@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Watch &amp; Device</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #121212;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+  }
+
+  .screen {
+    width: 378px;
+    min-height: 1680px;
+    background: #121212;
+    padding: 8px 20px 48px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Nav ── */
+  .nav { display: flex; flex-direction: column; gap: 12px; }
+  .nav-row { display: flex; align-items: center; justify-content: space-between; height: 48px; }
+  .back-btn { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .step-label { font-size: 12px; font-weight: 500; color: #B3B3B3; line-height: 18px; }
+  .progress-track { height: 4px; background: #1E1E1E; border-radius: 999px; overflow: hidden; }
+  .progress-fill  { height: 4px; background: #00E676; border-radius: 999px; width: 66.7%; }
+
+  /* ── Content ── */
+  .content { margin-top: 20px; display: flex; flex-direction: column; flex: 1; }
+  .screen-title  { font-size: 22px; font-weight: 600; color: #FFF; letter-spacing: -0.3px; line-height: 28px; margin-bottom: 8px; }
+  .screen-subtitle { font-size: 14px; font-weight: 400; color: #B3B3B3; line-height: 20px; letter-spacing: 0.15px; margin-bottom: 32px; }
+
+  .field { display: flex; flex-direction: column; gap: 12px; margin-bottom: 32px; }
+  .field-label { font-size: 14px; font-weight: 600; color: #FFF; line-height: 20px; letter-spacing: 0.1px; }
+
+  /* ── Yes/No device buttons (icon + text, large bordered) ── */
+  .device-row { display: flex; gap: 12px; }
+  .device-btn {
+    flex: 1; height: 48px; border-radius: 16px;
+    border: 1px solid #3A3A3A; background: #2A2A2A;
+    display: flex; align-items: center; justify-content: center;
+    gap: 8px; cursor: pointer;
+  }
+  .device-btn.active { background: rgba(0,230,118,0.2); border-color: #00E676; }
+  .device-btn img { width: 18px; height: 18px; display: block; }
+  .device-btn span { font-size: 16px; font-weight: 600; color: #FFF; line-height: 20px; letter-spacing: 0.1px; }
+  .device-btn.inactive span { color: #B3B3B3; }
+
+  /* ── Chip/pill buttons (device picker, metrics) ── */
+  .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    height: 48px; padding: 0 20px; border-radius: 999px;
+    border: 1px solid #3A3A3A; background: #2A2A2A;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 500; color: #B3B3B3;
+    letter-spacing: 0.5px; white-space: nowrap; cursor: pointer;
+  }
+  .chip.active { background: #00E676; border-color: #00E676; color: #121212; }
+
+  /* ── Simple choice buttons (1-line) ── */
+  .simple-btn {
+    width: 100%; height: 56px; border-radius: 16px;
+    border: 1px solid #3A3A3A; background: #2A2A2A;
+    padding: 0 16px; display: flex; align-items: center; cursor: pointer;
+  }
+  .simple-btn.active { background: rgba(0,230,118,0.2); border-color: #00E676; }
+  .simple-btn span { font-size: 16px; font-weight: 600; color: #FFF; line-height: 22px; letter-spacing: 0.1px; }
+
+  /* ── Segmented control — FIXED ── */
+  /* Base: equal flex segments, vertically centered, no-wrap */
+  .seg-control {
+    display: flex; width: 100%;
+    background: #2A2A2A; border-radius: 16px;
+    padding: 4px; gap: 4px;
+  }
+  .seg-btn {
+    flex: 1; min-width: 0; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; letter-spacing: 0.1px; line-height: 20px;
+    color: #B3B3B3; white-space: nowrap; cursor: pointer;
+  }
+  .seg-btn.active { background: #00E676; color: #121212; }
+
+  /* ── Continue ── */
+  .continue-btn {
+    width: 100%; height: 48px; background: #00E676; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 600; color: #121212; letter-spacing: 0.1px;
+    cursor: pointer; margin-top: auto;
+  }
+</style>
+</head>
+<body>
+  <div class="screen">
+
+    <!-- Nav -->
+    <div class="nav">
+      <div class="nav-row">
+        <div class="back-btn">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M15 18L9 12L15 6" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <span class="step-label">6 / 9</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill"></div></div>
+    </div>
+
+    <div class="content">
+
+      <h2 class="screen-title">Watch &amp; Device</h2>
+      <p class="screen-subtitle">Let us know what data sources are available.</p>
+
+      <!-- Do you use a watch? -->
+      <div class="field">
+        <span class="field-label">Do you use a watch or running device?</span>
+        <div class="device-row">
+          <div class="device-btn active">
+            <img src="https://www.figma.com/api/mcp/asset/f0501f99-1dfd-4e50-b267-c9782bde9b61" alt="watch">
+            <span>Yes</span>
+          </div>
+          <div class="device-btn inactive">
+            <img src="https://www.figma.com/api/mcp/asset/53017c18-6fcf-488d-ae2c-1bcf1f537375" alt="phone">
+            <span>No</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Which device? -->
+      <div class="field">
+        <span class="field-label">Which device?</span>
+        <div class="chip-group">
+          <div class="chip active">Garmin</div>
+          <div class="chip">Apple Watch</div>
+          <div class="chip">COROS</div>
+          <div class="chip">Polar</div>
+          <div class="chip">Suunto</div>
+          <div class="chip">Fitbit</div>
+          <div class="chip">Other</div>
+        </div>
+      </div>
+
+      <!-- How should the app use device data? -->
+      <div class="field">
+        <span class="field-label">How should the app use your device data?</span>
+        <div class="simple-btn"><span>Import runs automatically</span></div>
+        <div class="simple-btn"><span>Use heart rate only</span></div>
+        <div class="simple-btn"><span>Use pace and distance only</span></div>
+        <div class="simple-btn active"><span>Use all available data</span></div>
+        <div class="simple-btn"><span>I'm not sure</span></div>
+      </div>
+
+      <!-- Use watch-based metrics? -->
+      <div class="field">
+        <span class="field-label">Use watch-based metrics?</span>
+        <div class="seg-control">
+          <div class="seg-btn active">Yes</div>
+          <div class="seg-btn">No</div>
+          <div class="seg-btn">HR only</div>
+        </div>
+      </div>
+
+      <!-- Which metrics? -->
+      <div class="field">
+        <span class="field-label">Which metrics?</span>
+        <div class="chip-group">
+          <div class="chip active">Heart rate</div>
+          <div class="chip active">Heart rate zones</div>
+          <div class="chip active">Pace</div>
+          <div class="chip active">Distance</div>
+          <div class="chip">Cadence</div>
+          <div class="chip active">Elevation</div>
+          <div class="chip">Training load</div>
+          <div class="chip active">Recovery time</div>
+          <div class="chip">None</div>
+        </div>
+      </div>
+
+      <!-- Heart-rate-based training zones? — FIXED: "If supported" no longer wraps -->
+      <div class="field">
+        <span class="field-label">Heart-rate-based training zones?</span>
+        <div class="seg-control">
+          <div class="seg-btn active">Yes</div>
+          <div class="seg-btn">No</div>
+          <div class="seg-btn">If supported</div>
+        </div>
+      </div>
+
+      <!-- Pace recommendations from watch? -->
+      <div class="field">
+        <span class="field-label">Pace recommendations from watch?</span>
+        <div class="seg-control">
+          <div class="seg-btn active">Yes</div>
+          <div class="seg-btn">No</div>
+        </div>
+      </div>
+
+      <!-- Auto-adjust plan from watch data? -->
+      <div class="field">
+        <span class="field-label">Auto-adjust plan from watch data?</span>
+        <div class="seg-control">
+          <div class="seg-btn active">Auto</div>
+          <div class="seg-btn">Ask first</div>
+          <div class="seg-btn">No</div>
+        </div>
+      </div>
+
+      <div class="continue-btn">Continue</div>
+
+    </div>
+  </div>
+</body>
+</html>

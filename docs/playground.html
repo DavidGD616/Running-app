@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Playground — Running App</title>
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #121212;
+      color: #FFFFFF;
+      padding: 40px 48px;
+      min-width: 1440px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────── */
+    .page-header {
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 8px;
+    }
+    .page-header-badge {
+      background: rgba(0,230,118,0.15);
+      border: 1px solid rgba(0,230,118,0.4);
+      border-radius: 999px;
+      padding: 4px 14px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.8px;
+      color: #00E676; text-transform: uppercase;
+    }
+    .page-title {
+      font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+      color: #FFFFFF;
+    }
+    .page-subtitle {
+      font-size: 14px; color: #666666; margin-bottom: 40px;
+      padding-left: 2px;
+    }
+    .page-subtitle span { color: #B3B3B3; }
+
+    /* ── Section ─────────────────────────────────────────────── */
+    .section { margin-bottom: 56px; }
+    .section-label {
+      font-size: 11px; font-weight: 600; letter-spacing: 1.2px;
+      text-transform: uppercase; color: #666666;
+      margin-bottom: 20px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-label::after {
+      content: ''; flex: 1; height: 1px; background: #2A2A2A;
+    }
+
+    /* ── Experiment wrap ─────────────────────────────────────── */
+    .experiment-grid {
+      display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;
+    }
+    .experiment-cell {
+      display: flex; flex-direction: column; align-items: flex-start; gap: 10px;
+    }
+    .experiment-label {
+      font-size: 11px; color: #666666; letter-spacing: 0.3px;
+    }
+    .experiment-label.accent { color: #00E676; }
+
+    /* Draft tape */
+    .draft-tape {
+      background: rgba(255,193,7,0.12);
+      border: 1px dashed rgba(255,193,7,0.4);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 10px; font-weight: 600; color: #FFC107;
+      letter-spacing: 0.6px; text-transform: uppercase;
+    }
+    .wip-tape {
+      background: rgba(66,165,245,0.12);
+      border: 1px dashed rgba(66,165,245,0.4);
+      border-radius: 8px;
+      padding: 4px 10px;
+      font-size: 10px; font-weight: 600; color: #42A5F5;
+      letter-spacing: 0.6px; text-transform: uppercase;
+    }
+
+    /* ── Accent variants ─────────────────────────────────────── */
+    .swatch-row { display: flex; gap: 12px; align-items: flex-end; }
+    .swatch-col { display: flex; flex-direction: column; gap: 6px; align-items: center; }
+    .swatch {
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .swatch-name { font-size: 10px; color: #666666; letter-spacing: 0.3px; }
+
+    /* ── Button experiments ──────────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      height: 48px; padding: 0 24px;
+      border-radius: 16px; border: none; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.1px;
+    }
+    .btn-primary { background: #00E676; color: #121212; width: 220px; }
+    .btn-primary-wide { background: #00E676; color: #121212; width: 300px; }
+    .btn-outline { background: transparent; color: #00E676; border: 1.5px solid #00E676; width: 220px; }
+    .btn-ghost { background: transparent; color: #00E676; width: 220px; }
+    .btn-danger { background: #EF5350; color: #FFFFFF; width: 220px; }
+    .btn-disabled { background: #2A2A2A; color: #666666; width: 220px; cursor: not-allowed; }
+    .btn-sm { height: 36px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 600; }
+    .btn-icon { width: 48px; height: 48px; padding: 0; border-radius: 12px; }
+    .btn-pill { border-radius: 999px; }
+
+    /* ── Card experiments ────────────────────────────────────── */
+    .card {
+      background: #2A2A2A; border: 1px solid #3A3A3A;
+      border-radius: 16px; padding: 16px;
+    }
+    .card-elevated { background: #333333; }
+    .card-accent { border-color: #00E676; background: rgba(0,230,118,0.05); }
+    .card-warning { border-color: rgba(255,193,7,0.5); background: rgba(255,193,7,0.06); }
+    .card-error { border-color: rgba(239,83,80,0.5); background: rgba(239,83,80,0.06); }
+    .card-info { border-color: rgba(66,165,245,0.5); background: rgba(66,165,245,0.06); }
+
+    /* ── Typography experiments ──────────────────────────────── */
+    .type-row { display: flex; flex-direction: column; gap: 6px; width: 480px; }
+    .type-row + .type-row { margin-top: 8px; }
+
+    /* ── Chip experiments ────────────────────────────────────── */
+    .chip-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; justify-content: center;
+      height: 36px; padding: 0 16px; border-radius: 999px;
+      font-size: 12px; font-weight: 500; letter-spacing: 0.5px;
+      border: 1.5px solid #3A3A3A; background: #2A2A2A; color: #B3B3B3;
+      cursor: pointer;
+    }
+    .chip-selected { background: #00E676; color: #121212; border-color: #00E676; font-weight: 600; }
+    .chip-outline { background: transparent; color: #00E676; border-color: #00E676; }
+    .chip-sm { height: 28px; font-size: 11px; padding: 0 12px; }
+    .chip-icon { gap: 6px; }
+    .chip img { width: 14px; height: 14px; display: block; }
+
+    /* ── Icon showcase ───────────────────────────────────────── */
+    .icon-grid { display: flex; gap: 16px; flex-wrap: wrap; }
+    .icon-tile {
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+      background: #2A2A2A; border: 1px solid #3A3A3A;
+      border-radius: 12px; padding: 16px 20px; min-width: 80px;
+    }
+    .icon-tile img { width: 24px; height: 24px; display: block; }
+    .icon-tile-label { font-size: 10px; color: #666666; text-align: center; }
+
+    /* ── Segmented control ───────────────────────────────────── */
+    .seg { display: inline-flex; background: #2A2A2A; border-radius: 12px; padding: 4px; gap: 4px; }
+    /* Full-width equal-segment variant (e.g. sleep hours, 5 options) */
+    .seg-full {
+      display: flex; width: 100%; background: #2A2A2A;
+      border-radius: 16px; padding: 4px; gap: 4px;
+    }
+    .seg-item {
+      padding: 0 16px; height: 48px; border-radius: 12px;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.1px;
+      display: flex; align-items: center; justify-content: center;
+      white-space: nowrap; text-align: center;
+      cursor: pointer; color: #B3B3B3;
+    }
+    .seg-full .seg-item { flex: 1; min-width: 0; }
+    .seg-item-active { background: #00E676; color: #121212; }
+
+    /* ── Progress bars ───────────────────────────────────────── */
+    .progress-wrap { display: flex; flex-direction: column; gap: 12px; width: 320px; }
+    .progress-bar-track {
+      height: 6px; background: #1E1E1E; border-radius: 999px; overflow: hidden;
+    }
+    .progress-bar-fill { height: 100%; border-radius: 999px; background: #00E676; }
+    .progress-bar-fill.warning { background: #FFC107; }
+    .progress-bar-fill.danger { background: #EF5350; }
+    .progress-row { display: flex; align-items: center; gap: 12px; }
+    .progress-pct { font-size: 12px; color: #B3B3B3; width: 36px; text-align: right; font-variant-numeric: tabular-nums; }
+    .progress-thick .progress-bar-track { height: 10px; }
+    .progress-thin .progress-bar-track { height: 3px; }
+
+    /* ── Input sandbox ───────────────────────────────────────── */
+    .input-group { display: flex; flex-direction: column; gap: 6px; width: 260px; }
+    .input-label { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+    .input-field {
+      background: #2A2A2A; border: 1.5px solid #3A3A3A;
+      border-radius: 12px; padding: 14px 16px;
+      font-size: 16px; font-family: 'Inter', sans-serif; color: #FFFFFF;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .input-placeholder { color: #666666; }
+    .input-focused { border-color: #00E676; }
+    .input-error { border-color: #EF5350; }
+    .input-filled { }
+    .input-icon-right { justify-content: space-between; }
+    .input-icon-right svg { opacity: 0.5; flex-shrink: 0; }
+
+    /* ── Data display ────────────────────────────────────────── */
+    .stat-row { display: flex; gap: 12px; }
+    .stat-card {
+      background: #2A2A2A; border: 1px solid #3A3A3A;
+      border-radius: 16px; padding: 16px 20px;
+      display: flex; flex-direction: column; gap: 4px;
+      min-width: 100px;
+    }
+    .stat-value {
+      font-size: 28px; font-weight: 700; letter-spacing: -0.5px;
+      color: #FFFFFF; font-variant-numeric: tabular-nums;
+    }
+    .stat-unit { font-size: 16px; font-weight: 400; color: #B3B3B3; }
+    .stat-label { font-size: 12px; color: #666666; letter-spacing: 0.3px; }
+    .stat-accent .stat-value { color: #00E676; }
+    .stat-trend { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #4CAF50; }
+
+    /* ── Bottom sheet preview ────────────────────────────────── */
+    .sheet-preview {
+      background: #1E1E1E; border-radius: 20px 20px 0 0;
+      padding: 20px; width: 390px; position: relative;
+      border: 1px solid #2A2A2A;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; background: #3A3A3A;
+      border-radius: 999px; margin: 0 auto 20px;
+    }
+
+    /* ── Notification / Toast ────────────────────────────────── */
+    .toast {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 16px; border-radius: 14px;
+      width: 320px;
+    }
+    .toast-icon { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .toast-text { font-size: 14px; font-weight: 500; flex: 1; line-height: 1.4; }
+    .toast-success { background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); }
+    .toast-success .toast-text { color: #4CAF50; }
+    .toast-error { background: rgba(239,83,80,0.15); border: 1px solid rgba(239,83,80,0.3); }
+    .toast-error .toast-text { color: #EF5350; }
+    .toast-warning { background: rgba(255,193,7,0.12); border: 1px solid rgba(255,193,7,0.3); }
+    .toast-warning .toast-text { color: #FFC107; }
+    .toast-info { background: rgba(66,165,245,0.12); border: 1px solid rgba(66,165,245,0.3); }
+    .toast-info .toast-text { color: #42A5F5; }
+
+    /* ── Badge / Pill labels ─────────────────────────────────── */
+    .badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 3px 10px; border-radius: 999px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.3px;
+    }
+    .badge-dot { width: 6px; height: 6px; border-radius: 999px; flex-shrink: 0; }
+    .badge-accent { background: rgba(0,230,118,0.15); color: #00E676; }
+    .badge-accent .badge-dot { background: #00E676; }
+    .badge-success { background: rgba(76,175,80,0.15); color: #4CAF50; }
+    .badge-success .badge-dot { background: #4CAF50; }
+    .badge-warning { background: rgba(255,193,7,0.12); color: #FFC107; }
+    .badge-warning .badge-dot { background: #FFC107; }
+    .badge-error { background: rgba(239,83,80,0.15); color: #EF5350; }
+    .badge-error .badge-dot { background: #EF5350; }
+    .badge-neutral { background: #2A2A2A; color: #B3B3B3; }
+    .badge-neutral .badge-dot { background: #666666; }
+
+    /* ── Divider ─────────────────────────────────────────────── */
+    .divider { height: 1px; background: #2A2A2A; margin: 40px 0; }
+
+    /* ── Avatar / Initials ───────────────────────────────────── */
+    .avatar {
+      border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; letter-spacing: 0.3px; flex-shrink: 0;
+    }
+    .avatar-sm { width: 32px; height: 32px; font-size: 12px; }
+    .avatar-md { width: 40px; height: 40px; font-size: 14px; }
+    .avatar-lg { width: 56px; height: 56px; font-size: 18px; }
+    .avatar-accent { background: rgba(0,230,118,0.15); color: #00E676; }
+    .avatar-info { background: rgba(66,165,245,0.15); color: #42A5F5; }
+    .avatar-warn { background: rgba(255,193,7,0.12); color: #FFC107; }
+
+    /* ── List item ───────────────────────────────────────────── */
+    .list-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 14px 0; border-bottom: 1px solid #2A2A2A;
+      width: 340px;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .list-item-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(0,230,118,0.12);
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    .list-item-icon img { width: 18px; height: 18px; display: block; }
+    .list-item-body { flex: 1; }
+    .list-item-title { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+    .list-item-sub { font-size: 12px; color: #666666; margin-top: 2px; }
+    .list-item-chevron {
+      display: flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; flex-shrink: 0;
+    }
+    .list-item-chevron img { width: 16px; height: 16px; display: block; opacity: 0.4; }
+
+    /* ── Empty / Loading slot ────────────────────────────────── */
+    .skeleton {
+      background: linear-gradient(90deg, #2A2A2A 25%, #333333 50%, #2A2A2A 75%);
+      border-radius: 8px;
+    }
+    .skeleton-line { height: 14px; }
+    .skeleton-line.sm { height: 11px; }
+    .skeleton-circle { border-radius: 999px; }
+    .skeleton-card {
+      background: #2A2A2A; border: 1px solid #3A3A3A;
+      border-radius: 16px; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px; width: 240px;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-badge">Playground</div>
+    <h1 class="page-title">Safe to Break Things Here</h1>
+  </div>
+  <p class="page-subtitle">
+    <span>Experiment freely — this page won't affect Foundations, Components, or any screen.</span>
+    &nbsp;Try variants, edge cases, new ideas, or stress-test layouts.
+  </p>
+
+  <!-- ── 1. BUTTONS ─────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Buttons — variant experiments</div>
+    <div class="experiment-grid" style="align-items:flex-end;">
+
+      <div class="experiment-cell">
+        <button class="btn btn-primary">Start Training</button>
+        <span class="experiment-label">Primary</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-primary btn-pill">Start Training</button>
+        <span class="experiment-label">Primary — pill</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-outline">View Plan</button>
+        <span class="experiment-label">Outline</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-ghost">Skip for now</button>
+        <span class="experiment-label">Ghost / text</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-danger">Delete Run</button>
+        <span class="experiment-label">Destructive</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-disabled">Generating…</button>
+        <span class="experiment-label">Disabled</span>
+      </div>
+
+    </div>
+
+    <div class="experiment-grid" style="margin-top:16px; align-items:flex-end;">
+      <div class="experiment-cell">
+        <button class="btn btn-primary btn-sm">Save</button>
+        <span class="experiment-label">Small primary</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-outline btn-sm">Edit</button>
+        <span class="experiment-label">Small outline</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-primary btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+        <span class="experiment-label">Icon only</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-outline btn-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        </button>
+        <span class="experiment-label">Icon outline</span>
+      </div>
+      <div class="experiment-cell">
+        <button class="btn btn-primary-wide" style="width:340px;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+          Build My Training Plan
+        </button>
+        <span class="experiment-label">Full-width with icon</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 2. CHIPS ───────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Chips — day selector &amp; filter tags</div>
+
+    <div class="chip-row" style="margin-bottom:12px;">
+      <div class="chip">Mon</div>
+      <div class="chip chip-selected">Tue</div>
+      <div class="chip chip-selected">Wed</div>
+      <div class="chip">Thu</div>
+      <div class="chip chip-selected">Fri</div>
+      <div class="chip">Sat</div>
+      <div class="chip">Sun</div>
+    </div>
+
+    <div class="chip-row" style="margin-bottom:12px;">
+      <div class="chip chip-outline">5K</div>
+      <div class="chip chip-outline">10K</div>
+      <div class="chip chip-selected">Half Marathon</div>
+      <div class="chip chip-outline">Full Marathon</div>
+    </div>
+
+    <div class="chip-row">
+      <div class="chip chip-icon chip-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B3B3B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        Intervals
+      </div>
+      <div class="chip chip-icon chip-sm chip-selected">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#121212" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        Easy
+      </div>
+      <div class="chip chip-icon chip-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B3B3B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        Tempo
+      </div>
+      <div class="chip chip-icon chip-sm">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B3B3B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        Long Run
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 3. SEGMENTED CONTROL ───────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Segmented controls</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="seg">
+          <div class="seg-item seg-item-active">km</div>
+          <div class="seg-item">mi</div>
+        </div>
+        <span class="experiment-label">Units (2 options)</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="seg">
+          <div class="seg-item">Week</div>
+          <div class="seg-item seg-item-active">Month</div>
+          <div class="seg-item">All</div>
+        </div>
+        <span class="experiment-label">View range (3 options)</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="seg">
+          <div class="seg-item seg-item-active">AM</div>
+          <div class="seg-item">PM</div>
+          <div class="seg-item">Flexible</div>
+          <div class="seg-item">Both</div>
+        </div>
+        <span class="experiment-label">Time preference (4 options)</span>
+      </div>
+
+      <!-- Full-width sleep hours — 5 equal segments, matches Figma node 4:1469 -->
+      <div class="experiment-cell" style="width:360px;">
+        <div class="seg-full">
+          <div class="seg-item">&lt;&thinsp;5h</div>
+          <div class="seg-item">5–6h</div>
+          <div class="seg-item seg-item-active">6–7h</div>
+          <div class="seg-item">7–8h</div>
+          <div class="seg-item">8+h</div>
+        </div>
+        <span class="experiment-label">Sleep hours — full-width (5 options)</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 4. PROGRESS BARS ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Progress bars — sizes &amp; semantic states</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="progress-wrap">
+          <div class="progress-row progress-thin">
+            <div class="progress-bar-track" style="flex:1;"><div class="progress-bar-fill" style="width:30%;"></div></div>
+            <span class="progress-pct">3/9</span>
+          </div>
+          <div class="progress-row">
+            <div class="progress-bar-track" style="flex:1;"><div class="progress-bar-fill" style="width:55%;"></div></div>
+            <span class="progress-pct">5/9</span>
+          </div>
+          <div class="progress-row progress-thick">
+            <div class="progress-bar-track" style="flex:1;"><div class="progress-bar-fill" style="width:89%;"></div></div>
+            <span class="progress-pct">8/9</span>
+          </div>
+        </div>
+        <span class="experiment-label">Thin 3px / default 6px / thick 10px</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="progress-wrap">
+          <div class="progress-row">
+            <span style="font-size:11px;color:#666;width:72px;">Weekly km</span>
+            <div class="progress-bar-track" style="flex:1;"><div class="progress-bar-fill" style="width:72%;"></div></div>
+            <span class="progress-pct">72%</span>
+          </div>
+          <div class="progress-row">
+            <span style="font-size:11px;color:#666;width:72px;">Recovery</span>
+            <div class="progress-bar-track" style="flex:1;"><div class="progress-bar-fill warning" style="width:45%;"></div></div>
+            <span class="progress-pct" style="color:#FFC107;">45%</span>
+          </div>
+          <div class="progress-row">
+            <span style="font-size:11px;color:#666;width:72px;">Effort</span>
+            <div class="progress-bar-track" style="flex:1;"><div class="progress-bar-fill danger" style="width:91%;"></div></div>
+            <span class="progress-pct" style="color:#EF5350;">91%</span>
+          </div>
+        </div>
+        <span class="experiment-label">Semantic colors: success / warning / danger</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 5. STATS / DATA DISPLAY ────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Stats &amp; data display — numbers and metrics</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="stat-row">
+          <div class="stat-card">
+            <span class="stat-value">5<span class="stat-unit">km</span></span>
+            <span class="stat-label">Distance</span>
+          </div>
+          <div class="stat-card stat-accent">
+            <span class="stat-value">4<span class="stat-unit">:45</span></span>
+            <span class="stat-label">Avg Pace</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-value">28<span class="stat-unit">:14</span></span>
+            <span class="stat-label">Duration</span>
+          </div>
+        </div>
+        <span class="experiment-label">Run summary row</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="stat-row" style="flex-direction:column; gap:8px;">
+          <div class="stat-card" style="flex-direction:row; align-items:center; gap:16px; min-width:240px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+            <div style="flex:1;">
+              <div style="font-size:14px;color:#B3B3B3;">Heart Rate</div>
+              <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;">148 <span style="font-size:13px;color:#666;font-weight:400;">bpm</span></div>
+            </div>
+            <div class="stat-trend">▲ 3%</div>
+          </div>
+          <div class="stat-card" style="flex-direction:row; align-items:center; gap:16px; min-width:240px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+            <div style="flex:1;">
+              <div style="font-size:14px;color:#B3B3B3;">Weekly Volume</div>
+              <div style="font-size:22px;font-weight:700;font-variant-numeric:tabular-nums;">42 <span style="font-size:13px;color:#666;font-weight:400;">km</span></div>
+            </div>
+            <div class="stat-trend">▲ 12%</div>
+          </div>
+        </div>
+        <span class="experiment-label">Horizontal stat cards with icon</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 6. INPUTS (extended) ───────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Inputs — extended edge cases</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="input-group">
+          <span class="input-label">Search</span>
+          <div class="input-field input-icon-right">
+            <span class="input-placeholder">Find a workout…</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+        </div>
+        <span class="experiment-label">Search field</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="input-group">
+          <span class="input-label">Target Pace</span>
+          <div class="input-field input-icon-right">
+            4:30
+            <span style="font-size:13px;color:#666;">min/km</span>
+          </div>
+        </div>
+        <span class="experiment-label">Inline unit suffix</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="input-group">
+          <span class="input-label" style="color:#00E676;">Email</span>
+          <div class="input-field input-focused">
+            david@running.app
+          </div>
+        </div>
+        <span class="experiment-label">Focused + filled</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="input-group">
+          <span class="input-label" style="color:#EF5350;">Email</span>
+          <div class="input-field input-error">
+            not-an-email
+          </div>
+          <span style="font-size:12px;color:#EF5350;margin-top:2px;">Enter a valid email address</span>
+        </div>
+        <span class="experiment-label">Error + helper text</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 7. BADGES & TOASTS ─────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Badges &amp; toasts — semantic feedback</div>
+    <div class="experiment-grid" style="align-items:flex-start; gap:24px;">
+
+      <div class="experiment-cell">
+        <div style="display:flex;flex-wrap:wrap;gap:8px;max-width:320px;">
+          <span class="badge badge-accent"><span class="badge-dot"></span>Active</span>
+          <span class="badge badge-success"><span class="badge-dot"></span>Completed</span>
+          <span class="badge badge-warning"><span class="badge-dot"></span>Pending</span>
+          <span class="badge badge-error"><span class="badge-dot"></span>Missed</span>
+          <span class="badge badge-neutral"><span class="badge-dot"></span>Rest Day</span>
+          <span class="badge badge-accent" style="background:rgba(0,230,118,0.08);border:1px solid rgba(0,230,118,0.25);">New</span>
+        </div>
+        <span class="experiment-label">Status badges</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div class="toast toast-success">
+            <div class="toast-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </div>
+            <span class="toast-text">Plan updated successfully</span>
+          </div>
+          <div class="toast toast-error">
+            <div class="toast-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF5350" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+            </div>
+            <span class="toast-text">Could not save your changes</span>
+          </div>
+          <div class="toast toast-warning">
+            <div class="toast-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <span class="toast-text">High training load this week</span>
+          </div>
+          <div class="toast toast-info">
+            <div class="toast-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#42A5F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            </div>
+            <span class="toast-text">Sync your watch to see heart rate</span>
+          </div>
+        </div>
+        <span class="experiment-label">Toast notifications (all states)</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 8. ICON SHOWCASE ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Icons — Lucide SVG vectors</div>
+    <div class="icon-grid">
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        <span class="icon-tile-label">Goal</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span class="icon-tile-label">Fitness</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span class="icon-tile-label">Schedule</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        <span class="icon-tile-label">Health</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        <span class="icon-tile-label">Training</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 01-2 1.82H9.83a2 2 0 01-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 019.83 1h4.33a2 2 0 012 1.82l.35 3.83"/></svg>
+        <span class="icon-tile-label">Watch</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        <span class="icon-tile-label">Recovery</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        <span class="icon-tile-label">Motivation</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+        <span class="icon-tile-label">Done</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+        <span class="icon-tile-label">Edit</span>
+      </div>
+      <div class="icon-tile">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+        <span class="icon-tile-label">Back</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 9. LIST ITEMS ──────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">List items — navigation rows</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="card" style="width:340px;">
+          <div class="list-item">
+            <div class="list-item-icon">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <div class="list-item-body">
+              <div class="list-item-title">Race Goal</div>
+              <div class="list-item-sub">Half Marathon · April 12</div>
+            </div>
+            <div class="list-item-chevron">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-icon" style="background:rgba(66,165,245,0.12);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#42A5F5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="7"/><polyline points="12 9 12 12 13.5 13.5"/><path d="M16.51 17.35l-.35 3.83a2 2 0 01-2 1.82H9.83a2 2 0 01-2-1.82l-.35-3.83m.01-10.7l.35-3.83A2 2 0 019.83 1h4.33a2 2 0 012 1.82l.35 3.83"/></svg>
+            </div>
+            <div class="list-item-body">
+              <div class="list-item-title">Connected Device</div>
+              <div class="list-item-sub">Apple Watch Series 9</div>
+            </div>
+            <div class="list-item-chevron">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+            </div>
+          </div>
+          <div class="list-item">
+            <div class="list-item-icon" style="background:rgba(255,193,7,0.1);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#FFC107" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+            </div>
+            <div class="list-item-body">
+              <div class="list-item-title">Recovery Rating</div>
+              <div class="list-item-sub">Feeling good today</div>
+            </div>
+            <span class="badge badge-success" style="flex-shrink:0;"><span class="badge-dot"></span>Good</span>
+          </div>
+        </div>
+        <span class="experiment-label">Settings / profile list rows</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 10. BOTTOM SHEET ───────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Bottom sheet preview</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="sheet-preview">
+          <div class="sheet-handle"></div>
+          <div style="font-size:18px;font-weight:600;margin-bottom:6px;">Confirm Delete</div>
+          <div style="font-size:14px;color:#B3B3B3;margin-bottom:20px;line-height:1.5;">
+            This will remove your training plan permanently. You can generate a new one anytime.
+          </div>
+          <button class="btn btn-danger" style="width:100%;margin-bottom:10px;">Delete Plan</button>
+          <button class="btn btn-ghost" style="width:100%;color:#B3B3B3;">Cancel</button>
+        </div>
+        <span class="experiment-label">Destructive action sheet</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="sheet-preview">
+          <div class="sheet-handle"></div>
+          <div style="font-size:18px;font-weight:600;margin-bottom:16px;">Log Today's Run</div>
+          <div class="input-group" style="margin-bottom:12px;width:100%;">
+            <span class="input-label">Distance</span>
+            <div class="input-field input-icon-right" style="background:#2A2A2A;">
+              8.4
+              <span style="font-size:13px;color:#666;">km</span>
+            </div>
+          </div>
+          <div class="input-group" style="margin-bottom:20px;width:100%;">
+            <span class="input-label">Duration</span>
+            <div class="input-field" style="background:#2A2A2A;">42:16</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;">Save Run</button>
+        </div>
+        <span class="experiment-label">Log run sheet</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 11. CARDS SANDBOX ──────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Card variants — semantic backgrounds</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="card" style="width:240px;">
+          <div style="font-size:12px;color:#666666;margin-bottom:8px;">Default</div>
+          <div style="font-size:16px;font-weight:600;">Base card</div>
+          <div style="font-size:13px;color:#B3B3B3;margin-top:4px;">Background Card + Border Default</div>
+        </div>
+        <span class="experiment-label">#2A2A2A + #3A3A3A border</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="card card-elevated" style="width:240px;">
+          <div style="font-size:12px;color:#666666;margin-bottom:8px;">Elevated</div>
+          <div style="font-size:16px;font-weight:600;">Surface card</div>
+          <div style="font-size:13px;color:#B3B3B3;margin-top:4px;">Used for bottom sheets, modals</div>
+        </div>
+        <span class="experiment-label">#333333 elevated surface</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="card card-accent" style="width:240px;">
+          <div style="font-size:12px;color:#00E676;margin-bottom:8px;">Selected</div>
+          <div style="font-size:16px;font-weight:600;">Active card</div>
+          <div style="font-size:13px;color:#B3B3B3;margin-top:4px;">Chosen option — accent tint</div>
+        </div>
+        <span class="experiment-label">Accent Muted + accent border</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="card card-warning" style="width:240px;">
+          <div style="font-size:12px;color:#FFC107;margin-bottom:8px;">Warning</div>
+          <div style="font-size:16px;font-weight:600;">High load week</div>
+          <div style="font-size:13px;color:#B3B3B3;margin-top:4px;">Consider recovery run instead</div>
+        </div>
+        <span class="experiment-label">Warning semantic card</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="card card-error" style="width:240px;">
+          <div style="font-size:12px;color:#EF5350;margin-bottom:8px;">Error</div>
+          <div style="font-size:16px;font-weight:600;">Session missed</div>
+          <div style="font-size:13px;color:#B3B3B3;margin-top:4px;">Tap to reschedule or skip</div>
+        </div>
+        <span class="experiment-label">Error / missed state card</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div class="card card-info" style="width:240px;">
+          <div style="font-size:12px;color:#42A5F5;margin-bottom:8px;">Info</div>
+          <div style="font-size:16px;font-weight:600;">Tip of the day</div>
+          <div style="font-size:13px;color:#B3B3B3;margin-top:4px;">Cadence above 170 reduces impact</div>
+        </div>
+        <span class="experiment-label">Info / tip card</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 12. SKELETON LOADING ───────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Skeleton loaders — empty &amp; loading states</div>
+    <div class="experiment-grid">
+
+      <div class="experiment-cell">
+        <div class="skeleton-card">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="skeleton skeleton-circle" style="width:36px;height:36px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+              <div class="skeleton skeleton-line" style="width:80%;"></div>
+              <div class="skeleton skeleton-line sm" style="width:55%;"></div>
+            </div>
+          </div>
+          <div class="skeleton skeleton-line" style="width:100%;margin-top:4px;"></div>
+          <div class="skeleton skeleton-line" style="width:70%;"></div>
+        </div>
+        <span class="experiment-label">Card skeleton</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div style="display:flex;flex-direction:column;gap:10px;width:240px;padding:16px;background:#2A2A2A;border:1px solid #3A3A3A;border-radius:16px;">
+          <div style="display:flex;gap:12px;">
+            <div class="skeleton skeleton-circle" style="width:40px;height:40px;flex-shrink:0;"></div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;padding-top:4px;">
+              <div class="skeleton skeleton-line" style="width:65%;height:16px;border-radius:6px;"></div>
+              <div class="skeleton skeleton-line sm" style="width:45%;border-radius:6px;"></div>
+            </div>
+          </div>
+          <div class="skeleton" style="height:6px;border-radius:999px;width:100%;"></div>
+        </div>
+        <span class="experiment-label">Session card skeleton</span>
+      </div>
+
+      <div class="experiment-cell">
+        <div style="display:flex;gap:10px;">
+          <div class="skeleton skeleton-circle" style="width:48px;height:48px;flex-shrink:0;"></div>
+          <div class="skeleton skeleton-circle" style="width:48px;height:48px;flex-shrink:0;"></div>
+          <div class="skeleton skeleton-circle" style="width:48px;height:48px;flex-shrink:0;"></div>
+          <div class="skeleton skeleton-circle" style="width:48px;height:48px;flex-shrink:0;"></div>
+          <div class="skeleton skeleton-circle" style="width:48px;height:48px;flex-shrink:0;"></div>
+        </div>
+        <span class="experiment-label">Day chip row skeleton</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 13. AVATARS ────────────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Avatars &amp; user representations</div>
+    <div class="experiment-grid" style="align-items:flex-end;">
+
+      <div class="experiment-cell">
+        <div class="avatar avatar-lg avatar-accent">DG</div>
+        <span class="experiment-label">Large</span>
+      </div>
+      <div class="experiment-cell">
+        <div class="avatar avatar-md avatar-info">RN</div>
+        <span class="experiment-label">Medium</span>
+      </div>
+      <div class="experiment-cell">
+        <div class="avatar avatar-sm avatar-warn">+3</div>
+        <span class="experiment-label">Small / group</span>
+      </div>
+      <div class="experiment-cell">
+        <div style="display:flex;flex-direction:row;">
+          <div class="avatar avatar-md avatar-accent" style="z-index:3;border:2px solid #121212;">DG</div>
+          <div class="avatar avatar-md avatar-info" style="z-index:2;margin-left:-12px;border:2px solid #121212;">MR</div>
+          <div class="avatar avatar-md avatar-warn" style="z-index:1;margin-left:-12px;border:2px solid #121212;">+4</div>
+        </div>
+        <span class="experiment-label">Stacked group</span>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── 14. DRAFT / NOTES ──────────────────────────────────────────── -->
+  <div class="section">
+    <div class="section-label">Notes &amp; scratch area</div>
+    <div class="experiment-grid" style="align-items:flex-start; gap:20px;">
+
+      <div class="card" style="width:300px; border-style:dashed; border-color:#3A3A3A;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span class="draft-tape">Draft</span>
+          <span style="font-size:12px;color:#666;">idea to explore</span>
+        </div>
+        <div style="font-size:14px;color:#B3B3B3;line-height:1.6;">
+          Swipeable week calendar at top of home screen — show 7 days, tap to jump to session detail. Consider horizontal scroll + sticky today.
+        </div>
+      </div>
+
+      <div class="card" style="width:300px; border-style:dashed; border-color:#3A3A3A;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span class="wip-tape">WIP</span>
+          <span style="font-size:12px;color:#666;">in progress</span>
+        </div>
+        <div style="font-size:14px;color:#B3B3B3;line-height:1.6;">
+          Onboarding flow: consider merging Health &amp; Recovery screens to reduce step count. Test with 8-step vs 10-step with users.
+        </div>
+      </div>
+
+      <div class="card" style="width:300px; border-style:dashed; border-color:rgba(0,230,118,0.3); background:rgba(0,230,118,0.03);">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <span class="badge badge-accent" style="font-size:10px;">Idea</span>
+        </div>
+        <div style="font-size:14px;color:#B3B3B3;line-height:1.6;">
+          Add a "Coach notes" section after each completed session — short AI-generated insight based on the run data.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</body>
+</html>

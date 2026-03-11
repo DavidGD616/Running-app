@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=1400" />
+  <title>Components — Running App Design System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+
+  <!-- Real icon assets from Figma design -->
+  <!-- imgChevronLeft  = chevron-left (back button) -->
+  <!-- imgItemIcon     = goal/target icon           -->
+  <!-- imgItemIcon1    = chart/trend icon           -->
+  <!-- imgItemIcon2    = calendar icon              -->
+  <!-- imgItemIcon3    = heart icon                 -->
+  <!-- imgItemIcon4    = training/pace icon         -->
+  <!-- imgItemIcon5    = device/watch icon          -->
+  <!-- imgItemIcon6    = recovery/moon icon         -->
+  <!-- imgItemIcon7    = motivation/bolt icon       -->
+  <!-- imgEdit3        = edit/pencil icon           -->
+  <!-- imgCheckCircle  = check-circle icon          -->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #121212;
+      font-family: 'Inter', system-ui, sans-serif;
+      color: #FFFFFF;
+      padding: 60px 48px 120px;
+      width: 1400px;
+    }
+
+    /* ── Page title ── */
+    .page-title { font-size: 36px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+    .page-subtitle { font-size: 14px; font-weight: 400; color: #666666; margin-bottom: 80px; }
+
+    /* ── Section ── */
+    .section { margin-bottom: 80px; }
+    .section-header { margin-bottom: 32px; }
+    .section-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; line-height: 36px; margin-bottom: 8px; }
+    .section-accent { width: 40px; height: 3px; background: #00E676; border-radius: 999px; }
+
+    /* ── Component group ── */
+    .comp-group { margin-bottom: 48px; }
+    .comp-group-label {
+      font-size: 11px; font-weight: 600; color: #666666; letter-spacing: 1px;
+      text-transform: uppercase; margin-bottom: 16px;
+      padding-bottom: 8px; border-bottom: 1px solid #2A2A2A;
+    }
+    .comp-row { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; }
+    .comp-cell {
+      display: flex; flex-direction: column; align-items: center; gap: 10px;
+    }
+    .state-label {
+      font-size: 11px; font-weight: 500; color: #666666; letter-spacing: 0.4px;
+      text-align: center;
+    }
+
+    /* ──────────────────────────────────────────
+       BUTTONS
+    ────────────────────────────────────────── */
+    .btn {
+      display: flex; align-items: center; justify-content: center;
+      width: 260px; height: 48px; border-radius: 16px;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.1px;
+      cursor: pointer; border: none; outline: none;
+    }
+    .btn-primary          { background: #00E676; color: #121212; }
+    .btn-primary-pressed  { background: #00C960; color: #121212; }
+    .btn-primary-disabled { background: #2A2A2A; color: #666666; border: none; }
+    .btn-secondary        { background: transparent; color: #00E676; border: 1.5px solid #00E676; }
+    .btn-secondary-pressed{ background: rgba(0,230,118,0.08); color: #00E676; border: 1.5px solid #00E676; }
+    .btn-secondary-disabled{ background: transparent; color: #666666; border: 1.5px solid #3A3A3A; }
+    .btn-text             { background: transparent; color: #00E676; border: none; width: auto; padding: 0 16px; }
+    .btn-text-disabled    { background: transparent; color: #666666; border: none; width: auto; padding: 0 16px; }
+
+    /* ──────────────────────────────────────────
+       CARDS
+    ────────────────────────────────────────── */
+    .card-base {
+      background: #2A2A2A; border-radius: 16px;
+      border: 1px solid #3A3A3A; padding: 16px;
+    }
+    /* Choice Card */
+    .choice-card {
+      width: 260px; min-height: 80px;
+      display: flex; align-items: center; gap: 14px;
+    }
+    .choice-card-selected { border-color: #00E676; background: rgba(0,230,118,0.07); }
+    .choice-card-disabled { opacity: 0.4; }
+    .choice-icon {
+      width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+      background: rgba(0,230,118,0.15);
+      display: flex; align-items: center; justify-content: center;
+    }
+    .choice-icon img { width: 20px; height: 20px; display: block; }
+    .choice-text-wrap { flex: 1; }
+    .choice-title { font-size: 15px; font-weight: 600; color: #FFFFFF; margin-bottom: 2px; }
+    .choice-subtitle { font-size: 12px; font-weight: 400; color: #B3B3B3; }
+    .choice-check {
+      width: 20px; height: 20px; border-radius: 999px; flex-shrink: 0;
+      border: 2px solid #3A3A3A;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .choice-check-selected { border-color: #00E676; background: #00E676; }
+    .choice-check-dot { width: 8px; height: 8px; border-radius: 999px; background: #121212; }
+
+    /* Session Card */
+    .session-card {
+      width: 300px; padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+    }
+    .session-header { display: flex; justify-content: space-between; align-items: center; }
+    .session-day { font-size: 11px; font-weight: 600; color: #B3B3B3; letter-spacing: 0.5px; text-transform: uppercase; }
+    .session-badge {
+      font-size: 11px; font-weight: 600; padding: 3px 10px; border-radius: 999px;
+      background: rgba(0,230,118,0.15); color: #00E676; letter-spacing: 0.5px;
+    }
+    .session-badge-rest { background: rgba(179,179,179,0.12); color: #B3B3B3; }
+    .session-badge-done { background: rgba(76,175,80,0.15); color: #4CAF50; }
+    .session-type { font-size: 17px; font-weight: 600; color: #FFFFFF; }
+    .session-meta { font-size: 13px; font-weight: 400; color: #B3B3B3; }
+    .session-divider { height: 1px; background: #3A3A3A; }
+    .session-complete-row { display: flex; align-items: center; gap: 8px; }
+    .session-complete-icon { width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; }
+    .session-complete-text { font-size: 13px; font-weight: 500; color: #4CAF50; }
+
+    /* Weekly Calendar Card */
+    .weekly-card {
+      width: 340px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
+    }
+    .weekly-title { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+    .weekly-days { display: flex; justify-content: space-between; }
+    .day-pill {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+    }
+    .day-name { font-size: 10px; font-weight: 500; color: #666666; letter-spacing: 0.4px; text-transform: uppercase; }
+    .day-dot-wrap {
+      width: 32px; height: 32px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      background: #1E1E1E;
+    }
+    .day-dot-wrap.active { background: #00E676; }
+    .day-dot-wrap.done   { background: rgba(76,175,80,0.2); border: 1.5px solid #4CAF50; }
+    .day-dot-wrap.rest   { background: #1E1E1E; }
+    .day-dot-inner { width: 8px; height: 8px; border-radius: 999px; background: #3A3A3A; }
+    .day-dot-wrap.active .day-dot-inner { background: #121212; }
+    .day-dot-wrap.done .day-dot-inner   { background: #4CAF50; }
+
+    /* ──────────────────────────────────────────
+       CHIPS
+    ────────────────────────────────────────── */
+    .chip {
+      height: 36px; padding: 0 16px; border-radius: 999px;
+      display: inline-flex; align-items: center;
+      font-size: 13px; font-weight: 600; letter-spacing: 0.3px;
+      cursor: pointer; border: 1.5px solid transparent;
+    }
+    .chip-default   { background: #2A2A2A; color: #B3B3B3; border-color: #3A3A3A; }
+    .chip-selected  { background: rgba(0,230,118,0.12); color: #00E676; border-color: #00E676; }
+    .chip-disabled  { background: #1E1E1E; color: #666666; border-color: #2A2A2A; }
+
+    /* ──────────────────────────────────────────
+       INPUTS
+    ────────────────────────────────────────── */
+    .input-group { display: flex; flex-direction: column; gap: 6px; width: 300px; }
+    .input-label { font-size: 13px; font-weight: 600; color: #B3B3B3; }
+    .input-field {
+      height: 50px; border-radius: 12px; border: 1.5px solid #3A3A3A;
+      background: #1E1E1E; padding: 0 16px;
+      font-size: 15px; font-weight: 400; color: #FFFFFF;
+      font-family: 'Inter', sans-serif;
+      display: flex; align-items: center;
+    }
+    .input-placeholder { color: #666666; }
+    .input-field.focused { border-color: #00E676; background: #1E1E1E; }
+    .input-field.filled  { border-color: #3A3A3A; color: #FFFFFF; }
+    .input-field.error   { border-color: #EF5350; background: rgba(239,83,80,0.05); }
+    .input-field.disabled{ border-color: #2A2A2A; background: #1A1A1A; color: #666666; }
+    .input-error-msg { font-size: 11px; font-weight: 400; color: #EF5350; }
+    .input-helper    { font-size: 11px; font-weight: 400; color: #666666; }
+    .input-icon-right {
+      display: flex; justify-content: space-between; align-items: center;
+    }
+    .input-icon-svg { width: 20px; height: 20px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+
+    /* ──────────────────────────────────────────
+       SEGMENTED CONTROL
+    ────────────────────────────────────────── */
+    .segmented {
+      display: inline-flex; background: #2A2A2A; border-radius: 12px;
+      padding: 4px; gap: 4px;
+    }
+    /* Full-width equal-segment variant (e.g. sleep hours, onboarding) */
+    .segmented-full {
+      display: flex; width: 100%; background: #2A2A2A;
+      border-radius: 16px; padding: 4px; gap: 4px;
+    }
+    .seg-item {
+      height: 48px; padding: 0 16px; border-radius: 12px;
+      font-size: 14px; font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; color: #B3B3B3;
+      white-space: nowrap;
+    }
+    .segmented .seg-item { min-width: 64px; }
+    .segmented-full .seg-item { flex: 1; min-width: 0; }
+    .seg-item.active { background: #00E676; color: #121212; }
+    .seg-item.disabled-seg { color: #3A3A3A; }
+
+    /* ──────────────────────────────────────────
+       PROGRESS BAR
+    ────────────────────────────────────────── */
+    .progress-wrap { width: 300px; }
+    .progress-track {
+      height: 4px; border-radius: 999px; background: #1E1E1E; overflow: hidden;
+    }
+    .progress-fill {
+      height: 4px; border-radius: 999px; background: #00E676;
+    }
+    .progress-labels {
+      display: flex; justify-content: space-between;
+      margin-top: 6px;
+      font-size: 11px; font-weight: 500; color: #666666;
+    }
+
+    /* ──────────────────────────────────────────
+       TOP NAV BAR
+    ────────────────────────────────────────── */
+    .nav-bar {
+      width: 340px; height: 56px;
+      background: #121212;
+      display: flex; flex-direction: column;
+      padding: 0 4px; justify-content: center; gap: 10px;
+    }
+    .nav-row {
+      display: flex; align-items: center; justify-content: space-between;
+      height: 40px;
+    }
+    .nav-back {
+      width: 40px; height: 40px; border-radius: 999px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+    .nav-back svg { display: block; }
+    .nav-title { font-size: 16px; font-weight: 600; color: #FFFFFF; }
+    .nav-step  { font-size: 12px; font-weight: 500; color: #B3B3B3; }
+    .nav-progress-bar {
+      height: 4px; border-radius: 999px; background: #1E1E1E; margin: 0 4px;
+    }
+    .nav-progress-fill { height: 4px; border-radius: 999px; background: #00E676; }
+
+    /* ──────────────────────────────────────────
+       BOTTOM SHEET
+    ────────────────────────────────────────── */
+    .bottom-sheet {
+      width: 340px; background: #333333;
+      border-radius: 20px 20px 0 0;
+      padding: 12px 20px 24px;
+    }
+    .sheet-handle {
+      width: 36px; height: 4px; border-radius: 999px;
+      background: #555555; margin: 0 auto 16px;
+    }
+    .sheet-title { font-size: 18px; font-weight: 600; color: #FFFFFF; margin-bottom: 8px; }
+    .sheet-body  { font-size: 14px; font-weight: 400; color: #B3B3B3; line-height: 20px; }
+    .sheet-actions { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+
+    /* ──────────────────────────────────────────
+       STATES STRIP
+    ────────────────────────────────────────── */
+    .states-strip {
+      display: flex; flex-wrap: wrap; gap: 16px;
+    }
+    .state-card {
+      width: 200px; height: 80px; border-radius: 16px;
+      border: 1px solid #3A3A3A;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 6px;
+    }
+    .state-card-label { font-size: 12px; font-weight: 600; }
+    .state-card-sub   { font-size: 11px; font-weight: 400; color: #666666; }
+    .state-loading    { background: #1E1E1E; border-color: #2A2A2A; }
+    .state-empty      { background: #1E1E1E; border-color: #2A2A2A; }
+    .state-error      { background: rgba(239,83,80,0.06); border-color: #EF5350; }
+    .state-success    { background: rgba(76,175,80,0.07); border-color: #4CAF50; }
+
+    /* Loading dots */
+    .loading-dots { display: flex; gap: 5px; }
+    .dot {
+      width: 7px; height: 7px; border-radius: 999px;
+      background: #00E676; opacity: 0.3;
+    }
+    .dot-1 { opacity: 1; }
+    .dot-2 { opacity: 0.6; }
+  </style>
+</head>
+<body>
+
+  <h1 class="page-title">Components</h1>
+  <p class="page-subtitle">Running App · Reusable UI Parts · All States</p>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 1 · BUTTONS                          -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Buttons</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <!-- Primary -->
+    <div class="comp-group">
+      <div class="comp-group-label">Primary Button</div>
+      <div class="comp-row">
+        <div class="comp-cell">
+          <div class="btn btn-primary">Build My Plan</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="btn btn-primary-pressed">Build My Plan</div>
+          <span class="state-label">Pressed</span>
+        </div>
+        <div class="comp-cell">
+          <div class="btn btn-primary-disabled">Build My Plan</div>
+          <span class="state-label">Disabled</span>
+        </div>
+        <div class="comp-cell">
+          <div class="btn btn-primary" style="position:relative;">
+            <div class="loading-dots">
+              <div class="dot dot-1"></div>
+              <div class="dot dot-2"></div>
+              <div class="dot"></div>
+            </div>
+          </div>
+          <span class="state-label">Loading</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Secondary -->
+    <div class="comp-group">
+      <div class="comp-group-label">Secondary Button</div>
+      <div class="comp-row">
+        <div class="comp-cell">
+          <div class="btn btn-secondary">Edit Answers</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="btn btn-secondary-pressed">Edit Answers</div>
+          <span class="state-label">Pressed</span>
+        </div>
+        <div class="comp-cell">
+          <div class="btn btn-secondary-disabled">Edit Answers</div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Text-only -->
+    <div class="comp-group">
+      <div class="comp-group-label">Text Button</div>
+      <div class="comp-row">
+        <div class="comp-cell">
+          <div class="btn btn-text">Log In</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="btn btn-text-disabled">Log In</div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 2 · CARDS                            -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Cards</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <!-- Choice Card -->
+    <div class="comp-group">
+      <div class="comp-group-label">Choice Card — used in onboarding</div>
+      <div class="comp-row">
+        <!-- Default -->
+        <div class="comp-cell">
+          <div class="card-base choice-card">
+            <div class="choice-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <div class="choice-text-wrap">
+              <div class="choice-title">Half Marathon</div>
+              <div class="choice-subtitle">21.1 km · 13.1 mi</div>
+            </div>
+            <div class="choice-check"></div>
+          </div>
+          <span class="state-label">Default</span>
+        </div>
+        <!-- Selected -->
+        <div class="comp-cell">
+          <div class="card-base choice-card choice-card-selected">
+            <div class="choice-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <div class="choice-text-wrap">
+              <div class="choice-title">Half Marathon</div>
+              <div class="choice-subtitle">21.1 km · 13.1 mi</div>
+            </div>
+            <div class="choice-check choice-check-selected">
+              <div class="choice-check-dot"></div>
+            </div>
+          </div>
+          <span class="state-label">Selected</span>
+        </div>
+        <!-- Disabled -->
+        <div class="comp-cell">
+          <div class="card-base choice-card choice-card-disabled">
+            <div class="choice-icon" style="background:#1E1E1E;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.3;"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+            </div>
+            <div class="choice-text-wrap">
+              <div class="choice-title" style="color:#666666;">Half Marathon</div>
+              <div class="choice-subtitle">21.1 km · 13.1 mi</div>
+            </div>
+            <div class="choice-check"></div>
+          </div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Session Card -->
+    <div class="comp-group">
+      <div class="comp-group-label">Session Card — training plan</div>
+      <div class="comp-row">
+        <!-- Upcoming -->
+        <div class="comp-cell">
+          <div class="card-base session-card">
+            <div class="session-header">
+              <span class="session-day">Monday</span>
+              <span class="session-badge">Easy Run</span>
+            </div>
+            <div class="session-type">Easy 5K</div>
+            <div class="session-meta">30 min · Conversational pace · Zone 2</div>
+          </div>
+          <span class="state-label">Upcoming</span>
+        </div>
+        <!-- Completed -->
+        <div class="comp-cell">
+          <div class="card-base session-card" style="border-color:#4CAF50; background:rgba(76,175,80,0.05);">
+            <div class="session-header">
+              <span class="session-day">Monday</span>
+              <span class="session-badge session-badge-done">Done</span>
+            </div>
+            <div class="session-type">Easy 5K</div>
+            <div class="session-meta">30 min · Conversational pace · Zone 2</div>
+            <div class="session-divider"></div>
+            <div class="session-complete-row">
+              <div class="session-complete-icon">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <span class="session-complete-text">Completed · 31:04</span>
+            </div>
+          </div>
+          <span class="state-label">Completed</span>
+        </div>
+        <!-- Rest Day -->
+        <div class="comp-cell">
+          <div class="card-base session-card" style="opacity:0.6;">
+            <div class="session-header">
+              <span class="session-day">Sunday</span>
+              <span class="session-badge session-badge-rest">Rest</span>
+            </div>
+            <div class="session-type" style="color:#B3B3B3;">Rest Day</div>
+            <div class="session-meta">Recovery · No training today</div>
+          </div>
+          <span class="state-label">Rest Day</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Weekly Calendar Card -->
+    <div class="comp-group">
+      <div class="comp-group-label">Weekly Calendar Card</div>
+      <div class="comp-row">
+        <div class="comp-cell">
+          <div class="card-base weekly-card">
+            <div class="weekly-title">Week 4 of 12</div>
+            <div class="weekly-days">
+              <!-- Mon done -->
+              <div class="day-pill">
+                <span class="day-name">Mon</span>
+                <div class="day-dot-wrap done"><div class="day-dot-inner"></div></div>
+              </div>
+              <!-- Tue done -->
+              <div class="day-pill">
+                <span class="day-name">Tue</span>
+                <div class="day-dot-wrap done"><div class="day-dot-inner"></div></div>
+              </div>
+              <!-- Wed active (today) -->
+              <div class="day-pill">
+                <span class="day-name" style="color:#00E676;">Wed</span>
+                <div class="day-dot-wrap active"><div class="day-dot-inner"></div></div>
+              </div>
+              <!-- Thu -->
+              <div class="day-pill">
+                <span class="day-name">Thu</span>
+                <div class="day-dot-wrap rest"><div class="day-dot-inner"></div></div>
+              </div>
+              <!-- Fri -->
+              <div class="day-pill">
+                <span class="day-name">Fri</span>
+                <div class="day-dot-wrap rest"><div class="day-dot-inner"></div></div>
+              </div>
+              <!-- Sat -->
+              <div class="day-pill">
+                <span class="day-name">Sat</span>
+                <div class="day-dot-wrap rest"><div class="day-dot-inner"></div></div>
+              </div>
+              <!-- Sun rest -->
+              <div class="day-pill">
+                <span class="day-name">Sun</span>
+                <div class="day-dot-wrap rest" style="opacity:0.4;"><div class="day-dot-inner"></div></div>
+              </div>
+            </div>
+            <div style="height:1px;background:#3A3A3A;"></div>
+            <div style="font-size:12px;font-weight:500;color:#B3B3B3;display:flex;justify-content:space-between;">
+              <span>2 of 5 sessions done</span>
+              <span style="color:#00E676;">40%</span>
+            </div>
+          </div>
+          <span class="state-label">Default</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 3 · CHIPS                            -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Chips</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">Day Selection Chips</div>
+      <div class="comp-row" style="align-items:center; gap:20px;">
+        <div class="comp-cell">
+          <div class="chip chip-default">Mon</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-selected">Tue</div>
+          <span class="state-label">Selected</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-default chip-selected" style="border-color:#00E676;background:rgba(0,230,118,0.12);color:#00E676;">Wed</div>
+          <span class="state-label">Selected</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-default">Thu</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-selected">Fri</div>
+          <span class="state-label">Selected</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-default">Sat</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-disabled">Sun</div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">Filter / Tag Chips</div>
+      <div class="comp-row" style="align-items:center; gap:12px;">
+        <div class="comp-cell">
+          <div class="chip chip-default" style="height:32px; font-size:12px;">Road</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-selected" style="height:32px; font-size:12px;">Trail</div>
+          <span class="state-label">Selected</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-default" style="height:32px; font-size:12px;">Track</div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="chip chip-disabled" style="height:32px; font-size:12px;">Treadmill</div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 4 · INPUTS                           -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Inputs</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <!-- Text Field -->
+    <div class="comp-group">
+      <div class="comp-group-label">Text Field</div>
+      <div class="comp-row" style="align-items:flex-start;">
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label">Email</span>
+            <div class="input-field"><span class="input-placeholder">you@example.com</span></div>
+            <span class="input-helper">We'll never share your email</span>
+          </div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label" style="color:#00E676;">Email</span>
+            <div class="input-field focused">david@example.com</div>
+            <span class="input-helper">We'll never share your email</span>
+          </div>
+          <span class="state-label">Focused</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label">Email</span>
+            <div class="input-field filled">david@example.com</div>
+          </div>
+          <span class="state-label">Filled</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label" style="color:#EF5350;">Email</span>
+            <div class="input-field error">invalid-email</div>
+            <span class="input-error-msg">Enter a valid email address</span>
+          </div>
+          <span class="state-label">Error</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label" style="color:#666666;">Email</span>
+            <div class="input-field disabled"><span class="input-placeholder">you@example.com</span></div>
+          </div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Password Field -->
+    <div class="comp-group">
+      <div class="comp-group-label">Password Field</div>
+      <div class="comp-row" style="align-items:flex-start;">
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label">Password</span>
+            <div class="input-field input-icon-right">
+              <span class="input-placeholder">At least 6 characters</span>
+              <span class="input-icon-svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+            </div>
+          </div>
+          <span class="state-label">Default</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label" style="color:#00E676;">Password</span>
+            <div class="input-field focused input-icon-right">
+              ••••••••
+              <span class="input-icon-svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B3B3B3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+            </div>
+          </div>
+          <span class="state-label">Focused</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label" style="color:#EF5350;">Password</span>
+            <div class="input-field error input-icon-right">
+              ••••
+              <span class="input-icon-svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EF5350" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              </span>
+            </div>
+            <span class="input-error-msg">Password is too short</span>
+          </div>
+          <span class="state-label">Error</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Picker -->
+    <div class="comp-group">
+      <div class="comp-group-label">Date Picker Trigger</div>
+      <div class="comp-row" style="align-items:flex-start;">
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label">Race Date</span>
+            <div class="input-field input-icon-right">
+              <span class="input-placeholder">Select date</span>
+              <span class="input-icon-svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+            </div>
+          </div>
+          <span class="state-label">Empty</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group">
+            <span class="input-label">Race Date</span>
+            <div class="input-field filled input-icon-right">
+              April 12, 2026
+              <span class="input-icon-svg">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </span>
+            </div>
+          </div>
+          <span class="state-label">Filled</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Time Picker -->
+    <div class="comp-group">
+      <div class="comp-group-label">Time Input</div>
+      <div class="comp-row" style="align-items:flex-start;">
+        <div class="comp-cell">
+          <div class="input-group" style="width:180px;">
+            <span class="input-label">Target Time</span>
+            <div class="input-field"><span class="input-placeholder">1:45:00</span></div>
+          </div>
+          <span class="state-label">Empty</span>
+        </div>
+        <div class="comp-cell">
+          <div class="input-group" style="width:180px;">
+            <span class="input-label" style="color:#00E676;">Target Time</span>
+            <div class="input-field focused" style="font-variant-numeric:tabular-nums;letter-spacing:2px;font-weight:600;">
+              2:00:00
+            </div>
+          </div>
+          <span class="state-label">Active</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 5 · SELECTORS                        -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Selectors</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">Segmented Control</div>
+      <div class="comp-row" style="align-items:center; gap:32px;">
+        <!-- Units km/mi -->
+        <div class="comp-cell">
+          <div class="segmented">
+            <div class="seg-item active">km</div>
+            <div class="seg-item">mi</div>
+          </div>
+          <span class="state-label">km selected</span>
+        </div>
+        <div class="comp-cell">
+          <div class="segmented">
+            <div class="seg-item">km</div>
+            <div class="seg-item active">mi</div>
+          </div>
+          <span class="state-label">mi selected</span>
+        </div>
+        <!-- 3-segment -->
+        <div class="comp-cell">
+          <div class="segmented">
+            <div class="seg-item active">Beginner</div>
+            <div class="seg-item">Intermediate</div>
+            <div class="seg-item">Advanced</div>
+          </div>
+          <span class="state-label">3 options</span>
+        </div>
+        <!-- Disabled segment -->
+        <div class="comp-cell">
+          <div class="segmented" style="opacity:0.5;">
+            <div class="seg-item">km</div>
+            <div class="seg-item">mi</div>
+          </div>
+          <span class="state-label">Disabled</span>
+        </div>
+      </div>
+
+      <!-- Full-width sleep hours — 5 equal segments, matches Figma node 4:1469 -->
+      <div class="comp-group-label">Segmented Control — Full-width (sleep onboarding)</div>
+      <div class="comp-row">
+        <div class="comp-cell" style="width:360px;">
+          <div class="segmented-full">
+            <div class="seg-item">&lt; 5h</div>
+            <div class="seg-item">5–6h</div>
+            <div class="seg-item active">6–7h</div>
+            <div class="seg-item">7–8h</div>
+            <div class="seg-item">8+h</div>
+          </div>
+          <span class="state-label">6–7h selected</span>
+        </div>
+        <div class="comp-cell" style="width:360px;">
+          <div class="segmented-full">
+            <div class="seg-item">&lt; 5h</div>
+            <div class="seg-item">5–6h</div>
+            <div class="seg-item">6–7h</div>
+            <div class="seg-item active">7–8h</div>
+            <div class="seg-item">8+h</div>
+          </div>
+          <span class="state-label">7–8h selected</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 6 · PROGRESS BAR                     -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Progress Bar</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">Onboarding Progress — Step indicator</div>
+      <div class="comp-row" style="align-items:flex-start; gap:32px; flex-direction:column;">
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" style="width:11%;"></div></div>
+            <div class="progress-labels"><span>Step 1 / 9</span><span>11%</span></div>
+          </div>
+          <span class="state-label" style="text-align:left;">Step 1</span>
+        </div>
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" style="width:44%;"></div></div>
+            <div class="progress-labels"><span>Step 4 / 9</span><span>44%</span></div>
+          </div>
+          <span class="state-label" style="text-align:left;">Step 4</span>
+        </div>
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" style="width:89%;"></div></div>
+            <div class="progress-labels"><span>Step 8 / 9</span><span>89%</span></div>
+          </div>
+          <span class="state-label" style="text-align:left;">Step 8</span>
+        </div>
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="progress-wrap">
+            <div class="progress-track"><div class="progress-fill" style="width:100%;"></div></div>
+            <div class="progress-labels"><span>Step 9 / 9</span><span style="color:#00E676;">Complete ✓</span></div>
+          </div>
+          <span class="state-label" style="text-align:left;">Complete</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 7 · TOP NAV BAR                      -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Top Nav Bar</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">Onboarding Nav — Back button + progress</div>
+      <div class="comp-row" style="gap:32px; align-items:flex-start; flex-direction:column;">
+        <!-- With progress bar -->
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="nav-bar">
+            <div class="nav-row">
+              <div class="nav-back">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <div style="flex:1;"></div>
+              <span class="nav-step">4 / 9</span>
+            </div>
+            <div class="nav-progress-bar" style="overflow:hidden;">
+              <div class="nav-progress-fill" style="width:44%;"></div>
+            </div>
+          </div>
+          <span class="state-label" style="text-align:left;">With progress (step 4/9)</span>
+        </div>
+        <!-- First step — no back -->
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="nav-bar">
+            <div class="nav-row">
+              <div style="width:40px; height:40px;"></div>
+              <div style="flex:1;"></div>
+              <span class="nav-step">1 / 9</span>
+            </div>
+            <div class="nav-progress-bar" style="overflow:hidden;">
+              <div class="nav-progress-fill" style="width:11%;"></div>
+            </div>
+          </div>
+          <span class="state-label" style="text-align:left;">First step (no back)</span>
+        </div>
+        <!-- Auth nav — back only, no progress -->
+        <div class="comp-cell" style="align-items:flex-start;">
+          <div class="nav-bar">
+            <div class="nav-row">
+              <div class="nav-back">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+              <span class="nav-title">Create Account</span>
+              <div style="width:40px;"></div>
+            </div>
+          </div>
+          <span class="state-label" style="text-align:left;">Auth screen (title only)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 8 · BOTTOM SHEET                     -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Bottom Sheet</h2>
+      <div class="section-accent"></div>
+    </div>
+
+    <div class="comp-group">
+      <div class="comp-group-label">Modal Bottom Sheet</div>
+      <div class="comp-row" style="align-items:flex-start; gap:32px;">
+        <!-- Info sheet -->
+        <div class="comp-cell">
+          <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">What is Zone 2?</div>
+            <div class="sheet-body">Zone 2 is easy aerobic effort — you should be able to hold a conversation. It builds your aerobic base and improves fat metabolism.</div>
+            <div class="sheet-actions">
+              <div class="btn btn-primary" style="width:100%;">Got it</div>
+            </div>
+          </div>
+          <span class="state-label">Info Sheet</span>
+        </div>
+        <!-- Confirm action sheet -->
+        <div class="comp-cell">
+          <div class="bottom-sheet">
+            <div class="sheet-handle"></div>
+            <div class="sheet-title">Delete your plan?</div>
+            <div class="sheet-body">This will remove all your training data. This action cannot be undone.</div>
+            <div class="sheet-actions">
+              <div class="btn" style="width:100%;height:48px;border-radius:16px;font-size:14px;font-weight:600;background:#EF5350;color:#FFFFFF; display:flex; align-items:center; justify-content:center;">Delete Plan</div>
+              <div class="btn btn-secondary" style="width:100%;">Cancel</div>
+            </div>
+          </div>
+          <span class="state-label">Destructive Action</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════ -->
+  <!--  SECTION 9 · COMPONENT STATES                 -->
+  <!-- ══════════════════════════════════════════════ -->
+  <div class="section">
+    <div class="section-header">
+      <h2 class="section-title">Component States</h2>
+      <div class="section-accent"></div>
+    </div>
+    <div class="comp-group">
+      <div class="comp-group-label">All interactive states — reference</div>
+      <div class="states-strip">
+        <div class="comp-cell">
+          <div class="state-card state-loading">
+            <div class="loading-dots">
+              <div class="dot dot-1"></div>
+              <div class="dot dot-2"></div>
+              <div class="dot"></div>
+            </div>
+            <span class="state-card-label" style="color:#B3B3B3;">Loading</span>
+            <span class="state-card-sub">Processing request</span>
+          </div>
+        </div>
+        <div class="comp-cell">
+          <div class="state-card state-empty">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#666666" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+            <span class="state-card-label" style="color:#B3B3B3;">Empty</span>
+            <span class="state-card-sub">No data yet</span>
+          </div>
+        </div>
+        <div class="comp-cell">
+          <div class="state-card state-error">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EF5350" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span class="state-card-label" style="color:#EF5350;">Error</span>
+            <span class="state-card-sub">Something went wrong</span>
+          </div>
+        </div>
+        <div class="comp-cell">
+          <div class="state-card state-success">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span class="state-card-label" style="color:#4CAF50;">Success</span>
+            <span class="state-card-sub">Action completed</span>
+          </div>
+        </div>
+        <div class="comp-cell">
+          <div class="state-card" style="background:#1E1E1E;border-color:#3A3A3A;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3A3A3A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
+            <span class="state-card-label" style="color:#666666;">Disabled</span>
+            <span class="state-card-sub">Not available</span>
+          </div>
+        </div>
+        <div class="comp-cell">
+          <div class="state-card" style="background:rgba(0,230,118,0.07);border-color:#00E676;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#00E676" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+            <span class="state-card-label" style="color:#00E676;">Selected</span>
+            <span class="state-card-sub">Active/chosen state</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
