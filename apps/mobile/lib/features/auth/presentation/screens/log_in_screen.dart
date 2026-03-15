@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'sign_up_screen.dart';
 import 'forgot_password_screen.dart';
+import '../../../account_setup/presentation/screens/account_setup_screen.dart';
 
 class LogInScreen extends StatefulWidget {
   const LogInScreen({super.key});
@@ -103,7 +104,10 @@ class _LogInScreenState extends State<LogInScreen> {
                 children: [
                   AppButton(
                     label: 'Log In',
-                    onPressed: () {},
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const AccountSetupScreen()),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
