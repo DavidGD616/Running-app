@@ -5,24 +5,20 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import 'sign_up_screen.dart';
-import 'forgot_password_screen.dart';
 
-class LogInScreen extends StatefulWidget {
-  const LogInScreen({super.key});
+class ForgotPasswordScreen extends StatefulWidget {
+  const ForgotPasswordScreen({super.key});
 
   @override
-  State<LogInScreen> createState() => _LogInScreenState();
+  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
 }
 
-class _LogInScreenState extends State<LogInScreen> {
+class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -44,47 +40,21 @@ class _LogInScreenState extends State<LogInScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppSpacing.lg),
-                    // Headline
-                    Text('Welcome back', style: AppTypography.headlineMedium),
+                    Text('Forgot password?', style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
-                    // Subtitle
                     Text(
-                      'Log in to continue your training.',
+                      "Enter your email and we'll send you a reset link.",
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    // Email field
                     AppTextField(
                       label: 'Email',
                       hint: 'you@example.com',
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    // Password field
-                    AppTextField(
-                      label: 'Password',
-                      hint: 'Enter your password',
-                      controller: _passwordController,
-                      obscureText: true,
                       textInputAction: TextInputAction.done,
-                    ),
-                    const SizedBox(height: AppSpacing.base),
-                    // Forgot password link
-                    GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                      ),
-                      child: Text(
-                        'Forgot password?',
-                        style: AppTypography.labelLarge.copyWith(
-                          color: AppColors.accentPrimary,
-                        ),
-                      ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                   ],
@@ -102,16 +72,13 @@ class _LogInScreenState extends State<LogInScreen> {
               child: Column(
                 children: [
                   AppButton(
-                    label: 'Log In',
+                    label: 'Send Reset Link',
                     onPressed: () {},
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
-                    label: "Don't have an account? Sign up",
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                    ),
+                    label: 'Back to Log In',
+                    onPressed: () => Navigator.of(context).maybePop(),
                     variant: AppButtonVariant.text,
                   ),
                 ],
