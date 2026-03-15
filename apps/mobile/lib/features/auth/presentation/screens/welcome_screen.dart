@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import 'sign_up_screen.dart';
+import 'log_in_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -61,7 +62,10 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
               AppButton(
                 label: 'Log In',
-                onPressed: () {},
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const LogInScreen()),
+                ),
                 variant: AppButtonVariant.secondary,
               ),
               const SizedBox(height: AppSpacing.lg),

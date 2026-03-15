@@ -5,25 +5,23 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import 'log_in_screen.dart';
+import 'sign_up_screen.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class LogInScreen extends StatefulWidget {
+  const LogInScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  State<LogInScreen> createState() => _LogInScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _LogInScreenState extends State<LogInScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
     super.dispose();
   }
 
@@ -46,17 +44,17 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   children: [
                     const SizedBox(height: AppSpacing.lg),
                     // Headline
-                    Text('Create your account', style: AppTypography.headlineMedium),
+                    Text('Welcome back', style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     // Subtitle
                     Text(
-                      'Start building your personalized training plan.',
+                      'Log in to continue your training.',
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    // Form fields
+                    // Email field
                     AppTextField(
                       label: 'Email',
                       hint: 'you@example.com',
@@ -65,20 +63,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: AppSpacing.lg),
+                    // Password field
                     AppTextField(
                       label: 'Password',
-                      hint: 'At least 6 characters',
+                      hint: 'Enter your password',
                       controller: _passwordController,
                       obscureText: true,
-                      textInputAction: TextInputAction.next,
-                    ),
-                    const SizedBox(height: AppSpacing.lg),
-                    AppTextField(
-                      label: 'Confirm Password',
-                      hint: 'Re-enter your password',
-                      controller: _confirmPasswordController,
-                      obscureText: true,
                       textInputAction: TextInputAction.done,
+                    ),
+                    const SizedBox(height: AppSpacing.base),
+                    // Forgot password link
+                    GestureDetector(
+                      onTap: () {},
+                      child: Text(
+                        'Forgot password?',
+                        style: AppTypography.labelLarge.copyWith(
+                          color: AppColors.accentPrimary,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                   ],
@@ -96,15 +98,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
               child: Column(
                 children: [
                   AppButton(
-                    label: 'Create Account',
+                    label: 'Log In',
                     onPressed: () {},
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
-                    label: 'Already have an account? Log in',
+                    label: "Don't have an account? Sign up",
                     onPressed: () => Navigator.pushReplacement(
                       context,
-                      MaterialPageRoute(builder: (_) => const LogInScreen()),
+                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
                     ),
                     variant: AppButtonVariant.text,
                   ),
