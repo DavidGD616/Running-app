@@ -5,6 +5,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import 'sign_up_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -52,7 +53,10 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(flex: 3),
               AppButton(
                 label: 'Create Account',
-                onPressed: () {},
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const SignUpScreen()),
+                ),
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
