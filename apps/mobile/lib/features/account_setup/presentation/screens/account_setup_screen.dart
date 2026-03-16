@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_segmented_control.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../onboarding/presentation/screens/onboarding_intro_screen.dart';
 
 class AccountSetupScreen extends StatefulWidget {
   const AccountSetupScreen({super.key});
@@ -120,7 +121,12 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: () {},
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const OnboardingIntroScreen(),
+                  ),
+                ),
               ),
             ),
           ],
