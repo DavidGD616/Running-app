@@ -291,8 +291,9 @@ class _GoalScreenState extends State<GoalScreen> {
 
                       // Time pickers (only if Improve my time)
                       if (showTimeFields) ...[
+                        Text('Current race time', style: AppTypography.labelLarge),
+                        const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
-                          label: 'Current race time',
                           hint: 'Tap to set time',
                           value: _currentTime != null
                               ? _formatDuration(_currentTime!)
@@ -305,8 +306,9 @@ class _GoalScreenState extends State<GoalScreen> {
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),
+                        Text('Target race time', style: AppTypography.labelLarge),
+                        const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
-                          label: 'Target race time',
                           hint: 'Tap to set time',
                           value: _targetTime != null
                               ? _formatDuration(_targetTime!)
