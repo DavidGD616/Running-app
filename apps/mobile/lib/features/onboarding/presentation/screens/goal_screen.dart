@@ -117,6 +117,13 @@ class _GoalScreenState extends State<GoalScreen> {
     final showPriority = _selectedRace != null && _hasRaceDate != null;
     final showTimeFields = _priority == 'Improve my time';
 
+    final isComplete = _selectedRace != null &&
+        _hasRaceDate != null &&
+        (_hasRaceDate == false || _raceDate != null) &&
+        _priority != null &&
+        (_priority != 'Improve my time' ||
+            (_currentTime != null && _targetTime != null));
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -338,7 +345,7 @@ class _GoalScreenState extends State<GoalScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: () {},
+                onPressed: isComplete ? () {} : null,
               ),
             ),
           ],
