@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'current_fitness_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -345,7 +346,14 @@ class _GoalScreenState extends State<GoalScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: isComplete ? () {} : null,
+                onPressed: isComplete
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const CurrentFitnessScreen(),
+                          ),
+                        )
+                    : null,
               ),
             ),
           ],
