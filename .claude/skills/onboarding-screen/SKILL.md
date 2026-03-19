@@ -592,6 +592,11 @@ If a screen needs an icon that is **not in the list above**, download it from Fi
 2. The MCP server returns `localhost` URLs for assets — use those URLs directly to download the file.
 3. Save the SVG to `apps/mobile/assets/icons/<icon_name>.svg`.
 4. Verify `apps/mobile/pubspec.yaml` already includes `assets/icons/` — it does, so no changes needed there.
+5. **After downloading, strip CSS variables** — Figma exports SVGs with `var(--stroke-0, #00E676)` syntax. `flutter_svg` does NOT support CSS custom properties and will render nothing. Run:
+   ```bash
+   sed -i '' 's/var(--[^,]*, \(#[^)]*\))/\1/g' apps/mobile/assets/icons/<icon_name>.svg
+   ```
+   This replaces every `var(--x, #COLOR)` with the fallback `#COLOR` directly.
 
 **Never** create placeholder icons or use icon packages. If the Figma MCP returns a localhost URL, use it.
 
