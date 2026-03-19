@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'recovery_lifestyle_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -442,7 +443,14 @@ class _WatchDeviceScreenState extends State<WatchDeviceScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: _isComplete ? () {} : null,
+                onPressed: _isComplete
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const RecoveryLifestyleScreen(),
+                          ),
+                        )
+                    : null,
               ),
             ),
           ],
