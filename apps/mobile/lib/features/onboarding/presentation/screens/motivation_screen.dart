@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'summary_screen.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_slider.dart';
@@ -281,7 +282,14 @@ class _MotivationScreenState extends State<MotivationScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: _isComplete ? () {} : null,
+                onPressed: _isComplete
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SummaryScreen(),
+                          ),
+                        )
+                    : null,
               ),
             ),
           ],
