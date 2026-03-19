@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'motivation_screen.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -237,7 +238,14 @@ class _RecoveryLifestyleScreenState extends State<RecoveryLifestyleScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: _isComplete ? () {} : null,
+                onPressed: _isComplete
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MotivationScreen(),
+                          ),
+                        )
+                    : null,
               ),
             ),
           ],
