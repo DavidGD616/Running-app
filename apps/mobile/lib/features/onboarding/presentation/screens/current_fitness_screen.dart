@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'schedule_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -506,7 +507,14 @@ class _CurrentFitnessScreenState extends State<CurrentFitnessScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: _isComplete ? () {} : null,
+                onPressed: _isComplete
+                    ? () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ScheduleScreen(),
+                          ),
+                        )
+                    : null,
               ),
             ),
           ],
