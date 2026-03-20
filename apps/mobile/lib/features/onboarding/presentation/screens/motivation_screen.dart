@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -9,15 +10,16 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_slider.dart';
+import '../onboarding_provider.dart';
 
-class MotivationScreen extends StatefulWidget {
+class MotivationScreen extends ConsumerStatefulWidget {
   const MotivationScreen({super.key});
 
   @override
-  State<MotivationScreen> createState() => _MotivationScreenState();
+  ConsumerState<MotivationScreen> createState() => _MotivationScreenState();
 }
 
-class _MotivationScreenState extends State<MotivationScreen> {
+class _MotivationScreenState extends ConsumerState<MotivationScreen> {
   final Set<String> _motivations = {};
   final Set<String> _barriers = {};
   int _confidence = 5;
@@ -284,7 +286,15 @@ class _MotivationScreenState extends State<MotivationScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push(RouteNames.summary)
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setMotivation(
+                              motivations: _motivations.toList(),
+                              barriers: _barriers.toList(),
+                              confidence: _confidence,
+                              coachingTone: _coachingTone!,
+                            );
+                        context.push(RouteNames.summary);
+                      }
                     : null,
               ),
             ),

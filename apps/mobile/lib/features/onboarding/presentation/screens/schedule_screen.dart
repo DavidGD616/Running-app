@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -8,15 +9,16 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../onboarding_provider.dart';
 
-class ScheduleScreen extends StatefulWidget {
+class ScheduleScreen extends ConsumerStatefulWidget {
   const ScheduleScreen({super.key});
 
   @override
-  State<ScheduleScreen> createState() => _ScheduleScreenState();
+  ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
 }
 
-class _ScheduleScreenState extends State<ScheduleScreen> {
+class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   String? _trainingDays;
   String? _longRunDay;
   String? _weekdayTime;
@@ -299,7 +301,17 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push(RouteNames.health)
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setSchedule(
+                              trainingDays: _trainingDays!,
+                              longRunDay: _longRunDay!,
+                              weekdayTime: _weekdayTime!,
+                              weekendTime: _weekendTime!,
+                              hardDays: _hardDays.toList(),
+                              preferredTimeOfDay: _preferredTimeOfDay!,
+                            );
+                        context.push(RouteNames.health);
+                      }
                     : null,
               ),
             ),

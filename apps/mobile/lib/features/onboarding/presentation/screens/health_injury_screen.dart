@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -8,15 +9,16 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../onboarding_provider.dart';
 
-class HealthInjuryScreen extends StatefulWidget {
+class HealthInjuryScreen extends ConsumerStatefulWidget {
   const HealthInjuryScreen({super.key});
 
   @override
-  State<HealthInjuryScreen> createState() => _HealthInjuryScreenState();
+  ConsumerState<HealthInjuryScreen> createState() => _HealthInjuryScreenState();
 }
 
-class _HealthInjuryScreenState extends State<HealthInjuryScreen> {
+class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   String? _painLevel;
   String? _injuryHistory;
   String? _healthConditions;
@@ -244,7 +246,15 @@ class _HealthInjuryScreenState extends State<HealthInjuryScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push(RouteNames.training)
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setHealth(
+                              painLevel: _painLevel!,
+                              injuryHistory: _injuryHistory!,
+                              healthConditions: _healthConditions!,
+                              planPreference: _planPreference!,
+                            );
+                        context.push(RouteNames.training);
+                      }
                     : null,
               ),
             ),

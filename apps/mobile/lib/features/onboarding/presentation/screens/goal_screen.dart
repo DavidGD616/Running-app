@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -11,15 +12,16 @@ import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../onboarding_provider.dart';
 
-class GoalScreen extends StatefulWidget {
+class GoalScreen extends ConsumerStatefulWidget {
   const GoalScreen({super.key});
 
   @override
-  State<GoalScreen> createState() => _GoalScreenState();
+  ConsumerState<GoalScreen> createState() => _GoalScreenState();
 }
 
-class _GoalScreenState extends State<GoalScreen> {
+class _GoalScreenState extends ConsumerState<GoalScreen> {
   String? _selectedRace;
   bool? _hasRaceDate;
   DateTime? _raceDate;
@@ -348,7 +350,17 @@ class _GoalScreenState extends State<GoalScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: isComplete
-                    ? () => context.push(RouteNames.fitness)
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setGoal(
+                              race: _selectedRace!,
+                              hasRaceDate: _hasRaceDate!,
+                              raceDate: _raceDate,
+                              priority: _priority!,
+                              currentTime: _currentTime,
+                              targetTime: _targetTime,
+                            );
+                        context.push(RouteNames.fitness);
+                      }
                     : null,
               ),
             ),

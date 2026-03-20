@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -8,12 +9,131 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../onboarding_provider.dart';
 
-class SummaryScreen extends StatelessWidget {
+class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
 
+  // ── Helper: format DateTime as "Month DD, YYYY" ──────────────────────────
+  String _formatDate(DateTime d) {
+    const months = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December',
+    ];
+    return '${months[d.month - 1]} ${d.day}, ${d.year}';
+  }
+
+  // ── Build display values from provider data ───────────────────────────────
+
+  String _goalValue(Map<String, dynamic> a) =>
+      (a['race'] as String?) ?? '—';
+
+  String _goalDetail(Map<String, dynamic> a) {
+    final date = a['raceDate'] as DateTime?;
+    final priority = (a['priority'] as String?) ?? '—';
+    if (date != null) return '${_formatDate(date)} · $priority';
+    return priority;
+  }
+
+  String _fitnessValue(Map<String, dynamic> a) =>
+      (a['experience'] as String?) ?? '—';
+
+  String _fitnessDetail(Map<String, dynamic> a) {
+    final experience = a['experience'] as String?;
+    if (experience == 'Brand new') {
+      final can = a['canRun10Min'] as bool?;
+      return can == null ? '—' : 'Can run 10 min: ${can ? 'Yes' : 'No'}';
+    }
+    final days = (a['runningDays'] as String?) ?? '—';
+    final volume = (a['weeklyVolume'] as String?) ?? '—';
+    return '$days days/wk · $volume weekly';
+  }
+
+  String _scheduleValue(Map<String, dynamic> a) {
+    final days = a['trainingDays'] as String?;
+    return days != null ? '$days days per week' : '—';
+  }
+
+  String _scheduleDetail(Map<String, dynamic> a) {
+    final longRun = (a['longRunDay'] as String?) ?? '—';
+    final time = (a['preferredTimeOfDay'] as String?) ?? '—';
+    final weekday = (a['weekdayTime'] as String?) ?? '—';
+    return 'Long run $longRun · $time · $weekday weekdays';
+  }
+
+  String _healthValue(Map<String, dynamic> a) {
+    final pain = a['painLevel'] as String?;
+    if (pain == null) return '—';
+    return pain == 'No' ? 'No current pain' : 'Pain: $pain';
+  }
+
+  String _healthDetail(Map<String, dynamic> a) {
+    final pref = (a['planPreference'] as String?) ?? '—';
+    return '$pref plan preference';
+  }
+
+  String _trainingValue(Map<String, dynamic> a) {
+    final mode = a['guidanceMode'] as String?;
+    return mode != null ? '$mode-based guidance' : '—';
+  }
+
+  String _trainingDetail(Map<String, dynamic> a) {
+    final speed = (a['speedWorkouts'] as String?) ?? '—';
+    final strength = (a['strengthTraining'] as String?) ?? '—';
+    final surface = (a['runSurface'] as String?) ?? '—';
+    final terrain = (a['terrain'] as String?) ?? '—';
+    return 'Speed: $speed · Strength: $strength · $surface · $terrain';
+  }
+
+  String _deviceValue(Map<String, dynamic> a) {
+    final hasWatch = a['hasWatch'] as String?;
+    if (hasWatch == 'Yes') {
+      final device = (a['device'] as String?) ?? 'Watch';
+      return '$device connected';
+    }
+    if (hasWatch == 'No') return 'No watch';
+    return '—';
+  }
+
+  String _deviceDetail(Map<String, dynamic> a) {
+    final hasWatch = a['hasWatch'] as String?;
+    if (hasWatch == 'Yes') {
+      final usage = (a['dataUsage'] as String?) ?? '—';
+      final hr = (a['hrZones'] as String?) ?? '—';
+      final auto = (a['autoAdjust'] as String?) ?? '—';
+      return '$usage · HR zones: $hr · Auto-adjust: $auto';
+    }
+    return (a['noWatchGuidance'] as String?) ?? '—';
+  }
+
+  String _recoveryValue(Map<String, dynamic> a) {
+    final sleep = a['sleep'] as String?;
+    return sleep != null ? '$sleep sleep' : '—';
+  }
+
+  String _recoveryDetail(Map<String, dynamic> a) {
+    final work = (a['workLevel'] as String?) ?? '—';
+    final stress = (a['stressLevel'] as String?) ?? '—';
+    final feel = (a['dayFeeling'] as String?) ?? '—';
+    return '$work · $stress stress · $feel';
+  }
+
+  String _motivationValue(Map<String, dynamic> a) {
+    final list = a['motivations'] as List?;
+    if (list == null || list.isEmpty) return '—';
+    return list.join(', ');
+  }
+
+  String _motivationDetail(Map<String, dynamic> a) {
+    final tone = (a['coachingTone'] as String?) ?? '—';
+    final conf = (a['confidence'] as int?) ?? 5;
+    return '$tone tone · Confidence $conf/10';
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final answers = ref.watch(onboardingProvider);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -90,65 +210,65 @@ class SummaryScreen extends StatelessWidget {
                     _SummaryCard(
                       icon: 'assets/icons/target.svg',
                       category: 'Goal Race',
-                      value: 'Half Marathon',
-                      detail: 'April 12, 2026 · Finish feeling strong',
-                      onEdit: () {},
+                      value: _goalValue(answers),
+                      detail: _goalDetail(answers),
+                      onEdit: () => context.go(RouteNames.goal),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/trending_up.svg',
                       category: 'Current Level',
-                      value: 'Intermediate',
-                      detail: '3 days/wk · 11–15 miles weekly',
-                      onEdit: () {},
+                      value: _fitnessValue(answers),
+                      detail: _fitnessDetail(answers),
+                      onEdit: () => context.go(RouteNames.fitness),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/calendar.svg',
                       category: 'Schedule',
-                      value: '4 days per week',
-                      detail: 'Long run Saturday · Morning · 45 min weekdays',
-                      onEdit: () {},
+                      value: _scheduleValue(answers),
+                      detail: _scheduleDetail(answers),
+                      onEdit: () => context.go(RouteNames.schedule),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/heart.svg',
                       category: 'Health',
-                      value: 'No current pain',
-                      detail: 'Balanced plan preference',
-                      onEdit: () {},
+                      value: _healthValue(answers),
+                      detail: _healthDetail(answers),
+                      onEdit: () => context.go(RouteNames.health),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/training.svg',
                       category: 'Training',
-                      value: 'Pace-based guidance',
-                      detail: 'Speed workouts · Strength 2×/wk · Road · Some hills',
-                      onEdit: () {},
+                      value: _trainingValue(answers),
+                      detail: _trainingDetail(answers),
+                      onEdit: () => context.go(RouteNames.training),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/watch.svg',
                       category: 'Device',
-                      value: 'Garmin connected',
-                      detail: 'All data · HR zones · Auto-adjust',
-                      onEdit: () {},
+                      value: _deviceValue(answers),
+                      detail: _deviceDetail(answers),
+                      onEdit: () => context.go(RouteNames.device),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/moon.svg',
                       category: 'Recovery',
-                      value: '7–8h sleep',
-                      detail: 'Desk job · Moderate stress · Usually fresh',
-                      onEdit: () {},
+                      value: _recoveryValue(answers),
+                      detail: _recoveryDetail(answers),
+                      onEdit: () => context.go(RouteNames.recovery),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/motivation.svg',
                       category: 'Motivation',
-                      value: 'Personal challenge, Health',
-                      detail: 'Encouraging tone · Confidence 7/10',
-                      onEdit: () {},
+                      value: _motivationValue(answers),
+                      detail: _motivationDetail(answers),
+                      onEdit: () => context.go(RouteNames.motivation),
                     ),
                     const SizedBox(height: AppSpacing.xl),
 
@@ -317,4 +437,3 @@ class _SummaryCard extends StatelessWidget {
     );
   }
 }
-

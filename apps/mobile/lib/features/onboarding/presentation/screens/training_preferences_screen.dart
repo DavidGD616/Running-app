@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
@@ -8,17 +9,18 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../onboarding_provider.dart';
 
-class TrainingPreferencesScreen extends StatefulWidget {
+class TrainingPreferencesScreen extends ConsumerStatefulWidget {
   const TrainingPreferencesScreen({super.key});
 
   @override
-  State<TrainingPreferencesScreen> createState() =>
+  ConsumerState<TrainingPreferencesScreen> createState() =>
       _TrainingPreferencesScreenState();
 }
 
 class _TrainingPreferencesScreenState
-    extends State<TrainingPreferencesScreen> {
+    extends ConsumerState<TrainingPreferencesScreen> {
   String? _guidanceMode;
   String? _speedWorkouts;
   String? _strengthTraining;
@@ -330,7 +332,17 @@ class _TrainingPreferencesScreenState
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push(RouteNames.device)
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setTraining(
+                              guidanceMode: _guidanceMode!,
+                              speedWorkouts: _speedWorkouts!,
+                              strengthTraining: _strengthTraining!,
+                              runSurface: _runSurface!,
+                              terrain: _terrain!,
+                              walkRunIntervals: _walkRunIntervals!,
+                            );
+                        context.push(RouteNames.device);
+                      }
                     : null,
               ),
             ),
