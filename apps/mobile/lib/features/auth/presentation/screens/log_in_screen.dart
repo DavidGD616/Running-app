@@ -5,6 +5,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
 
 class LogInScreen extends StatefulWidget {
@@ -74,7 +75,7 @@ class _LogInScreenState extends State<LogInScreen> {
                     const SizedBox(height: AppSpacing.base),
                     // Forgot password link
                     GestureDetector(
-                      onTap: () => context.push('/forgot-password'),
+                      onTap: () => context.push(RouteNames.forgotPassword),
                       child: Text(
                         'Forgot password?',
                         style: AppTypography.labelLarge.copyWith(
@@ -99,12 +100,12 @@ class _LogInScreenState extends State<LogInScreen> {
                 children: [
                   AppButton(
                     label: 'Log In',
-                    onPressed: () => context.go('/account-setup'),
+                    onPressed: () => context.go(RouteNames.accountSetup),
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: "Don't have an account? Sign up",
-                    onPressed: () => context.go('/sign-up'),
+                    onPressed: () => context.go(RouteNames.signUp),
                     variant: AppButtonVariant.text,
                   ),
                 ],

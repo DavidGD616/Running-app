@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
@@ -283,7 +284,7 @@ class _MotivationScreenState extends State<MotivationScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push('/onboarding/summary')
+                    ? () => context.push(RouteNames.summary)
                     : null,
               ),
             ),

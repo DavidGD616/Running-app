@@ -6,6 +6,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_segmented_control.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
 
 class AccountSetupScreen extends StatefulWidget {
@@ -121,7 +122,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: () => context.go('/onboarding'),
+                onPressed: () => context.go(RouteNames.onboarding),
               ),
             ),
           ],

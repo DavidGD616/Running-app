@@ -2,6 +2,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -508,7 +509,7 @@ class _CurrentFitnessScreenState extends State<CurrentFitnessScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push('/onboarding/schedule')
+                    ? () => context.push(RouteNames.schedule)
                     : null,
               ),
             ),

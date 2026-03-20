@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -189,13 +190,13 @@ class SummaryScreen extends StatelessWidget {
                 children: [
                   AppButton(
                     label: 'Build My Plan',
-                    onPressed: () {},
+                    onPressed: () => context.go(RouteNames.planGeneration),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppButton(
                     label: 'Edit Answers',
                     variant: AppButtonVariant.secondary,
-                    onPressed: () => context.go('/onboarding/goal'),
+                    onPressed: () => context.go(RouteNames.goal),
                   ),
                 ],
               ),
