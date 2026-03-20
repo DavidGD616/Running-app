@@ -1,4 +1,6 @@
 import 'package:go_router/go_router.dart';
+import 'route_names.dart';
+import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/presentation/screens/log_in_screen.dart';
@@ -14,69 +16,83 @@ import '../../features/onboarding/presentation/screens/watch_device_screen.dart'
 import '../../features/onboarding/presentation/screens/recovery_lifestyle_screen.dart';
 import '../../features/onboarding/presentation/screens/motivation_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
+import '../../features/onboarding/presentation/screens/plan_generation_screen.dart';
+import '../../features/home/presentation/screens/home_screen.dart';
 
 final appRouter = GoRouter(
-  initialLocation: '/',
+  initialLocation: RouteNames.splash,
   routes: [
     GoRoute(
-      path: '/',
+      path: RouteNames.splash,
+      builder: (context, state) => const SplashScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.welcome,
       builder: (context, state) => const WelcomeScreen(),
     ),
     GoRoute(
-      path: '/sign-up',
+      path: RouteNames.signUp,
       builder: (context, state) => const SignUpScreen(),
     ),
     GoRoute(
-      path: '/log-in',
+      path: RouteNames.logIn,
       builder: (context, state) => const LogInScreen(),
     ),
     GoRoute(
-      path: '/forgot-password',
+      path: RouteNames.forgotPassword,
       builder: (context, state) => const ForgotPasswordScreen(),
     ),
     GoRoute(
-      path: '/account-setup',
+      path: RouteNames.accountSetup,
       builder: (context, state) => const AccountSetupScreen(),
     ),
     GoRoute(
-      path: '/onboarding',
+      path: RouteNames.onboarding,
       builder: (context, state) => const OnboardingIntroScreen(),
     ),
     GoRoute(
-      path: '/onboarding/goal',
+      path: RouteNames.goal,
       builder: (context, state) => const GoalScreen(),
     ),
     GoRoute(
-      path: '/onboarding/fitness',
+      path: RouteNames.fitness,
       builder: (context, state) => const CurrentFitnessScreen(),
     ),
     GoRoute(
-      path: '/onboarding/schedule',
+      path: RouteNames.schedule,
       builder: (context, state) => const ScheduleScreen(),
     ),
     GoRoute(
-      path: '/onboarding/health',
+      path: RouteNames.health,
       builder: (context, state) => const HealthInjuryScreen(),
     ),
     GoRoute(
-      path: '/onboarding/training',
+      path: RouteNames.training,
       builder: (context, state) => const TrainingPreferencesScreen(),
     ),
     GoRoute(
-      path: '/onboarding/device',
+      path: RouteNames.device,
       builder: (context, state) => const WatchDeviceScreen(),
     ),
     GoRoute(
-      path: '/onboarding/recovery',
+      path: RouteNames.recovery,
       builder: (context, state) => const RecoveryLifestyleScreen(),
     ),
     GoRoute(
-      path: '/onboarding/motivation',
+      path: RouteNames.motivation,
       builder: (context, state) => const MotivationScreen(),
     ),
     GoRoute(
-      path: '/onboarding/summary',
+      path: RouteNames.summary,
       builder: (context, state) => const SummaryScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.planGeneration,
+      builder: (context, state) => const PlanGenerationScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.home,
+      builder: (context, state) => const HomeScreen(),
     ),
   ],
 );

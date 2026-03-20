@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../onboarding_provider.dart';
 
-class WatchDeviceScreen extends StatefulWidget {
+class WatchDeviceScreen extends ConsumerStatefulWidget {
   const WatchDeviceScreen({super.key});
 
   @override
-  State<WatchDeviceScreen> createState() => _WatchDeviceScreenState();
+  ConsumerState<WatchDeviceScreen> createState() => _WatchDeviceScreenState();
 }
 
-class _WatchDeviceScreenState extends State<WatchDeviceScreen> {
+class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
   // ── Shared ────────────────────────────────────────────────────────────────
   String? _hasWatch; // 'Yes' | 'No'
 
@@ -444,7 +447,20 @@ class _WatchDeviceScreenState extends State<WatchDeviceScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push('/onboarding/recovery')
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setDevice(
+                              hasWatch: _hasWatch!,
+                              device: _device,
+                              dataUsage: _dataUsage,
+                              watchMetrics: _watchMetrics,
+                              metrics: _metrics.toList(),
+                              hrZones: _hrZones,
+                              paceRecs: _paceRecs,
+                              autoAdjust: _autoAdjust,
+                              noWatchGuidance: _noWatchGuidance,
+                            );
+                        context.push(RouteNames.recovery);
+                      }
                     : null,
               ),
             ),

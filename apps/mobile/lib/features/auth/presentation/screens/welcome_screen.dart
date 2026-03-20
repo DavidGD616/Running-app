@@ -5,6 +5,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_button.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -53,12 +54,12 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(flex: 3),
               AppButton(
                 label: 'Create Account',
-                onPressed: () => context.push('/sign-up'),
+                onPressed: () => context.push(RouteNames.signUp),
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
                 label: 'Log In',
-                onPressed: () => context.push('/log-in'),
+                onPressed: () => context.push(RouteNames.logIn),
                 variant: AppButtonVariant.secondary,
               ),
               const SizedBox(height: AppSpacing.lg),

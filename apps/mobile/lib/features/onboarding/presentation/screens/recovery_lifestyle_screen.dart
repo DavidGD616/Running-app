@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../onboarding_provider.dart';
 
-class RecoveryLifestyleScreen extends StatefulWidget {
+class RecoveryLifestyleScreen extends ConsumerStatefulWidget {
   const RecoveryLifestyleScreen({super.key});
 
   @override
-  State<RecoveryLifestyleScreen> createState() =>
+  ConsumerState<RecoveryLifestyleScreen> createState() =>
       _RecoveryLifestyleScreenState();
 }
 
-class _RecoveryLifestyleScreenState extends State<RecoveryLifestyleScreen> {
+class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScreen> {
   String? _sleep;
   String? _workLevel;
   String? _stressLevel;
@@ -239,7 +242,15 @@ class _RecoveryLifestyleScreenState extends State<RecoveryLifestyleScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push('/onboarding/motivation')
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setRecovery(
+                              sleep: _sleep!,
+                              workLevel: _workLevel!,
+                              stressLevel: _stressLevel!,
+                              dayFeeling: _dayFeeling!,
+                            );
+                        context.push(RouteNames.motivation);
+                      }
                     : null,
               ),
             ),

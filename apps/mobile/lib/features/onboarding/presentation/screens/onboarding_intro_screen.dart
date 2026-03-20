@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 
 class OnboardingIntroScreen extends StatelessWidget {
@@ -94,7 +95,7 @@ class OnboardingIntroScreen extends StatelessWidget {
               // Bottom CTA
               AppButton(
                 label: "Let's Go",
-                onPressed: () => context.push('/onboarding/goal'),
+                onPressed: () => context.push(RouteNames.goal),
               ),
               const SizedBox(height: AppSpacing.base),
               Text(

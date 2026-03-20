@@ -5,6 +5,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -102,7 +103,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: 'Already have an account? Log in',
-                    onPressed: () => context.go('/log-in'),
+                    onPressed: () => context.go(RouteNames.logIn),
                     variant: AppButtonVariant.text,
                   ),
                 ],

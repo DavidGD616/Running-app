@@ -1,7 +1,9 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -10,15 +12,16 @@ import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../onboarding_provider.dart';
 
-class CurrentFitnessScreen extends StatefulWidget {
+class CurrentFitnessScreen extends ConsumerStatefulWidget {
   const CurrentFitnessScreen({super.key});
 
   @override
-  State<CurrentFitnessScreen> createState() => _CurrentFitnessScreenState();
+  ConsumerState<CurrentFitnessScreen> createState() => _CurrentFitnessScreenState();
 }
 
-class _CurrentFitnessScreenState extends State<CurrentFitnessScreen> {
+class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
   String? _experience;
 
   // Brand new only
@@ -508,7 +511,20 @@ class _CurrentFitnessScreenState extends State<CurrentFitnessScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => context.push('/onboarding/schedule')
+                    ? () {
+                        ref.read(onboardingProvider.notifier).setFitness(
+                              experience: _experience!,
+                              canRun10Min: _canRun10Min,
+                              runningDays: _runningDays,
+                              weeklyVolume: _weeklyVolume,
+                              longestRun: _longestRun,
+                              canCompleteGoalDist: _canCompleteGoalDist,
+                              raceDistanceBefore: _raceDistanceBefore,
+                              benchmark: _benchmark,
+                              benchmarkTime: _benchmarkTime,
+                            );
+                        context.push(RouteNames.schedule);
+                      }
                     : null,
               ),
             ),
