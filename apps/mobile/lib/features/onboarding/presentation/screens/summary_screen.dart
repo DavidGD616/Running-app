@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -28,7 +29,7 @@ class SummaryScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.of(context).maybePop(),
+                        onTap: () => context.pop(),
                         child: SizedBox(
                           width: 48,
                           height: 48,
@@ -194,9 +195,7 @@ class SummaryScreen extends StatelessWidget {
                   AppButton(
                     label: 'Edit Answers',
                     variant: AppButtonVariant.secondary,
-                    onPressed: () => Navigator.of(context).popUntil(
-                      (route) => route.isFirst,
-                    ),
+                    onPressed: () => context.go('/onboarding/goal'),
                   ),
                 ],
               ),

@@ -4,10 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import 'sign_up_screen.dart';
-import 'forgot_password_screen.dart';
-import '../../../account_setup/presentation/screens/account_setup_screen.dart';
 
 class LogInScreen extends StatefulWidget {
   const LogInScreen({super.key});
@@ -76,10 +74,7 @@ class _LogInScreenState extends State<LogInScreen> {
                     const SizedBox(height: AppSpacing.base),
                     // Forgot password link
                     GestureDetector(
-                      onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()),
-                      ),
+                      onTap: () => context.push('/forgot-password'),
                       child: Text(
                         'Forgot password?',
                         style: AppTypography.labelLarge.copyWith(
@@ -104,18 +99,12 @@ class _LogInScreenState extends State<LogInScreen> {
                 children: [
                   AppButton(
                     label: 'Log In',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const AccountSetupScreen()),
-                    ),
+                    onPressed: () => context.go('/account-setup'),
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: "Don't have an account? Sign up",
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                    ),
+                    onPressed: () => context.go('/sign-up'),
                     variant: AppButtonVariant.text,
                   ),
                 ],
@@ -132,7 +121,7 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).maybePop(),
+      onTap: () => context.pop(),
       child: Container(
         width: 48,
         height: 48,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -78,7 +79,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: 'Back to Log In',
-                    onPressed: () => Navigator.of(context).maybePop(),
+                    onPressed: () => context.pop(),
                     variant: AppButtonVariant.text,
                   ),
                 ],
@@ -95,7 +96,7 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).maybePop(),
+      onTap: () => context.pop(),
       child: Container(
         width: 48,
         height: 48,
