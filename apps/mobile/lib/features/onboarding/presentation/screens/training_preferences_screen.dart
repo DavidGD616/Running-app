@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'watch_device_screen.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -69,7 +69,7 @@ class _TrainingPreferencesScreenState
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.of(context).maybePop(),
+                        onTap: () => context.pop(),
                         child: SizedBox(
                           width: 48,
                           height: 48,
@@ -329,12 +329,7 @@ class _TrainingPreferencesScreenState
               child: AppButton(
                 label: 'Continue',
                 onPressed: _isComplete
-                    ? () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const WatchDeviceScreen(),
-                          ),
-                        )
+                    ? () => context.push('/onboarding/device')
                     : null,
               ),
             ),

@@ -5,8 +5,8 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_segmented_control.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import '../../../onboarding/presentation/screens/onboarding_intro_screen.dart';
 
 class AccountSetupScreen extends StatefulWidget {
   const AccountSetupScreen({super.key});
@@ -121,12 +121,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const OnboardingIntroScreen(),
-                  ),
-                ),
+                onPressed: () => context.go('/onboarding'),
               ),
             ),
           ],
@@ -140,7 +135,7 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).maybePop(),
+      onTap: () => context.pop(),
       child: Container(
         width: 48,
         height: 48,

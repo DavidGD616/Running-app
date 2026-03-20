@@ -1,7 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'current_fitness_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -144,7 +144,7 @@ class _GoalScreenState extends State<GoalScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       GestureDetector(
-                        onTap: () => Navigator.of(context).maybePop(),
+                        onTap: () => context.pop(),
                         child: SizedBox(
                           width: 48,
                           height: 48,
@@ -347,12 +347,7 @@ class _GoalScreenState extends State<GoalScreen> {
               child: AppButton(
                 label: 'Continue',
                 onPressed: isComplete
-                    ? () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const CurrentFitnessScreen(),
-                          ),
-                        )
+                    ? () => context.push('/onboarding/fitness')
                     : null,
               ),
             ),

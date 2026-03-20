@@ -4,8 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import 'log_in_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -102,10 +102,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: 'Already have an account? Log in',
-                    onPressed: () => Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LogInScreen()),
-                    ),
+                    onPressed: () => context.go('/log-in'),
                     variant: AppButtonVariant.text,
                   ),
                 ],
@@ -122,7 +119,7 @@ class _BackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.of(context).maybePop(),
+      onTap: () => context.pop(),
       child: Container(
         width: 48,
         height: 48,

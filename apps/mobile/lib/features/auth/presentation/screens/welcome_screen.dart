@@ -4,9 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/widgets/app_button.dart';
-import 'sign_up_screen.dart';
-import 'log_in_screen.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -54,18 +53,12 @@ class WelcomeScreen extends StatelessWidget {
               const Spacer(flex: 3),
               AppButton(
                 label: 'Create Account',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SignUpScreen()),
-                ),
+                onPressed: () => context.push('/sign-up'),
               ),
               const SizedBox(height: AppSpacing.md),
               AppButton(
                 label: 'Log In',
-                onPressed: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LogInScreen()),
-                ),
+                onPressed: () => context.push('/log-in'),
                 variant: AppButtonVariant.secondary,
               ),
               const SizedBox(height: AppSpacing.lg),
