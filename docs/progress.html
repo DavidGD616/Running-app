@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Progress — Running App</title>
+  <script src="https://mcp.figma.com/mcp/html-to-design/capture.js" async></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: #121212;
+      color: #FFFFFF;
+      padding: 40px;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .phone-frame {
+      width: 390px;
+      min-height: 844px;
+      background: #121212;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .screen-content {
+      flex: 1;
+      padding: 24px 20px 90px;
+      scrollbar-width: none; /* Firefox */
+    }
+    .screen-content::-webkit-scrollbar { display: none; }
+
+    .top-bar {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 24px;
+      padding-top: 24px;
+    }
+    .page-title { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; }
+
+    /* Streak Banner */
+    .streak-banner {
+      background: linear-gradient(90deg, rgba(255,193,7,0.12) 0%, rgba(255,193,7,0.02) 100%);
+      border: 1px solid rgba(255,193,7,0.3);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex; align-items: center; gap: 16px;
+      margin-bottom: 24px;
+    }
+    .streak-icon {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: rgba(255,193,7,0.2);
+      display: flex; align-items: center; justify-content: center;
+      color: #FFC107;
+      flex-shrink: 0;
+    }
+    .streak-text-main { font-size: 16px; font-weight: 600; margin-bottom: 2px; }
+    .streak-text-sub { font-size: 13px; color: #B3B3B3; }
+
+    /* Card styling */
+    .card {
+      background: #2A2A2A; border: 1px solid #3A3A3A;
+      border-radius: 16px; padding: 20px; margin-bottom: 16px;
+    }
+
+    /* Featured volume card — premium dashboard module */
+    .volume-card {
+      background: linear-gradient(180deg, #2A2A2A 0%, #242424 100%);
+      border: 1px solid #3A3A3A;
+      border-radius: 20px;
+      padding: 24px;
+      padding-bottom: 32px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .volume-card::after {
+      content: ''; position: absolute; top: 0; right: 0;
+      width: 180px; height: 180px;
+      background: radial-gradient(circle at top right, rgba(0,230,118,0.06) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* Grid Stats — intentional summary modules */
+    .stats-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;
+    }
+    .stats-grid-card {
+      background: #2A2A2A; border: 1px solid #3A3A3A; border-radius: 16px; padding: 16px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+    .stats-card-header { display: flex; align-items: center; gap: 8px; width: 100%; }
+    .stats-icon {
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .stats-icon svg { width: 22px; height: 22px; }
+    .stats-label { font-size: 13px; color: #B3B3B3; font-weight: 500; }
+    .stats-value { font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+    .stats-sub { font-size: 11px; font-weight: 500; margin-top: 4px; }
+
+    /* Achievements */
+    .section-header {
+      display: flex; justify-content: space-between; align-items: baseline;
+      margin-bottom: 16px;
+    }
+    .section-title { font-size: 18px; font-weight: 600; }
+    .view-all { font-size: 13px; color: #00E676; font-weight: 500; cursor: pointer; }
+
+    .achievement-card {
+      background: linear-gradient(145deg, #333333 0%, #2A2A2A 100%);
+      border: 1px solid rgba(0,230,118,0.2); border-radius: 20px; padding: 24px;
+      display: flex; align-items: center; gap: 16px; margin-bottom: 16px;
+      position: relative; overflow: hidden;
+    }
+    .achievement-card::before {
+      content: ''; position: absolute; top: -40px; right: -30px; width: 160px; height: 160px;
+      background: radial-gradient(circle, rgba(0,230,118,0.1) 0%, transparent 70%); border-radius: 50%; pointer-events: none;
+    }
+    .achievement-icon {
+      width: 52px; height: 52px; background: rgba(0,230,118,0.08); border: 1px solid rgba(0,230,118,0.25);
+      border-radius: 14px; display: flex; align-items: center; justify-content: center;
+      color: #00E676; flex-shrink: 0;
+    }
+    .achievement-metric {
+      margin-left: auto; text-align: right; flex-shrink: 0;
+    }
+    .achievement-metric-value {
+      font-size: 28px; font-weight: 700; color: #FFFFFF;
+      font-variant-numeric: tabular-nums; line-height: 1;
+    }
+    .achievement-metric-unit {
+      font-size: 14px; color: #B3B3B3; font-weight: 400;
+    }
+
+    /* Sessions card module */
+    .sessions-card {
+      background: #2A2A2A; border: 1px solid #3A3A3A;
+      border-radius: 20px; padding: 20px; margin-bottom: 16px;
+    }
+    .sessions-card .section-header { margin-bottom: 4px; }
+
+    /* Day Rows — refined internal rows */
+    .day-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 16px 0;
+      border-bottom: 1px solid rgba(58,58,58,0.6);
+    }
+    .day-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .day-row:first-child { padding-top: 12px; }
+    .day-badge { display: flex; flex-direction: column; align-items: center; min-width: 40px; }
+    .day-badge-label { font-size: 10px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; color: #666666; }
+    .day-badge-number { font-size: 18px; font-weight: 700; color: #FFFFFF; }
+    .day-row-body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+    .day-row-title { font-size: 14px; font-weight: 600; color: #FFFFFF; }
+    .day-row-sub { font-size: 12px; color: #666666; }
+    .day-row-time {
+      font-size: 14px; font-weight: 600; color: #B3B3B3;
+      font-variant-numeric: tabular-nums; flex-shrink: 0;
+    }
+    .day-row-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; background: rgba(0,230,118,0.1); color: #00E676;
+    }
+
+    /* Bottom Nav */
+    .bottom-nav {
+      position: absolute; bottom: 0; left: 0; right: 0;
+      display: flex; align-items: center; justify-content: space-around;
+      padding: 13px 12px 33px; /* Matches Figma pt-13 + safe area */
+      background: rgba(30,30,30,0.95); backdrop-filter: blur(12px);
+      border-top: 1px solid #3a3a3a; z-index: 10;
+    }
+    .bottom-nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      color: #666666; cursor: pointer; padding: 0; width: 64px; height: 48px; justify-content: center;
+    }
+    .bottom-nav-item.active { color: #00E676; }
+    .bottom-nav-label { font-size: 10px; font-weight: 500; letter-spacing: 0.3px; }
+  </style>
+</head>
+<body>
+
+<div class="phone-frame">
+  <div class="screen-content">
+    
+    <!-- Header -->
+    <div class="top-bar">
+      <div>
+        <h1 class="page-title">Progress</h1>
+        <div style="font-size: 13px; color: #666666; margin-top: 4px;">You're building a solid habit. Keep it up.</div>
+      </div>
+    </div>
+
+    <!-- Streak Banner -->
+    <div class="streak-banner">
+      <div class="streak-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+      </div>
+      <div>
+        <div class="streak-text-main">5 Week Streak!</div>
+        <div class="streak-text-sub">You're staying consistently active.</div>
+      </div>
+    </div>
+
+    <!-- Continuous Area Trend — Featured Dashboard Module -->
+    <div class="volume-card">
+      <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 24px;">
+        <div>
+          <div style="font-size: 15px; font-weight: 600; color: #FFFFFF; margin-bottom: 4px;">Weekly Volume</div>
+          <div style="font-size: 12px; color: #00E676; display: flex; align-items: center; gap: 4px;">
+            <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="14 4 8 10 5 7 2 10"/><polyline points="10 4 14 4 14 8"/></svg>
+            Trending Up
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 24px; font-weight: 700; color: #FFFFFF; font-variant-numeric: tabular-nums; line-height: 1;">
+            2 <span style="font-size: 18px; color: #666666;">/ 4</span>
+          </div>
+          <div style="font-size: 12px; color: #B3B3B3; margin-top: 4px;">runs this week</div>
+        </div>
+      </div>
+      
+      <div style="position:relative; width: 100%;">
+        <svg viewBox="0 0 302 120" style="width:100%; height:120px; overflow:visible;">
+          <defs>
+            <linearGradient id="areaGradPremium" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="rgba(0, 230, 118, 0.45)" />
+              <stop offset="50%" stop-color="rgba(0, 230, 118, 0.15)" />
+              <stop offset="100%" stop-color="rgba(0, 230, 118, 0.0)" />
+            </linearGradient>
+            <filter id="neonGlow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="3" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          <line x1="0" y1="20" x2="302" y2="20" stroke="#2A2A2A" stroke-width="1" stroke-dasharray="4 4" />
+          <line x1="0" y1="60" x2="302" y2="60" stroke="#2A2A2A" stroke-width="1" stroke-dasharray="4 4" />
+          <line x1="0" y1="100" x2="302" y2="100" stroke="#2A2A2A" stroke-width="1" stroke-dasharray="4 4" />
+          <path d="M10,100 L10,75 L80,55 L150,35 L220,45 L290,20 L290,100 Z" fill="url(#areaGradPremium)" />
+          <polyline points="10,75 80,55 150,35 220,45 290,20" fill="none" stroke="#00E676" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" filter="url(#neonGlow)" />
+          <circle cx="10" cy="75" r="3.5" fill="#121212" stroke="#00E676" stroke-width="2"/>
+          <circle cx="80" cy="55" r="3.5" fill="#121212" stroke="#00E676" stroke-width="2"/>
+          <circle cx="150" cy="35" r="3.5" fill="#121212" stroke="#00E676" stroke-width="2"/>
+          <circle cx="220" cy="45" r="3.5" fill="#121212" stroke="#00E676" stroke-width="2"/>
+          <circle cx="290" cy="20" r="5.5" fill="#00E676" stroke="#121212" stroke-width="2"/>
+          <circle cx="290" cy="20" r="2" fill="#121212" />
+          <text x="10" y="60" fill="#B3B3B3" font-size="11" font-weight="500" text-anchor="middle">15</text>
+          <text x="80" y="40" fill="#B3B3B3" font-size="11" font-weight="500" text-anchor="middle">20</text>
+          <text x="150" y="20" fill="#B3B3B3" font-size="11" font-weight="500" text-anchor="middle">24</text>
+          <text x="220" y="30" fill="#B3B3B3" font-size="11" font-weight="500" text-anchor="middle">22</text>
+          <text x="290" y="6" fill="#FFFFFF" font-size="13" font-weight="700" text-anchor="middle">30</text>
+        </svg>
+        <div style="position: relative; height: 30px; margin-top: 16px;">
+          <div style="position: absolute; top: 0; left: 0; right: 0; height: 1px; background: #2A2A2A;"></div>
+          <span style="position: absolute; left: 10px; top: 12px; transform: translateX(-50%); font-size: 11px; font-weight: 500; color: #666666;">W1</span>
+          <span style="position: absolute; left: 80px; top: 12px; transform: translateX(-50%); font-size: 11px; font-weight: 500; color: #666666;">W2</span>
+          <span style="position: absolute; left: 150px; top: 12px; transform: translateX(-50%); font-size: 11px; font-weight: 500; color: #666666;">W3</span>
+          <span style="position: absolute; left: 220px; top: 12px; transform: translateX(-50%); font-size: 11px; font-weight: 500; color: #666666;">W4</span>
+          <span style="position: absolute; left: 290px; top: 10px; transform: translateX(-50%); font-size: 11px; font-weight: 700; color: #00E676; background: rgba(0,230,118,0.1); border-radius: 4px; padding: 2px 6px;">W5</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Modules — 2x2 Stats Grid -->
+    <div class="stats-grid">
+      <div class="stats-grid-card">
+        <div class="stats-card-header">
+          <div class="stats-icon" style="color: #00E676;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5333 6.46667L12.03 10.9758C11.9482 11.2213 11.8103 11.4444 11.6274 11.6274C11.4444 11.8103 11.2213 11.9482 10.9758 12.03L6.46667 13.5333L7.97 9.02417C8.05182 8.77868 8.18967 8.55562 8.37265 8.37265C8.55562 8.18967 8.77868 8.05182 9.02417 7.97L13.5333 6.46667Z"/><path d="M10 18.3333C14.6024 18.3333 18.3333 14.6024 18.3333 10C18.3333 5.39763 14.6024 1.66667 10 1.66667C5.39763 1.66667 1.66667 5.39763 1.66667 10C1.66667 14.6024 5.39763 18.3333 10 18.3333Z"/></svg>
+          </div>
+          <span class="stats-label">Distance</span>
+        </div>
+        <div>
+          <div class="stats-value">65.2<span style="font-size:14px;color:#B3B3B3;font-weight:500;">km</span></div>
+          <div class="stats-sub" style="color:#00E676;">▲ 14% vs last mo</div>
+        </div>
+      </div>
+      <div class="stats-grid-card">
+        <div class="stats-card-header">
+          <div class="stats-icon" style="color: #42A5F5;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 18.3333C14.6024 18.3333 18.3333 14.6024 18.3333 10C18.3333 5.39763 14.6024 1.66667 10 1.66667C5.39763 1.66667 1.66667 5.39763 1.66667 10C1.66667 14.6024 5.39763 18.3333 10 18.3333Z"/><path d="M10 5V10L13.3333 11.6667"/></svg>
+          </div>
+          <span class="stats-label">Time</span>
+        </div>
+        <div>
+          <div class="stats-value">6<span style="font-size:14px;color:#B3B3B3;font-weight:500;">h </span>15<span style="font-size:14px;color:#B3B3B3;font-weight:500;">m</span></div>
+          <div class="stats-sub" style="color:#42A5F5;">▲ 5% vs last mo</div>
+        </div>
+      </div>
+      <div class="stats-grid-card">
+        <div class="stats-card-header">
+          <div class="stats-icon" style="color: #FFC107;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>
+          </div>
+          <span class="stats-label">Streak</span>
+        </div>
+        <div>
+          <div class="stats-value" style="color: #FFC107;">4<span style="font-size:14px;color:#B3B3B3;font-weight:500;"> wks</span></div>
+          <div class="stats-sub" style="color:#FFC107;">4 weeks in a row</div>
+        </div>
+      </div>
+      <div class="stats-grid-card">
+        <div class="stats-card-header">
+          <div class="stats-icon" style="color: #AB47BC;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <span class="stats-label">Runs</span>
+        </div>
+        <div>
+          <div class="stats-value">10</div>
+          <div class="stats-sub" style="color:#AB47BC;">Completed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Achievement — Longest Run insight card -->
+    <div class="achievement-card">
+      <div class="achievement-icon">
+        <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      <div style="flex: 1; min-width: 0;">
+        <div style="font-size: 15px; font-weight: 600; color: #FFFFFF; margin-bottom: 3px;">Longest Run</div>
+        <div style="font-size: 12px; color: #666666;">+4.0 km since start</div>
+      </div>
+      <div class="achievement-metric">
+        <span class="achievement-metric-value">12.0</span>
+        <span class="achievement-metric-unit"> km</span>
+      </div>
+    </div>
+
+    <!-- Recent Sessions — polished card module -->
+    <div class="sessions-card">
+      <div class="section-header">
+        <div class="section-title">Recent Sessions</div>
+        <div class="view-all">View All ›</div>
+      </div>
+
+      <div class="day-row">
+        <div class="day-row-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="day-row-body">
+          <div class="day-row-title">Tempo Run</div>
+          <div class="day-row-sub">Yesterday • 8.0 km</div>
+        </div>
+        <div class="day-row-time">45 min</div>
+      </div>
+
+      <div class="day-row">
+        <div class="day-row-icon" style="background: rgba(66,165,245,0.1); color: #42A5F5;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+        </div>
+        <div class="day-row-body">
+          <div class="day-row-title">Easy Run</div>
+          <div class="day-row-sub">Tuesday • 5.0 km</div>
+        </div>
+        <div class="day-row-time">30 min</div>
+      </div>
+
+      <div class="day-row">
+        <div class="day-row-icon" style="background: rgba(255,193,7,0.1); color: #FFC107;">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>
+        </div>
+        <div class="day-row-body">
+          <div class="day-row-title">Long Run</div>
+          <div class="day-row-sub">Last Sunday • 12.0 km</div>
+        </div>
+        <div class="day-row-time">1h 15m</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <div class="bottom-nav">
+    <div class="bottom-nav-item">
+      <img src="https://www.figma.com/api/mcp/asset/bdd572a5-e17a-40c0-ba57-0e240f9736a5" alt="Today" style="width: 24px; height: 24px; display: block;">
+      <span class="bottom-nav-label">Today</span>
+    </div>
+    <div class="bottom-nav-item">
+      <img src="https://www.figma.com/api/mcp/asset/d806dedf-9926-49f7-a255-fffb13b91514" alt="Plan" style="width: 24px; height: 24px; display: block;">
+      <span class="bottom-nav-label">Plan</span>
+    </div>
+    <div class="bottom-nav-item active">
+      <img src="https://www.figma.com/api/mcp/asset/5f90e3bf-33d3-4c69-90ad-79f61f39375f" alt="Progress" style="width: 24px; height: 24px; display: block;">
+      <span class="bottom-nav-label" style="color: #00e676;">Progress</span>
+    </div>
+    <div class="bottom-nav-item">
+      <img src="https://www.figma.com/api/mcp/asset/8ba6b42b-cf93-4a5e-92bd-be1999435163" alt="Settings" style="width: 24px; height: 24px; display: block;">
+      <span class="bottom-nav-label">Settings</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
