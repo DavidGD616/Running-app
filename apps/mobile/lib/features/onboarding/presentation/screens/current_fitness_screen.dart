@@ -13,6 +13,9 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
+import '../../../../core/utils/unit_formatter.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 class CurrentFitnessScreen extends ConsumerStatefulWidget {
   const CurrentFitnessScreen({super.key});
@@ -108,6 +111,11 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final unitSystem = ref
+        .watch(userPreferencesProvider)
+        .valueOrNull
+        ?.unitSystem ?? UnitSystem.km;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -339,10 +347,8 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          '0 miles', '1-5 miles', '6-10 miles',
-                          '11-15 miles', '16-20 miles', '21-30 miles', '31+',
-                        ].map((vol) => _Chip(
+                        children: UnitFormatter.weeklyVolumeOptions(unitSystem)
+                        .map((vol) => _Chip(
                           label: vol,
                           isSelected: _weeklyVolume == vol,
                           onTap: () {
@@ -368,10 +374,8 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          "I haven't done one", 'Less than 3 miles', '3-5 miles',
-                          '6-8 miles', '9-10 miles', '11-13 miles', '13+',
-                        ].map((run) => _Chip(
+                        children: UnitFormatter.longestRunOptions(unitSystem)
+                        .map((run) => _Chip(
                           label: run,
                           isSelected: _longestRun == run,
                           onTap: () {
