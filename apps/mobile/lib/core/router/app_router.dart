@@ -1,5 +1,6 @@
 import 'package:go_router/go_router.dart';
 import 'route_names.dart';
+import '../../features/onboarding/presentation/onboarding_provider.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
@@ -21,6 +22,11 @@ import '../../features/home/presentation/screens/home_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: RouteNames.splash,
+  redirect: (context, state) async {
+    if (state.matchedLocation != RouteNames.splash) return null;
+    final completed = await OnboardingNotifier.isCompleted();
+    return completed ? RouteNames.home : null;
+  },
   routes: [
     GoRoute(
       path: RouteNames.splash,

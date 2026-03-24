@@ -281,11 +281,8 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          '1-mile run time', '1-mile walk time',
-                          '5K time', '10K time', 'Half marathon time',
-                          'Skip for now',
-                        ].map((bench) => _Chip(
+                        children: UnitFormatter.benchmarkOptions(unitSystem)
+                        .map((bench) => _Chip(
                           label: bench,
                           isSelected: _benchmark == bench,
                           onTap: () {
@@ -466,11 +463,8 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          '1-mile run time', '1-mile walk time',
-                          '5K time', '10K time', 'Half marathon time',
-                          'Skip for now',
-                        ].map((bench) => _Chip(
+                        children: UnitFormatter.benchmarkOptions(unitSystem)
+                        .map((bench) => _Chip(
                           label: bench,
                           isSelected: _benchmark == bench,
                           onTap: () {

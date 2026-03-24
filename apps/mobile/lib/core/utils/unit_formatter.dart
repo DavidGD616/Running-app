@@ -37,6 +37,12 @@ class UnitFormatter {
           ? ['0 km', '1–13 km', '10–16 km', '17–24 km', '25–32 km', '33–48 km', '49+']
           : ['0 mi', '1–5 mi', '6–10 mi', '11–15 mi', '16–20 mi', '21–30 mi', '31+'];
 
+  /// Options for the optional benchmark picker in CurrentFitnessScreen.
+  static List<String> benchmarkOptions(UnitSystem unit) =>
+      unit == UnitSystem.km
+          ? ['1-km run time', '1-km walk time', '5K time', '10K time', 'Half marathon time', 'Skip for now']
+          : ['1-mile run time', '1-mile walk time', '5K time', '10K time', 'Half marathon time', 'Skip for now'];
+
   /// Options for "Longest recent run" in CurrentFitnessScreen.
   static List<String> longestRunOptions(UnitSystem unit) =>
       unit == UnitSystem.km

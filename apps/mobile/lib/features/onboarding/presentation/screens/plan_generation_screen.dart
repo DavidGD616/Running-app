@@ -1,20 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../onboarding_provider.dart';
 
-class PlanGenerationScreen extends StatefulWidget {
+class PlanGenerationScreen extends ConsumerStatefulWidget {
   const PlanGenerationScreen({super.key});
 
   @override
-  State<PlanGenerationScreen> createState() => _PlanGenerationScreenState();
+  ConsumerState<PlanGenerationScreen> createState() => _PlanGenerationScreenState();
 }
 
-class _PlanGenerationScreenState extends State<PlanGenerationScreen>
+class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     with SingleTickerProviderStateMixin {
   static const _messages = [
     'Analyzing your fitness profile...',
@@ -54,7 +56,9 @@ class _PlanGenerationScreenState extends State<PlanGenerationScreen>
         });
       } else {
         timer.cancel();
-        Future.delayed(const Duration(milliseconds: 600), () {
+        Future.delayed(const Duration(milliseconds: 600), () async {
+          if (!mounted) return;
+          await ref.read(onboardingProvider.notifier).markCompleted();
           if (mounted) context.go(RouteNames.home);
         });
       }
