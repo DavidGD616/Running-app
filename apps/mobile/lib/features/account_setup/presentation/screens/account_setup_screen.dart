@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -8,18 +9,40 @@ import '../../../../core/widgets/app_segmented_control.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
-class AccountSetupScreen extends StatefulWidget {
+class AccountSetupScreen extends ConsumerStatefulWidget {
   const AccountSetupScreen({super.key});
 
   @override
-  State<AccountSetupScreen> createState() => _AccountSetupScreenState();
+  ConsumerState<AccountSetupScreen> createState() => _AccountSetupScreenState();
 }
 
-class _AccountSetupScreenState extends State<AccountSetupScreen> {
+class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
   int _unitIndex = 0; // 0 = km, 1 = mi
   int _genderIndex = 0; // 0 = Male, 1 = Female, 2 = Other
   DateTime? _dateOfBirth;
+
+  static const _genderOptions = ['Male', 'Female', 'Other'];
+
+  @override
+  void initState() {
+    super.initState();
+    // Load previously saved preferences and pre-fill the form after the first
+    // frame — we use a post-frame callback because ref.read inside initState
+    // can run before the provider has resolved its async build().
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final prefs = await ref.read(userPreferencesProvider.future);
+      if (!mounted) return;
+      setState(() {
+        _unitIndex = prefs.unitSystem == UnitSystem.miles ? 1 : 0;
+        final genderIdx = _genderOptions.indexOf(prefs.gender ?? '');
+        _genderIndex = genderIdx == -1 ? 0 : genderIdx;
+        _dateOfBirth = prefs.dateOfBirth;
+      });
+    });
+  }
 
   String get _dateOfBirthDisplay {
     if (_dateOfBirth == null) return '';
@@ -50,6 +73,16 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
     if (picked != null) {
       setState(() => _dateOfBirth = picked);
     }
+  }
+
+  void _onContinue() {
+    final notifier = ref.read(userPreferencesProvider.notifier);
+    // Fire-and-forget: Riverpod state updates immediately (optimistic), the
+    // disk write happens asynchronously in the background.
+    notifier.setUnitSystem(_unitIndex == 0 ? UnitSystem.km : UnitSystem.miles);
+    notifier.setGender(_genderOptions[_genderIndex]);
+    if (_dateOfBirth != null) notifier.setDateOfBirth(_dateOfBirth!);
+    context.go(RouteNames.onboarding);
   }
 
   @override
@@ -90,7 +123,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
                     Text('Gender', style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     AppSegmentedControl(
-                      options: const ['Male', 'Female', 'Other'],
+                      options: _genderOptions,
                       selectedIndex: _genderIndex,
                       onChanged: (i) => setState(() => _genderIndex = i),
                     ),
@@ -122,7 +155,7 @@ class _AccountSetupScreenState extends State<AccountSetupScreen> {
               ),
               child: AppButton(
                 label: 'Continue',
-                onPressed: () => context.go(RouteNames.onboarding),
+                onPressed: _onContinue,
               ),
             ),
           ],

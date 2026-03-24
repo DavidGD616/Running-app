@@ -13,6 +13,9 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
+import '../../../../core/utils/unit_formatter.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
 
 class GoalScreen extends ConsumerStatefulWidget {
   const GoalScreen({super.key});
@@ -40,12 +43,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     });
   }
 
-  static const _races = [
-    _Race('5K', '3.1 miles', 'assets/icons/flame.svg'),
-    _Race('10K', '6.2 miles', 'assets/icons/flame.svg'),
-    _Race('Half Marathon', '13.1 miles', 'assets/icons/trophy.svg'),
-    _Race('Marathon', '26.2 miles', 'assets/icons/medal.svg'),
-    _Race('Other', 'Custom distance', 'assets/icons/mountain.svg'),
+  static List<_Race> _buildRaces(UnitSystem unit) => [
+    _Race('5K', UnitFormatter.raceSubtitle('5K', unit), 'assets/icons/flame.svg'),
+    _Race('10K', UnitFormatter.raceSubtitle('10K', unit), 'assets/icons/flame.svg'),
+    _Race('Half Marathon', UnitFormatter.raceSubtitle('Half Marathon', unit), 'assets/icons/trophy.svg'),
+    _Race('Marathon', UnitFormatter.raceSubtitle('Marathon', unit), 'assets/icons/medal.svg'),
+    _Race('Other', UnitFormatter.raceSubtitle('Other', unit), 'assets/icons/mountain.svg'),
   ];
 
   static const _priorities = [
@@ -116,6 +119,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final unitSystem = ref
+        .watch(userPreferencesProvider)
+        .valueOrNull
+        ?.unitSystem ?? UnitSystem.km;
+    final races = _buildRaces(unitSystem);
+
     final showRaceDateQuestion = _selectedRace != null;
     final showRaceDate = _hasRaceDate == true;
     final showPriority = _selectedRace != null && _hasRaceDate != null;
@@ -207,7 +216,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     // Goal race cards
                     Text('Goal race', style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
-                    ..._races.map(
+                    ...races.map(
                       (race) => Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.md),
                         child: _RaceCard(
