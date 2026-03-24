@@ -8,8 +8,15 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_button.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  String _selectedLanguage = 'EN';
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +70,11 @@ class WelcomeScreen extends StatelessWidget {
                 variant: AppButtonVariant.secondary,
               ),
               const SizedBox(height: AppSpacing.lg),
+              _LanguageSwitcher(
+                selected: _selectedLanguage,
+                onChanged: (lang) => setState(() => _selectedLanguage = lang),
+              ),
+              const SizedBox(height: AppSpacing.lg),
             ],
           ),
         ),
@@ -91,6 +103,101 @@ class _AppLogo extends StatelessWidget {
           BlendMode.srcIn,
         ),
       ),
+    );
+  }
+}
+
+class _LanguageSwitcher extends StatelessWidget {
+  const _LanguageSwitcher({
+    required this.selected,
+    required this.onChanged,
+  });
+
+  final String selected;
+  final ValueChanged<String> onChanged;
+
+  static const _languages = ['EN', 'ES'];
+
+  @override
+  Widget build(BuildContext context) {
+    final next = selected == 'EN' ? 'ES' : 'EN';
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => onChanged(next),
+      child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Container(
+          width: 32,
+          height: 32,
+          decoration: BoxDecoration(
+            color: AppColors.backgroundSecondary,
+            shape: BoxShape.circle,
+            border: Border.all(color: const Color(0xFF2A2A2A), width: 1),
+          ),
+          child: const Icon(
+            Icons.language,
+            size: 18,
+            color: AppColors.textDisabled,
+          ),
+        ),
+        const SizedBox(width: 8),
+        SizedBox(
+          width: 110,
+          child: Container(
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundSecondary,
+              borderRadius: BorderRadius.circular(9999),
+              border: Border.all(color: const Color(0xFF2A2A2A), width: 1),
+            ),
+            padding: const EdgeInsets.all(4),
+            child: Stack(
+              children: [
+                AnimatedAlign(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOutCubic,
+                  alignment: selected == 'EN'
+                      ? Alignment.centerLeft
+                      : Alignment.centerRight,
+                  child: FractionallySizedBox(
+                    widthFactor: 0.5,
+                    heightFactor: 1,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.info,
+                        borderRadius: BorderRadius.circular(9999),
+                      ),
+                    ),
+                  ),
+                ),
+                Row(
+                  children: _languages.map((lang) {
+                    final isActive = lang == selected;
+                    return Expanded(
+                      child: Center(
+                        child: AnimatedDefaultTextStyle(
+                          duration: const Duration(milliseconds: 200),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.3,
+                            color: isActive
+                                ? AppColors.backgroundPrimary
+                                : AppColors.textDisabled,
+                          ),
+                          child: Text(lang),
+                        ),
+                      ),
+                    );
+                  }).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    ),
     );
   }
 }
