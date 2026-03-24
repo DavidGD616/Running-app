@@ -100,7 +100,7 @@ class _LogInScreenState extends State<LogInScreen> {
                 children: [
                   AppButton(
                     label: 'Log In',
-                    onPressed: () => context.go(RouteNames.accountSetup),
+                    onPressed: () => context.push(RouteNames.accountSetup),
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
