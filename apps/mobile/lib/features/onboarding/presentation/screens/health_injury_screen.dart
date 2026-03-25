@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class HealthInjuryScreen extends ConsumerStatefulWidget {
   const HealthInjuryScreen({super.key});
@@ -50,6 +51,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final painOptions = [l10n.painNo, l10n.painMild, l10n.painModerate, l10n.painSevere];
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -112,10 +117,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Health & Injury', style: AppTypography.headlineMedium),
+                    Text(l10n.healthTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Help us understand any limitations so your plan keeps you safe.',
+                      l10n.healthSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -123,9 +128,9 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Current pain or injury? ────────────────────────────
-                    Text('Current pain or injury?', style: AppTypography.labelLarge),
+                    Text(l10n.currentPainLabel, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
-                    ...['No', 'Yes, mild', 'Yes, moderate', 'Yes, severe']
+                    ...painOptions
                         .map((option) => Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                               child: _SelectCard(
@@ -147,12 +152,12 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     if (_painLevel != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Running-related injury in the last 12 months?',
+                        l10n.recentInjuryLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['No', 'Once', 'Multiple'],
+                        options: [l10n.injuryNo, l10n.injuryOnce, l10n.injuryMultiple],
                         selected: _injuryHistory,
                         onSelect: (val) {
                           setState(() {
@@ -169,7 +174,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     if (_injuryHistory != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Health conditions affecting exercise?',
+                        l10n.healthConditionsLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -177,7 +182,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                         children: [
                           Expanded(
                             child: _ToggleButton(
-                              label: 'No',
+                              label: l10n.no,
                               isSelected: _healthConditions == 'No',
                               onTap: () {
                                 setState(() {
@@ -191,7 +196,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _ToggleButton(
-                              label: 'Yes',
+                              label: l10n.yes,
                               isSelected: _healthConditions == 'Yes',
                               onTap: () {
                                 setState(() {
@@ -209,25 +214,25 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     // ── 4. Plan preference ────────────────────────────────────
                     if (_healthConditions != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Plan preference', style: AppTypography.labelLarge),
+                      Text(l10n.planPreferenceLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SelectCard(
-                        label: 'Safest possible',
-                        subtitle: 'Prioritize injury prevention',
+                        label: l10n.planSafest,
+                        subtitle: l10n.planSafestSub,
                         isSelected: _planPreference == 'Safest possible',
                         onTap: () => setState(() => _planPreference = 'Safest possible'),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Balanced',
-                        subtitle: 'Mix of safety and progression',
+                        label: l10n.planBalanced,
+                        subtitle: l10n.planBalancedSub,
                         isSelected: _planPreference == 'Balanced',
                         onTap: () => setState(() => _planPreference = 'Balanced'),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Performance-focused',
-                        subtitle: 'Push for results',
+                        label: l10n.planPerformance,
+                        subtitle: l10n.planPerformanceSub,
                         isSelected: _planPreference == 'Performance-focused',
                         onTap: () => setState(() => _planPreference = 'Performance-focused'),
                       ),
@@ -244,7 +249,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                 AppSpacing.screen, AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setHealth(

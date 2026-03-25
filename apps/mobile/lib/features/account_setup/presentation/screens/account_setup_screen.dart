@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_segmented_control.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
@@ -24,8 +25,6 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
   int _genderIndex = 0; // 0 = Male, 1 = Female, 2 = Other
   DateTime? _dateOfBirth;
 
-  static const _genderOptions = ['Male', 'Female', 'Other'];
-
   @override
   void initState() {
     super.initState();
@@ -37,7 +36,11 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
       if (!mounted) return;
       setState(() {
         _unitIndex = prefs.unitSystem == UnitSystem.miles ? 1 : 0;
-        final genderIdx = _genderOptions.indexOf(prefs.gender ?? '');
+        final genderIdx = [
+          'Male',
+          'Female',
+          'Other',
+        ].indexOf(prefs.gender ?? '');
         _genderIndex = genderIdx == -1 ? 0 : genderIdx;
         _dateOfBirth = prefs.dateOfBirth;
       });
@@ -80,13 +83,20 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
     // Fire-and-forget: Riverpod state updates immediately (optimistic), the
     // disk write happens asynchronously in the background.
     notifier.setUnitSystem(_unitIndex == 0 ? UnitSystem.km : UnitSystem.miles);
-    notifier.setGender(_genderOptions[_genderIndex]);
+    notifier.setGender(
+      [
+        AppLocalizations.of(context)!.genderMale,
+        AppLocalizations.of(context)!.genderFemale,
+        AppLocalizations.of(context)!.genderOther,
+      ][_genderIndex],
+    );
     if (_dateOfBirth != null) notifier.setDateOfBirth(_dateOfBirth!);
     context.go(RouteNames.onboarding);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -96,42 +106,51 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
             _BackButton(),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screen,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppSpacing.lg),
-                    Text('Account Setup', style: AppTypography.headlineMedium),
+                    Text(
+                      l10n.accountSetupTitle,
+                      style: AppTypography.headlineMedium,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Help us personalize your experience.',
+                      l10n.accountSetupSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                     // Preferred Units
-                    Text('Preferred Units', style: AppTypography.labelLarge),
+                    Text(l10n.preferredUnits, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     AppSegmentedControl(
-                      options: const ['km', 'mi'],
+                      options: [l10n.unitKm, l10n.unitMi],
                       selectedIndex: _unitIndex,
                       onChanged: (i) => setState(() => _unitIndex = i),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     // Gender
-                    Text('Gender', style: AppTypography.labelLarge),
+                    Text(l10n.genderLabel, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     AppSegmentedControl(
-                      options: _genderOptions,
+                      options: [
+                        l10n.genderMale,
+                        l10n.genderFemale,
+                        l10n.genderOther,
+                      ],
                       selectedIndex: _genderIndex,
                       onChanged: (i) => setState(() => _genderIndex = i),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     // Date of Birth
                     AppPickerField(
-                      label: 'Date of Birth',
-                      hint: 'DD / MM / YYYY',
+                      label: l10n.dateOfBirthLabel,
+                      hint: l10n.dateOfBirthHint,
                       value: _dateOfBirth != null ? _dateOfBirthDisplay : null,
                       onTap: _pickDateOfBirth,
                       suffixIcon: const Icon(
@@ -154,7 +173,7 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _onContinue,
               ),
             ),

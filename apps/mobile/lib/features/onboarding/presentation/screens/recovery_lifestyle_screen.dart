@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class RecoveryLifestyleScreen extends ConsumerStatefulWidget {
   const RecoveryLifestyleScreen({super.key});
@@ -51,6 +52,25 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final sleepOptions = [
+      l10n.sleepLessThan5h,
+      l10n.sleep5to6h,
+      l10n.sleep6to7h,
+      l10n.sleep7to8h,
+      l10n.sleep8plusH,
+    ];
+
+    final stressOptions = [l10n.stressLow, l10n.stressModerate, l10n.stressHigh];
+
+    final feelingOptions = [
+      l10n.feelingFresh,
+      l10n.feelingSometimesTired,
+      l10n.feelingOftenTired,
+      l10n.feelingAlwaysTired,
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -113,11 +133,11 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Recovery & Lifestyle',
+                    Text(l10n.recoveryTitle,
                         style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Quick questions to understand your recovery capacity.',
+                      l10n.recoverySubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -125,11 +145,11 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Average weekday sleep ──────────────────────────────
-                    Text('Average weekday sleep',
+                    Text(l10n.sleepLabel,
                         style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     _SegmentedControl(
-                      options: const ['< 5h', '5–6h', '6–7h', '7–8h', '+8h'],
+                      options: sleepOptions,
                       selected: _sleep,
                       onSelect: (val) {
                         setState(() {
@@ -145,16 +165,16 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     // ── 2. Work / activity level ──────────────────────────────
                     if (_sleep != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Work / activity level',
+                      Text(l10n.workLevelLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SelectCard(
-                        label: 'Mostly desk',
-                        subtitle: 'Sitting most of the day',
-                        isSelected: _workLevel == 'Mostly desk',
+                        label: l10n.workMostlyDesk,
+                        subtitle: l10n.workMostlyDeskSub,
+                        isSelected: _workLevel == l10n.workMostlyDesk,
                         onTap: () {
                           setState(() {
-                            _workLevel = 'Mostly desk';
+                            _workLevel = l10n.workMostlyDesk;
                             _stressLevel = null;
                             _dayFeeling = null;
                           });
@@ -163,12 +183,12 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Mixed',
-                        subtitle: 'Some sitting, some moving',
-                        isSelected: _workLevel == 'Mixed',
+                        label: l10n.workMixed,
+                        subtitle: l10n.workMixedSub,
+                        isSelected: _workLevel == l10n.workMixed,
                         onTap: () {
                           setState(() {
-                            _workLevel = 'Mixed';
+                            _workLevel = l10n.workMixed;
                             _stressLevel = null;
                             _dayFeeling = null;
                           });
@@ -177,12 +197,12 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Physical job',
-                        subtitle: 'On your feet most of the day',
-                        isSelected: _workLevel == 'Physical job',
+                        label: l10n.workPhysical,
+                        subtitle: l10n.workPhysicalSub,
+                        isSelected: _workLevel == l10n.workPhysical,
                         onTap: () {
                           setState(() {
-                            _workLevel = 'Physical job';
+                            _workLevel = l10n.workPhysical;
                             _stressLevel = null;
                             _dayFeeling = null;
                           });
@@ -194,11 +214,11 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     // ── 3. Average stress level ───────────────────────────────
                     if (_workLevel != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Average stress level',
+                      Text(l10n.stressLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Low', 'Moderate', 'High'],
+                        options: stressOptions,
                         selected: _stressLevel,
                         onSelect: (val) {
                           setState(() {
@@ -213,10 +233,10 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     // ── 4. How do you feel day-to-day? ────────────────────────
                     if (_stressLevel != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('How do you feel day-to-day?',
+                      Text(l10n.dayFeelingLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
-                      ...['Usually fresh', 'Sometimes tired', 'Often tired', 'Always tired']
+                      ...feelingOptions
                           .map((option) => Padding(
                                 padding: const EdgeInsets.only(
                                     bottom: AppSpacing.sm),
@@ -240,7 +260,7 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                 AppSpacing.screen, AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setRecovery(

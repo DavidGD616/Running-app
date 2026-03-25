@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class WatchDeviceScreen extends ConsumerStatefulWidget {
   const WatchDeviceScreen({super.key});
@@ -100,6 +101,37 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final deviceOptions = [
+      (l10n.deviceGarmin, l10n.deviceGarmin),
+      (l10n.deviceAppleWatch, l10n.deviceAppleWatch),
+      (l10n.deviceCOROS, l10n.deviceCOROS),
+      (l10n.devicePolar, l10n.devicePolar),
+      (l10n.deviceSuunto, l10n.deviceSuunto),
+      (l10n.deviceFitbit, l10n.deviceFitbit),
+      (l10n.deviceOther, l10n.deviceOther),
+    ];
+
+    final metricOptions = [
+      ('Heart rate', l10n.metricHeartRate),
+      ('Heart rate zones', l10n.metricHRZones),
+      ('Pace', l10n.metricPace),
+      ('Distance', l10n.metricDistance),
+      ('Cadence', l10n.metricCadence),
+      ('Elevation', l10n.metricElevation),
+      ('Training load', l10n.metricTrainingLoad),
+      ('Recovery time', l10n.metricRecoveryTime),
+      ('None', l10n.metricNone),
+    ];
+
+    final noWatchOptions = [
+      ('Effort only', l10n.noWatchEffortOnly, l10n.noWatchEffortOnlySub),
+      ('Time-based runs', l10n.noWatchTimeBased, l10n.noWatchTimeBasedSub),
+      ('Simple beginner guidance', l10n.noWatchBeginner, l10n.noWatchBeginnerSub),
+      ('Decide for me', l10n.noWatchDecideForMe, l10n.noWatchDecideForMeSub),
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -162,10 +194,10 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Watch & Device', style: AppTypography.headlineMedium),
+                    Text(l10n.watchTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Let us know what data sources are available.',
+                      l10n.watchSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -174,7 +206,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
 
                     // ── Do you use a watch or running device? ─────────────────
                     Text(
-                      'Do you use a watch or running device?',
+                      l10n.usesWatchLabel,
                       style: AppTypography.labelLarge,
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -183,7 +215,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         Expanded(
                           child: _IconToggleButton(
                             icon: 'assets/icons/watch.svg',
-                            label: 'Yes',
+                            label: l10n.yes,
                             isSelected: _hasWatch == 'Yes',
                             onTap: () => _selectHasWatch('Yes'),
                           ),
@@ -192,7 +224,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         Expanded(
                           child: _IconToggleButton(
                             icon: 'assets/icons/smartphone.svg',
-                            label: 'No',
+                            label: l10n.no,
                             isSelected: _hasWatch == 'No',
                             onTap: () => _selectHasWatch('No'),
                           ),
@@ -207,20 +239,17 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     // ── Which device? ─────────────────────────────────────────
                     if (_hasWatch == 'Yes') ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Which device?', style: AppTypography.labelLarge),
+                      Text(l10n.deviceLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          'Garmin', 'Apple Watch', 'COROS',
-                          'Polar', 'Suunto', 'Fitbit', 'Other',
-                        ].map((d) => _Chip(
-                          label: d,
-                          isSelected: _device == d,
+                        children: deviceOptions.map((opt) => _Chip(
+                          label: opt.$2,
+                          isSelected: _device == opt.$1,
                           onTap: () {
                             setState(() {
-                              _device = d;
+                              _device = opt.$1;
                               _dataUsage = null;
                               _watchMetrics = null;
                               _metrics.clear();
@@ -238,16 +267,16 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     if (_hasWatch == 'Yes' && _device != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'How should the app use your device data?',
+                        l10n.deviceDataUsageLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       ...([
-                        'Import runs automatically',
-                        'Use heart rate only',
-                        'Use pace and distance only',
-                        'Use all available data',
-                        "I'm not sure",
+                        l10n.dataUsageImportAuto,
+                        l10n.dataUsageHROnly,
+                        l10n.dataUsagePaceDistance,
+                        l10n.dataUsageAll,
+                        l10n.dataUsageNotSure,
                       ].map((opt) => Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: _SelectCard(
@@ -272,7 +301,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     if (_hasWatch == 'Yes' && _dataUsage != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Use watch-based metrics?',
+                        l10n.useWatchMetricsLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -295,19 +324,15 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     // ── Which metrics? (multi-select, only when Yes) ──────────
                     if (_hasWatch == 'Yes' && _watchMetrics == 'Yes') ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Which metrics?', style: AppTypography.labelLarge),
+                      Text(l10n.metricsLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          'Heart rate', 'Heart rate zones', 'Pace',
-                          'Distance', 'Cadence', 'Elevation',
-                          'Training load', 'Recovery time', 'None',
-                        ].map((m) => _Chip(
-                          label: m,
-                          isSelected: _metrics.contains(m),
-                          onTap: () => _toggleMetric(m),
+                        children: metricOptions.map(((String, String) m) => _Chip(
+                          label: m.$2,
+                          isSelected: _metrics.contains(m.$1),
+                          onTap: () => _toggleMetric(m.$1),
                         )).toList(),
                       ),
                     ],
@@ -318,7 +343,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         (_watchMetrics != 'Yes' || _metrics.isNotEmpty)) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Heart-rate-based training zones?',
+                        l10n.hrZonesLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -340,7 +365,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     if (_hasWatch == 'Yes' && _hrZones != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Pace recommendations from watch?',
+                        l10n.paceFromWatchLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -361,12 +386,12 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     if (_hasWatch == 'Yes' && _paceRecs != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Auto-adjust plan from watch data?',
+                        l10n.autoAdjustLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Auto', 'Ask first', 'No'],
+                        options: [l10n.autoAdjustAuto, l10n.autoAdjustAskFirst, l10n.no],
                         selected: _autoAdjust,
                         onSelect: (val) => setState(() => _autoAdjust = val),
                       ),
@@ -402,7 +427,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: Text(
-                                "No worries! The app works great without a watch. We'll guide your training differently.",
+                                l10n.noWatchInfo,
                                 style: AppTypography.bodyMedium.copyWith(
                                   color: AppColors.textSecondary,
                                 ),
@@ -413,20 +438,15 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'How should we guide your training?',
+                        l10n.noWatchGuidanceLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      ...([
-                        ('Effort only', 'Train by how it feels'),
-                        ('Time-based runs', 'Run for set durations'),
-                        ('Simple beginner guidance', 'Step-by-step instructions'),
-                        ('Decide for me', "We'll pick what works best"),
-                      ].map(((String, String) opt) => Padding(
+                      ...(noWatchOptions.map(((String, String, String) opt) => Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: _SelectCard(
-                          label: opt.$1,
-                          subtitle: opt.$2,
+                          label: opt.$2,
+                          subtitle: opt.$3,
                           isSelected: _noWatchGuidance == opt.$1,
                           onTap: () =>
                               setState(() => _noWatchGuidance = opt.$1),
@@ -445,7 +465,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                 AppSpacing.screen, AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setDevice(

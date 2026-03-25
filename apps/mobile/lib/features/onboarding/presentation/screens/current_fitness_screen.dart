@@ -16,6 +16,7 @@ import '../onboarding_provider.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class CurrentFitnessScreen extends ConsumerStatefulWidget {
   const CurrentFitnessScreen({super.key});
@@ -111,10 +112,42 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final unitSystem = ref
         .watch(userPreferencesProvider)
         .valueOrNull
         ?.unitSystem ?? UnitSystem.km;
+
+    final goalDistOptions = [
+      ('Yes', l10n.yes),
+      ('No', l10n.no),
+      ('Not sure', l10n.notSure),
+    ];
+
+    final benchmarkOptions = unitSystem == UnitSystem.km
+        ? [
+            ('1-km run time', l10n.benchmarkKmRun),
+            ('1-km walk time', l10n.benchmarkKmWalk),
+            ('5K time', l10n.benchmark5K),
+            ('10K time', l10n.benchmark10K),
+            ('Half marathon time', l10n.benchmarkHalfMarathon),
+            ('Skip for now', l10n.benchmarkSkipForNow),
+          ]
+        : [
+            ('1-mile run time', l10n.benchmarkMiRun),
+            ('1-mile walk time', l10n.benchmarkMiWalk),
+            ('5K time', l10n.benchmark5K),
+            ('10K time', l10n.benchmark10K),
+            ('Half marathon time', l10n.benchmarkHalfMarathon),
+            ('Skip for now', l10n.benchmarkSkipForNow),
+          ];
+    final benchmarkLabelFor = Map<String, String>.fromEntries(
+      benchmarkOptions.map((t) => MapEntry(t.$1, t.$2)),
+    );
+
+    final longestRunOptions = unitSystem == UnitSystem.km
+        ? [l10n.longestRunNone, l10n.longestRunLessThan5km, '5–8 km', '9–13 km', '14–16 km', '17–21 km', '21+ km']
+        : [l10n.longestRunNone, l10n.longestRunLessThan3mi, '3–5 mi', '6–8 mi', '9–10 mi', '11–13 mi', '13+ mi'];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -178,10 +211,10 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Current Fitness', style: AppTypography.headlineMedium),
+                    Text(l10n.fitnessTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      "Help us understand where you're starting from.",
+                      l10n.fitnessSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -189,32 +222,32 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── Running experience ───────────────────────────────────
-                    Text('Running experience', style: AppTypography.labelLarge),
+                    Text(l10n.runningExperienceLabel, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     _SelectCard(
-                      label: 'Brand new',
-                      subtitle: 'Never really run before',
+                      label: l10n.experienceBrandNew,
+                      subtitle: l10n.experienceBrandNewSub,
                       isSelected: _experience == 'Brand new',
                       onTap: () => _selectExperience('Brand new'),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _SelectCard(
-                      label: 'Beginner',
-                      subtitle: 'Some running, no consistent plan',
+                      label: l10n.experienceBeginner,
+                      subtitle: l10n.experienceBeginnerSub,
                       isSelected: _experience == 'Beginner',
                       onTap: () => _selectExperience('Beginner'),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _SelectCard(
-                      label: 'Intermediate',
-                      subtitle: 'Run regularly, some race experience',
+                      label: l10n.experienceIntermediate,
+                      subtitle: l10n.experienceIntermediateSub,
                       isSelected: _experience == 'Intermediate',
                       onTap: () => _selectExperience('Intermediate'),
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     _SelectCard(
-                      label: 'Experienced',
-                      subtitle: 'Structured training, multiple races',
+                      label: l10n.experienceExperienced,
+                      subtitle: l10n.experienceExperiencedSub,
                       isSelected: _experience == 'Experienced',
                       onTap: () => _selectExperience('Experienced'),
                     ),
@@ -223,7 +256,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     if (_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Can you currently run continuously for 10 minutes?',
+                        l10n.canRun10MinLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -231,7 +264,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                         children: [
                           Expanded(
                             child: _ToggleButton(
-                              label: 'Yes',
+                              label: l10n.yes,
                               isSelected: _canRun10Min == true,
                               onTap: () {
                                 setState(() {
@@ -246,7 +279,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _ToggleButton(
-                              label: 'No',
+                              label: l10n.no,
                               isSelected: _canRun10Min == false,
                               onTap: () {
                                 setState(() {
@@ -267,12 +300,14 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       Row(
                         children: [
-                          Text('Optional benchmark', style: AppTypography.labelLarge),
+                          Text(l10n.optionalBenchmark, style: AppTypography.labelLarge),
                           const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'optional',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textSecondary,
+                          Expanded(
+                            child: Text(
+                              l10n.optionalBadge,
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -281,16 +316,15 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.benchmarkOptions(unitSystem)
-                        .map((bench) => _Chip(
-                          label: bench,
-                          isSelected: _benchmark == bench,
+                        children: benchmarkOptions.map(((String canonical, String label) t) => _Chip(
+                          label: t.$2,
+                          isSelected: _benchmark == t.$1,
                           onTap: () {
                             setState(() {
-                              _benchmark = bench;
+                              _benchmark = t.$1;
                               _benchmarkTime = null;
                             });
-                            if (bench != 'Skip for now') {
+                            if (t.$1 != 'Skip for now') {
                               _scrollToBottom();
                               _showTimePicker();
                             }
@@ -299,10 +333,10 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       ),
                       if (_benchmark != null && _benchmark != 'Skip for now') ...[
                         const SizedBox(height: AppSpacing.lg),
-                        Text('Your $_benchmark', style: AppTypography.labelLarge),
+                        Text(l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!), style: AppTypography.labelLarge),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
-                          hint: 'Tap to set time',
+                          hint: l10n.tapToSetTime,
                           value: _benchmarkTime != null
                               ? _formatDuration(_benchmarkTime!)
                               : null,
@@ -316,7 +350,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     // 1. Running days per week
                     if (_experience != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Current running days per week', style: AppTypography.labelLarge),
+                      Text(l10n.currentRunDaysLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
                         options: const ['0', '1', '2', '3', '4', '5+'],
@@ -339,7 +373,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     // 2. Average weekly volume
                     if (_runningDays != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Average weekly volume', style: AppTypography.labelLarge),
+                      Text(l10n.weeklyVolumeLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
@@ -366,12 +400,12 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     // 3. Longest recent run
                     if (_weeklyVolume != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Longest recent run', style: AppTypography.labelLarge),
+                      Text(l10n.longestRunLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.longestRunOptions(unitSystem)
+                        children: longestRunOptions
                         .map((run) => _Chip(
                           label: run,
                           isSelected: _longestRun == run,
@@ -393,22 +427,24 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     if (_longestRun != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Can you currently complete your goal distance?',
+                        l10n.canCompleteGoalLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       Row(
-                        children: ['Yes', 'No', 'Not sure'].asMap().entries.map((entry) {
+                        children: goalDistOptions.asMap().entries.map((entry) {
                           final isLast = entry.key == 2;
+                          final key = entry.value.$1;
+                          final label = entry.value.$2;
                           return Expanded(
                             child: Padding(
                               padding: EdgeInsets.only(right: isLast ? 0 : AppSpacing.md),
                               child: _ToggleButton(
-                                label: entry.value,
-                                isSelected: _canCompleteGoalDist == entry.value,
+                                label: label,
+                                isSelected: _canCompleteGoalDist == key,
                                 onTap: () {
                                   setState(() {
-                                    _canCompleteGoalDist = entry.value;
+                                    _canCompleteGoalDist = key;
                                     _raceDistanceBefore = null;
                                     _benchmark = null;
                                     _benchmarkTime = null;
@@ -426,12 +462,17 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     if (_canCompleteGoalDist != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        'Have you done this race distance before?',
+                        l10n.raceDistanceBeforeLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Never', 'Once', '2-3', '4+'],
+                        options: [
+                          l10n.raceDistanceNever,
+                          l10n.raceDistanceOnce,
+                          l10n.raceDistance2to3,
+                          l10n.raceDistance4plus,
+                        ],
                         selected: _raceDistanceBefore,
                         onSelect: (val) {
                           setState(() {
@@ -449,12 +490,14 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       Row(
                         children: [
-                          Text('Optional benchmark', style: AppTypography.labelLarge),
+                          Text(l10n.optionalBenchmark, style: AppTypography.labelLarge),
                           const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'optional',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textSecondary,
+                          Expanded(
+                            child: Text(
+                              l10n.optionalBadge,
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -463,16 +506,15 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.benchmarkOptions(unitSystem)
-                        .map((bench) => _Chip(
-                          label: bench,
-                          isSelected: _benchmark == bench,
+                        children: benchmarkOptions.map(((String canonical, String label) t) => _Chip(
+                          label: t.$2,
+                          isSelected: _benchmark == t.$1,
                           onTap: () {
                             setState(() {
-                              _benchmark = bench;
+                              _benchmark = t.$1;
                               _benchmarkTime = null;
                             });
-                            if (bench != 'Skip for now') {
+                            if (t.$1 != 'Skip for now') {
                               _scrollToBottom();
                               _showTimePicker();
                             }
@@ -482,12 +524,12 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       if (_benchmark != null && _benchmark != 'Skip for now') ...[
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          'Your $_benchmark',
+                          l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!),
                           style: AppTypography.labelLarge,
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
-                          hint: 'Tap to set time',
+                          hint: l10n.tapToSetTime,
                           value: _benchmarkTime != null
                               ? _formatDuration(_benchmarkTime!)
                               : null,
@@ -507,7 +549,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                 AppSpacing.screen, AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setFitness(
@@ -620,6 +662,7 @@ class _ToggleButton extends StatelessWidget {
         child: Center(
           child: Text(
             label,
+            textAlign: TextAlign.center,
             style: AppTypography.textTheme.titleMedium?.copyWith(
               color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
@@ -758,11 +801,12 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Your benchmark time',
+          l10n.yourBenchmarkTime,
           style: AppTypography.titleMedium,
         ),
         const SizedBox(height: AppSpacing.lg),
@@ -773,19 +817,19 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
               _WheelColumn(
                 count: 24,
                 initial: _hours,
-                label: 'h',
+                label: l10n.timePickerHours,
                 onChanged: (v) => setState(() => _hours = v),
               ),
               _WheelColumn(
                 count: 60,
                 initial: _minutes,
-                label: 'min',
+                label: l10n.timePickerMinutes,
                 onChanged: (v) => setState(() => _minutes = v),
               ),
               _WheelColumn(
                 count: 60,
                 initial: _seconds,
-                label: 'sec',
+                label: l10n.timePickerSeconds,
                 onChanged: (v) => setState(() => _seconds = v),
               ),
             ],
@@ -793,7 +837,7 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
         ),
         const SizedBox(height: AppSpacing.lg),
         AppButton(
-          label: 'Confirm',
+          label: l10n.confirm,
           onPressed: () => widget.onConfirm(
             Duration(hours: _hours, minutes: _minutes, seconds: _seconds),
           ),

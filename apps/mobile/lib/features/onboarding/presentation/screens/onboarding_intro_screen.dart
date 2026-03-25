@@ -8,12 +8,14 @@ import '../../../../core/widgets/app_button.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class OnboardingIntroScreen extends StatelessWidget {
   const OnboardingIntroScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -55,7 +57,7 @@ class OnboardingIntroScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.xxxl),
                       // Title
                       Text(
-                        "Let's build your plan",
+                        l10n.onboardingIntroTitle,
                         style: AppTypography.textTheme.headlineMedium?.copyWith(
                           color: AppColors.textPrimary,
                           fontWeight: FontWeight.bold,
@@ -66,7 +68,7 @@ class OnboardingIntroScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.md),
                       // Subtitle
                       Text(
-                        'Answer a few questions so we can create a training plan personalized to you. It takes about 3 minutes.',
+                        l10n.onboardingIntroSubtitle,
                         style: AppTypography.textTheme.bodyLarge?.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -76,17 +78,17 @@ class OnboardingIntroScreen extends StatelessWidget {
                       // Feature items
                       _FeatureItem(
                         icon: 'assets/icons/circle_check.svg',
-                        label: 'Your race goal and timeline',
+                        label: l10n.onboardingIntroFeature1,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       _FeatureItem(
                         icon: 'assets/icons/sparkles.svg',
-                        label: 'Fitness level and experience',
+                        label: l10n.onboardingIntroFeature2,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       _FeatureItem(
                         icon: 'assets/icons/clock.svg',
-                        label: 'Schedule and preferences',
+                        label: l10n.onboardingIntroFeature3,
                       ),
                     ],
                   ),
@@ -94,12 +96,12 @@ class OnboardingIntroScreen extends StatelessWidget {
               ),
               // Bottom CTA
               AppButton(
-                label: "Let's Go",
+                label: l10n.letsGo,
                 onPressed: () => context.push(RouteNames.goal),
               ),
               const SizedBox(height: AppSpacing.base),
               Text(
-                '9 short sections · You can edit answers later',
+                l10n.onboardingIntroFooter,
                 style: AppTypography.textTheme.labelSmall?.copyWith(
                   color: AppColors.textDisabled,
                   letterSpacing: 0.4,
@@ -144,10 +146,12 @@ class _FeatureItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.base),
-        Text(
-          label,
-          style: AppTypography.textTheme.bodyLarge?.copyWith(
-            color: AppColors.textPrimary,
+        Expanded(
+          child: Text(
+            label,
+            style: AppTypography.textTheme.bodyLarge?.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ],

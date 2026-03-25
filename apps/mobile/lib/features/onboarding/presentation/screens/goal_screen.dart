@@ -16,6 +16,7 @@ import '../onboarding_provider.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class GoalScreen extends ConsumerStatefulWidget {
   const GoalScreen({super.key});
@@ -43,12 +44,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     });
   }
 
-  static List<_Race> _buildRaces(UnitSystem unit) => [
-    _Race('5K', UnitFormatter.raceSubtitle('5K', unit), 'assets/icons/flame.svg'),
-    _Race('10K', UnitFormatter.raceSubtitle('10K', unit), 'assets/icons/flame.svg'),
-    _Race('Half Marathon', UnitFormatter.raceSubtitle('Half Marathon', unit), 'assets/icons/trophy.svg'),
-    _Race('Marathon', UnitFormatter.raceSubtitle('Marathon', unit), 'assets/icons/medal.svg'),
-    _Race('Other', UnitFormatter.raceSubtitle('Other', unit), 'assets/icons/mountain.svg'),
+  List<_Race> _buildRaces(UnitSystem unit, AppLocalizations l10n) => [
+    _Race('5K', l10n.race5K, UnitFormatter.raceSubtitle('5K', unit), 'assets/icons/flame.svg'),
+    _Race('10K', l10n.race10K, UnitFormatter.raceSubtitle('10K', unit), 'assets/icons/flame.svg'),
+    _Race('Half Marathon', l10n.raceHalfMarathon, UnitFormatter.raceSubtitle('Half Marathon', unit), 'assets/icons/trophy.svg'),
+    _Race('Marathon', l10n.raceMarathon, UnitFormatter.raceSubtitle('Marathon', unit), 'assets/icons/medal.svg'),
+    _Race('Other', l10n.raceOther, UnitFormatter.raceSubtitle('Other', unit), 'assets/icons/mountain.svg'),
   ];
 
   static const _priorities = [
@@ -58,6 +59,17 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     'Build consistency',
     'General fitness',
   ];
+
+  String _priorityLabel(String key, AppLocalizations l10n) {
+    switch (key) {
+      case 'Just finish': return l10n.priorityJustFinish;
+      case 'Finish feeling strong': return l10n.priorityFinishStrong;
+      case 'Improve my time': return l10n.priorityImproveTime;
+      case 'Build consistency': return l10n.priorityConsistency;
+      case 'General fitness': return l10n.priorityGeneralFitness;
+      default: return key;
+    }
+  }
 
   String get _raceDateDisplay {
     if (_raceDate == null) return '';
@@ -119,11 +131,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final unitSystem = ref
         .watch(userPreferencesProvider)
         .valueOrNull
         ?.unitSystem ?? UnitSystem.km;
-    final races = _buildRaces(unitSystem);
+    final races = _buildRaces(unitSystem, l10n);
 
     final showRaceDateQuestion = _selectedRace != null;
     final showRaceDate = _hasRaceDate == true;
@@ -203,10 +216,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text("What's your goal?", style: AppTypography.headlineMedium),
+                    Text(l10n.goalTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      "Tell us what you're training for and what outcome you want.",
+                      l10n.goalSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -214,7 +227,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // Goal race cards
-                    Text('Goal race', style: AppTypography.labelLarge),
+                    Text(l10n.goalRaceLabel, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     ...races.map(
                       (race) => Padding(
@@ -238,13 +251,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     // Do you have a race date? (reveals after selecting goal)
                     if (showRaceDateQuestion) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      Text('Do you have a race date?', style: AppTypography.labelLarge),
+                      Text(l10n.raceHasDateLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
                           Expanded(
                             child: _ToggleButton(
-                              label: 'Yes',
+                              label: l10n.yes,
                               isSelected: _hasRaceDate == true,
                               onTap: () {
                                 setState(() {
@@ -258,7 +271,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _ToggleButton(
-                              label: 'No',
+                              label: l10n.no,
                               isSelected: _hasRaceDate == false,
                               onTap: () {
                                 setState(() {
@@ -278,8 +291,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     if (showRaceDate) ...[
                       const SizedBox(height: AppSpacing.xl),
                       AppPickerField(
-                        label: 'Race date',
-                        hint: 'DD / MM / YYYY',
+                        label: l10n.raceDateLabel,
+                        hint: l10n.tapToSetDate,
                         value: _raceDate != null ? _raceDateDisplay : null,
                         onTap: _pickRaceDate,
                         suffixIcon: const Icon(
@@ -293,13 +306,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     // What's your priority? (reveals after answering race date)
                     if (showPriority) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text("What's your priority?", style: AppTypography.labelLarge),
+                      Text(l10n.priorityLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       ..._priorities.map(
                         (p) => Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.md),
                           child: _PriorityCard(
-                            label: p,
+                            label: _priorityLabel(p, l10n),
                             isSelected: _priority == p,
                             onTap: () {
                             setState(() => _priority = p);
@@ -311,30 +324,30 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
                       // Time pickers (only if Improve my time)
                       if (showTimeFields) ...[
-                        Text('Current race time', style: AppTypography.labelLarge),
+                        Text(l10n.currentRaceTime, style: AppTypography.labelLarge),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
-                          hint: 'Tap to set time',
+                          hint: l10n.tapToSetTime,
                           value: _currentTime != null
                               ? _formatDuration(_currentTime!)
                               : null,
                           onTap: () => _showTimePicker(
-                            title: 'Current race time',
+                            title: l10n.currentRaceTime,
                             initial: _currentTime,
                             onConfirm: (d) =>
                                 setState(() => _currentTime = d),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        Text('Target race time', style: AppTypography.labelLarge),
+                        Text(l10n.targetRaceTime, style: AppTypography.labelLarge),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
-                          hint: 'Tap to set time',
+                          hint: l10n.tapToSetTime,
                           value: _targetTime != null
                               ? _formatDuration(_targetTime!)
                               : null,
                           onTap: () => _showTimePicker(
-                            title: 'Target race time',
+                            title: l10n.targetRaceTime,
                             initial: _targetTime,
                             onConfirm: (d) =>
                                 setState(() => _targetTime = d),
@@ -357,7 +370,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setGoal(
@@ -383,8 +396,9 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 // ─── Data model ──────────────────────────────────────────────────────────────
 
 class _Race {
-  const _Race(this.name, this.subtitle, this.icon);
-  final String name;
+  const _Race(this.name, this.displayName, this.subtitle, this.icon);
+  final String name;        // canonical key — used for comparisons
+  final String displayName; // localized — shown in UI
   final String subtitle;
   final String icon;
 }
@@ -439,24 +453,26 @@ class _RaceCard extends StatelessWidget {
               ),
             ),
             const SizedBox(width: AppSpacing.base),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  race.name,
-                  style: AppTypography.textTheme.titleMedium?.copyWith(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w600,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    race.displayName,
+                    style: AppTypography.textTheme.titleMedium?.copyWith(
+                      color: AppColors.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
-                Text(
-                  race.subtitle,
-                  style: AppTypography.textTheme.bodyMedium?.copyWith(
-                    color: AppColors.textSecondary,
+                  Text(
+                    race.subtitle,
+                    style: AppTypography.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -581,6 +597,7 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -599,19 +616,19 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
               _WheelColumn(
                 count: 24,
                 initial: _hours,
-                label: 'h',
+                label: l10n.timePickerHours,
                 onChanged: (v) => setState(() => _hours = v),
               ),
               _WheelColumn(
                 count: 60,
                 initial: _minutes,
-                label: 'min',
+                label: l10n.timePickerMinutes,
                 onChanged: (v) => setState(() => _minutes = v),
               ),
               _WheelColumn(
                 count: 60,
                 initial: _seconds,
-                label: 'sec',
+                label: l10n.timePickerSeconds,
                 onChanged: (v) => setState(() => _seconds = v),
               ),
             ],
@@ -619,7 +636,7 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
         ),
         const SizedBox(height: AppSpacing.lg),
         AppButton(
-          label: 'Confirm',
+          label: l10n.confirm,
           onPressed: () => widget.onConfirm(
             Duration(hours: _hours, minutes: _minutes, seconds: _seconds),
           ),
