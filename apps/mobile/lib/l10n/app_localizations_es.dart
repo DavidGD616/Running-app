@@ -249,7 +249,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get confirm => 'Confirmar';
 
   @override
-  String get fitnessTitle => 'Forma Física Actual';
+  String get fitnessTitle => 'Estado Físico Actual';
 
   @override
   String get fitnessSubtitle => 'Ayúdanos a entender desde dónde empiezas.';
@@ -304,6 +304,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get longestRunNone => 'No he hecho ninguna';
+
+  @override
+  String get longestRunLessThan5km => 'Menos de 5 km';
+
+  @override
+  String get longestRunLessThan3mi => 'Menos de 3 mi';
 
   @override
   String get canCompleteGoalLabel =>

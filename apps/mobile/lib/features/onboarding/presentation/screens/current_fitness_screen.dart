@@ -124,6 +124,10 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
       ('Not sure', l10n.notSure),
     ];
 
+    final longestRunOptions = unitSystem == UnitSystem.km
+        ? [l10n.longestRunNone, l10n.longestRunLessThan5km, '5–8 km', '9–13 km', '14–16 km', '17–21 km', '21+ km']
+        : [l10n.longestRunNone, l10n.longestRunLessThan3mi, '3–5 mi', '6–8 mi', '9–10 mi', '11–13 mi', '13+ mi'];
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -381,7 +385,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.longestRunOptions(unitSystem)
+                        children: longestRunOptions
                         .map((run) => _Chip(
                           label: run,
                           isSelected: _longestRun == run,

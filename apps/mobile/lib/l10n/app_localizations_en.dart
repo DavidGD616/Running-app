@@ -305,6 +305,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get longestRunNone => 'I haven\'t done one';
 
   @override
+  String get longestRunLessThan5km => 'Less than 5 km';
+
+  @override
+  String get longestRunLessThan3mi => 'Less than 3 mi';
+
+  @override
   String get canCompleteGoalLabel =>
       'Can you currently complete your goal distance?';
 

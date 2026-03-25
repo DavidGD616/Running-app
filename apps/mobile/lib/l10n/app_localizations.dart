@@ -674,6 +674,18 @@ abstract class AppLocalizations {
   /// **'I haven\'t done one'**
   String get longestRunNone;
 
+  /// Longest run chip option for km users
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 5 km'**
+  String get longestRunLessThan5km;
+
+  /// Longest run chip option for mi users
+  ///
+  /// In en, this message translates to:
+  /// **'Less than 3 mi'**
+  String get longestRunLessThan3mi;
+
   /// Section label on current fitness screen
   ///
   /// In en, this message translates to:

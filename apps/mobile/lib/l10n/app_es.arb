@@ -90,7 +90,7 @@
   "timePickerSeconds": "seg",
   "confirm": "Confirmar",
 
-  "fitnessTitle": "Forma Física Actual",
+  "fitnessTitle": "Estado Físico Actual",
   "fitnessSubtitle": "Ayúdanos a entender desde dónde empiezas.",
   "runningExperienceLabel": "Experiencia corriendo",
   "experienceBrandNew": "Principiante total",
@@ -108,6 +108,10 @@
   "weeklyVolumeLabel": "Volumen semanal promedio",
   "longestRunLabel": "Carrera más larga reciente",
   "longestRunNone": "No he hecho ninguna",
+
+  "longestRunLessThan5km": "Menos de 5 km",
+  "longestRunLessThan3mi": "Menos de 3 mi",
+
   "canCompleteGoalLabel": "¿Puedes completar tu distancia objetivo actualmente?",
   "raceDistanceBeforeLabel": "¿Has corrido esta distancia antes?",
   "raceDistanceNever": "Nunca",
