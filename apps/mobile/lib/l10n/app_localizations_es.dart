@@ -312,6 +312,35 @@ class AppLocalizationsEs extends AppLocalizations {
   String get longestRunLessThan3mi => 'Menos de 3 mi';
 
   @override
+  String get benchmarkKmRun => 'Tiempo corriendo 1 km';
+
+  @override
+  String get benchmarkKmWalk => 'Tiempo caminando 1 km';
+
+  @override
+  String get benchmarkMiRun => 'Tiempo corriendo 1 milla';
+
+  @override
+  String get benchmarkMiWalk => 'Tiempo caminando 1 milla';
+
+  @override
+  String get benchmark5K => 'Tiempo 5K';
+
+  @override
+  String get benchmark10K => 'Tiempo 10K';
+
+  @override
+  String get benchmarkHalfMarathon => 'Tiempo media maratón';
+
+  @override
+  String get benchmarkSkipForNow => 'Omitir por ahora';
+
+  @override
+  String benchmarkSelectedLabel(String benchmark) {
+    return 'Tu $benchmark';
+  }
+
+  @override
   String get canCompleteGoalLabel =>
       '¿Puedes completar tu distancia objetivo actualmente?';
 

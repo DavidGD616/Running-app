@@ -686,6 +686,60 @@ abstract class AppLocalizations {
   /// **'Less than 3 mi'**
   String get longestRunLessThan3mi;
 
+  /// Benchmark chip: 1-km run
+  ///
+  /// In en, this message translates to:
+  /// **'1-km run time'**
+  String get benchmarkKmRun;
+
+  /// Benchmark chip: 1-km walk
+  ///
+  /// In en, this message translates to:
+  /// **'1-km walk time'**
+  String get benchmarkKmWalk;
+
+  /// Benchmark chip: 1-mile run
+  ///
+  /// In en, this message translates to:
+  /// **'1-mile run time'**
+  String get benchmarkMiRun;
+
+  /// Benchmark chip: 1-mile walk
+  ///
+  /// In en, this message translates to:
+  /// **'1-mile walk time'**
+  String get benchmarkMiWalk;
+
+  /// Benchmark chip: 5K
+  ///
+  /// In en, this message translates to:
+  /// **'5K time'**
+  String get benchmark5K;
+
+  /// Benchmark chip: 10K
+  ///
+  /// In en, this message translates to:
+  /// **'10K time'**
+  String get benchmark10K;
+
+  /// Benchmark chip: half marathon
+  ///
+  /// In en, this message translates to:
+  /// **'Half marathon time'**
+  String get benchmarkHalfMarathon;
+
+  /// Benchmark chip: skip option
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
+  String get benchmarkSkipForNow;
+
+  /// Label shown above benchmark time picker
+  ///
+  /// In en, this message translates to:
+  /// **'Your {benchmark}'**
+  String benchmarkSelectedLabel(String benchmark);
+
   /// Section label on current fitness screen
   ///
   /// In en, this message translates to:

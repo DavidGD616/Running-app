@@ -124,6 +124,27 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
       ('Not sure', l10n.notSure),
     ];
 
+    final benchmarkOptions = unitSystem == UnitSystem.km
+        ? [
+            ('1-km run time', l10n.benchmarkKmRun),
+            ('1-km walk time', l10n.benchmarkKmWalk),
+            ('5K time', l10n.benchmark5K),
+            ('10K time', l10n.benchmark10K),
+            ('Half marathon time', l10n.benchmarkHalfMarathon),
+            ('Skip for now', l10n.benchmarkSkipForNow),
+          ]
+        : [
+            ('1-mile run time', l10n.benchmarkMiRun),
+            ('1-mile walk time', l10n.benchmarkMiWalk),
+            ('5K time', l10n.benchmark5K),
+            ('10K time', l10n.benchmark10K),
+            ('Half marathon time', l10n.benchmarkHalfMarathon),
+            ('Skip for now', l10n.benchmarkSkipForNow),
+          ];
+    final benchmarkLabelFor = Map<String, String>.fromEntries(
+      benchmarkOptions.map((t) => MapEntry(t.$1, t.$2)),
+    );
+
     final longestRunOptions = unitSystem == UnitSystem.km
         ? [l10n.longestRunNone, l10n.longestRunLessThan5km, '5–8 km', '9–13 km', '14–16 km', '17–21 km', '21+ km']
         : [l10n.longestRunNone, l10n.longestRunLessThan3mi, '3–5 mi', '6–8 mi', '9–10 mi', '11–13 mi', '13+ mi'];
@@ -295,16 +316,15 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.benchmarkOptions(unitSystem)
-                        .map((bench) => _Chip(
-                          label: bench,
-                          isSelected: _benchmark == bench,
+                        children: benchmarkOptions.map(((String canonical, String label) t) => _Chip(
+                          label: t.$2,
+                          isSelected: _benchmark == t.$1,
                           onTap: () {
                             setState(() {
-                              _benchmark = bench;
+                              _benchmark = t.$1;
                               _benchmarkTime = null;
                             });
-                            if (bench != 'Skip for now') {
+                            if (t.$1 != 'Skip for now') {
                               _scrollToBottom();
                               _showTimePicker();
                             }
@@ -313,7 +333,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       ),
                       if (_benchmark != null && _benchmark != 'Skip for now') ...[
                         const SizedBox(height: AppSpacing.lg),
-                        Text('Your $_benchmark', style: AppTypography.labelLarge),
+                        Text(l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!), style: AppTypography.labelLarge),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
                           hint: l10n.tapToSetTime,
@@ -486,16 +506,15 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.benchmarkOptions(unitSystem)
-                        .map((bench) => _Chip(
-                          label: bench,
-                          isSelected: _benchmark == bench,
+                        children: benchmarkOptions.map(((String canonical, String label) t) => _Chip(
+                          label: t.$2,
+                          isSelected: _benchmark == t.$1,
                           onTap: () {
                             setState(() {
-                              _benchmark = bench;
+                              _benchmark = t.$1;
                               _benchmarkTime = null;
                             });
-                            if (bench != 'Skip for now') {
+                            if (t.$1 != 'Skip for now') {
                               _scrollToBottom();
                               _showTimePicker();
                             }
@@ -505,7 +524,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       if (_benchmark != null && _benchmark != 'Skip for now') ...[
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          'Your $_benchmark',
+                          l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!),
                           style: AppTypography.labelLarge,
                         ),
                         const SizedBox(height: AppSpacing.sm),

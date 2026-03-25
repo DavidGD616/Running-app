@@ -112,6 +112,16 @@
   "longestRunLessThan5km": "Menos de 5 km",
   "longestRunLessThan3mi": "Menos de 3 mi",
 
+  "benchmarkKmRun": "Tiempo corriendo 1 km",
+  "benchmarkKmWalk": "Tiempo caminando 1 km",
+  "benchmarkMiRun": "Tiempo corriendo 1 milla",
+  "benchmarkMiWalk": "Tiempo caminando 1 milla",
+  "benchmark5K": "Tiempo 5K",
+  "benchmark10K": "Tiempo 10K",
+  "benchmarkHalfMarathon": "Tiempo media maratón",
+  "benchmarkSkipForNow": "Omitir por ahora",
+  "benchmarkSelectedLabel": "Tu {benchmark}",
+
   "canCompleteGoalLabel": "¿Puedes completar tu distancia objetivo actualmente?",
   "raceDistanceBeforeLabel": "¿Has corrido esta distancia antes?",
   "raceDistanceNever": "Nunca",

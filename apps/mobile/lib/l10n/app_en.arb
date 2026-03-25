@@ -295,6 +295,30 @@
   "longestRunLessThan3mi": "Less than 3 mi",
   "@longestRunLessThan3mi": { "description": "Longest run chip option for mi users" },
 
+  "benchmarkKmRun": "1-km run time",
+  "@benchmarkKmRun": { "description": "Benchmark chip: 1-km run" },
+  "benchmarkKmWalk": "1-km walk time",
+  "@benchmarkKmWalk": { "description": "Benchmark chip: 1-km walk" },
+  "benchmarkMiRun": "1-mile run time",
+  "@benchmarkMiRun": { "description": "Benchmark chip: 1-mile run" },
+  "benchmarkMiWalk": "1-mile walk time",
+  "@benchmarkMiWalk": { "description": "Benchmark chip: 1-mile walk" },
+  "benchmark5K": "5K time",
+  "@benchmark5K": { "description": "Benchmark chip: 5K" },
+  "benchmark10K": "10K time",
+  "@benchmark10K": { "description": "Benchmark chip: 10K" },
+  "benchmarkHalfMarathon": "Half marathon time",
+  "@benchmarkHalfMarathon": { "description": "Benchmark chip: half marathon" },
+  "benchmarkSkipForNow": "Skip for now",
+  "@benchmarkSkipForNow": { "description": "Benchmark chip: skip option" },
+  "benchmarkSelectedLabel": "Your {benchmark}",
+  "@benchmarkSelectedLabel": {
+    "description": "Label shown above benchmark time picker",
+    "placeholders": {
+      "benchmark": { "type": "String" }
+    }
+  },
+
   "canCompleteGoalLabel": "Can you currently complete your goal distance?",
   "@canCompleteGoalLabel": { "description": "Section label on current fitness screen" },
 
