@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -25,6 +26,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: Center(
@@ -50,11 +52,11 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
             const SizedBox(height: AppSpacing.lg),
             // App name
-            Text('RunFlow', style: AppTypography.headlineLarge),
+            Text(l10n.appTitle, style: AppTypography.headlineLarge),
             const SizedBox(height: AppSpacing.sm),
             // Tagline
             Text(
-              'Train smarter. Run stronger.',
+              l10n.splashTagline,
               style: AppTypography.bodyMedium.copyWith(
                 color: AppColors.textSecondary,
               ),

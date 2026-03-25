@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_button.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -30,6 +31,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -41,17 +43,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
             // Scrollable content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screen,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppSpacing.lg),
                     // Headline
-                    Text('Create your account', style: AppTypography.headlineMedium),
+                    Text(l10n.signUpTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     // Subtitle
                     Text(
-                      'Start building your personalized training plan.',
+                      l10n.signUpSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -59,24 +63,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     const SizedBox(height: AppSpacing.xxxl),
                     // Form fields
                     AppTextField(
-                      label: 'Email',
-                      hint: 'you@example.com',
+                      label: l10n.emailLabel,
+                      hint: l10n.emailHint,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     AppTextField(
-                      label: 'Password',
-                      hint: 'At least 6 characters',
+                      label: l10n.passwordLabel,
+                      hint: l10n.passwordHintSignUp,
                       controller: _passwordController,
                       obscureText: true,
                       textInputAction: TextInputAction.next,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     AppTextField(
-                      label: 'Confirm Password',
-                      hint: 'Re-enter your password',
+                      label: l10n.confirmPasswordLabel,
+                      hint: l10n.confirmPasswordHint,
                       controller: _confirmPasswordController,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
@@ -96,13 +100,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               child: Column(
                 children: [
-                  AppButton(
-                    label: 'Create Account',
-                    onPressed: () {},
-                  ),
+                  AppButton(label: l10n.createAccount, onPressed: () {}),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
-                    label: 'Already have an account? Log in',
+                    label: l10n.alreadyHaveAccount,
                     onPressed: () => context.go(RouteNames.logIn),
                     variant: AppButtonVariant.text,
                   ),
