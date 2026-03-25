@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class TrainingPreferencesScreen extends ConsumerStatefulWidget {
   const TrainingPreferencesScreen({super.key});
@@ -56,6 +57,13 @@ class _TrainingPreferencesScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final surfaceOptions = [
+      l10n.surfaceRoad, l10n.surfaceTreadmill, l10n.surfaceTrack,
+      l10n.surfaceTrail, l10n.surfaceMixed,
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -118,11 +126,11 @@ class _TrainingPreferencesScreenState
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Training Preferences',
+                    Text(l10n.trainingPrefsTitle,
                         style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Customize how your plan is structured.',
+                      l10n.trainingPrefsSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -130,13 +138,13 @@ class _TrainingPreferencesScreenState
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Preferred guidance mode ────────────────────────────
-                    Text('Preferred guidance mode',
+                    Text(l10n.guidanceModeLabel,
                         style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     _IconCard(
                       icon: 'assets/icons/effort.svg',
-                      label: 'Effort',
-                      subtitle: 'Train by perceived effort',
+                      label: l10n.guidanceEffort,
+                      subtitle: l10n.guidanceEffortSub,
                       isSelected: _guidanceMode == 'Effort',
                       onTap: () {
                         setState(() {
@@ -153,8 +161,8 @@ class _TrainingPreferencesScreenState
                     const SizedBox(height: AppSpacing.sm),
                     _IconCard(
                       icon: 'assets/icons/pace.svg',
-                      label: 'Pace',
-                      subtitle: 'Train by pace targets',
+                      label: l10n.guidancePace,
+                      subtitle: l10n.guidancePaceSub,
                       isSelected: _guidanceMode == 'Pace',
                       onTap: () {
                         setState(() {
@@ -171,8 +179,8 @@ class _TrainingPreferencesScreenState
                     const SizedBox(height: AppSpacing.sm),
                     _IconCard(
                       icon: 'assets/icons/heart_rate.svg',
-                      label: 'Heart rate',
-                      subtitle: 'Train using HR zones',
+                      label: l10n.guidanceHeartRate,
+                      subtitle: l10n.guidanceHeartRateSub,
                       isSelected: _guidanceMode == 'Heart rate',
                       onTap: () {
                         setState(() {
@@ -189,8 +197,8 @@ class _TrainingPreferencesScreenState
                     const SizedBox(height: AppSpacing.sm),
                     _IconCard(
                       icon: 'assets/icons/decide_for_me.svg',
-                      label: 'Decide for me',
-                      subtitle: "We'll pick the best approach",
+                      label: l10n.guidanceDecideForMe,
+                      subtitle: l10n.guidanceDecideForMeSub,
                       isSelected: _guidanceMode == 'Decide for me',
                       onTap: () {
                         setState(() {
@@ -208,11 +216,11 @@ class _TrainingPreferencesScreenState
                     // ── 2. Speed workouts included? ───────────────────────────
                     if (_guidanceMode != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Speed workouts included?',
+                      Text(l10n.speedWorkoutsLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Yes', 'No', 'Only if\nneeded'],
+                        options: [l10n.yes, l10n.no, l10n.onlyIfNeeded],
                         selected: _speedWorkouts,
                         itemHeight: 64,
                         onSelect: (val) {
@@ -231,15 +239,15 @@ class _TrainingPreferencesScreenState
                     // ── 3. Strength training? ─────────────────────────────────
                     if (_speedWorkouts != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Strength training?',
+                      Text(l10n.strengthTrainingLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const [
-                          'No',
-                          '1 day/\nweek',
-                          '2 days/\nweek',
-                          '3 days/\nweek',
+                        options: [
+                          l10n.no,
+                          l10n.strength1DayWeek,
+                          l10n.strength2DaysWeek,
+                          l10n.strength3DaysWeek,
                         ],
                         selected: _strengthTraining,
                         itemHeight: 64,
@@ -258,13 +266,13 @@ class _TrainingPreferencesScreenState
                     // ── 4. Where do you run most? ─────────────────────────────
                     if (_strengthTraining != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Where do you run most?',
+                      Text(l10n.runSurfaceLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: ['Road', 'Treadmill', 'Track', 'Trail', 'Mixed']
+                        children: surfaceOptions
                             .map((s) => _Chip(
                                   label: s,
                                   isSelected: _runSurface == s,
@@ -284,14 +292,14 @@ class _TrainingPreferencesScreenState
                     // ── 5. Terrain ────────────────────────────────────────────
                     if (_runSurface != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Terrain', style: AppTypography.labelLarge),
+                      Text(l10n.terrainLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const [
-                          'Flat',
-                          'Some\nhills',
-                          'Hilly',
-                          'Mixed',
+                        options: [
+                          l10n.terrainFlat,
+                          l10n.terrainSomeHills,
+                          l10n.terrainHilly,
+                          l10n.terrainMixed,
                         ],
                         selected: _terrain,
                         itemHeight: 64,
@@ -308,11 +316,11 @@ class _TrainingPreferencesScreenState
                     // ── 6. Walk/run intervals? ────────────────────────────────
                     if (_terrain != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Walk/run intervals?',
+                      Text(l10n.walkRunLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Yes', 'No', 'Only if\nneeded'],
+                        options: [l10n.yes, l10n.no, l10n.onlyIfNeeded],
                         selected: _walkRunIntervals,
                         itemHeight: 64,
                         onSelect: (val) => setState(() => _walkRunIntervals = val),
@@ -330,7 +338,7 @@ class _TrainingPreferencesScreenState
                 AppSpacing.screen, AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setTraining(

@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class PlanGenerationScreen extends ConsumerStatefulWidget {
   const PlanGenerationScreen({super.key});
@@ -18,19 +19,20 @@ class PlanGenerationScreen extends ConsumerStatefulWidget {
 
 class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     with SingleTickerProviderStateMixin {
-  static const _messages = [
-    'Analyzing your fitness profile...',
-    'Calculating optimal training zones...',
-    'Building your weekly structure...',
-    'Personalizing session targets...',
-    'Your plan is almost ready!',
-  ];
 
   int _messageIndex = 0;
   double _progress = 0.0;
   Timer? _timer;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
+
+  List<String> _getMessages(AppLocalizations l10n) => [
+    l10n.planGenerationMsg1,
+    l10n.planGenerationMsg2,
+    l10n.planGenerationMsg3,
+    l10n.planGenerationMsg4,
+    l10n.planGenerationMsg5,
+  ];
 
   @override
   void initState() {
@@ -48,11 +50,13 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     // Step through messages every 2 seconds
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
+      final messages = _getMessages(l10n);
       final nextIndex = _messageIndex + 1;
-      if (nextIndex < _messages.length) {
+      if (nextIndex < messages.length) {
         setState(() {
           _messageIndex = nextIndex;
-          _progress = nextIndex / (_messages.length - 1);
+          _progress = nextIndex / (messages.length - 1);
         });
       } else {
         timer.cancel();
@@ -79,6 +83,9 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = _getMessages(l10n);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: Center(
@@ -131,7 +138,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
 
               // Title
               Text(
-                'Building Your Plan',
+                l10n.planGenerationTitle,
                 style: AppTypography.headlineMedium,
                 textAlign: TextAlign.center,
               ),
@@ -141,7 +148,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
               AnimatedSwitcher(
                 duration: const Duration(milliseconds: 400),
                 child: Text(
-                  _messages[_messageIndex],
+                  messages[_messageIndex],
                   key: ValueKey(_messageIndex),
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textSecondary,

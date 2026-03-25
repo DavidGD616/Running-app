@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_slider.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class MotivationScreen extends ConsumerStatefulWidget {
   const MotivationScreen({super.key});
@@ -80,6 +81,29 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    final motivationOptions = [
+      l10n.motivationPersonalChallenge,
+      l10n.motivationHealth,
+      l10n.motivationWeightLoss,
+      l10n.motivationImprovePerformance,
+      l10n.motivationRaceFriends,
+      l10n.motivationDiscipline,
+      l10n.motivationOther,
+    ];
+
+    final barrierOptions = [
+      l10n.barrierTime,
+      l10n.barrierMotivation,
+      l10n.barrierFatigue,
+      l10n.barrierStress,
+      l10n.barrierPain,
+      l10n.barrierBoredom,
+      l10n.barrierDontKnowHow,
+      l10n.barrierOther,
+    ];
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -142,11 +166,11 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Motivation & Adherence',
+                    Text(l10n.motivationTitle,
                         style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Help us understand what drives you and what might get in the way.',
+                      l10n.motivationSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -154,11 +178,11 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Why are you doing this? ────────────────────────────
-                    Text('Why are you doing this?',
+                    Text(l10n.whyDoingThisLabel,
                         style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
-                      'Select all that apply',
+                      l10n.selectAllThatApply,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -167,15 +191,7 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     Wrap(
                       spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.sm,
-                      children: [
-                        'Personal challenge',
-                        'Health',
-                        'Weight loss',
-                        'Improve performance',
-                        'Race with friends/family',
-                        'Build discipline',
-                        'Other',
-                      ]
+                      children: motivationOptions
                           .map((label) => _Chip(
                                 label: label,
                                 isSelected: _motivations.contains(label),
@@ -187,11 +203,11 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     // ── 2. What gets in the way of consistency? ───────────────
                     if (_motivations.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('What gets in the way of consistency?',
+                      Text(l10n.barriersLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
-                        'Select all that apply',
+                        l10n.selectAllThatApply,
                         style: AppTypography.bodyMedium.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -200,16 +216,7 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: [
-                          'Time',
-                          'Motivation',
-                          'Fatigue',
-                          'Stress',
-                          'Pain or soreness',
-                          'Boredom',
-                          "I don't know how to train",
-                          'Other',
-                        ]
+                        children: barrierOptions
                             .map((label) => _Chip(
                                   label: label,
                                   isSelected: _barriers.contains(label),
@@ -222,7 +229,7 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     // ── 3. Confidence slider ──────────────────────────────────
                     if (_barriers.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text("Confidence you'll stick with the plan",
+                      Text(l10n.confidenceLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       AppSlider(
@@ -236,36 +243,36 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     // ── 4. Preferred coaching tone ────────────────────────────
                     if (_barriers.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text('Preferred coaching tone',
+                      Text(l10n.coachingToneLabel,
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SelectCard(
-                        label: 'Simple and direct',
-                        subtitle: 'Straight to the point',
+                        label: l10n.toneSimple,
+                        subtitle: l10n.toneSimpleSub,
                         isSelected: _coachingTone == 'Simple and direct',
                         onTap: () => setState(
                             () => _coachingTone = 'Simple and direct'),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Encouraging',
-                        subtitle: 'Supportive and positive',
+                        label: l10n.toneEncouraging,
+                        subtitle: l10n.toneEncouragingSub,
                         isSelected: _coachingTone == 'Encouraging',
                         onTap: () =>
                             setState(() => _coachingTone = 'Encouraging'),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Detailed and data-driven',
-                        subtitle: 'Numbers and explanations',
+                        label: l10n.toneDetailed,
+                        subtitle: l10n.toneDetailedSub,
                         isSelected: _coachingTone == 'Detailed and data-driven',
                         onTap: () => setState(
                             () => _coachingTone = 'Detailed and data-driven'),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
-                        label: 'Strict and performance-focused',
-                        subtitle: 'Push me hard',
+                        label: l10n.toneStrict,
+                        subtitle: l10n.toneStrictSub,
                         isSelected:
                             _coachingTone == 'Strict and performance-focused',
                         onTap: () => setState(() =>
@@ -284,7 +291,7 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                 AppSpacing.screen, AppSpacing.xl,
               ),
               child: AppButton(
-                label: 'Continue',
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref.read(onboardingProvider.notifier).setMotivation(

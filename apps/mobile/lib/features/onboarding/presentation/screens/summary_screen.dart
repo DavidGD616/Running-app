@@ -10,15 +10,17 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
 
   // ── Helper: format DateTime as "Month DD, YYYY" ──────────────────────────
-  String _formatDate(DateTime d) {
-    const months = [
-      'January', 'February', 'March', 'April', 'May', 'June',
-      'July', 'August', 'September', 'October', 'November', 'December',
+  String _formatDate(DateTime d, AppLocalizations l10n) {
+    final months = [
+      l10n.monthJanuary, l10n.monthFebruary, l10n.monthMarch, l10n.monthApril,
+      l10n.monthMay, l10n.monthJune, l10n.monthJuly, l10n.monthAugust,
+      l10n.monthSeptember, l10n.monthOctober, l10n.monthNovember, l10n.monthDecember,
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
@@ -28,10 +30,10 @@ class SummaryScreen extends ConsumerWidget {
   String _goalValue(Map<String, dynamic> a) =>
       (a['race'] as String?) ?? '—';
 
-  String _goalDetail(Map<String, dynamic> a) {
+  String _goalDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final date = a['raceDate'] as DateTime?;
     final priority = (a['priority'] as String?) ?? '—';
-    if (date != null) return '${_formatDate(date)} · $priority';
+    if (date != null) return '${_formatDate(date, l10n)} · $priority';
     return priority;
   }
 
@@ -132,6 +134,7 @@ class SummaryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
     final answers = ref.watch(onboardingProvider);
 
     return Scaffold(
@@ -195,11 +198,11 @@ class SummaryScreen extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Your Plan Summary',
+                    Text(l10n.summaryTitle,
                         style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      'Review your selections before we build your plan.',
+                      l10n.summarySubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -209,15 +212,15 @@ class SummaryScreen extends ConsumerWidget {
                     // ── Summary cards ─────────────────────────────────────────
                     _SummaryCard(
                       icon: 'assets/icons/target.svg',
-                      category: 'Goal Race',
+                      category: l10n.summaryGoalRace,
                       value: _goalValue(answers),
-                      detail: _goalDetail(answers),
+                      detail: _goalDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.goal),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/trending_up.svg',
-                      category: 'Current Level',
+                      category: l10n.summaryCurrentLevel,
                       value: _fitnessValue(answers),
                       detail: _fitnessDetail(answers),
                       onEdit: () => context.go(RouteNames.fitness),
@@ -225,7 +228,7 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/calendar.svg',
-                      category: 'Schedule',
+                      category: l10n.summarySchedule,
                       value: _scheduleValue(answers),
                       detail: _scheduleDetail(answers),
                       onEdit: () => context.go(RouteNames.schedule),
@@ -233,7 +236,7 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/heart.svg',
-                      category: 'Health',
+                      category: l10n.summaryHealth,
                       value: _healthValue(answers),
                       detail: _healthDetail(answers),
                       onEdit: () => context.go(RouteNames.health),
@@ -241,7 +244,7 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/training.svg',
-                      category: 'Training',
+                      category: l10n.summaryTraining,
                       value: _trainingValue(answers),
                       detail: _trainingDetail(answers),
                       onEdit: () => context.go(RouteNames.training),
@@ -249,7 +252,7 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/watch.svg',
-                      category: 'Device',
+                      category: l10n.summaryDevice,
                       value: _deviceValue(answers),
                       detail: _deviceDetail(answers),
                       onEdit: () => context.go(RouteNames.device),
@@ -257,7 +260,7 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/moon.svg',
-                      category: 'Recovery',
+                      category: l10n.summaryRecovery,
                       value: _recoveryValue(answers),
                       detail: _recoveryDetail(answers),
                       onEdit: () => context.go(RouteNames.recovery),
@@ -265,7 +268,7 @@ class SummaryScreen extends ConsumerWidget {
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/motivation.svg',
-                      category: 'Motivation',
+                      category: l10n.summaryMotivation,
                       value: _motivationValue(answers),
                       detail: _motivationDetail(answers),
                       onEdit: () => context.go(RouteNames.motivation),
@@ -287,7 +290,7 @@ class SummaryScreen extends ConsumerWidget {
                         const SizedBox(width: AppSpacing.md),
                         Expanded(
                           child: Text(
-                            'Everything looks good. Ready to build your plan!',
+                            l10n.summaryEverythingReady,
                             style: AppTypography.bodyMedium.copyWith(
                               color: const Color(0xFF4CAF50),
                             ),
@@ -309,12 +312,12 @@ class SummaryScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   AppButton(
-                    label: 'Build My Plan',
+                    label: l10n.buildMyPlan,
                     onPressed: () => context.go(RouteNames.planGeneration),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppButton(
-                    label: 'Edit Answers',
+                    label: l10n.editAnswers,
                     variant: AppButtonVariant.secondary,
                     onPressed: () => context.go(RouteNames.goal),
                   ),
