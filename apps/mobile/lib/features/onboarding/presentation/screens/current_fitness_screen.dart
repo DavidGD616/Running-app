@@ -269,10 +269,12 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                         children: [
                           Text('Optional benchmark', style: AppTypography.labelLarge),
                           const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'optional',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textSecondary,
+                          Expanded(
+                            child: Text(
+                              'optional',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],
@@ -451,10 +453,12 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                         children: [
                           Text('Optional benchmark', style: AppTypography.labelLarge),
                           const SizedBox(width: AppSpacing.sm),
-                          Text(
-                            'optional',
-                            style: AppTypography.caption.copyWith(
-                              color: AppColors.textSecondary,
+                          Expanded(
+                            child: Text(
+                              'optional',
+                              style: AppTypography.caption.copyWith(
+                                color: AppColors.textSecondary,
+                              ),
                             ),
                           ),
                         ],

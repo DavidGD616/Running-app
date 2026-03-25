@@ -144,10 +144,12 @@ class _FeatureItem extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.base),
-        Text(
-          label,
-          style: AppTypography.textTheme.bodyLarge?.copyWith(
-            color: AppColors.textPrimary,
+        Expanded(
+          child: Text(
+            label,
+            style: AppTypography.textTheme.bodyLarge?.copyWith(
+              color: AppColors.textPrimary,
+            ),
           ),
         ),
       ],
