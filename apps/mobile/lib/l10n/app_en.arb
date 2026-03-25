@@ -904,6 +904,76 @@
   "editAnswers": "Edit Answers",
   "@editAnswers": { "description": "Secondary button on the summary screen" },
 
+  "summaryCanRun10Min": "Can run 10 min: {yesNo}",
+  "@summaryCanRun10Min": {
+    "description": "Fitness detail for brand-new runners",
+    "placeholders": { "yesNo": { "type": "String" } }
+  },
+  "summaryFitnessDetail": "{days} days/wk · {volume} weekly",
+  "@summaryFitnessDetail": {
+    "description": "Fitness detail for non-beginners",
+    "placeholders": { "days": { "type": "String" }, "volume": { "type": "String" } }
+  },
+  "summaryDaysPerWeek": "{days} days per week",
+  "@summaryDaysPerWeek": {
+    "description": "Schedule value in summary",
+    "placeholders": { "days": { "type": "String" } }
+  },
+  "summaryScheduleDetail": "Long run {longRun} · {time} · {weekday} weekdays",
+  "@summaryScheduleDetail": {
+    "description": "Schedule detail in summary",
+    "placeholders": { "longRun": { "type": "String" }, "time": { "type": "String" }, "weekday": { "type": "String" } }
+  },
+  "summaryNoPain": "No current pain",
+  "@summaryNoPain": { "description": "Health value when no pain" },
+  "summaryWithPain": "Pain: {level}",
+  "@summaryWithPain": {
+    "description": "Health value when there is pain",
+    "placeholders": { "level": { "type": "String" } }
+  },
+  "summaryPlanPref": "{preference} plan preference",
+  "@summaryPlanPref": {
+    "description": "Health detail showing plan preference",
+    "placeholders": { "preference": { "type": "String" } }
+  },
+  "summaryGuidanceBased": "{mode}-based guidance",
+  "@summaryGuidanceBased": {
+    "description": "Training value showing guidance mode",
+    "placeholders": { "mode": { "type": "String" } }
+  },
+  "summaryTrainingDetail": "Speed: {speed} · Strength: {strength} · {surface} · {terrain}",
+  "@summaryTrainingDetail": {
+    "description": "Training detail in summary",
+    "placeholders": { "speed": { "type": "String" }, "strength": { "type": "String" }, "surface": { "type": "String" }, "terrain": { "type": "String" } }
+  },
+  "summaryDeviceConnected": "{device} connected",
+  "@summaryDeviceConnected": {
+    "description": "Device value when watch is connected",
+    "placeholders": { "device": { "type": "String" } }
+  },
+  "summaryNoWatch": "No watch",
+  "@summaryNoWatch": { "description": "Device value when no watch" },
+  "summaryDeviceDetail": "{usage} · HR zones: {hrZones} · Auto-adjust: {auto}",
+  "@summaryDeviceDetail": {
+    "description": "Device detail when watch is connected",
+    "placeholders": { "usage": { "type": "String" }, "hrZones": { "type": "String" }, "auto": { "type": "String" } }
+  },
+  "summarySleepHours": "{hours} sleep",
+  "@summarySleepHours": {
+    "description": "Recovery value showing sleep hours",
+    "placeholders": { "hours": { "type": "String" } }
+  },
+  "summaryRecoveryDetail": "{work} · {stress} stress · {feeling}",
+  "@summaryRecoveryDetail": {
+    "description": "Recovery detail in summary",
+    "placeholders": { "work": { "type": "String" }, "stress": { "type": "String" }, "feeling": { "type": "String" } }
+  },
+  "summaryMotivationDetail": "{tone} tone · Confidence {score}/10",
+  "@summaryMotivationDetail": {
+    "description": "Motivation detail in summary",
+    "placeholders": { "tone": { "type": "String" }, "score": { "type": "String" } }
+  },
+
   "planGenerationTitle": "Building Your Plan",
   "@planGenerationTitle": { "description": "Heading on the plan generation screen" },
 

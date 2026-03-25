@@ -1910,6 +1910,101 @@ abstract class AppLocalizations {
   /// **'Edit Answers'**
   String get editAnswers;
 
+  /// Fitness detail for brand-new runners
+  ///
+  /// In en, this message translates to:
+  /// **'Can run 10 min: {yesNo}'**
+  String summaryCanRun10Min(String yesNo);
+
+  /// Fitness detail for non-beginners
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days/wk · {volume} weekly'**
+  String summaryFitnessDetail(String days, String volume);
+
+  /// Schedule value in summary
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days per week'**
+  String summaryDaysPerWeek(String days);
+
+  /// Schedule detail in summary
+  ///
+  /// In en, this message translates to:
+  /// **'Long run {longRun} · {time} · {weekday} weekdays'**
+  String summaryScheduleDetail(String longRun, String time, String weekday);
+
+  /// Health value when no pain
+  ///
+  /// In en, this message translates to:
+  /// **'No current pain'**
+  String get summaryNoPain;
+
+  /// Health value when there is pain
+  ///
+  /// In en, this message translates to:
+  /// **'Pain: {level}'**
+  String summaryWithPain(String level);
+
+  /// Health detail showing plan preference
+  ///
+  /// In en, this message translates to:
+  /// **'{preference} plan preference'**
+  String summaryPlanPref(String preference);
+
+  /// Training value showing guidance mode
+  ///
+  /// In en, this message translates to:
+  /// **'{mode}-based guidance'**
+  String summaryGuidanceBased(String mode);
+
+  /// Training detail in summary
+  ///
+  /// In en, this message translates to:
+  /// **'Speed: {speed} · Strength: {strength} · {surface} · {terrain}'**
+  String summaryTrainingDetail(
+    String speed,
+    String strength,
+    String surface,
+    String terrain,
+  );
+
+  /// Device value when watch is connected
+  ///
+  /// In en, this message translates to:
+  /// **'{device} connected'**
+  String summaryDeviceConnected(String device);
+
+  /// Device value when no watch
+  ///
+  /// In en, this message translates to:
+  /// **'No watch'**
+  String get summaryNoWatch;
+
+  /// Device detail when watch is connected
+  ///
+  /// In en, this message translates to:
+  /// **'{usage} · HR zones: {hrZones} · Auto-adjust: {auto}'**
+  String summaryDeviceDetail(String usage, String hrZones, String auto);
+
+  /// Recovery value showing sleep hours
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} sleep'**
+  String summarySleepHours(String hours);
+
+  /// Recovery detail in summary
+  ///
+  /// In en, this message translates to:
+  /// **'{work} · {stress} stress · {feeling}'**
+  String summaryRecoveryDetail(String work, String stress, String feeling);
+
+  /// Motivation detail in summary
+  ///
+  /// In en, this message translates to:
+  /// **'{tone} tone · Confidence {score}/10'**
+  String summaryMotivationDetail(String tone, String score);
+
   /// Heading on the plan generation screen
   ///
   /// In en, this message translates to:

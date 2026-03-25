@@ -934,6 +934,82 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editAnswers => 'Edit Answers';
 
   @override
+  String summaryCanRun10Min(String yesNo) {
+    return 'Can run 10 min: $yesNo';
+  }
+
+  @override
+  String summaryFitnessDetail(String days, String volume) {
+    return '$days days/wk · $volume weekly';
+  }
+
+  @override
+  String summaryDaysPerWeek(String days) {
+    return '$days days per week';
+  }
+
+  @override
+  String summaryScheduleDetail(String longRun, String time, String weekday) {
+    return 'Long run $longRun · $time · $weekday weekdays';
+  }
+
+  @override
+  String get summaryNoPain => 'No current pain';
+
+  @override
+  String summaryWithPain(String level) {
+    return 'Pain: $level';
+  }
+
+  @override
+  String summaryPlanPref(String preference) {
+    return '$preference plan preference';
+  }
+
+  @override
+  String summaryGuidanceBased(String mode) {
+    return '$mode-based guidance';
+  }
+
+  @override
+  String summaryTrainingDetail(
+    String speed,
+    String strength,
+    String surface,
+    String terrain,
+  ) {
+    return 'Speed: $speed · Strength: $strength · $surface · $terrain';
+  }
+
+  @override
+  String summaryDeviceConnected(String device) {
+    return '$device connected';
+  }
+
+  @override
+  String get summaryNoWatch => 'No watch';
+
+  @override
+  String summaryDeviceDetail(String usage, String hrZones, String auto) {
+    return '$usage · HR zones: $hrZones · Auto-adjust: $auto';
+  }
+
+  @override
+  String summarySleepHours(String hours) {
+    return '$hours sleep';
+  }
+
+  @override
+  String summaryRecoveryDetail(String work, String stress, String feeling) {
+    return '$work · $stress stress · $feeling';
+  }
+
+  @override
+  String summaryMotivationDetail(String tone, String score) {
+    return '$tone tone · Confidence $score/10';
+  }
+
+  @override
   String get planGenerationTitle => 'Building Your Plan';
 
   @override

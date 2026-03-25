@@ -25,99 +25,181 @@ class SummaryScreen extends ConsumerWidget {
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
+  // ── Canonical → localized mappers ─────────────────────────────────────────
+
+  String _localizedRace(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case '5K': return l10n.race5K;
+      case '10K': return l10n.race10K;
+      case 'Half Marathon': return l10n.raceHalfMarathon;
+      case 'Marathon': return l10n.raceMarathon;
+      case 'Other': return l10n.raceOther;
+      default: return canonical;
+    }
+  }
+
+  String _localizedPriority(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case 'Just finish': return l10n.priorityJustFinish;
+      case 'Finish feeling strong': return l10n.priorityFinishStrong;
+      case 'Improve my time': return l10n.priorityImproveTime;
+      case 'Build consistency': return l10n.priorityConsistency;
+      case 'General fitness': return l10n.priorityGeneralFitness;
+      default: return canonical;
+    }
+  }
+
+  String _localizedExperience(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case 'Brand new': return l10n.experienceBrandNew;
+      case 'Beginner': return l10n.experienceBeginner;
+      case 'Intermediate': return l10n.experienceIntermediate;
+      case 'Experienced': return l10n.experienceExperienced;
+      default: return canonical;
+    }
+  }
+
+  String _localizedGuidanceMode(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case 'Effort': return l10n.guidanceEffort;
+      case 'Pace': return l10n.guidancePace;
+      case 'Heart rate': return l10n.guidanceHeartRate;
+      case 'Decide for me': return l10n.guidanceDecideForMe;
+      default: return canonical;
+    }
+  }
+
+  String _localizedPlanPref(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case 'Safest possible': return l10n.planSafest;
+      case 'Balanced': return l10n.planBalanced;
+      case 'Performance-focused': return l10n.planPerformance;
+      default: return canonical;
+    }
+  }
+
+  String _localizedNoWatchGuidance(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case 'Effort only': return l10n.noWatchEffortOnly;
+      case 'Time-based runs': return l10n.noWatchTimeBased;
+      case 'Simple beginner guidance': return l10n.noWatchBeginner;
+      case 'Decide for me': return l10n.noWatchDecideForMe;
+      default: return canonical;
+    }
+  }
+
+  String _localizedCoachingTone(String canonical, AppLocalizations l10n) {
+    switch (canonical) {
+      case 'Simple and direct': return l10n.toneSimple;
+      case 'Encouraging': return l10n.toneEncouraging;
+      case 'Detailed and data-driven': return l10n.toneDetailed;
+      case 'Strict and performance-focused': return l10n.toneStrict;
+      default: return canonical;
+    }
+  }
+
   // ── Build display values from provider data ───────────────────────────────
 
-  String _goalValue(Map<String, dynamic> a) =>
-      (a['race'] as String?) ?? '—';
+  String _goalValue(Map<String, dynamic> a, AppLocalizations l10n) {
+    final race = a['race'] as String?;
+    if (race == null) return '—';
+    return _localizedRace(race, l10n);
+  }
 
   String _goalDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final date = a['raceDate'] as DateTime?;
-    final priority = (a['priority'] as String?) ?? '—';
-    if (date != null) return '${_formatDate(date, l10n)} · $priority';
-    return priority;
+    final priority = a['priority'] as String?;
+    final localizedPriority = priority != null ? _localizedPriority(priority, l10n) : '—';
+    if (date != null) return '${_formatDate(date, l10n)} · $localizedPriority';
+    return localizedPriority;
   }
 
-  String _fitnessValue(Map<String, dynamic> a) =>
-      (a['experience'] as String?) ?? '—';
+  String _fitnessValue(Map<String, dynamic> a, AppLocalizations l10n) {
+    final exp = a['experience'] as String?;
+    if (exp == null) return '—';
+    return _localizedExperience(exp, l10n);
+  }
 
-  String _fitnessDetail(Map<String, dynamic> a) {
+  String _fitnessDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final experience = a['experience'] as String?;
     if (experience == 'Brand new') {
       final can = a['canRun10Min'] as bool?;
-      return can == null ? '—' : 'Can run 10 min: ${can ? 'Yes' : 'No'}';
+      if (can == null) return '—';
+      return l10n.summaryCanRun10Min(can ? l10n.yes : l10n.no);
     }
     final days = (a['runningDays'] as String?) ?? '—';
     final volume = (a['weeklyVolume'] as String?) ?? '—';
-    return '$days days/wk · $volume weekly';
+    return l10n.summaryFitnessDetail(days, volume);
   }
 
-  String _scheduleValue(Map<String, dynamic> a) {
+  String _scheduleValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final days = a['trainingDays'] as String?;
-    return days != null ? '$days days per week' : '—';
+    return days != null ? l10n.summaryDaysPerWeek(days) : '—';
   }
 
-  String _scheduleDetail(Map<String, dynamic> a) {
+  String _scheduleDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final longRun = (a['longRunDay'] as String?) ?? '—';
     final time = (a['preferredTimeOfDay'] as String?) ?? '—';
     final weekday = (a['weekdayTime'] as String?) ?? '—';
-    return 'Long run $longRun · $time · $weekday weekdays';
+    return l10n.summaryScheduleDetail(longRun, time, weekday);
   }
 
-  String _healthValue(Map<String, dynamic> a) {
+  String _healthValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final pain = a['painLevel'] as String?;
     if (pain == null) return '—';
-    return pain == 'No' ? 'No current pain' : 'Pain: $pain';
+    return pain == 'No' ? l10n.summaryNoPain : l10n.summaryWithPain(pain);
   }
 
-  String _healthDetail(Map<String, dynamic> a) {
+  String _healthDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final pref = (a['planPreference'] as String?) ?? '—';
-    return '$pref plan preference';
+    return l10n.summaryPlanPref(_localizedPlanPref(pref, l10n));
   }
 
-  String _trainingValue(Map<String, dynamic> a) {
+  String _trainingValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final mode = a['guidanceMode'] as String?;
-    return mode != null ? '$mode-based guidance' : '—';
+    return mode != null ? l10n.summaryGuidanceBased(_localizedGuidanceMode(mode, l10n)) : '—';
   }
 
-  String _trainingDetail(Map<String, dynamic> a) {
+  String _trainingDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final speed = (a['speedWorkouts'] as String?) ?? '—';
     final strength = (a['strengthTraining'] as String?) ?? '—';
     final surface = (a['runSurface'] as String?) ?? '—';
     final terrain = (a['terrain'] as String?) ?? '—';
-    return 'Speed: $speed · Strength: $strength · $surface · $terrain';
+    return l10n.summaryTrainingDetail(speed, strength, surface, terrain);
   }
 
-  String _deviceValue(Map<String, dynamic> a) {
+  String _deviceValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final hasWatch = a['hasWatch'] as String?;
     if (hasWatch == 'Yes') {
       final device = (a['device'] as String?) ?? 'Watch';
-      return '$device connected';
+      return l10n.summaryDeviceConnected(device);
     }
-    if (hasWatch == 'No') return 'No watch';
+    if (hasWatch == 'No') return l10n.summaryNoWatch;
     return '—';
   }
 
-  String _deviceDetail(Map<String, dynamic> a) {
+  String _deviceDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final hasWatch = a['hasWatch'] as String?;
     if (hasWatch == 'Yes') {
       final usage = (a['dataUsage'] as String?) ?? '—';
       final hr = (a['hrZones'] as String?) ?? '—';
       final auto = (a['autoAdjust'] as String?) ?? '—';
-      return '$usage · HR zones: $hr · Auto-adjust: $auto';
+      return l10n.summaryDeviceDetail(usage, hr, auto);
     }
-    return (a['noWatchGuidance'] as String?) ?? '—';
+    final guidance = a['noWatchGuidance'] as String?;
+    return guidance != null ? _localizedNoWatchGuidance(guidance, l10n) : '—';
   }
 
-  String _recoveryValue(Map<String, dynamic> a) {
+  String _recoveryValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final sleep = a['sleep'] as String?;
-    return sleep != null ? '$sleep sleep' : '—';
+    return sleep != null ? l10n.summarySleepHours(sleep) : '—';
   }
 
-  String _recoveryDetail(Map<String, dynamic> a) {
+  String _recoveryDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final work = (a['workLevel'] as String?) ?? '—';
     final stress = (a['stressLevel'] as String?) ?? '—';
     final feel = (a['dayFeeling'] as String?) ?? '—';
-    return '$work · $stress stress · $feel';
+    return l10n.summaryRecoveryDetail(work, stress, feel);
   }
 
   String _motivationValue(Map<String, dynamic> a) {
@@ -126,10 +208,10 @@ class SummaryScreen extends ConsumerWidget {
     return list.join(', ');
   }
 
-  String _motivationDetail(Map<String, dynamic> a) {
+  String _motivationDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final tone = (a['coachingTone'] as String?) ?? '—';
     final conf = (a['confidence'] as int?) ?? 5;
-    return '$tone tone · Confidence $conf/10';
+    return l10n.summaryMotivationDetail(_localizedCoachingTone(tone, l10n), conf.toString());
   }
 
   @override
@@ -213,7 +295,7 @@ class SummaryScreen extends ConsumerWidget {
                     _SummaryCard(
                       icon: 'assets/icons/target.svg',
                       category: l10n.summaryGoalRace,
-                      value: _goalValue(answers),
+                      value: _goalValue(answers, l10n),
                       detail: _goalDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.goal),
                     ),
@@ -221,48 +303,48 @@ class SummaryScreen extends ConsumerWidget {
                     _SummaryCard(
                       icon: 'assets/icons/trending_up.svg',
                       category: l10n.summaryCurrentLevel,
-                      value: _fitnessValue(answers),
-                      detail: _fitnessDetail(answers),
+                      value: _fitnessValue(answers, l10n),
+                      detail: _fitnessDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.fitness),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/calendar.svg',
                       category: l10n.summarySchedule,
-                      value: _scheduleValue(answers),
-                      detail: _scheduleDetail(answers),
+                      value: _scheduleValue(answers, l10n),
+                      detail: _scheduleDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.schedule),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/heart.svg',
                       category: l10n.summaryHealth,
-                      value: _healthValue(answers),
-                      detail: _healthDetail(answers),
+                      value: _healthValue(answers, l10n),
+                      detail: _healthDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.health),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/training.svg',
                       category: l10n.summaryTraining,
-                      value: _trainingValue(answers),
-                      detail: _trainingDetail(answers),
+                      value: _trainingValue(answers, l10n),
+                      detail: _trainingDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.training),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/watch.svg',
                       category: l10n.summaryDevice,
-                      value: _deviceValue(answers),
-                      detail: _deviceDetail(answers),
+                      value: _deviceValue(answers, l10n),
+                      detail: _deviceDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.device),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
                       icon: 'assets/icons/moon.svg',
                       category: l10n.summaryRecovery,
-                      value: _recoveryValue(answers),
-                      detail: _recoveryDetail(answers),
+                      value: _recoveryValue(answers, l10n),
+                      detail: _recoveryDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.recovery),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -270,7 +352,7 @@ class SummaryScreen extends ConsumerWidget {
                       icon: 'assets/icons/motivation.svg',
                       category: l10n.summaryMotivation,
                       value: _motivationValue(answers),
-                      detail: _motivationDetail(answers),
+                      detail: _motivationDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.motivation),
                     ),
                     const SizedBox(height: AppSpacing.xl),
