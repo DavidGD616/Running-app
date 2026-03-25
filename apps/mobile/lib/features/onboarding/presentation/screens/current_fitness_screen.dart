@@ -643,6 +643,7 @@ class _ToggleButton extends StatelessWidget {
         child: Center(
           child: Text(
             label,
+            textAlign: TextAlign.center,
             style: AppTypography.textTheme.titleMedium?.copyWith(
               color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
