@@ -7,6 +7,7 @@ import '../../../../core/widgets/app_button.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class LogInScreen extends StatefulWidget {
   const LogInScreen({super.key});
@@ -28,6 +29,7 @@ class _LogInScreenState extends State<LogInScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -39,17 +41,19 @@ class _LogInScreenState extends State<LogInScreen> {
             // Scrollable content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screen,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppSpacing.lg),
                     // Headline
-                    Text('Welcome back', style: AppTypography.headlineMedium),
+                    Text(l10n.logInTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
                     // Subtitle
                     Text(
-                      'Log in to continue your training.',
+                      l10n.logInSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -57,8 +61,8 @@ class _LogInScreenState extends State<LogInScreen> {
                     const SizedBox(height: AppSpacing.xxxl),
                     // Email field
                     AppTextField(
-                      label: 'Email',
-                      hint: 'you@example.com',
+                      label: l10n.emailLabel,
+                      hint: l10n.emailHint,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
@@ -66,8 +70,8 @@ class _LogInScreenState extends State<LogInScreen> {
                     const SizedBox(height: AppSpacing.lg),
                     // Password field
                     AppTextField(
-                      label: 'Password',
-                      hint: 'Enter your password',
+                      label: l10n.passwordLabel,
+                      hint: l10n.passwordHint,
                       controller: _passwordController,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
@@ -77,7 +81,7 @@ class _LogInScreenState extends State<LogInScreen> {
                     GestureDetector(
                       onTap: () => context.push(RouteNames.forgotPassword),
                       child: Text(
-                        'Forgot password?',
+                        l10n.forgotPassword,
                         style: AppTypography.labelLarge.copyWith(
                           color: AppColors.accentPrimary,
                         ),
@@ -99,12 +103,12 @@ class _LogInScreenState extends State<LogInScreen> {
               child: Column(
                 children: [
                   AppButton(
-                    label: 'Log In',
+                    label: l10n.logIn,
                     onPressed: () => context.push(RouteNames.accountSetup),
                   ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
-                    label: "Don't have an account? Sign up",
+                    label: l10n.dontHaveAccount,
                     onPressed: () => context.go(RouteNames.signUp),
                     variant: AppButtonVariant.text,
                   ),

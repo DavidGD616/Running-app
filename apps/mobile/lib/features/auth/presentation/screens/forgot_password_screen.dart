@@ -6,6 +6,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../l10n/app_localizations.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -25,6 +26,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
@@ -36,23 +38,28 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             // Scrollable content
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.screen,
+                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppSpacing.lg),
-                    Text('Forgot password?', style: AppTypography.headlineMedium),
+                    Text(
+                      l10n.forgotPasswordTitle,
+                      style: AppTypography.headlineMedium,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      "Enter your email and we'll send you a reset link.",
+                      l10n.forgotPasswordSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
                         color: AppColors.textSecondary,
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                     AppTextField(
-                      label: 'Email',
-                      hint: 'you@example.com',
+                      label: l10n.emailLabel,
+                      hint: l10n.emailHint,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
@@ -72,13 +79,10 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               child: Column(
                 children: [
-                  AppButton(
-                    label: 'Send Reset Link',
-                    onPressed: () {},
-                  ),
+                  AppButton(label: l10n.sendResetLink, onPressed: () {}),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
-                    label: 'Back to Log In',
+                    label: l10n.backToLogIn,
                     onPressed: () => context.pop(),
                     variant: AppButtonVariant.text,
                   ),
