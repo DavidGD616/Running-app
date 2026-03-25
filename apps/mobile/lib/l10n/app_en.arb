@@ -1,0 +1,933 @@
+{
+  "@@locale": "en",
+
+  "appTitle": "RunFlow",
+  "@appTitle": { "description": "App name" },
+
+  "languageCodeEN": "EN",
+  "@languageCodeEN": { "description": "Short English language code shown on the toggle" },
+
+  "languageCodeES": "ES",
+  "@languageCodeES": { "description": "Short Spanish language code shown on the toggle" },
+
+  "splashTagline": "Train smarter. Run stronger.",
+  "@splashTagline": { "description": "Tagline shown on the splash screen" },
+
+  "welcomeTitle": "Welcome to RunFlow",
+  "@welcomeTitle": { "description": "Main heading on the welcome screen" },
+
+  "welcomeSubtitle": "Your personal running coach. Build a plan tailored to your goals, fitness level, and schedule.",
+  "@welcomeSubtitle": { "description": "Subtitle on the welcome screen" },
+
+  "welcomeFeature1": "Personalized training plans",
+  "@welcomeFeature1": { "description": "First feature bullet on welcome screen" },
+
+  "welcomeFeature2": "AI-powered progression",
+  "@welcomeFeature2": { "description": "Second feature bullet on welcome screen" },
+
+  "welcomeFeature3": "Flexible scheduling",
+  "@welcomeFeature3": { "description": "Third feature bullet on welcome screen" },
+
+  "createAccount": "Create Account",
+  "@createAccount": { "description": "Primary CTA button on welcome screen and sign up screen" },
+
+  "logIn": "Log In",
+  "@logIn": { "description": "Log in button label" },
+
+  "logInTitle": "Welcome back",
+  "@logInTitle": { "description": "Heading on the log in screen" },
+
+  "logInSubtitle": "Log in to continue your training.",
+  "@logInSubtitle": { "description": "Subtitle on the log in screen" },
+
+  "emailLabel": "Email",
+  "@emailLabel": { "description": "Email field label" },
+
+  "emailHint": "you@example.com",
+  "@emailHint": { "description": "Email field placeholder" },
+
+  "passwordLabel": "Password",
+  "@passwordLabel": { "description": "Password field label" },
+
+  "passwordHint": "Enter your password",
+  "@passwordHint": { "description": "Password field placeholder" },
+
+  "forgotPassword": "Forgot password?",
+  "@forgotPassword": { "description": "Forgot password link on log in screen" },
+
+  "dontHaveAccount": "Don't have an account? Sign up",
+  "@dontHaveAccount": { "description": "Log in screen link to sign up" },
+
+  "signUpTitle": "Create your account",
+  "@signUpTitle": { "description": "Heading on the sign up screen" },
+
+  "signUpSubtitle": "Start building your personalized training plan.",
+  "@signUpSubtitle": { "description": "Subtitle on the sign up screen" },
+
+  "passwordHintSignUp": "At least 6 characters",
+  "@passwordHintSignUp": { "description": "Password hint on sign up screen" },
+
+  "confirmPasswordLabel": "Confirm Password",
+  "@confirmPasswordLabel": { "description": "Confirm password field label" },
+
+  "confirmPasswordHint": "Re-enter your password",
+  "@confirmPasswordHint": { "description": "Confirm password field placeholder" },
+
+  "alreadyHaveAccount": "Already have an account? Log in",
+  "@alreadyHaveAccount": { "description": "Sign up screen link to log in" },
+
+  "forgotPasswordTitle": "Forgot password?",
+  "@forgotPasswordTitle": { "description": "Heading on the forgot password screen" },
+
+  "forgotPasswordSubtitle": "Enter your email and we'll send you a reset link.",
+  "@forgotPasswordSubtitle": { "description": "Subtitle on the forgot password screen" },
+
+  "sendResetLink": "Send Reset Link",
+  "@sendResetLink": { "description": "Button on forgot password screen" },
+
+  "backToLogIn": "Back to Log In",
+  "@backToLogIn": { "description": "Back link on forgot password screen" },
+
+  "accountSetupTitle": "Account Setup",
+  "@accountSetupTitle": { "description": "Heading on the account setup screen" },
+
+  "accountSetupSubtitle": "Help us personalize your experience.",
+  "@accountSetupSubtitle": { "description": "Subtitle on the account setup screen" },
+
+  "preferredUnits": "Preferred Units",
+  "@preferredUnits": { "description": "Section label on account setup screen" },
+
+  "unitKm": "km",
+  "@unitKm": { "description": "Kilometers unit option" },
+
+  "unitMi": "mi",
+  "@unitMi": { "description": "Miles unit option" },
+
+  "genderLabel": "Gender",
+  "@genderLabel": { "description": "Section label on account setup screen" },
+
+  "genderMale": "Male",
+  "@genderMale": { "description": "Male gender option" },
+
+  "genderFemale": "Female",
+  "@genderFemale": { "description": "Female gender option" },
+
+  "genderOther": "Other",
+  "@genderOther": { "description": "Other gender option" },
+
+  "dateOfBirthLabel": "Date of Birth",
+  "@dateOfBirthLabel": { "description": "Date of birth field label" },
+
+  "dateOfBirthHint": "DD / MM / YYYY",
+  "@dateOfBirthHint": { "description": "Date of birth field placeholder" },
+
+  "continueButton": "Continue",
+  "@continueButton": { "description": "Generic continue button label" },
+
+  "homeReady": "Your plan is ready!",
+  "@homeReady": { "description": "Heading on the home screen" },
+
+  "homeComingSoon": "Home screen coming soon.",
+  "@homeComingSoon": { "description": "Placeholder subtitle on the home screen" },
+
+  "onboardingIntroTitle": "Let's build your plan",
+  "@onboardingIntroTitle": { "description": "Heading on the onboarding intro screen" },
+
+  "onboardingIntroSubtitle": "Answer a few questions so we can create a training plan personalized to you. It takes about 3 minutes.",
+  "@onboardingIntroSubtitle": { "description": "Subtitle on the onboarding intro screen" },
+
+  "onboardingIntroFeature1": "Your race goal and timeline",
+  "@onboardingIntroFeature1": { "description": "First bullet on onboarding intro screen" },
+
+  "onboardingIntroFeature2": "Fitness level and experience",
+  "@onboardingIntroFeature2": { "description": "Second bullet on onboarding intro screen" },
+
+  "onboardingIntroFeature3": "Schedule and preferences",
+  "@onboardingIntroFeature3": { "description": "Third bullet on onboarding intro screen" },
+
+  "onboardingIntroFooter": "9 short sections · You can edit answers later",
+  "@onboardingIntroFooter": { "description": "Footer note on onboarding intro screen" },
+
+  "letsGo": "Let's Go",
+  "@letsGo": { "description": "CTA button on the onboarding intro screen" },
+
+  "goalTitle": "What's your goal?",
+  "@goalTitle": { "description": "Heading on the goal screen" },
+
+  "goalSubtitle": "Tell us what you're training for and what outcome you want.",
+  "@goalSubtitle": { "description": "Subtitle on the goal screen" },
+
+  "goalRaceLabel": "Goal race",
+  "@goalRaceLabel": { "description": "Section label for race selection on goal screen" },
+
+  "race5K": "5K",
+  "@race5K": { "description": "5K race option label" },
+
+  "race10K": "10K",
+  "@race10K": { "description": "10K race option label" },
+
+  "raceHalfMarathon": "Half Marathon",
+  "@raceHalfMarathon": { "description": "Half marathon race option label" },
+
+  "raceMarathon": "Marathon",
+  "@raceMarathon": { "description": "Marathon race option label" },
+
+  "raceOther": "Other",
+  "@raceOther": { "description": "Other/custom race option label" },
+
+  "raceCustomDistance": "Custom distance",
+  "@raceCustomDistance": { "description": "Subtitle for the Other race option" },
+
+  "raceHasDateLabel": "Do you have a race date?",
+  "@raceHasDateLabel": { "description": "Section label for race date question on goal screen" },
+
+  "yes": "Yes",
+  "@yes": { "description": "Generic yes option" },
+
+  "no": "No",
+  "@no": { "description": "Generic no option" },
+
+  "notSure": "Not sure",
+  "@notSure": { "description": "Generic not sure option" },
+
+  "raceDateLabel": "Race date",
+  "@raceDateLabel": { "description": "Race date picker label" },
+
+  "tapToSetDate": "DD / MM / YYYY",
+  "@tapToSetDate": { "description": "Date picker placeholder text" },
+
+  "priorityLabel": "What's your priority?",
+  "@priorityLabel": { "description": "Section label for race priority on goal screen" },
+
+  "priorityJustFinish": "Just finish",
+  "@priorityJustFinish": { "description": "Priority option: finish the race" },
+
+  "priorityFinishStrong": "Finish feeling strong",
+  "@priorityFinishStrong": { "description": "Priority option: finish strong" },
+
+  "priorityImproveTime": "Improve my time",
+  "@priorityImproveTime": { "description": "Priority option: improve time" },
+
+  "priorityConsistency": "Build consistency",
+  "@priorityConsistency": { "description": "Priority option: build consistency" },
+
+  "priorityGeneralFitness": "General fitness",
+  "@priorityGeneralFitness": { "description": "Priority option: general fitness" },
+
+  "currentRaceTime": "Current race time",
+  "@currentRaceTime": { "description": "Section label for current race time on goal screen" },
+
+  "targetRaceTime": "Target race time",
+  "@targetRaceTime": { "description": "Section label for target race time on goal screen" },
+
+  "tapToSetTime": "Tap to set time",
+  "@tapToSetTime": { "description": "Time picker placeholder" },
+
+  "timePickerHours": "h",
+  "@timePickerHours": { "description": "Hours wheel column label on time picker" },
+
+  "timePickerMinutes": "min",
+  "@timePickerMinutes": { "description": "Minutes wheel column label on time picker" },
+
+  "timePickerSeconds": "sec",
+  "@timePickerSeconds": { "description": "Seconds wheel column label on time picker" },
+
+  "confirm": "Confirm",
+  "@confirm": { "description": "Confirm button on time picker" },
+
+  "fitnessTitle": "Current Fitness",
+  "@fitnessTitle": { "description": "Heading on the current fitness screen" },
+
+  "fitnessSubtitle": "Help us understand where you're starting from.",
+  "@fitnessSubtitle": { "description": "Subtitle on the current fitness screen" },
+
+  "runningExperienceLabel": "Running experience",
+  "@runningExperienceLabel": { "description": "Section label on current fitness screen" },
+
+  "experienceBrandNew": "Brand new",
+  "@experienceBrandNew": { "description": "Experience level option label" },
+
+  "experienceBrandNewSub": "Never really run before",
+  "@experienceBrandNewSub": { "description": "Experience level option subtitle" },
+
+  "experienceBeginner": "Beginner",
+  "@experienceBeginner": { "description": "Experience level option label" },
+
+  "experienceBeginnerSub": "Some running, no consistent plan",
+  "@experienceBeginnerSub": { "description": "Experience level option subtitle" },
+
+  "experienceIntermediate": "Intermediate",
+  "@experienceIntermediate": { "description": "Experience level option label" },
+
+  "experienceIntermediateSub": "Run regularly, some race experience",
+  "@experienceIntermediateSub": { "description": "Experience level option subtitle" },
+
+  "experienceExperienced": "Experienced",
+  "@experienceExperienced": { "description": "Experience level option label" },
+
+  "experienceExperiencedSub": "Structured training, multiple races",
+  "@experienceExperiencedSub": { "description": "Experience level option subtitle" },
+
+  "canRun10MinLabel": "Can you currently run continuously for 10 minutes?",
+  "@canRun10MinLabel": { "description": "Section label on current fitness screen" },
+
+  "optionalBenchmark": "Optional benchmark",
+  "@optionalBenchmark": { "description": "Section label for optional benchmark on fitness screen" },
+
+  "optionalBadge": "optional",
+  "@optionalBadge": { "description": "Badge label indicating a field is optional" },
+
+  "currentRunDaysLabel": "Current running days per week",
+  "@currentRunDaysLabel": { "description": "Section label on current fitness screen" },
+
+  "weeklyVolumeLabel": "Average weekly volume",
+  "@weeklyVolumeLabel": { "description": "Section label on current fitness screen" },
+
+  "longestRunLabel": "Longest recent run",
+  "@longestRunLabel": { "description": "Section label on current fitness screen" },
+
+  "longestRunNone": "I haven't done one",
+  "@longestRunNone": { "description": "Longest run chip option for zero runs" },
+
+  "canCompleteGoalLabel": "Can you currently complete your goal distance?",
+  "@canCompleteGoalLabel": { "description": "Section label on current fitness screen" },
+
+  "raceDistanceBeforeLabel": "Have you done this race distance before?",
+  "@raceDistanceBeforeLabel": { "description": "Section label on current fitness screen" },
+
+  "raceDistanceNever": "Never",
+  "@raceDistanceNever": { "description": "Segmented option: never done the distance" },
+
+  "raceDistanceOnce": "Once",
+  "@raceDistanceOnce": { "description": "Segmented option: done once" },
+
+  "raceDistance2to3": "2-3",
+  "@raceDistance2to3": { "description": "Segmented option: done 2-3 times" },
+
+  "raceDistance4plus": "4+",
+  "@raceDistance4plus": { "description": "Segmented option: done 4 or more times" },
+
+  "yourBenchmarkTime": "Your benchmark time",
+  "@yourBenchmarkTime": { "description": "Time picker bottom sheet title for benchmark" },
+
+  "scheduleTitle": "Your Schedule",
+  "@scheduleTitle": { "description": "Heading on the schedule screen" },
+
+  "scheduleSubtitle": "Tell us when you can realistically train.",
+  "@scheduleSubtitle": { "description": "Subtitle on the schedule screen" },
+
+  "trainingDaysLabel": "Training days per week",
+  "@trainingDaysLabel": { "description": "Section label on schedule screen" },
+
+  "longRunDayLabel": "Preferred long run day",
+  "@longRunDayLabel": { "description": "Section label on schedule screen" },
+
+  "longRunDayHelper": "This is the anchor of your weekly plan",
+  "@longRunDayHelper": { "description": "Helper text under long run day label" },
+
+  "dayMon": "Mon",
+  "@dayMon": { "description": "Monday chip label" },
+
+  "dayTue": "Tue",
+  "@dayTue": { "description": "Tuesday chip label" },
+
+  "dayWed": "Wed",
+  "@dayWed": { "description": "Wednesday chip label" },
+
+  "dayThu": "Thu",
+  "@dayThu": { "description": "Thursday chip label" },
+
+  "dayFri": "Fri",
+  "@dayFri": { "description": "Friday chip label" },
+
+  "daySat": "Sat",
+  "@daySat": { "description": "Saturday chip label" },
+
+  "daySun": "Sun",
+  "@daySun": { "description": "Sunday chip label" },
+
+  "weekdayTimeLabel": "Weekday time available",
+  "@weekdayTimeLabel": { "description": "Section label on schedule screen" },
+
+  "time20min": "20 min",
+  "@time20min": { "description": "20 minute time chip" },
+
+  "time30min": "30 min",
+  "@time30min": { "description": "30 minute time chip" },
+
+  "time45min": "45 min",
+  "@time45min": { "description": "45 minute time chip" },
+
+  "time60min": "60 min",
+  "@time60min": { "description": "60 minute time chip" },
+
+  "time75plusMin": "75+ min",
+  "@time75plusMin": { "description": "75+ minute time chip" },
+
+  "weekendTimeLabel": "Weekend time available",
+  "@weekendTimeLabel": { "description": "Section label on schedule screen" },
+
+  "time90min": "90 min",
+  "@time90min": { "description": "90 minute time chip" },
+
+  "time2plusHours": "2+ hours",
+  "@time2plusHours": { "description": "2+ hours time chip" },
+
+  "hardDaysLabel": "Days that are hard to train",
+  "@hardDaysLabel": { "description": "Section label on schedule screen" },
+
+  "selectAllThatApply": "Select all that apply",
+  "@selectAllThatApply": { "description": "Helper text for multi-select sections" },
+
+  "timeOfDayLabel": "Preferred time of day",
+  "@timeOfDayLabel": { "description": "Section label on schedule screen" },
+
+  "timeOfDayEarlyMorning": "Early morning",
+  "@timeOfDayEarlyMorning": { "description": "Time of day chip: early morning" },
+
+  "timeOfDayMorning": "Morning",
+  "@timeOfDayMorning": { "description": "Time of day chip: morning" },
+
+  "timeOfDayAfternoon": "Afternoon",
+  "@timeOfDayAfternoon": { "description": "Time of day chip: afternoon" },
+
+  "timeOfDayEvening": "Evening",
+  "@timeOfDayEvening": { "description": "Time of day chip: evening" },
+
+  "timeOfDayNoPreference": "No preference",
+  "@timeOfDayNoPreference": { "description": "Time of day chip: no preference" },
+
+  "healthTitle": "Health & Injury",
+  "@healthTitle": { "description": "Heading on the health & injury screen" },
+
+  "healthSubtitle": "Help us understand any limitations so your plan keeps you safe.",
+  "@healthSubtitle": { "description": "Subtitle on the health & injury screen" },
+
+  "currentPainLabel": "Current pain or injury?",
+  "@currentPainLabel": { "description": "Section label on health screen" },
+
+  "painNo": "No",
+  "@painNo": { "description": "Pain option: no pain" },
+
+  "painMild": "Yes, mild",
+  "@painMild": { "description": "Pain option: mild pain" },
+
+  "painModerate": "Yes, moderate",
+  "@painModerate": { "description": "Pain option: moderate pain" },
+
+  "painSevere": "Yes, severe",
+  "@painSevere": { "description": "Pain option: severe pain" },
+
+  "recentInjuryLabel": "Running-related injury in the last 12 months?",
+  "@recentInjuryLabel": { "description": "Section label on health screen" },
+
+  "injuryNo": "No",
+  "@injuryNo": { "description": "Injury history option: no" },
+
+  "injuryOnce": "Once",
+  "@injuryOnce": { "description": "Injury history option: once" },
+
+  "injuryMultiple": "Multiple",
+  "@injuryMultiple": { "description": "Injury history option: multiple" },
+
+  "healthConditionsLabel": "Health conditions affecting exercise?",
+  "@healthConditionsLabel": { "description": "Section label on health screen" },
+
+  "planPreferenceLabel": "Plan preference",
+  "@planPreferenceLabel": { "description": "Section label on health screen" },
+
+  "planSafest": "Safest possible",
+  "@planSafest": { "description": "Plan preference option label" },
+
+  "planSafestSub": "Prioritize injury prevention",
+  "@planSafestSub": { "description": "Plan preference option subtitle" },
+
+  "planBalanced": "Balanced",
+  "@planBalanced": { "description": "Plan preference option label" },
+
+  "planBalancedSub": "Mix of safety and progression",
+  "@planBalancedSub": { "description": "Plan preference option subtitle" },
+
+  "planPerformance": "Performance-focused",
+  "@planPerformance": { "description": "Plan preference option label" },
+
+  "planPerformanceSub": "Push for results",
+  "@planPerformanceSub": { "description": "Plan preference option subtitle" },
+
+  "trainingPrefsTitle": "Training Preferences",
+  "@trainingPrefsTitle": { "description": "Heading on the training preferences screen" },
+
+  "trainingPrefsSubtitle": "Customize how your plan is structured.",
+  "@trainingPrefsSubtitle": { "description": "Subtitle on the training preferences screen" },
+
+  "guidanceModeLabel": "Preferred guidance mode",
+  "@guidanceModeLabel": { "description": "Section label on training preferences screen" },
+
+  "guidanceEffort": "Effort",
+  "@guidanceEffort": { "description": "Guidance mode option label" },
+
+  "guidanceEffortSub": "Train by perceived effort",
+  "@guidanceEffortSub": { "description": "Guidance mode option subtitle" },
+
+  "guidancePace": "Pace",
+  "@guidancePace": { "description": "Guidance mode option label" },
+
+  "guidancePaceSub": "Train by pace targets",
+  "@guidancePaceSub": { "description": "Guidance mode option subtitle" },
+
+  "guidanceHeartRate": "Heart rate",
+  "@guidanceHeartRate": { "description": "Guidance mode option label" },
+
+  "guidanceHeartRateSub": "Train using HR zones",
+  "@guidanceHeartRateSub": { "description": "Guidance mode option subtitle" },
+
+  "guidanceDecideForMe": "Decide for me",
+  "@guidanceDecideForMe": { "description": "Guidance mode option label" },
+
+  "guidanceDecideForMeSub": "We'll pick the best approach",
+  "@guidanceDecideForMeSub": { "description": "Guidance mode option subtitle" },
+
+  "speedWorkoutsLabel": "Speed workouts included?",
+  "@speedWorkoutsLabel": { "description": "Section label on training preferences screen" },
+
+  "onlyIfNeeded": "Only if needed",
+  "@onlyIfNeeded": { "description": "Segmented option: only if needed" },
+
+  "strengthTrainingLabel": "Strength training?",
+  "@strengthTrainingLabel": { "description": "Section label on training preferences screen" },
+
+  "strength1DayWeek": "1 day/week",
+  "@strength1DayWeek": { "description": "Strength training option: 1 day/week" },
+
+  "strength2DaysWeek": "2 days/week",
+  "@strength2DaysWeek": { "description": "Strength training option: 2 days/week" },
+
+  "strength3DaysWeek": "3 days/week",
+  "@strength3DaysWeek": { "description": "Strength training option: 3 days/week" },
+
+  "runSurfaceLabel": "Where do you run most?",
+  "@runSurfaceLabel": { "description": "Section label on training preferences screen" },
+
+  "surfaceRoad": "Road",
+  "@surfaceRoad": { "description": "Surface option: road" },
+
+  "surfaceTreadmill": "Treadmill",
+  "@surfaceTreadmill": { "description": "Surface option: treadmill" },
+
+  "surfaceTrack": "Track",
+  "@surfaceTrack": { "description": "Surface option: track" },
+
+  "surfaceTrail": "Trail",
+  "@surfaceTrail": { "description": "Surface option: trail" },
+
+  "surfaceMixed": "Mixed",
+  "@surfaceMixed": { "description": "Surface option: mixed" },
+
+  "terrainLabel": "Terrain",
+  "@terrainLabel": { "description": "Section label on training preferences screen" },
+
+  "terrainFlat": "Flat",
+  "@terrainFlat": { "description": "Terrain option: flat" },
+
+  "terrainSomeHills": "Some hills",
+  "@terrainSomeHills": { "description": "Terrain option: some hills" },
+
+  "terrainHilly": "Hilly",
+  "@terrainHilly": { "description": "Terrain option: hilly" },
+
+  "terrainMixed": "Mixed",
+  "@terrainMixed": { "description": "Terrain option: mixed" },
+
+  "walkRunLabel": "Walk/run intervals?",
+  "@walkRunLabel": { "description": "Section label on training preferences screen" },
+
+  "watchTitle": "Watch & Device",
+  "@watchTitle": { "description": "Heading on the watch & device screen" },
+
+  "watchSubtitle": "Let us know what data sources are available.",
+  "@watchSubtitle": { "description": "Subtitle on the watch & device screen" },
+
+  "usesWatchLabel": "Do you use a watch or running device?",
+  "@usesWatchLabel": { "description": "Section label on watch screen" },
+
+  "deviceLabel": "Which device?",
+  "@deviceLabel": { "description": "Section label on watch screen" },
+
+  "deviceGarmin": "Garmin",
+  "@deviceGarmin": { "description": "Device chip: Garmin" },
+
+  "deviceAppleWatch": "Apple Watch",
+  "@deviceAppleWatch": { "description": "Device chip: Apple Watch" },
+
+  "deviceCOROS": "COROS",
+  "@deviceCOROS": { "description": "Device chip: COROS" },
+
+  "devicePolar": "Polar",
+  "@devicePolar": { "description": "Device chip: Polar" },
+
+  "deviceSuunto": "Suunto",
+  "@deviceSuunto": { "description": "Device chip: Suunto" },
+
+  "deviceFitbit": "Fitbit",
+  "@deviceFitbit": { "description": "Device chip: Fitbit" },
+
+  "deviceOther": "Other",
+  "@deviceOther": { "description": "Device chip: other" },
+
+  "deviceDataUsageLabel": "How should the app use your device data?",
+  "@deviceDataUsageLabel": { "description": "Section label on watch screen" },
+
+  "dataUsageImportAuto": "Import runs automatically",
+  "@dataUsageImportAuto": { "description": "Data usage option" },
+
+  "dataUsageHROnly": "Use heart rate only",
+  "@dataUsageHROnly": { "description": "Data usage option" },
+
+  "dataUsagePaceDistance": "Use pace and distance only",
+  "@dataUsagePaceDistance": { "description": "Data usage option" },
+
+  "dataUsageAll": "Use all available data",
+  "@dataUsageAll": { "description": "Data usage option" },
+
+  "dataUsageNotSure": "I'm not sure",
+  "@dataUsageNotSure": { "description": "Data usage option" },
+
+  "useWatchMetricsLabel": "Use watch-based metrics?",
+  "@useWatchMetricsLabel": { "description": "Section label on watch screen" },
+
+  "hrOnly": "HR only",
+  "@hrOnly": { "description": "Segmented option: HR only" },
+
+  "metricsLabel": "Which metrics?",
+  "@metricsLabel": { "description": "Section label on watch screen" },
+
+  "metricHeartRate": "Heart rate",
+  "@metricHeartRate": { "description": "Metric chip: heart rate" },
+
+  "metricHRZones": "Heart rate zones",
+  "@metricHRZones": { "description": "Metric chip: heart rate zones" },
+
+  "metricPace": "Pace",
+  "@metricPace": { "description": "Metric chip: pace" },
+
+  "metricDistance": "Distance",
+  "@metricDistance": { "description": "Metric chip: distance" },
+
+  "metricCadence": "Cadence",
+  "@metricCadence": { "description": "Metric chip: cadence" },
+
+  "metricElevation": "Elevation",
+  "@metricElevation": { "description": "Metric chip: elevation" },
+
+  "metricTrainingLoad": "Training load",
+  "@metricTrainingLoad": { "description": "Metric chip: training load" },
+
+  "metricRecoveryTime": "Recovery time",
+  "@metricRecoveryTime": { "description": "Metric chip: recovery time" },
+
+  "metricNone": "None",
+  "@metricNone": { "description": "Metric chip: none" },
+
+  "hrZonesLabel": "Heart-rate-based training zones?",
+  "@hrZonesLabel": { "description": "Section label on watch screen" },
+
+  "ifSupported": "If supported",
+  "@ifSupported": { "description": "Segmented option: if supported" },
+
+  "paceFromWatchLabel": "Pace recommendations from watch?",
+  "@paceFromWatchLabel": { "description": "Section label on watch screen" },
+
+  "autoAdjustLabel": "Auto-adjust plan from watch data?",
+  "@autoAdjustLabel": { "description": "Section label on watch screen" },
+
+  "autoAdjustAuto": "Auto",
+  "@autoAdjustAuto": { "description": "Auto-adjust option: auto" },
+
+  "autoAdjustAskFirst": "Ask first",
+  "@autoAdjustAskFirst": { "description": "Auto-adjust option: ask first" },
+
+  "noWatchInfo": "No worries! The app works great without a watch. We'll guide your training differently.",
+  "@noWatchInfo": { "description": "Info card text for users without a watch" },
+
+  "noWatchGuidanceLabel": "How should we guide your training?",
+  "@noWatchGuidanceLabel": { "description": "Section label on watch screen for no-watch users" },
+
+  "noWatchEffortOnly": "Effort only",
+  "@noWatchEffortOnly": { "description": "No-watch guidance option label" },
+
+  "noWatchEffortOnlySub": "Train by how it feels",
+  "@noWatchEffortOnlySub": { "description": "No-watch guidance option subtitle" },
+
+  "noWatchTimeBased": "Time-based runs",
+  "@noWatchTimeBased": { "description": "No-watch guidance option label" },
+
+  "noWatchTimeBasedSub": "Run for set durations",
+  "@noWatchTimeBasedSub": { "description": "No-watch guidance option subtitle" },
+
+  "noWatchBeginner": "Simple beginner guidance",
+  "@noWatchBeginner": { "description": "No-watch guidance option label" },
+
+  "noWatchBeginnerSub": "Step-by-step instructions",
+  "@noWatchBeginnerSub": { "description": "No-watch guidance option subtitle" },
+
+  "noWatchDecideForMe": "Decide for me",
+  "@noWatchDecideForMe": { "description": "No-watch guidance option label" },
+
+  "noWatchDecideForMeSub": "We'll pick what works best",
+  "@noWatchDecideForMeSub": { "description": "No-watch guidance option subtitle" },
+
+  "recoveryTitle": "Recovery & Lifestyle",
+  "@recoveryTitle": { "description": "Heading on the recovery & lifestyle screen" },
+
+  "recoverySubtitle": "Quick questions to understand your recovery capacity.",
+  "@recoverySubtitle": { "description": "Subtitle on the recovery & lifestyle screen" },
+
+  "sleepLabel": "Average weekday sleep",
+  "@sleepLabel": { "description": "Section label on recovery screen" },
+
+  "sleepLessThan5h": "< 5h",
+  "@sleepLessThan5h": { "description": "Sleep option: less than 5 hours" },
+
+  "sleep5to6h": "5–6h",
+  "@sleep5to6h": { "description": "Sleep option: 5 to 6 hours" },
+
+  "sleep6to7h": "6–7h",
+  "@sleep6to7h": { "description": "Sleep option: 6 to 7 hours" },
+
+  "sleep7to8h": "7–8h",
+  "@sleep7to8h": { "description": "Sleep option: 7 to 8 hours" },
+
+  "sleep8plusH": "+8h",
+  "@sleep8plusH": { "description": "Sleep option: more than 8 hours" },
+
+  "workLevelLabel": "Work / activity level",
+  "@workLevelLabel": { "description": "Section label on recovery screen" },
+
+  "workMostlyDesk": "Mostly desk",
+  "@workMostlyDesk": { "description": "Work level option label" },
+
+  "workMostlyDeskSub": "Sitting most of the day",
+  "@workMostlyDeskSub": { "description": "Work level option subtitle" },
+
+  "workMixed": "Mixed",
+  "@workMixed": { "description": "Work level option label" },
+
+  "workMixedSub": "Some sitting, some moving",
+  "@workMixedSub": { "description": "Work level option subtitle" },
+
+  "workPhysical": "Physical job",
+  "@workPhysical": { "description": "Work level option label" },
+
+  "workPhysicalSub": "On your feet most of the day",
+  "@workPhysicalSub": { "description": "Work level option subtitle" },
+
+  "stressLabel": "Average stress level",
+  "@stressLabel": { "description": "Section label on recovery screen" },
+
+  "stressLow": "Low",
+  "@stressLow": { "description": "Stress option: low" },
+
+  "stressModerate": "Moderate",
+  "@stressModerate": { "description": "Stress option: moderate" },
+
+  "stressHigh": "High",
+  "@stressHigh": { "description": "Stress option: high" },
+
+  "dayFeelingLabel": "How do you feel day-to-day?",
+  "@dayFeelingLabel": { "description": "Section label on recovery screen" },
+
+  "feelingFresh": "Usually fresh",
+  "@feelingFresh": { "description": "Day feeling option" },
+
+  "feelingSometimesTired": "Sometimes tired",
+  "@feelingSometimesTired": { "description": "Day feeling option" },
+
+  "feelingOftenTired": "Often tired",
+  "@feelingOftenTired": { "description": "Day feeling option" },
+
+  "feelingAlwaysTired": "Always tired",
+  "@feelingAlwaysTired": { "description": "Day feeling option" },
+
+  "motivationTitle": "Motivation & Adherence",
+  "@motivationTitle": { "description": "Heading on the motivation screen" },
+
+  "motivationSubtitle": "Help us understand what drives you and what might get in the way.",
+  "@motivationSubtitle": { "description": "Subtitle on the motivation screen" },
+
+  "whyDoingThisLabel": "Why are you doing this?",
+  "@whyDoingThisLabel": { "description": "Section label on motivation screen" },
+
+  "motivationPersonalChallenge": "Personal challenge",
+  "@motivationPersonalChallenge": { "description": "Motivation chip" },
+
+  "motivationHealth": "Health",
+  "@motivationHealth": { "description": "Motivation chip" },
+
+  "motivationWeightLoss": "Weight loss",
+  "@motivationWeightLoss": { "description": "Motivation chip" },
+
+  "motivationImprovePerformance": "Improve performance",
+  "@motivationImprovePerformance": { "description": "Motivation chip" },
+
+  "motivationRaceFriends": "Race with friends/family",
+  "@motivationRaceFriends": { "description": "Motivation chip" },
+
+  "motivationDiscipline": "Build discipline",
+  "@motivationDiscipline": { "description": "Motivation chip" },
+
+  "motivationOther": "Other",
+  "@motivationOther": { "description": "Motivation chip: other" },
+
+  "barriersLabel": "What gets in the way of consistency?",
+  "@barriersLabel": { "description": "Section label on motivation screen" },
+
+  "barrierTime": "Time",
+  "@barrierTime": { "description": "Barrier chip: time" },
+
+  "barrierMotivation": "Motivation",
+  "@barrierMotivation": { "description": "Barrier chip: motivation" },
+
+  "barrierFatigue": "Fatigue",
+  "@barrierFatigue": { "description": "Barrier chip: fatigue" },
+
+  "barrierStress": "Stress",
+  "@barrierStress": { "description": "Barrier chip: stress" },
+
+  "barrierPain": "Pain or soreness",
+  "@barrierPain": { "description": "Barrier chip: pain or soreness" },
+
+  "barrierBoredom": "Boredom",
+  "@barrierBoredom": { "description": "Barrier chip: boredom" },
+
+  "barrierDontKnowHow": "I don't know how to train",
+  "@barrierDontKnowHow": { "description": "Barrier chip: don't know how" },
+
+  "barrierOther": "Other",
+  "@barrierOther": { "description": "Barrier chip: other" },
+
+  "confidenceLabel": "Confidence you'll stick with the plan",
+  "@confidenceLabel": { "description": "Section label for confidence slider on motivation screen" },
+
+  "coachingToneLabel": "Preferred coaching tone",
+  "@coachingToneLabel": { "description": "Section label on motivation screen" },
+
+  "toneSimple": "Simple and direct",
+  "@toneSimple": { "description": "Coaching tone option label" },
+
+  "toneSimpleSub": "Straight to the point",
+  "@toneSimpleSub": { "description": "Coaching tone option subtitle" },
+
+  "toneEncouraging": "Encouraging",
+  "@toneEncouraging": { "description": "Coaching tone option label" },
+
+  "toneEncouragingSub": "Supportive and positive",
+  "@toneEncouragingSub": { "description": "Coaching tone option subtitle" },
+
+  "toneDetailed": "Detailed and data-driven",
+  "@toneDetailed": { "description": "Coaching tone option label" },
+
+  "toneDetailedSub": "Numbers and explanations",
+  "@toneDetailedSub": { "description": "Coaching tone option subtitle" },
+
+  "toneStrict": "Strict and performance-focused",
+  "@toneStrict": { "description": "Coaching tone option label" },
+
+  "toneStrictSub": "Push me hard",
+  "@toneStrictSub": { "description": "Coaching tone option subtitle" },
+
+  "summaryTitle": "Your Plan Summary",
+  "@summaryTitle": { "description": "Heading on the summary screen" },
+
+  "summarySubtitle": "Review your selections before we build your plan.",
+  "@summarySubtitle": { "description": "Subtitle on the summary screen" },
+
+  "summaryGoalRace": "Goal Race",
+  "@summaryGoalRace": { "description": "Summary card category label" },
+
+  "summaryCurrentLevel": "Current Level",
+  "@summaryCurrentLevel": { "description": "Summary card category label" },
+
+  "summarySchedule": "Schedule",
+  "@summarySchedule": { "description": "Summary card category label" },
+
+  "summaryHealth": "Health",
+  "@summaryHealth": { "description": "Summary card category label" },
+
+  "summaryTraining": "Training",
+  "@summaryTraining": { "description": "Summary card category label" },
+
+  "summaryDevice": "Device",
+  "@summaryDevice": { "description": "Summary card category label" },
+
+  "summaryRecovery": "Recovery",
+  "@summaryRecovery": { "description": "Summary card category label" },
+
+  "summaryMotivation": "Motivation",
+  "@summaryMotivation": { "description": "Summary card category label" },
+
+  "summaryEverythingReady": "Everything looks good. Ready to build your plan!",
+  "@summaryEverythingReady": { "description": "Ready message at the bottom of the summary screen" },
+
+  "buildMyPlan": "Build My Plan",
+  "@buildMyPlan": { "description": "Primary CTA button on the summary screen" },
+
+  "editAnswers": "Edit Answers",
+  "@editAnswers": { "description": "Secondary button on the summary screen" },
+
+  "planGenerationTitle": "Building Your Plan",
+  "@planGenerationTitle": { "description": "Heading on the plan generation screen" },
+
+  "planGenerationMsg1": "Analyzing your fitness profile...",
+  "@planGenerationMsg1": { "description": "Loading message 1 on plan generation screen" },
+
+  "planGenerationMsg2": "Calculating optimal training zones...",
+  "@planGenerationMsg2": { "description": "Loading message 2 on plan generation screen" },
+
+  "planGenerationMsg3": "Building your weekly structure...",
+  "@planGenerationMsg3": { "description": "Loading message 3 on plan generation screen" },
+
+  "planGenerationMsg4": "Personalizing session targets...",
+  "@planGenerationMsg4": { "description": "Loading message 4 on plan generation screen" },
+
+  "planGenerationMsg5": "Your plan is almost ready!",
+  "@planGenerationMsg5": { "description": "Loading message 5 on plan generation screen" },
+
+  "monthJanuary": "January",
+  "@monthJanuary": { "description": "Month name" },
+
+  "monthFebruary": "February",
+  "@monthFebruary": { "description": "Month name" },
+
+  "monthMarch": "March",
+  "@monthMarch": { "description": "Month name" },
+
+  "monthApril": "April",
+  "@monthApril": { "description": "Month name" },
+
+  "monthMay": "May",
+  "@monthMay": { "description": "Month name" },
+
+  "monthJune": "June",
+  "@monthJune": { "description": "Month name" },
+
+  "monthJuly": "July",
+  "@monthJuly": { "description": "Month name" },
+
+  "monthAugust": "August",
+  "@monthAugust": { "description": "Month name" },
+
+  "monthSeptember": "September",
+  "@monthSeptember": { "description": "Month name" },
+
+  "monthOctober": "October",
+  "@monthOctober": { "description": "Month name" },
+
+  "monthNovember": "November",
+  "@monthNovember": { "description": "Month name" },
+
+  "monthDecember": "December",
+  "@monthDecember": { "description": "Month name" },
+
+  "errorGeneric": "Something went wrong. Please try again.",
+  "@errorGeneric": { "description": "Generic error message" }
+}
