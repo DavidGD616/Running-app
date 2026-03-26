@@ -1,0 +1,199 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_typography.dart';
+
+enum SettingsRowVariant { chevron, badge, toggleOn, toggleOff, value }
+
+class SettingsRow extends StatelessWidget {
+  const SettingsRow({
+    super.key,
+    required this.label,
+    required this.iconAsset,
+    this.iconColor = AppColors.textSecondary,
+    this.variant = SettingsRowVariant.chevron,
+    this.badgeLabel,
+    this.valueLabel,
+    this.onTap,
+    this.onToggle,
+    this.isDestructive = false,
+  });
+
+  final String label;
+  final String iconAsset;
+  final Color iconColor;
+  final SettingsRowVariant variant;
+  final String? badgeLabel;
+  final String? valueLabel;
+  final VoidCallback? onTap;
+  final ValueChanged<bool>? onToggle;
+  final bool isDestructive;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: variant == SettingsRowVariant.toggleOn ||
+              variant == SettingsRowVariant.toggleOff
+          ? null
+          : onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: isDestructive
+                    ? AppColors.error.withValues(alpha: 0.15)
+                    : iconColor.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: SvgPicture.asset(
+                  iconAsset,
+                  width: 18,
+                  height: 18,
+                  colorFilter: ColorFilter.mode(
+                    isDestructive ? AppColors.error : iconColor,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: Text(
+                label,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: isDestructive ? AppColors.error : AppColors.textPrimary,
+                ),
+              ),
+            ),
+            _trailing(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _trailing() {
+    switch (variant) {
+      case SettingsRowVariant.chevron:
+        return SvgPicture.asset(
+          'assets/icons/chevron_right.svg',
+          width: 20,
+          height: 20,
+          colorFilter: const ColorFilter.mode(
+              AppColors.textSecondary, BlendMode.srcIn),
+        );
+      case SettingsRowVariant.badge:
+        return _StatusBadgeInline(label: badgeLabel ?? '');
+      case SettingsRowVariant.toggleOn:
+        return Switch(
+          value: true,
+          onChanged: onToggle,
+          activeThumbColor: AppColors.accentPrimary,
+        );
+      case SettingsRowVariant.toggleOff:
+        return Switch(
+          value: false,
+          onChanged: onToggle,
+          activeThumbColor: AppColors.accentPrimary,
+        );
+      case SettingsRowVariant.value:
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(valueLabel ?? '', style: AppTypography.bodyMedium),
+            const SizedBox(width: AppSpacing.xs),
+            SvgPicture.asset(
+              'assets/icons/chevron_right.svg',
+              width: 20,
+              height: 20,
+              colorFilter: const ColorFilter.mode(
+                  AppColors.textSecondary, BlendMode.srcIn),
+            ),
+          ],
+        );
+    }
+  }
+}
+
+class _StatusBadgeInline extends StatelessWidget {
+  const _StatusBadgeInline({required this.label});
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.success.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: const BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.success,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(color: AppColors.success),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Standalone destructive row for actions like "Log Out".
+class DestructiveRow extends StatelessWidget {
+  const DestructiveRow({
+    super.key,
+    required this.label,
+    required this.iconAsset,
+    this.onTap,
+  });
+
+  final String label;
+  final String iconAsset;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            SvgPicture.asset(
+              iconAsset,
+              width: 20,
+              height: 20,
+              colorFilter: const ColorFilter.mode(
+                  AppColors.error, BlendMode.srcIn),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            Text(
+              label,
+              style: AppTypography.labelLarge.copyWith(color: AppColors.error),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

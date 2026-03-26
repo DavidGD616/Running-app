@@ -1,0 +1,7 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="BarChart">
+<rect id="Bar1" x="3" y="14" width="4.5" height="7" rx="1" fill="currentColor"/>
+<rect id="Bar2" x="9.75" y="9" width="4.5" height="12" rx="1" fill="currentColor"/>
+<rect id="Bar3" x="16.5" y="4" width="4.5" height="17" rx="1" fill="currentColor"/>
+</g>
+</svg>
