@@ -361,5 +361,18 @@
   "monthNovember": "Noviembre",
   "monthDecember": "Diciembre",
 
-  "errorGeneric": "Algo salió mal. Por favor intenta de nuevo."
+  "errorGeneric": "Algo salió mal. Por favor intenta de nuevo.",
+
+  "planReadyWeekPlanName": "{race} de {weeks} semanas",
+
+  "planReadyTitle": "Tu plan está listo",
+  "planReadyGoalLabel": "Objetivo",
+  "planReadyScheduleLabel": "Horario",
+  "planReadyLongRunsLabel": "Carreras largas",
+  "planReadyGuidanceModeLabel": "Modo de guía",
+  "planReadyGoalDescription": "Completar {race}",
+  "planReadyScheduleValue": "{weeks} semanas • {runsPerWeek} carreras/semana",
+  "planReadyDescription": "Diseñado exactamente para tu condición física y horario. Construiremos tu resistencia de forma segura para que llegues a la meta sintiéndote fuerte.",
+  "planReadyStartPlan": "Iniciar plan",
+  "planReadyViewFullWeek": "Ver semana completa"
 }

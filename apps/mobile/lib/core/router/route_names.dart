@@ -16,5 +16,6 @@ abstract class RouteNames {
   static const motivation      = '/onboarding/motivation';
   static const summary         = '/onboarding/summary';
   static const planGeneration  = '/plan-generation';
+  static const planReady       = '/plan-ready';
   static const home            = '/home';
 }

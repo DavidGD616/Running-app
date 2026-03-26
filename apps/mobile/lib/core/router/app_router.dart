@@ -18,6 +18,7 @@ import '../../features/onboarding/presentation/screens/recovery_lifestyle_screen
 import '../../features/onboarding/presentation/screens/motivation_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_generation_screen.dart';
+import '../../features/onboarding/presentation/screens/plan_ready_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 
 final appRouter = GoRouter(
@@ -95,6 +96,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.planGeneration,
       builder: (context, state) => const PlanGenerationScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.planReady,
+      builder: (context, state) => const PlanReadyScreen(),
     ),
     GoRoute(
       path: RouteNames.home,

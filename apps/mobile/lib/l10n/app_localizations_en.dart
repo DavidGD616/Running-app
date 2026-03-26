@@ -1065,4 +1065,44 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String planReadyWeekPlanName(String weeks, String race) {
+    return '$weeks-Week $race';
+  }
+
+  @override
+  String get planReadyTitle => 'Your plan is ready';
+
+  @override
+  String get planReadyGoalLabel => 'Goal';
+
+  @override
+  String get planReadyScheduleLabel => 'Schedule';
+
+  @override
+  String get planReadyLongRunsLabel => 'Long Runs';
+
+  @override
+  String get planReadyGuidanceModeLabel => 'Guidance Mode';
+
+  @override
+  String planReadyGoalDescription(String race) {
+    return 'Complete a $race';
+  }
+
+  @override
+  String planReadyScheduleValue(String weeks, String runsPerWeek) {
+    return '$weeks weeks • $runsPerWeek runs/week';
+  }
+
+  @override
+  String get planReadyDescription =>
+      'Tailored exactly to your fitness and schedule. We\'ll safely build your endurance so you reach the finish line feeling strong.';
+
+  @override
+  String get planReadyStartPlan => 'Start Plan';
+
+  @override
+  String get planReadyViewFullWeek => 'View Full Week';
 }

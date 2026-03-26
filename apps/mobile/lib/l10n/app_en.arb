@@ -1029,5 +1029,53 @@
   "@monthDecember": { "description": "Month name" },
 
   "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": { "description": "Generic error message" }
+  "@errorGeneric": { "description": "Generic error message" },
+
+  "planReadyWeekPlanName": "{weeks}-Week {race}",
+  "@planReadyWeekPlanName": {
+    "description": "Plan name format e.g. '12-Week Half Marathon'",
+    "placeholders": {
+      "weeks": { "type": "String" },
+      "race": { "type": "String" }
+    }
+  },
+
+  "planReadyTitle": "Your plan is ready",
+  "@planReadyTitle": { "description": "Heading on the plan-ready screen" },
+
+  "planReadyGoalLabel": "Goal",
+  "@planReadyGoalLabel": { "description": "Label for the goal row on the plan-ready screen" },
+
+  "planReadyScheduleLabel": "Schedule",
+  "@planReadyScheduleLabel": { "description": "Label for the schedule row on the plan-ready screen" },
+
+  "planReadyLongRunsLabel": "Long Runs",
+  "@planReadyLongRunsLabel": { "description": "Label for the long runs row on the plan-ready screen" },
+
+  "planReadyGuidanceModeLabel": "Guidance Mode",
+  "@planReadyGuidanceModeLabel": { "description": "Label for the guidance mode row on the plan-ready screen" },
+
+  "planReadyGoalDescription": "Complete a {race}",
+  "@planReadyGoalDescription": {
+    "description": "Goal description shown on the plan-ready screen",
+    "placeholders": { "race": { "type": "String" } }
+  },
+
+  "planReadyScheduleValue": "{weeks} weeks • {runsPerWeek} runs/week",
+  "@planReadyScheduleValue": {
+    "description": "Schedule summary shown on the plan-ready screen",
+    "placeholders": {
+      "weeks": { "type": "String" },
+      "runsPerWeek": { "type": "String" }
+    }
+  },
+
+  "planReadyDescription": "Tailored exactly to your fitness and schedule. We'll safely build your endurance so you reach the finish line feeling strong.",
+  "@planReadyDescription": { "description": "Motivational paragraph on the plan-ready screen" },
+
+  "planReadyStartPlan": "Start Plan",
+  "@planReadyStartPlan": { "description": "Primary CTA button on the plan-ready screen" },
+
+  "planReadyViewFullWeek": "View Full Week",
+  "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" }
 }

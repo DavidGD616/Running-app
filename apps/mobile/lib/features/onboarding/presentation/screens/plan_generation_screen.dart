@@ -7,7 +7,6 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../onboarding_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class PlanGenerationScreen extends ConsumerStatefulWidget {
@@ -62,8 +61,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         timer.cancel();
         Future.delayed(const Duration(milliseconds: 600), () async {
           if (!mounted) return;
-          await ref.read(onboardingProvider.notifier).markCompleted();
-          if (mounted) context.go(RouteNames.home);
+          if (mounted) context.go(RouteNames.planReady);
         });
       }
     });

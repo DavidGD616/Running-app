@@ -18,13 +18,13 @@ Implements remaining RunFlow post-onboarding app screens following established p
 
 | Screen | Node ID | Feature folder | File to create |
 |--------|---------|---------------|----------------|
-| plan-ready | `154:561` | `plan/` | `plan_ready_screen.dart` |
-| pre-run | `158:1596` | `training/` | `pre_run_screen.dart` |
-| log-run | `161:1835` | `training/` | `log_run_screen.dart` |
-| weekly-plan | `173:3` | `home/` | `weekly_plan_screen.dart` |
-| session-detail | `182:3` | `training/` | `session_detail_screen.dart` |
-| progress | `183:3` | `progress/` | `progress_screen.dart` |
-| settings | `184:3` | `settings/` | `settings_screen.dart` |
+| plan-ready | `154:561` | `onboarding/presentation/screens/` | `plan_ready_screen.dart` |
+| pre-run | `158:1596` | `pre_run/presentation/screens/` | `pre_run_screen.dart` |
+| log-run | `161:1835` | `log_run/presentation/screens/` | `log_run_screen.dart` |
+| weekly-plan | `173:3` | `weekly_plan/presentation/screens/` | `weekly_plan_screen.dart` |
+| session-detail | `182:3` | `session_detail/presentation/screens/` | `session_detail_screen.dart` |
+| progress | `183:3` | `progress/presentation/screens/` | `progress_screen.dart` |
+| settings | `184:3` | `settings/presentation/screens/` | `settings_screen.dart` |
 
 ## Required Workflow
 
@@ -61,6 +61,20 @@ App screens go in feature-specific subfolders:
 apps/mobile/lib/features/<feature>/presentation/screens/<screen_name>.dart
 ```
 
+Each screen lives in its own feature, even if it is a tab in the bottom nav. The bottom tab bar is navigation only — it does not determine where screen files live.
+
+**Exact locations for remaining screens:**
+
+```
+onboarding/presentation/screens/plan_ready_screen.dart
+weekly_plan/presentation/screens/weekly_plan_screen.dart
+progress/presentation/screens/progress_screen.dart
+settings/presentation/screens/settings_screen.dart
+pre_run/presentation/screens/pre_run_screen.dart
+log_run/presentation/screens/log_run_screen.dart
+session_detail/presentation/screens/session_detail_screen.dart
+```
+
 If the feature folder does not yet exist, create the full path:
 ```
 features/<feature>/
@@ -75,7 +89,11 @@ See the **Established Patterns** and **Reusable UI Patterns** sections below.
 
 ### Step 5 — Wire navigation
 
-Connect from the previous screen or bottom nav bar. Use `Navigator.push` for stack navigation or update the router config if adding a new named route.
+Connect from the previous screen or bottom nav bar. Use `context.go` / `context.push` (GoRouter) for navigation.
+
+**Bottom tab screens (weekly_plan, progress, settings, home) must NOT include a `bottomNavigationBar` in their own Scaffold.** The tab bar lives once in `AppShell` — the shell widget that wraps all tab routes via `StatefulShellRoute`. Adding `AppTabBar` inside a tab screen's `Scaffold` would duplicate it.
+
+See the **Bottom Tab Shell** section below for how the shell and router are set up.
 
 ---
 
@@ -776,6 +794,111 @@ Key distinctions:
 - **`_SegmentedControl` vs `_Chip`**: segmented control options are equal-width inside one container; chips are content-sized and wrap to multiple rows.
 - **Never use `_Chip` in an `Expanded` row** — that forces full width. Use `_ToggleButton` or `_SegmentedControl` instead.
 - **Never re-implement `StatCard`, `SessionCard`, or any listed core widget inline** — always import from `core/widgets/`.
+
+---
+
+## Bottom Tab Shell
+
+The bottom navigation bar is rendered **once** inside `AppShell` — never inside individual tab screens. This is the Flutter/GoRouter equivalent of a React layout component wrapping `<Outlet />`.
+
+### AppShell widget
+
+Create at `apps/mobile/lib/features/home/presentation/screens/app_shell.dart`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/widgets/app_tab_bar.dart';
+
+class AppShell extends StatelessWidget {
+  const AppShell({super.key, required this.navigationShell});
+
+  final StatefulNavigationShell navigationShell;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: navigationShell, // ← GoRouter injects the current tab's screen here
+      bottomNavigationBar: AppTabBar(
+        currentTab: _tabFromIndex(navigationShell.currentIndex),
+        onTabSelected: (tab) {
+          navigationShell.goBranch(
+            _indexFromTab(tab),
+            initialLocation: navigationShell.currentIndex == _indexFromTab(tab),
+          );
+        },
+      ),
+    );
+  }
+
+  static AppTab _tabFromIndex(int index) {
+    switch (index) {
+      case 0: return AppTab.today;
+      case 1: return AppTab.plan;
+      case 2: return AppTab.progress;
+      case 3: return AppTab.settings;
+      default: return AppTab.today;
+    }
+  }
+
+  static int _indexFromTab(AppTab tab) {
+    switch (tab) {
+      case AppTab.today:    return 0;
+      case AppTab.plan:     return 1;
+      case AppTab.progress: return 2;
+      case AppTab.settings: return 3;
+    }
+  }
+}
+```
+
+### Router config (StatefulShellRoute)
+
+In `app_router.dart`, wrap all tab routes inside a `StatefulShellRoute.indexedStack`:
+
+```dart
+StatefulShellRoute.indexedStack(
+  builder: (context, state, navigationShell) =>
+      AppShell(navigationShell: navigationShell),
+  branches: [
+    StatefulShellBranch(routes: [
+      GoRoute(path: '/today',    builder: (_, __) => const HomeScreen()),
+    ]),
+    StatefulShellBranch(routes: [
+      GoRoute(path: '/plan',     builder: (_, __) => const WeeklyPlanScreen()),
+    ]),
+    StatefulShellBranch(routes: [
+      GoRoute(path: '/progress', builder: (_, __) => const ProgressScreen()),
+    ]),
+    StatefulShellBranch(routes: [
+      GoRoute(path: '/settings', builder: (_, __) => const SettingsScreen()),
+    ]),
+  ],
+)
+```
+
+Each branch can have **child routes** for screens that push on top within a tab (e.g. session detail pushed from the Plan tab stays inside the Plan branch):
+
+```dart
+StatefulShellBranch(routes: [
+  GoRoute(
+    path: '/plan',
+    builder: (_, __) => const WeeklyPlanScreen(),
+    routes: [
+      GoRoute(
+        path: 'session/:id',
+        builder: (_, state) => SessionDetailScreen(id: state.pathParameters['id']!),
+      ),
+    ],
+  ),
+]),
+```
+
+### Rule — never add AppTabBar inside a tab screen
+
+Tab screens (`HomeScreen`, `WeeklyPlanScreen`, `ProgressScreen`, `SettingsScreen`) must have **no `bottomNavigationBar`** in their `Scaffold`. The shell provides it. If you add it inside the screen you will see two tab bars stacked.
+
+Screens pushed on top of a tab (pre-run, log-run, session-detail) also have no tab bar — they are full-screen detail views.
 
 ---
 

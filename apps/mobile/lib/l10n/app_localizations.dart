@@ -2118,6 +2118,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get errorGeneric;
+
+  /// Plan name format e.g. '12-Week Half Marathon'
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks}-Week {race}'**
+  String planReadyWeekPlanName(String weeks, String race);
+
+  /// Heading on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is ready'**
+  String get planReadyTitle;
+
+  /// Label for the goal row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get planReadyGoalLabel;
+
+  /// Label for the schedule row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get planReadyScheduleLabel;
+
+  /// Label for the long runs row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Long Runs'**
+  String get planReadyLongRunsLabel;
+
+  /// Label for the guidance mode row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Guidance Mode'**
+  String get planReadyGuidanceModeLabel;
+
+  /// Goal description shown on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a {race}'**
+  String planReadyGoalDescription(String race);
+
+  /// Schedule summary shown on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} weeks • {runsPerWeek} runs/week'**
+  String planReadyScheduleValue(String weeks, String runsPerWeek);
+
+  /// Motivational paragraph on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tailored exactly to your fitness and schedule. We\'ll safely build your endurance so you reach the finish line feeling strong.'**
+  String get planReadyDescription;
+
+  /// Primary CTA button on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Start Plan'**
+  String get planReadyStartPlan;
+
+  /// Secondary CTA button on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'View Full Week'**
+  String get planReadyViewFullWeek;
 }
 
 class _AppLocalizationsDelegate
