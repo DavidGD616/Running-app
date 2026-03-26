@@ -598,23 +598,184 @@ Layout with a 2-column grid using `Row` + `Expanded` pairs, separated by `SizedB
 
 ---
 
+## Core Widgets for App Screens
+
+These shared widgets live in `apps/mobile/lib/core/widgets/` and **must be imported and reused** — do not re-implement them inline.
+
+### Navigation
+
+| Widget | Import | When to use |
+|--------|--------|-------------|
+| `AppHomeHeaderBar` | `core/widgets/app_header_bar.dart` | Large title + plan badge + profile icon (Today, Plan, Progress, Settings tabs) |
+| `AppDetailHeaderBar` | `core/widgets/app_header_bar.dart` | Back chevron + centered title (session detail, pre-run, log-run, plan-ready) |
+| `AppTabBar` | `core/widgets/app_tab_bar.dart` | Bottom 4-tab nav bar on every main tab screen |
+
+`AppTabBar` usage:
+```dart
+AppTabBar(
+  currentTab: AppTab.today,
+  onTabSelected: (tab) { /* navigate */ },
+)
+```
+
+`AppDetailHeaderBar` usage:
+```dart
+AppDetailHeaderBar(title: 'Workout', onBack: () => Navigator.of(context).maybePop())
+```
+
+`AppHomeHeaderBar` usage:
+```dart
+AppHomeHeaderBar(
+  title: 'Today',
+  planBadge: PlanBadgePill(planName: 'Half Marathon Plan'),
+  onProfileTap: () { /* navigate */ },
+)
+```
+
+---
+
+### Cards & Lists
+
+| Widget | Import | When to use |
+|--------|--------|-------------|
+| `SessionCard` | `core/widgets/session_card.dart` | Training session row (weekly plan, session list) |
+| `WeeklyCalendarCard` | `core/widgets/weekly_calendar_card.dart` | Week X of Y + 7-day dots + session progress |
+| `WorkoutHeroCard` | `core/widgets/workout_hero_card.dart` | Featured workout on home (type, name, duration, distance, CTA buttons) |
+| `UpNextRowCard` | `core/widgets/up_next_row_card.dart` | Compact upcoming session row on home |
+| `WeekProgressCard` | `core/widgets/week_progress_card.dart` | This week's runs + volume + progress bar |
+| `StatCard` | `core/widgets/stat_card.dart` | Single metric tile (duration, distance, pace, HR) on session detail |
+| `AchievementCard` | `core/widgets/achievement_card.dart` | Achievement row on progress screen (gold/green/locked variants) |
+| `ProfileCard` | `core/widgets/profile_card.dart` | Profile header on settings screen |
+
+`SessionCard` variants:
+```dart
+SessionCard(day: 'Monday', title: 'Easy Run', sessionType: 'Easy Run',
+    duration: '30 min', variant: SessionCardVariant.upcoming, onTap: () {})
+SessionCard(day: 'Sunday', title: 'Long Run', completedTime: '1:12:04',
+    variant: SessionCardVariant.completed)
+SessionCard(day: 'Wednesday', title: 'Rest Day', variant: SessionCardVariant.restDay)
+```
+
+`StatCard` usage (lay out 2 per row with `Expanded`):
+```dart
+Row(children: [
+  Expanded(child: StatCard(label: 'Duration', value: '45', unit: 'min', icon: Icons.timer)),
+  SizedBox(width: AppSpacing.sm),
+  Expanded(child: StatCard(label: 'Distance', value: '6.0', unit: 'km', icon: Icons.straighten)),
+])
+```
+
+`AchievementCard` variants:
+```dart
+AchievementCard(title: 'First 10K', description: '...', dateOrProgress: 'March 15',
+    variant: AchievementCardVariant.gold)
+AchievementCard(title: 'Half Marathon Ready', description: '...', dateOrProgress: '6.2 km to go',
+    variant: AchievementCardVariant.locked)
+```
+
+---
+
+### Layout Helpers
+
+| Widget | Import | When to use |
+|--------|--------|-------------|
+| `SectionLabel` | `core/widgets/section_label.dart` | Section heading + extending divider line |
+| `TimelineItem` | `core/widgets/timeline_item.dart` | Workout phase breakdown (warm-up → main → cool-down) |
+
+`SectionLabel` usage:
+```dart
+SectionLabel(label: "Today's Workout")
+SectionLabel(label: 'Up Next', trailing: TextButton(...))
+```
+
+`TimelineItem` usage:
+```dart
+TimelineItem(phases: [
+  TimelinePhase(label: 'Warm-up', duration: '10 min', paceRange: '6:30–7:00 /km',
+      iconAsset: 'assets/icons/zap.svg'),
+  TimelinePhase(label: 'Intervals × 6', duration: '24 min', paceRange: '4:30–4:45 /km',
+      notes: '90s recovery jog between reps', iconAsset: 'assets/icons/effort.svg'),
+  TimelinePhase(label: 'Cool-down', duration: '10 min', paceRange: '7:00–8:00 /km',
+      iconAsset: 'assets/icons/heart.svg'),
+])
+```
+
+---
+
+### Settings Screen Widgets
+
+| Widget | Import | When to use |
+|--------|--------|-------------|
+| `SettingsRow` | `core/widgets/settings_row.dart` | Single settings list row (5 variants) |
+| `DestructiveRow` | `core/widgets/settings_row.dart` | Centered destructive action row (e.g. Log Out) |
+| `StatusBadge` | `core/widgets/status_badge.dart` | Connected / Disconnected / Inactive pill |
+| `PlanBadgePill` | `core/widgets/plan_badge_pill.dart` | Green dot + plan name pill |
+| `ProfileCard` | `core/widgets/profile_card.dart` | Avatar + name + plan badge + edit icon |
+
+`SettingsRow` variants:
+```dart
+SettingsRow(label: 'Update Plan Info', iconAsset: 'assets/icons/target.svg',
+    iconColor: AppColors.accentPrimary, variant: SettingsRowVariant.chevron, onTap: () {})
+SettingsRow(label: 'Apple Health', iconAsset: 'assets/icons/heart.svg',
+    variant: SettingsRowVariant.badge, badgeLabel: 'Connected')
+SettingsRow(label: 'Notifications', iconAsset: 'assets/icons/zap.svg',
+    variant: SettingsRowVariant.toggleOn, onToggle: (v) {})
+SettingsRow(label: 'Units', iconAsset: 'assets/icons/trending_up.svg',
+    variant: SettingsRowVariant.value, valueLabel: 'Kilometers')
+DestructiveRow(label: 'Log Out', iconAsset: 'assets/icons/zap.svg', onTap: () {})
+```
+
+---
+
+### Progress Screen Widgets
+
+| Widget | Import | When to use |
+|--------|--------|-------------|
+| `StreakBanner` | `core/widgets/streak_banner.dart` | Fire icon + "X Week Streak!" banner |
+| `AchievementCard` | `core/widgets/achievement_card.dart` | Achievement row (see Cards section above) |
+
+`StreakBanner` usage:
+```dart
+StreakBanner(streakWeeks: 5, subtitle: "You're staying consistently active.")
+```
+
+---
+
 ## Component Selection Guide
 
 Always call `get_design_context` to verify the exact component before implementing.
 
 | What you see in Figma | Component to use |
 |-----------------------|-----------------|
-| Full-width card with title + subtitle, rounded rect border | `_SelectCard` |
-| Large icon box + title + subtitle, rounded rect border | `_IconCard` |
-| 2–3 equal full-width rectangular buttons (Yes/No) | `_ToggleButton` in `Expanded` `Row` |
-| 4–6 short options inside one shared dark container | `_SegmentedControl` |
-| Variable-width pill buttons in a `Wrap` | `_Chip` with `IntrinsicWidth` |
-| Single number + label + optional unit | `_StatTile` |
+| Full-width card with title + subtitle, rounded rect border | `_SelectCard` (inline) |
+| Large icon box + title + subtitle, rounded rect border | `_IconCard` (inline) |
+| 2–3 equal full-width rectangular buttons (Yes/No) | `_ToggleButton` (inline) in `Expanded` `Row` |
+| 4–6 short options inside one shared dark container | `_SegmentedControl` (inline) |
+| Variable-width pill buttons in a `Wrap` | `_Chip` (inline) with `IntrinsicWidth` |
+| Single metric tile with icon + label + value | `StatCard` from `core/widgets/stat_card.dart` |
+| Training session row (upcoming / completed / rest) | `SessionCard` from `core/widgets/session_card.dart` |
+| Week X of Y calendar with 7-day dots | `WeeklyCalendarCard` from `core/widgets/weekly_calendar_card.dart` |
+| Featured workout card with Start + View Details | `WorkoutHeroCard` from `core/widgets/workout_hero_card.dart` |
+| Compact upcoming session row with chevron | `UpNextRowCard` from `core/widgets/up_next_row_card.dart` |
+| This week runs + volume + progress bar | `WeekProgressCard` from `core/widgets/week_progress_card.dart` |
+| Section heading + horizontal divider line | `SectionLabel` from `core/widgets/section_label.dart` |
+| Workout phases with vertical timeline line | `TimelineItem` from `core/widgets/timeline_item.dart` |
+| Settings list row (chevron / toggle / badge / value) | `SettingsRow` from `core/widgets/settings_row.dart` |
+| Centered destructive action (Log Out) | `DestructiveRow` from `core/widgets/settings_row.dart` |
+| Connected / Disconnected status pill | `StatusBadge` from `core/widgets/status_badge.dart` |
+| Green dot + plan name pill | `PlanBadgePill` from `core/widgets/plan_badge_pill.dart` |
+| Avatar + name + plan badge header | `ProfileCard` from `core/widgets/profile_card.dart` |
+| Fire icon + streak count banner | `StreakBanner` from `core/widgets/streak_banner.dart` |
+| Achievement row (gold / green / locked) | `AchievementCard` from `core/widgets/achievement_card.dart` |
+| Bottom 4-tab navigation bar | `AppTabBar` from `core/widgets/app_tab_bar.dart` |
+| Large home-style header bar | `AppHomeHeaderBar` from `core/widgets/app_header_bar.dart` |
+| Back + title header bar | `AppDetailHeaderBar` from `core/widgets/app_header_bar.dart` |
 
 Key distinctions:
 - **`_ToggleButton` vs `_SegmentedControl`**: toggle buttons are separate bordered cards; segmented control is segments inside one shared container with no individual borders.
 - **`_SegmentedControl` vs `_Chip`**: segmented control options are equal-width inside one container; chips are content-sized and wrap to multiple rows.
 - **Never use `_Chip` in an `Expanded` row** — that forces full width. Use `_ToggleButton` or `_SegmentedControl` instead.
+- **Never re-implement `StatCard`, `SessionCard`, or any listed core widget inline** — always import from `core/widgets/`.
 
 ---
 
@@ -639,10 +800,11 @@ These files already exist in `apps/mobile/assets/icons/`:
 
 ```
 zap.svg            target.svg         trending_up.svg    calendar.svg
-chevron_left.svg   circle_check.svg   sparkles.svg       clock.svg
-flame.svg          trophy.svg         medal.svg          mountain.svg
-effort.svg         pace.svg           heart_rate.svg     decide_for_me.svg
-heart.svg          moon.svg           edit.svg
+chevron_left.svg   chevron_right.svg  circle_check.svg   sparkles.svg
+clock.svg          flame.svg          trophy.svg         medal.svg
+mountain.svg       effort.svg         pace.svg           heart_rate.svg
+decide_for_me.svg  heart.svg          moon.svg           edit.svg
+grid.svg           bar_chart.svg      person.svg         distance.svg
 ```
 
 Reference them directly: `'assets/icons/filename.svg'`
