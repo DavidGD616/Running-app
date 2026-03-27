@@ -11,22 +11,24 @@ import '../../../../l10n/app_localizations.dart';
 
 enum _SessionType { rest, easyRun, intervals, longRun, recoveryRun }
 
+enum _SessionStatus { completed, skipped, today, upcoming }
+
 class _SessionData {
   const _SessionData({
     required this.dayLabel,
     required this.dateNumber,
     required this.type,
+    required this.status,
     this.distance,
     this.duration,
-    this.isToday = false,
   });
 
   final String Function(AppLocalizations) dayLabel;
   final String dateNumber;
   final _SessionType type;
+  final _SessionStatus status;
   final String? distance;
   final String? duration;
-  final bool isToday;
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -59,13 +61,13 @@ class WeeklyPlanScreen extends StatelessWidget {
     final l10n = AppLocalizations.of(context)!;
 
     final sessions = [
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayMon,   dateNumber: '12', type: _SessionType.rest),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayTue,   dateNumber: '13', type: _SessionType.easyRun,     distance: '5 km',  duration: '30 min'),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayWed,   dateNumber: '14', type: _SessionType.rest),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayToday, dateNumber: '15', type: _SessionType.intervals,   distance: '6 km',  duration: '45 min', isToday: true),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayFri,   dateNumber: '16', type: _SessionType.rest),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDaySat,   dateNumber: '17', type: _SessionType.longRun,     distance: '12 km', duration: '1h 15m'),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDaySun,   dateNumber: '18', type: _SessionType.recoveryRun, distance: '3 km',  duration: '20 min'),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDayMon,   dateNumber: '12', type: _SessionType.rest,        status: _SessionStatus.upcoming),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDayTue,   dateNumber: '13', type: _SessionType.easyRun,     status: _SessionStatus.completed, distance: '5 km',  duration: '30 min'),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDayWed,   dateNumber: '14', type: _SessionType.easyRun,     status: _SessionStatus.skipped,   distance: '4 km',  duration: '25 min'),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDayToday, dateNumber: '15', type: _SessionType.intervals,   status: _SessionStatus.today,     distance: '6 km',  duration: '45 min'),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDayFri,   dateNumber: '16', type: _SessionType.rest,        status: _SessionStatus.upcoming),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDaySat,   dateNumber: '17', type: _SessionType.longRun,     status: _SessionStatus.upcoming,  distance: '12 km', duration: '1h 15m'),
+      _SessionData(dayLabel: (l) => l.weeklyPlanDaySun,   dateNumber: '18', type: _SessionType.recoveryRun, status: _SessionStatus.upcoming,  distance: '3 km',  duration: '20 min'),
     ];
 
     return Scaffold(
@@ -109,7 +111,7 @@ class WeeklyPlanScreen extends StatelessWidget {
                       : null,
                   distance: s.distance,
                   duration: s.duration,
-                  isToday: s.isToday,
+                  status: s.status,
                   isRest: s.type == _SessionType.rest,
                   trailingIcon: _trailingIcon(s.type),
                   nowLabel: l10n.weeklyPlanNowBadge,
@@ -224,7 +226,7 @@ class _SessionRow extends StatelessWidget {
     this.subtitle,
     this.distance,
     this.duration,
-    required this.isToday,
+    required this.status,
     required this.isRest,
     required this.trailingIcon,
     required this.nowLabel,
@@ -236,13 +238,15 @@ class _SessionRow extends StatelessWidget {
   final String? subtitle;
   final String? distance;
   final String? duration;
-  final bool isToday;
+  final _SessionStatus status;
   final bool isRest;
   final String trailingIcon;
   final String nowLabel;
 
   @override
   Widget build(BuildContext context) {
+    final bool isToday = status == _SessionStatus.today;
+    final bool isSkipped = status == _SessionStatus.skipped;
     final Color rowBg;
     final Color rowBorder;
     final Color dateBg;
@@ -264,7 +268,22 @@ class _SessionRow extends StatelessWidget {
       dayTextColor = const Color(0xFF444444);
       dateTextColor = AppColors.textDisabled;
       titleColor = const Color(0xFF555555);
+    } else if (status == _SessionStatus.completed) {
+      rowBg = AppColors.backgroundSecondary;
+      rowBorder = AppColors.backgroundCard;
+      dateBg = const Color(0xFF1C1C1C);
+      dayTextColor = AppColors.textDisabled;
+      dateTextColor = AppColors.textDisabled;        // #666
+      titleColor = const Color(0xFF888888);          // #888 — dimmed, run is done
+    } else if (isSkipped) {
+      rowBg = Colors.transparent;
+      rowBorder = const Color(0xFF222222);
+      dateBg = const Color(0xFF1C1C1C);
+      dayTextColor = AppColors.textDisabled;
+      dateTextColor = AppColors.textDisabled;        // #666
+      titleColor = AppColors.textDisabled;           // #666 + strikethrough applied below
     } else {
+      // upcoming
       rowBg = AppColors.backgroundSecondary;
       rowBorder = AppColors.backgroundCard;
       dateBg = const Color(0xFF252525);
@@ -333,6 +352,8 @@ class _SessionRow extends StatelessWidget {
                         color: titleColor,
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
+                        decoration: isSkipped ? TextDecoration.lineThrough : null,
+                        decorationColor: isSkipped ? AppColors.textDisabled : null,
                       ),
                     ),
                     if (isToday) ...[
@@ -367,9 +388,11 @@ class _SessionRow extends StatelessWidget {
                         Text(
                           distance!,
                           style: AppTypography.caption.copyWith(
-                            color: AppColors.textDisabled,
+                            color: isSkipped ? const Color(0xFF555555) : AppColors.textDisabled,
                             fontSize: 12,
                             letterSpacing: 0.1,
+                            decoration: isSkipped ? TextDecoration.lineThrough : null,
+                            decorationColor: isSkipped ? const Color(0xFF555555) : null,
                           ),
                         ),
                       ],
@@ -389,9 +412,11 @@ class _SessionRow extends StatelessWidget {
                         Text(
                           duration!,
                           style: AppTypography.caption.copyWith(
-                            color: AppColors.textDisabled,
+                            color: isSkipped ? const Color(0xFF555555) : AppColors.textDisabled,
                             fontSize: 12,
                             letterSpacing: 0.1,
+                            decoration: isSkipped ? TextDecoration.lineThrough : null,
+                            decorationColor: isSkipped ? const Color(0xFF555555) : null,
                           ),
                         ),
                       ],
@@ -404,7 +429,7 @@ class _SessionRow extends StatelessWidget {
           // ── Trailing icon ────────────────────────────────────
           _TrailingIcon(
             iconAsset: trailingIcon,
-            isToday: isToday,
+            status: status,
             isRest: isRest,
           ),
         ],
@@ -452,16 +477,44 @@ class _NowBadge extends StatelessWidget {
 class _TrailingIcon extends StatelessWidget {
   const _TrailingIcon({
     required this.iconAsset,
-    required this.isToday,
+    required this.status,
     required this.isRest,
   });
 
   final String iconAsset;
-  final bool isToday;
+  final _SessionStatus status;
   final bool isRest;
 
   @override
   Widget build(BuildContext context) {
+    // Completed — muted green bg + green checkmark
+    if (status == _SessionStatus.completed) {
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: AppColors.accentPrimary.withValues(alpha: 0.1),
+          borderRadius: AppRadius.borderMd,
+        ),
+        child: Icon(Icons.check, color: AppColors.accentPrimary, size: 18),
+      );
+    }
+
+    // Skipped — dark rounded square with X
+    if (status == _SessionStatus.skipped) {
+      return Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: const Color(0xFF222222),
+          borderRadius: AppRadius.borderMd,
+        ),
+        child: Icon(Icons.close, color: AppColors.textDisabled, size: 18),
+      );
+    }
+
+    // Today / upcoming / rest — SVG icon
+    final bool isToday = status == _SessionStatus.today;
     final Color boxBg;
     final Color iconColor;
     final double opacity;
