@@ -383,5 +383,28 @@
   "homeSectionUpNext": "A Continuación",
   "homeSectionThisWeek": "Esta Semana",
   "homeLogPastRun": "Registrar Carrera",
-  "homeFullWeek": "Semana Completa"
+  "homeFullWeek": "Semana Completa",
+
+  "workoutDurationLabel": "Duración",
+  "workoutDistanceLabel": "Distancia",
+  "workoutTargetGuidanceLabel": "Objetivo de Entrenamiento",
+  "workoutViewDetailsButton": "Ver Detalles",
+  "workoutStartButton": "Iniciar",
+
+  "weekProgressRunsLabel": "Carreras",
+  "weekProgressVolumeLabel": "Volumen",
+  "weekProgressFooter": "En camino de alcanzar {totalVolume} {unit} planificados",
+
+  "homeWorkoutSessionType": "Intervalos",
+  "homeWorkoutSessionName": "Entrenamiento de Intervalos",
+  "homeWorkoutDuration": "45 min",
+  "homeWorkoutDistance": "~6.5 km",
+  "homeWorkoutTargetGuidance": "4×800m al ritmo de 5K. 90s trote de recuperación.",
+
+  "homeUpNextSessionName": "Carrera Larga",
+  "homeUpNextDayLabel": "Sábado",
+  "homeUpNextDuration": "1h 15min",
+  "homeUpNextEffortLabel": "Esfuerzo suave",
+
+  "homeVolumeUnit": "km"
 }

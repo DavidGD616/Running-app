@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../../l10n/app_localizations.dart';
 
 class WorkoutHeroCard extends StatelessWidget {
   const WorkoutHeroCard({
@@ -29,6 +30,7 @@ class WorkoutHeroCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
@@ -101,7 +103,7 @@ class WorkoutHeroCard extends StatelessWidget {
               child: Row(
                 children: [
                   Expanded(
-                    child: _StatCell(label: 'Duration', value: duration),
+                    child: _StatCell(label: l10n.workoutDurationLabel, value: duration),
                   ),
                   const VerticalDivider(
                     width: 1,
@@ -109,7 +111,7 @@ class WorkoutHeroCard extends StatelessWidget {
                     color: AppColors.borderDefault,
                   ),
                   Expanded(
-                    child: _StatCell(label: 'Distance', value: distance),
+                    child: _StatCell(label: l10n.workoutDistanceLabel, value: distance),
                   ),
                 ],
               ),
@@ -134,7 +136,7 @@ class WorkoutHeroCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'TARGET GUIDANCE',
+                    l10n.workoutTargetGuidanceLabel.toUpperCase(),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.accentPrimary,
                       fontSize: 10,
@@ -211,6 +213,7 @@ class _ViewDetailsButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -221,7 +224,7 @@ class _ViewDetailsButton extends StatelessWidget {
         ),
         child: Center(
           child: Text(
-            'View Details',
+            l10n.workoutViewDetailsButton,
             style: AppTypography.labelLarge.copyWith(
               color: AppColors.textSecondary,
             ),
@@ -239,6 +242,7 @@ class _StartButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -257,7 +261,7 @@ class _StartButton extends StatelessWidget {
             ),
             const SizedBox(width: 6),
             Text(
-              'Start',
+              l10n.workoutStartButton,
               style: AppTypography.labelLarge.copyWith(
                 color: AppColors.backgroundPrimary,
                 fontWeight: FontWeight.w700,

@@ -1135,4 +1135,61 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeFullWeek => 'Semana Completa';
+
+  @override
+  String get workoutDurationLabel => 'Duración';
+
+  @override
+  String get workoutDistanceLabel => 'Distancia';
+
+  @override
+  String get workoutTargetGuidanceLabel => 'Objetivo de Entrenamiento';
+
+  @override
+  String get workoutViewDetailsButton => 'Ver Detalles';
+
+  @override
+  String get workoutStartButton => 'Iniciar';
+
+  @override
+  String get weekProgressRunsLabel => 'Carreras';
+
+  @override
+  String get weekProgressVolumeLabel => 'Volumen';
+
+  @override
+  String weekProgressFooter(String totalVolume, String unit) {
+    return 'En camino de alcanzar $totalVolume $unit planificados';
+  }
+
+  @override
+  String get homeWorkoutSessionType => 'Intervalos';
+
+  @override
+  String get homeWorkoutSessionName => 'Entrenamiento de Intervalos';
+
+  @override
+  String get homeWorkoutDuration => '45 min';
+
+  @override
+  String get homeWorkoutDistance => '~6.5 km';
+
+  @override
+  String get homeWorkoutTargetGuidance =>
+      '4×800m al ritmo de 5K. 90s trote de recuperación.';
+
+  @override
+  String get homeUpNextSessionName => 'Carrera Larga';
+
+  @override
+  String get homeUpNextDayLabel => 'Sábado';
+
+  @override
+  String get homeUpNextDuration => '1h 15min';
+
+  @override
+  String get homeUpNextEffortLabel => 'Esfuerzo suave';
+
+  @override
+  String get homeVolumeUnit => 'km';
 }

@@ -1101,5 +1101,65 @@
   "@homeLogPastRun": { "description": "Quick action button to log a past run on the home screen" },
 
   "homeFullWeek": "Full Week",
-  "@homeFullWeek": { "description": "Quick action button to view the full weekly plan on the home screen" }
+  "@homeFullWeek": { "description": "Quick action button to view the full weekly plan on the home screen" },
+
+  "workoutDurationLabel": "Duration",
+  "@workoutDurationLabel": { "description": "Stat label in the workout hero card" },
+
+  "workoutDistanceLabel": "Distance",
+  "@workoutDistanceLabel": { "description": "Stat label in the workout hero card" },
+
+  "workoutTargetGuidanceLabel": "Target Guidance",
+  "@workoutTargetGuidanceLabel": { "description": "Section label inside the target guidance box in the workout hero card" },
+
+  "workoutViewDetailsButton": "View Details",
+  "@workoutViewDetailsButton": { "description": "Secondary button in the workout hero card" },
+
+  "workoutStartButton": "Start",
+  "@workoutStartButton": { "description": "Primary CTA button in the workout hero card" },
+
+  "weekProgressRunsLabel": "Runs",
+  "@weekProgressRunsLabel": { "description": "Stat label for runs completed in the week progress card" },
+
+  "weekProgressVolumeLabel": "Volume",
+  "@weekProgressVolumeLabel": { "description": "Stat label for volume in the week progress card" },
+
+  "weekProgressFooter": "On track to hit {totalVolume} {unit} planned",
+  "@weekProgressFooter": {
+    "description": "Footer message in the week progress card",
+    "placeholders": {
+      "totalVolume": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "homeWorkoutSessionType": "Interval",
+  "@homeWorkoutSessionType": { "description": "Session type label on the home workout hero card" },
+
+  "homeWorkoutSessionName": "Interval Training",
+  "@homeWorkoutSessionName": { "description": "Session name on the home workout hero card" },
+
+  "homeWorkoutDuration": "45 min",
+  "@homeWorkoutDuration": { "description": "Duration shown on the home workout hero card" },
+
+  "homeWorkoutDistance": "~6.5 km",
+  "@homeWorkoutDistance": { "description": "Distance shown on the home workout hero card" },
+
+  "homeWorkoutTargetGuidance": "4×800m @ 5K pace. 90s recovery jog.",
+  "@homeWorkoutTargetGuidance": { "description": "Target guidance text on the home workout hero card" },
+
+  "homeUpNextSessionName": "Long Run",
+  "@homeUpNextSessionName": { "description": "Up Next session name on the home screen" },
+
+  "homeUpNextDayLabel": "Saturday",
+  "@homeUpNextDayLabel": { "description": "Day label for the Up Next session on the home screen" },
+
+  "homeUpNextDuration": "1h 15min",
+  "@homeUpNextDuration": { "description": "Duration for the Up Next session on the home screen" },
+
+  "homeUpNextEffortLabel": "Easy effort",
+  "@homeUpNextEffortLabel": { "description": "Effort label for the Up Next session on the home screen" },
+
+  "homeVolumeUnit": "km",
+  "@homeVolumeUnit": { "description": "Volume unit displayed on the home week progress card" }
 }

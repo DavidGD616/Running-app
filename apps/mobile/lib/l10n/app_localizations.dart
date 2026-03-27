@@ -2232,6 +2232,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Full Week'**
   String get homeFullWeek;
+
+  /// Stat label in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get workoutDurationLabel;
+
+  /// Stat label in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get workoutDistanceLabel;
+
+  /// Section label inside the target guidance box in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Target Guidance'**
+  String get workoutTargetGuidanceLabel;
+
+  /// Secondary button in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'View Details'**
+  String get workoutViewDetailsButton;
+
+  /// Primary CTA button in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get workoutStartButton;
+
+  /// Stat label for runs completed in the week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get weekProgressRunsLabel;
+
+  /// Stat label for volume in the week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get weekProgressVolumeLabel;
+
+  /// Footer message in the week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'On track to hit {totalVolume} {unit} planned'**
+  String weekProgressFooter(String totalVolume, String unit);
+
+  /// Session type label on the home workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Interval'**
+  String get homeWorkoutSessionType;
+
+  /// Session name on the home workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Interval Training'**
+  String get homeWorkoutSessionName;
+
+  /// Duration shown on the home workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'45 min'**
+  String get homeWorkoutDuration;
+
+  /// Distance shown on the home workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'~6.5 km'**
+  String get homeWorkoutDistance;
+
+  /// Target guidance text on the home workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'4×800m @ 5K pace. 90s recovery jog.'**
+  String get homeWorkoutTargetGuidance;
+
+  /// Up Next session name on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Long Run'**
+  String get homeUpNextSessionName;
+
+  /// Day label for the Up Next session on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get homeUpNextDayLabel;
+
+  /// Duration for the Up Next session on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'1h 15min'**
+  String get homeUpNextDuration;
+
+  /// Effort label for the Up Next session on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy effort'**
+  String get homeUpNextEffortLabel;
+
+  /// Volume unit displayed on the home week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get homeVolumeUnit;
 }
 
 class _AppLocalizationsDelegate

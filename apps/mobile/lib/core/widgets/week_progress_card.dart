@@ -3,6 +3,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../../l10n/app_localizations.dart';
 
 class WeekProgressCard extends StatelessWidget {
   const WeekProgressCard({
@@ -27,6 +28,7 @@ class WeekProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.base,
@@ -52,7 +54,7 @@ class WeekProgressCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'RUNS',
+                    l10n.weekProgressRunsLabel.toUpperCase(),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textDisabled,
                       fontSize: 11,
@@ -86,7 +88,7 @@ class WeekProgressCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    'VOLUME',
+                    l10n.weekProgressVolumeLabel.toUpperCase(),
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textDisabled,
                       fontSize: 11,
@@ -139,7 +141,7 @@ class WeekProgressCard extends StatelessWidget {
               Expanded(
                 child: Text(
                   footerMessage ??
-                      'On track to hit ${totalVolume.toStringAsFixed(1)} $volumeUnit planned',
+                      l10n.weekProgressFooter(totalVolume.toStringAsFixed(1), volumeUnit),
                   style: AppTypography.caption.copyWith(
                     color: AppColors.textDisabled,
                   ),

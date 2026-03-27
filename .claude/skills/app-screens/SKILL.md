@@ -911,7 +911,7 @@ Screens pushed on top of a tab (pre-run, log-run, session-detail) also have no t
 - **Colors:** always `AppColors.*`, never hex.
 - **Typography:** always use direct non-nullable getters — `AppTypography.titleMedium`, `AppTypography.bodyMedium`, etc. **NEVER use `AppTypography.textTheme.*?.copyWith(...)` — the `?` makes the whole style null if the slot is unset.**
 - **Border radius:** always `AppRadius.*` or `BorderRadius.circular(100)` for pills.
-- **Localization:** always use `AppLocalizations.of(context)!` for any user-facing text. Add new keys to both `app_en.arb` and `app_es.arb`, then run `flutter gen-l10n` before using them.
+- **Localization:** always use `AppLocalizations.of(context)!` for **every** user-facing string — this includes text passed as parameters to widgets, not just text rendered directly in the screen file. There must be zero hardcoded English strings anywhere on the screen: no `'Long Run'`, no `'45 min'`, no `'km'`, no `'Easy effort'`. Every string a user can read must have an `arb` key in both `app_en.arb` and `app_es.arb`. Add new keys to both files, then run `flutter gen-l10n` before using them. Reusable widgets that have their own static UI labels (e.g. "Duration", "Start", "Runs") must call `AppLocalizations.of(context)!` directly inside their own `build` method.
 
 ---
 
