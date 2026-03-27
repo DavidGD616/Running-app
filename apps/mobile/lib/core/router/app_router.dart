@@ -19,14 +19,18 @@ import '../../features/onboarding/presentation/screens/motivation_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_generation_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_ready_screen.dart';
+import '../../features/home/presentation/screens/app_shell.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/weekly_plan/presentation/screens/weekly_plan_screen.dart';
+import '../../features/progress/presentation/screens/progress_screen.dart';
+import '../../features/settings/presentation/screens/settings_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: RouteNames.splash,
   redirect: (context, state) async {
     if (state.matchedLocation != RouteNames.splash) return null;
     final completed = await OnboardingNotifier.isCompleted();
-    return completed ? RouteNames.home : null;
+    return completed ? RouteNames.today : null;
   },
   routes: [
     GoRoute(
@@ -101,9 +105,35 @@ final appRouter = GoRouter(
       path: RouteNames.planReady,
       builder: (context, state) => const PlanReadyScreen(),
     ),
-    GoRoute(
-      path: RouteNames.home,
-      builder: (context, state) => const HomeScreen(),
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          AppShell(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: RouteNames.today,
+            builder: (_, _) => const HomeScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: RouteNames.plan,
+            builder: (_, _) => const WeeklyPlanScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: RouteNames.progress,
+            builder: (_, _) => const ProgressScreen(),
+          ),
+        ]),
+        StatefulShellBranch(routes: [
+          GoRoute(
+            path: RouteNames.settings,
+            builder: (_, _) => const SettingsScreen(),
+          ),
+        ]),
+      ],
     ),
   ],
 );

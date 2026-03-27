@@ -223,7 +223,7 @@ class PlanReadyScreen extends ConsumerWidget {
                     label: l10n.planReadyStartPlan,
                     onPressed: () async {
                       await ref.read(onboardingProvider.notifier).markCompleted();
-                      if (context.mounted) context.go(RouteNames.home);
+                      if (context.mounted) context.go(RouteNames.today);
                     },
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -232,7 +232,7 @@ class PlanReadyScreen extends ConsumerWidget {
                     variant: AppButtonVariant.secondary,
                     onPressed: () async {
                       await ref.read(onboardingProvider.notifier).markCompleted();
-                      if (context.mounted) context.go(RouteNames.home);
+                      if (context.mounted) context.go(RouteNames.today);
                     },
                   ),
                 ],

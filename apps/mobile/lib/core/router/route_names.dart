@@ -18,4 +18,8 @@ abstract class RouteNames {
   static const planGeneration  = '/plan-generation';
   static const planReady       = '/plan-ready';
   static const home            = '/home';
+  static const today           = '/today';
+  static const plan            = '/plan';
+  static const progress        = '/progress';
+  static const settings        = '/settings';
 }
