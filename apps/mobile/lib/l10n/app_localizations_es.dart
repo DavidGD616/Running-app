@@ -1111,4 +1111,28 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planReadyViewFullWeek => 'Ver semana completa';
+
+  @override
+  String get homeTitle => 'Hoy';
+
+  @override
+  String get homePlanName => 'Plan Media Maratón';
+
+  @override
+  String get homeWeekInfo => 'Semana 4';
+
+  @override
+  String get homeSectionTodaysWorkout => 'Entrenamiento de Hoy';
+
+  @override
+  String get homeSectionUpNext => 'A Continuación';
+
+  @override
+  String get homeSectionThisWeek => 'Esta Semana';
+
+  @override
+  String get homeLogPastRun => 'Registrar Carrera';
+
+  @override
+  String get homeFullWeek => 'Semana Completa';
 }

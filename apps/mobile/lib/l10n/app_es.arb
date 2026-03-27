@@ -374,5 +374,14 @@
   "planReadyScheduleValue": "{weeks} semanas • {runsPerWeek} carreras/semana",
   "planReadyDescription": "Diseñado exactamente para tu condición física y horario. Construiremos tu resistencia de forma segura para que llegues a la meta sintiéndote fuerte.",
   "planReadyStartPlan": "Iniciar plan",
-  "planReadyViewFullWeek": "Ver semana completa"
+  "planReadyViewFullWeek": "Ver semana completa",
+
+  "homeTitle": "Hoy",
+  "homePlanName": "Plan Media Maratón",
+  "homeWeekInfo": "Semana 4",
+  "homeSectionTodaysWorkout": "Entrenamiento de Hoy",
+  "homeSectionUpNext": "A Continuación",
+  "homeSectionThisWeek": "Esta Semana",
+  "homeLogPastRun": "Registrar Carrera",
+  "homeFullWeek": "Semana Completa"
 }

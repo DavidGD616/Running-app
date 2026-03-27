@@ -18,7 +18,7 @@ class AppHomeHeaderBar extends StatelessWidget implements PreferredSizeWidget {
   final VoidCallback? onProfileTap;
 
   @override
-  Size get preferredSize => const Size.fromHeight(64);
+  Size get preferredSize => const Size.fromHeight(80);
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +27,7 @@ class AppHomeHeaderBar extends StatelessWidget implements PreferredSizeWidget {
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
         child: SizedBox(
-          height: 64,
+          height: 80,
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [

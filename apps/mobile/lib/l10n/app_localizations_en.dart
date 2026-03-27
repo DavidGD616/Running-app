@@ -1105,4 +1105,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planReadyViewFullWeek => 'View Full Week';
+
+  @override
+  String get homeTitle => 'Today';
+
+  @override
+  String get homePlanName => 'Half Marathon Plan';
+
+  @override
+  String get homeWeekInfo => 'Week 4';
+
+  @override
+  String get homeSectionTodaysWorkout => 'Today\'s Workout';
+
+  @override
+  String get homeSectionUpNext => 'Up Next';
+
+  @override
+  String get homeSectionThisWeek => 'This Week';
+
+  @override
+  String get homeLogPastRun => 'Log Past Run';
+
+  @override
+  String get homeFullWeek => 'Full Week';
 }

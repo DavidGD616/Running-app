@@ -1077,5 +1077,29 @@
   "@planReadyStartPlan": { "description": "Primary CTA button on the plan-ready screen" },
 
   "planReadyViewFullWeek": "View Full Week",
-  "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" }
+  "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" },
+
+  "homeTitle": "Today",
+  "@homeTitle": { "description": "Title of the home/today screen" },
+
+  "homePlanName": "Half Marathon Plan",
+  "@homePlanName": { "description": "Plan name shown in the header badge on the home screen" },
+
+  "homeWeekInfo": "Week 4",
+  "@homeWeekInfo": { "description": "Current week indicator next to the plan badge on the home screen" },
+
+  "homeSectionTodaysWorkout": "Today's Workout",
+  "@homeSectionTodaysWorkout": { "description": "Section label for today's workout on the home screen" },
+
+  "homeSectionUpNext": "Up Next",
+  "@homeSectionUpNext": { "description": "Section label for upcoming session on the home screen" },
+
+  "homeSectionThisWeek": "This Week",
+  "@homeSectionThisWeek": { "description": "Section label for weekly progress on the home screen" },
+
+  "homeLogPastRun": "Log Past Run",
+  "@homeLogPastRun": { "description": "Quick action button to log a past run on the home screen" },
+
+  "homeFullWeek": "Full Week",
+  "@homeFullWeek": { "description": "Quick action button to view the full weekly plan on the home screen" }
 }

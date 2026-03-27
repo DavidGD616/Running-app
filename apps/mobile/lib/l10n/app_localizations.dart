@@ -2184,6 +2184,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View Full Week'**
   String get planReadyViewFullWeek;
+
+  /// Title of the home/today screen
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get homeTitle;
+
+  /// Plan name shown in the header badge on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Half Marathon Plan'**
+  String get homePlanName;
+
+  /// Current week indicator next to the plan badge on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Week 4'**
+  String get homeWeekInfo;
+
+  /// Section label for today's workout on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Workout'**
+  String get homeSectionTodaysWorkout;
+
+  /// Section label for upcoming session on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Up Next'**
+  String get homeSectionUpNext;
+
+  /// Section label for weekly progress on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get homeSectionThisWeek;
+
+  /// Quick action button to log a past run on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Log Past Run'**
+  String get homeLogPastRun;
+
+  /// Quick action button to view the full weekly plan on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Full Week'**
+  String get homeFullWeek;
 }
 
 class _AppLocalizationsDelegate
