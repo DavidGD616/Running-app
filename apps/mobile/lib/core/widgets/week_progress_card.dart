@@ -28,51 +28,111 @@ class WeekProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.base),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.base,
+        AppSpacing.lg,
+        AppSpacing.base,
+        AppSpacing.base,
+      ),
       decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
+        color: AppColors.backgroundSecondary,
         borderRadius: AppRadius.borderLg,
         border: Border.all(color: AppColors.borderDefault),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Runs / Volume row ──────────────────────────────
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Expanded(
-                child: _StatColumn(
-                  label: 'Runs',
-                  value: '$sessionsCompleted/$totalSessions sessions done',
-                ),
-              ),
-              Container(
-                width: 1,
-                height: 36,
-                color: AppColors.borderDefault,
-              ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(left: AppSpacing.base),
-                  child: _StatColumn(
-                    label: 'Volume',
-                    value:
-                        '${volumeCompleted.toStringAsFixed(1)} $volumeUnit this week',
+              // Runs — left aligned
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'RUNS',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textDisabled,
+                      fontSize: 11,
+                      letterSpacing: 0.3,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
-                ),
+                  const SizedBox(height: 3),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$sessionsCompleted ',
+                          style: AppTypography.headlineLarge,
+                        ),
+                        TextSpan(
+                          text: '/ $totalSessions',
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppColors.textDisabled,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              // Volume — right aligned
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    'VOLUME',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textDisabled,
+                      fontSize: 11,
+                      letterSpacing: 0.3,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '${volumeCompleted.toStringAsFixed(1)} ',
+                          style: AppTypography.headlineLarge,
+                        ),
+                        TextSpan(
+                          text: volumeUnit,
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppColors.textDisabled,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
+
           const SizedBox(height: AppSpacing.md),
+
+          // ── Progress bar ───────────────────────────────────
           ClipRRect(
             borderRadius: AppRadius.borderFull,
             child: LinearProgressIndicator(
               value: _progress,
               minHeight: 6,
-              backgroundColor: AppColors.borderDefault,
+              backgroundColor: AppColors.backgroundCard,
               valueColor: const AlwaysStoppedAnimation(AppColors.accentPrimary),
             ),
           ),
+
           const SizedBox(height: AppSpacing.sm),
+
+          // ── Footer ─────────────────────────────────────────
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -80,38 +140,22 @@ class WeekProgressCard extends StatelessWidget {
                 child: Text(
                   footerMessage ??
                       'On track to hit ${totalVolume.toStringAsFixed(1)} $volumeUnit planned',
-                  style: AppTypography.caption,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textDisabled,
+                  ),
                 ),
               ),
               Text(
                 '${(_progress * 100).round()}%',
                 style: AppTypography.caption.copyWith(
                   color: AppColors.accentPrimary,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
           ),
         ],
       ),
-    );
-  }
-}
-
-class _StatColumn extends StatelessWidget {
-  const _StatColumn({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label, style: AppTypography.caption),
-        const SizedBox(height: AppSpacing.xs),
-        Text(value, style: AppTypography.bodyMedium),
-      ],
     );
   }
 }

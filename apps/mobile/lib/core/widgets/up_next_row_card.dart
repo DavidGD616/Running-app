@@ -31,7 +31,7 @@ class UpNextRowCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.base, vertical: AppSpacing.md),
         decoration: BoxDecoration(
-          color: AppColors.backgroundCard,
+          color: AppColors.backgroundSecondary,
           borderRadius: AppRadius.borderLg,
           border: Border.all(color: AppColors.borderDefault),
         ),
@@ -68,12 +68,15 @@ class UpNextRowCard extends StatelessWidget {
                 ],
               ),
             ),
-            SvgPicture.asset(
-              'assets/icons/chevron_right.svg',
-              width: 20,
-              height: 20,
-              colorFilter: const ColorFilter.mode(
-                  AppColors.textSecondary, BlendMode.srcIn),
+            Opacity(
+              opacity: 0.40,
+              child: SvgPicture.asset(
+                'assets/icons/chevron_right.svg',
+                width: 18,
+                height: 18,
+                colorFilter: const ColorFilter.mode(
+                    AppColors.textPrimary, BlendMode.srcIn),
+              ),
             ),
           ],
         ),
