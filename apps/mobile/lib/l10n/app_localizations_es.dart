@@ -1204,4 +1204,66 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tabSettings => 'Ajustes';
+
+  @override
+  String weeklyPlanTitle(String week, String total) {
+    return 'Semana $week de $total';
+  }
+
+  @override
+  String get weeklyPlanDistanceLabel => 'Distancia';
+
+  @override
+  String get weeklyPlanTimeLabel => 'Tiempo';
+
+  @override
+  String get weeklyPlanRunsLabel => 'Carreras';
+
+  @override
+  String get weeklyPlanScheduleLabel => 'Horario';
+
+  @override
+  String get weeklyPlanRestTitle => 'Descanso';
+
+  @override
+  String get weeklyPlanRestSubtitle => 'Día de recuperación';
+
+  @override
+  String get weeklyPlanNowBadge => 'Ahora';
+
+  @override
+  String get weeklyPlanViewFullPlan => 'Ver Plan Completo';
+
+  @override
+  String get weeklyPlanSessionEasyRun => 'Carrera Suave';
+
+  @override
+  String get weeklyPlanSessionIntervals => 'Intervalos';
+
+  @override
+  String get weeklyPlanSessionLongRun => 'Carrera Larga';
+
+  @override
+  String get weeklyPlanSessionRecoveryRun => 'Carrera de Recuperación';
+
+  @override
+  String get weeklyPlanDayMon => 'Lun';
+
+  @override
+  String get weeklyPlanDayTue => 'Mar';
+
+  @override
+  String get weeklyPlanDayWed => 'Mié';
+
+  @override
+  String get weeklyPlanDayFri => 'Vie';
+
+  @override
+  String get weeklyPlanDaySat => 'Sáb';
+
+  @override
+  String get weeklyPlanDaySun => 'Dom';
+
+  @override
+  String get weeklyPlanDayToday => 'Hoy';
 }

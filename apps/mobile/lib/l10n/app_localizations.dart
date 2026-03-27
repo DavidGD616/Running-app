@@ -2364,6 +2364,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get tabSettings;
+
+  /// Weekly plan screen title showing current week and total weeks
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week} of {total}'**
+  String weeklyPlanTitle(String week, String total);
+
+  /// Distance stat label in weekly plan summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get weeklyPlanDistanceLabel;
+
+  /// Time stat label in weekly plan summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get weeklyPlanTimeLabel;
+
+  /// Runs stat label in weekly plan summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get weeklyPlanRunsLabel;
+
+  /// Schedule section label in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get weeklyPlanScheduleLabel;
+
+  /// Rest day session title
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get weeklyPlanRestTitle;
+
+  /// Rest day subtitle text
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery day'**
+  String get weeklyPlanRestSubtitle;
+
+  /// Badge label on today's session row
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get weeklyPlanNowBadge;
+
+  /// View full plan button label
+  ///
+  /// In en, this message translates to:
+  /// **'View Full Plan'**
+  String get weeklyPlanViewFullPlan;
+
+  /// Easy run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Run'**
+  String get weeklyPlanSessionEasyRun;
+
+  /// Intervals session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get weeklyPlanSessionIntervals;
+
+  /// Long run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Long Run'**
+  String get weeklyPlanSessionLongRun;
+
+  /// Recovery run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Run'**
+  String get weeklyPlanSessionRecoveryRun;
+
+  /// Monday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get weeklyPlanDayMon;
+
+  /// Tuesday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get weeklyPlanDayTue;
+
+  /// Wednesday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get weeklyPlanDayWed;
+
+  /// Friday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get weeklyPlanDayFri;
+
+  /// Saturday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get weeklyPlanDaySat;
+
+  /// Sunday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get weeklyPlanDaySun;
+
+  /// Label for today's date box in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get weeklyPlanDayToday;
 }
 
 class _AppLocalizationsDelegate

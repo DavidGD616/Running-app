@@ -1197,4 +1197,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tabSettings => 'Settings';
+
+  @override
+  String weeklyPlanTitle(String week, String total) {
+    return 'Week $week of $total';
+  }
+
+  @override
+  String get weeklyPlanDistanceLabel => 'Distance';
+
+  @override
+  String get weeklyPlanTimeLabel => 'Time';
+
+  @override
+  String get weeklyPlanRunsLabel => 'Runs';
+
+  @override
+  String get weeklyPlanScheduleLabel => 'Schedule';
+
+  @override
+  String get weeklyPlanRestTitle => 'Rest';
+
+  @override
+  String get weeklyPlanRestSubtitle => 'Recovery day';
+
+  @override
+  String get weeklyPlanNowBadge => 'Now';
+
+  @override
+  String get weeklyPlanViewFullPlan => 'View Full Plan';
+
+  @override
+  String get weeklyPlanSessionEasyRun => 'Easy Run';
+
+  @override
+  String get weeklyPlanSessionIntervals => 'Intervals';
+
+  @override
+  String get weeklyPlanSessionLongRun => 'Long Run';
+
+  @override
+  String get weeklyPlanSessionRecoveryRun => 'Recovery Run';
+
+  @override
+  String get weeklyPlanDayMon => 'Mon';
+
+  @override
+  String get weeklyPlanDayTue => 'Tue';
+
+  @override
+  String get weeklyPlanDayWed => 'Wed';
+
+  @override
+  String get weeklyPlanDayFri => 'Fri';
+
+  @override
+  String get weeklyPlanDaySat => 'Sat';
+
+  @override
+  String get weeklyPlanDaySun => 'Sun';
+
+  @override
+  String get weeklyPlanDayToday => 'Today';
 }

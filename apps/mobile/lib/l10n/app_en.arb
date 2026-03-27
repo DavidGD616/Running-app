@@ -1173,5 +1173,71 @@
   "@tabProgress": { "description": "Bottom nav tab label for the Progress tab" },
 
   "tabSettings": "Settings",
-  "@tabSettings": { "description": "Bottom nav tab label for the Settings tab" }
+  "@tabSettings": { "description": "Bottom nav tab label for the Settings tab" },
+
+  "weeklyPlanTitle": "Week {week} of {total}",
+  "@weeklyPlanTitle": {
+    "description": "Weekly plan screen title showing current week and total weeks",
+    "placeholders": {
+      "week": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "weeklyPlanDistanceLabel": "Distance",
+  "@weeklyPlanDistanceLabel": { "description": "Distance stat label in weekly plan summary card" },
+
+  "weeklyPlanTimeLabel": "Time",
+  "@weeklyPlanTimeLabel": { "description": "Time stat label in weekly plan summary card" },
+
+  "weeklyPlanRunsLabel": "Runs",
+  "@weeklyPlanRunsLabel": { "description": "Runs stat label in weekly plan summary card" },
+
+  "weeklyPlanScheduleLabel": "Schedule",
+  "@weeklyPlanScheduleLabel": { "description": "Schedule section label in weekly plan" },
+
+  "weeklyPlanRestTitle": "Rest",
+  "@weeklyPlanRestTitle": { "description": "Rest day session title" },
+
+  "weeklyPlanRestSubtitle": "Recovery day",
+  "@weeklyPlanRestSubtitle": { "description": "Rest day subtitle text" },
+
+  "weeklyPlanNowBadge": "Now",
+  "@weeklyPlanNowBadge": { "description": "Badge label on today's session row" },
+
+  "weeklyPlanViewFullPlan": "View Full Plan",
+  "@weeklyPlanViewFullPlan": { "description": "View full plan button label" },
+
+  "weeklyPlanSessionEasyRun": "Easy Run",
+  "@weeklyPlanSessionEasyRun": { "description": "Easy run session type name" },
+
+  "weeklyPlanSessionIntervals": "Intervals",
+  "@weeklyPlanSessionIntervals": { "description": "Intervals session type name" },
+
+  "weeklyPlanSessionLongRun": "Long Run",
+  "@weeklyPlanSessionLongRun": { "description": "Long run session type name" },
+
+  "weeklyPlanSessionRecoveryRun": "Recovery Run",
+  "@weeklyPlanSessionRecoveryRun": { "description": "Recovery run session type name" },
+
+  "weeklyPlanDayMon": "Mon",
+  "@weeklyPlanDayMon": { "description": "Monday abbreviation in weekly plan" },
+
+  "weeklyPlanDayTue": "Tue",
+  "@weeklyPlanDayTue": { "description": "Tuesday abbreviation in weekly plan" },
+
+  "weeklyPlanDayWed": "Wed",
+  "@weeklyPlanDayWed": { "description": "Wednesday abbreviation in weekly plan" },
+
+  "weeklyPlanDayFri": "Fri",
+  "@weeklyPlanDayFri": { "description": "Friday abbreviation in weekly plan" },
+
+  "weeklyPlanDaySat": "Sat",
+  "@weeklyPlanDaySat": { "description": "Saturday abbreviation in weekly plan" },
+
+  "weeklyPlanDaySun": "Sun",
+  "@weeklyPlanDaySun": { "description": "Sunday abbreviation in weekly plan" },
+
+  "weeklyPlanDayToday": "Today",
+  "@weeklyPlanDayToday": { "description": "Label for today's date box in weekly plan" }
 }

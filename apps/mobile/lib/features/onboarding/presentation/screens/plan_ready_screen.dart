@@ -232,7 +232,7 @@ class PlanReadyScreen extends ConsumerWidget {
                     variant: AppButtonVariant.secondary,
                     onPressed: () async {
                       await ref.read(onboardingProvider.notifier).markCompleted();
-                      if (context.mounted) context.go(RouteNames.today);
+                      if (context.mounted) context.go(RouteNames.plan);
                     },
                   ),
                 ],

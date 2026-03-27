@@ -411,5 +411,26 @@
   "tabToday": "Hoy",
   "tabPlan": "Plan",
   "tabProgress": "Progreso",
-  "tabSettings": "Ajustes"
+  "tabSettings": "Ajustes",
+
+  "weeklyPlanTitle": "Semana {week} de {total}",
+  "weeklyPlanDistanceLabel": "Distancia",
+  "weeklyPlanTimeLabel": "Tiempo",
+  "weeklyPlanRunsLabel": "Carreras",
+  "weeklyPlanScheduleLabel": "Horario",
+  "weeklyPlanRestTitle": "Descanso",
+  "weeklyPlanRestSubtitle": "Día de recuperación",
+  "weeklyPlanNowBadge": "Ahora",
+  "weeklyPlanViewFullPlan": "Ver Plan Completo",
+  "weeklyPlanSessionEasyRun": "Carrera Suave",
+  "weeklyPlanSessionIntervals": "Intervalos",
+  "weeklyPlanSessionLongRun": "Carrera Larga",
+  "weeklyPlanSessionRecoveryRun": "Carrera de Recuperación",
+  "weeklyPlanDayMon": "Lun",
+  "weeklyPlanDayTue": "Mar",
+  "weeklyPlanDayWed": "Mié",
+  "weeklyPlanDayFri": "Vie",
+  "weeklyPlanDaySat": "Sáb",
+  "weeklyPlanDaySun": "Dom",
+  "weeklyPlanDayToday": "Hoy"
 }
