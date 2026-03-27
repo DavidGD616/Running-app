@@ -904,6 +904,8 @@ Screens pushed on top of a tab (pre-run, log-run, session-detail) also have no t
 
 ## Design Rules
 
+- **Always verify colors against Figma before implementing.** Inactive/disabled states often use `AppColors.textDisabled` (`#666`), not `AppColors.textSecondary` (`#B3B3B3`) — they look similar but are noticeably different. When in doubt, check the Figma hex value.
+- **Always verify padding against Figma.** Internal padding (e.g. top padding inside a bar or card) must be read from the design context, not estimated. A `pt-[14px]` in Figma means a `14px` top padding in Flutter — do not skip it or absorb it into a fixed height.
 - **Pixel sizes from Figma are reference only.** Use `AppSpacing` tokens — never hardcode pixel numbers for padding/margin.
 - **Spacing between sections:** `SizedBox(height: AppSpacing.xl)` (24px)
 - **Spacing between label and content:** `SizedBox(height: AppSpacing.md)` (12px)

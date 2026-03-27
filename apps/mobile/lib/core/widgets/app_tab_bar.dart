@@ -25,14 +25,17 @@ class AppTabBar extends StatelessWidget {
       ),
       child: SafeArea(
         top: false,
-        child: SizedBox(
-          height: 56,
-          child: Row(
+        child: Padding(
+          padding: const EdgeInsets.only(top: 14),
+          child: SizedBox(
+            height: 48,
+            child: Row(
             children: AppTab.values.map((tab) => _TabItem(
               tab: tab,
               isActive: currentTab == tab,
               onTap: () => onTabSelected(tab),
             )).toList(),
+          ),
           ),
         ),
       ),
@@ -76,7 +79,7 @@ class _TabItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = isActive ? AppColors.accentPrimary : AppColors.textSecondary;
+    final color = isActive ? AppColors.accentPrimary : AppColors.textDisabled;
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
