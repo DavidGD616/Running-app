@@ -901,7 +901,7 @@ mountain.svg       effort.svg         pace.svg           heart_rate.svg
 decide_for_me.svg  heart.svg          moon.svg           edit.svg
 grid.svg           bar_chart.svg      person.svg         distance.svg
 activity.svg       settings.svg       coffee.svg         route.svg
-stopwatch.svg
+stopwatch.svg      star.svg
 ```
 
 Reference them directly: `'assets/icons/filename.svg'`

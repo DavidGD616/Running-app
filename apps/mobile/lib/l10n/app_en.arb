@@ -1239,5 +1239,86 @@
   "@weeklyPlanDaySun": { "description": "Sunday abbreviation in weekly plan" },
 
   "weeklyPlanDayToday": "Today",
-  "@weeklyPlanDayToday": { "description": "Label for today's date box in weekly plan" }
+  "@weeklyPlanDayToday": { "description": "Label for today's date box in weekly plan" },
+
+  "progressTitle": "Progress",
+  "@progressTitle": { "description": "Progress screen title" },
+
+  "progressSubtitle": "You're building a solid habit. Keep it up.",
+  "@progressSubtitle": { "description": "Progress screen subtitle" },
+
+  "progressStreakBannerSubtitle": "You're staying consistently active.",
+  "@progressStreakBannerSubtitle": { "description": "Subtitle on the streak banner" },
+
+  "progressWeeklyVolumeTitle": "Weekly Volume",
+  "@progressWeeklyVolumeTitle": { "description": "Weekly volume chart section title" },
+
+  "progressTrendingUp": "Trending Up",
+  "@progressTrendingUp": { "description": "Trending up label in volume chart" },
+
+  "progressRunsThisWeek": "runs this week",
+  "@progressRunsThisWeek": { "description": "Label below runs counter in volume chart" },
+
+  "progressDistanceLabel": "Distance",
+  "@progressDistanceLabel": { "description": "Distance stat label" },
+
+  "progressTimeLabel": "Time",
+  "@progressTimeLabel": { "description": "Time stat label" },
+
+  "progressStreakLabel": "Streak",
+  "@progressStreakLabel": { "description": "Streak stat label" },
+
+  "progressRunsLabel": "Runs",
+  "@progressRunsLabel": { "description": "Runs stat label" },
+
+  "progressRunsCompleted": "Completed",
+  "@progressRunsCompleted": { "description": "Completed label under runs count" },
+
+  "progressStreakSubtitle": "{count} weeks in a row",
+  "@progressStreakSubtitle": {
+    "description": "Streak subtitle below streak count",
+    "placeholders": { "count": { "type": "String" } }
+  },
+
+  "progressTrendUp": "▲ {percent}% vs last mo",
+  "@progressTrendUp": {
+    "description": "Upward trend label on stat tiles",
+    "placeholders": { "percent": { "type": "String" } }
+  },
+
+  "progressWeeksUnit": "wks",
+  "@progressWeeksUnit": { "description": "Weeks unit abbreviation" },
+
+  "progressHourUnit": "h",
+  "@progressHourUnit": { "description": "Hour unit abbreviation" },
+
+  "progressMinuteUnit": "m",
+  "@progressMinuteUnit": { "description": "Minute unit abbreviation" },
+
+  "progressLongestRunTitle": "Longest Run",
+  "@progressLongestRunTitle": { "description": "Longest run card title" },
+
+  "progressLongestRunImproved": "+{km} km since start",
+  "@progressLongestRunImproved": {
+    "description": "Longest run improvement since plan start",
+    "placeholders": { "km": { "type": "String" } }
+  },
+
+  "progressRecentSessionsTitle": "Recent Sessions",
+  "@progressRecentSessionsTitle": { "description": "Recent sessions section title" },
+
+  "progressViewAll": "View All ›",
+  "@progressViewAll": { "description": "View all sessions link" },
+
+  "progressSessionTempoRun": "Tempo Run",
+  "@progressSessionTempoRun": { "description": "Tempo run session type name" },
+
+  "progressYesterday": "Yesterday",
+  "@progressYesterday": { "description": "Yesterday relative date label" },
+
+  "progressTuesdayLabel": "Tuesday",
+  "@progressTuesdayLabel": { "description": "Tuesday label for recent session meta" },
+
+  "progressLastSunday": "Last Sunday",
+  "@progressLastSunday": { "description": "Last Sunday label for recent session meta" }
 }
