@@ -10,63 +10,28 @@ class AppHomeHeaderBar extends StatelessWidget implements PreferredSizeWidget {
     super.key,
     required this.title,
     this.planBadge,
-    this.onProfileTap,
   });
 
   final String title;
   final Widget? planBadge;
-  final VoidCallback? onProfileTap;
 
   @override
   Size get preferredSize => const Size.fromHeight(80);
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      bottom: false,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
-        child: SizedBox(
-          height: 80,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppTypography.headlineLarge),
-                    if (planBadge != null) ...[
-                      const SizedBox(height: 4),
-                      planBadge!,
-                    ],
-                  ],
-                ),
-              ),
-              GestureDetector(
-                onTap: onProfileTap,
-                child: Container(
-                  width: 40,
-                  height: 40,
-                  decoration: const BoxDecoration(
-                    color: AppColors.backgroundCard,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/icons/person.svg',
-                      width: 20,
-                      height: 20,
-                      colorFilter: const ColorFilter.mode(
-                          AppColors.textSecondary, BlendMode.srcIn),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+    return SizedBox(
+      height: 80,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: AppTypography.headlineLarge),
+          if (planBadge != null) ...[
+            const SizedBox(height: 4),
+            planBadge!,
+          ],
+        ],
       ),
     );
   }

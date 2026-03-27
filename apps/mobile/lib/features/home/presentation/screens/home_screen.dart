@@ -21,97 +21,117 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppHomeHeaderBar(
-        title: l10n.homeTitle,
-        planBadge: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            PlanBadgePill(planName: l10n.homePlanName),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              l10n.homeWeekInfo,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textDisabled,
-              ),
-            ),
-          ],
-        ),
-        onProfileTap: () {},
-      ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(
-          AppSpacing.screen,
-          AppSpacing.lg,
-          AppSpacing.screen,
-          AppSpacing.xl,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── Today's Workout ───────────────────────────────
-            SectionLabel(label: l10n.homeSectionTodaysWorkout),
-            const SizedBox(height: AppSpacing.md),
-            WorkoutHeroCard(
-              sessionType: l10n.homeWorkoutSessionType,
-              sessionName: l10n.homeWorkoutSessionName,
-              duration: l10n.homeWorkoutDuration,
-              distance: l10n.homeWorkoutDistance,
-              targetGuidance: l10n.homeWorkoutTargetGuidance,
-              sessionTypeIconAsset: 'assets/icons/zap.svg',
-              onViewDetails: () {},
-              onStart: () {},
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            // ── Up Next ───────────────────────────────────────
-            SectionLabel(label: l10n.homeSectionUpNext),
-            const SizedBox(height: AppSpacing.md),
-            UpNextRowCard(
-              sessionName: l10n.homeUpNextSessionName,
-              dayLabel: l10n.homeUpNextDayLabel,
-              duration: l10n.homeUpNextDuration,
-              effortLabel: l10n.homeUpNextEffortLabel,
-              iconAsset: 'assets/icons/calendar.svg',
-              onTap: () {},
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            // ── This Week ─────────────────────────────────────
-            SectionLabel(label: l10n.homeSectionThisWeek),
-            const SizedBox(height: AppSpacing.md),
-            WeekProgressCard(
-              sessionsCompleted: 2,
-              totalSessions: 4,
-              volumeCompleted: 12.5,
-              totalVolume: 25.0,
-              volumeUnit: l10n.homeVolumeUnit,
-            ),
-
-            const SizedBox(height: AppSpacing.xl),
-
-            // ── Quick Actions ─────────────────────────────────
-            Row(
-              children: [
-                Expanded(
-                  child: _QuickActionButton(
-                    label: l10n.homeLogPastRun,
-                    iconAsset: 'assets/icons/circle_check.svg',
-                    onTap: () {},
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Header ──────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen,
+                  AppSpacing.md,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: AppHomeHeaderBar(
+                  title: l10n.homeTitle,
+                  planBadge: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PlanBadgePill(planName: l10n.homePlanName),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        l10n.homeWeekInfo,
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textDisabled,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: _QuickActionButton(
-                    label: l10n.homeFullWeek,
-                    iconAsset: 'assets/icons/calendar.svg',
-                    onTap: () {},
-                  ),
+              ),
+
+              // ── Body ────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
-              ],
-            ),
-          ],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Today's Workout ───────────────────────
+                    SectionLabel(label: l10n.homeSectionTodaysWorkout),
+                    const SizedBox(height: AppSpacing.md),
+                    WorkoutHeroCard(
+                      sessionType: l10n.homeWorkoutSessionType,
+                      sessionName: l10n.homeWorkoutSessionName,
+                      duration: l10n.homeWorkoutDuration,
+                      distance: l10n.homeWorkoutDistance,
+                      targetGuidance: l10n.homeWorkoutTargetGuidance,
+                      sessionTypeIconAsset: 'assets/icons/zap.svg',
+                      onViewDetails: () {},
+                      onStart: () {},
+                    ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // ── Up Next ───────────────────────────────
+                    SectionLabel(label: l10n.homeSectionUpNext),
+                    const SizedBox(height: AppSpacing.md),
+                    UpNextRowCard(
+                      sessionName: l10n.homeUpNextSessionName,
+                      dayLabel: l10n.homeUpNextDayLabel,
+                      duration: l10n.homeUpNextDuration,
+                      effortLabel: l10n.homeUpNextEffortLabel,
+                      iconAsset: 'assets/icons/calendar.svg',
+                      onTap: () {},
+                    ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // ── This Week ─────────────────────────────
+                    SectionLabel(label: l10n.homeSectionThisWeek),
+                    const SizedBox(height: AppSpacing.md),
+                    WeekProgressCard(
+                      sessionsCompleted: 2,
+                      totalSessions: 4,
+                      volumeCompleted: 12.5,
+                      totalVolume: 25.0,
+                      volumeUnit: l10n.homeVolumeUnit,
+                    ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // ── Quick Actions ─────────────────────────
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _QuickActionButton(
+                            label: l10n.homeLogPastRun,
+                            iconAsset: 'assets/icons/circle_check.svg',
+                            onTap: () {},
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.sm),
+                        Expanded(
+                          child: _QuickActionButton(
+                            label: l10n.homeFullWeek,
+                            iconAsset: 'assets/icons/calendar.svg',
+                            onTap: () {},
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
