@@ -457,5 +457,7 @@
   "progressSessionTempoRun": "Carrera Tempo",
   "progressYesterday": "Ayer",
   "progressTuesdayLabel": "Martes",
-  "progressLastSunday": "Último Domingo"
+  "progressLastSunday": "Último Domingo",
+
+  "progressWeekPrefix": "S"
 }

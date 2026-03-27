@@ -188,18 +188,26 @@ class ProgressScreen extends StatelessWidget {
 
 // ── Weekly volume chart card ──────────────────────────────────────────────────
 
-class _VolumeChartCard extends StatelessWidget {
+class _VolumeChartCard extends StatefulWidget {
   const _VolumeChartCard({required this.l10n});
 
   final AppLocalizations l10n;
 
+  @override
+  State<_VolumeChartCard> createState() => _VolumeChartCardState();
+}
+
+class _VolumeChartCardState extends State<_VolumeChartCard> {
   static const _weeklyData = [15.0, 20.0, 24.0, 22.0, 30.0];
   static const _currentWeekIndex = 4;
   static const _completedRuns = 2;
   static const _totalRuns = 4;
 
+  int _selectedIndex = _currentWeekIndex;
+
   @override
   Widget build(BuildContext context) {
+    final l10n = widget.l10n;
     return Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md,
@@ -297,7 +305,7 @@ class _VolumeChartCard extends StatelessWidget {
             child: CustomPaint(
               painter: _ChartPainter(
                 data: _weeklyData,
-                currentIndex: _currentWeekIndex,
+                selectedIndex: _selectedIndex,
               ),
               size: Size.infinite,
             ),
@@ -306,7 +314,11 @@ class _VolumeChartCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
 
           // ── Week labels ─────────────────────────────────────
-          _WeekLabels(currentIndex: _currentWeekIndex),
+          _WeekLabels(
+            selectedIndex: _selectedIndex,
+            weekPrefix: l10n.progressWeekPrefix,
+            onSelect: (i) => setState(() => _selectedIndex = i),
+          ),
         ],
       ),
     );
@@ -316,10 +328,10 @@ class _VolumeChartCard extends StatelessWidget {
 // ── Line chart painter ────────────────────────────────────────────────────────
 
 class _ChartPainter extends CustomPainter {
-  const _ChartPainter({required this.data, required this.currentIndex});
+  const _ChartPainter({required this.data, required this.selectedIndex});
 
   final List<double> data;
-  final int currentIndex;
+  final int selectedIndex;
 
   static const _maxVal = 35.0;
   static const _minVal = 0.0;
@@ -382,22 +394,22 @@ class _ChartPainter extends CustomPainter {
 
     // 4. Dots and value labels
     for (int i = 0; i < data.length; i++) {
-      final isCurrent = i == currentIndex;
+      final isSelected = i == selectedIndex;
       final center = points[i];
-      final outerRadius = isCurrent ? 5.5 : 4.0;
+      final outerRadius = isSelected ? 5.5 : 4.0;
 
-      // Dot: green outer, dark inner for current
+      // Dot: green outer, dark inner for selected
       canvas.drawCircle(center, outerRadius, Paint()..color = AppColors.accentPrimary);
-      if (isCurrent) {
+      if (isSelected) {
         canvas.drawCircle(center, 2.5, Paint()..color = const Color(0xFF121212));
       }
 
       // Value label above dot
       final labelText = data[i].toInt().toString();
       final labelStyle = ui.TextStyle(
-        color: isCurrent ? Colors.white : const Color(0xFFB3B3B3),
-        fontSize: 10.0,
-        fontWeight: isCurrent ? ui.FontWeight.w700 : ui.FontWeight.w400,
+        color: isSelected ? Colors.white : const Color(0xFFB3B3B3),
+        fontSize: isSelected ? 13.0 : 11.0,
+        fontWeight: isSelected ? ui.FontWeight.w700 : ui.FontWeight.w400,
       );
       final pb = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: TextAlign.center))
         ..pushStyle(labelStyle)
@@ -429,48 +441,53 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ChartPainter old) =>
-      old.data != data || old.currentIndex != currentIndex;
+      old.data != data || old.selectedIndex != selectedIndex;
 }
 
 // ── Week labels row ───────────────────────────────────────────────────────────
 
 class _WeekLabels extends StatelessWidget {
-  const _WeekLabels({required this.currentIndex});
+  const _WeekLabels({
+    required this.selectedIndex,
+    required this.weekPrefix,
+    required this.onSelect,
+  });
 
-  final int currentIndex;
-
-  static const _labels = ['W1', 'W2', 'W3', 'W4', 'W5'];
+  final int selectedIndex;
+  final String weekPrefix;
+  final void Function(int) onSelect;
 
   @override
   Widget build(BuildContext context) {
+    final labels = List.generate(5, (i) => '$weekPrefix${i + 1}');
     return Column(
       children: [
         Container(height: 1, color: AppColors.borderDefault),
         const SizedBox(height: AppSpacing.sm),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(_labels.length, (i) {
-            final isCurrent = i == currentIndex;
-            return Container(
-              padding: isCurrent
-                  ? const EdgeInsets.symmetric(horizontal: 6, vertical: 2)
-                  : null,
-              decoration: isCurrent
-                  ? BoxDecoration(
-                      color: AppColors.accentPrimary.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(4),
-                    )
-                  : null,
-              child: Text(
-                _labels[i],
-                style: AppTypography.caption.copyWith(
-                  color: isCurrent
-                      ? AppColors.accentPrimary
-                      : AppColors.textDisabled,
-                  fontSize: 11,
-                  fontWeight:
-                      isCurrent ? FontWeight.w700 : FontWeight.w500,
-                  letterSpacing: 0,
+          children: List.generate(labels.length, (i) {
+            final isSelected = i == selectedIndex;
+            return GestureDetector(
+              onTap: () => onSelect(i),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: isSelected
+                    ? BoxDecoration(
+                        color: AppColors.accentPrimary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      )
+                    : null,
+                child: Text(
+                  labels[i],
+                  style: AppTypography.caption.copyWith(
+                    color: isSelected
+                        ? AppColors.accentPrimary
+                        : AppColors.textDisabled,
+                    fontSize: 11,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    letterSpacing: 0,
+                  ),
                 ),
               ),
             );

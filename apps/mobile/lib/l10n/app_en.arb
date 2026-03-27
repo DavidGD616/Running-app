@@ -1320,5 +1320,8 @@
   "@progressTuesdayLabel": { "description": "Tuesday label for recent session meta" },
 
   "progressLastSunday": "Last Sunday",
-  "@progressLastSunday": { "description": "Last Sunday label for recent session meta" }
+  "@progressLastSunday": { "description": "Last Sunday label for recent session meta" },
+
+  "progressWeekPrefix": "W",
+  "@progressWeekPrefix": { "description": "Week label prefix in volume chart (W1, W2...). S for Spanish (Semana)." }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -25,8 +26,26 @@ class StreakBanner extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const Text('🔥', style: TextStyle(fontSize: 28)),
-          const SizedBox(width: AppSpacing.md),
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.2),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                'assets/icons/flame.svg',
+                width: 22,
+                height: 22,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.warning,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.base),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
