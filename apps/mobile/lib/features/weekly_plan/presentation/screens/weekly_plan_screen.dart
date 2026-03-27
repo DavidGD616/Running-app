@@ -76,29 +76,10 @@ class WeeklyPlanScreen extends StatelessWidget {
             // ── Header ────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
+                AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, 0,
               ),
               child: Row(
                 children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).maybePop(),
-                    child: SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: Center(
-                        child: SvgPicture.asset(
-                          'assets/icons/chevron_left.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.textPrimary,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
                   Text(
                     l10n.weeklyPlanTitle('1', '12'),
                     style: AppTypography.titleLarge,
