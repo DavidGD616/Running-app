@@ -71,71 +71,57 @@ class WeeklyPlanScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
-        child: Column(
-          children: [
-            // ── Header ────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.lg, AppSpacing.screen, 0,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen, AppSpacing.lg,
+            AppSpacing.screen, AppSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Title ─────────────────────────────────────────────
+              Text(
+                l10n.weeklyPlanTitle('1', '12'),
+                style: AppTypography.titleLarge,
               ),
-              child: Row(
-                children: [
-                  Text(
-                    l10n.weeklyPlanTitle('1', '12'),
-                    style: AppTypography.titleLarge,
-                  ),
-                ],
-              ),
-            ),
 
-            // ── Scrollable body ───────────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+              const SizedBox(height: AppSpacing.xl),
+
+              // Week stats card
+              _WeekStatsSummary(l10n: l10n),
+
+              const SizedBox(height: AppSpacing.xl),
+
+              // Schedule section label
+              SectionLabel(label: l10n.weeklyPlanScheduleLabel),
+
+              const SizedBox(height: AppSpacing.md),
+
+              // Session rows
+              ...sessions.map((s) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: _SessionRow(
+                  dayLabel: s.dayLabel(l10n),
+                  dateNumber: s.dateNumber,
+                  title: _sessionTitle(s.type, l10n),
+                  subtitle: s.type == _SessionType.rest
+                      ? l10n.weeklyPlanRestSubtitle
+                      : null,
+                  distance: s.distance,
+                  duration: s.duration,
+                  isToday: s.isToday,
+                  isRest: s.type == _SessionType.rest,
+                  trailingIcon: _trailingIcon(s.type),
+                  nowLabel: l10n.weeklyPlanNowBadge,
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Week stats card
-                    _WeekStatsSummary(l10n: l10n),
+              )),
 
-                    const SizedBox(height: AppSpacing.xl),
+              const SizedBox(height: AppSpacing.md),
 
-                    // Schedule section label
-                    SectionLabel(label: l10n.weeklyPlanScheduleLabel),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // Session rows
-                    ...sessions.map((s) => Padding(
-                      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                      child: _SessionRow(
-                        dayLabel: s.dayLabel(l10n),
-                        dateNumber: s.dateNumber,
-                        title: _sessionTitle(s.type, l10n),
-                        subtitle: s.type == _SessionType.rest
-                            ? l10n.weeklyPlanRestSubtitle
-                            : null,
-                        distance: s.distance,
-                        duration: s.duration,
-                        isToday: s.isToday,
-                        isRest: s.type == _SessionType.rest,
-                        trailingIcon: _trailingIcon(s.type),
-                        nowLabel: l10n.weeklyPlanNowBadge,
-                      ),
-                    )),
-
-                    const SizedBox(height: AppSpacing.md),
-
-                    // View Full Plan button
-                    _ViewFullPlanButton(label: l10n.weeklyPlanViewFullPlan),
-                  ],
-                ),
-              ),
-            ),
-          ],
+              // View Full Plan button
+              _ViewFullPlanButton(label: l10n.weeklyPlanViewFullPlan),
+            ],
+          ),
         ),
       ),
     );

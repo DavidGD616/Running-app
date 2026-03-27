@@ -121,6 +121,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 Use when the screen only displays data and has no interactive selections:
 
+**CRITICAL — title and all content must scroll together.** Never place a title or header outside `SingleChildScrollView` — that makes it sticky/fixed, which is not wanted. The title is the first item inside the scroll view.
+
 ```dart
 class XxxScreen extends StatelessWidget {
   const XxxScreen({super.key});
@@ -131,55 +133,22 @@ class XxxScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
-        child: Column(
-          children: [
-            // ── Top nav ──────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
-              ),
-              child: Row(
-                children: [
-                  GestureDetector(
-                    onTap: () => Navigator.of(context).maybePop(),
-                    child: const SizedBox(
-                      width: 48,
-                      height: 48,
-                      child: Center(
-                        child: SvgPicture.asset(
-                          'assets/icons/chevron_left.svg',
-                          width: 24,
-                          height: 24,
-                          colorFilter: ColorFilter.mode(
-                            AppColors.textPrimary,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text('Screen Title', style: AppTypography.titleLarge),
-                ],
-              ),
-            ),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen, AppSpacing.lg,
+            AppSpacing.screen, AppSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Title ──────────────────────────────────────
+              Text('Screen Title', style: AppTypography.titleLarge),
 
-            // ── Scrollable body ───────────────────────────────
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // content here
-                  ],
-                ),
-              ),
-            ),
-          ],
+              const SizedBox(height: AppSpacing.xl),
+
+              // content here
+            ],
+          ),
         ),
       ),
     );
@@ -904,6 +873,7 @@ Screens pushed on top of a tab (pre-run, log-run, session-detail) also have no t
 
 ## Design Rules
 
+- **Titles and headers always scroll with content.** Never use `Column → fixed header + Expanded(SingleChildScrollView)`. That pattern makes the title sticky. Always put the title as the first child inside `SingleChildScrollView` so everything scrolls together.
 - **Always verify colors against Figma before implementing.** Inactive/disabled states often use `AppColors.textDisabled` (`#666`), not `AppColors.textSecondary` (`#B3B3B3`) — they look similar but are noticeably different. When in doubt, check the Figma hex value.
 - **Always verify padding against Figma.** Internal padding (e.g. top padding inside a bar or card) must be read from the design context, not estimated. A `pt-[14px]` in Figma means a `14px` top padding in Flutter — do not skip it or absorb it into a fixed height.
 - **Pixel sizes from Figma are reference only.** Use `AppSpacing` tokens — never hardcode pixel numbers for padding/margin.
