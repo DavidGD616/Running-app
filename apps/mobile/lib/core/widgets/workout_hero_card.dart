@@ -4,7 +4,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
-import 'app_button.dart';
 
 class WorkoutHeroCard extends StatelessWidget {
   const WorkoutHeroCard({
@@ -33,18 +32,31 @@ class WorkoutHeroCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        borderRadius: AppRadius.borderLg,
+        color: AppColors.backgroundSecondary,
+        borderRadius: AppRadius.borderXl,
         border: Border.all(color: AppColors.borderDefault),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.25),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── Header: icon + type + name ─────────────────────
           Row(
             children: [
               Container(
-                width: 36,
-                height: 36,
+                width: 40,
+                height: 40,
                 decoration: BoxDecoration(
                   color: AppColors.accentMuted,
                   borderRadius: AppRadius.borderMd,
@@ -55,7 +67,9 @@ class WorkoutHeroCard extends StatelessWidget {
                     width: 20,
                     height: 20,
                     colorFilter: const ColorFilter.mode(
-                        AppColors.accentPrimary, BlendMode.srcIn),
+                      AppColors.accentPrimary,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
@@ -63,65 +77,86 @@ class WorkoutHeroCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(sessionType, style: AppTypography.caption),
-                  Text(sessionName, style: AppTypography.titleMedium),
+                  Text(
+                    sessionType.toUpperCase(),
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textDisabled,
+                      fontSize: 10,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  Text(sessionName, style: AppTypography.titleLarge),
                 ],
               ),
             ],
           ),
+
           const SizedBox(height: AppSpacing.base),
-          Row(
-            children: [
-              Expanded(
-                child: _StatCell(
-                  label: 'Duration',
-                  value: duration,
-                  iconAsset: 'assets/icons/clock.svg',
-                ),
+
+          // ── Stats: Duration | Distance ──────────────────────
+          ClipRRect(
+            borderRadius: AppRadius.borderMd,
+            child: IntrinsicHeight(
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _StatCell(label: 'Duration', value: duration),
+                  ),
+                  const VerticalDivider(
+                    width: 1,
+                    thickness: 1,
+                    color: AppColors.borderDefault,
+                  ),
+                  Expanded(
+                    child: _StatCell(label: 'Distance', value: distance),
+                  ),
+                ],
               ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: _StatCell(
-                  label: 'Distance',
-                  value: distance,
-                  iconAsset: 'assets/icons/distance.svg',
-                ),
-              ),
-            ],
+            ),
           ),
+
+          // ── Target Guidance ─────────────────────────────────
           if (targetGuidance != null) ...[
             const SizedBox(height: AppSpacing.md),
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.backgroundSecondary,
-                borderRadius: AppRadius.borderMd,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.base,
+                vertical: AppSpacing.md,
               ),
-              child: Text(
-                targetGuidance!,
-                style: AppTypography.bodyMedium,
+              decoration: BoxDecoration(
+                color: const Color(0x1200E676),
+                borderRadius: AppRadius.borderMd,
+                border: Border.all(color: const Color(0x3300E676)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TARGET GUIDANCE',
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.accentPrimary,
+                      fontSize: 10,
+                      letterSpacing: 1,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(targetGuidance!, style: AppTypography.bodyMedium),
+                ],
               ),
             ),
           ],
+
           const SizedBox(height: AppSpacing.base),
+
+          // ── Buttons: View Details | Start ───────────────────
           Row(
             children: [
-              Expanded(
-                child: AppButton(
-                  label: 'View Details',
-                  onPressed: onViewDetails,
-                  variant: AppButtonVariant.secondary,
-                ),
-              ),
+              Expanded(child: _ViewDetailsButton(onTap: onViewDetails)),
               const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: AppButton(
-                  label: 'Start',
-                  onPressed: onStart,
-                  variant: AppButtonVariant.primary,
-                ),
-              ),
+              Expanded(child: _StartButton(onTap: onStart)),
             ],
           ),
         ],
@@ -131,43 +166,105 @@ class WorkoutHeroCard extends StatelessWidget {
 }
 
 class _StatCell extends StatelessWidget {
-  const _StatCell({
-    required this.label,
-    required this.value,
-    required this.iconAsset,
-  });
+  const _StatCell({required this.label, required this.value});
 
   final String label;
   final String value;
-  final String iconAsset;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundSecondary,
-        borderRadius: AppRadius.borderMd,
+      color: AppColors.backgroundCard,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.base,
+        AppSpacing.md,
+        AppSpacing.base,
+        AppSpacing.md,
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SvgPicture.asset(
-            iconAsset,
-            width: 16,
-            height: 16,
-            colorFilter: const ColorFilter.mode(
-                AppColors.accentPrimary, BlendMode.srcIn),
+          Text(
+            label.toUpperCase(),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textDisabled,
+              fontSize: 10,
+              letterSpacing: 0.8,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(label, style: AppTypography.caption),
-              Text(value, style: AppTypography.labelLarge),
-            ],
+          const SizedBox(height: 3),
+          Text(
+            value,
+            style: AppTypography.headlineMedium.copyWith(fontSize: 20),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _ViewDetailsButton extends StatelessWidget {
+  const _ViewDetailsButton({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(color: AppColors.borderDefault),
+        ),
+        child: Center(
+          child: Text(
+            'View Details',
+            style: AppTypography.labelLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StartButton extends StatelessWidget {
+  const _StartButton({this.onTap});
+
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          color: AppColors.accentPrimary,
+          borderRadius: AppRadius.borderLg,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.play_arrow,
+              size: 16,
+              color: AppColors.backgroundPrimary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Start',
+              style: AppTypography.labelLarge.copyWith(
+                color: AppColors.backgroundPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
