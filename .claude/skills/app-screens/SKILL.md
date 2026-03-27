@@ -930,22 +930,39 @@ clock.svg          flame.svg          trophy.svg         medal.svg
 mountain.svg       effort.svg         pace.svg           heart_rate.svg
 decide_for_me.svg  heart.svg          moon.svg           edit.svg
 grid.svg           bar_chart.svg      person.svg         distance.svg
+activity.svg       settings.svg       coffee.svg         route.svg
+stopwatch.svg
 ```
 
 Reference them directly: `'assets/icons/filename.svg'`
 
+### CRITICAL — Never guess or substitute icons
+
+**Do NOT pick an icon based on its name sounding similar to what you need.** This leads to wrong icons. Examples of past mistakes:
+- Used `moon.svg` for a rest/coffee-cup icon → wrong
+- Used `distance.svg` (a map pin) for a route/path icon → wrong
+
+**Every icon used in a screen must be visually verified against Figma.** Follow this process for every icon, even ones that sound obvious:
+
+1. Use `get_screenshot` on the specific icon node ID from the Figma design context to see exactly what the icon looks like.
+2. If it matches an icon already in the list above (same shape, not just similar name), use the existing file.
+3. If it does NOT match any existing file, download it from Figma.
+
 ### Pulling new icons from Figma
 
-If a screen needs an icon that is **not in the list above**, download it from Figma:
+If a screen needs an icon not already in the list:
 
-1. Use `get_design_context` on the screen node to get asset download URLs returned by the Figma MCP.
-2. The MCP server returns `localhost` or `figma.com/api/mcp/asset/...` URLs — use those directly.
-3. Save the SVG to `apps/mobile/assets/icons/<icon_name>.svg`.
-4. Verify `apps/mobile/pubspec.yaml` already includes `assets/icons/` — it does.
-5. **Strip CSS variables after downloading** — Figma exports SVGs with `var(--stroke-0, #00E676)` syntax. `flutter_svg` does NOT support CSS custom properties. Run:
+1. Use `get_design_context` on the screen node to get asset download URLs.
+2. The MCP returns `figma.com/api/mcp/asset/...` URLs that serve SVG files directly.
+3. Download with curl: `curl -s -o <name>.svg "<url>"`
+4. Check the content type is `image/svg+xml` — it is for all vector icons.
+5. Save to `apps/mobile/assets/icons/<icon_name>.svg`.
+6. **Strip CSS variables** — Figma exports with `var(--stroke-0, #B3B3B3)` syntax. `flutter_svg` does NOT support CSS custom properties. Run:
    ```bash
    sed -i '' 's/var(--[^,]*, \(#[^)]*\))/\1/g' apps/mobile/assets/icons/<icon_name>.svg
    ```
+7. **Remove baked-in opacity** — if the downloaded SVG has `opacity="0.5"` or similar on a group, remove it. Opacity is controlled in Flutter via `Opacity` widget or `colorFilter`, not in the SVG file.
+8. Add the new filename to the "already available" list above so future implementations know it exists.
 
 ---
 

@@ -46,11 +46,11 @@ class WeeklyPlanScreen extends StatelessWidget {
 
   String _trailingIcon(_SessionType type) {
     switch (type) {
-      case _SessionType.rest:         return 'assets/icons/moon.svg';
-      case _SessionType.easyRun:      return 'assets/icons/distance.svg';
+      case _SessionType.rest:         return 'assets/icons/coffee.svg';
+      case _SessionType.easyRun:      return 'assets/icons/route.svg';
       case _SessionType.intervals:    return 'assets/icons/activity.svg';
       case _SessionType.longRun:      return 'assets/icons/target.svg';
-      case _SessionType.recoveryRun:  return 'assets/icons/clock.svg';
+      case _SessionType.recoveryRun:  return 'assets/icons/stopwatch.svg';
     }
   }
 
@@ -388,7 +388,7 @@ class _SessionRow extends StatelessWidget {
                     children: [
                       if (distance != null) ...[
                         SvgPicture.asset(
-                          'assets/icons/distance.svg',
+                          'assets/icons/route.svg',
                           width: 12,
                           height: 12,
                           colorFilter: const ColorFilter.mode(
