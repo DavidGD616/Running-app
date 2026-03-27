@@ -406,5 +406,10 @@
   "homeUpNextDuration": "1h 15min",
   "homeUpNextEffortLabel": "Esfuerzo suave",
 
-  "homeVolumeUnit": "km"
+  "homeVolumeUnit": "km",
+
+  "tabToday": "Hoy",
+  "tabPlan": "Plan",
+  "tabProgress": "Progreso",
+  "tabSettings": "Ajustes"
 }

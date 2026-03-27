@@ -2340,6 +2340,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'km'**
   String get homeVolumeUnit;
+
+  /// Bottom nav tab label for the Today/Home tab
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get tabToday;
+
+  /// Bottom nav tab label for the Plan tab
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get tabPlan;
+
+  /// Bottom nav tab label for the Progress tab
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get tabProgress;
+
+  /// Bottom nav tab label for the Settings tab
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get tabSettings;
 }
 
 class _AppLocalizationsDelegate

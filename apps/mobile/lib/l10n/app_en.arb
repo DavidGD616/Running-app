@@ -1161,5 +1161,17 @@
   "@homeUpNextEffortLabel": { "description": "Effort label for the Up Next session on the home screen" },
 
   "homeVolumeUnit": "km",
-  "@homeVolumeUnit": { "description": "Volume unit displayed on the home week progress card" }
+  "@homeVolumeUnit": { "description": "Volume unit displayed on the home week progress card" },
+
+  "tabToday": "Today",
+  "@tabToday": { "description": "Bottom nav tab label for the Today/Home tab" },
+
+  "tabPlan": "Plan",
+  "@tabPlan": { "description": "Bottom nav tab label for the Plan tab" },
+
+  "tabProgress": "Progress",
+  "@tabProgress": { "description": "Bottom nav tab label for the Progress tab" },
+
+  "tabSettings": "Settings",
+  "@tabSettings": { "description": "Bottom nav tab label for the Settings tab" }
 }

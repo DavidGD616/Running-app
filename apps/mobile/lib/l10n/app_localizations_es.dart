@@ -1192,4 +1192,16 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get homeVolumeUnit => 'km';
+
+  @override
+  String get tabToday => 'Hoy';
+
+  @override
+  String get tabPlan => 'Plan';
+
+  @override
+  String get tabProgress => 'Progreso';
+
+  @override
+  String get tabSettings => 'Ajustes';
 }

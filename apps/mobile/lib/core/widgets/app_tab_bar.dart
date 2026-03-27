@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_typography.dart';
+import '../../l10n/app_localizations.dart';
 
 enum AppTab { today, plan, progress, settings }
 
@@ -53,26 +54,23 @@ class _TabItem extends StatelessWidget {
   String get _iconAsset {
     switch (tab) {
       case AppTab.today:
-        return 'assets/icons/grid.svg';
+        return 'assets/icons/activity.svg';
       case AppTab.plan:
         return 'assets/icons/calendar.svg';
       case AppTab.progress:
         return 'assets/icons/bar_chart.svg';
       case AppTab.settings:
-        return 'assets/icons/person.svg';
+        return 'assets/icons/settings.svg';
     }
   }
 
-  String get _label {
+  String _label(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     switch (tab) {
-      case AppTab.today:
-        return 'Today';
-      case AppTab.plan:
-        return 'Plan';
-      case AppTab.progress:
-        return 'Progress';
-      case AppTab.settings:
-        return 'Settings';
+      case AppTab.today:    return l10n.tabToday;
+      case AppTab.plan:     return l10n.tabPlan;
+      case AppTab.progress: return l10n.tabProgress;
+      case AppTab.settings: return l10n.tabSettings;
     }
   }
 
@@ -94,7 +92,7 @@ class _TabItem extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              _label,
+              _label(context),
               style: AppTypography.caption.copyWith(
                 color: color,
                 fontWeight: isActive ? FontWeight.w600 : FontWeight.w400,
