@@ -27,7 +27,7 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyUnit, unit.name);
     state = AsyncData(
-      (state.valueOrNull ?? const UserPreferences()).copyWith(unitSystem: unit),
+      (state.value ?? const UserPreferences()).copyWith(unitSystem: unit),
     );
   }
 
@@ -35,7 +35,7 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyGender, gender);
     state = AsyncData(
-      (state.valueOrNull ?? const UserPreferences()).copyWith(gender: gender),
+      (state.value ?? const UserPreferences()).copyWith(gender: gender),
     );
   }
 
@@ -43,7 +43,7 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyDob, dob.millisecondsSinceEpoch);
     state = AsyncData(
-      (state.valueOrNull ?? const UserPreferences())
+      (state.value ?? const UserPreferences())
           .copyWith(dateOfBirth: dob),
     );
   }

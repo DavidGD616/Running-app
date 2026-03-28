@@ -115,7 +115,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
     final l10n = AppLocalizations.of(context)!;
     final unitSystem = ref
         .watch(userPreferencesProvider)
-        .valueOrNull
+        .value
         ?.unitSystem ?? UnitSystem.km;
 
     final goalDistOptions = [

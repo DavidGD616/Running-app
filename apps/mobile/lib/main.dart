@@ -22,7 +22,7 @@ class RunningApp extends ConsumerWidget {
 
     // While locale is loading from disk, use English as a fallback
     // This prevents a flash of the wrong language on startup
-    final locale = localeAsync.valueOrNull ?? const Locale('en');
+    final locale = localeAsync.value ?? const Locale('en');
 
     return MaterialApp.router(
       title: 'RunFlow',

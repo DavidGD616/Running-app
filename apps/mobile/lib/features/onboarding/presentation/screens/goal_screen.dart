@@ -134,7 +134,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     final l10n = AppLocalizations.of(context)!;
     final unitSystem = ref
         .watch(userPreferencesProvider)
-        .valueOrNull
+        .value
         ?.unitSystem ?? UnitSystem.km;
     final races = _buildRaces(unitSystem, l10n);
 
