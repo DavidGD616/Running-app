@@ -117,7 +117,7 @@ class SessionDetailScreen extends StatelessWidget {
           // ── Start Workout button ───────────────────────────────
           _StartButton(
             label: l10n.sessionDetailStartWorkout,
-            onTap: () => context.push(RouteNames.logRun),
+            onTap: () => context.push(RouteNames.preRun),
           ),
         ],
       ),

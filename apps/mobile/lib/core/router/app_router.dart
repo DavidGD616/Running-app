@@ -25,6 +25,7 @@ import '../../features/weekly_plan/presentation/screens/weekly_plan_screen.dart'
 import '../../features/progress/presentation/screens/progress_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
+import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
 import '../../features/log_run/presentation/screens/log_run_screen.dart';
 
 final appRouter = GoRouter(
@@ -110,6 +111,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.sessionDetail,
       builder: (context, state) => const SessionDetailScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.preRun,
+      builder: (context, state) => const PreRunScreen(),
     ),
     GoRoute(
       path: RouteNames.logRun,

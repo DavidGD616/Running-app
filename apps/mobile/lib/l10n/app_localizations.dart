@@ -3000,6 +3000,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Session'**
   String get logSessionSaveButton;
+
+  /// Header title on the pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-run Check'**
+  String get preRunTitle;
+
+  /// Large heading on the pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'How are you feeling?'**
+  String get preRunHeading;
+
+  /// Subtitle below heading on the pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check to make sure today\'s interval session is still the right move.'**
+  String get preRunSubtitle;
+
+  /// Question label for legs feeling section
+  ///
+  /// In en, this message translates to:
+  /// **'How do your legs feel today?'**
+  String get preRunLegsQuestion;
+
+  /// Legs feeling option: fresh
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh'**
+  String get preRunFresh;
+
+  /// Legs feeling option: normal
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get preRunNormal;
+
+  /// Legs feeling option: heavy
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy'**
+  String get preRunHeavy;
+
+  /// Question label for pain level section
+  ///
+  /// In en, this message translates to:
+  /// **'Any pain right now?'**
+  String get preRunPainQuestion;
+
+  /// Pain level option: none
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get preRunNone;
+
+  /// Pain level option: mild discomfort
+  ///
+  /// In en, this message translates to:
+  /// **'Mild discomfort'**
+  String get preRunMildDiscomfort;
+
+  /// Pain level option: moderate pain
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate pain'**
+  String get preRunModeratePain;
+
+  /// Pain level option: sharp pain
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp pain'**
+  String get preRunSharpPain;
+
+  /// Question label for sleep quality section
+  ///
+  /// In en, this message translates to:
+  /// **'How was your sleep?'**
+  String get preRunSleepQuestion;
+
+  /// Sleep quality option: great
+  ///
+  /// In en, this message translates to:
+  /// **'Great'**
+  String get preRunGreat;
+
+  /// Sleep quality option: okay
+  ///
+  /// In en, this message translates to:
+  /// **'Okay'**
+  String get preRunOkay;
+
+  /// Sleep quality option: poor
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get preRunPoor;
+
+  /// Question label for readiness section
+  ///
+  /// In en, this message translates to:
+  /// **'Are you ready for this session?'**
+  String get preRunReadinessQuestion;
+
+  /// Readiness option: let's go
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s go'**
+  String get preRunLetsGo;
+
+  /// Readiness option: not fully ready
+  ///
+  /// In en, this message translates to:
+  /// **'Not fully ready'**
+  String get preRunNotFullyReady;
+
+  /// Continue CTA button on pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get preRunContinue;
 }
 
 class _AppLocalizationsDelegate

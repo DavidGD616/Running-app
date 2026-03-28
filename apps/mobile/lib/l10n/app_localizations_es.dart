@@ -1534,4 +1534,65 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get logSessionSaveButton => 'Guardar Sesión';
+
+  @override
+  String get preRunTitle => 'Control Pre-carrera';
+
+  @override
+  String get preRunHeading => '¿Cómo te sientes?';
+
+  @override
+  String get preRunSubtitle =>
+      'Verificación rápida para asegurarte de que la sesión de intervalos de hoy sigue siendo la decisión correcta.';
+
+  @override
+  String get preRunLegsQuestion => '¿Cómo se sienten tus piernas hoy?';
+
+  @override
+  String get preRunFresh => 'Frescas';
+
+  @override
+  String get preRunNormal => 'Normal';
+
+  @override
+  String get preRunHeavy => 'Pesadas';
+
+  @override
+  String get preRunPainQuestion => '¿Tienes algún dolor ahora mismo?';
+
+  @override
+  String get preRunNone => 'Ninguno';
+
+  @override
+  String get preRunMildDiscomfort => 'Molestia leve';
+
+  @override
+  String get preRunModeratePain => 'Dolor moderado';
+
+  @override
+  String get preRunSharpPain => 'Dolor agudo';
+
+  @override
+  String get preRunSleepQuestion => '¿Cómo fue tu sueño?';
+
+  @override
+  String get preRunGreat => 'Excelente';
+
+  @override
+  String get preRunOkay => 'Regular';
+
+  @override
+  String get preRunPoor => 'Malo';
+
+  @override
+  String get preRunReadinessQuestion => '¿Estás listo para esta sesión?';
+
+  @override
+  String get preRunLetsGo => '¡Vamos!';
+
+  @override
+  String get preRunNotFullyReady => 'No del todo listo';
+
+  @override
+  String get preRunContinue => 'Continuar';
 }

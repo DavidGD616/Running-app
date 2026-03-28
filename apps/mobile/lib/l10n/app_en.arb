@@ -1506,5 +1506,65 @@
   "@logSessionNotesHint": { "description": "Placeholder text in the notes text area" },
 
   "logSessionSaveButton": "Save Session",
-  "@logSessionSaveButton": { "description": "Save session CTA button label" }
+  "@logSessionSaveButton": { "description": "Save session CTA button label" },
+
+  "preRunTitle": "Pre-run Check",
+  "@preRunTitle": { "description": "Header title on the pre-run check screen" },
+
+  "preRunHeading": "How are you feeling?",
+  "@preRunHeading": { "description": "Large heading on the pre-run check screen" },
+
+  "preRunSubtitle": "Quick check to make sure today's interval session is still the right move.",
+  "@preRunSubtitle": { "description": "Subtitle below heading on the pre-run check screen" },
+
+  "preRunLegsQuestion": "How do your legs feel today?",
+  "@preRunLegsQuestion": { "description": "Question label for legs feeling section" },
+
+  "preRunFresh": "Fresh",
+  "@preRunFresh": { "description": "Legs feeling option: fresh" },
+
+  "preRunNormal": "Normal",
+  "@preRunNormal": { "description": "Legs feeling option: normal" },
+
+  "preRunHeavy": "Heavy",
+  "@preRunHeavy": { "description": "Legs feeling option: heavy" },
+
+  "preRunPainQuestion": "Any pain right now?",
+  "@preRunPainQuestion": { "description": "Question label for pain level section" },
+
+  "preRunNone": "None",
+  "@preRunNone": { "description": "Pain level option: none" },
+
+  "preRunMildDiscomfort": "Mild discomfort",
+  "@preRunMildDiscomfort": { "description": "Pain level option: mild discomfort" },
+
+  "preRunModeratePain": "Moderate pain",
+  "@preRunModeratePain": { "description": "Pain level option: moderate pain" },
+
+  "preRunSharpPain": "Sharp pain",
+  "@preRunSharpPain": { "description": "Pain level option: sharp pain" },
+
+  "preRunSleepQuestion": "How was your sleep?",
+  "@preRunSleepQuestion": { "description": "Question label for sleep quality section" },
+
+  "preRunGreat": "Great",
+  "@preRunGreat": { "description": "Sleep quality option: great" },
+
+  "preRunOkay": "Okay",
+  "@preRunOkay": { "description": "Sleep quality option: okay" },
+
+  "preRunPoor": "Poor",
+  "@preRunPoor": { "description": "Sleep quality option: poor" },
+
+  "preRunReadinessQuestion": "Are you ready for this session?",
+  "@preRunReadinessQuestion": { "description": "Question label for readiness section" },
+
+  "preRunLetsGo": "Let's go",
+  "@preRunLetsGo": { "description": "Readiness option: let's go" },
+
+  "preRunNotFullyReady": "Not fully ready",
+  "@preRunNotFullyReady": { "description": "Readiness option: not fully ready" },
+
+  "preRunContinue": "Continue",
+  "@preRunContinue": { "description": "Continue CTA button on pre-run check screen" }
 }

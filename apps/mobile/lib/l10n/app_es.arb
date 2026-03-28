@@ -524,5 +524,26 @@
   "logSessionNotes": "Notas",
   "logSessionOptional": "(Opcional)",
   "logSessionNotesHint": "¿Cómo fue la carrera?",
-  "logSessionSaveButton": "Guardar Sesión"
+  "logSessionSaveButton": "Guardar Sesión",
+
+  "preRunTitle": "Control Pre-carrera",
+  "preRunHeading": "¿Cómo te sientes?",
+  "preRunSubtitle": "Verificación rápida para asegurarte de que la sesión de intervalos de hoy sigue siendo la decisión correcta.",
+  "preRunLegsQuestion": "¿Cómo se sienten tus piernas hoy?",
+  "preRunFresh": "Frescas",
+  "preRunNormal": "Normal",
+  "preRunHeavy": "Pesadas",
+  "preRunPainQuestion": "¿Tienes algún dolor ahora mismo?",
+  "preRunNone": "Ninguno",
+  "preRunMildDiscomfort": "Molestia leve",
+  "preRunModeratePain": "Dolor moderado",
+  "preRunSharpPain": "Dolor agudo",
+  "preRunSleepQuestion": "¿Cómo fue tu sueño?",
+  "preRunGreat": "Excelente",
+  "preRunOkay": "Regular",
+  "preRunPoor": "Malo",
+  "preRunReadinessQuestion": "¿Estás listo para esta sesión?",
+  "preRunLetsGo": "¡Vamos!",
+  "preRunNotFullyReady": "No del todo listo",
+  "preRunContinue": "Continuar"
 }
