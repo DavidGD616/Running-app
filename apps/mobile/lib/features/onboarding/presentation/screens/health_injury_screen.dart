@@ -89,7 +89,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                         ),
                       ),
                       Text(
-                        '4 / 9',
+                        l10n.onboardingStep(4, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

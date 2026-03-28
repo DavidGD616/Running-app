@@ -138,7 +138,7 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                         ),
                       ),
                       Text(
-                        '8 / 9',
+                        l10n.onboardingStep(8, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

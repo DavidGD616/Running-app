@@ -130,6 +130,15 @@
   "homeComingSoon": "Home screen coming soon.",
   "@homeComingSoon": { "description": "Placeholder subtitle on the home screen" },
 
+  "onboardingStep": "{step} / {total}",
+  "@onboardingStep": {
+    "description": "Step counter displayed on onboarding screens, e.g. '1 / 9'",
+    "placeholders": {
+      "step": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+
   "onboardingIntroTitle": "Let's build your plan",
   "@onboardingIntroTitle": { "description": "Heading on the onboarding intro screen" },
 
@@ -1082,12 +1091,6 @@
   "homeTitle": "Today",
   "@homeTitle": { "description": "Title of the home/today screen" },
 
-  "homePlanName": "Half Marathon Plan",
-  "@homePlanName": { "description": "Plan name shown in the header badge on the home screen" },
-
-  "homeWeekInfo": "Week 4",
-  "@homeWeekInfo": { "description": "Current week indicator next to the plan badge on the home screen" },
-
   "homeSectionTodaysWorkout": "Today's Workout",
   "@homeSectionTodaysWorkout": { "description": "Section label for today's workout on the home screen" },
 
@@ -1132,33 +1135,6 @@
       "unit": { "type": "String" }
     }
   },
-
-  "homeWorkoutSessionType": "Interval",
-  "@homeWorkoutSessionType": { "description": "Session type label on the home workout hero card" },
-
-  "homeWorkoutSessionName": "Interval Training",
-  "@homeWorkoutSessionName": { "description": "Session name on the home workout hero card" },
-
-  "homeWorkoutDuration": "45 min",
-  "@homeWorkoutDuration": { "description": "Duration shown on the home workout hero card" },
-
-  "homeWorkoutDistance": "~6.5 km",
-  "@homeWorkoutDistance": { "description": "Distance shown on the home workout hero card" },
-
-  "homeWorkoutTargetGuidance": "4×800m @ 5K pace. 90s recovery jog.",
-  "@homeWorkoutTargetGuidance": { "description": "Target guidance text on the home workout hero card" },
-
-  "homeUpNextSessionName": "Long Run",
-  "@homeUpNextSessionName": { "description": "Up Next session name on the home screen" },
-
-  "homeUpNextDayLabel": "Saturday",
-  "@homeUpNextDayLabel": { "description": "Day label for the Up Next session on the home screen" },
-
-  "homeUpNextDuration": "1h 15min",
-  "@homeUpNextDuration": { "description": "Duration for the Up Next session on the home screen" },
-
-  "homeUpNextEffortLabel": "Easy effort",
-  "@homeUpNextEffortLabel": { "description": "Effort label for the Up Next session on the home screen" },
 
   "homeVolumeUnit": "km",
   "@homeVolumeUnit": { "description": "Volume unit displayed on the home week progress card" },
@@ -1339,15 +1315,6 @@
 
   "settingsTitle": "Settings",
   "@settingsTitle": { "description": "Settings screen title" },
-
-  "settingsProfileName": "User Name",
-  "@settingsProfileName": { "description": "Placeholder user name on settings profile card" },
-
-  "settingsPlanBadge": "Half Marathon Plan",
-  "@settingsPlanBadge": { "description": "Training plan name on settings profile card" },
-
-  "settingsWeekInfo": "Week 4 of 12",
-  "@settingsWeekInfo": { "description": "Week progress shown on settings profile card" },
 
   "settingsPlanGoalsSection": "Plan & Goals",
   "@settingsPlanGoalsSection": { "description": "Plan & Goals section header" },

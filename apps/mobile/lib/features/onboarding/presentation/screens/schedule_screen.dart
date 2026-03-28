@@ -111,7 +111,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         ),
                       ),
                       Text(
-                        '3 / 9',
+                        l10n.onboardingStep(3, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

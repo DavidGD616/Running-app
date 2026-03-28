@@ -356,6 +356,12 @@ abstract class AppLocalizations {
   /// **'Home screen coming soon.'**
   String get homeComingSoon;
 
+  /// Step counter displayed on onboarding screens, e.g. '1 / 9'
+  ///
+  /// In en, this message translates to:
+  /// **'{step} / {total}'**
+  String onboardingStep(int step, int total);
+
   /// Heading on the onboarding intro screen
   ///
   /// In en, this message translates to:
@@ -2191,18 +2197,6 @@ abstract class AppLocalizations {
   /// **'Today'**
   String get homeTitle;
 
-  /// Plan name shown in the header badge on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'Half Marathon Plan'**
-  String get homePlanName;
-
-  /// Current week indicator next to the plan badge on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'Week 4'**
-  String get homeWeekInfo;
-
   /// Section label for today's workout on the home screen
   ///
   /// In en, this message translates to:
@@ -2280,60 +2274,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On track to hit {totalVolume} {unit} planned'**
   String weekProgressFooter(String totalVolume, String unit);
-
-  /// Session type label on the home workout hero card
-  ///
-  /// In en, this message translates to:
-  /// **'Interval'**
-  String get homeWorkoutSessionType;
-
-  /// Session name on the home workout hero card
-  ///
-  /// In en, this message translates to:
-  /// **'Interval Training'**
-  String get homeWorkoutSessionName;
-
-  /// Duration shown on the home workout hero card
-  ///
-  /// In en, this message translates to:
-  /// **'45 min'**
-  String get homeWorkoutDuration;
-
-  /// Distance shown on the home workout hero card
-  ///
-  /// In en, this message translates to:
-  /// **'~6.5 km'**
-  String get homeWorkoutDistance;
-
-  /// Target guidance text on the home workout hero card
-  ///
-  /// In en, this message translates to:
-  /// **'4×800m @ 5K pace. 90s recovery jog.'**
-  String get homeWorkoutTargetGuidance;
-
-  /// Up Next session name on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'Long Run'**
-  String get homeUpNextSessionName;
-
-  /// Day label for the Up Next session on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'Saturday'**
-  String get homeUpNextDayLabel;
-
-  /// Duration for the Up Next session on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'1h 15min'**
-  String get homeUpNextDuration;
-
-  /// Effort label for the Up Next session on the home screen
-  ///
-  /// In en, this message translates to:
-  /// **'Easy effort'**
-  String get homeUpNextEffortLabel;
 
   /// Volume unit displayed on the home week progress card
   ///
@@ -2664,24 +2604,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Settings'**
   String get settingsTitle;
-
-  /// Placeholder user name on settings profile card
-  ///
-  /// In en, this message translates to:
-  /// **'User Name'**
-  String get settingsProfileName;
-
-  /// Training plan name on settings profile card
-  ///
-  /// In en, this message translates to:
-  /// **'Half Marathon Plan'**
-  String get settingsPlanBadge;
-
-  /// Week progress shown on settings profile card
-  ///
-  /// In en, this message translates to:
-  /// **'Week 4 of 12'**
-  String get settingsWeekInfo;
 
   /// Plan & Goals section header
   ///

@@ -105,7 +105,7 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                         ),
                       ),
                       Text(
-                        '7 / 9',
+                        l10n.onboardingStep(7, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

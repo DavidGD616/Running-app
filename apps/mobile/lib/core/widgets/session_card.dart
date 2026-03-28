@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
+import '../../l10n/app_localizations.dart';
 
 enum SessionCardVariant { upcoming, completed, restDay }
 
@@ -193,6 +194,7 @@ class _RestDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
@@ -217,7 +219,7 @@ class _RestDayCard extends StatelessWidget {
               children: [
                 Text(day, style: AppTypography.caption),
                 const SizedBox(height: AppSpacing.xs),
-                Text('Rest Day', style: AppTypography.titleMedium.copyWith(
+                Text(l10n.weeklyPlanRestTitle, style: AppTypography.titleMedium.copyWith(
                   color: AppColors.textSecondary,
                 )),
               ],

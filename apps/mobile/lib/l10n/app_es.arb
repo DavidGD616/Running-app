@@ -53,6 +53,8 @@
   "homeReady": "¡Tu plan está listo!",
   "homeComingSoon": "Pantalla de inicio próximamente.",
 
+  "onboardingStep": "{step} / {total}",
+
   "onboardingIntroTitle": "Construyamos tu plan",
   "onboardingIntroSubtitle": "Responde algunas preguntas para que podamos crear un plan de entrenamiento personalizado para ti. Tarda unos 3 minutos.",
   "onboardingIntroFeature1": "Tu objetivo de carrera y cronograma",
@@ -377,8 +379,6 @@
   "planReadyViewFullWeek": "Ver semana completa",
 
   "homeTitle": "Hoy",
-  "homePlanName": "Plan Media Maratón",
-  "homeWeekInfo": "Semana 4",
   "homeSectionTodaysWorkout": "Entrenamiento de Hoy",
   "homeSectionUpNext": "A Continuación",
   "homeSectionThisWeek": "Esta Semana",
@@ -394,17 +394,6 @@
   "weekProgressRunsLabel": "Carreras",
   "weekProgressVolumeLabel": "Volumen",
   "weekProgressFooter": "En camino de alcanzar {totalVolume} {unit} planificados",
-
-  "homeWorkoutSessionType": "Intervalos",
-  "homeWorkoutSessionName": "Entrenamiento de Intervalos",
-  "homeWorkoutDuration": "45 min",
-  "homeWorkoutDistance": "~6.5 km",
-  "homeWorkoutTargetGuidance": "4×800m al ritmo de 5K. 90s trote de recuperación.",
-
-  "homeUpNextSessionName": "Carrera Larga",
-  "homeUpNextDayLabel": "Sábado",
-  "homeUpNextDuration": "1h 15min",
-  "homeUpNextEffortLabel": "Esfuerzo suave",
 
   "homeVolumeUnit": "km",
 
@@ -467,9 +456,6 @@
   "progressSeeFullData": "Ver datos completos",
 
   "settingsTitle": "Configuración",
-  "settingsProfileName": "Nombre de usuario",
-  "settingsPlanBadge": "Plan de media maratón",
-  "settingsWeekInfo": "Semana 4 de 12",
   "settingsPlanGoalsSection": "Plan y objetivos",
   "settingsUpdatePlanInfo": "Actualizar plan",
   "settingsPreferencesSection": "Preferencias",

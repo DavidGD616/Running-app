@@ -183,7 +183,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                         ),
                       ),
                       Text(
-                        '2 / 9',
+                        l10n.onboardingStep(2, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

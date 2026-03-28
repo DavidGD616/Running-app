@@ -141,6 +141,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeComingSoon => 'Pantalla de inicio próximamente.';
 
   @override
+  String onboardingStep(int step, int total) {
+    return '$step / $total';
+  }
+
+  @override
   String get onboardingIntroTitle => 'Construyamos tu plan';
 
   @override
@@ -1116,12 +1121,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get homeTitle => 'Hoy';
 
   @override
-  String get homePlanName => 'Plan Media Maratón';
-
-  @override
-  String get homeWeekInfo => 'Semana 4';
-
-  @override
   String get homeSectionTodaysWorkout => 'Entrenamiento de Hoy';
 
   @override
@@ -1161,34 +1160,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String weekProgressFooter(String totalVolume, String unit) {
     return 'En camino de alcanzar $totalVolume $unit planificados';
   }
-
-  @override
-  String get homeWorkoutSessionType => 'Intervalos';
-
-  @override
-  String get homeWorkoutSessionName => 'Entrenamiento de Intervalos';
-
-  @override
-  String get homeWorkoutDuration => '45 min';
-
-  @override
-  String get homeWorkoutDistance => '~6.5 km';
-
-  @override
-  String get homeWorkoutTargetGuidance =>
-      '4×800m al ritmo de 5K. 90s trote de recuperación.';
-
-  @override
-  String get homeUpNextSessionName => 'Carrera Larga';
-
-  @override
-  String get homeUpNextDayLabel => 'Sábado';
-
-  @override
-  String get homeUpNextDuration => '1h 15min';
-
-  @override
-  String get homeUpNextEffortLabel => 'Esfuerzo suave';
 
   @override
   String get homeVolumeUnit => 'km';
@@ -1364,15 +1335,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsTitle => 'Configuración';
-
-  @override
-  String get settingsProfileName => 'Nombre de usuario';
-
-  @override
-  String get settingsPlanBadge => 'Plan de media maratón';
-
-  @override
-  String get settingsWeekInfo => 'Semana 4 de 12';
 
   @override
   String get settingsPlanGoalsSection => 'Plan y objetivos';

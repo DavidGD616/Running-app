@@ -187,7 +187,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                         ),
                       ),
                       Text(
-                        '1 / 9',
+                        l10n.onboardingStep(1, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

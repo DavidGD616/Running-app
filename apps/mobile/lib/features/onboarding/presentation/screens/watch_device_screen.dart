@@ -166,7 +166,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         ),
                       ),
                       Text(
-                        '6 / 9',
+                        l10n.onboardingStep(6, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

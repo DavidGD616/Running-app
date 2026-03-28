@@ -98,7 +98,7 @@ class _TrainingPreferencesScreenState
                         ),
                       ),
                       Text(
-                        '5 / 9',
+                        l10n.onboardingStep(5, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,

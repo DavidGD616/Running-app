@@ -141,6 +141,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeComingSoon => 'Home screen coming soon.';
 
   @override
+  String onboardingStep(int step, int total) {
+    return '$step / $total';
+  }
+
+  @override
   String get onboardingIntroTitle => 'Let\'s build your plan';
 
   @override
@@ -1110,12 +1115,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeTitle => 'Today';
 
   @override
-  String get homePlanName => 'Half Marathon Plan';
-
-  @override
-  String get homeWeekInfo => 'Week 4';
-
-  @override
   String get homeSectionTodaysWorkout => 'Today\'s Workout';
 
   @override
@@ -1155,33 +1154,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String weekProgressFooter(String totalVolume, String unit) {
     return 'On track to hit $totalVolume $unit planned';
   }
-
-  @override
-  String get homeWorkoutSessionType => 'Interval';
-
-  @override
-  String get homeWorkoutSessionName => 'Interval Training';
-
-  @override
-  String get homeWorkoutDuration => '45 min';
-
-  @override
-  String get homeWorkoutDistance => '~6.5 km';
-
-  @override
-  String get homeWorkoutTargetGuidance => '4×800m @ 5K pace. 90s recovery jog.';
-
-  @override
-  String get homeUpNextSessionName => 'Long Run';
-
-  @override
-  String get homeUpNextDayLabel => 'Saturday';
-
-  @override
-  String get homeUpNextDuration => '1h 15min';
-
-  @override
-  String get homeUpNextEffortLabel => 'Easy effort';
 
   @override
   String get homeVolumeUnit => 'km';
@@ -1356,15 +1328,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsTitle => 'Settings';
-
-  @override
-  String get settingsProfileName => 'User Name';
-
-  @override
-  String get settingsPlanBadge => 'Half Marathon Plan';
-
-  @override
-  String get settingsWeekInfo => 'Week 4 of 12';
 
   @override
   String get settingsPlanGoalsSection => 'Plan & Goals';

@@ -253,7 +253,7 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        '9 / 9',
+                        l10n.onboardingStep(9, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
