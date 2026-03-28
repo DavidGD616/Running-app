@@ -277,7 +277,8 @@ class _VolumeChartCard extends StatelessWidget {
                       children: [
                         Expanded(
                           child: _WeekStatItem(
-                            iconAsset: 'assets/icons/circle_check.svg',
+                            iconAsset: 'assets/icons/compass.svg',
+                            iconColor: AppColors.accentPrimary,
                             label: l10n.progressDistanceLabel,
                             value: '28',
                             unit: ' km',
@@ -291,6 +292,7 @@ class _VolumeChartCard extends StatelessWidget {
                         Expanded(
                           child: _WeekStatItem(
                             iconAsset: 'assets/icons/clock.svg',
+                            iconColor: AppColors.info,
                             label: l10n.progressTimeLabel,
                             value: '2${l10n.progressHourUnit} 30${l10n.progressMinuteUnit}',
                             unit: '',
@@ -304,6 +306,7 @@ class _VolumeChartCard extends StatelessWidget {
                         Expanded(
                           child: _WeekStatItem(
                             iconAsset: 'assets/icons/mountain.svg',
+                            iconColor: AppColors.warning,
                             label: l10n.progressElevationLabel,
                             value: '150',
                             unit: ' m',
@@ -408,12 +411,14 @@ class _VolumeChartCard extends StatelessWidget {
 class _WeekStatItem extends StatelessWidget {
   const _WeekStatItem({
     required this.iconAsset,
+    required this.iconColor,
     required this.label,
     required this.value,
     required this.unit,
   });
 
   final String iconAsset;
+  final Color iconColor;
   final String label;
   final String value;
   final String unit;
@@ -432,10 +437,7 @@ class _WeekStatItem extends StatelessWidget {
                 iconAsset,
                 width: 11,
                 height: 11,
-                colorFilter: const ColorFilter.mode(
-                  AppColors.accentPrimary,
-                  BlendMode.srcIn,
-                ),
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
               ),
               const SizedBox(width: 4),
               Text(
