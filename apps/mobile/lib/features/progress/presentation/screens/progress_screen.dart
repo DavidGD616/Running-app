@@ -188,17 +188,41 @@ class ProgressScreen extends StatelessWidget {
 
 // ── Weekly volume chart card ──────────────────────────────────────────────────
 
-class _VolumeChartCard extends StatelessWidget {
+class _VolumeChartCard extends StatefulWidget {
   const _VolumeChartCard({required this.l10n});
 
   final AppLocalizations l10n;
 
+  @override
+  State<_VolumeChartCard> createState() => _VolumeChartCardState();
+}
+
+class _VolumeChartCardState extends State<_VolumeChartCard> {
   static const _weeklyData = [23.0, 27.0, 22.0, 25.0, 28.0, 24.0];
-  static const _selectedIndex = 5;
   static const _maxVal = 46.0;
+
+  int _selectedIndex = 5;
+
+  void _updateFromX(double localX, double chartWidth) {
+    final count = _weeklyData.length;
+    int nearest = 0;
+    double minDist = double.infinity;
+    for (int i = 0; i < count; i++) {
+      final x = chartWidth * i / (count - 1);
+      final dist = (x - localX).abs();
+      if (dist < minDist) {
+        minDist = dist;
+        nearest = i;
+      }
+    }
+    if (nearest != _selectedIndex) {
+      setState(() => _selectedIndex = nearest);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = widget.l10n;
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -341,12 +365,23 @@ class _VolumeChartCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: CustomPaint(
-                      painter: _ChartPainter(
-                        data: _weeklyData,
-                        selectedIndex: _selectedIndex,
-                        maxVal: _maxVal,
-                      ),
+                    child: LayoutBuilder(
+                      builder: (context, constraints) {
+                        return GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapDown: (d) =>
+                              _updateFromX(d.localPosition.dx, constraints.maxWidth),
+                          onHorizontalDragUpdate: (d) =>
+                              _updateFromX(d.localPosition.dx, constraints.maxWidth),
+                          child: CustomPaint(
+                            painter: _ChartPainter(
+                              data: _weeklyData,
+                              selectedIndex: _selectedIndex,
+                              maxVal: _maxVal,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
