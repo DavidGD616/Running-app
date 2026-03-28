@@ -4,7 +4,7 @@ abstract class AppColors {
   // Backgrounds
   static const Color backgroundPrimary = Color(0xFF121212);
   static const Color backgroundSecondary = Color(0xFF1E1E1E);
-  static const Color backgroundCard = Color(0xFF2A2A2A);
+  static const Color backgroundCard = Color(0xFF1E1E1E);
 
   // Surfaces
   static const Color surfaceElevated = Color(0xFF333333);
@@ -17,7 +17,7 @@ abstract class AppColors {
   // Brand / Accent
   static const Color accentPrimary = Color(0xFF00E676);
   static const Color accentLight = Color(0xFF69F0AE);
-  static const Color accentMuted = Color(0x3300E676); // 20% opacity
+  static const Color accentMuted = Color(0x1F00E676); // 12% opacity
 
   // Borders
   static const Color borderDefault = Color(0xFF3A3A3A);

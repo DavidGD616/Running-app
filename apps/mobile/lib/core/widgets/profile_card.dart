@@ -42,7 +42,16 @@ class ProfileCard extends StatelessWidget {
                 Text(name, style: AppTypography.titleMedium),
                 if (planName != null) ...[
                   const SizedBox(height: AppSpacing.xs),
-                  PlanBadgePill(planName: planName!, weekInfo: weekInfo),
+                  PlanBadgePill(planName: planName!),
+                ],
+                if (weekInfo != null) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    weekInfo!,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textDisabled,
+                    ),
+                  ),
                 ],
               ],
             ),

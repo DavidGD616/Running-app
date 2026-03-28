@@ -14,7 +14,7 @@ class PlanBadgePill extends StatelessWidget {
   final String planName;
   final String? weekInfo;
 
-  String get _label => weekInfo != null ? '$planName · $weekInfo' : planName;
+  String get _label => planName;
 
   @override
   Widget build(BuildContext context) {
@@ -38,10 +38,12 @@ class PlanBadgePill extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.xs),
-          Text(
-            _label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.accentPrimary,
+          Flexible(
+            child: Text(
+              _label,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.accentPrimary,
+              ),
             ),
           ),
         ],
