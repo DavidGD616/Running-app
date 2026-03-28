@@ -109,7 +109,7 @@ class ProgressScreen extends StatelessWidget {
                   children: [
                     Expanded(
                       child: _ProgressStatTile(
-                        iconAsset: 'assets/icons/route.svg',
+                        iconAsset: 'assets/icons/compass.svg',
                         iconColor: AppColors.accentPrimary,
                         label: l10n.progressDistanceLabel,
                         value: '65.2',
