@@ -37,7 +37,6 @@ class SettingsScreen extends StatelessWidget {
                 name: l10n.settingsProfileName,
                 planName: l10n.settingsPlanBadge,
                 weekInfo: l10n.settingsWeekInfo,
-                onEdit: () {},
               ),
 
               const SizedBox(height: AppSpacing.xl),
@@ -193,10 +192,11 @@ class _LogOutCard extends StatelessWidget {
           border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
         ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 32,
-              height: 32,
+              width: 28,
+              height: 28,
               decoration: BoxDecoration(
                 color: AppColors.error.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),

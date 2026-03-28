@@ -42,12 +42,12 @@ class SettingsRow extends StatelessWidget {
         child: Row(
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(
                 color: isDestructive
-                    ? AppColors.error.withValues(alpha: 0.15)
-                    : iconColor.withValues(alpha: 0.15),
+                    ? AppColors.error.withValues(alpha: 0.08)
+                    : iconColor.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Center(
@@ -119,12 +119,17 @@ class SettingsRow extends StatelessWidget {
         return Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(valueLabel ?? '', style: AppTypography.bodyMedium),
+            Text(
+              valueLabel ?? '',
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textDisabled,
+              ),
+            ),
             const SizedBox(width: AppSpacing.xs),
             SvgPicture.asset(
               'assets/icons/chevron_right.svg',
-              width: 20,
-              height: 20,
+              width: 16,
+              height: 16,
               colorFilter: const ColorFilter.mode(
                   AppColors.textSecondary, BlendMode.srcIn),
             ),

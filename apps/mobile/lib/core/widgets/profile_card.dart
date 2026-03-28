@@ -84,12 +84,12 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 52,
-      height: 52,
+      width: 64,
+      height: 64,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: AppColors.backgroundSecondary,
-        border: Border.all(color: AppColors.borderDefault),
+        borderRadius: BorderRadius.circular(32),
+        color: AppColors.accentPrimary.withValues(alpha: 0.08),
+        border: Border.all(color: AppColors.accentPrimary.withValues(alpha: 0.2)),
         image: avatarUrl != null
             ? DecorationImage(
                 image: NetworkImage(avatarUrl!),
@@ -101,8 +101,8 @@ class _Avatar extends StatelessWidget {
           ? Center(
               child: SvgPicture.asset(
                 'assets/icons/person.svg',
-                width: 26,
-                height: 26,
+                width: 32,
+                height: 32,
                 colorFilter: const ColorFilter.mode(
                     AppColors.textSecondary, BlendMode.srcIn),
               ),
