@@ -1229,6 +1229,9 @@
   "weeklyPlanDayWed": "Wed",
   "@weeklyPlanDayWed": { "description": "Wednesday abbreviation in weekly plan" },
 
+  "weeklyPlanDayThu": "Thu",
+  "@weeklyPlanDayThu": { "description": "Thursday abbreviation in weekly plan" },
+
   "weeklyPlanDayFri": "Fri",
   "@weeklyPlanDayFri": { "description": "Friday abbreviation in weekly plan" },
 

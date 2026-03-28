@@ -43,6 +43,22 @@ class UnitFormatter {
           ? ['1-km run time', '1-km walk time', '5K time', '10K time', 'Half marathon time', 'Skip for now']
           : ['1-mile run time', '1-mile walk time', '5K time', '10K time', 'Half marathon time', 'Skip for now'];
 
+  /// Formats a duration in minutes to a human-readable string.
+  /// e.g. 30 → '30 min', 75 → '1h 15m', 60 → '1h'
+  static String formatDuration(int minutes) {
+    if (minutes < 60) return '$minutes min';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    return m == 0 ? '${h}h' : '${h}h ${m}m';
+  }
+
+  /// Formats a distance in km to a human-readable string.
+  /// e.g. 5.0 → '5 km', 6.5 → '6.5 km'
+  static String formatDistanceKm(double km) {
+    final isWhole = km == km.truncateToDouble();
+    return isWhole ? '${km.toInt()} km' : '${km.toStringAsFixed(1)} km';
+  }
+
   /// Options for "Longest recent run" in CurrentFitnessScreen.
   static List<String> longestRunOptions(UnitSystem unit) =>
       unit == UnitSystem.km

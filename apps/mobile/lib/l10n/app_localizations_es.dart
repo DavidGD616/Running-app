@@ -1256,6 +1256,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get weeklyPlanDayWed => 'Mié';
 
   @override
+  String get weeklyPlanDayThu => 'Jue';
+
+  @override
   String get weeklyPlanDayFri => 'Vie';
 
   @override

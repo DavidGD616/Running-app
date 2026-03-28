@@ -1,69 +1,59 @@
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/streak_banner.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../progress/domain/models/recent_session.dart';
+import '../../../progress/domain/models/weekly_volume_data.dart';
+import '../../../training_plan/domain/models/session_type.dart';
+import '../../presentation/progress_provider.dart';
 
-// ── Recent session data ───────────────────────────────────────────────────────
+// ── Icon data helper ──────────────────────────────────────────────────────────
 
-class _RecentSession {
-  const _RecentSession({
-    required this.title,
-    required this.meta,
-    required this.duration,
-    required this.iconAsset,
-    required this.iconBg,
-    required this.iconColor,
-  });
-
-  final String title;
-  final String meta;
-  final String duration;
-  final String iconAsset;
-  final Color iconBg;
-  final Color iconColor;
+({String iconAsset, Color iconColor, Color iconBg}) _sessionIconData(
+    SessionType type) {
+  return switch (type) {
+    SessionType.tempoRun || SessionType.intervals => (
+      iconAsset: 'assets/icons/activity.svg',
+      iconColor: AppColors.accentPrimary,
+      iconBg: AppColors.accentPrimary.withValues(alpha: 0.1),
+    ),
+    SessionType.easyRun || SessionType.recoveryRun => (
+      iconAsset: 'assets/icons/heart.svg',
+      iconColor: AppColors.info,
+      iconBg: AppColors.info.withValues(alpha: 0.1),
+    ),
+    SessionType.longRun => (
+      iconAsset: 'assets/icons/target.svg',
+      iconColor: AppColors.warning,
+      iconBg: AppColors.warning.withValues(alpha: 0.1),
+    ),
+    SessionType.rest => (
+      iconAsset: 'assets/icons/coffee.svg',
+      iconColor: AppColors.textDisabled,
+      iconBg: AppColors.backgroundCard,
+    ),
+  };
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
-class ProgressScreen extends StatelessWidget {
+class ProgressScreen extends ConsumerWidget {
   const ProgressScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-
-    final sessions = [
-      _RecentSession(
-        title: l10n.progressSessionTempoRun,
-        meta: '${l10n.progressYesterday} • 8.0 km',
-        duration: '45 min',
-        iconAsset: 'assets/icons/activity.svg',
-        iconBg: AppColors.accentPrimary.withValues(alpha: 0.1),
-        iconColor: AppColors.accentPrimary,
-      ),
-      _RecentSession(
-        title: l10n.weeklyPlanSessionEasyRun,
-        meta: '${l10n.progressTuesdayLabel} • 5.0 km',
-        duration: '30 min',
-        iconAsset: 'assets/icons/heart.svg',
-        iconBg: AppColors.info.withValues(alpha: 0.1),
-        iconColor: AppColors.info,
-      ),
-      _RecentSession(
-        title: l10n.weeklyPlanSessionLongRun,
-        meta: '${l10n.progressLastSunday} • 12.0 km',
-        duration: '1h 15m',
-        iconAsset: 'assets/icons/target.svg',
-        iconBg: AppColors.warning.withValues(alpha: 0.1),
-        iconColor: AppColors.warning,
-      ),
-    ];
+    final stats = ref.watch(userStatsProvider);
+    final sessions = ref.watch(recentSessionsProvider);
+    final volumeData = ref.watch(weeklyVolumeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -91,14 +81,14 @@ class ProgressScreen extends StatelessWidget {
 
               // ── Streak banner ─────────────────────────────────────
               StreakBanner(
-                streakWeeks: 5,
+                streakWeeks: stats.streakWeeks,
                 subtitle: l10n.progressStreakBannerSubtitle,
               ),
 
               const SizedBox(height: AppSpacing.md),
 
               // ── Weekly volume chart ───────────────────────────────
-              _VolumeChartCard(l10n: l10n),
+              _VolumeChartCard(l10n: l10n, weeks: volumeData),
 
               const SizedBox(height: AppSpacing.md),
 
@@ -112,9 +102,9 @@ class ProgressScreen extends StatelessWidget {
                         iconAsset: 'assets/icons/compass.svg',
                         iconColor: AppColors.accentPrimary,
                         label: l10n.progressDistanceLabel,
-                        value: '65.2',
+                        value: stats.totalDistanceKm.toStringAsFixed(1),
                         unit: 'km',
-                        trend: l10n.progressTrendUp('14'),
+                        trend: l10n.progressTrendUp(stats.distanceTrendPct.round().toString()),
                         trendColor: AppColors.accentPrimary,
                       ),
                     ),
@@ -124,11 +114,11 @@ class ProgressScreen extends StatelessWidget {
                         iconAsset: 'assets/icons/clock.svg',
                         iconColor: AppColors.info,
                         label: l10n.progressTimeLabel,
-                        timeHours: '6',
-                        timeMinutes: '15',
+                        timeHours: stats.totalTimeHours.toString(),
+                        timeMinutes: stats.totalTimeRemainingMinutes.toString().padLeft(2, '0'),
                         hourUnit: l10n.progressHourUnit,
                         minuteUnit: l10n.progressMinuteUnit,
-                        trend: l10n.progressTrendUp('5'),
+                        trend: l10n.progressTrendUp(stats.timeTrendPct.round().toString()),
                         trendColor: AppColors.info,
                       ),
                     ),
@@ -147,10 +137,10 @@ class ProgressScreen extends StatelessWidget {
                         iconAsset: 'assets/icons/flame.svg',
                         iconColor: AppColors.warning,
                         label: l10n.progressStreakLabel,
-                        value: '4',
+                        value: stats.streakWeeks.toString(),
                         unit: ' ${l10n.progressWeeksUnit}',
                         valueColor: AppColors.warning,
-                        trend: l10n.progressStreakSubtitle('4'),
+                        trend: l10n.progressStreakSubtitle(stats.streakWeeks.toString()),
                         trendColor: AppColors.warning,
                       ),
                     ),
@@ -160,7 +150,7 @@ class ProgressScreen extends StatelessWidget {
                         iconAsset: 'assets/icons/circle_check.svg',
                         iconColor: const Color(0xFFAB47BC),
                         label: l10n.progressRunsLabel,
-                        value: '10',
+                        value: stats.totalRuns.toString(),
                         trend: l10n.progressRunsCompleted,
                         trendColor: const Color(0xFFAB47BC),
                       ),
@@ -172,7 +162,11 @@ class ProgressScreen extends StatelessWidget {
               const SizedBox(height: AppSpacing.md),
 
               // ── Longest run card ──────────────────────────────────
-              _LongestRunCard(l10n: l10n),
+              _LongestRunCard(
+                l10n: l10n,
+                longestRunKm: stats.longestRunKm,
+                improvementKm: stats.longestRunImprovementKm,
+              ),
 
               const SizedBox(height: AppSpacing.md),
 
@@ -188,57 +182,31 @@ class ProgressScreen extends StatelessWidget {
 
 // ── Week data ─────────────────────────────────────────────────────────────────
 
-class _WeekData {
-  const _WeekData({
-    required this.distance,
-    required this.timeHours,
-    required this.timeMinutes,
-    required this.elevation,
-    this.dateRange,
-  });
-
-  /// Distance in km — drives the chart line height.
-  final double distance;
-  final int timeHours;
-  final int timeMinutes;
-
-  /// Elevation in meters.
-  final int elevation;
-
-  /// Human-readable date range, e.g. "MAR 16 - MAR 22".
-  /// Null for the current (most recent) week.
-  final String? dateRange;
-
-  bool get isCurrentWeek => dateRange == null;
-}
-
 // ── Weekly volume chart card ──────────────────────────────────────────────────
 
 class _VolumeChartCard extends StatefulWidget {
-  const _VolumeChartCard({required this.l10n});
+  const _VolumeChartCard({required this.l10n, required this.weeks});
 
   final AppLocalizations l10n;
+  final List<WeeklyVolumeData> weeks;
 
   @override
   State<_VolumeChartCard> createState() => _VolumeChartCardState();
 }
 
 class _VolumeChartCardState extends State<_VolumeChartCard> {
-  static const _weeks = [
-    _WeekData(distance: 23, timeHours: 2, timeMinutes: 10, elevation: 120, dateRange: 'FEB 16 - FEB 22'),
-    _WeekData(distance: 27, timeHours: 2, timeMinutes: 35, elevation: 145, dateRange: 'FEB 23 - MAR 01'),
-    _WeekData(distance: 22, timeHours: 2, timeMinutes: 05, elevation: 110, dateRange: 'MAR 02 - MAR 08'),
-    _WeekData(distance: 25, timeHours: 2, timeMinutes: 20, elevation: 135, dateRange: 'MAR 09 - MAR 15'),
-    _WeekData(distance: 28, timeHours: 2, timeMinutes: 45, elevation: 155, dateRange: 'MAR 16 - MAR 22'),
-    _WeekData(distance: 24, timeHours: 2, timeMinutes: 30, elevation: 150),
-  ];
-
-  static const _maxVal = 46.0;
-
   int _selectedIndex = 5;
 
+  double get _maxVal {
+    if (widget.weeks.isEmpty) return 50.0;
+    final maxDist = widget.weeks
+        .map((w) => w.distanceKm)
+        .reduce((a, b) => a > b ? a : b);
+    return ((maxDist * 1.2) / 10).ceil() * 10.0;
+  }
+
   void _updateFromX(double localX, double chartWidth) {
-    final count = _weeks.length;
+    final count = widget.weeks.length;
     int nearest = 0;
     double minDist = double.infinity;
     for (int i = 0; i < count; i++) {
@@ -257,7 +225,8 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
-    final selected = _weeks[_selectedIndex];
+    final selected = widget.weeks[_selectedIndex];
+    final maxVal = _maxVal;
     final weekLabel = selected.isCurrentWeek
         ? l10n.progressCurrentWeek
         : selected.dateRange!;
@@ -342,7 +311,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/compass.svg',
                             iconColor: AppColors.accentPrimary,
                             label: l10n.progressDistanceLabel,
-                            value: selected.distance.toInt().toString(),
+                            value: selected.distanceKm.toInt().toString(),
                             unit: ' km',
                           ),
                         ),
@@ -370,7 +339,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/mountain.svg',
                             iconColor: AppColors.warning,
                             label: l10n.progressElevationLabel,
-                            value: selected.elevation.toString(),
+                            value: selected.elevationMeters.toString(),
                             unit: ' m',
                           ),
                         ),
@@ -396,8 +365,8 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('46 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
-                      Text('23 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
+                      Text('${maxVal.round()} km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
+                      Text('${(maxVal / 2).round()} km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
                       Text('0 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
                     ],
                   ),
@@ -413,9 +382,9 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                               _updateFromX(d.localPosition.dx, constraints.maxWidth),
                           child: CustomPaint(
                             painter: _ChartPainter(
-                              data: _weeks.map((w) => w.distance).toList(),
+                              data: widget.weeks.map((w) => w.distanceKm).toList(),
                               selectedIndex: _selectedIndex,
-                              maxVal: _maxVal,
+                              maxVal: maxVal,
                             ),
                           ),
                         );
@@ -826,9 +795,15 @@ class _ProgressStatTile extends StatelessWidget {
 // ── Longest run card ──────────────────────────────────────────────────────────
 
 class _LongestRunCard extends StatelessWidget {
-  const _LongestRunCard({required this.l10n});
+  const _LongestRunCard({
+    required this.l10n,
+    required this.longestRunKm,
+    required this.improvementKm,
+  });
 
   final AppLocalizations l10n;
+  final double longestRunKm;
+  final double improvementKm;
 
   @override
   Widget build(BuildContext context) {
@@ -887,7 +862,7 @@ class _LongestRunCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  l10n.progressLongestRunImproved('4.0'),
+                  l10n.progressLongestRunImproved(improvementKm.toStringAsFixed(1)),
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textDisabled,
                     fontSize: 12,
@@ -902,7 +877,7 @@ class _LongestRunCard extends StatelessWidget {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: '12.0',
+                  text: longestRunKm.toStringAsFixed(1),
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 28,
@@ -934,7 +909,7 @@ class _RecentSessionsCard extends StatelessWidget {
     required this.l10n,
   });
 
-  final List<_RecentSession> sessions;
+  final List<RecentSession> sessions;
   final AppLocalizations l10n;
 
   @override
@@ -972,6 +947,9 @@ class _RecentSessionsCard extends StatelessWidget {
           ...sessions.asMap().entries.map((entry) {
             final isLast = entry.key == sessions.length - 1;
             final s = entry.value;
+            final iconData = _sessionIconData(s.type);
+            final meta = '${s.dateLabel} • ${UnitFormatter.formatDistanceKm(s.distanceKm)}';
+            final duration = UnitFormatter.formatDuration(s.durationMinutes);
             return Column(
               children: [
                 Padding(
@@ -982,16 +960,16 @@ class _RecentSessionsCard extends StatelessWidget {
                         width: 36,
                         height: 36,
                         decoration: BoxDecoration(
-                          color: s.iconBg,
+                          color: iconData.iconBg,
                           borderRadius: AppRadius.borderMd,
                         ),
                         child: Center(
                           child: SvgPicture.asset(
-                            s.iconAsset,
+                            iconData.iconAsset,
                             width: 18,
                             height: 18,
                             colorFilter: ColorFilter.mode(
-                              s.iconColor,
+                              iconData.iconColor,
                               BlendMode.srcIn,
                             ),
                           ),
@@ -1010,7 +988,7 @@ class _RecentSessionsCard extends StatelessWidget {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              s.meta,
+                              meta,
                               style: AppTypography.bodyMedium.copyWith(
                                 color: AppColors.textDisabled,
                                 fontSize: 12,
@@ -1020,7 +998,7 @@ class _RecentSessionsCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        s.duration,
+                        duration,
                         style: AppTypography.titleMedium.copyWith(
                           color: AppColors.textSecondary,
                           fontSize: 14,

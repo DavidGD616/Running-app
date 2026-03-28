@@ -34,7 +34,7 @@ TrainingPlan buildSeedTrainingPlan() {
       id: 'seed-mon',
       date: day(0),
       type: SessionType.rest,
-      status: SessionStatus.upcoming,
+      status: statusFor(day(0)),
     ),
     TrainingSession(
       id: 'seed-tue',
@@ -68,7 +68,7 @@ TrainingPlan buildSeedTrainingPlan() {
       id: 'seed-fri',
       date: day(4),
       type: SessionType.rest,
-      status: SessionStatus.upcoming,
+      status: statusFor(day(4)),
     ),
     TrainingSession(
       id: 'seed-sat',

@@ -1,74 +1,57 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../l10n/app_localizations.dart';
-
-// ── Session data model ────────────────────────────────────────────────────────
-
-enum _SessionType { rest, easyRun, intervals, longRun, recoveryRun }
-
-enum _SessionStatus { completed, skipped, today, upcoming }
-
-class _SessionData {
-  const _SessionData({
-    required this.dayLabel,
-    required this.dateNumber,
-    required this.type,
-    required this.status,
-    this.distance,
-    this.duration,
-  });
-
-  final String Function(AppLocalizations) dayLabel;
-  final String dateNumber;
-  final _SessionType type;
-  final _SessionStatus status;
-  final String? distance;
-  final String? duration;
-}
+import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/training_session.dart';
+import '../../../training_plan/domain/models/week_progress.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
-class WeeklyPlanScreen extends StatelessWidget {
+class WeeklyPlanScreen extends ConsumerWidget {
   const WeeklyPlanScreen({super.key});
 
-  String _sessionTitle(_SessionType type, AppLocalizations l10n) {
+  String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case _SessionType.rest:         return l10n.weeklyPlanRestTitle;
-      case _SessionType.easyRun:      return l10n.weeklyPlanSessionEasyRun;
-      case _SessionType.intervals:    return l10n.weeklyPlanSessionIntervals;
-      case _SessionType.longRun:      return l10n.weeklyPlanSessionLongRun;
-      case _SessionType.recoveryRun:  return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.rest:        return l10n.weeklyPlanRestTitle;
+      case SessionType.easyRun:     return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.intervals:   return l10n.weeklyPlanSessionIntervals;
+      case SessionType.longRun:     return l10n.weeklyPlanSessionLongRun;
+      case SessionType.recoveryRun: return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.tempoRun:    return l10n.progressSessionTempoRun;
     }
   }
 
-  String _trailingIcon(_SessionType type) {
-    switch (type) {
-      case _SessionType.rest:         return 'assets/icons/coffee.svg';
-      case _SessionType.easyRun:      return 'assets/icons/route.svg';
-      case _SessionType.intervals:    return 'assets/icons/activity.svg';
-      case _SessionType.longRun:      return 'assets/icons/target.svg';
-      case _SessionType.recoveryRun:  return 'assets/icons/stopwatch.svg';
+  /// Short weekday label for the date badge, e.g. 'MON', 'TUE'.
+  /// Uses 'TODAY' when the session is marked as today.
+  String _dayLabel(TrainingSession s, AppLocalizations l10n) {
+    if (s.status == SessionStatus.today) return l10n.weeklyPlanDayToday;
+    switch (s.date.weekday) {
+      case 1: return l10n.weeklyPlanDayMon;
+      case 2: return l10n.weeklyPlanDayTue;
+      case 3: return l10n.weeklyPlanDayWed;
+      case 4: return l10n.weeklyPlanDayThu;
+      case 5: return l10n.weeklyPlanDayFri;
+      case 6: return l10n.weeklyPlanDaySat;
+      default: return l10n.weeklyPlanDaySun;
     }
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-
-    final sessions = [
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayMon,   dateNumber: '12', type: _SessionType.rest,        status: _SessionStatus.upcoming),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayTue,   dateNumber: '13', type: _SessionType.easyRun,     status: _SessionStatus.completed, distance: '5 km',  duration: '30 min'),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayWed,   dateNumber: '14', type: _SessionType.easyRun,     status: _SessionStatus.skipped,   distance: '4 km',  duration: '25 min'),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayToday, dateNumber: '15', type: _SessionType.intervals,   status: _SessionStatus.today,     distance: '6 km',  duration: '45 min'),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDayFri,   dateNumber: '16', type: _SessionType.rest,        status: _SessionStatus.upcoming),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDaySat,   dateNumber: '17', type: _SessionType.longRun,     status: _SessionStatus.upcoming,  distance: '12 km', duration: '1h 15m'),
-      _SessionData(dayLabel: (l) => l.weeklyPlanDaySun,   dateNumber: '18', type: _SessionType.recoveryRun, status: _SessionStatus.upcoming,  distance: '3 km',  duration: '20 min'),
-    ];
+    final plan = ref.watch(trainingPlanProvider);
+    final progress = ref.watch(weekProgressProvider);
+    final sessions = plan.currentWeekSessions;
+    final weekStart = sessions.isNotEmpty ? sessions.first.date.day.toString() : '';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -83,14 +66,14 @@ class WeeklyPlanScreen extends StatelessWidget {
             children: [
               // ── Title ─────────────────────────────────────────────
               Text(
-                l10n.weeklyPlanTitle('1', '12'),
+                l10n.weeklyPlanTitle(plan.currentWeekNumber.toString(), weekStart),
                 style: AppTypography.titleLarge,
               ),
 
               const SizedBox(height: AppSpacing.xl),
 
               // Week stats card
-              _WeekStatsSummary(l10n: l10n),
+              _WeekStatsSummary(l10n: l10n, progress: progress),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -103,17 +86,21 @@ class WeeklyPlanScreen extends StatelessWidget {
               ...sessions.map((s) => Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                 child: _SessionRow(
-                  dayLabel: s.dayLabel(l10n),
-                  dateNumber: s.dateNumber,
+                  dayLabel: _dayLabel(s, l10n),
+                  dateNumber: s.date.day.toString(),
                   title: _sessionTitle(s.type, l10n),
-                  subtitle: s.type == _SessionType.rest
+                  subtitle: s.type == SessionType.rest
                       ? l10n.weeklyPlanRestSubtitle
                       : null,
-                  distance: s.distance,
-                  duration: s.duration,
+                  distance: s.distanceKm != null
+                      ? UnitFormatter.formatDistanceKm(s.distanceKm!)
+                      : null,
+                  duration: s.durationMinutes != null
+                      ? UnitFormatter.formatDuration(s.durationMinutes!)
+                      : null,
                   status: s.status,
-                  isRest: s.type == _SessionType.rest,
-                  trailingIcon: _trailingIcon(s.type),
+                  isRest: s.type == SessionType.rest,
+                  trailingIcon: s.type.iconAsset,
                   nowLabel: l10n.weeklyPlanNowBadge,
                 ),
               )),
@@ -133,9 +120,10 @@ class WeeklyPlanScreen extends StatelessWidget {
 // ── Week stats summary card ───────────────────────────────────────────────────
 
 class _WeekStatsSummary extends StatelessWidget {
-  const _WeekStatsSummary({required this.l10n});
+  const _WeekStatsSummary({required this.l10n, required this.progress});
 
   final AppLocalizations l10n;
+  final WeekProgress progress;
 
   @override
   Widget build(BuildContext context) {
@@ -148,15 +136,18 @@ class _WeekStatsSummary extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _StatColumn(label: l10n.weeklyPlanDistanceLabel, value: '26 km'),
+          _StatColumn(
+            label: l10n.weeklyPlanDistanceLabel,
+            value: UnitFormatter.formatDistanceKm(progress.totalVolumeKm),
+          ),
           _StatColumn(
             label: l10n.weeklyPlanTimeLabel,
-            value: '2h 50m',
+            value: UnitFormatter.formatDuration(progress.totalDurationMinutes),
             hasDivider: true,
           ),
           _StatColumn(
             label: l10n.weeklyPlanRunsLabel,
-            value: '4',
+            value: progress.totalSessions.toString(),
             hasDivider: true,
           ),
         ],
@@ -238,15 +229,15 @@ class _SessionRow extends StatelessWidget {
   final String? subtitle;
   final String? distance;
   final String? duration;
-  final _SessionStatus status;
+  final SessionStatus status;
   final bool isRest;
   final String trailingIcon;
   final String nowLabel;
 
   @override
   Widget build(BuildContext context) {
-    final bool isToday = status == _SessionStatus.today;
-    final bool isSkipped = status == _SessionStatus.skipped;
+    final bool isToday = status == SessionStatus.today;
+    final bool isSkipped = status == SessionStatus.skipped;
     final Color rowBg;
     final Color rowBorder;
     final Color dateBg;
@@ -268,20 +259,20 @@ class _SessionRow extends StatelessWidget {
       dayTextColor = const Color(0xFF444444);
       dateTextColor = AppColors.textDisabled;
       titleColor = const Color(0xFF555555);
-    } else if (status == _SessionStatus.completed) {
+    } else if (status == SessionStatus.completed) {
       rowBg = AppColors.backgroundSecondary;
       rowBorder = AppColors.backgroundCard;
       dateBg = const Color(0xFF1C1C1C);
       dayTextColor = AppColors.textDisabled;
-      dateTextColor = AppColors.textDisabled;        // #666
-      titleColor = const Color(0xFF888888);          // #888 — dimmed, run is done
+      dateTextColor = AppColors.textDisabled;
+      titleColor = const Color(0xFF888888);
     } else if (isSkipped) {
       rowBg = Colors.transparent;
       rowBorder = const Color(0xFF222222);
       dateBg = const Color(0xFF1C1C1C);
       dayTextColor = AppColors.textDisabled;
-      dateTextColor = AppColors.textDisabled;        // #666
-      titleColor = AppColors.textDisabled;           // #666 + strikethrough applied below
+      dateTextColor = AppColors.textDisabled;
+      titleColor = AppColors.textDisabled;
     } else {
       // upcoming
       rowBg = AppColors.backgroundSecondary;
@@ -343,7 +334,6 @@ class _SessionRow extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Title row + optional Now badge
                 Row(
                   children: [
                     Text(
@@ -363,7 +353,6 @@ class _SessionRow extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 4),
-                // Subtitle (rest day) or meta (distance + duration)
                 if (subtitle != null)
                   Text(
                     subtitle!,
@@ -482,13 +471,12 @@ class _TrailingIcon extends StatelessWidget {
   });
 
   final String iconAsset;
-  final _SessionStatus status;
+  final SessionStatus status;
   final bool isRest;
 
   @override
   Widget build(BuildContext context) {
-    // Completed — muted green bg + green checkmark
-    if (status == _SessionStatus.completed) {
+    if (status == SessionStatus.completed) {
       return Container(
         width: 36,
         height: 36,
@@ -496,12 +484,11 @@ class _TrailingIcon extends StatelessWidget {
           color: AppColors.accentPrimary.withValues(alpha: 0.1),
           borderRadius: AppRadius.borderMd,
         ),
-        child: Icon(Icons.check, color: AppColors.accentPrimary, size: 18),
+        child: const Icon(Icons.check, color: AppColors.accentPrimary, size: 18),
       );
     }
 
-    // Skipped — dark rounded square with X
-    if (status == _SessionStatus.skipped) {
+    if (status == SessionStatus.skipped) {
       return Container(
         width: 36,
         height: 36,
@@ -509,12 +496,11 @@ class _TrailingIcon extends StatelessWidget {
           color: const Color(0xFF222222),
           borderRadius: AppRadius.borderMd,
         ),
-        child: Icon(Icons.close, color: AppColors.textDisabled, size: 18),
+        child: const Icon(Icons.close, color: AppColors.textDisabled, size: 18),
       );
     }
 
-    // Today / upcoming / rest — SVG icon
-    final bool isToday = status == _SessionStatus.today;
+    final bool isToday = status == SessionStatus.today;
     final Color boxBg;
     final Color iconColor;
     final double opacity;

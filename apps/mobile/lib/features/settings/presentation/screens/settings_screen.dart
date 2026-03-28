@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -8,13 +9,15 @@ import '../../../../core/widgets/profile_card.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/settings_row.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final profile = ref.watch(userProfileDisplayProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -34,9 +37,9 @@ class SettingsScreen extends StatelessWidget {
 
               // ── Profile card ───────────────────────────────────
               ProfileCard(
-                name: l10n.settingsProfileName,
-                planName: l10n.settingsPlanBadge,
-                weekInfo: l10n.settingsWeekInfo,
+                name: profile.name,
+                planName: profile.planName,
+                weekInfo: profile.weekFull,
               ),
 
               const SizedBox(height: AppSpacing.xl),

@@ -2461,6 +2461,12 @@ abstract class AppLocalizations {
   /// **'Wed'**
   String get weeklyPlanDayWed;
 
+  /// Thursday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get weeklyPlanDayThu;
+
   /// Friday abbreviation in weekly plan
   ///
   /// In en, this message translates to:
