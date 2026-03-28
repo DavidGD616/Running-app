@@ -1332,5 +1332,65 @@
   "@progressElevationLabel": { "description": "Elevation stat label in the current week stats card" },
 
   "progressSeeFullData": "See Full Data",
-  "@progressSeeFullData": { "description": "Footer link in the weekly volume chart card" }
+  "@progressSeeFullData": { "description": "Footer link in the weekly volume chart card" },
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": { "description": "Settings screen title" },
+
+  "settingsProfileName": "User Name",
+  "@settingsProfileName": { "description": "Placeholder user name on settings profile card" },
+
+  "settingsPlanBadge": "Half Marathon Plan",
+  "@settingsPlanBadge": { "description": "Training plan name on settings profile card" },
+
+  "settingsWeekInfo": "Week 4 of 12",
+  "@settingsWeekInfo": { "description": "Week progress shown on settings profile card" },
+
+  "settingsPlanGoalsSection": "Plan & Goals",
+  "@settingsPlanGoalsSection": { "description": "Plan & Goals section header" },
+
+  "settingsUpdatePlanInfo": "Update Plan Info",
+  "@settingsUpdatePlanInfo": { "description": "Row label to update training plan info" },
+
+  "settingsPreferencesSection": "Preferences",
+  "@settingsPreferencesSection": { "description": "Preferences section header" },
+
+  "settingsLanguage": "Language",
+  "@settingsLanguage": { "description": "Language preference row label" },
+
+  "settingsLanguageValue": "English",
+  "@settingsLanguageValue": { "description": "Current language value" },
+
+  "settingsUnits": "Units",
+  "@settingsUnits": { "description": "Units preference row label" },
+
+  "settingsUnitsValue": "Metric (km)",
+  "@settingsUnitsValue": { "description": "Current units value" },
+
+  "settingsAudioGuidance": "Audio Guidance",
+  "@settingsAudioGuidance": { "description": "Audio guidance preference row label" },
+
+  "settingsAudioValue": "Minimal",
+  "@settingsAudioValue": { "description": "Current audio guidance value" },
+
+  "settingsNotifications": "Notifications",
+  "@settingsNotifications": { "description": "Notifications preference row label" },
+
+  "settingsNotificationsValue": "Enabled",
+  "@settingsNotificationsValue": { "description": "Current notifications value" },
+
+  "settingsConnectedDevicesSection": "Connected Devices",
+  "@settingsConnectedDevicesSection": { "description": "Connected Devices section header" },
+
+  "settingsGarminConnect": "Garmin Connect",
+  "@settingsGarminConnect": { "description": "Garmin Connect row label" },
+
+  "settingsConnected": "Connected",
+  "@settingsConnected": { "description": "Connected device badge label" },
+
+  "settingsLogOut": "Log Out",
+  "@settingsLogOut": { "description": "Log out button label" },
+
+  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+  "@settingsVersion": { "description": "App version string shown at bottom of settings" }
 }

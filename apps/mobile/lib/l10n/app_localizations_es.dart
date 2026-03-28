@@ -1358,4 +1358,64 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get progressSeeFullData => 'Ver datos completos';
+
+  @override
+  String get settingsTitle => 'Configuración';
+
+  @override
+  String get settingsProfileName => 'Nombre de usuario';
+
+  @override
+  String get settingsPlanBadge => 'Plan de media maratón';
+
+  @override
+  String get settingsWeekInfo => 'Semana 4 de 12';
+
+  @override
+  String get settingsPlanGoalsSection => 'Plan y objetivos';
+
+  @override
+  String get settingsUpdatePlanInfo => 'Actualizar plan';
+
+  @override
+  String get settingsPreferencesSection => 'Preferencias';
+
+  @override
+  String get settingsLanguage => 'Idioma';
+
+  @override
+  String get settingsLanguageValue => 'Español';
+
+  @override
+  String get settingsUnits => 'Unidades';
+
+  @override
+  String get settingsUnitsValue => 'Métrico (km)';
+
+  @override
+  String get settingsAudioGuidance => 'Guía de audio';
+
+  @override
+  String get settingsAudioValue => 'Mínimo';
+
+  @override
+  String get settingsNotifications => 'Notificaciones';
+
+  @override
+  String get settingsNotificationsValue => 'Activado';
+
+  @override
+  String get settingsConnectedDevicesSection => 'Dispositivos conectados';
+
+  @override
+  String get settingsGarminConnect => 'Garmin Connect';
+
+  @override
+  String get settingsConnected => 'Conectado';
+
+  @override
+  String get settingsLogOut => 'Cerrar sesión';
+
+  @override
+  String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
 }

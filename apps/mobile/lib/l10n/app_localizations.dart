@@ -2652,6 +2652,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'See Full Data'**
   String get progressSeeFullData;
+
+  /// Settings screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// Placeholder user name on settings profile card
+  ///
+  /// In en, this message translates to:
+  /// **'User Name'**
+  String get settingsProfileName;
+
+  /// Training plan name on settings profile card
+  ///
+  /// In en, this message translates to:
+  /// **'Half Marathon Plan'**
+  String get settingsPlanBadge;
+
+  /// Week progress shown on settings profile card
+  ///
+  /// In en, this message translates to:
+  /// **'Week 4 of 12'**
+  String get settingsWeekInfo;
+
+  /// Plan & Goals section header
+  ///
+  /// In en, this message translates to:
+  /// **'Plan & Goals'**
+  String get settingsPlanGoalsSection;
+
+  /// Row label to update training plan info
+  ///
+  /// In en, this message translates to:
+  /// **'Update Plan Info'**
+  String get settingsUpdatePlanInfo;
+
+  /// Preferences section header
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get settingsPreferencesSection;
+
+  /// Language preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// Current language value
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageValue;
+
+  /// Units preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get settingsUnits;
+
+  /// Current units value
+  ///
+  /// In en, this message translates to:
+  /// **'Metric (km)'**
+  String get settingsUnitsValue;
+
+  /// Audio guidance preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Guidance'**
+  String get settingsAudioGuidance;
+
+  /// Current audio guidance value
+  ///
+  /// In en, this message translates to:
+  /// **'Minimal'**
+  String get settingsAudioValue;
+
+  /// Notifications preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsNotifications;
+
+  /// Current notifications value
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get settingsNotificationsValue;
+
+  /// Connected Devices section header
+  ///
+  /// In en, this message translates to:
+  /// **'Connected Devices'**
+  String get settingsConnectedDevicesSection;
+
+  /// Garmin Connect row label
+  ///
+  /// In en, this message translates to:
+  /// **'Garmin Connect'**
+  String get settingsGarminConnect;
+
+  /// Connected device badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get settingsConnected;
+
+  /// Log out button label
+  ///
+  /// In en, this message translates to:
+  /// **'Log Out'**
+  String get settingsLogOut;
+
+  /// App version string shown at bottom of settings
+  ///
+  /// In en, this message translates to:
+  /// **'RunFlow v1.0.0 (Build 42)'**
+  String get settingsVersion;
 }
 
 class _AppLocalizationsDelegate

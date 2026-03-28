@@ -1350,4 +1350,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progressSeeFullData => 'See Full Data';
+
+  @override
+  String get settingsTitle => 'Settings';
+
+  @override
+  String get settingsProfileName => 'User Name';
+
+  @override
+  String get settingsPlanBadge => 'Half Marathon Plan';
+
+  @override
+  String get settingsWeekInfo => 'Week 4 of 12';
+
+  @override
+  String get settingsPlanGoalsSection => 'Plan & Goals';
+
+  @override
+  String get settingsUpdatePlanInfo => 'Update Plan Info';
+
+  @override
+  String get settingsPreferencesSection => 'Preferences';
+
+  @override
+  String get settingsLanguage => 'Language';
+
+  @override
+  String get settingsLanguageValue => 'English';
+
+  @override
+  String get settingsUnits => 'Units';
+
+  @override
+  String get settingsUnitsValue => 'Metric (km)';
+
+  @override
+  String get settingsAudioGuidance => 'Audio Guidance';
+
+  @override
+  String get settingsAudioValue => 'Minimal';
+
+  @override
+  String get settingsNotifications => 'Notifications';
+
+  @override
+  String get settingsNotificationsValue => 'Enabled';
+
+  @override
+  String get settingsConnectedDevicesSection => 'Connected Devices';
+
+  @override
+  String get settingsGarminConnect => 'Garmin Connect';
+
+  @override
+  String get settingsConnected => 'Connected';
+
+  @override
+  String get settingsLogOut => 'Log Out';
+
+  @override
+  String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
 }

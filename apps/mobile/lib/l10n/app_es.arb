@@ -463,5 +463,26 @@
 
   "progressCurrentWeek": "SEMANA ACTUAL",
   "progressElevationLabel": "Elevación",
-  "progressSeeFullData": "Ver datos completos"
+  "progressSeeFullData": "Ver datos completos",
+
+  "settingsTitle": "Configuración",
+  "settingsProfileName": "Nombre de usuario",
+  "settingsPlanBadge": "Plan de media maratón",
+  "settingsWeekInfo": "Semana 4 de 12",
+  "settingsPlanGoalsSection": "Plan y objetivos",
+  "settingsUpdatePlanInfo": "Actualizar plan",
+  "settingsPreferencesSection": "Preferencias",
+  "settingsLanguage": "Idioma",
+  "settingsLanguageValue": "Español",
+  "settingsUnits": "Unidades",
+  "settingsUnitsValue": "Métrico (km)",
+  "settingsAudioGuidance": "Guía de audio",
+  "settingsAudioValue": "Mínimo",
+  "settingsNotifications": "Notificaciones",
+  "settingsNotificationsValue": "Activado",
+  "settingsConnectedDevicesSection": "Dispositivos conectados",
+  "settingsGarminConnect": "Garmin Connect",
+  "settingsConnected": "Conectado",
+  "settingsLogOut": "Cerrar sesión",
+  "settingsVersion": "RunFlow v1.0.0 (Build 42)"
 }
