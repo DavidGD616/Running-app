@@ -89,7 +89,20 @@ class SettingsRow extends StatelessWidget {
               AppColors.textSecondary, BlendMode.srcIn),
         );
       case SettingsRowVariant.badge:
-        return _StatusBadgeInline(label: badgeLabel ?? '');
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _StatusBadgeInline(label: badgeLabel ?? ''),
+            const SizedBox(width: AppSpacing.sm),
+            SvgPicture.asset(
+              'assets/icons/chevron_right.svg',
+              width: 16,
+              height: 16,
+              colorFilter: const ColorFilter.mode(
+                  AppColors.textSecondary, BlendMode.srcIn),
+            ),
+          ],
+        );
       case SettingsRowVariant.toggleOn:
         return Switch(
           value: true,
@@ -129,27 +142,31 @@ class _StatusBadgeInline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.sm, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.15),
+        color: AppColors.accentPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.accentPrimary.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            width: 6,
-            height: 6,
-            decoration: const BoxDecoration(
-              shape: BoxShape.circle,
-              color: AppColors.success,
+          SvgPicture.asset(
+            'assets/icons/circle_check.svg',
+            width: 13,
+            height: 13,
+            colorFilter: const ColorFilter.mode(
+              AppColors.accentPrimary,
+              BlendMode.srcIn,
             ),
           ),
           const SizedBox(width: 4),
           Text(
             label,
-            style: AppTypography.caption.copyWith(color: AppColors.success),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.accentPrimary,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ],
       ),
