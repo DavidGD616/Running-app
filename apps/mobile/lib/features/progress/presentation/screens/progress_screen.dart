@@ -186,6 +186,32 @@ class ProgressScreen extends StatelessWidget {
   }
 }
 
+// ── Week data ─────────────────────────────────────────────────────────────────
+
+class _WeekData {
+  const _WeekData({
+    required this.distance,
+    required this.timeHours,
+    required this.timeMinutes,
+    required this.elevation,
+    this.dateRange,
+  });
+
+  /// Distance in km — drives the chart line height.
+  final double distance;
+  final int timeHours;
+  final int timeMinutes;
+
+  /// Elevation in meters.
+  final int elevation;
+
+  /// Human-readable date range, e.g. "MAR 16 - MAR 22".
+  /// Null for the current (most recent) week.
+  final String? dateRange;
+
+  bool get isCurrentWeek => dateRange == null;
+}
+
 // ── Weekly volume chart card ──────────────────────────────────────────────────
 
 class _VolumeChartCard extends StatefulWidget {
@@ -198,13 +224,21 @@ class _VolumeChartCard extends StatefulWidget {
 }
 
 class _VolumeChartCardState extends State<_VolumeChartCard> {
-  static const _weeklyData = [23.0, 27.0, 22.0, 25.0, 28.0, 24.0];
+  static const _weeks = [
+    _WeekData(distance: 23, timeHours: 2, timeMinutes: 10, elevation: 120, dateRange: 'FEB 16 - FEB 22'),
+    _WeekData(distance: 27, timeHours: 2, timeMinutes: 35, elevation: 145, dateRange: 'FEB 23 - MAR 01'),
+    _WeekData(distance: 22, timeHours: 2, timeMinutes: 05, elevation: 110, dateRange: 'MAR 02 - MAR 08'),
+    _WeekData(distance: 25, timeHours: 2, timeMinutes: 20, elevation: 135, dateRange: 'MAR 09 - MAR 15'),
+    _WeekData(distance: 28, timeHours: 2, timeMinutes: 45, elevation: 155, dateRange: 'MAR 16 - MAR 22'),
+    _WeekData(distance: 24, timeHours: 2, timeMinutes: 30, elevation: 150),
+  ];
+
   static const _maxVal = 46.0;
 
   int _selectedIndex = 5;
 
   void _updateFromX(double localX, double chartWidth) {
-    final count = _weeklyData.length;
+    final count = _weeks.length;
     int nearest = 0;
     double minDist = double.infinity;
     for (int i = 0; i < count; i++) {
@@ -223,6 +257,10 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
+    final selected = _weeks[_selectedIndex];
+    final weekLabel = selected.isCurrentWeek
+        ? l10n.progressCurrentWeek
+        : selected.dateRange!;
     return Container(
       decoration: BoxDecoration(
         gradient: const LinearGradient(
@@ -287,7 +325,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l10n.progressCurrentWeek,
+                    weekLabel,
                     style: AppTypography.caption.copyWith(
                       color: AppColors.textSecondary,
                       fontSize: 12,
@@ -304,7 +342,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/compass.svg',
                             iconColor: AppColors.accentPrimary,
                             label: l10n.progressDistanceLabel,
-                            value: '28',
+                            value: selected.distance.toInt().toString(),
                             unit: ' km',
                           ),
                         ),
@@ -318,7 +356,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/clock.svg',
                             iconColor: AppColors.info,
                             label: l10n.progressTimeLabel,
-                            value: '2${l10n.progressHourUnit} 30${l10n.progressMinuteUnit}',
+                            value: '${selected.timeHours}${l10n.progressHourUnit} ${selected.timeMinutes}${l10n.progressMinuteUnit}',
                             unit: '',
                           ),
                         ),
@@ -332,7 +370,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/mountain.svg',
                             iconColor: AppColors.warning,
                             label: l10n.progressElevationLabel,
-                            value: '150',
+                            value: selected.elevation.toString(),
                             unit: ' m',
                           ),
                         ),
@@ -375,7 +413,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                               _updateFromX(d.localPosition.dx, constraints.maxWidth),
                           child: CustomPaint(
                             painter: _ChartPainter(
-                              data: _weeklyData,
+                              data: _weeks.map((w) => w.distance).toList(),
                               selectedIndex: _selectedIndex,
                               maxVal: _maxVal,
                             ),
