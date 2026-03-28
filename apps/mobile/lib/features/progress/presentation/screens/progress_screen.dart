@@ -188,30 +188,18 @@ class ProgressScreen extends StatelessWidget {
 
 // ── Weekly volume chart card ──────────────────────────────────────────────────
 
-class _VolumeChartCard extends StatefulWidget {
+class _VolumeChartCard extends StatelessWidget {
   const _VolumeChartCard({required this.l10n});
 
   final AppLocalizations l10n;
 
-  @override
-  State<_VolumeChartCard> createState() => _VolumeChartCardState();
-}
-
-class _VolumeChartCardState extends State<_VolumeChartCard> {
-  static const _weeklyData = [15.0, 20.0, 24.0, 22.0, 30.0];
-  static const _currentWeekIndex = 4;
-  static const _completedRuns = 2;
-  static const _totalRuns = 4;
-
-  int _selectedIndex = _currentWeekIndex;
+  static const _weeklyData = [23.0, 27.0, 22.0, 25.0, 28.0, 24.0];
+  static const _selectedIndex = 5;
+  static const _maxVal = 46.0;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = widget.l10n;
     return Container(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md,
-      ),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           begin: Alignment.topCenter,
@@ -219,105 +207,271 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
           colors: [Color(0xFF1E1E1E), Color(0xFF1A1A1A)],
         ),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderDefault),
+        border: Border.all(color: const Color(0xFF3A3A3A)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ── Header ─────────────────────────────────────────
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Column(
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.base,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  l10n.progressWeeklyVolumeTitle,
+                  style: AppTypography.titleMedium.copyWith(fontSize: 15),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                SvgPicture.asset(
+                  'assets/icons/trending_up.svg',
+                  width: 12,
+                  height: 12,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.accentPrimary,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  l10n.progressTrendingUp,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.accentPrimary,
+                    fontSize: 12,
+                    letterSpacing: 0,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // ── Current week stats card ─────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.base,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: const Color(0xFF161616),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF2A2A2A)),
+              ),
+              child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l10n.progressWeeklyVolumeTitle,
-                    style: AppTypography.titleMedium.copyWith(fontSize: 15),
+                    l10n.progressCurrentWeek,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textSecondary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
                   ),
-                  const SizedBox(height: 3),
-                  Row(
-                    children: [
-                      SvgPicture.asset(
-                        'assets/icons/trending_up.svg',
-                        width: 12,
-                        height: 12,
-                        colorFilter: const ColorFilter.mode(
-                          AppColors.accentPrimary,
-                          BlendMode.srcIn,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        l10n.progressTrendingUp,
-                        style: AppTypography.caption.copyWith(
-                          color: AppColors.accentPrimary,
-                          fontSize: 12,
-                          letterSpacing: 0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  RichText(
-                    text: TextSpan(
+                  const SizedBox(height: AppSpacing.sm),
+                  IntrinsicHeight(
+                    child: Row(
                       children: [
-                        TextSpan(
-                          text: '$_completedRuns ',
-                          style: AppTypography.headlineMedium.copyWith(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w700,
+                        Expanded(
+                          child: _WeekStatItem(
+                            iconAsset: 'assets/icons/circle_check.svg',
+                            label: l10n.progressDistanceLabel,
+                            value: '28',
+                            unit: ' km',
                           ),
                         ),
-                        TextSpan(
-                          text: '/ $_totalRuns',
-                          style: AppTypography.headlineMedium.copyWith(
-                            fontSize: 18,
-                            color: AppColors.textDisabled,
-                            fontWeight: FontWeight.w400,
+                        Container(
+                          width: 1,
+                          margin: const EdgeInsets.symmetric(vertical: 2),
+                          color: const Color(0xFF2A2A2A),
+                        ),
+                        Expanded(
+                          child: _WeekStatItem(
+                            iconAsset: 'assets/icons/clock.svg',
+                            label: l10n.progressTimeLabel,
+                            value: '2${l10n.progressHourUnit} 30${l10n.progressMinuteUnit}',
+                            unit: '',
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          margin: const EdgeInsets.symmetric(vertical: 2),
+                          color: const Color(0xFF2A2A2A),
+                        ),
+                        Expanded(
+                          child: _WeekStatItem(
+                            iconAsset: 'assets/icons/mountain.svg',
+                            label: l10n.progressElevationLabel,
+                            value: '150',
+                            unit: ' m',
                           ),
                         ),
                       ],
                     ),
                   ),
-                  Text(
-                    l10n.progressRunsThisWeek,
-                    style: AppTypography.caption.copyWith(
-                      color: AppColors.textSecondary,
-                      fontSize: 12,
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: AppSpacing.base),
+
+          // ── Chart with Y-axis labels ────────────────────────
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+            child: SizedBox(
+              height: 140,
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text('46 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
+                      Text('23 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
+                      Text('0 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
+                    ],
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: CustomPaint(
+                      painter: _ChartPainter(
+                        data: _weeklyData,
+                        selectedIndex: _selectedIndex,
+                        maxVal: _maxVal,
+                      ),
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-
-          const SizedBox(height: AppSpacing.lg),
-
-          // ── Chart ───────────────────────────────────────────
-          SizedBox(
-            height: 120,
-            child: CustomPaint(
-              painter: _ChartPainter(
-                data: _weeklyData,
-                selectedIndex: _selectedIndex,
-              ),
-              size: Size.infinite,
             ),
           ),
 
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.base),
 
-          // ── Week labels ─────────────────────────────────────
-          _WeekLabels(
-            selectedIndex: _selectedIndex,
-            weekPrefix: l10n.progressWeekPrefix,
-            onSelect: (i) => setState(() => _selectedIndex = i),
+          // ── See Full Data footer ────────────────────────────
+          Container(
+            width: double.infinity,
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: Color(0xFF2A2A2A))),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(20),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                SvgPicture.asset(
+                  'assets/icons/bar_chart.svg',
+                  width: 16,
+                  height: 16,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.accentPrimary,
+                    BlendMode.srcIn,
+                  ),
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  l10n.progressSeeFullData,
+                  style: AppTypography.titleMedium.copyWith(
+                    color: AppColors.accentPrimary,
+                    fontSize: 14,
+                  ),
+                ),
+                const SizedBox(width: 4),
+                SvgPicture.asset(
+                  'assets/icons/chevron_right.svg',
+                  width: 16,
+                  height: 16,
+                  colorFilter: const ColorFilter.mode(
+                    AppColors.accentPrimary,
+                    BlendMode.srcIn,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Week stat item ────────────────────────────────────────────────────────────
+
+class _WeekStatItem extends StatelessWidget {
+  const _WeekStatItem({
+    required this.iconAsset,
+    required this.label,
+    required this.value,
+    required this.unit,
+  });
+
+  final String iconAsset;
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                iconAsset,
+                width: 11,
+                height: 11,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.accentPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: AppTypography.caption.copyWith(
+                  color: const Color(0xFF888888),
+                  fontSize: 11,
+                  letterSpacing: 0.06,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.31,
+                  ),
+                ),
+                if (unit.isNotEmpty)
+                  TextSpan(
+                    text: unit,
+                    style: const TextStyle(
+                      color: Color(0xFFB3B3B3),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -328,37 +482,33 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
 // ── Line chart painter ────────────────────────────────────────────────────────
 
 class _ChartPainter extends CustomPainter {
-  const _ChartPainter({required this.data, required this.selectedIndex});
+  const _ChartPainter({
+    required this.data,
+    required this.selectedIndex,
+    required this.maxVal,
+  });
 
   final List<double> data;
   final int selectedIndex;
-
-  static const _maxVal = 35.0;
-  static const _minVal = 0.0;
+  final double maxVal;
 
   @override
   void paint(Canvas canvas, Size size) {
-    double yFor(double v) =>
-        size.height * (1.0 - (v - _minVal) / (_maxVal - _minVal));
+    double yFor(double v) => size.height * (1.0 - v / maxVal);
     double xFor(int i) => size.width * i / (data.length - 1);
 
-    final points = List.generate(
-      data.length,
-      (i) => Offset(xFor(i), yFor(data[i])),
-    );
+    final points = List.generate(data.length, (i) => Offset(xFor(i), yFor(data[i])));
 
-    // 1. Dashed grid lines at 16.89%, 50%, 83.11% height
+    // 1. Dashed grid lines at 0 km, 23 km, 46 km (bottom, middle, top)
     final gridPaint = Paint()
-      ..color = AppColors.borderDefault
+      ..color = const Color(0xFF2A2A2A)
       ..strokeWidth = 0.5;
-    for (final ratio in [0.1689, 0.5, 0.8311]) {
-      final y = size.height * ratio;
+    for (final y in [0.0, size.height / 2, size.height]) {
       _drawDashedLine(canvas, Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
     // 2. Gradient fill below line
-    final fillPath = Path()
-      ..moveTo(points.first.dx, points.first.dy);
+    final fillPath = Path()..moveTo(points.first.dx, points.first.dy);
     for (final p in points.skip(1)) {
       fillPath.lineTo(p.dx, p.dy);
     }
@@ -367,10 +517,9 @@ class _ChartPainter extends CustomPainter {
       ..lineTo(points.first.dx, size.height)
       ..close();
 
-    final topY = yFor(data.reduce((a, b) => a > b ? a : b));
     final fillPaint = Paint()
       ..shader = ui.Gradient.linear(
-        Offset(0, topY),
+        Offset.zero,
         Offset(0, size.height),
         [
           AppColors.accentPrimary.withValues(alpha: 0.25),
@@ -392,33 +541,37 @@ class _ChartPainter extends CustomPainter {
     }
     canvas.drawPath(linePath, linePaint);
 
-    // 4. Dots and value labels
+    // 4. Vertical dashed line from selected point to bottom
+    final selectedPoint = points[selectedIndex];
+    final dashLinePaint = Paint()
+      ..color = AppColors.accentPrimary.withValues(alpha: 0.5)
+      ..strokeWidth = 1.0;
+    _drawDashedLine(
+      canvas,
+      Offset(selectedPoint.dx, selectedPoint.dy),
+      Offset(selectedPoint.dx, size.height),
+      dashLinePaint,
+    );
+
+    // 5. Dots
     for (int i = 0; i < data.length; i++) {
       final isSelected = i == selectedIndex;
       final center = points[i];
-      final outerRadius = isSelected ? 5.5 : 4.0;
 
-      // Dot: green outer, dark inner for selected
-      canvas.drawCircle(center, outerRadius, Paint()..color = AppColors.accentPrimary);
       if (isSelected) {
-        canvas.drawCircle(center, 2.5, Paint()..color = const Color(0xFF121212));
+        canvas.drawCircle(center, 5.5, Paint()..color = AppColors.accentPrimary);
+      } else {
+        // Hollow dot: dark fill + green stroke
+        canvas.drawCircle(center, 4.0, Paint()..color = const Color(0xFF1A1A1A));
+        canvas.drawCircle(
+          center,
+          4.0,
+          Paint()
+            ..color = AppColors.accentPrimary
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5,
+        );
       }
-
-      // Value label above dot
-      final labelText = data[i].toInt().toString();
-      final labelStyle = ui.TextStyle(
-        color: isSelected ? Colors.white : const Color(0xFFB3B3B3),
-        fontSize: isSelected ? 13.0 : 11.0,
-        fontWeight: isSelected ? ui.FontWeight.w700 : ui.FontWeight.w400,
-      );
-      final pb = ui.ParagraphBuilder(ui.ParagraphStyle(textAlign: TextAlign.center))
-        ..pushStyle(labelStyle)
-        ..addText(labelText);
-      final paragraph = pb.build()..layout(const ui.ParagraphConstraints(width: 30));
-      canvas.drawParagraph(
-        paragraph,
-        Offset(center.dx - 15, center.dy - outerRadius - paragraph.height - 2),
-      );
     }
   }
 
@@ -441,61 +594,7 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ChartPainter old) =>
-      old.data != data || old.selectedIndex != selectedIndex;
-}
-
-// ── Week labels row ───────────────────────────────────────────────────────────
-
-class _WeekLabels extends StatelessWidget {
-  const _WeekLabels({
-    required this.selectedIndex,
-    required this.weekPrefix,
-    required this.onSelect,
-  });
-
-  final int selectedIndex;
-  final String weekPrefix;
-  final void Function(int) onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    final labels = List.generate(5, (i) => '$weekPrefix${i + 1}');
-    return Column(
-      children: [
-        Container(height: 1, color: AppColors.borderDefault),
-        const SizedBox(height: AppSpacing.sm),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: List.generate(labels.length, (i) {
-            final isSelected = i == selectedIndex;
-            return GestureDetector(
-              onTap: () => onSelect(i),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                decoration: isSelected
-                    ? BoxDecoration(
-                        color: AppColors.accentPrimary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(4),
-                      )
-                    : null,
-                child: Text(
-                  labels[i],
-                  style: AppTypography.caption.copyWith(
-                    color: isSelected
-                        ? AppColors.accentPrimary
-                        : AppColors.textDisabled,
-                    fontSize: 11,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    letterSpacing: 0,
-                  ),
-                ),
-              ),
-            );
-          }),
-        ),
-      ],
-    );
-  }
+      old.data != data || old.selectedIndex != selectedIndex || old.maxVal != maxVal;
 }
 
 // ── Progress stat tile ────────────────────────────────────────────────────────

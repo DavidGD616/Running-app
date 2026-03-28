@@ -459,5 +459,9 @@
   "progressTuesdayLabel": "Martes",
   "progressLastSunday": "Último Domingo",
 
-  "progressWeekPrefix": "S"
+  "progressWeekPrefix": "S",
+
+  "progressCurrentWeek": "SEMANA ACTUAL",
+  "progressElevationLabel": "Elevación",
+  "progressSeeFullData": "Ver datos completos"
 }

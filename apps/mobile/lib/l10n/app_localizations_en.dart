@@ -1259,4 +1259,95 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weeklyPlanDayToday => 'Today';
+
+  @override
+  String get progressTitle => 'Progress';
+
+  @override
+  String get progressSubtitle => 'You\'re building a solid habit. Keep it up.';
+
+  @override
+  String get progressStreakBannerSubtitle =>
+      'You\'re staying consistently active.';
+
+  @override
+  String get progressWeeklyVolumeTitle => 'Weekly Volume';
+
+  @override
+  String get progressTrendingUp => 'Trending Up';
+
+  @override
+  String get progressRunsThisWeek => 'runs this week';
+
+  @override
+  String get progressDistanceLabel => 'Distance';
+
+  @override
+  String get progressTimeLabel => 'Time';
+
+  @override
+  String get progressStreakLabel => 'Streak';
+
+  @override
+  String get progressRunsLabel => 'Runs';
+
+  @override
+  String get progressRunsCompleted => 'Completed';
+
+  @override
+  String progressStreakSubtitle(String count) {
+    return '$count weeks in a row';
+  }
+
+  @override
+  String progressTrendUp(String percent) {
+    return '▲ $percent% vs last mo';
+  }
+
+  @override
+  String get progressWeeksUnit => 'wks';
+
+  @override
+  String get progressHourUnit => 'h';
+
+  @override
+  String get progressMinuteUnit => 'm';
+
+  @override
+  String get progressLongestRunTitle => 'Longest Run';
+
+  @override
+  String progressLongestRunImproved(String km) {
+    return '+$km km since start';
+  }
+
+  @override
+  String get progressRecentSessionsTitle => 'Recent Sessions';
+
+  @override
+  String get progressViewAll => 'View All ›';
+
+  @override
+  String get progressSessionTempoRun => 'Tempo Run';
+
+  @override
+  String get progressYesterday => 'Yesterday';
+
+  @override
+  String get progressTuesdayLabel => 'Tuesday';
+
+  @override
+  String get progressLastSunday => 'Last Sunday';
+
+  @override
+  String get progressWeekPrefix => 'W';
+
+  @override
+  String get progressCurrentWeek => 'CURRENT WEEK';
+
+  @override
+  String get progressElevationLabel => 'Elevation';
+
+  @override
+  String get progressSeeFullData => 'See Full Data';
 }

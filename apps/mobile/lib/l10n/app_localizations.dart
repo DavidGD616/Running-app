@@ -2484,6 +2484,174 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Today'**
   String get weeklyPlanDayToday;
+
+  /// Progress screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progressTitle;
+
+  /// Progress screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re building a solid habit. Keep it up.'**
+  String get progressSubtitle;
+
+  /// Subtitle on the streak banner
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re staying consistently active.'**
+  String get progressStreakBannerSubtitle;
+
+  /// Weekly volume chart section title
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Volume'**
+  String get progressWeeklyVolumeTitle;
+
+  /// Trending up label in volume chart
+  ///
+  /// In en, this message translates to:
+  /// **'Trending Up'**
+  String get progressTrendingUp;
+
+  /// Label below runs counter in volume chart
+  ///
+  /// In en, this message translates to:
+  /// **'runs this week'**
+  String get progressRunsThisWeek;
+
+  /// Distance stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get progressDistanceLabel;
+
+  /// Time stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get progressTimeLabel;
+
+  /// Streak stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get progressStreakLabel;
+
+  /// Runs stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get progressRunsLabel;
+
+  /// Completed label under runs count
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get progressRunsCompleted;
+
+  /// Streak subtitle below streak count
+  ///
+  /// In en, this message translates to:
+  /// **'{count} weeks in a row'**
+  String progressStreakSubtitle(String count);
+
+  /// Upward trend label on stat tiles
+  ///
+  /// In en, this message translates to:
+  /// **'▲ {percent}% vs last mo'**
+  String progressTrendUp(String percent);
+
+  /// Weeks unit abbreviation
+  ///
+  /// In en, this message translates to:
+  /// **'wks'**
+  String get progressWeeksUnit;
+
+  /// Hour unit abbreviation
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get progressHourUnit;
+
+  /// Minute unit abbreviation
+  ///
+  /// In en, this message translates to:
+  /// **'m'**
+  String get progressMinuteUnit;
+
+  /// Longest run card title
+  ///
+  /// In en, this message translates to:
+  /// **'Longest Run'**
+  String get progressLongestRunTitle;
+
+  /// Longest run improvement since plan start
+  ///
+  /// In en, this message translates to:
+  /// **'+{km} km since start'**
+  String progressLongestRunImproved(String km);
+
+  /// Recent sessions section title
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Sessions'**
+  String get progressRecentSessionsTitle;
+
+  /// View all sessions link
+  ///
+  /// In en, this message translates to:
+  /// **'View All ›'**
+  String get progressViewAll;
+
+  /// Tempo run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo Run'**
+  String get progressSessionTempoRun;
+
+  /// Yesterday relative date label
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get progressYesterday;
+
+  /// Tuesday label for recent session meta
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get progressTuesdayLabel;
+
+  /// Last Sunday label for recent session meta
+  ///
+  /// In en, this message translates to:
+  /// **'Last Sunday'**
+  String get progressLastSunday;
+
+  /// Week label prefix in volume chart (W1, W2...). S for Spanish (Semana).
+  ///
+  /// In en, this message translates to:
+  /// **'W'**
+  String get progressWeekPrefix;
+
+  /// Label for the current week stats card inside the volume chart
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT WEEK'**
+  String get progressCurrentWeek;
+
+  /// Elevation stat label in the current week stats card
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation'**
+  String get progressElevationLabel;
+
+  /// Footer link in the weekly volume chart card
+  ///
+  /// In en, this message translates to:
+  /// **'See Full Data'**
+  String get progressSeeFullData;
 }
 
 class _AppLocalizationsDelegate

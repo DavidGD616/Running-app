@@ -1323,5 +1323,14 @@
   "@progressLastSunday": { "description": "Last Sunday label for recent session meta" },
 
   "progressWeekPrefix": "W",
-  "@progressWeekPrefix": { "description": "Week label prefix in volume chart (W1, W2...). S for Spanish (Semana)." }
+  "@progressWeekPrefix": { "description": "Week label prefix in volume chart (W1, W2...). S for Spanish (Semana)." },
+
+  "progressCurrentWeek": "CURRENT WEEK",
+  "@progressCurrentWeek": { "description": "Label for the current week stats card inside the volume chart" },
+
+  "progressElevationLabel": "Elevation",
+  "@progressElevationLabel": { "description": "Elevation stat label in the current week stats card" },
+
+  "progressSeeFullData": "See Full Data",
+  "@progressSeeFullData": { "description": "Footer link in the weekly volume chart card" }
 }
