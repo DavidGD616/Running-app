@@ -61,7 +61,6 @@ TrainingPlan buildSeedTrainingPlan() {
       status: statusFor(day(3)),
       distanceKm: 6.0,
       durationMinutes: 45,
-      description: '4×800m @ 5K pace. 90s recovery jog.',
       effortLabel: 'Hard effort',
     ),
     TrainingSession(

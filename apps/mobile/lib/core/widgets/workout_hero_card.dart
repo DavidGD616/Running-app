@@ -176,7 +176,7 @@ class _StatCell extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: AppColors.backgroundCard,
+      color: AppColors.backgroundElevated,
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.base,
         AppSpacing.md,
@@ -198,7 +198,10 @@ class _StatCell extends StatelessWidget {
           const SizedBox(height: 3),
           Text(
             value,
-            style: AppTypography.headlineMedium.copyWith(fontSize: 20),
+            style: AppTypography.headlineMedium.copyWith(
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ],
       ),

@@ -1139,6 +1139,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutTargetGuidanceLabel => 'Target Guidance';
 
   @override
+  String get sessionDescEasyRun =>
+      'Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.';
+
+  @override
+  String get sessionDescIntervals =>
+      '4×800m @ 5K pace. 90s recovery jog between each rep.';
+
+  @override
+  String get sessionDescLongRun =>
+      'Your key long run this week. Builds the endurance needed for your Half Marathon race day.';
+
+  @override
+  String get sessionDescRecoveryRun =>
+      'Active recovery run to flush fatigue. Keep the effort very easy — slower than you think.';
+
+  @override
+  String get sessionDescTempoRun =>
+      'Comfortably hard effort. You should be able to speak a few words but not hold a conversation.';
+
+  @override
   String get workoutViewDetailsButton => 'View Details';
 
   @override

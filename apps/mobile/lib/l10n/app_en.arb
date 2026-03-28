@@ -1115,6 +1115,21 @@
   "workoutTargetGuidanceLabel": "Target Guidance",
   "@workoutTargetGuidanceLabel": { "description": "Section label inside the target guidance box in the workout hero card" },
 
+  "sessionDescEasyRun": "Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.",
+  "@sessionDescEasyRun": { "description": "Target guidance for easy run sessions" },
+
+  "sessionDescIntervals": "4×800m @ 5K pace. 90s recovery jog between each rep.",
+  "@sessionDescIntervals": { "description": "Target guidance for interval sessions" },
+
+  "sessionDescLongRun": "Your key long run this week. Builds the endurance needed for your Half Marathon race day.",
+  "@sessionDescLongRun": { "description": "Target guidance for long run sessions" },
+
+  "sessionDescRecoveryRun": "Active recovery run to flush fatigue. Keep the effort very easy — slower than you think.",
+  "@sessionDescRecoveryRun": { "description": "Target guidance for recovery run sessions" },
+
+  "sessionDescTempoRun": "Comfortably hard effort. You should be able to speak a few words but not hold a conversation.",
+  "@sessionDescTempoRun": { "description": "Target guidance for tempo run sessions" },
+
   "workoutViewDetailsButton": "View Details",
   "@workoutViewDetailsButton": { "description": "Secondary button in the workout hero card" },
 

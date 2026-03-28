@@ -5,6 +5,7 @@ abstract class AppColors {
   static const Color backgroundPrimary = Color(0xFF121212);
   static const Color backgroundSecondary = Color(0xFF1E1E1E);
   static const Color backgroundCard = Color(0xFF1E1E1E);
+  static const Color backgroundElevated = Color(0xFF252525);
 
   // Surfaces
   static const Color surfaceElevated = Color(0xFF333333);

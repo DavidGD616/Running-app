@@ -2245,6 +2245,36 @@ abstract class AppLocalizations {
   /// **'Target Guidance'**
   String get workoutTargetGuidanceLabel;
 
+  /// Target guidance for easy run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.'**
+  String get sessionDescEasyRun;
+
+  /// Target guidance for interval sessions
+  ///
+  /// In en, this message translates to:
+  /// **'4×800m @ 5K pace. 90s recovery jog between each rep.'**
+  String get sessionDescIntervals;
+
+  /// Target guidance for long run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Your key long run this week. Builds the endurance needed for your Half Marathon race day.'**
+  String get sessionDescLongRun;
+
+  /// Target guidance for recovery run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Active recovery run to flush fatigue. Keep the effort very easy — slower than you think.'**
+  String get sessionDescRecoveryRun;
+
+  /// Target guidance for tempo run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortably hard effort. You should be able to speak a few words but not hold a conversation.'**
+  String get sessionDescTempoRun;
+
   /// Secondary button in the workout hero card
   ///
   /// In en, this message translates to:

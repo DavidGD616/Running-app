@@ -35,6 +35,17 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 
+  String? _sessionDescription(SessionType type, AppLocalizations l10n) {
+    switch (type) {
+      case SessionType.rest:        return null;
+      case SessionType.easyRun:     return l10n.sessionDescEasyRun;
+      case SessionType.intervals:   return l10n.sessionDescIntervals;
+      case SessionType.longRun:     return l10n.sessionDescLongRun;
+      case SessionType.recoveryRun: return l10n.sessionDescRecoveryRun;
+      case SessionType.tempoRun:    return l10n.sessionDescTempoRun;
+    }
+  }
+
   String _weekdayName(int weekday) {
     const names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     return names[(weekday - 1).clamp(0, 6)];
@@ -186,7 +197,7 @@ class HomeScreen extends ConsumerWidget {
       distance: session.distanceKm != null
           ? UnitFormatter.formatDistanceKm(session.distanceKm!)
           : '-',
-      targetGuidance: session.description,
+      targetGuidance: session.description ?? _sessionDescription(session.type, l10n),
       sessionTypeIconAsset: session.type.iconAsset,
       onViewDetails: () => context.push(RouteNames.sessionDetail),
       onStart: () {},

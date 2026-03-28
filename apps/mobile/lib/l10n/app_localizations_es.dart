@@ -1145,6 +1145,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get workoutTargetGuidanceLabel => 'Objetivo de Entrenamiento';
 
   @override
+  String get sessionDescEasyRun =>
+      'Construye tu base aeróbica para la Media Maratón. Mantén un ritmo en el que puedas conversar.';
+
+  @override
+  String get sessionDescIntervals =>
+      '4×800m al ritmo de 5K. 90s de trote de recuperación entre cada repetición.';
+
+  @override
+  String get sessionDescLongRun =>
+      'Tu carrera larga clave de esta semana. Construye la resistencia necesaria para el día de tu Media Maratón.';
+
+  @override
+  String get sessionDescRecoveryRun =>
+      'Carrera de recuperación activa para eliminar la fatiga. Mantén el esfuerzo muy suave, más lento de lo que crees.';
+
+  @override
+  String get sessionDescTempoRun =>
+      'Esfuerzo cómodamente intenso. Puedes decir algunas palabras pero no mantener una conversación.';
+
+  @override
   String get workoutViewDetailsButton => 'Ver Detalles';
 
   @override
