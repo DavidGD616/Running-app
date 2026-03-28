@@ -216,14 +216,14 @@ class _ViewDetailsButton extends StatelessWidget {
         height: 52,
         decoration: BoxDecoration(
           borderRadius: AppRadius.borderLg,
-          border: Border.all(color: const Color(0xFF2979FF)),
-          color: const Color(0xFF2979FF).withValues(alpha: 0.08),
+          border: Border.all(color: AppColors.info),
+          color: AppColors.info.withValues(alpha: 0.08),
         ),
         child: Center(
           child: Text(
             l10n.workoutViewDetailsButton,
             style: AppTypography.labelLarge.copyWith(
-              color: const Color(0xFF2979FF),
+              color: AppColors.info,
               fontWeight: FontWeight.w600,
             ),
           ),
