@@ -1159,10 +1159,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Comfortably hard effort. You should be able to speak a few words but not hold a conversation.';
 
   @override
-  String get workoutViewDetailsButton => 'View Details';
-
-  @override
-  String get workoutStartButton => 'Start';
+  String get workoutViewDetailsButton => 'View Workout';
 
   @override
   String get weekProgressRunsLabel => 'Runs';

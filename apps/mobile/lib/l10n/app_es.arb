@@ -393,8 +393,7 @@
   "sessionDescLongRun": "Tu carrera larga clave de esta semana. Construye la resistencia necesaria para el día de tu Media Maratón.",
   "sessionDescRecoveryRun": "Carrera de recuperación activa para eliminar la fatiga. Mantén el esfuerzo muy suave, más lento de lo que crees.",
   "sessionDescTempoRun": "Esfuerzo cómodamente intenso. Puedes decir algunas palabras pero no mantener una conversación.",
-  "workoutViewDetailsButton": "Ver Detalles",
-  "workoutStartButton": "Iniciar",
+  "workoutViewDetailsButton": "Ver Entrenamiento",
 
   "weekProgressRunsLabel": "Carreras",
   "weekProgressVolumeLabel": "Volumen",

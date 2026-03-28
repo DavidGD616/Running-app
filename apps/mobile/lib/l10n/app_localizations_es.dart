@@ -1165,10 +1165,7 @@ class AppLocalizationsEs extends AppLocalizations {
       'Esfuerzo cómodamente intenso. Puedes decir algunas palabras pero no mantener una conversación.';
 
   @override
-  String get workoutViewDetailsButton => 'Ver Detalles';
-
-  @override
-  String get workoutStartButton => 'Iniciar';
+  String get workoutViewDetailsButton => 'Ver Entrenamiento';
 
   @override
   String get weekProgressRunsLabel => 'Carreras';

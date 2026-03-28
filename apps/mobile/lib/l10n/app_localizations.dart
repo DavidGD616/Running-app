@@ -2275,17 +2275,11 @@ abstract class AppLocalizations {
   /// **'Comfortably hard effort. You should be able to speak a few words but not hold a conversation.'**
   String get sessionDescTempoRun;
 
-  /// Secondary button in the workout hero card
+  /// Primary button in the workout hero card
   ///
   /// In en, this message translates to:
-  /// **'View Details'**
+  /// **'View Workout'**
   String get workoutViewDetailsButton;
-
-  /// Primary CTA button in the workout hero card
-  ///
-  /// In en, this message translates to:
-  /// **'Start'**
-  String get workoutStartButton;
 
   /// Stat label for runs completed in the week progress card
   ///

@@ -184,7 +184,6 @@ class HomeScreen extends ConsumerWidget {
         distance: '-',
         sessionTypeIconAsset: SessionType.rest.iconAsset,
         onViewDetails: () => context.push(RouteNames.sessionDetail),
-        onStart: () {},
       );
     }
 
@@ -200,7 +199,6 @@ class HomeScreen extends ConsumerWidget {
       targetGuidance: session.description ?? _sessionDescription(session.type, l10n),
       sessionTypeIconAsset: session.type.iconAsset,
       onViewDetails: () => context.push(RouteNames.sessionDetail),
-      onStart: () {},
     );
   }
 }

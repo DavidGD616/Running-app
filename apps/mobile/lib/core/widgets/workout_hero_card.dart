@@ -16,7 +16,6 @@ class WorkoutHeroCard extends StatelessWidget {
     this.targetGuidance,
     this.sessionTypeIconAsset,
     this.onViewDetails,
-    this.onStart,
   });
 
   final String sessionType;
@@ -26,7 +25,6 @@ class WorkoutHeroCard extends StatelessWidget {
   final String? targetGuidance;
   final String? sessionTypeIconAsset;
   final VoidCallback? onViewDetails;
-  final VoidCallback? onStart;
 
   @override
   Widget build(BuildContext context) {
@@ -153,14 +151,8 @@ class WorkoutHeroCard extends StatelessWidget {
 
           const SizedBox(height: AppSpacing.base),
 
-          // ── Buttons: View Details | Start ───────────────────
-          Row(
-            children: [
-              Expanded(child: _ViewDetailsButton(onTap: onViewDetails)),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(child: _StartButton(onTap: onStart)),
-            ],
-          ),
+          // ── Button: View Workout ────────────────────────────
+          _ViewDetailsButton(onTap: onViewDetails),
         ],
       ),
     );
@@ -220,16 +212,19 @@ class _ViewDetailsButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        height: 48,
+        width: double.infinity,
+        height: 52,
         decoration: BoxDecoration(
           borderRadius: AppRadius.borderLg,
-          border: Border.all(color: AppColors.borderDefault),
+          border: Border.all(color: const Color(0xFF2979FF)),
+          color: const Color(0xFF2979FF).withValues(alpha: 0.08),
         ),
         child: Center(
           child: Text(
             l10n.workoutViewDetailsButton,
             style: AppTypography.labelLarge.copyWith(
-              color: AppColors.textSecondary,
+              color: const Color(0xFF2979FF),
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -238,41 +233,3 @@ class _ViewDetailsButton extends StatelessWidget {
   }
 }
 
-class _StartButton extends StatelessWidget {
-  const _StartButton({this.onTap});
-
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.accentPrimary,
-          borderRadius: AppRadius.borderLg,
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(
-              Icons.play_arrow,
-              size: 16,
-              color: AppColors.backgroundPrimary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              l10n.workoutStartButton,
-              style: AppTypography.labelLarge.copyWith(
-                color: AppColors.backgroundPrimary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

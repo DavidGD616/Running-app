@@ -1130,11 +1130,8 @@
   "sessionDescTempoRun": "Comfortably hard effort. You should be able to speak a few words but not hold a conversation.",
   "@sessionDescTempoRun": { "description": "Target guidance for tempo run sessions" },
 
-  "workoutViewDetailsButton": "View Details",
-  "@workoutViewDetailsButton": { "description": "Secondary button in the workout hero card" },
-
-  "workoutStartButton": "Start",
-  "@workoutStartButton": { "description": "Primary CTA button in the workout hero card" },
+  "workoutViewDetailsButton": "View Workout",
+  "@workoutViewDetailsButton": { "description": "Primary button in the workout hero card" },
 
   "weekProgressRunsLabel": "Runs",
   "@weekProgressRunsLabel": { "description": "Stat label for runs completed in the week progress card" },
