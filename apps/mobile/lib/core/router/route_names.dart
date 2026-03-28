@@ -23,4 +23,5 @@ abstract class RouteNames {
   static const progress        = '/progress';
   static const settings        = '/settings';
   static const sessionDetail   = '/session-detail';
+  static const logRun          = '/log-run';
 }

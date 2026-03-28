@@ -1452,5 +1452,59 @@
   "@sessionDetailCoolDownNote": { "description": "Cool-down phase zone note" },
 
   "sessionDetailStartWorkout": "Start Workout",
-  "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" }
+  "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" },
+
+  "logSessionTitle": "Log Session",
+  "@logSessionTitle": { "description": "Log session screen title" },
+
+  "logSessionPlannedSession": "Planned Session",
+  "@logSessionPlannedSession": { "description": "Label above planned session name on log session screen" },
+
+  "logSessionSessionName": "Morning Intervals",
+  "@logSessionSessionName": { "description": "Demo planned session name on log session screen" },
+
+  "logSessionDurationLabel": "DURATION",
+  "@logSessionDurationLabel": { "description": "Duration metric card label" },
+
+  "logSessionActiveTime": "Active time",
+  "@logSessionActiveTime": { "description": "Duration metric card subtitle" },
+
+  "logSessionDistanceLabel": "DISTANCE",
+  "@logSessionDistanceLabel": { "description": "Distance metric card label" },
+
+  "logSessionMinUnit": "min",
+  "@logSessionMinUnit": { "description": "Minutes unit label" },
+
+  "logSessionKmUnit": "km",
+  "@logSessionKmUnit": { "description": "Kilometers unit label" },
+
+  "logSessionPaceValue": "7:31 / km pace",
+  "@logSessionPaceValue": { "description": "Pace subtitle on distance metric card" },
+
+  "logSessionHowDidItFeel": "How did it feel?",
+  "@logSessionHowDidItFeel": { "description": "Section heading for perceived effort selection" },
+
+  "logSessionEasy": "Easy",
+  "@logSessionEasy": { "description": "Perceived effort option: easy" },
+
+  "logSessionModerate": "Moderate",
+  "@logSessionModerate": { "description": "Perceived effort option: moderate" },
+
+  "logSessionHard": "Hard",
+  "@logSessionHard": { "description": "Perceived effort option: hard" },
+
+  "logSessionVeryHard": "Very Hard",
+  "@logSessionVeryHard": { "description": "Perceived effort option: very hard" },
+
+  "logSessionNotes": "Notes",
+  "@logSessionNotes": { "description": "Notes section heading" },
+
+  "logSessionOptional": "(Optional)",
+  "@logSessionOptional": { "description": "Optional label next to Notes heading" },
+
+  "logSessionNotesHint": "How did the run go?",
+  "@logSessionNotesHint": { "description": "Placeholder text in the notes text area" },
+
+  "logSessionSaveButton": "Save Session",
+  "@logSessionSaveButton": { "description": "Save session CTA button label" }
 }

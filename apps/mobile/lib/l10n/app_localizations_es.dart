@@ -1480,4 +1480,58 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
+
+  @override
+  String get logSessionTitle => 'Registrar Sesión';
+
+  @override
+  String get logSessionPlannedSession => 'Sesión Planificada';
+
+  @override
+  String get logSessionSessionName => 'Intervalos Matutinos';
+
+  @override
+  String get logSessionDurationLabel => 'DURACIÓN';
+
+  @override
+  String get logSessionActiveTime => 'Tiempo activo';
+
+  @override
+  String get logSessionDistanceLabel => 'DISTANCIA';
+
+  @override
+  String get logSessionMinUnit => 'min';
+
+  @override
+  String get logSessionKmUnit => 'km';
+
+  @override
+  String get logSessionPaceValue => '7:31 / ritmo km';
+
+  @override
+  String get logSessionHowDidItFeel => '¿Cómo te fue?';
+
+  @override
+  String get logSessionEasy => 'Fácil';
+
+  @override
+  String get logSessionModerate => 'Moderado';
+
+  @override
+  String get logSessionHard => 'Duro';
+
+  @override
+  String get logSessionVeryHard => 'Muy Duro';
+
+  @override
+  String get logSessionNotes => 'Notas';
+
+  @override
+  String get logSessionOptional => '(Opcional)';
+
+  @override
+  String get logSessionNotesHint => '¿Cómo fue la carrera?';
+
+  @override
+  String get logSessionSaveButton => 'Guardar Sesión';
 }

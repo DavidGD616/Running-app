@@ -6,6 +6,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class SessionDetailScreen extends StatelessWidget {
@@ -114,7 +115,10 @@ class SessionDetailScreen extends StatelessWidget {
           ),
 
           // ── Start Workout button ───────────────────────────────
-          _StartButton(label: l10n.sessionDetailStartWorkout),
+          _StartButton(
+            label: l10n.sessionDetailStartWorkout,
+            onTap: () => context.push(RouteNames.logRun),
+          ),
         ],
       ),
     );
@@ -323,9 +327,10 @@ class _PhaseItem extends StatelessWidget {
 // ── Start Workout button ──────────────────────────────────────────────────────
 
 class _StartButton extends StatelessWidget {
-  const _StartButton({required this.label});
+  const _StartButton({required this.label, required this.onTap});
 
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -346,7 +351,7 @@ class _StartButton extends StatelessWidget {
         AppSpacing.screen, AppSpacing.xl,
       ),
       child: GestureDetector(
-        onTap: () {},
+        onTap: onTap,
         child: Container(
           height: 56,
           decoration: BoxDecoration(

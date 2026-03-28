@@ -505,5 +505,24 @@
   "sessionDetailCoolDown": "Enfriamiento",
   "sessionDetailCoolDownDuration": "10 min",
   "sessionDetailCoolDownNote": "Ritmo fácil o caminata",
-  "sessionDetailStartWorkout": "Iniciar entrenamiento"
+  "sessionDetailStartWorkout": "Iniciar entrenamiento",
+
+  "logSessionTitle": "Registrar Sesión",
+  "logSessionPlannedSession": "Sesión Planificada",
+  "logSessionSessionName": "Intervalos Matutinos",
+  "logSessionDurationLabel": "DURACIÓN",
+  "logSessionActiveTime": "Tiempo activo",
+  "logSessionDistanceLabel": "DISTANCIA",
+  "logSessionMinUnit": "min",
+  "logSessionKmUnit": "km",
+  "logSessionPaceValue": "7:31 / ritmo km",
+  "logSessionHowDidItFeel": "¿Cómo te fue?",
+  "logSessionEasy": "Fácil",
+  "logSessionModerate": "Moderado",
+  "logSessionHard": "Duro",
+  "logSessionVeryHard": "Muy Duro",
+  "logSessionNotes": "Notas",
+  "logSessionOptional": "(Opcional)",
+  "logSessionNotesHint": "¿Cómo fue la carrera?",
+  "logSessionSaveButton": "Guardar Sesión"
 }

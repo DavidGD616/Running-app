@@ -2892,6 +2892,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Workout'**
   String get sessionDetailStartWorkout;
+
+  /// Log session screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Log Session'**
+  String get logSessionTitle;
+
+  /// Label above planned session name on log session screen
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Session'**
+  String get logSessionPlannedSession;
+
+  /// Demo planned session name on log session screen
+  ///
+  /// In en, this message translates to:
+  /// **'Morning Intervals'**
+  String get logSessionSessionName;
+
+  /// Duration metric card label
+  ///
+  /// In en, this message translates to:
+  /// **'DURATION'**
+  String get logSessionDurationLabel;
+
+  /// Duration metric card subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Active time'**
+  String get logSessionActiveTime;
+
+  /// Distance metric card label
+  ///
+  /// In en, this message translates to:
+  /// **'DISTANCE'**
+  String get logSessionDistanceLabel;
+
+  /// Minutes unit label
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get logSessionMinUnit;
+
+  /// Kilometers unit label
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get logSessionKmUnit;
+
+  /// Pace subtitle on distance metric card
+  ///
+  /// In en, this message translates to:
+  /// **'7:31 / km pace'**
+  String get logSessionPaceValue;
+
+  /// Section heading for perceived effort selection
+  ///
+  /// In en, this message translates to:
+  /// **'How did it feel?'**
+  String get logSessionHowDidItFeel;
+
+  /// Perceived effort option: easy
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get logSessionEasy;
+
+  /// Perceived effort option: moderate
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get logSessionModerate;
+
+  /// Perceived effort option: hard
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get logSessionHard;
+
+  /// Perceived effort option: very hard
+  ///
+  /// In en, this message translates to:
+  /// **'Very Hard'**
+  String get logSessionVeryHard;
+
+  /// Notes section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get logSessionNotes;
+
+  /// Optional label next to Notes heading
+  ///
+  /// In en, this message translates to:
+  /// **'(Optional)'**
+  String get logSessionOptional;
+
+  /// Placeholder text in the notes text area
+  ///
+  /// In en, this message translates to:
+  /// **'How did the run go?'**
+  String get logSessionNotesHint;
+
+  /// Save session CTA button label
+  ///
+  /// In en, this message translates to:
+  /// **'Save Session'**
+  String get logSessionSaveButton;
 }
 
 class _AppLocalizationsDelegate

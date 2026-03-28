@@ -1471,4 +1471,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionDetailStartWorkout => 'Start Workout';
+
+  @override
+  String get logSessionTitle => 'Log Session';
+
+  @override
+  String get logSessionPlannedSession => 'Planned Session';
+
+  @override
+  String get logSessionSessionName => 'Morning Intervals';
+
+  @override
+  String get logSessionDurationLabel => 'DURATION';
+
+  @override
+  String get logSessionActiveTime => 'Active time';
+
+  @override
+  String get logSessionDistanceLabel => 'DISTANCE';
+
+  @override
+  String get logSessionMinUnit => 'min';
+
+  @override
+  String get logSessionKmUnit => 'km';
+
+  @override
+  String get logSessionPaceValue => '7:31 / km pace';
+
+  @override
+  String get logSessionHowDidItFeel => 'How did it feel?';
+
+  @override
+  String get logSessionEasy => 'Easy';
+
+  @override
+  String get logSessionModerate => 'Moderate';
+
+  @override
+  String get logSessionHard => 'Hard';
+
+  @override
+  String get logSessionVeryHard => 'Very Hard';
+
+  @override
+  String get logSessionNotes => 'Notes';
+
+  @override
+  String get logSessionOptional => '(Optional)';
+
+  @override
+  String get logSessionNotesHint => 'How did the run go?';
+
+  @override
+  String get logSessionSaveButton => 'Save Session';
 }

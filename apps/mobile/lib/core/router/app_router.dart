@@ -25,6 +25,7 @@ import '../../features/weekly_plan/presentation/screens/weekly_plan_screen.dart'
 import '../../features/progress/presentation/screens/progress_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
+import '../../features/log_run/presentation/screens/log_run_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: RouteNames.splash,
@@ -109,6 +110,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.sessionDetail,
       builder: (context, state) => const SessionDetailScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.logRun,
+      builder: (context, state) => const LogRunScreen(),
     ),
     StatefulShellRoute.indexedStack(
       builder: (context, state, navigationShell) =>
