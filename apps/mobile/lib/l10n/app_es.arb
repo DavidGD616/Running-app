@@ -484,5 +484,26 @@
   "settingsGarminConnect": "Garmin Connect",
   "settingsConnected": "Conectado",
   "settingsLogOut": "Cerrar sesión",
-  "settingsVersion": "RunFlow v1.0.0 (Build 42)"
+  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+
+  "sessionDetailTitle": "Entrenamiento",
+  "sessionDetailSessionType": "Velocidad",
+  "sessionDetailSessionName": "6 km Intervalos",
+  "sessionDetailDescription": "Entrenamiento interválico de alta intensidad para desarrollar velocidad y capacidad aeróbica.",
+  "sessionDetailTotalDistanceLabel": "Distancia total",
+  "sessionDetailDistanceValue": "6.0 km",
+  "sessionDetailEstDurationLabel": "Duración est.",
+  "sessionDetailDurationValue": "45 min",
+  "sessionDetailWorkoutStructure": "Estructura del entrenamiento",
+  "sessionDetailWarmUp": "Calentamiento",
+  "sessionDetailWarmUpDuration": "10 min",
+  "sessionDetailWarmUpNote": "Ritmo fácil, Zona 2",
+  "sessionDetailIntervals": "Intervalos",
+  "sessionDetailIntervalsDuration": "5 × 3 min",
+  "sessionDetailIntervalsNote": "Esfuerzo intenso, Zona 4",
+  "sessionDetailIntervalsRecovery": "2 min de recuperación entre series",
+  "sessionDetailCoolDown": "Enfriamiento",
+  "sessionDetailCoolDownDuration": "10 min",
+  "sessionDetailCoolDownNote": "Ritmo fácil o caminata",
+  "sessionDetailStartWorkout": "Iniciar entrenamiento"
 }

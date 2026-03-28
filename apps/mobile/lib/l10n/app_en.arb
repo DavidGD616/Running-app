@@ -1392,5 +1392,65 @@
   "@settingsLogOut": { "description": "Log out button label" },
 
   "settingsVersion": "RunFlow v1.0.0 (Build 42)",
-  "@settingsVersion": { "description": "App version string shown at bottom of settings" }
+  "@settingsVersion": { "description": "App version string shown at bottom of settings" },
+
+  "sessionDetailTitle": "Workout",
+  "@sessionDetailTitle": { "description": "Header title on the session detail screen" },
+
+  "sessionDetailSessionType": "Speed Work",
+  "@sessionDetailSessionType": { "description": "Session type badge label" },
+
+  "sessionDetailSessionName": "6 km Intervals",
+  "@sessionDetailSessionName": { "description": "Session name heading" },
+
+  "sessionDetailDescription": "High-intensity interval training to build speed and aerobic capacity.",
+  "@sessionDetailDescription": { "description": "Session description paragraph" },
+
+  "sessionDetailTotalDistanceLabel": "Total Distance",
+  "@sessionDetailTotalDistanceLabel": { "description": "Label for total distance stat tile" },
+
+  "sessionDetailDistanceValue": "6.0 km",
+  "@sessionDetailDistanceValue": { "description": "Total distance value" },
+
+  "sessionDetailEstDurationLabel": "Est. Duration",
+  "@sessionDetailEstDurationLabel": { "description": "Label for estimated duration stat tile" },
+
+  "sessionDetailDurationValue": "45 min",
+  "@sessionDetailDurationValue": { "description": "Estimated duration value" },
+
+  "sessionDetailWorkoutStructure": "Workout Structure",
+  "@sessionDetailWorkoutStructure": { "description": "Workout Structure section heading" },
+
+  "sessionDetailWarmUp": "Warm-up",
+  "@sessionDetailWarmUp": { "description": "Warm-up phase title" },
+
+  "sessionDetailWarmUpDuration": "10 min",
+  "@sessionDetailWarmUpDuration": { "description": "Warm-up phase duration" },
+
+  "sessionDetailWarmUpNote": "Easy pace, Zone 2",
+  "@sessionDetailWarmUpNote": { "description": "Warm-up phase zone note" },
+
+  "sessionDetailIntervals": "Intervals",
+  "@sessionDetailIntervals": { "description": "Intervals phase title" },
+
+  "sessionDetailIntervalsDuration": "5 × 3 min",
+  "@sessionDetailIntervalsDuration": { "description": "Intervals phase duration" },
+
+  "sessionDetailIntervalsNote": "Hard effort, Zone 4",
+  "@sessionDetailIntervalsNote": { "description": "Intervals phase zone note" },
+
+  "sessionDetailIntervalsRecovery": "2 min recovery between sets",
+  "@sessionDetailIntervalsRecovery": { "description": "Intervals phase recovery note" },
+
+  "sessionDetailCoolDown": "Cool-down",
+  "@sessionDetailCoolDown": { "description": "Cool-down phase title" },
+
+  "sessionDetailCoolDownDuration": "10 min",
+  "@sessionDetailCoolDownDuration": { "description": "Cool-down phase duration" },
+
+  "sessionDetailCoolDownNote": "Easy pace or walk",
+  "@sessionDetailCoolDownNote": { "description": "Cool-down phase zone note" },
+
+  "sessionDetailStartWorkout": "Start Workout",
+  "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" }
 }

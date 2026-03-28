@@ -1418,4 +1418,66 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
+
+  @override
+  String get sessionDetailTitle => 'Entrenamiento';
+
+  @override
+  String get sessionDetailSessionType => 'Velocidad';
+
+  @override
+  String get sessionDetailSessionName => '6 km Intervalos';
+
+  @override
+  String get sessionDetailDescription =>
+      'Entrenamiento interválico de alta intensidad para desarrollar velocidad y capacidad aeróbica.';
+
+  @override
+  String get sessionDetailTotalDistanceLabel => 'Distancia total';
+
+  @override
+  String get sessionDetailDistanceValue => '6.0 km';
+
+  @override
+  String get sessionDetailEstDurationLabel => 'Duración est.';
+
+  @override
+  String get sessionDetailDurationValue => '45 min';
+
+  @override
+  String get sessionDetailWorkoutStructure => 'Estructura del entrenamiento';
+
+  @override
+  String get sessionDetailWarmUp => 'Calentamiento';
+
+  @override
+  String get sessionDetailWarmUpDuration => '10 min';
+
+  @override
+  String get sessionDetailWarmUpNote => 'Ritmo fácil, Zona 2';
+
+  @override
+  String get sessionDetailIntervals => 'Intervalos';
+
+  @override
+  String get sessionDetailIntervalsDuration => '5 × 3 min';
+
+  @override
+  String get sessionDetailIntervalsNote => 'Esfuerzo intenso, Zona 4';
+
+  @override
+  String get sessionDetailIntervalsRecovery =>
+      '2 min de recuperación entre series';
+
+  @override
+  String get sessionDetailCoolDown => 'Enfriamiento';
+
+  @override
+  String get sessionDetailCoolDownDuration => '10 min';
+
+  @override
+  String get sessionDetailCoolDownNote => 'Ritmo fácil o caminata';
+
+  @override
+  String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
 }

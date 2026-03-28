@@ -2772,6 +2772,126 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'RunFlow v1.0.0 (Build 42)'**
   String get settingsVersion;
+
+  /// Header title on the session detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get sessionDetailTitle;
+
+  /// Session type badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Work'**
+  String get sessionDetailSessionType;
+
+  /// Session name heading
+  ///
+  /// In en, this message translates to:
+  /// **'6 km Intervals'**
+  String get sessionDetailSessionName;
+
+  /// Session description paragraph
+  ///
+  /// In en, this message translates to:
+  /// **'High-intensity interval training to build speed and aerobic capacity.'**
+  String get sessionDetailDescription;
+
+  /// Label for total distance stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'Total Distance'**
+  String get sessionDetailTotalDistanceLabel;
+
+  /// Total distance value
+  ///
+  /// In en, this message translates to:
+  /// **'6.0 km'**
+  String get sessionDetailDistanceValue;
+
+  /// Label for estimated duration stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'Est. Duration'**
+  String get sessionDetailEstDurationLabel;
+
+  /// Estimated duration value
+  ///
+  /// In en, this message translates to:
+  /// **'45 min'**
+  String get sessionDetailDurationValue;
+
+  /// Workout Structure section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Workout Structure'**
+  String get sessionDetailWorkoutStructure;
+
+  /// Warm-up phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up'**
+  String get sessionDetailWarmUp;
+
+  /// Warm-up phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionDetailWarmUpDuration;
+
+  /// Warm-up phase zone note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy pace, Zone 2'**
+  String get sessionDetailWarmUpNote;
+
+  /// Intervals phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get sessionDetailIntervals;
+
+  /// Intervals phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'5 × 3 min'**
+  String get sessionDetailIntervalsDuration;
+
+  /// Intervals phase zone note
+  ///
+  /// In en, this message translates to:
+  /// **'Hard effort, Zone 4'**
+  String get sessionDetailIntervalsNote;
+
+  /// Intervals phase recovery note
+  ///
+  /// In en, this message translates to:
+  /// **'2 min recovery between sets'**
+  String get sessionDetailIntervalsRecovery;
+
+  /// Cool-down phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Cool-down'**
+  String get sessionDetailCoolDown;
+
+  /// Cool-down phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionDetailCoolDownDuration;
+
+  /// Cool-down phase zone note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy pace or walk'**
+  String get sessionDetailCoolDownNote;
+
+  /// Start Workout CTA button label
+  ///
+  /// In en, this message translates to:
+  /// **'Start Workout'**
+  String get sessionDetailStartWorkout;
 }
 
 class _AppLocalizationsDelegate

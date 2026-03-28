@@ -10,6 +10,8 @@ import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/up_next_row_card.dart';
 import '../../../../core/widgets/week_progress_card.dart';
 import '../../../../core/widgets/workout_hero_card.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -74,7 +76,7 @@ class HomeScreen extends StatelessWidget {
                       distance: l10n.homeWorkoutDistance,
                       targetGuidance: l10n.homeWorkoutTargetGuidance,
                       sessionTypeIconAsset: 'assets/icons/zap.svg',
-                      onViewDetails: () {},
+                      onViewDetails: () => context.push(RouteNames.sessionDetail),
                       onStart: () {},
                     ),
 

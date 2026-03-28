@@ -22,4 +22,5 @@ abstract class RouteNames {
   static const plan            = '/plan';
   static const progress        = '/progress';
   static const settings        = '/settings';
+  static const sessionDetail   = '/session-detail';
 }

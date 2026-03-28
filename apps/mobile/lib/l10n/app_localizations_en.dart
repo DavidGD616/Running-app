@@ -1410,4 +1410,65 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
+
+  @override
+  String get sessionDetailTitle => 'Workout';
+
+  @override
+  String get sessionDetailSessionType => 'Speed Work';
+
+  @override
+  String get sessionDetailSessionName => '6 km Intervals';
+
+  @override
+  String get sessionDetailDescription =>
+      'High-intensity interval training to build speed and aerobic capacity.';
+
+  @override
+  String get sessionDetailTotalDistanceLabel => 'Total Distance';
+
+  @override
+  String get sessionDetailDistanceValue => '6.0 km';
+
+  @override
+  String get sessionDetailEstDurationLabel => 'Est. Duration';
+
+  @override
+  String get sessionDetailDurationValue => '45 min';
+
+  @override
+  String get sessionDetailWorkoutStructure => 'Workout Structure';
+
+  @override
+  String get sessionDetailWarmUp => 'Warm-up';
+
+  @override
+  String get sessionDetailWarmUpDuration => '10 min';
+
+  @override
+  String get sessionDetailWarmUpNote => 'Easy pace, Zone 2';
+
+  @override
+  String get sessionDetailIntervals => 'Intervals';
+
+  @override
+  String get sessionDetailIntervalsDuration => '5 × 3 min';
+
+  @override
+  String get sessionDetailIntervalsNote => 'Hard effort, Zone 4';
+
+  @override
+  String get sessionDetailIntervalsRecovery => '2 min recovery between sets';
+
+  @override
+  String get sessionDetailCoolDown => 'Cool-down';
+
+  @override
+  String get sessionDetailCoolDownDuration => '10 min';
+
+  @override
+  String get sessionDetailCoolDownNote => 'Easy pace or walk';
+
+  @override
+  String get sessionDetailStartWorkout => 'Start Workout';
 }
