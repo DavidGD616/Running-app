@@ -8,6 +8,7 @@ class UserStats {
     required this.distanceTrendPct,
     required this.timeTrendPct,
     required this.longestRunKm,
+    required this.longestRunImprovementKm,
   });
 
   final int streakWeeks;
@@ -23,6 +24,9 @@ class UserStats {
   final double timeTrendPct;
 
   final double longestRunKm;
+
+  /// How many km longer the longest run is vs the previous personal best.
+  final double longestRunImprovementKm;
 
   int get totalTimeHours => totalTimeMinutes ~/ 60;
   int get totalTimeRemainingMinutes => totalTimeMinutes % 60;
