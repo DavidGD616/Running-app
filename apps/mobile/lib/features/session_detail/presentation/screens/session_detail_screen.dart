@@ -604,6 +604,13 @@ class _PhaseItem extends StatelessWidget {
   final bool isLast;
   final SessionStatus? status;
 
+  Color get _borderColor {
+    if (status == SessionStatus.today && cardBorderColor == null) {
+      return iconBgColor;
+    }
+    return cardBorderColor ?? AppColors.borderDefault;
+  }
+
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -651,9 +658,7 @@ class _PhaseItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.backgroundCard,
                   borderRadius: AppRadius.borderLg,
-                  border: Border.all(
-                    color: cardBorderColor ?? AppColors.borderDefault,
-                  ),
+                  border: Border.all(color: _borderColor),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
