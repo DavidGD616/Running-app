@@ -451,12 +451,28 @@ class _TypeBadge extends StatelessWidget {
         color: _backgroundColor,
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: AppTypography.labelMedium.copyWith(
-          color: _textColor,
-          letterSpacing: 0.5,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (status == SessionStatus.today) ...[
+            Container(
+              width: 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: _textColor,
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
+            style: AppTypography.labelMedium.copyWith(
+              color: _textColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
       ),
     );
   }
