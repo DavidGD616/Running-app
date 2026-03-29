@@ -360,6 +360,7 @@ class SessionDetailScreen extends StatelessWidget {
                         recoveryNote: phase.recoveryNote,
                         cardBorderColor: _phaseCardBorder(phase.type),
                         isLast: isLast,
+                        status: status,
                       );
                     }),
                   ],
@@ -589,6 +590,7 @@ class _PhaseItem extends StatelessWidget {
     this.recoveryNote,
     this.cardBorderColor,
     this.isLast = false,
+    this.status,
   });
 
   final String iconAsset;
@@ -600,6 +602,7 @@ class _PhaseItem extends StatelessWidget {
   final String? recoveryNote;
   final Color? cardBorderColor;
   final bool isLast;
+  final SessionStatus? status;
 
   @override
   Widget build(BuildContext context) {
