@@ -14,6 +14,7 @@ class WeekProgressCard extends StatelessWidget {
     required this.totalVolume,
     required this.volumeUnit,
     this.footerMessage,
+    this.onTap,
   });
 
   final int sessionsCompleted;
@@ -22,6 +23,7 @@ class WeekProgressCard extends StatelessWidget {
   final double totalVolume;
   final String volumeUnit;
   final String? footerMessage;
+  final VoidCallback? onTap;
 
   double get _progress =>
       totalSessions == 0 ? 0 : sessionsCompleted / totalSessions;
@@ -29,7 +31,9 @@ class WeekProgressCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.base,
         AppSpacing.lg,
@@ -158,6 +162,7 @@ class WeekProgressCard extends StatelessWidget {
           ),
         ],
       ),
+    ),
     );
   }
 }

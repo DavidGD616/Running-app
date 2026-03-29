@@ -1464,6 +1464,127 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
 
   @override
+  String get sessionPhaseEasyRunWarmDuration => '5 min';
+
+  @override
+  String get sessionPhaseEasyRunWarmNote =>
+      'Caminata rápida + estiramientos dinámicos suaves de piernas';
+
+  @override
+  String sessionPhaseEasyRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseEasyRunMainNote =>
+      'Ritmo conversacional · Zona 2 · mantente relajado';
+
+  @override
+  String get sessionPhaseEasyRunCoolDuration => '3 min';
+
+  @override
+  String get sessionPhaseEasyRunCoolNote =>
+      'Caminata suave · estiramientos estáticos ligeros';
+
+  @override
+  String get sessionPhaseIntervalsWarmDuration => '10 min';
+
+  @override
+  String get sessionPhaseIntervalsWarmNote =>
+      'Trote suave · strides al final para activar las piernas';
+
+  @override
+  String sessionPhaseIntervalsMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String sessionPhaseIntervalsMainNote(int reps, String repDistance) {
+    return '$reps × $repDistance a esfuerzo intenso · RPE 8–9';
+  }
+
+  @override
+  String sessionPhaseIntervalsMainRecovery(int recoverySeconds) {
+    return '$recoverySeconds s de trote suave de recuperación entre cada repetición';
+  }
+
+  @override
+  String get sessionPhaseIntervalsCoolDuration => '10 min';
+
+  @override
+  String get sessionPhaseIntervalsCoolNote =>
+      'Trote suave → caminata · estiramientos completos';
+
+  @override
+  String get sessionPhaseLongRunWarmDuration => '10 min';
+
+  @override
+  String get sessionPhaseLongRunWarmNote =>
+      'Trote muy suave · comienza sin prisa';
+
+  @override
+  String sessionPhaseLongRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseLongRunMainNote =>
+      'Esfuerzo constante y fácil · Zona 2 · mantente cómodo';
+
+  @override
+  String get sessionPhaseLongRunCoolDuration => '10 min';
+
+  @override
+  String get sessionPhaseLongRunCoolNote =>
+      'Caminata al final · estiramientos completos · recarga energía';
+
+  @override
+  String get sessionPhaseRecoveryRunWarmDuration => '3 min';
+
+  @override
+  String get sessionPhaseRecoveryRunWarmNote =>
+      'Caminata suave para empezar a moverse';
+
+  @override
+  String sessionPhaseRecoveryRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseRecoveryRunMainNote =>
+      'Ritmo muy suave y conversacional · sin presión';
+
+  @override
+  String get sessionPhaseRecoveryRunCoolDuration => '3 min';
+
+  @override
+  String get sessionPhaseRecoveryRunCoolNote =>
+      'Caminata · rodillo de espuma si está disponible';
+
+  @override
+  String get sessionPhaseTempoRunWarmDuration => '10 min';
+
+  @override
+  String get sessionPhaseTempoRunWarmNote =>
+      'Trote suave · aumenta el ritmo gradualmente';
+
+  @override
+  String sessionPhaseTempoRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseTempoRunMainNote =>
+      'Esfuerzo cómodamente intenso · Zona 3–4';
+
+  @override
+  String get sessionPhaseTempoRunCoolDuration => '10 min';
+
+  @override
+  String get sessionPhaseTempoRunCoolNote =>
+      'Trote suave → caminata · estiramientos completos';
+
+  @override
   String get logSessionTitle => 'Registrar Sesión';
 
   @override

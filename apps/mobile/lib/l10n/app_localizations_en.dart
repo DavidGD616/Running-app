@@ -1456,6 +1456,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailStartWorkout => 'Start Workout';
 
   @override
+  String get sessionPhaseEasyRunWarmDuration => '5 min';
+
+  @override
+  String get sessionPhaseEasyRunWarmNote =>
+      'Brisk walk + light dynamic leg swings';
+
+  @override
+  String sessionPhaseEasyRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseEasyRunMainNote =>
+      'Conversational pace · Zone 2 · keep it relaxed';
+
+  @override
+  String get sessionPhaseEasyRunCoolDuration => '3 min';
+
+  @override
+  String get sessionPhaseEasyRunCoolNote =>
+      'Walk it out · light static stretches';
+
+  @override
+  String get sessionPhaseIntervalsWarmDuration => '10 min';
+
+  @override
+  String get sessionPhaseIntervalsWarmNote =>
+      'Easy jog · strides at the end to prime the legs';
+
+  @override
+  String sessionPhaseIntervalsMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String sessionPhaseIntervalsMainNote(int reps, String repDistance) {
+    return '$reps × $repDistance at hard effort · RPE 8–9';
+  }
+
+  @override
+  String sessionPhaseIntervalsMainRecovery(int recoverySeconds) {
+    return '$recoverySeconds s easy jog recovery between each rep';
+  }
+
+  @override
+  String get sessionPhaseIntervalsCoolDuration => '10 min';
+
+  @override
+  String get sessionPhaseIntervalsCoolNote =>
+      'Easy jog → walk · full-body stretch';
+
+  @override
+  String get sessionPhaseLongRunWarmDuration => '10 min';
+
+  @override
+  String get sessionPhaseLongRunWarmNote =>
+      'Very easy jog · ease into the effort';
+
+  @override
+  String sessionPhaseLongRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseLongRunMainNote =>
+      'Steady easy effort · Zone 2 · stay comfortable throughout';
+
+  @override
+  String get sessionPhaseLongRunCoolDuration => '10 min';
+
+  @override
+  String get sessionPhaseLongRunCoolNote =>
+      'Walk to finish · thorough stretch · refuel';
+
+  @override
+  String get sessionPhaseRecoveryRunWarmDuration => '3 min';
+
+  @override
+  String get sessionPhaseRecoveryRunWarmNote => 'Gentle walk to get moving';
+
+  @override
+  String sessionPhaseRecoveryRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseRecoveryRunMainNote =>
+      'Very easy conversational pace · no watch pressure';
+
+  @override
+  String get sessionPhaseRecoveryRunCoolDuration => '3 min';
+
+  @override
+  String get sessionPhaseRecoveryRunCoolNote => 'Walk · foam roll if available';
+
+  @override
+  String get sessionPhaseTempoRunWarmDuration => '10 min';
+
+  @override
+  String get sessionPhaseTempoRunWarmNote => 'Easy jog · build pace gradually';
+
+  @override
+  String sessionPhaseTempoRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseTempoRunMainNote =>
+      'Comfortably hard effort · Zone 3–4';
+
+  @override
+  String get sessionPhaseTempoRunCoolDuration => '10 min';
+
+  @override
+  String get sessionPhaseTempoRunCoolNote =>
+      'Easy jog → walk · stretch thoroughly';
+
+  @override
   String get logSessionTitle => 'Log Session';
 
   @override

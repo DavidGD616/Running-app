@@ -2845,6 +2845,192 @@ abstract class AppLocalizations {
   /// **'Start Workout'**
   String get sessionDetailStartWorkout;
 
+  /// Easy run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'5 min'**
+  String get sessionPhaseEasyRunWarmDuration;
+
+  /// Easy run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Brisk walk + light dynamic leg swings'**
+  String get sessionPhaseEasyRunWarmNote;
+
+  /// Easy run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseEasyRunMainDuration(int minutes);
+
+  /// Easy run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Conversational pace · Zone 2 · keep it relaxed'**
+  String get sessionPhaseEasyRunMainNote;
+
+  /// Easy run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'3 min'**
+  String get sessionPhaseEasyRunCoolDuration;
+
+  /// Easy run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Walk it out · light static stretches'**
+  String get sessionPhaseEasyRunCoolNote;
+
+  /// Intervals warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionPhaseIntervalsWarmDuration;
+
+  /// Intervals warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog · strides at the end to prime the legs'**
+  String get sessionPhaseIntervalsWarmNote;
+
+  /// Intervals main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseIntervalsMainDuration(int minutes);
+
+  /// Intervals main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {repDistance} at hard effort · RPE 8–9'**
+  String sessionPhaseIntervalsMainNote(int reps, String repDistance);
+
+  /// Intervals main phase recovery note
+  ///
+  /// In en, this message translates to:
+  /// **'{recoverySeconds} s easy jog recovery between each rep'**
+  String sessionPhaseIntervalsMainRecovery(int recoverySeconds);
+
+  /// Intervals cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionPhaseIntervalsCoolDuration;
+
+  /// Intervals cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog → walk · full-body stretch'**
+  String get sessionPhaseIntervalsCoolNote;
+
+  /// Long run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionPhaseLongRunWarmDuration;
+
+  /// Long run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Very easy jog · ease into the effort'**
+  String get sessionPhaseLongRunWarmNote;
+
+  /// Long run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseLongRunMainDuration(int minutes);
+
+  /// Long run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Steady easy effort · Zone 2 · stay comfortable throughout'**
+  String get sessionPhaseLongRunMainNote;
+
+  /// Long run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionPhaseLongRunCoolDuration;
+
+  /// Long run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Walk to finish · thorough stretch · refuel'**
+  String get sessionPhaseLongRunCoolNote;
+
+  /// Recovery run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'3 min'**
+  String get sessionPhaseRecoveryRunWarmDuration;
+
+  /// Recovery run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle walk to get moving'**
+  String get sessionPhaseRecoveryRunWarmNote;
+
+  /// Recovery run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseRecoveryRunMainDuration(int minutes);
+
+  /// Recovery run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Very easy conversational pace · no watch pressure'**
+  String get sessionPhaseRecoveryRunMainNote;
+
+  /// Recovery run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'3 min'**
+  String get sessionPhaseRecoveryRunCoolDuration;
+
+  /// Recovery run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Walk · foam roll if available'**
+  String get sessionPhaseRecoveryRunCoolNote;
+
+  /// Tempo run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionPhaseTempoRunWarmDuration;
+
+  /// Tempo run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog · build pace gradually'**
+  String get sessionPhaseTempoRunWarmNote;
+
+  /// Tempo run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseTempoRunMainDuration(int minutes);
+
+  /// Tempo run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortably hard effort · Zone 3–4'**
+  String get sessionPhaseTempoRunMainNote;
+
+  /// Tempo run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionPhaseTempoRunCoolDuration;
+
+  /// Tempo run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog → walk · stretch thoroughly'**
+  String get sessionPhaseTempoRunCoolNote;
+
   /// Log session screen title
   ///
   /// In en, this message translates to:

@@ -110,7 +110,13 @@ final appRouter = GoRouter(
     ),
     GoRoute(
       path: RouteNames.sessionDetail,
-      builder: (context, state) => const SessionDetailScreen(),
+      builder: (context, state) {
+        final args = state.extra as SessionDetailArgs;
+        return SessionDetailScreen(
+          session: args.session,
+          showStartWorkout: args.showStartWorkout,
+        );
+      },
     ),
     GoRoute(
       path: RouteNames.preRun,

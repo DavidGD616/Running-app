@@ -7,14 +7,129 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/training_session.dart';
+
+// ── Navigation args ───────────────────────────────────────────────────────────
+
+class SessionDetailArgs {
+  const SessionDetailArgs({
+    required this.session,
+    this.showStartWorkout = true,
+  });
+
+  final TrainingSession session;
+  final bool showStartWorkout;
+}
+
+// ── Screen ────────────────────────────────────────────────────────────────────
 
 class SessionDetailScreen extends StatelessWidget {
-  const SessionDetailScreen({super.key});
+  const SessionDetailScreen({
+    super.key,
+    required this.session,
+    this.showStartWorkout = true,
+  });
+
+  final TrainingSession session;
+  final bool showStartWorkout;
+
+  // ── Helpers ──────────────────────────────────────────────────────────────
+
+  String _sessionTitle(SessionType type, AppLocalizations l10n) {
+    switch (type) {
+      case SessionType.rest:        return l10n.weeklyPlanRestTitle;
+      case SessionType.easyRun:     return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.intervals:   return l10n.weeklyPlanSessionIntervals;
+      case SessionType.longRun:     return l10n.weeklyPlanSessionLongRun;
+      case SessionType.recoveryRun: return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.tempoRun:    return l10n.progressSessionTempoRun;
+    }
+  }
+
+  String _sessionDescription(SessionType type, AppLocalizations l10n) {
+    switch (type) {
+      case SessionType.rest:        return '';
+      case SessionType.easyRun:     return l10n.sessionDescEasyRun;
+      case SessionType.intervals:   return l10n.sessionDescIntervals;
+      case SessionType.longRun:     return l10n.sessionDescLongRun;
+      case SessionType.recoveryRun: return l10n.sessionDescRecoveryRun;
+      case SessionType.tempoRun:    return l10n.sessionDescTempoRun;
+    }
+  }
+
+  bool get _isHardSession =>
+      session.type == SessionType.intervals ||
+      session.type == SessionType.tempoRun;
+
+  List<_PhaseData> _phasesFor(AppLocalizations l10n) {
+    final mainTitle = _sessionTitle(session.type, l10n);
+    final warm = l10n.sessionDetailWarmUp;
+    final cool = l10n.sessionDetailCoolDown;
+    switch (session.type) {
+      case SessionType.easyRun:
+        return [
+          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseEasyRunWarmDuration,                                l10n.sessionPhaseEasyRunWarmNote),
+          _PhaseData(_PT.main,   'assets/icons/route.svg',      mainTitle, l10n.sessionPhaseEasyRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseEasyRunMainNote),
+          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseEasyRunCoolDuration,                                l10n.sessionPhaseEasyRunCoolNote),
+        ];
+      case SessionType.intervals:
+        return [
+          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseIntervalsWarmDuration,                                  l10n.sessionPhaseIntervalsWarmNote),
+          _PhaseData(_PT.main,   'assets/icons/activity.svg',   mainTitle, l10n.sessionPhaseIntervalsMainDuration(session.durationMinutes ?? 0),    l10n.sessionPhaseIntervalsMainNote(session.intervalReps ?? 0, session.intervalRepDistance ?? '—'), recoveryNote: l10n.sessionPhaseIntervalsMainRecovery(session.intervalRecoverySeconds ?? 0)),
+          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseIntervalsCoolDuration,                                  l10n.sessionPhaseIntervalsCoolNote),
+        ];
+      case SessionType.longRun:
+        return [
+          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseLongRunWarmDuration,                                l10n.sessionPhaseLongRunWarmNote),
+          _PhaseData(_PT.main,   'assets/icons/target.svg',     mainTitle, l10n.sessionPhaseLongRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseLongRunMainNote),
+          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseLongRunCoolDuration,                                l10n.sessionPhaseLongRunCoolNote),
+        ];
+      case SessionType.recoveryRun:
+        return [
+          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',       warm,      l10n.sessionPhaseRecoveryRunWarmDuration,                                l10n.sessionPhaseRecoveryRunWarmNote),
+          _PhaseData(_PT.main,   'assets/icons/stopwatch.svg',   mainTitle, l10n.sessionPhaseRecoveryRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseRecoveryRunMainNote),
+          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg',  cool,      l10n.sessionPhaseRecoveryRunCoolDuration,                                l10n.sessionPhaseRecoveryRunCoolNote),
+        ];
+      case SessionType.tempoRun:
+        return [
+          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseTempoRunWarmDuration,                                l10n.sessionPhaseTempoRunWarmNote),
+          _PhaseData(_PT.main,   'assets/icons/activity.svg',   mainTitle, l10n.sessionPhaseTempoRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseTempoRunMainNote),
+          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseTempoRunCoolDuration,                                l10n.sessionPhaseTempoRunCoolNote),
+        ];
+      case SessionType.rest:
+        return [];
+    }
+  }
+
+  Color _phaseIconColor(_PT type) {
+    switch (type) {
+      case _PT.warmUp: return AppColors.warning;
+      case _PT.main:   return _isHardSession ? AppColors.error : AppColors.accentPrimary;
+      case _PT.cool:   return AppColors.info;
+    }
+  }
+
+  Color? _phaseCardBorder(_PT type) {
+    if (type == _PT.main && _isHardSession) {
+      return AppColors.error.withValues(alpha: 0.5);
+    }
+    return null;
+  }
+
+  // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final title = _sessionTitle(session.type, l10n);
+    final description = session.description?.isNotEmpty == true
+        ? session.description!
+        : _sessionDescription(session.type, l10n);
+    final phases = _phasesFor(l10n);
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppDetailHeaderBar(
@@ -33,23 +148,21 @@ class SessionDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Session type badge ─────────────────────────
-                  _TypeBadge(label: l10n.sessionDetailSessionType),
+                  _TypeBadge(label: title.toUpperCase()),
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Session name ───────────────────────────────
-                  Text(
-                    l10n.sessionDetailSessionName,
-                    style: AppTypography.headlineLarge,
-                  ),
+                  Text(title, style: AppTypography.headlineLarge),
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Description ────────────────────────────────
-                  Text(
-                    l10n.sessionDetailDescription,
-                    style: AppTypography.bodyLarge.copyWith(
-                      color: AppColors.textSecondary,
+                  if (description.isNotEmpty)
+                    Text(
+                      description,
+                      style: AppTypography.bodyLarge.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
                   const SizedBox(height: AppSpacing.xl),
 
                   // ── Stat tiles ─────────────────────────────────
@@ -59,7 +172,9 @@ class SessionDetailScreen extends StatelessWidget {
                         child: _StatTile(
                           iconAsset: 'assets/icons/route.svg',
                           label: l10n.sessionDetailTotalDistanceLabel,
-                          value: l10n.sessionDetailDistanceValue,
+                          value: session.distanceKm != null
+                              ? UnitFormatter.formatDistanceKm(session.distanceKm!)
+                              : '—',
                         ),
                       ),
                       const SizedBox(width: AppSpacing.md),
@@ -67,7 +182,9 @@ class SessionDetailScreen extends StatelessWidget {
                         child: _StatTile(
                           iconAsset: 'assets/icons/stopwatch.svg',
                           label: l10n.sessionDetailEstDurationLabel,
-                          value: l10n.sessionDetailDurationValue,
+                          value: session.durationMinutes != null
+                              ? UnitFormatter.formatDuration(session.durationMinutes!)
+                              : '—',
                         ),
                       ),
                     ],
@@ -75,54 +192,67 @@ class SessionDetailScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.xl),
 
                   // ── Workout Structure ──────────────────────────
-                  Text(
-                    l10n.sessionDetailWorkoutStructure,
-                    style: AppTypography.titleLarge,
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-
-                  // ── Timeline ───────────────────────────────────
-                  _PhaseItem(
-                    iconAsset: 'assets/icons/flame.svg',
-                    iconBgColor: AppColors.warning.withValues(alpha: 0.08),
-                    iconColor: AppColors.warning,
-                    title: l10n.sessionDetailWarmUp,
-                    duration: l10n.sessionDetailWarmUpDuration,
-                    note: l10n.sessionDetailWarmUpNote,
-                  ),
-                  _PhaseItem(
-                    iconAsset: 'assets/icons/activity.svg',
-                    iconBgColor: AppColors.error.withValues(alpha: 0.08),
-                    iconColor: AppColors.error,
-                    title: l10n.sessionDetailIntervals,
-                    duration: l10n.sessionDetailIntervalsDuration,
-                    note: l10n.sessionDetailIntervalsNote,
-                    recoveryNote: l10n.sessionDetailIntervalsRecovery,
-                    cardBorderColor: AppColors.error.withValues(alpha: 0.5),
-                  ),
-                  _PhaseItem(
-                    iconAsset: 'assets/icons/heart_rate.svg',
-                    iconBgColor: AppColors.info.withValues(alpha: 0.08),
-                    iconColor: AppColors.info,
-                    title: l10n.sessionDetailCoolDown,
-                    duration: l10n.sessionDetailCoolDownDuration,
-                    note: l10n.sessionDetailCoolDownNote,
-                    isLast: true,
-                  ),
+                  if (phases.isNotEmpty) ...[
+                    Text(
+                      l10n.sessionDetailWorkoutStructure,
+                      style: AppTypography.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    ...phases.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final phase = entry.value;
+                      final isLast = index == phases.length - 1;
+                      final iconColor = _phaseIconColor(phase.type);
+                      return _PhaseItem(
+                        iconAsset: phase.iconAsset,
+                        iconBgColor: iconColor.withValues(alpha: 0.08),
+                        iconColor: iconColor,
+                        title: phase.title,
+                        duration: phase.duration,
+                        note: phase.note,
+                        recoveryNote: phase.recoveryNote,
+                        cardBorderColor: _phaseCardBorder(phase.type),
+                        isLast: isLast,
+                      );
+                    }),
+                  ],
                 ],
               ),
             ),
           ),
 
           // ── Start Workout button ───────────────────────────────
-          _StartButton(
-            label: l10n.sessionDetailStartWorkout,
-            onTap: () => context.push(RouteNames.preRun),
-          ),
+          if (showStartWorkout)
+            _StartButton(
+              label: l10n.sessionDetailStartWorkout,
+              onTap: () => context.push(RouteNames.preRun),
+            ),
         ],
       ),
     );
   }
+}
+
+// ── Private types ─────────────────────────────────────────────────────────────
+
+enum _PT { warmUp, main, cool }
+
+class _PhaseData {
+  const _PhaseData(
+    this.type,
+    this.iconAsset,
+    this.title,
+    this.duration,
+    this.note, {
+    this.recoveryNote,
+  });
+
+  final _PT type;
+  final String iconAsset;
+  final String title;
+  final String duration;
+  final String note;
+  final String? recoveryNote;
 }
 
 // ── Session type badge ────────────────────────────────────────────────────────
@@ -194,10 +324,7 @@ class _StatTile extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.xs),
-          Text(
-            value,
-            style: AppTypography.headlineMedium,
-          ),
+          Text(value, style: AppTypography.headlineMedium),
         ],
       ),
     );
@@ -235,7 +362,6 @@ class _PhaseItem extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Left: icon circle + connecting line
           SizedBox(
             width: 40,
             child: Column(
@@ -259,17 +385,13 @@ class _PhaseItem extends StatelessWidget {
                 if (!isLast)
                   Expanded(
                     child: Center(
-                      child: Container(
-                        width: 2,
-                        color: AppColors.surfaceElevated,
-                      ),
+                      child: Container(width: 2, color: AppColors.surfaceElevated),
                     ),
                   ),
               ],
             ),
           ),
           const SizedBox(width: AppSpacing.md),
-          // Right: card
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.md),

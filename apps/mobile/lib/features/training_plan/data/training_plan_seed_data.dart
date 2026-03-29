@@ -62,6 +62,9 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 6.0,
       durationMinutes: 45,
       effortLabel: 'Hard effort',
+      intervalReps: 6,
+      intervalRepDistance: '400 m',
+      intervalRecoverySeconds: 90,
     ),
     TrainingSession(
       id: 'seed-fri',

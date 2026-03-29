@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../session_detail/presentation/screens/session_detail_screen.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
@@ -121,7 +122,13 @@ class HomeScreen extends ConsumerWidget {
                             nextSession.durationMinutes ?? 0),
                         effortLabel: nextSession.effortLabel ?? '',
                         iconAsset: nextSession.type.iconAsset,
-                        onTap: () => context.go(RouteNames.plan),
+                        onTap: () => context.push(
+                          RouteNames.sessionDetail,
+                          extra: SessionDetailArgs(
+                            session: nextSession,
+                            showStartWorkout: false,
+                          ),
+                        ),
                       ),
 
                     const SizedBox(height: AppSpacing.xl),
@@ -135,6 +142,7 @@ class HomeScreen extends ConsumerWidget {
                       volumeCompleted: progress.completedVolumeKm,
                       totalVolume: progress.totalVolumeKm,
                       volumeUnit: l10n.homeVolumeUnit,
+                      onTap: () => context.go(RouteNames.plan),
                     ),
 
                   ],
@@ -153,14 +161,7 @@ class HomeScreen extends ConsumerWidget {
     TrainingSession? session,
   ) {
     if (session == null) {
-      return WorkoutHeroCard(
-        sessionType: l10n.weeklyPlanRestTitle,
-        sessionName: l10n.weeklyPlanRestTitle,
-        duration: '-',
-        distance: '-',
-        sessionTypeIconAsset: SessionType.rest.iconAsset,
-        onViewDetails: () => context.push(RouteNames.sessionDetail),
-      );
+      return const SizedBox.shrink();
     }
 
     return WorkoutHeroCard(
@@ -174,7 +175,10 @@ class HomeScreen extends ConsumerWidget {
           : '-',
       targetGuidance: session.description ?? _sessionDescription(session.type, l10n),
       sessionTypeIconAsset: session.type.iconAsset,
-      onViewDetails: () => context.push(RouteNames.sessionDetail),
+      onViewDetails: () => context.push(
+        RouteNames.sessionDetail,
+        extra: SessionDetailArgs(session: session),
+      ),
     );
   }
 }
