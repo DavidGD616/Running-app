@@ -87,9 +87,7 @@ class SessionDetailScreen extends StatelessWidget {
 
   bool get _canStartWorkout {
     if (!showStartWorkout) return false;
-    if (status == SessionStatus.completed || status == SessionStatus.skipped) {
-      return false;
-    }
+    if (status != SessionStatus.today) return false;
     return true;
   }
 
