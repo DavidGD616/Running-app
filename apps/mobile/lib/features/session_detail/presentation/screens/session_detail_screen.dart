@@ -413,7 +413,7 @@ class _TypeBadge extends StatelessWidget {
   Color get _backgroundColor {
     switch (status) {
       case SessionStatus.today:
-        return AppColors.accentPrimary;
+        return AppColors.accentPrimary.withValues(alpha: 0.1);
       case SessionStatus.upcoming:
         return AppColors.accentPrimary.withValues(alpha: 0.1);
       case SessionStatus.completed:
@@ -428,7 +428,7 @@ class _TypeBadge extends StatelessWidget {
   Color get _textColor {
     switch (status) {
       case SessionStatus.today:
-        return AppColors.backgroundPrimary;
+        return AppColors.accentPrimary;
       case SessionStatus.upcoming:
         return AppColors.accentPrimary;
       case SessionStatus.completed:
