@@ -261,6 +261,10 @@ class SessionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final title = _sessionTitle(session.type, l10n);
+    final distanceText = session.distanceKm != null
+        ? '${UnitFormatter.formatDistanceKm(session.distanceKm!)} '
+        : '';
+    final titleWithDistance = '$distanceText$title';
     final description = session.description?.isNotEmpty == true
         ? session.description!
         : _sessionDescription(session.type, l10n);
@@ -295,7 +299,15 @@ class SessionDetailScreen extends StatelessWidget {
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Session name ───────────────────────────────
-                  Text(title, style: AppTypography.headlineLarge),
+                  Text(
+                    titleWithDistance,
+                    style: status == SessionStatus.skipped
+                        ? AppTypography.headlineLarge.copyWith(
+                            decoration: TextDecoration.lineThrough,
+                            color: AppColors.textDisabled,
+                          )
+                        : AppTypography.headlineLarge,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Description ────────────────────────────────
@@ -464,7 +476,7 @@ class _TypeBadgeState extends State<_TypeBadge>
       case SessionStatus.completed:
         return AppColors.success.withValues(alpha: 0.1);
       case SessionStatus.skipped:
-        return AppColors.textDisabled.withValues(alpha: 0.1);
+        return AppColors.warning.withValues(alpha: 0.1);
       case null:
         return AppColors.accentPrimary.withValues(alpha: 0.1);
     }
@@ -479,7 +491,7 @@ class _TypeBadgeState extends State<_TypeBadge>
       case SessionStatus.completed:
         return AppColors.success;
       case SessionStatus.skipped:
-        return AppColors.textDisabled;
+        return AppColors.warning;
       case null:
         return AppColors.accentPrimary;
     }
