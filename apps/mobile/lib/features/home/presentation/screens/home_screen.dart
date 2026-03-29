@@ -151,7 +151,9 @@ class HomeScreen extends ConsumerWidget {
                           RouteNames.sessionDetail,
                           extra: SessionDetailArgs(
                             session: nextSession,
-                            showStartWorkout: false,
+                            status: nextSession.status,
+                            showStartWorkout:
+                                nextSession.status == SessionStatus.today,
                           ),
                         ),
                       ),
@@ -201,7 +203,11 @@ class HomeScreen extends ConsumerWidget {
       sessionTypeIconAsset: session.type.iconAsset,
       onViewDetails: () => context.push(
         RouteNames.sessionDetail,
-        extra: SessionDetailArgs(session: session),
+        extra: SessionDetailArgs(
+          session: session,
+          status: session.status,
+          showStartWorkout: session.status == SessionStatus.today,
+        ),
       ),
     );
   }

@@ -114,6 +114,7 @@ final appRouter = GoRouter(
         final args = state.extra as SessionDetailArgs;
         return SessionDetailScreen(
           session: args.session,
+          status: args.status,
           showStartWorkout: args.showStartWorkout,
         );
       },
@@ -130,30 +131,38 @@ final appRouter = GoRouter(
       builder: (context, state, navigationShell) =>
           AppShell(navigationShell: navigationShell),
       branches: [
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: RouteNames.today,
-            builder: (_, _) => const HomeScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: RouteNames.plan,
-            builder: (_, _) => const WeeklyPlanScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: RouteNames.progress,
-            builder: (_, _) => const ProgressScreen(),
-          ),
-        ]),
-        StatefulShellBranch(routes: [
-          GoRoute(
-            path: RouteNames.settings,
-            builder: (_, _) => const SettingsScreen(),
-          ),
-        ]),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.today,
+              builder: (_, _) => const HomeScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.plan,
+              builder: (_, _) => const WeeklyPlanScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.progress,
+              builder: (_, _) => const ProgressScreen(),
+            ),
+          ],
+        ),
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RouteNames.settings,
+              builder: (_, _) => const SettingsScreen(),
+            ),
+          ],
+        ),
       ],
     ),
   ],
