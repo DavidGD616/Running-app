@@ -618,16 +618,19 @@ class _PhaseItem extends StatelessWidget {
 
   bool get _isDimmed => status == SessionStatus.upcoming;
   bool get _isCompleted => status == SessionStatus.completed;
+  bool get _isSkipped => status == SessionStatus.skipped;
 
   Color get _effectiveIconBgColor {
     if (_isDimmed) return AppColors.textDisabled.withValues(alpha: 0.1);
     if (_isCompleted) return AppColors.success.withValues(alpha: 0.1);
+    if (_isSkipped) return AppColors.warning.withValues(alpha: 0.1);
     return iconBgColor;
   }
 
   Color get _effectiveIconColor {
     if (_isDimmed) return AppColors.textDisabled;
     if (_isCompleted) return AppColors.success;
+    if (_isSkipped) return AppColors.warning;
     return iconColor;
   }
 
