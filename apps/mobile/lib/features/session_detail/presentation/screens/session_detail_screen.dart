@@ -404,14 +404,57 @@ class _PhaseData {
 
 // ── Session type badge ────────────────────────────────────────────────────────
 
-class _TypeBadge extends StatelessWidget {
+class _TypeBadge extends StatefulWidget {
   const _TypeBadge({required this.label, this.status});
 
   final String label;
   final SessionStatus? status;
 
+  @override
+  State<_TypeBadge> createState() => _TypeBadgeState();
+}
+
+class _TypeBadgeState extends State<_TypeBadge>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    );
+    _animation = Tween<double>(
+      begin: 0.4,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+    if (widget.status == SessionStatus.today) {
+      _controller.repeat(reverse: true);
+    }
+  }
+
+  @override
+  void didUpdateWidget(_TypeBadge oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.status == SessionStatus.today) {
+      if (!_controller.isAnimating) {
+        _controller.repeat(reverse: true);
+      }
+    } else {
+      _controller.stop();
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
   Color get _backgroundColor {
-    switch (status) {
+    switch (widget.status) {
       case SessionStatus.today:
         return AppColors.accentPrimary.withValues(alpha: 0.1);
       case SessionStatus.upcoming:
@@ -426,7 +469,7 @@ class _TypeBadge extends StatelessWidget {
   }
 
   Color get _textColor {
-    switch (status) {
+    switch (widget.status) {
       case SessionStatus.today:
         return AppColors.accentPrimary;
       case SessionStatus.upcoming:
@@ -454,19 +497,24 @@ class _TypeBadge extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (status == SessionStatus.today) ...[
-            Container(
-              width: 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: _textColor,
-                shape: BoxShape.circle,
-              ),
+          if (widget.status == SessionStatus.today) ...[
+            AnimatedBuilder(
+              animation: _animation,
+              builder: (context, child) {
+                return Container(
+                  width: 6,
+                  height: 6,
+                  decoration: BoxDecoration(
+                    color: _textColor.withValues(alpha: _animation.value),
+                    shape: BoxShape.circle,
+                  ),
+                );
+              },
             ),
             const SizedBox(width: 6),
           ],
           Text(
-            label,
+            widget.label,
             style: AppTypography.labelMedium.copyWith(
               color: _textColor,
               letterSpacing: 0.5,
