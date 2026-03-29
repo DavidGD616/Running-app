@@ -18,10 +18,12 @@ import '../../../training_plan/domain/models/training_session.dart';
 class SessionDetailArgs {
   const SessionDetailArgs({
     required this.session,
+    this.status,
     this.showStartWorkout = true,
   });
 
   final TrainingSession session;
+  final SessionStatus? status;
   final bool showStartWorkout;
 }
 
@@ -31,10 +33,12 @@ class SessionDetailScreen extends StatelessWidget {
   const SessionDetailScreen({
     super.key,
     required this.session,
+    this.status,
     this.showStartWorkout = true,
   });
 
   final TrainingSession session;
+  final SessionStatus? status;
   final bool showStartWorkout;
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -80,6 +84,14 @@ class SessionDetailScreen extends StatelessWidget {
   bool get _isHardSession =>
       session.type == SessionType.intervals ||
       session.type == SessionType.tempoRun;
+
+  bool get _canStartWorkout {
+    if (!showStartWorkout) return false;
+    if (status == SessionStatus.completed || status == SessionStatus.skipped) {
+      return false;
+    }
+    return true;
+  }
 
   List<_PhaseData> _phasesFor(AppLocalizations l10n) {
     final mainTitle = _sessionTitle(session.type, l10n);
@@ -281,7 +293,7 @@ class SessionDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Session type badge ─────────────────────────
-                  _TypeBadge(label: title.toUpperCase()),
+                  _TypeBadge(label: title.toUpperCase(), status: status),
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Session name ───────────────────────────────
@@ -359,7 +371,7 @@ class SessionDetailScreen extends StatelessWidget {
           ),
 
           // ── Start Workout button ───────────────────────────────
-          if (showStartWorkout)
+          if (_canStartWorkout)
             _StartButton(
               label: l10n.sessionDetailStartWorkout,
               onTap: () => context.push(RouteNames.preRun),
@@ -395,9 +407,40 @@ class _PhaseData {
 // ── Session type badge ────────────────────────────────────────────────────────
 
 class _TypeBadge extends StatelessWidget {
-  const _TypeBadge({required this.label});
+  const _TypeBadge({required this.label, this.status});
 
   final String label;
+  final SessionStatus? status;
+
+  Color get _backgroundColor {
+    switch (status) {
+      case SessionStatus.today:
+        return AppColors.accentPrimary;
+      case SessionStatus.upcoming:
+        return AppColors.accentPrimary.withValues(alpha: 0.1);
+      case SessionStatus.completed:
+        return AppColors.success.withValues(alpha: 0.1);
+      case SessionStatus.skipped:
+        return AppColors.textDisabled.withValues(alpha: 0.1);
+      case null:
+        return AppColors.accentPrimary.withValues(alpha: 0.1);
+    }
+  }
+
+  Color get _textColor {
+    switch (status) {
+      case SessionStatus.today:
+        return AppColors.backgroundPrimary;
+      case SessionStatus.upcoming:
+        return AppColors.accentPrimary;
+      case SessionStatus.completed:
+        return AppColors.success;
+      case SessionStatus.skipped:
+        return AppColors.textDisabled;
+      case null:
+        return AppColors.accentPrimary;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -407,13 +450,13 @@ class _TypeBadge extends StatelessWidget {
         vertical: 4,
       ),
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.1),
+        color: _backgroundColor,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         label,
         style: AppTypography.labelMedium.copyWith(
-          color: AppColors.accentPrimary,
+          color: _textColor,
           letterSpacing: 0.5,
         ),
       ),
