@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../session_detail/presentation/screens/session_detail_screen.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -21,12 +24,18 @@ class WeeklyPlanScreen extends ConsumerWidget {
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:        return l10n.weeklyPlanRestTitle;
-      case SessionType.easyRun:     return l10n.weeklyPlanSessionEasyRun;
-      case SessionType.intervals:   return l10n.weeklyPlanSessionIntervals;
-      case SessionType.longRun:     return l10n.weeklyPlanSessionLongRun;
-      case SessionType.recoveryRun: return l10n.weeklyPlanSessionRecoveryRun;
-      case SessionType.tempoRun:    return l10n.progressSessionTempoRun;
+      case SessionType.rest:
+        return l10n.weeklyPlanRestTitle;
+      case SessionType.easyRun:
+        return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.longRun:
+        return l10n.weeklyPlanSessionLongRun;
+      case SessionType.recoveryRun:
+        return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.tempoRun:
+        return l10n.progressSessionTempoRun;
     }
   }
 
@@ -35,13 +44,20 @@ class WeeklyPlanScreen extends ConsumerWidget {
   String _dayLabel(TrainingSession s, AppLocalizations l10n) {
     if (s.status == SessionStatus.today) return l10n.weeklyPlanDayToday;
     switch (s.date.weekday) {
-      case 1: return l10n.weeklyPlanDayMon;
-      case 2: return l10n.weeklyPlanDayTue;
-      case 3: return l10n.weeklyPlanDayWed;
-      case 4: return l10n.weeklyPlanDayThu;
-      case 5: return l10n.weeklyPlanDayFri;
-      case 6: return l10n.weeklyPlanDaySat;
-      default: return l10n.weeklyPlanDaySun;
+      case 1:
+        return l10n.weeklyPlanDayMon;
+      case 2:
+        return l10n.weeklyPlanDayTue;
+      case 3:
+        return l10n.weeklyPlanDayWed;
+      case 4:
+        return l10n.weeklyPlanDayThu;
+      case 5:
+        return l10n.weeklyPlanDayFri;
+      case 6:
+        return l10n.weeklyPlanDaySat;
+      default:
+        return l10n.weeklyPlanDaySun;
     }
   }
 
@@ -51,22 +67,29 @@ class WeeklyPlanScreen extends ConsumerWidget {
     final plan = ref.watch(trainingPlanProvider);
     final progress = ref.watch(weekProgressProvider);
     final sessions = plan.currentWeekSessions;
-    final weekStart = sessions.isNotEmpty ? sessions.first.date.day.toString() : '';
+    final weekStart = sessions.isNotEmpty
+        ? sessions.first.date.day.toString()
+        : '';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen, AppSpacing.lg,
-            AppSpacing.screen, AppSpacing.xl,
+            AppSpacing.screen,
+            AppSpacing.lg,
+            AppSpacing.screen,
+            AppSpacing.xl,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ── Title ─────────────────────────────────────────────
               Text(
-                l10n.weeklyPlanTitle(plan.currentWeekNumber.toString(), weekStart),
+                l10n.weeklyPlanTitle(
+                  plan.currentWeekNumber.toString(),
+                  weekStart,
+                ),
                 style: AppTypography.titleLarge,
               ),
 
@@ -83,27 +106,38 @@ class WeeklyPlanScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
 
               // Session rows
-              ...sessions.map((s) => Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                child: _SessionRow(
-                  dayLabel: _dayLabel(s, l10n),
-                  dateNumber: s.date.day.toString(),
-                  title: _sessionTitle(s.type, l10n),
-                  subtitle: s.type == SessionType.rest
-                      ? l10n.weeklyPlanRestSubtitle
-                      : null,
-                  distance: s.distanceKm != null
-                      ? UnitFormatter.formatDistanceKm(s.distanceKm!)
-                      : null,
-                  duration: s.durationMinutes != null
-                      ? UnitFormatter.formatDuration(s.durationMinutes!)
-                      : null,
-                  status: s.status,
-                  isRest: s.type == SessionType.rest,
-                  trailingIcon: s.type.iconAsset,
-                  nowLabel: l10n.weeklyPlanNowBadge,
+              ...sessions.map(
+                (s) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: _SessionRow(
+                    dayLabel: _dayLabel(s, l10n),
+                    dateNumber: s.date.day.toString(),
+                    title: _sessionTitle(s.type, l10n),
+                    subtitle: s.type == SessionType.rest
+                        ? l10n.weeklyPlanRestSubtitle
+                        : null,
+                    distance: s.distanceKm != null
+                        ? UnitFormatter.formatDistanceKm(s.distanceKm!)
+                        : null,
+                    duration: s.durationMinutes != null
+                        ? UnitFormatter.formatDuration(s.durationMinutes!)
+                        : null,
+                    status: s.status,
+                    isRest: s.type == SessionType.rest,
+                    trailingIcon: s.type.iconAsset,
+                    nowLabel: l10n.weeklyPlanNowBadge,
+                    onTap: s.type == SessionType.rest
+                        ? null
+                        : () => context.push(
+                            RouteNames.sessionDetail,
+                            extra: SessionDetailArgs(
+                              session: s,
+                              status: s.status,
+                            ),
+                          ),
+                  ),
                 ),
-              )),
+              ),
 
               const SizedBox(height: AppSpacing.md),
 
@@ -221,6 +255,7 @@ class _SessionRow extends StatelessWidget {
     required this.isRest,
     required this.trailingIcon,
     required this.nowLabel,
+    this.onTap,
   });
 
   final String dayLabel;
@@ -233,6 +268,7 @@ class _SessionRow extends StatelessWidget {
   final bool isRest;
   final String trailingIcon;
   final String nowLabel;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -283,145 +319,164 @@ class _SessionRow extends StatelessWidget {
       titleColor = AppColors.textPrimary;
     }
 
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
-      decoration: BoxDecoration(
-        color: rowBg,
-        borderRadius: AppRadius.borderLg,
-        border: Border.all(color: rowBorder),
-      ),
-      child: Row(
-        children: [
-          // ── Date badge ──────────────────────────────────────
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: dateBg,
-              borderRadius: AppRadius.borderMd,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  dayLabel.toUpperCase(),
-                  style: AppTypography.caption.copyWith(
-                    color: dayTextColor,
-                    fontSize: 10,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 1),
-                Text(
-                  dateNumber,
-                  style: AppTypography.titleMedium.copyWith(
-                    color: dateTextColor,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 14),
-
-          // ── Content ─────────────────────────────────────────
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      title,
-                      style: AppTypography.titleMedium.copyWith(
-                        color: titleColor,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        decoration: isSkipped ? TextDecoration.lineThrough : null,
-                        decorationColor: isSkipped ? AppColors.textDisabled : null,
-                      ),
-                    ),
-                    if (isToday) ...[
-                      const SizedBox(width: 7),
-                      _NowBadge(label: nowLabel),
-                    ],
-                  ],
-                ),
-                const SizedBox(height: 4),
-                if (subtitle != null)
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 72,
+        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
+        decoration: BoxDecoration(
+          color: rowBg,
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(color: rowBorder),
+        ),
+        child: Row(
+          children: [
+            // ── Date badge ──────────────────────────────────────
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: dateBg,
+                borderRadius: AppRadius.borderMd,
+              ),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
                   Text(
-                    subtitle!,
+                    dayLabel.toUpperCase(),
                     style: AppTypography.caption.copyWith(
-                      color: const Color(0xFF444444),
+                      color: dayTextColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.5,
                     ),
-                  )
-                else if (distance != null || duration != null)
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    dateNumber,
+                    style: AppTypography.titleMedium.copyWith(
+                      color: dateTextColor,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(width: 14),
+
+            // ── Content ─────────────────────────────────────────
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
                   Row(
                     children: [
-                      if (distance != null) ...[
-                        SvgPicture.asset(
-                          'assets/icons/route.svg',
-                          width: 12,
-                          height: 12,
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.textDisabled,
-                            BlendMode.srcIn,
-                          ),
+                      Text(
+                        title,
+                        style: AppTypography.titleMedium.copyWith(
+                          color: titleColor,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          decoration: isSkipped
+                              ? TextDecoration.lineThrough
+                              : null,
+                          decorationColor: isSkipped
+                              ? AppColors.textDisabled
+                              : null,
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          distance!,
-                          style: AppTypography.caption.copyWith(
-                            color: isSkipped ? const Color(0xFF555555) : AppColors.textDisabled,
-                            fontSize: 12,
-                            letterSpacing: 0.1,
-                            decoration: isSkipped ? TextDecoration.lineThrough : null,
-                            decorationColor: isSkipped ? const Color(0xFF555555) : null,
-                          ),
-                        ),
-                      ],
-                      if (distance != null && duration != null)
-                        const SizedBox(width: 10),
-                      if (duration != null) ...[
-                        SvgPicture.asset(
-                          'assets/icons/clock.svg',
-                          width: 12,
-                          height: 12,
-                          colorFilter: const ColorFilter.mode(
-                            AppColors.textDisabled,
-                            BlendMode.srcIn,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          duration!,
-                          style: AppTypography.caption.copyWith(
-                            color: isSkipped ? const Color(0xFF555555) : AppColors.textDisabled,
-                            fontSize: 12,
-                            letterSpacing: 0.1,
-                            decoration: isSkipped ? TextDecoration.lineThrough : null,
-                            decorationColor: isSkipped ? const Color(0xFF555555) : null,
-                          ),
-                        ),
+                      ),
+                      if (isToday) ...[
+                        const SizedBox(width: 7),
+                        _NowBadge(label: nowLabel),
                       ],
                     ],
                   ),
-              ],
+                  const SizedBox(height: 4),
+                  if (subtitle != null)
+                    Text(
+                      subtitle!,
+                      style: AppTypography.caption.copyWith(
+                        color: const Color(0xFF444444),
+                      ),
+                    )
+                  else if (distance != null || duration != null)
+                    Row(
+                      children: [
+                        if (distance != null) ...[
+                          SvgPicture.asset(
+                            'assets/icons/route.svg',
+                            width: 12,
+                            height: 12,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.textDisabled,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            distance!,
+                            style: AppTypography.caption.copyWith(
+                              color: isSkipped
+                                  ? const Color(0xFF555555)
+                                  : AppColors.textDisabled,
+                              fontSize: 12,
+                              letterSpacing: 0.1,
+                              decoration: isSkipped
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              decorationColor: isSkipped
+                                  ? const Color(0xFF555555)
+                                  : null,
+                            ),
+                          ),
+                        ],
+                        if (distance != null && duration != null)
+                          const SizedBox(width: 10),
+                        if (duration != null) ...[
+                          SvgPicture.asset(
+                            'assets/icons/clock.svg',
+                            width: 12,
+                            height: 12,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.textDisabled,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            duration!,
+                            style: AppTypography.caption.copyWith(
+                              color: isSkipped
+                                  ? const Color(0xFF555555)
+                                  : AppColors.textDisabled,
+                              fontSize: 12,
+                              letterSpacing: 0.1,
+                              decoration: isSkipped
+                                  ? TextDecoration.lineThrough
+                                  : null,
+                              decorationColor: isSkipped
+                                  ? const Color(0xFF555555)
+                                  : null,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                ],
+              ),
             ),
-          ),
 
-          // ── Trailing icon ────────────────────────────────────
-          _TrailingIcon(
-            iconAsset: trailingIcon,
-            status: status,
-            isRest: isRest,
-          ),
-        ],
+            // ── Trailing icon ────────────────────────────────────
+            _TrailingIcon(
+              iconAsset: trailingIcon,
+              status: status,
+              isRest: isRest,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -484,7 +539,11 @@ class _TrailingIcon extends StatelessWidget {
           color: AppColors.accentPrimary.withValues(alpha: 0.1),
           borderRadius: AppRadius.borderMd,
         ),
-        child: const Icon(Icons.check, color: AppColors.accentPrimary, size: 18),
+        child: const Icon(
+          Icons.check,
+          color: AppColors.accentPrimary,
+          size: 18,
+        ),
       );
     }
 
