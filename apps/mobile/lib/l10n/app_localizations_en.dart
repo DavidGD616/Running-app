@@ -1143,8 +1143,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.';
 
   @override
-  String get sessionDescIntervals =>
-      '4×800m @ 5K pace. 90s recovery jog between each rep.';
+  String sessionDescIntervals(
+    int reps,
+    String repDistance,
+    int recoverySeconds,
+  ) {
+    return '$reps×$repDistance @ 5K pace. ${recoverySeconds}s recovery jog between each rep.';
+  }
 
   @override
   String get sessionDescLongRun =>
@@ -1401,23 +1406,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailSessionType => 'Speed Work';
 
   @override
-  String get sessionDetailSessionName => '6 km Intervals';
-
-  @override
-  String get sessionDetailDescription =>
-      'High-intensity interval training to build speed and aerobic capacity.';
-
-  @override
   String get sessionDetailTotalDistanceLabel => 'Total Distance';
 
   @override
-  String get sessionDetailDistanceValue => '6.0 km';
-
-  @override
   String get sessionDetailEstDurationLabel => 'Est. Duration';
-
-  @override
-  String get sessionDetailDurationValue => '45 min';
 
   @override
   String get sessionDetailWorkoutStructure => 'Workout Structure';
@@ -1426,22 +1418,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailWarmUp => 'Warm-up';
 
   @override
-  String get sessionDetailWarmUpDuration => '10 min';
-
-  @override
   String get sessionDetailWarmUpNote => 'Easy pace, Zone 2';
 
   @override
   String get sessionDetailIntervals => 'Intervals';
 
   @override
-  String get sessionDetailIntervalsDuration => '5 × 3 min';
-
-  @override
   String get sessionDetailIntervalsNote => 'Hard effort, Zone 4';
-
-  @override
-  String get sessionDetailIntervalsRecovery => '2 min recovery between sets';
 
   @override
   String get sessionDetailCoolDown => 'Cool-down';
@@ -1456,7 +1439,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailStartWorkout => 'Start Workout';
 
   @override
-  String get sessionPhaseEasyRunWarmDuration => '5 min';
+  String sessionPhaseEasyRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseEasyRunWarmNote =>
@@ -1472,14 +1457,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Conversational pace · Zone 2 · keep it relaxed';
 
   @override
-  String get sessionPhaseEasyRunCoolDuration => '3 min';
+  String sessionPhaseEasyRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseEasyRunCoolNote =>
       'Walk it out · light static stretches';
 
   @override
-  String get sessionPhaseIntervalsWarmDuration => '10 min';
+  String sessionPhaseIntervalsWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseIntervalsWarmNote =>
@@ -1501,14 +1490,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get sessionPhaseIntervalsCoolDuration => '10 min';
+  String sessionPhaseIntervalsCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseIntervalsCoolNote =>
       'Easy jog → walk · full-body stretch';
 
   @override
-  String get sessionPhaseLongRunWarmDuration => '10 min';
+  String sessionPhaseLongRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseLongRunWarmNote =>
@@ -1524,14 +1517,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Steady easy effort · Zone 2 · stay comfortable throughout';
 
   @override
-  String get sessionPhaseLongRunCoolDuration => '10 min';
+  String sessionPhaseLongRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseLongRunCoolNote =>
       'Walk to finish · thorough stretch · refuel';
 
   @override
-  String get sessionPhaseRecoveryRunWarmDuration => '3 min';
+  String sessionPhaseRecoveryRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseRecoveryRunWarmNote => 'Gentle walk to get moving';
@@ -1546,13 +1543,17 @@ class AppLocalizationsEn extends AppLocalizations {
       'Very easy conversational pace · no watch pressure';
 
   @override
-  String get sessionPhaseRecoveryRunCoolDuration => '3 min';
+  String sessionPhaseRecoveryRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseRecoveryRunCoolNote => 'Walk · foam roll if available';
 
   @override
-  String get sessionPhaseTempoRunWarmDuration => '10 min';
+  String sessionPhaseTempoRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseTempoRunWarmNote => 'Easy jog · build pace gradually';
@@ -1567,7 +1568,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Comfortably hard effort · Zone 3–4';
 
   @override
-  String get sessionPhaseTempoRunCoolDuration => '10 min';
+  String sessionPhaseTempoRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseTempoRunCoolNote =>

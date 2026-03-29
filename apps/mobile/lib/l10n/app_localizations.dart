@@ -2254,8 +2254,12 @@ abstract class AppLocalizations {
   /// Target guidance for interval sessions
   ///
   /// In en, this message translates to:
-  /// **'4×800m @ 5K pace. 90s recovery jog between each rep.'**
-  String get sessionDescIntervals;
+  /// **'{reps}×{repDistance} @ 5K pace. {recoverySeconds}s recovery jog between each rep.'**
+  String sessionDescIntervals(
+    int reps,
+    String repDistance,
+    int recoverySeconds,
+  );
 
   /// Target guidance for long run sessions
   ///
@@ -2737,41 +2741,17 @@ abstract class AppLocalizations {
   /// **'Speed Work'**
   String get sessionDetailSessionType;
 
-  /// Session name heading
-  ///
-  /// In en, this message translates to:
-  /// **'6 km Intervals'**
-  String get sessionDetailSessionName;
-
-  /// Session description paragraph
-  ///
-  /// In en, this message translates to:
-  /// **'High-intensity interval training to build speed and aerobic capacity.'**
-  String get sessionDetailDescription;
-
   /// Label for total distance stat tile
   ///
   /// In en, this message translates to:
   /// **'Total Distance'**
   String get sessionDetailTotalDistanceLabel;
 
-  /// Total distance value
-  ///
-  /// In en, this message translates to:
-  /// **'6.0 km'**
-  String get sessionDetailDistanceValue;
-
   /// Label for estimated duration stat tile
   ///
   /// In en, this message translates to:
   /// **'Est. Duration'**
   String get sessionDetailEstDurationLabel;
-
-  /// Estimated duration value
-  ///
-  /// In en, this message translates to:
-  /// **'45 min'**
-  String get sessionDetailDurationValue;
 
   /// Workout Structure section heading
   ///
@@ -2785,12 +2765,6 @@ abstract class AppLocalizations {
   /// **'Warm-up'**
   String get sessionDetailWarmUp;
 
-  /// Warm-up phase duration
-  ///
-  /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionDetailWarmUpDuration;
-
   /// Warm-up phase zone note
   ///
   /// In en, this message translates to:
@@ -2803,23 +2777,11 @@ abstract class AppLocalizations {
   /// **'Intervals'**
   String get sessionDetailIntervals;
 
-  /// Intervals phase duration
-  ///
-  /// In en, this message translates to:
-  /// **'5 × 3 min'**
-  String get sessionDetailIntervalsDuration;
-
   /// Intervals phase zone note
   ///
   /// In en, this message translates to:
   /// **'Hard effort, Zone 4'**
   String get sessionDetailIntervalsNote;
-
-  /// Intervals phase recovery note
-  ///
-  /// In en, this message translates to:
-  /// **'2 min recovery between sets'**
-  String get sessionDetailIntervalsRecovery;
 
   /// Cool-down phase title
   ///
@@ -2848,8 +2810,8 @@ abstract class AppLocalizations {
   /// Easy run warm-up duration
   ///
   /// In en, this message translates to:
-  /// **'5 min'**
-  String get sessionPhaseEasyRunWarmDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseEasyRunWarmDuration(int minutes);
 
   /// Easy run warm-up note
   ///
@@ -2872,8 +2834,8 @@ abstract class AppLocalizations {
   /// Easy run cool-down duration
   ///
   /// In en, this message translates to:
-  /// **'3 min'**
-  String get sessionPhaseEasyRunCoolDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseEasyRunCoolDuration(int minutes);
 
   /// Easy run cool-down note
   ///
@@ -2884,8 +2846,8 @@ abstract class AppLocalizations {
   /// Intervals warm-up duration
   ///
   /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionPhaseIntervalsWarmDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseIntervalsWarmDuration(int minutes);
 
   /// Intervals warm-up note
   ///
@@ -2914,8 +2876,8 @@ abstract class AppLocalizations {
   /// Intervals cool-down duration
   ///
   /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionPhaseIntervalsCoolDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseIntervalsCoolDuration(int minutes);
 
   /// Intervals cool-down note
   ///
@@ -2926,8 +2888,8 @@ abstract class AppLocalizations {
   /// Long run warm-up duration
   ///
   /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionPhaseLongRunWarmDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseLongRunWarmDuration(int minutes);
 
   /// Long run warm-up note
   ///
@@ -2950,8 +2912,8 @@ abstract class AppLocalizations {
   /// Long run cool-down duration
   ///
   /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionPhaseLongRunCoolDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseLongRunCoolDuration(int minutes);
 
   /// Long run cool-down note
   ///
@@ -2962,8 +2924,8 @@ abstract class AppLocalizations {
   /// Recovery run warm-up duration
   ///
   /// In en, this message translates to:
-  /// **'3 min'**
-  String get sessionPhaseRecoveryRunWarmDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseRecoveryRunWarmDuration(int minutes);
 
   /// Recovery run warm-up note
   ///
@@ -2986,8 +2948,8 @@ abstract class AppLocalizations {
   /// Recovery run cool-down duration
   ///
   /// In en, this message translates to:
-  /// **'3 min'**
-  String get sessionPhaseRecoveryRunCoolDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseRecoveryRunCoolDuration(int minutes);
 
   /// Recovery run cool-down note
   ///
@@ -2998,8 +2960,8 @@ abstract class AppLocalizations {
   /// Tempo run warm-up duration
   ///
   /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionPhaseTempoRunWarmDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseTempoRunWarmDuration(int minutes);
 
   /// Tempo run warm-up note
   ///
@@ -3022,8 +2984,8 @@ abstract class AppLocalizations {
   /// Tempo run cool-down duration
   ///
   /// In en, this message translates to:
-  /// **'10 min'**
-  String get sessionPhaseTempoRunCoolDuration;
+  /// **'{minutes} min'**
+  String sessionPhaseTempoRunCoolDuration(int minutes);
 
   /// Tempo run cool-down note
   ///

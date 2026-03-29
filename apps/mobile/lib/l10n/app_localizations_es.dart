@@ -1149,8 +1149,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Construye tu base aeróbica para la Media Maratón. Mantén un ritmo en el que puedas conversar.';
 
   @override
-  String get sessionDescIntervals =>
-      '4×800m al ritmo de 5K. 90s de trote de recuperación entre cada repetición.';
+  String sessionDescIntervals(
+    int reps,
+    String repDistance,
+    int recoverySeconds,
+  ) {
+    return '$reps×$repDistance al ritmo de 5K. ${recoverySeconds}s de trote de recuperación entre cada repetición.';
+  }
 
   @override
   String get sessionDescLongRun =>
@@ -1408,23 +1413,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDetailSessionType => 'Velocidad';
 
   @override
-  String get sessionDetailSessionName => '6 km Intervalos';
-
-  @override
-  String get sessionDetailDescription =>
-      'Entrenamiento interválico de alta intensidad para desarrollar velocidad y capacidad aeróbica.';
-
-  @override
   String get sessionDetailTotalDistanceLabel => 'Distancia total';
 
   @override
-  String get sessionDetailDistanceValue => '6.0 km';
-
-  @override
   String get sessionDetailEstDurationLabel => 'Duración est.';
-
-  @override
-  String get sessionDetailDurationValue => '45 min';
 
   @override
   String get sessionDetailWorkoutStructure => 'Estructura del entrenamiento';
@@ -1433,23 +1425,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDetailWarmUp => 'Calentamiento';
 
   @override
-  String get sessionDetailWarmUpDuration => '10 min';
-
-  @override
   String get sessionDetailWarmUpNote => 'Ritmo fácil, Zona 2';
 
   @override
   String get sessionDetailIntervals => 'Intervalos';
 
   @override
-  String get sessionDetailIntervalsDuration => '5 × 3 min';
-
-  @override
   String get sessionDetailIntervalsNote => 'Esfuerzo intenso, Zona 4';
-
-  @override
-  String get sessionDetailIntervalsRecovery =>
-      '2 min de recuperación entre series';
 
   @override
   String get sessionDetailCoolDown => 'Enfriamiento';
@@ -1464,7 +1446,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
 
   @override
-  String get sessionPhaseEasyRunWarmDuration => '5 min';
+  String sessionPhaseEasyRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseEasyRunWarmNote =>
@@ -1480,14 +1464,18 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ritmo conversacional · Zona 2 · mantente relajado';
 
   @override
-  String get sessionPhaseEasyRunCoolDuration => '3 min';
+  String sessionPhaseEasyRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseEasyRunCoolNote =>
       'Caminata suave · estiramientos estáticos ligeros';
 
   @override
-  String get sessionPhaseIntervalsWarmDuration => '10 min';
+  String sessionPhaseIntervalsWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseIntervalsWarmNote =>
@@ -1509,14 +1497,18 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String get sessionPhaseIntervalsCoolDuration => '10 min';
+  String sessionPhaseIntervalsCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseIntervalsCoolNote =>
       'Trote suave → caminata · estiramientos completos';
 
   @override
-  String get sessionPhaseLongRunWarmDuration => '10 min';
+  String sessionPhaseLongRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseLongRunWarmNote =>
@@ -1532,14 +1524,18 @@ class AppLocalizationsEs extends AppLocalizations {
       'Esfuerzo constante y fácil · Zona 2 · mantente cómodo';
 
   @override
-  String get sessionPhaseLongRunCoolDuration => '10 min';
+  String sessionPhaseLongRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseLongRunCoolNote =>
       'Caminata al final · estiramientos completos · recarga energía';
 
   @override
-  String get sessionPhaseRecoveryRunWarmDuration => '3 min';
+  String sessionPhaseRecoveryRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseRecoveryRunWarmNote =>
@@ -1555,14 +1551,18 @@ class AppLocalizationsEs extends AppLocalizations {
       'Ritmo muy suave y conversacional · sin presión';
 
   @override
-  String get sessionPhaseRecoveryRunCoolDuration => '3 min';
+  String sessionPhaseRecoveryRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseRecoveryRunCoolNote =>
       'Caminata · rodillo de espuma si está disponible';
 
   @override
-  String get sessionPhaseTempoRunWarmDuration => '10 min';
+  String sessionPhaseTempoRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseTempoRunWarmNote =>
@@ -1578,7 +1578,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Esfuerzo cómodamente intenso · Zona 3–4';
 
   @override
-  String get sessionPhaseTempoRunCoolDuration => '10 min';
+  String sessionPhaseTempoRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
 
   @override
   String get sessionPhaseTempoRunCoolNote =>

@@ -40,23 +40,39 @@ class SessionDetailScreen extends StatelessWidget {
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:        return l10n.weeklyPlanRestTitle;
-      case SessionType.easyRun:     return l10n.weeklyPlanSessionEasyRun;
-      case SessionType.intervals:   return l10n.weeklyPlanSessionIntervals;
-      case SessionType.longRun:     return l10n.weeklyPlanSessionLongRun;
-      case SessionType.recoveryRun: return l10n.weeklyPlanSessionRecoveryRun;
-      case SessionType.tempoRun:    return l10n.progressSessionTempoRun;
+      case SessionType.rest:
+        return l10n.weeklyPlanRestTitle;
+      case SessionType.easyRun:
+        return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.longRun:
+        return l10n.weeklyPlanSessionLongRun;
+      case SessionType.recoveryRun:
+        return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.tempoRun:
+        return l10n.progressSessionTempoRun;
     }
   }
 
   String _sessionDescription(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:        return '';
-      case SessionType.easyRun:     return l10n.sessionDescEasyRun;
-      case SessionType.intervals:   return l10n.sessionDescIntervals;
-      case SessionType.longRun:     return l10n.sessionDescLongRun;
-      case SessionType.recoveryRun: return l10n.sessionDescRecoveryRun;
-      case SessionType.tempoRun:    return l10n.sessionDescTempoRun;
+      case SessionType.rest:
+        return '';
+      case SessionType.easyRun:
+        return l10n.sessionDescEasyRun;
+      case SessionType.intervals:
+        return l10n.sessionDescIntervals(
+          session.intervalReps ?? 0,
+          session.intervalRepDistance ?? '—',
+          session.intervalRecoverySeconds ?? 0,
+        );
+      case SessionType.longRun:
+        return l10n.sessionDescLongRun;
+      case SessionType.recoveryRun:
+        return l10n.sessionDescRecoveryRun;
+      case SessionType.tempoRun:
+        return l10n.sessionDescTempoRun;
     }
   }
 
@@ -71,33 +87,139 @@ class SessionDetailScreen extends StatelessWidget {
     switch (session.type) {
       case SessionType.easyRun:
         return [
-          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseEasyRunWarmDuration,                                l10n.sessionPhaseEasyRunWarmNote),
-          _PhaseData(_PT.main,   'assets/icons/route.svg',      mainTitle, l10n.sessionPhaseEasyRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseEasyRunMainNote),
-          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseEasyRunCoolDuration,                                l10n.sessionPhaseEasyRunCoolNote),
+          _PhaseData(
+            _PT.warmUp,
+            'assets/icons/flame.svg',
+            warm,
+            l10n.sessionPhaseEasyRunWarmDuration(session.warmUpMinutes ?? 0),
+            l10n.sessionPhaseEasyRunWarmNote,
+          ),
+          _PhaseData(
+            _PT.main,
+            'assets/icons/route.svg',
+            mainTitle,
+            l10n.sessionPhaseEasyRunMainDuration(session.durationMinutes ?? 0),
+            l10n.sessionPhaseEasyRunMainNote,
+          ),
+          _PhaseData(
+            _PT.cool,
+            'assets/icons/heart_rate.svg',
+            cool,
+            l10n.sessionPhaseEasyRunCoolDuration(session.coolDownMinutes ?? 0),
+            l10n.sessionPhaseEasyRunCoolNote,
+          ),
         ];
       case SessionType.intervals:
         return [
-          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseIntervalsWarmDuration,                                  l10n.sessionPhaseIntervalsWarmNote),
-          _PhaseData(_PT.main,   'assets/icons/activity.svg',   mainTitle, l10n.sessionPhaseIntervalsMainDuration(session.durationMinutes ?? 0),    l10n.sessionPhaseIntervalsMainNote(session.intervalReps ?? 0, session.intervalRepDistance ?? '—'), recoveryNote: l10n.sessionPhaseIntervalsMainRecovery(session.intervalRecoverySeconds ?? 0)),
-          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseIntervalsCoolDuration,                                  l10n.sessionPhaseIntervalsCoolNote),
+          _PhaseData(
+            _PT.warmUp,
+            'assets/icons/flame.svg',
+            warm,
+            l10n.sessionPhaseIntervalsWarmDuration(session.warmUpMinutes ?? 0),
+            l10n.sessionPhaseIntervalsWarmNote,
+          ),
+          _PhaseData(
+            _PT.main,
+            'assets/icons/activity.svg',
+            mainTitle,
+            l10n.sessionPhaseIntervalsMainDuration(
+              session.durationMinutes ?? 0,
+            ),
+            l10n.sessionPhaseIntervalsMainNote(
+              session.intervalReps ?? 0,
+              session.intervalRepDistance ?? '—',
+            ),
+            recoveryNote: l10n.sessionPhaseIntervalsMainRecovery(
+              session.intervalRecoverySeconds ?? 0,
+            ),
+          ),
+          _PhaseData(
+            _PT.cool,
+            'assets/icons/heart_rate.svg',
+            cool,
+            l10n.sessionPhaseIntervalsCoolDuration(
+              session.coolDownMinutes ?? 0,
+            ),
+            l10n.sessionPhaseIntervalsCoolNote,
+          ),
         ];
       case SessionType.longRun:
         return [
-          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseLongRunWarmDuration,                                l10n.sessionPhaseLongRunWarmNote),
-          _PhaseData(_PT.main,   'assets/icons/target.svg',     mainTitle, l10n.sessionPhaseLongRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseLongRunMainNote),
-          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseLongRunCoolDuration,                                l10n.sessionPhaseLongRunCoolNote),
+          _PhaseData(
+            _PT.warmUp,
+            'assets/icons/flame.svg',
+            warm,
+            l10n.sessionPhaseLongRunWarmDuration(session.warmUpMinutes ?? 0),
+            l10n.sessionPhaseLongRunWarmNote,
+          ),
+          _PhaseData(
+            _PT.main,
+            'assets/icons/target.svg',
+            mainTitle,
+            l10n.sessionPhaseLongRunMainDuration(session.durationMinutes ?? 0),
+            l10n.sessionPhaseLongRunMainNote,
+          ),
+          _PhaseData(
+            _PT.cool,
+            'assets/icons/heart_rate.svg',
+            cool,
+            l10n.sessionPhaseLongRunCoolDuration(session.coolDownMinutes ?? 0),
+            l10n.sessionPhaseLongRunCoolNote,
+          ),
         ];
       case SessionType.recoveryRun:
         return [
-          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',       warm,      l10n.sessionPhaseRecoveryRunWarmDuration,                                l10n.sessionPhaseRecoveryRunWarmNote),
-          _PhaseData(_PT.main,   'assets/icons/stopwatch.svg',   mainTitle, l10n.sessionPhaseRecoveryRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseRecoveryRunMainNote),
-          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg',  cool,      l10n.sessionPhaseRecoveryRunCoolDuration,                                l10n.sessionPhaseRecoveryRunCoolNote),
+          _PhaseData(
+            _PT.warmUp,
+            'assets/icons/flame.svg',
+            warm,
+            l10n.sessionPhaseRecoveryRunWarmDuration(
+              session.warmUpMinutes ?? 0,
+            ),
+            l10n.sessionPhaseRecoveryRunWarmNote,
+          ),
+          _PhaseData(
+            _PT.main,
+            'assets/icons/stopwatch.svg',
+            mainTitle,
+            l10n.sessionPhaseRecoveryRunMainDuration(
+              session.durationMinutes ?? 0,
+            ),
+            l10n.sessionPhaseRecoveryRunMainNote,
+          ),
+          _PhaseData(
+            _PT.cool,
+            'assets/icons/heart_rate.svg',
+            cool,
+            l10n.sessionPhaseRecoveryRunCoolDuration(
+              session.coolDownMinutes ?? 0,
+            ),
+            l10n.sessionPhaseRecoveryRunCoolNote,
+          ),
         ];
       case SessionType.tempoRun:
         return [
-          _PhaseData(_PT.warmUp, 'assets/icons/flame.svg',      warm,      l10n.sessionPhaseTempoRunWarmDuration,                                l10n.sessionPhaseTempoRunWarmNote),
-          _PhaseData(_PT.main,   'assets/icons/activity.svg',   mainTitle, l10n.sessionPhaseTempoRunMainDuration(session.durationMinutes ?? 0),  l10n.sessionPhaseTempoRunMainNote),
-          _PhaseData(_PT.cool,   'assets/icons/heart_rate.svg', cool,      l10n.sessionPhaseTempoRunCoolDuration,                                l10n.sessionPhaseTempoRunCoolNote),
+          _PhaseData(
+            _PT.warmUp,
+            'assets/icons/flame.svg',
+            warm,
+            l10n.sessionPhaseTempoRunWarmDuration(session.warmUpMinutes ?? 0),
+            l10n.sessionPhaseTempoRunWarmNote,
+          ),
+          _PhaseData(
+            _PT.main,
+            'assets/icons/activity.svg',
+            mainTitle,
+            l10n.sessionPhaseTempoRunMainDuration(session.durationMinutes ?? 0),
+            l10n.sessionPhaseTempoRunMainNote,
+          ),
+          _PhaseData(
+            _PT.cool,
+            'assets/icons/heart_rate.svg',
+            cool,
+            l10n.sessionPhaseTempoRunCoolDuration(session.coolDownMinutes ?? 0),
+            l10n.sessionPhaseTempoRunCoolNote,
+          ),
         ];
       case SessionType.rest:
         return [];
@@ -106,9 +228,12 @@ class SessionDetailScreen extends StatelessWidget {
 
   Color _phaseIconColor(_PT type) {
     switch (type) {
-      case _PT.warmUp: return AppColors.warning;
-      case _PT.main:   return _isHardSession ? AppColors.error : AppColors.accentPrimary;
-      case _PT.cool:   return AppColors.info;
+      case _PT.warmUp:
+        return AppColors.warning;
+      case _PT.main:
+        return _isHardSession ? AppColors.error : AppColors.accentPrimary;
+      case _PT.cool:
+        return AppColors.info;
     }
   }
 
@@ -141,8 +266,10 @@ class SessionDetailScreen extends StatelessWidget {
           Expanded(
             child: SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.md,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.md,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -173,7 +300,9 @@ class SessionDetailScreen extends StatelessWidget {
                           iconAsset: 'assets/icons/route.svg',
                           label: l10n.sessionDetailTotalDistanceLabel,
                           value: session.distanceKm != null
-                              ? UnitFormatter.formatDistanceKm(session.distanceKm!)
+                              ? UnitFormatter.formatDistanceKm(
+                                  session.distanceKm!,
+                                )
                               : '—',
                         ),
                       ),
@@ -183,7 +312,9 @@ class SessionDetailScreen extends StatelessWidget {
                           iconAsset: 'assets/icons/stopwatch.svg',
                           label: l10n.sessionDetailEstDurationLabel,
                           value: session.durationMinutes != null
-                              ? UnitFormatter.formatDuration(session.durationMinutes!)
+                              ? UnitFormatter.formatDuration(
+                                  session.durationMinutes!,
+                                )
                               : '—',
                         ),
                       ),
@@ -265,7 +396,10 @@ class _TypeBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: AppColors.accentPrimary.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
@@ -385,7 +519,10 @@ class _PhaseItem extends StatelessWidget {
                 if (!isLast)
                   Expanded(
                     child: Center(
-                      child: Container(width: 2, color: AppColors.surfaceElevated),
+                      child: Container(
+                        width: 2,
+                        color: AppColors.surfaceElevated,
+                      ),
                     ),
                   ),
               ],
@@ -469,8 +606,10 @@ class _StartButton extends StatelessWidget {
         ),
       ),
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.screen, AppSpacing.md,
-        AppSpacing.screen, AppSpacing.xl,
+        AppSpacing.screen,
+        AppSpacing.md,
+        AppSpacing.screen,
+        AppSpacing.xl,
       ),
       child: GestureDetector(
         onTap: onTap,

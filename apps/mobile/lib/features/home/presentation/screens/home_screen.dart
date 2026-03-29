@@ -25,28 +25,52 @@ class HomeScreen extends ConsumerWidget {
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:        return l10n.weeklyPlanRestTitle;
-      case SessionType.easyRun:     return l10n.weeklyPlanSessionEasyRun;
-      case SessionType.intervals:   return l10n.weeklyPlanSessionIntervals;
-      case SessionType.longRun:     return l10n.weeklyPlanSessionLongRun;
-      case SessionType.recoveryRun: return l10n.weeklyPlanSessionRecoveryRun;
-      case SessionType.tempoRun:    return l10n.progressSessionTempoRun;
+      case SessionType.rest:
+        return l10n.weeklyPlanRestTitle;
+      case SessionType.easyRun:
+        return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.longRun:
+        return l10n.weeklyPlanSessionLongRun;
+      case SessionType.recoveryRun:
+        return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.tempoRun:
+        return l10n.progressSessionTempoRun;
     }
   }
 
-  String? _sessionDescription(SessionType type, AppLocalizations l10n) {
-    switch (type) {
-      case SessionType.rest:        return null;
-      case SessionType.easyRun:     return l10n.sessionDescEasyRun;
-      case SessionType.intervals:   return l10n.sessionDescIntervals;
-      case SessionType.longRun:     return l10n.sessionDescLongRun;
-      case SessionType.recoveryRun: return l10n.sessionDescRecoveryRun;
-      case SessionType.tempoRun:    return l10n.sessionDescTempoRun;
+  String? _sessionDescription(TrainingSession session, AppLocalizations l10n) {
+    switch (session.type) {
+      case SessionType.rest:
+        return null;
+      case SessionType.easyRun:
+        return l10n.sessionDescEasyRun;
+      case SessionType.intervals:
+        return l10n.sessionDescIntervals(
+          session.intervalReps ?? 0,
+          session.intervalRepDistance ?? '—',
+          session.intervalRecoverySeconds ?? 0,
+        );
+      case SessionType.longRun:
+        return l10n.sessionDescLongRun;
+      case SessionType.recoveryRun:
+        return l10n.sessionDescRecoveryRun;
+      case SessionType.tempoRun:
+        return l10n.sessionDescTempoRun;
     }
   }
 
   String _weekdayName(int weekday) {
-    const names = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+    const names = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday',
+    ];
     return names[(weekday - 1).clamp(0, 6)];
   }
 
@@ -119,7 +143,8 @@ class HomeScreen extends ConsumerWidget {
                         sessionName: _sessionTitle(nextSession.type, l10n),
                         dayLabel: _weekdayName(nextSession.date.weekday),
                         duration: UnitFormatter.formatDuration(
-                            nextSession.durationMinutes ?? 0),
+                          nextSession.durationMinutes ?? 0,
+                        ),
                         effortLabel: nextSession.effortLabel ?? '',
                         iconAsset: nextSession.type.iconAsset,
                         onTap: () => context.push(
@@ -144,7 +169,6 @@ class HomeScreen extends ConsumerWidget {
                       volumeUnit: l10n.homeVolumeUnit,
                       onTap: () => context.go(RouteNames.plan),
                     ),
-
                   ],
                 ),
               ),
@@ -173,7 +197,7 @@ class HomeScreen extends ConsumerWidget {
       distance: session.distanceKm != null
           ? UnitFormatter.formatDistanceKm(session.distanceKm!)
           : '-',
-      targetGuidance: session.description ?? _sessionDescription(session.type, l10n),
+      targetGuidance: session.description ?? _sessionDescription(session, l10n),
       sessionTypeIconAsset: session.type.iconAsset,
       onViewDetails: () => context.push(
         RouteNames.sessionDetail,

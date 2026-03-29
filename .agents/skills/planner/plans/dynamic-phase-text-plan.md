@@ -1,165 +1,126 @@
 # Dynamic Phase Text via ARB Placeholders
 
-## Problem
+## Purpose
 
-Workout phase strings in the session detail screen have hardcoded numbers:
-- `"6 × 400 m at hard effort · RPE 8–9"` — reps and rep distance
-- `"90 s easy jog recovery between each rep"` — recovery seconds
-- `"22 min"`, `"55 min"`, etc. — main phase durations
+Workout phase strings in the session detail screen contain numbers (reps, distances, durations) that are tied to the specific training plan. If the plan changes — e.g. the intervals session goes from 6×400m to 8×400m, or a run is extended from 22 to 30 minutes — those numbers need to update automatically across all languages without touching the ARB translation files.
 
-If the plan changes (e.g. 8×400m instead of 6), the ARB files would need to be updated manually, breaking translations.
-
-## Solution
-
-Use Flutter's ARB placeholder system so text templates live in translations and numbers come from session data.
-
-**Example:**
-```json
-"sessionPhaseIntervalsMainNote": "{reps} × {repDistance} at hard effort · RPE 8–9"
-```
-Numbers come from `TrainingSession` fields → change the plan, all translations update automatically.
+The solution is Flutter's ARB placeholder system: translation files hold text templates with named slots (`{minutes}`, `{reps}`, `{repDistance}`, `{recoverySeconds}`), and the actual numbers come from `TrainingSession` model fields at runtime. This means a plan change only requires updating the data — translations stay untouched and remain correct in every language.
 
 ---
 
-## Step 1 — New fields on `TrainingSession`
+## Status
 
-File: `lib/features/training_plan/domain/models/training_session.dart`
+**Phase 1 — DONE** (committed `3862ac3`): Main-phase durations + intervals-specific keys parameterized.
+**Phase 2 — PENDING**: Warm/cool durations, intervals description, legacy key cleanup.
 
-Add 3 new optional fields:
+---
 
+## What Was Implemented (Phase 1)
+
+### Fields added to `TrainingSession`
 ```dart
-final int? intervalReps;            // e.g. 6
-final String? intervalRepDistance;  // e.g. "400 m"
-final int? intervalRecoverySeconds; // e.g. 90
+final int? intervalReps;
+final String? intervalRepDistance;
+final int? intervalRecoverySeconds;
 ```
+Seed data `seed-thu` populated: `intervalReps: 6`, `intervalRepDistance: '400 m'`, `intervalRecoverySeconds: 90`.
 
-- `durationMinutes` (already exists) drives all 5 main-phase duration strings
-- `intervalRepDistance` is a `String` because it's always a pre-formatted display value (`"400 m"`, `"1 km"`)
-- Update constructor and `copyWith` with the 3 new params
+### ARB keys parameterized (7 keys — both EN + ES)
+| Key | Placeholder(s) |
+|---|---|
+| `sessionPhaseEasyRunMainDuration` | `{minutes}` |
+| `sessionPhaseIntervalsMainDuration` | `{minutes}` |
+| `sessionPhaseLongRunMainDuration` | `{minutes}` |
+| `sessionPhaseRecoveryRunMainDuration` | `{minutes}` |
+| `sessionPhaseTempoRunMainDuration` | `{minutes}` |
+| `sessionPhaseIntervalsMainNote` | `{reps}`, `{repDistance}` |
+| `sessionPhaseIntervalsMainRecovery` | `{recoverySeconds}` |
+
+`_phasesFor()` in `session_detail_screen.dart` updated to pass session fields to all 7 call sites.
 
 ---
 
-## Step 2 — ARB changes
+## Remaining Hardcoded Numbers (Phase 2)
 
-### Keys that become parameterized (both `app_en.arb` and `app_es.arb`)
+### 1 — Warm-up & cool-down durations (10 keys, same `{minutes}` pattern)
 
-**5 main-phase duration keys** — add `minutes` placeholder:
+These need the same treatment as the main-phase durations. Requires adding warm/cool duration fields to `TrainingSession` (or reusing a generic approach).
 
-```json
-"sessionPhaseEasyRunMainDuration": "{minutes} min",
-"@sessionPhaseEasyRunMainDuration": {
-  "placeholders": { "minutes": { "type": "int" } }
-}
+| Key | Current value |
+|---|---|
+| `sessionPhaseEasyRunWarmDuration` | `"5 min"` |
+| `sessionPhaseEasyRunCoolDuration` | `"3 min"` |
+| `sessionPhaseIntervalsWarmDuration` | `"10 min"` |
+| `sessionPhaseIntervalsCoolDuration` | `"10 min"` |
+| `sessionPhaseLongRunWarmDuration` | `"10 min"` |
+| `sessionPhaseLongRunCoolDuration` | `"10 min"` |
+| `sessionPhaseRecoveryRunWarmDuration` | `"3 min"` |
+| `sessionPhaseRecoveryRunCoolDuration` | `"3 min"` |
+| `sessionPhaseTempoRunWarmDuration` | `"10 min"` |
+| `sessionPhaseTempoRunCoolDuration` | `"10 min"` |
+
+**New fields needed on `TrainingSession`:**
+```dart
+final int? warmUpMinutes;
+final int? coolDownMinutes;
 ```
+Seed data would need `warmUpMinutes` and `coolDownMinutes` per session.
 
-Apply same pattern to:
-- `sessionPhaseIntervalsMainDuration`
-- `sessionPhaseLongRunMainDuration`
-- `sessionPhaseRecoveryRunMainDuration`
-- `sessionPhaseTempoRunMainDuration`
+### 2 — Intervals session description (1 key)
 
-**Intervals main note** — add `reps` + `repDistance` placeholders:
+```
+sessionDescIntervals: "4×800m @ 5K pace. 90s recovery jog between each rep."
+```
+Has hardcoded reps (4), distance (800m), recovery (90s). Could use `intervalReps`, `intervalRepDistance`, `intervalRecoverySeconds` already on the model.
 
+Proposed placeholder key:
 ```json
-"sessionPhaseIntervalsMainNote": "{reps} × {repDistance} at hard effort · RPE 8–9",
-"@sessionPhaseIntervalsMainNote": {
+"sessionDescIntervals": "{reps}×{repDistance} @ 5K pace. {recoverySeconds}s recovery jog between each rep.",
+"@sessionDescIntervals": {
   "placeholders": {
     "reps": { "type": "int" },
-    "repDistance": { "type": "String" }
+    "repDistance": { "type": "String" },
+    "recoverySeconds": { "type": "int" }
   }
 }
 ```
-
-**Intervals recovery note** — add `recoverySeconds` placeholder:
-
-```json
-"sessionPhaseIntervalsMainRecovery": "{recoverySeconds} s easy jog recovery between each rep",
-"@sessionPhaseIntervalsMainRecovery": {
-  "placeholders": { "recoverySeconds": { "type": "int" } }
-}
-```
-
-### Spanish equivalents (`app_es.arb`)
-
-Same 7 keys, same placeholder slots:
-- `"{minutes} min"` (same in Spanish)
-- `"{reps} × {repDistance} a esfuerzo intenso · RPE 8–9"`
-- `"{recoverySeconds} s de trote suave de recuperación entre cada repetición"`
-
-> Warm-up and cool-down durations/notes have no variable numbers — leave them as zero-argument getters.
-
----
-
-## Step 3 — Seed data
-
-File: `lib/features/training_plan/data/training_plan_seed_data.dart`
-
-Add the 3 new fields to `seed-thu` (intervals session):
-
+Call site in `session_detail_screen.dart`:
 ```dart
-TrainingSession(
-  id: 'seed-thu',
-  type: SessionType.intervals,
-  distanceKm: 6.0,
-  durationMinutes: 45,
-  effortLabel: 'Hard effort',
-  intervalReps: 6,
-  intervalRepDistance: '400 m',
-  intervalRecoverySeconds: 90,
-),
+l10n.sessionDescIntervals(session.intervalReps ?? 0, session.intervalRepDistance ?? '—', session.intervalRecoverySeconds ?? 0)
 ```
 
-Other sessions only need `durationMinutes` which already exists.
+### 3 — Legacy `sessionDetail*` keys (6 keys — delete or ignore)
+
+These appear to be leftover mock keys from before the screen rewrite. Verify they are unused, then delete.
+
+| Key | Value |
+|---|---|
+| `sessionDetailSessionName` | `"6 km Intervals"` |
+| `sessionDetailDistanceValue` | `"6.0 km"` |
+| `sessionDetailDurationValue` | `"45 min"` |
+| `sessionDetailWarmUpDuration` | `"10 min"` |
+| `sessionDetailIntervalsDuration` | `"5 × 3 min"` |
+| `sessionDetailIntervalsRecovery` | `"2 min recovery between sets"` |
 
 ---
 
-## Step 4 — Run `flutter gen-l10n`
+## Phase 2 Execution Order
 
-```bash
-flutter gen-l10n
-```
+1. Add `warmUpMinutes` + `coolDownMinutes` to `TrainingSession` (constructor + `copyWith`)
+2. Populate warm/cool minutes in seed data for all 5 session types
+3. Update 10 warm/cool ARB keys in `app_en.arb` + `app_es.arb` with `{minutes}` placeholder
+4. Update `sessionDescIntervals` in both ARB files with 3 placeholders
+5. Run `flutter gen-l10n`
+6. Update all 10 warm/cool duration call sites + `sessionDescIntervals` call site in `_phasesFor()`
+7. Verify legacy keys are unused → delete from both ARB files
 
-Run from `apps/mobile/`. This regenerates the 3 `.dart` l10n files automatically. **Never edit those files by hand.**
-
----
-
-## Step 5 — Update `_phasesFor()` in session detail screen
-
-File: `lib/features/session_detail/presentation/screens/session_detail_screen.dart`
-
-All 5 duration calls now require an argument:
-
-```dart
-l10n.sessionPhaseEasyRunMainDuration(session.durationMinutes ?? 0)
-```
-
-Intervals-specific calls:
-
-```dart
-l10n.sessionPhaseIntervalsMainNote(
-  session.intervalReps ?? 0,
-  session.intervalRepDistance ?? '—',
-)
-l10n.sessionPhaseIntervalsMainRecovery(session.intervalRecoverySeconds ?? 0)
-```
-
----
-
-## Files Changed
+## Files to Change (Phase 2)
 
 | File | Change |
 |---|---|
-| `lib/features/training_plan/domain/models/training_session.dart` | +3 fields, update constructor + `copyWith` |
-| `lib/features/training_plan/data/training_plan_seed_data.dart` | Populate new fields on `seed-thu` |
-| `lib/l10n/app_en.arb` | 7 keys gain placeholders |
-| `lib/l10n/app_es.arb` | Same 7 keys, Spanish templates |
-| `lib/features/session_detail/presentation/screens/session_detail_screen.dart` | 7 call sites in `_phasesFor()` updated |
+| `lib/features/training_plan/domain/models/training_session.dart` | +2 fields (`warmUpMinutes`, `coolDownMinutes`) |
+| `lib/features/training_plan/data/training_plan_seed_data.dart` | Populate warm/cool minutes on all sessions |
+| `lib/l10n/app_en.arb` | 11 keys gain placeholders; 6 legacy keys deleted |
+| `lib/l10n/app_es.arb` | Same |
+| `lib/features/session_detail/presentation/screens/session_detail_screen.dart` | 11 call sites updated |
 | `lib/l10n/app_localizations*.dart` | Auto-generated — run `flutter gen-l10n` |
-
-## Execution Order
-
-1. `training_session.dart` — add fields
-2. `app_en.arb` + `app_es.arb` — add placeholders
-3. Run `flutter gen-l10n`
-4. `session_detail_screen.dart` — update call sites
-5. `training_plan_seed_data.dart` — populate seed values

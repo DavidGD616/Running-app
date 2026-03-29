@@ -44,6 +44,8 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 5.0,
       durationMinutes: 30,
       effortLabel: 'Easy effort',
+      warmUpMinutes: 5,
+      coolDownMinutes: 3,
     ),
     TrainingSession(
       id: 'seed-wed',
@@ -53,6 +55,8 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 4.0,
       durationMinutes: 25,
       effortLabel: 'Easy effort',
+      warmUpMinutes: 5,
+      coolDownMinutes: 3,
     ),
     TrainingSession(
       id: 'seed-thu',
@@ -65,6 +69,8 @@ TrainingPlan buildSeedTrainingPlan() {
       intervalReps: 6,
       intervalRepDistance: '400 m',
       intervalRecoverySeconds: 90,
+      warmUpMinutes: 10,
+      coolDownMinutes: 10,
     ),
     TrainingSession(
       id: 'seed-fri',
@@ -80,6 +86,8 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 12.0,
       durationMinutes: 75,
       effortLabel: 'Easy effort',
+      warmUpMinutes: 10,
+      coolDownMinutes: 10,
     ),
     TrainingSession(
       id: 'seed-sun',
@@ -89,6 +97,8 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 3.0,
       durationMinutes: 20,
       effortLabel: 'Very easy effort',
+      warmUpMinutes: 3,
+      coolDownMinutes: 3,
     ),
   ];
 

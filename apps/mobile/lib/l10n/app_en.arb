@@ -1118,8 +1118,15 @@
   "sessionDescEasyRun": "Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.",
   "@sessionDescEasyRun": { "description": "Target guidance for easy run sessions" },
 
-  "sessionDescIntervals": "4×800m @ 5K pace. 90s recovery jog between each rep.",
-  "@sessionDescIntervals": { "description": "Target guidance for interval sessions" },
+  "sessionDescIntervals": "{reps}×{repDistance} @ 5K pace. {recoverySeconds}s recovery jog between each rep.",
+  "@sessionDescIntervals": {
+    "description": "Target guidance for interval sessions",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "repDistance": { "type": "String" },
+      "recoverySeconds": { "type": "int" }
+    }
+  },
 
   "sessionDescLongRun": "Your key long run this week. Builds the endurance needed for your Half Marathon race day.",
   "@sessionDescLongRun": { "description": "Target guidance for long run sessions" },
@@ -1382,23 +1389,11 @@
   "sessionDetailSessionType": "Speed Work",
   "@sessionDetailSessionType": { "description": "Session type badge label" },
 
-  "sessionDetailSessionName": "6 km Intervals",
-  "@sessionDetailSessionName": { "description": "Session name heading" },
-
-  "sessionDetailDescription": "High-intensity interval training to build speed and aerobic capacity.",
-  "@sessionDetailDescription": { "description": "Session description paragraph" },
-
   "sessionDetailTotalDistanceLabel": "Total Distance",
   "@sessionDetailTotalDistanceLabel": { "description": "Label for total distance stat tile" },
 
-  "sessionDetailDistanceValue": "6.0 km",
-  "@sessionDetailDistanceValue": { "description": "Total distance value" },
-
   "sessionDetailEstDurationLabel": "Est. Duration",
   "@sessionDetailEstDurationLabel": { "description": "Label for estimated duration stat tile" },
-
-  "sessionDetailDurationValue": "45 min",
-  "@sessionDetailDurationValue": { "description": "Estimated duration value" },
 
   "sessionDetailWorkoutStructure": "Workout Structure",
   "@sessionDetailWorkoutStructure": { "description": "Workout Structure section heading" },
@@ -1406,23 +1401,14 @@
   "sessionDetailWarmUp": "Warm-up",
   "@sessionDetailWarmUp": { "description": "Warm-up phase title" },
 
-  "sessionDetailWarmUpDuration": "10 min",
-  "@sessionDetailWarmUpDuration": { "description": "Warm-up phase duration" },
-
   "sessionDetailWarmUpNote": "Easy pace, Zone 2",
   "@sessionDetailWarmUpNote": { "description": "Warm-up phase zone note" },
 
   "sessionDetailIntervals": "Intervals",
   "@sessionDetailIntervals": { "description": "Intervals phase title" },
 
-  "sessionDetailIntervalsDuration": "5 × 3 min",
-  "@sessionDetailIntervalsDuration": { "description": "Intervals phase duration" },
-
   "sessionDetailIntervalsNote": "Hard effort, Zone 4",
   "@sessionDetailIntervalsNote": { "description": "Intervals phase zone note" },
-
-  "sessionDetailIntervalsRecovery": "2 min recovery between sets",
-  "@sessionDetailIntervalsRecovery": { "description": "Intervals phase recovery note" },
 
   "sessionDetailCoolDown": "Cool-down",
   "@sessionDetailCoolDown": { "description": "Cool-down phase title" },
@@ -1436,8 +1422,11 @@
   "sessionDetailStartWorkout": "Start Workout",
   "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" },
 
-  "sessionPhaseEasyRunWarmDuration": "5 min",
-  "@sessionPhaseEasyRunWarmDuration": { "description": "Easy run warm-up duration" },
+  "sessionPhaseEasyRunWarmDuration": "{minutes} min",
+  "@sessionPhaseEasyRunWarmDuration": {
+    "description": "Easy run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseEasyRunWarmNote": "Brisk walk + light dynamic leg swings",
   "@sessionPhaseEasyRunWarmNote": { "description": "Easy run warm-up note" },
   "sessionPhaseEasyRunMainDuration": "{minutes} min",
@@ -1447,13 +1436,19 @@
   },
   "sessionPhaseEasyRunMainNote": "Conversational pace · Zone 2 · keep it relaxed",
   "@sessionPhaseEasyRunMainNote": { "description": "Easy run main phase note" },
-  "sessionPhaseEasyRunCoolDuration": "3 min",
-  "@sessionPhaseEasyRunCoolDuration": { "description": "Easy run cool-down duration" },
+  "sessionPhaseEasyRunCoolDuration": "{minutes} min",
+  "@sessionPhaseEasyRunCoolDuration": {
+    "description": "Easy run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseEasyRunCoolNote": "Walk it out · light static stretches",
   "@sessionPhaseEasyRunCoolNote": { "description": "Easy run cool-down note" },
 
-  "sessionPhaseIntervalsWarmDuration": "10 min",
-  "@sessionPhaseIntervalsWarmDuration": { "description": "Intervals warm-up duration" },
+  "sessionPhaseIntervalsWarmDuration": "{minutes} min",
+  "@sessionPhaseIntervalsWarmDuration": {
+    "description": "Intervals warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseIntervalsWarmNote": "Easy jog · strides at the end to prime the legs",
   "@sessionPhaseIntervalsWarmNote": { "description": "Intervals warm-up note" },
   "sessionPhaseIntervalsMainDuration": "{minutes} min",
@@ -1474,13 +1469,19 @@
     "description": "Intervals main phase recovery note",
     "placeholders": { "recoverySeconds": { "type": "int" } }
   },
-  "sessionPhaseIntervalsCoolDuration": "10 min",
-  "@sessionPhaseIntervalsCoolDuration": { "description": "Intervals cool-down duration" },
+  "sessionPhaseIntervalsCoolDuration": "{minutes} min",
+  "@sessionPhaseIntervalsCoolDuration": {
+    "description": "Intervals cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseIntervalsCoolNote": "Easy jog → walk · full-body stretch",
   "@sessionPhaseIntervalsCoolNote": { "description": "Intervals cool-down note" },
 
-  "sessionPhaseLongRunWarmDuration": "10 min",
-  "@sessionPhaseLongRunWarmDuration": { "description": "Long run warm-up duration" },
+  "sessionPhaseLongRunWarmDuration": "{minutes} min",
+  "@sessionPhaseLongRunWarmDuration": {
+    "description": "Long run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseLongRunWarmNote": "Very easy jog · ease into the effort",
   "@sessionPhaseLongRunWarmNote": { "description": "Long run warm-up note" },
   "sessionPhaseLongRunMainDuration": "{minutes} min",
@@ -1490,13 +1491,19 @@
   },
   "sessionPhaseLongRunMainNote": "Steady easy effort · Zone 2 · stay comfortable throughout",
   "@sessionPhaseLongRunMainNote": { "description": "Long run main phase note" },
-  "sessionPhaseLongRunCoolDuration": "10 min",
-  "@sessionPhaseLongRunCoolDuration": { "description": "Long run cool-down duration" },
+  "sessionPhaseLongRunCoolDuration": "{minutes} min",
+  "@sessionPhaseLongRunCoolDuration": {
+    "description": "Long run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseLongRunCoolNote": "Walk to finish · thorough stretch · refuel",
   "@sessionPhaseLongRunCoolNote": { "description": "Long run cool-down note" },
 
-  "sessionPhaseRecoveryRunWarmDuration": "3 min",
-  "@sessionPhaseRecoveryRunWarmDuration": { "description": "Recovery run warm-up duration" },
+  "sessionPhaseRecoveryRunWarmDuration": "{minutes} min",
+  "@sessionPhaseRecoveryRunWarmDuration": {
+    "description": "Recovery run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseRecoveryRunWarmNote": "Gentle walk to get moving",
   "@sessionPhaseRecoveryRunWarmNote": { "description": "Recovery run warm-up note" },
   "sessionPhaseRecoveryRunMainDuration": "{minutes} min",
@@ -1506,13 +1513,19 @@
   },
   "sessionPhaseRecoveryRunMainNote": "Very easy conversational pace · no watch pressure",
   "@sessionPhaseRecoveryRunMainNote": { "description": "Recovery run main phase note" },
-  "sessionPhaseRecoveryRunCoolDuration": "3 min",
-  "@sessionPhaseRecoveryRunCoolDuration": { "description": "Recovery run cool-down duration" },
+  "sessionPhaseRecoveryRunCoolDuration": "{minutes} min",
+  "@sessionPhaseRecoveryRunCoolDuration": {
+    "description": "Recovery run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseRecoveryRunCoolNote": "Walk · foam roll if available",
   "@sessionPhaseRecoveryRunCoolNote": { "description": "Recovery run cool-down note" },
 
-  "sessionPhaseTempoRunWarmDuration": "10 min",
-  "@sessionPhaseTempoRunWarmDuration": { "description": "Tempo run warm-up duration" },
+  "sessionPhaseTempoRunWarmDuration": "{minutes} min",
+  "@sessionPhaseTempoRunWarmDuration": {
+    "description": "Tempo run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseTempoRunWarmNote": "Easy jog · build pace gradually",
   "@sessionPhaseTempoRunWarmNote": { "description": "Tempo run warm-up note" },
   "sessionPhaseTempoRunMainDuration": "{minutes} min",
@@ -1522,8 +1535,11 @@
   },
   "sessionPhaseTempoRunMainNote": "Comfortably hard effort · Zone 3–4",
   "@sessionPhaseTempoRunMainNote": { "description": "Tempo run main phase note" },
-  "sessionPhaseTempoRunCoolDuration": "10 min",
-  "@sessionPhaseTempoRunCoolDuration": { "description": "Tempo run cool-down duration" },
+  "sessionPhaseTempoRunCoolDuration": "{minutes} min",
+  "@sessionPhaseTempoRunCoolDuration": {
+    "description": "Tempo run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
   "sessionPhaseTempoRunCoolNote": "Easy jog → walk · stretch thoroughly",
   "@sessionPhaseTempoRunCoolNote": { "description": "Tempo run cool-down note" },
 

@@ -34,6 +34,8 @@ class TrainingSession {
     this.intervalReps,
     this.intervalRepDistance,
     this.intervalRecoverySeconds,
+    this.warmUpMinutes,
+    this.coolDownMinutes,
   });
 
   final String id;
@@ -48,6 +50,8 @@ class TrainingSession {
   final int? intervalReps;
   final String? intervalRepDistance;
   final int? intervalRecoverySeconds;
+  final int? warmUpMinutes;
+  final int? coolDownMinutes;
 
   TrainingSession copyWith({
     String? id,
@@ -62,6 +66,8 @@ class TrainingSession {
     int? intervalReps,
     String? intervalRepDistance,
     int? intervalRecoverySeconds,
+    int? warmUpMinutes,
+    int? coolDownMinutes,
   }) {
     return TrainingSession(
       id: id ?? this.id,
@@ -75,7 +81,10 @@ class TrainingSession {
       phases: phases ?? this.phases,
       intervalReps: intervalReps ?? this.intervalReps,
       intervalRepDistance: intervalRepDistance ?? this.intervalRepDistance,
-      intervalRecoverySeconds: intervalRecoverySeconds ?? this.intervalRecoverySeconds,
+      intervalRecoverySeconds:
+          intervalRecoverySeconds ?? this.intervalRecoverySeconds,
+      warmUpMinutes: warmUpMinutes ?? this.warmUpMinutes,
+      coolDownMinutes: coolDownMinutes ?? this.coolDownMinutes,
     );
   }
 }
