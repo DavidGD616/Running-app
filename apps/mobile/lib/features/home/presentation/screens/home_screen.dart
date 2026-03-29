@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
@@ -123,7 +121,7 @@ class HomeScreen extends ConsumerWidget {
                             nextSession.durationMinutes ?? 0),
                         effortLabel: nextSession.effortLabel ?? '',
                         iconAsset: nextSession.type.iconAsset,
-                        onTap: () {},
+                        onTap: () => context.go(RouteNames.plan),
                       ),
 
                     const SizedBox(height: AppSpacing.xl),
@@ -139,28 +137,6 @@ class HomeScreen extends ConsumerWidget {
                       volumeUnit: l10n.homeVolumeUnit,
                     ),
 
-                    const SizedBox(height: AppSpacing.xl),
-
-                    // ── Quick Actions ──────────────────────────────────
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _QuickActionButton(
-                            label: l10n.homeLogPastRun,
-                            iconAsset: 'assets/icons/circle_check.svg',
-                            onTap: () {},
-                          ),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: _QuickActionButton(
-                            label: l10n.homeFullWeek,
-                            iconAsset: 'assets/icons/calendar.svg',
-                            onTap: () {},
-                          ),
-                        ),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -204,51 +180,3 @@ class HomeScreen extends ConsumerWidget {
 }
 
 // ── Private widgets ─────────────────────────────────────────────────────────────
-
-class _QuickActionButton extends StatelessWidget {
-  const _QuickActionButton({
-    required this.label,
-    required this.iconAsset,
-    required this.onTap,
-  });
-
-  final String label;
-  final String iconAsset;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          color: AppColors.backgroundCard,
-          borderRadius: AppRadius.borderLg,
-          border: Border.all(color: AppColors.borderDefault),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            SvgPicture.asset(
-              iconAsset,
-              width: 16,
-              height: 16,
-              colorFilter: const ColorFilter.mode(
-                AppColors.textSecondary,
-                BlendMode.srcIn,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.sm),
-            Text(
-              label,
-              style: AppTypography.labelMedium.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
