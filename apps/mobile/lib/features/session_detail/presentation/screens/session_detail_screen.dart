@@ -617,12 +617,19 @@ class _PhaseItem extends StatelessWidget {
   }
 
   bool get _isDimmed => status == SessionStatus.upcoming;
+  bool get _isCompleted => status == SessionStatus.completed;
 
-  Color get _effectiveIconBgColor =>
-      _isDimmed ? AppColors.textDisabled.withValues(alpha: 0.1) : iconBgColor;
+  Color get _effectiveIconBgColor {
+    if (_isDimmed) return AppColors.textDisabled.withValues(alpha: 0.1);
+    if (_isCompleted) return AppColors.success.withValues(alpha: 0.1);
+    return iconBgColor;
+  }
 
-  Color get _effectiveIconColor =>
-      _isDimmed ? AppColors.textDisabled : iconColor;
+  Color get _effectiveIconColor {
+    if (_isDimmed) return AppColors.textDisabled;
+    if (_isCompleted) return AppColors.success;
+    return iconColor;
+  }
 
   @override
   Widget build(BuildContext context) {
