@@ -6,6 +6,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
+import '../../../../core/widgets/skip_workout_bottom_sheet.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -260,6 +261,11 @@ class SessionDetailScreen extends StatelessWidget {
       appBar: AppDetailHeaderBar(
         title: l10n.sessionDetailTitle,
         onBack: () => context.pop(),
+        onMore: () => showSkipWorkoutBottomSheet(
+          context: context,
+          sessionName: title,
+          onSkip: () {},
+        ),
       ),
       body: Column(
         children: [

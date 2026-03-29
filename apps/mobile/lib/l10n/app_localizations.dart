@@ -3220,6 +3220,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue'**
   String get preRunContinue;
+
+  /// Title of the workout options bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Workout Options'**
+  String get workoutOptionsTitle;
+
+  /// Skip workout option label
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Workout'**
+  String get workoutOptionsSkipWorkout;
+
+  /// Skip workout option description
+  ///
+  /// In en, this message translates to:
+  /// **'Removes this session from this week schedule'**
+  String get workoutOptionsSkipWorkoutDescription;
 }
 
 class _AppLocalizationsDelegate

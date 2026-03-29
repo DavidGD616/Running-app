@@ -1690,4 +1690,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get preRunContinue => 'Continue';
+
+  @override
+  String get workoutOptionsTitle => 'Workout Options';
+
+  @override
+  String get workoutOptionsSkipWorkout => 'Skip Workout';
+
+  @override
+  String get workoutOptionsSkipWorkoutDescription =>
+      'Removes this session from this week schedule';
 }

@@ -565,5 +565,9 @@
   "preRunReadinessQuestion": "¿Estás listo para esta sesión?",
   "preRunLetsGo": "¡Vamos!",
   "preRunNotFullyReady": "No del todo listo",
-  "preRunContinue": "Continuar"
+  "preRunContinue": "Continuar",
+
+  "workoutOptionsTitle": "Opciones de Entrenamiento",
+  "workoutOptionsSkipWorkout": "Omitir Entrenamiento",
+  "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana"
 }

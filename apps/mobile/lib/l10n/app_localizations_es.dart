@@ -1700,4 +1700,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get preRunContinue => 'Continuar';
+
+  @override
+  String get workoutOptionsTitle => 'Opciones de Entrenamiento';
+
+  @override
+  String get workoutOptionsSkipWorkout => 'Omitir Entrenamiento';
+
+  @override
+  String get workoutOptionsSkipWorkoutDescription =>
+      'Elimina esta sesión del plan de esta semana';
 }

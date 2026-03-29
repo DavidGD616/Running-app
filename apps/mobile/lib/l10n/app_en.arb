@@ -1655,5 +1655,14 @@
   "@preRunNotFullyReady": { "description": "Readiness option: not fully ready" },
 
   "preRunContinue": "Continue",
-  "@preRunContinue": { "description": "Continue CTA button on pre-run check screen" }
+  "@preRunContinue": { "description": "Continue CTA button on pre-run check screen" },
+
+  "workoutOptionsTitle": "Workout Options",
+  "@workoutOptionsTitle": { "description": "Title of the workout options bottom sheet" },
+
+  "workoutOptionsSkipWorkout": "Skip Workout",
+  "@workoutOptionsSkipWorkout": { "description": "Skip workout option label" },
+
+  "workoutOptionsSkipWorkoutDescription": "Removes this session from this week schedule",
+  "@workoutOptionsSkipWorkoutDescription": { "description": "Skip workout option description" }
 }

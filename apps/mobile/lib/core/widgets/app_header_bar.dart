@@ -6,11 +6,7 @@ import '../theme/app_typography.dart';
 
 /// Large home-style header with title, optional plan badge, and profile icon.
 class AppHomeHeaderBar extends StatelessWidget implements PreferredSizeWidget {
-  const AppHomeHeaderBar({
-    super.key,
-    required this.title,
-    this.planBadge,
-  });
+  const AppHomeHeaderBar({super.key, required this.title, this.planBadge});
 
   final String title;
   final Widget? planBadge;
@@ -27,10 +23,7 @@ class AppHomeHeaderBar extends StatelessWidget implements PreferredSizeWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(title, style: AppTypography.headlineLarge),
-          if (planBadge != null) ...[
-            const SizedBox(height: 4),
-            planBadge!,
-          ],
+          if (planBadge != null) ...[const SizedBox(height: 4), planBadge!],
         ],
       ),
     );
@@ -38,17 +31,20 @@ class AppHomeHeaderBar extends StatelessWidget implements PreferredSizeWidget {
 }
 
 /// Detail-style header with back button and centered title.
-class AppDetailHeaderBar extends StatelessWidget implements PreferredSizeWidget {
+class AppDetailHeaderBar extends StatelessWidget
+    implements PreferredSizeWidget {
   const AppDetailHeaderBar({
     super.key,
     required this.title,
     this.onBack,
     this.actions,
+    this.onMore,
   });
 
   final String title;
   final VoidCallback? onBack;
   final List<Widget>? actions;
+  final VoidCallback? onMore;
 
   @override
   Size get preferredSize => const Size.fromHeight(56);
@@ -73,16 +69,41 @@ class AppDetailHeaderBar extends StatelessWidget implements PreferredSizeWidget 
                     width: 24,
                     height: 24,
                     colorFilter: const ColorFilter.mode(
-                        AppColors.textPrimary, BlendMode.srcIn),
+                      AppColors.textPrimary,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
             ),
             Text(title, style: AppTypography.titleMedium),
-            if (actions != null)
+            if (actions != null || onMore != null)
               Positioned(
                 right: 4,
-                child: Row(mainAxisSize: MainAxisSize.min, children: actions!),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (actions != null) ...actions!,
+                    if (onMore != null) ...[
+                      const SizedBox(width: AppSpacing.xs),
+                      GestureDetector(
+                        onTap: onMore,
+                        child: Padding(
+                          padding: const EdgeInsets.all(AppSpacing.sm),
+                          child: SvgPicture.asset(
+                            'assets/icons/more_vertical.svg',
+                            width: 24,
+                            height: 24,
+                            colorFilter: const ColorFilter.mode(
+                              AppColors.textPrimary,
+                              BlendMode.srcIn,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
               ),
           ],
         ),

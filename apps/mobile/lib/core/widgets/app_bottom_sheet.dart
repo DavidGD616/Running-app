@@ -12,7 +12,7 @@ Future<T?> showAppBottomSheet<T>({
     context: context,
     isDismissible: isDismissible,
     isScrollControlled: true,
-    backgroundColor: AppColors.surfaceElevated,
+    backgroundColor: AppColors.backgroundSecondary,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.only(
         topLeft: AppRadius.xl,
