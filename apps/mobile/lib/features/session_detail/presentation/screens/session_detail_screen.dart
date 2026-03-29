@@ -361,6 +361,7 @@ class SessionDetailScreen extends StatelessWidget {
                         cardBorderColor: _phaseCardBorder(phase.type),
                         isLast: isLast,
                         status: status,
+                        isMainPhase: phase.type == _PT.main,
                       );
                     }),
                   ],
@@ -591,6 +592,7 @@ class _PhaseItem extends StatelessWidget {
     this.cardBorderColor,
     this.isLast = false,
     this.status,
+    this.isMainPhase = false,
   });
 
   final String iconAsset;
@@ -603,10 +605,13 @@ class _PhaseItem extends StatelessWidget {
   final Color? cardBorderColor;
   final bool isLast;
   final SessionStatus? status;
+  final bool isMainPhase;
 
   Color get _borderColor {
-    if (status == SessionStatus.today && cardBorderColor == null) {
-      return iconBgColor;
+    if (status == SessionStatus.today &&
+        isMainPhase &&
+        cardBorderColor == null) {
+      return iconBgColor.withValues(alpha: 0.5);
     }
     return cardBorderColor ?? AppColors.borderDefault;
   }
@@ -658,7 +663,7 @@ class _PhaseItem extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: AppColors.backgroundCard,
                   borderRadius: AppRadius.borderLg,
-                  border: Border.all(color: _borderColor),
+                  border: Border.all(color: _borderColor, width: 2),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
