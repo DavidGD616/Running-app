@@ -616,6 +616,14 @@ class _PhaseItem extends StatelessWidget {
     return cardBorderColor ?? AppColors.borderDefault;
   }
 
+  bool get _isDimmed => status == SessionStatus.upcoming;
+
+  Color get _effectiveIconBgColor =>
+      _isDimmed ? AppColors.textDisabled.withValues(alpha: 0.1) : iconBgColor;
+
+  Color get _effectiveIconColor =>
+      _isDimmed ? AppColors.textDisabled : iconColor;
+
   @override
   Widget build(BuildContext context) {
     return IntrinsicHeight(
@@ -630,7 +638,7 @@ class _PhaseItem extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: iconBgColor,
+                    color: _effectiveIconBgColor,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Center(
@@ -638,7 +646,10 @@ class _PhaseItem extends StatelessWidget {
                       iconAsset,
                       width: 20,
                       height: 20,
-                      colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+                      colorFilter: ColorFilter.mode(
+                        _effectiveIconColor,
+                        BlendMode.srcIn,
+                      ),
                     ),
                   ),
                 ),
