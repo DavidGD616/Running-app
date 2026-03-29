@@ -374,23 +374,29 @@ class _SessionRow extends StatelessWidget {
                 children: [
                   Row(
                     children: [
-                      Text(
-                        title,
-                        style: AppTypography.titleMedium.copyWith(
-                          color: titleColor,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          decoration: isSkipped
-                              ? TextDecoration.lineThrough
-                              : null,
-                          decorationColor: isSkipped
-                              ? AppColors.textDisabled
-                              : null,
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: AppTypography.titleMedium.copyWith(
+                            color: titleColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            decoration: isSkipped
+                                ? TextDecoration.lineThrough
+                                : null,
+                            decorationColor: isSkipped
+                                ? AppColors.textDisabled
+                                : null,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
                       if (isToday) ...[
                         const SizedBox(width: 7),
-                        _NowBadge(label: nowLabel),
+                        Container(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: _NowBadge(label: nowLabel),
+                        ),
                       ],
                     ],
                   ),
