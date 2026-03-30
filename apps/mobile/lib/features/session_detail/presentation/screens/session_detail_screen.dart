@@ -304,13 +304,6 @@ class SessionDetailScreen extends StatelessWidget {
     }
   }
 
-  Color? _phaseCardBorder(_PT type) {
-    if (type == _PT.main && _isHardSession) {
-      return AppColors.error.withValues(alpha: 0.5);
-    }
-    return null;
-  }
-
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
@@ -430,7 +423,7 @@ class SessionDetailScreen extends StatelessWidget {
                         duration: phase.duration,
                         note: phase.note,
                         recoveryNote: phase.recoveryNote,
-                        cardBorderColor: _phaseCardBorder(phase.type),
+                        cardBorderColor: null,
                         isLast: isLast,
                         status: status,
                         isMainPhase: phase.type == _PT.main,
