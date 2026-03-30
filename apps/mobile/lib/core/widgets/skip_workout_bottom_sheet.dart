@@ -78,7 +78,7 @@ class SkipWorkoutBottomSheet extends StatelessWidget {
                     ),
                     child: Center(
                       child: SvgPicture.asset(
-                        'assets/icons/rotate_left.svg',
+                        'assets/icons/restore.svg',
                         width: 20,
                         height: 20,
                         colorFilter: const ColorFilter.mode(
