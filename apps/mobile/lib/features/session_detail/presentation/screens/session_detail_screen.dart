@@ -341,13 +341,12 @@ class SessionDetailScreen extends ConsumerWidget {
                   ref
                       .read(trainingPlanProvider.notifier)
                       .skipSession(session.id);
-                  context.pop();
+                  context.go(RouteNames.plan);
                 },
                 onRestore: () {
                   ref
                       .read(trainingPlanProvider.notifier)
                       .restoreSession(session.id);
-                  context.pop();
                 },
               )
             : null,
