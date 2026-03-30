@@ -26,6 +26,7 @@ class TrainingSession {
     required this.date,
     required this.type,
     required this.status,
+    this.weekNumber = 1,
     this.distanceKm,
     this.durationMinutes,
     this.description,
@@ -42,6 +43,7 @@ class TrainingSession {
   final DateTime date;
   final SessionType type;
   final SessionStatus status;
+  final int weekNumber;
   final double? distanceKm;
   final int? durationMinutes;
   final String? description;
@@ -58,6 +60,7 @@ class TrainingSession {
     DateTime? date,
     SessionType? type,
     SessionStatus? status,
+    int? weekNumber,
     double? distanceKm,
     int? durationMinutes,
     String? description,
@@ -74,6 +77,7 @@ class TrainingSession {
       date: date ?? this.date,
       type: type ?? this.type,
       status: status ?? this.status,
+      weekNumber: weekNumber ?? this.weekNumber,
       distanceKm: distanceKm ?? this.distanceKm,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       description: description ?? this.description,

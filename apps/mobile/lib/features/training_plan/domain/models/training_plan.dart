@@ -1,3 +1,4 @@
+import 'plan_week.dart';
 import 'training_session.dart';
 import 'session_type.dart';
 
@@ -45,6 +46,19 @@ class TrainingPlan {
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
     return candidates.isNotEmpty ? candidates.first : null;
+  }
+
+  /// All weeks in the plan, grouped by weekNumber and sorted ascending.
+  List<PlanWeek> get allWeeks {
+    final grouped = <int, List<TrainingSession>>{};
+    for (final s in sessions) {
+      grouped.putIfAbsent(s.weekNumber, () => []).add(s);
+    }
+    final weekNumbers = grouped.keys.toList()..sort();
+    return weekNumbers.map((n) {
+      final sorted = grouped[n]!..sort((a, b) => a.date.compareTo(b.date));
+      return PlanWeek(weekNumber: n, sessions: sorted);
+    }).toList();
   }
 
   static DateTime _mondayOf(DateTime date) {

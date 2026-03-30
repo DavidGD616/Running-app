@@ -1701,5 +1701,40 @@
   "@workoutOptionsRestoreWorkout": { "description": "Restore workout option label" },
 
   "workoutOptionsRestoreWorkoutDescription": "Put this session back on the schedule",
-  "@workoutOptionsRestoreWorkoutDescription": { "description": "Restore workout option description" }
+  "@workoutOptionsRestoreWorkoutDescription": { "description": "Restore workout option description" },
+
+  "fullPlanTitle": "Full Plan",
+  "@fullPlanTitle": { "description": "Title of the full plan screen" },
+
+  "fullPlanNote": "This is your estimated full plan. It may change over time based on your progress and training adjustments.",
+  "@fullPlanNote": { "description": "Informational note at the top of the full plan screen" },
+
+  "fullPlanWeeksLabel": "WEEKS",
+  "@fullPlanWeeksLabel": { "description": "Label for the weeks stat column on the full plan screen" },
+
+  "fullPlanDistanceLabel": "DISTANCE",
+  "@fullPlanDistanceLabel": { "description": "Label for the total distance stat column on the full plan screen" },
+
+  "fullPlanRunsLabel": "RUNS",
+  "@fullPlanRunsLabel": { "description": "Label for the total runs stat column on the full plan screen" },
+
+  "fullPlanWeekLabel": "Week {number}",
+  "@fullPlanWeekLabel": {
+    "description": "Week card heading, e.g. 'Week 4'",
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "fullPlanCurrentBadge": "CURRENT",
+  "@fullPlanCurrentBadge": { "description": "Status badge label for the current week on the full plan screen" },
+
+  "fullPlanCompletedBadge": "DONE",
+  "@fullPlanCompletedBadge": { "description": "Status badge label for completed weeks on the full plan screen" },
+
+  "fullPlanUpcomingBadge": "UPCOMING",
+  "@fullPlanUpcomingBadge": { "description": "Status badge label for upcoming weeks on the full plan screen" },
+
+  "fullPlanScheduleLabel": "SCHEDULE",
+  "@fullPlanScheduleLabel": { "description": "Section label above the week list on the full plan screen" }
 }

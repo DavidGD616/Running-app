@@ -1749,4 +1749,37 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get workoutOptionsRestoreWorkoutDescription =>
       'Put this session back on the schedule';
+
+  @override
+  String get fullPlanTitle => 'Full Plan';
+
+  @override
+  String get fullPlanNote =>
+      'This is your estimated full plan. It may change over time based on your progress and training adjustments.';
+
+  @override
+  String get fullPlanWeeksLabel => 'WEEKS';
+
+  @override
+  String get fullPlanDistanceLabel => 'DISTANCE';
+
+  @override
+  String get fullPlanRunsLabel => 'RUNS';
+
+  @override
+  String fullPlanWeekLabel(int number) {
+    return 'Week $number';
+  }
+
+  @override
+  String get fullPlanCurrentBadge => 'CURRENT';
+
+  @override
+  String get fullPlanCompletedBadge => 'DONE';
+
+  @override
+  String get fullPlanUpcomingBadge => 'UPCOMING';
+
+  @override
+  String get fullPlanScheduleLabel => 'SCHEDULE';
 }

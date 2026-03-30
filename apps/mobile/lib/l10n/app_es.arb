@@ -589,5 +589,21 @@
   "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana",
 
   "workoutOptionsRestoreWorkout": "Restaurar Entrenamiento",
-  "workoutOptionsRestoreWorkoutDescription": "Vuelve a poner esta sesión en el calendario"
+  "workoutOptionsRestoreWorkoutDescription": "Vuelve a poner esta sesión en el calendario",
+
+  "fullPlanTitle": "Plan Completo",
+  "fullPlanNote": "Este es tu plan estimado completo. Puede cambiar con el tiempo según tu progreso y ajustes de entrenamiento.",
+  "fullPlanWeeksLabel": "SEMANAS",
+  "fullPlanDistanceLabel": "DISTANCIA",
+  "fullPlanRunsLabel": "CARRERAS",
+  "fullPlanWeekLabel": "Semana {number}",
+  "@fullPlanWeekLabel": {
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+  "fullPlanCurrentBadge": "ACTUAL",
+  "fullPlanCompletedBadge": "HECHO",
+  "fullPlanUpcomingBadge": "PRÓXIMA",
+  "fullPlanScheduleLabel": "HORARIO"
 }

@@ -3334,6 +3334,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Put this session back on the schedule'**
   String get workoutOptionsRestoreWorkoutDescription;
+
+  /// Title of the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'Full Plan'**
+  String get fullPlanTitle;
+
+  /// Informational note at the top of the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'This is your estimated full plan. It may change over time based on your progress and training adjustments.'**
+  String get fullPlanNote;
+
+  /// Label for the weeks stat column on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKS'**
+  String get fullPlanWeeksLabel;
+
+  /// Label for the total distance stat column on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'DISTANCE'**
+  String get fullPlanDistanceLabel;
+
+  /// Label for the total runs stat column on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'RUNS'**
+  String get fullPlanRunsLabel;
+
+  /// Week card heading, e.g. 'Week 4'
+  ///
+  /// In en, this message translates to:
+  /// **'Week {number}'**
+  String fullPlanWeekLabel(int number);
+
+  /// Status badge label for the current week on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT'**
+  String get fullPlanCurrentBadge;
+
+  /// Status badge label for completed weeks on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'DONE'**
+  String get fullPlanCompletedBadge;
+
+  /// Status badge label for upcoming weeks on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'UPCOMING'**
+  String get fullPlanUpcomingBadge;
+
+  /// Section label above the week list on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'SCHEDULE'**
+  String get fullPlanScheduleLabel;
 }
 
 class _AppLocalizationsDelegate
