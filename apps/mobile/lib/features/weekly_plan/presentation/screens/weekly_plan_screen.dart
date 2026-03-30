@@ -303,6 +303,7 @@ class _SessionRow extends StatelessWidget {
         sessionDate.month == now.month &&
         sessionDate.day == now.day;
     final bool isSkipped = status == SessionStatus.skipped;
+    final bool isTodaySkipped = isToday && isSkipped;
     final Color rowBg;
     final Color rowBorder;
     final Color dateBg;
@@ -310,7 +311,14 @@ class _SessionRow extends StatelessWidget {
     final Color dateTextColor;
     final Color titleColor;
 
-    if (isToday) {
+    if (isTodaySkipped) {
+      rowBg = AppColors.warning.withValues(alpha: 0.06);
+      rowBorder = AppColors.warning;
+      dateBg = const Color(0xFF252525);
+      dayTextColor = AppColors.warning;
+      dateTextColor = AppColors.warning;
+      titleColor = AppColors.warning;
+    } else if (isToday) {
       rowBg = AppColors.accentPrimary.withValues(alpha: 0.06);
       rowBorder = AppColors.accentPrimary;
       dateBg = const Color(0xFF252525);
@@ -414,7 +422,9 @@ class _SessionRow extends StatelessWidget {
                                 ? TextDecoration.lineThrough
                                 : null,
                             decorationColor: isSkipped
-                                ? AppColors.textDisabled
+                                ? isTodaySkipped
+                                      ? AppColors.warning
+                                      : AppColors.textDisabled
                                 : null,
                           ),
                           overflow: TextOverflow.ellipsis,
@@ -424,7 +434,12 @@ class _SessionRow extends StatelessWidget {
                         const SizedBox(width: 7),
                         Container(
                           padding: const EdgeInsets.only(right: 8),
-                          child: _NowBadge(label: nowLabel),
+                          child: _NowBadge(
+                            label: nowLabel,
+                            color: isTodaySkipped
+                                ? AppColors.warning
+                                : AppColors.accentPrimary,
+                          ),
                         ),
                       ],
                     ],
@@ -520,9 +535,10 @@ class _SessionRow extends StatelessWidget {
 // ── "Now" badge ───────────────────────────────────────────────────────────────
 
 class _NowBadge extends StatelessWidget {
-  const _NowBadge({required this.label});
+  const _NowBadge({required this.label, this.color = AppColors.accentPrimary});
 
   final String label;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -530,17 +546,15 @@ class _NowBadge extends StatelessWidget {
       height: 16,
       padding: const EdgeInsets.symmetric(horizontal: 8),
       decoration: BoxDecoration(
-        color: AppColors.accentPrimary.withValues(alpha: 0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: AppColors.accentPrimary.withValues(alpha: 0.2),
-        ),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Center(
         child: Text(
           label,
           style: AppTypography.caption.copyWith(
-            color: AppColors.accentPrimary,
+            color: color,
             fontSize: 10,
             fontWeight: FontWeight.w600,
             letterSpacing: 0.3,
