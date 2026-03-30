@@ -1215,6 +1215,34 @@
   "weeklyPlanSessionRecoveryRun": "Recovery Run",
   "@weeklyPlanSessionRecoveryRun": { "description": "Recovery run session type name" },
 
+  "sessionTypeProgressionRun": "Progression Run",
+  "@sessionTypeProgressionRun": { "description": "Progression run session type name" },
+
+  "sessionTypeHillRepeats": "Hill Repeats",
+  "@sessionTypeHillRepeats": { "description": "Hill repeats session type name" },
+
+  "sessionTypeFartlek": "Fartlek",
+  "@sessionTypeFartlek": { "description": "Fartlek session type name" },
+
+  "sessionTypeThresholdRun": "Threshold Run",
+  "@sessionTypeThresholdRun": { "description": "Threshold run session type name" },
+
+  "sessionTypeRacePaceRun": "Race Pace Run",
+  "@sessionTypeRacePaceRun": { "description": "Race pace run session type name" },
+
+  "sessionTypeCrossTraining": "Cross Training",
+  "@sessionTypeCrossTraining": { "description": "Cross training session type name" },
+
+  "sessionTypeRestDay": "Rest Day",
+  "@sessionTypeRestDay": { "description": "Rest day session type name" },
+
+  "sessionCategoryEndurance": "Endurance",
+  "sessionCategorySpeedWork": "Speed Work",
+  "sessionCategoryThreshold": "Threshold",
+  "sessionCategoryRaceSpecific": "Race Specific",
+  "sessionCategoryRecovery": "Recovery",
+  "sessionCategoryRest": "Rest",
+
   "weeklyPlanDayMon": "Mon",
   "@weeklyPlanDayMon": { "description": "Monday abbreviation in weekly plan" },
 
@@ -1310,6 +1338,9 @@
 
   "progressSessionTempoRun": "Tempo Run",
   "@progressSessionTempoRun": { "description": "Tempo run session type name" },
+
+  "sessionTypeTempoRun": "Tempo Run",
+  "@sessionTypeTempoRun": { "description": "Tempo run session type name" },
 
   "progressYesterday": "Yesterday",
   "@progressYesterday": { "description": "Yesterday relative date label" },

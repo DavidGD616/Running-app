@@ -25,39 +25,74 @@ class HomeScreen extends ConsumerWidget {
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:
-        return l10n.weeklyPlanRestTitle;
+      // Rest
+      case SessionType.restDay:
+        return l10n.sessionTypeRestDay;
+      // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
-      case SessionType.intervals:
-        return l10n.weeklyPlanSessionIntervals;
       case SessionType.longRun:
         return l10n.weeklyPlanSessionLongRun;
+      case SessionType.progressionRun:
+        return l10n.sessionTypeProgressionRun;
+      // Speed Work
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.hillRepeats:
+        return l10n.sessionTypeHillRepeats;
+      case SessionType.fartlek:
+        return l10n.sessionTypeFartlek;
+      // Threshold
+      case SessionType.tempoRun:
+        return l10n.sessionTypeTempoRun;
+      case SessionType.thresholdRun:
+        return l10n.sessionTypeThresholdRun;
+      // Race Specific
+      case SessionType.racePaceRun:
+        return l10n.sessionTypeRacePaceRun;
+      // Recovery
       case SessionType.recoveryRun:
         return l10n.weeklyPlanSessionRecoveryRun;
-      case SessionType.tempoRun:
-        return l10n.progressSessionTempoRun;
+      case SessionType.crossTraining:
+        return l10n.sessionTypeCrossTraining;
     }
   }
 
   String? _sessionDescription(TrainingSession session, AppLocalizations l10n) {
     switch (session.type) {
-      case SessionType.rest:
+      // Rest
+      case SessionType.restDay:
         return null;
+      // Endurance
       case SessionType.easyRun:
         return l10n.sessionDescEasyRun;
+      case SessionType.longRun:
+        return l10n.sessionDescLongRun;
+      case SessionType.progressionRun:
+        return null;
+      // Speed Work
       case SessionType.intervals:
         return l10n.sessionDescIntervals(
           session.intervalReps ?? 0,
           session.intervalRepDistance ?? '—',
           session.intervalRecoverySeconds ?? 0,
         );
-      case SessionType.longRun:
-        return l10n.sessionDescLongRun;
-      case SessionType.recoveryRun:
-        return l10n.sessionDescRecoveryRun;
+      case SessionType.hillRepeats:
+      case SessionType.fartlek:
+        return null;
+      // Threshold
       case SessionType.tempoRun:
         return l10n.sessionDescTempoRun;
+      case SessionType.thresholdRun:
+        return null;
+      // Race Specific
+      case SessionType.racePaceRun:
+        return null;
+      // Recovery
+      case SessionType.recoveryRun:
+        return l10n.sessionDescRecoveryRun;
+      case SessionType.crossTraining:
+        return null;
     }
   }
 

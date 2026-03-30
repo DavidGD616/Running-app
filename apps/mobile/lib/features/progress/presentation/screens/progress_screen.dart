@@ -18,24 +18,32 @@ import '../../presentation/progress_provider.dart';
 // ── Icon data helper ──────────────────────────────────────────────────────────
 
 ({String iconAsset, Color iconColor, Color iconBg}) _sessionIconData(
-    SessionType type) {
+  SessionType type,
+) {
   return switch (type) {
-    SessionType.tempoRun || SessionType.intervals => (
+    // Speed Work & Threshold
+    SessionType.tempoRun ||
+    SessionType.intervals ||
+    SessionType.hillRepeats ||
+    SessionType.fartlek ||
+    SessionType.thresholdRun ||
+    SessionType.racePaceRun => (
       iconAsset: 'assets/icons/activity.svg',
       iconColor: AppColors.accentPrimary,
       iconBg: AppColors.accentPrimary.withValues(alpha: 0.1),
     ),
-    SessionType.easyRun || SessionType.recoveryRun => (
-      iconAsset: 'assets/icons/heart.svg',
+    // Endurance
+    SessionType.easyRun ||
+    SessionType.longRun ||
+    SessionType.progressionRun ||
+    SessionType.recoveryRun ||
+    SessionType.crossTraining => (
+      iconAsset: 'assets/icons/route.svg',
       iconColor: AppColors.info,
       iconBg: AppColors.info.withValues(alpha: 0.1),
     ),
-    SessionType.longRun => (
-      iconAsset: 'assets/icons/target.svg',
-      iconColor: AppColors.warning,
-      iconBg: AppColors.warning.withValues(alpha: 0.1),
-    ),
-    SessionType.rest => (
+    // Rest
+    SessionType.restDay => (
       iconAsset: 'assets/icons/coffee.svg',
       iconColor: AppColors.textDisabled,
       iconBg: AppColors.backgroundCard,
@@ -60,8 +68,10 @@ class ProgressScreen extends ConsumerWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen, AppSpacing.lg,
-            AppSpacing.screen, AppSpacing.xl,
+            AppSpacing.screen,
+            AppSpacing.lg,
+            AppSpacing.screen,
+            AppSpacing.xl,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +114,9 @@ class ProgressScreen extends ConsumerWidget {
                         label: l10n.progressDistanceLabel,
                         value: stats.totalDistanceKm.toStringAsFixed(1),
                         unit: 'km',
-                        trend: l10n.progressTrendUp(stats.distanceTrendPct.round().toString()),
+                        trend: l10n.progressTrendUp(
+                          stats.distanceTrendPct.round().toString(),
+                        ),
                         trendColor: AppColors.accentPrimary,
                       ),
                     ),
@@ -115,10 +127,14 @@ class ProgressScreen extends ConsumerWidget {
                         iconColor: AppColors.info,
                         label: l10n.progressTimeLabel,
                         timeHours: stats.totalTimeHours.toString(),
-                        timeMinutes: stats.totalTimeRemainingMinutes.toString().padLeft(2, '0'),
+                        timeMinutes: stats.totalTimeRemainingMinutes
+                            .toString()
+                            .padLeft(2, '0'),
                         hourUnit: l10n.progressHourUnit,
                         minuteUnit: l10n.progressMinuteUnit,
-                        trend: l10n.progressTrendUp(stats.timeTrendPct.round().toString()),
+                        trend: l10n.progressTrendUp(
+                          stats.timeTrendPct.round().toString(),
+                        ),
                         trendColor: AppColors.info,
                       ),
                     ),
@@ -140,7 +156,9 @@ class ProgressScreen extends ConsumerWidget {
                         value: stats.streakWeeks.toString(),
                         unit: ' ${l10n.progressWeeksUnit}',
                         valueColor: AppColors.warning,
-                        trend: l10n.progressStreakSubtitle(stats.streakWeeks.toString()),
+                        trend: l10n.progressStreakSubtitle(
+                          stats.streakWeeks.toString(),
+                        ),
                         trendColor: AppColors.warning,
                       ),
                     ),
@@ -246,7 +264,10 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
           // ── Header ─────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.base,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.base,
             ),
             child: Row(
               children: [
@@ -325,7 +346,8 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/clock.svg',
                             iconColor: AppColors.info,
                             label: l10n.progressTimeLabel,
-                            value: '${selected.timeHours}${l10n.progressHourUnit} ${selected.timeMinutes}${l10n.progressMinuteUnit}',
+                            value:
+                                '${selected.timeHours}${l10n.progressHourUnit} ${selected.timeMinutes}${l10n.progressMinuteUnit}',
                             unit: '',
                           ),
                         ),
@@ -365,9 +387,30 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text('${maxVal.round()} km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
-                      Text('${(maxVal / 2).round()} km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
-                      Text('0 km', style: AppTypography.caption.copyWith(color: const Color(0xFF666666), fontSize: 11, letterSpacing: 0)),
+                      Text(
+                        '${maxVal.round()} km',
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF666666),
+                          fontSize: 11,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      Text(
+                        '${(maxVal / 2).round()} km',
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF666666),
+                          fontSize: 11,
+                          letterSpacing: 0,
+                        ),
+                      ),
+                      Text(
+                        '0 km',
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF666666),
+                          fontSize: 11,
+                          letterSpacing: 0,
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(width: 8),
@@ -376,13 +419,19 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                       builder: (context, constraints) {
                         return GestureDetector(
                           behavior: HitTestBehavior.opaque,
-                          onTapDown: (d) =>
-                              _updateFromX(d.localPosition.dx, constraints.maxWidth),
-                          onHorizontalDragUpdate: (d) =>
-                              _updateFromX(d.localPosition.dx, constraints.maxWidth),
+                          onTapDown: (d) => _updateFromX(
+                            d.localPosition.dx,
+                            constraints.maxWidth,
+                          ),
+                          onHorizontalDragUpdate: (d) => _updateFromX(
+                            d.localPosition.dx,
+                            constraints.maxWidth,
+                          ),
                           child: CustomPaint(
                             painter: _ChartPainter(
-                              data: widget.weeks.map((w) => w.distanceKm).toList(),
+                              data: widget.weeks
+                                  .map((w) => w.distanceKm)
+                                  .toList(),
                               selectedIndex: _selectedIndex,
                               maxVal: maxVal,
                             ),
@@ -541,7 +590,10 @@ class _ChartPainter extends CustomPainter {
     double yFor(double v) => size.height * (1.0 - v / maxVal);
     double xFor(int i) => size.width * i / (data.length - 1);
 
-    final points = List.generate(data.length, (i) => Offset(xFor(i), yFor(data[i])));
+    final points = List.generate(
+      data.length,
+      (i) => Offset(xFor(i), yFor(data[i])),
+    );
 
     // 1. Dashed grid lines at 0 km, 23 km, 46 km (bottom, middle, top)
     final gridPaint = Paint()
@@ -562,14 +614,10 @@ class _ChartPainter extends CustomPainter {
       ..close();
 
     final fillPaint = Paint()
-      ..shader = ui.Gradient.linear(
-        Offset.zero,
-        Offset(0, size.height),
-        [
-          AppColors.accentPrimary.withValues(alpha: 0.25),
-          AppColors.accentPrimary.withValues(alpha: 0.0),
-        ],
-      );
+      ..shader = ui.Gradient.linear(Offset.zero, Offset(0, size.height), [
+        AppColors.accentPrimary.withValues(alpha: 0.25),
+        AppColors.accentPrimary.withValues(alpha: 0.0),
+      ]);
     canvas.drawPath(fillPath, fillPaint);
 
     // 3. Line
@@ -603,10 +651,18 @@ class _ChartPainter extends CustomPainter {
       final center = points[i];
 
       if (isSelected) {
-        canvas.drawCircle(center, 5.5, Paint()..color = AppColors.accentPrimary);
+        canvas.drawCircle(
+          center,
+          5.5,
+          Paint()..color = AppColors.accentPrimary,
+        );
       } else {
         // Hollow dot: dark fill + green stroke
-        canvas.drawCircle(center, 4.0, Paint()..color = const Color(0xFF1A1A1A));
+        canvas.drawCircle(
+          center,
+          4.0,
+          Paint()..color = const Color(0xFF1A1A1A),
+        );
         canvas.drawCircle(
           center,
           4.0,
@@ -638,7 +694,9 @@ class _ChartPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_ChartPainter old) =>
-      old.data != data || old.selectedIndex != selectedIndex || old.maxVal != maxVal;
+      old.data != data ||
+      old.selectedIndex != selectedIndex ||
+      old.maxVal != maxVal;
 }
 
 // ── Progress stat tile ────────────────────────────────────────────────────────
@@ -862,7 +920,9 @@ class _LongestRunCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  l10n.progressLongestRunImproved(improvementKm.toStringAsFixed(1)),
+                  l10n.progressLongestRunImproved(
+                    improvementKm.toStringAsFixed(1),
+                  ),
                   style: AppTypography.bodyMedium.copyWith(
                     color: AppColors.textDisabled,
                     fontSize: 12,
@@ -904,10 +964,7 @@ class _LongestRunCard extends StatelessWidget {
 // ── Recent sessions card ──────────────────────────────────────────────────────
 
 class _RecentSessionsCard extends StatelessWidget {
-  const _RecentSessionsCard({
-    required this.sessions,
-    required this.l10n,
-  });
+  const _RecentSessionsCard({required this.sessions, required this.l10n});
 
   final List<RecentSession> sessions;
   final AppLocalizations l10n;
@@ -948,12 +1005,15 @@ class _RecentSessionsCard extends StatelessWidget {
             final isLast = entry.key == sessions.length - 1;
             final s = entry.value;
             final iconData = _sessionIconData(s.type);
-            final meta = '${s.dateLabel} • ${UnitFormatter.formatDistanceKm(s.distanceKm)}';
+            final meta =
+                '${s.dateLabel} • ${UnitFormatter.formatDistanceKm(s.distanceKm)}';
             final duration = UnitFormatter.formatDuration(s.durationMinutes);
             return Column(
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.base,
+                  ),
                   child: Row(
                     children: [
                       Container(

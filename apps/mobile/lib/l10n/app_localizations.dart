@@ -2411,6 +2411,84 @@ abstract class AppLocalizations {
   /// **'Recovery Run'**
   String get weeklyPlanSessionRecoveryRun;
 
+  /// Progression run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Progression Run'**
+  String get sessionTypeProgressionRun;
+
+  /// Hill repeats session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Hill Repeats'**
+  String get sessionTypeHillRepeats;
+
+  /// Fartlek session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Fartlek'**
+  String get sessionTypeFartlek;
+
+  /// Threshold run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold Run'**
+  String get sessionTypeThresholdRun;
+
+  /// Race pace run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Race Pace Run'**
+  String get sessionTypeRacePaceRun;
+
+  /// Cross training session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Cross Training'**
+  String get sessionTypeCrossTraining;
+
+  /// Rest day session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Rest Day'**
+  String get sessionTypeRestDay;
+
+  /// No description provided for @sessionCategoryEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get sessionCategoryEndurance;
+
+  /// No description provided for @sessionCategorySpeedWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Work'**
+  String get sessionCategorySpeedWork;
+
+  /// No description provided for @sessionCategoryThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get sessionCategoryThreshold;
+
+  /// No description provided for @sessionCategoryRaceSpecific.
+  ///
+  /// In en, this message translates to:
+  /// **'Race Specific'**
+  String get sessionCategoryRaceSpecific;
+
+  /// No description provided for @sessionCategoryRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get sessionCategoryRecovery;
+
+  /// No description provided for @sessionCategoryRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get sessionCategoryRest;
+
   /// Monday abbreviation in weekly plan
   ///
   /// In en, this message translates to:
@@ -2584,6 +2662,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tempo Run'**
   String get progressSessionTempoRun;
+
+  /// Tempo run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo Run'**
+  String get sessionTypeTempoRun;
 
   /// Yesterday relative date label
   ///

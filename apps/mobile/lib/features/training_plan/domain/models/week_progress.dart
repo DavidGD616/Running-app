@@ -19,8 +19,7 @@ class WeekProgress {
   final int totalDurationMinutes;
 
   factory WeekProgress.fromSessions(List<TrainingSession> sessions) {
-    final runningSessions =
-        sessions.where((s) => s.type != SessionType.rest).toList();
+    final runningSessions = sessions.where((s) => !s.type.isRest).toList();
 
     final completed = runningSessions
         .where((s) => s.status == SessionStatus.completed)
@@ -31,10 +30,14 @@ class WeekProgress {
         .fold(0.0, (sum, s) => sum + (s.distanceKm ?? 0.0));
 
     final totalKm = runningSessions.fold(
-        0.0, (sum, s) => sum + (s.distanceKm ?? 0.0));
+      0.0,
+      (sum, s) => sum + (s.distanceKm ?? 0.0),
+    );
 
     final totalMinutes = runningSessions.fold(
-        0, (sum, s) => sum + (s.durationMinutes ?? 0));
+      0,
+      (sum, s) => sum + (s.durationMinutes ?? 0),
+    );
 
     return WeekProgress(
       completedSessions: completed,

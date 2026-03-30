@@ -43,47 +43,97 @@ class SessionDetailScreen extends StatelessWidget {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
+  String _categoryLabel(SessionCategory category, AppLocalizations l10n) {
+    switch (category) {
+      case SessionCategory.endurance:
+        return l10n.sessionCategoryEndurance;
+      case SessionCategory.speedWork:
+        return l10n.sessionCategorySpeedWork;
+      case SessionCategory.threshold:
+        return l10n.sessionCategoryThreshold;
+      case SessionCategory.raceSpecific:
+        return l10n.sessionCategoryRaceSpecific;
+      case SessionCategory.recovery:
+        return l10n.sessionCategoryRecovery;
+      case SessionCategory.rest:
+        return l10n.sessionCategoryRest;
+    }
+  }
+
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:
-        return l10n.weeklyPlanRestTitle;
+      // Rest
+      case SessionType.restDay:
+        return l10n.sessionTypeRestDay;
+      // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
-      case SessionType.intervals:
-        return l10n.weeklyPlanSessionIntervals;
       case SessionType.longRun:
         return l10n.weeklyPlanSessionLongRun;
+      case SessionType.progressionRun:
+        return l10n.sessionTypeProgressionRun;
+      // Speed Work
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.hillRepeats:
+        return l10n.sessionTypeHillRepeats;
+      case SessionType.fartlek:
+        return l10n.sessionTypeFartlek;
+      // Threshold
+      case SessionType.tempoRun:
+        return l10n.sessionTypeTempoRun;
+      case SessionType.thresholdRun:
+        return l10n.sessionTypeThresholdRun;
+      // Race Specific
+      case SessionType.racePaceRun:
+        return l10n.sessionTypeRacePaceRun;
+      // Recovery
       case SessionType.recoveryRun:
         return l10n.weeklyPlanSessionRecoveryRun;
-      case SessionType.tempoRun:
-        return l10n.progressSessionTempoRun;
+      case SessionType.crossTraining:
+        return l10n.sessionTypeCrossTraining;
     }
   }
 
   String _sessionDescription(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:
+      // Rest
+      case SessionType.restDay:
         return '';
+      // Endurance
       case SessionType.easyRun:
         return l10n.sessionDescEasyRun;
+      case SessionType.longRun:
+        return l10n.sessionDescLongRun;
+      case SessionType.progressionRun:
+        return '';
+      // Speed Work
       case SessionType.intervals:
         return l10n.sessionDescIntervals(
           session.intervalReps ?? 0,
           session.intervalRepDistance ?? '—',
           session.intervalRecoverySeconds ?? 0,
         );
-      case SessionType.longRun:
-        return l10n.sessionDescLongRun;
+      case SessionType.hillRepeats:
+      case SessionType.fartlek:
+        return '';
+      // Threshold
+      case SessionType.tempoRun:
+      case SessionType.thresholdRun:
+      // Race Specific
+      case SessionType.racePaceRun:
+      // Recovery
       case SessionType.recoveryRun:
         return l10n.sessionDescRecoveryRun;
-      case SessionType.tempoRun:
-        return l10n.sessionDescTempoRun;
+      case SessionType.crossTraining:
+        return '';
     }
   }
 
   bool get _isHardSession =>
-      session.type == SessionType.intervals ||
-      session.type == SessionType.tempoRun;
+      session.type.category == SessionCategory.speedWork ||
+      session.type.category == SessionCategory.threshold ||
+      session.type == SessionType.racePaceRun;
 
   bool get _canStartWorkout {
     if (!showStartWorkout) return false;
@@ -232,7 +282,13 @@ class SessionDetailScreen extends StatelessWidget {
             l10n.sessionPhaseTempoRunCoolNote,
           ),
         ];
-      case SessionType.rest:
+      case SessionType.progressionRun:
+      case SessionType.hillRepeats:
+      case SessionType.fartlek:
+      case SessionType.thresholdRun:
+      case SessionType.racePaceRun:
+      case SessionType.crossTraining:
+      case SessionType.restDay:
         return [];
     }
   }
@@ -261,6 +317,7 @@ class SessionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final title = _sessionTitle(session.type, l10n);
+    final categoryLabel = _categoryLabel(session.type.category, l10n);
     final distanceText = session.distanceKm != null
         ? '${UnitFormatter.formatDistanceKm(session.distanceKm!)} '
         : '';
@@ -295,7 +352,10 @@ class SessionDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // ── Session type badge ─────────────────────────
-                  _TypeBadge(label: title.toUpperCase(), status: status),
+                  _TypeBadge(
+                    label: categoryLabel.toUpperCase(),
+                    status: status,
+                  ),
                   const SizedBox(height: AppSpacing.sm),
 
                   // ── Session name ───────────────────────────────

@@ -1234,6 +1234,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get weeklyPlanSessionRecoveryRun => 'Recovery Run';
 
   @override
+  String get sessionTypeProgressionRun => 'Progression Run';
+
+  @override
+  String get sessionTypeHillRepeats => 'Hill Repeats';
+
+  @override
+  String get sessionTypeFartlek => 'Fartlek';
+
+  @override
+  String get sessionTypeThresholdRun => 'Threshold Run';
+
+  @override
+  String get sessionTypeRacePaceRun => 'Race Pace Run';
+
+  @override
+  String get sessionTypeCrossTraining => 'Cross Training';
+
+  @override
+  String get sessionTypeRestDay => 'Rest Day';
+
+  @override
+  String get sessionCategoryEndurance => 'Endurance';
+
+  @override
+  String get sessionCategorySpeedWork => 'Speed Work';
+
+  @override
+  String get sessionCategoryThreshold => 'Threshold';
+
+  @override
+  String get sessionCategoryRaceSpecific => 'Race Specific';
+
+  @override
+  String get sessionCategoryRecovery => 'Recovery';
+
+  @override
+  String get sessionCategoryRest => 'Rest';
+
+  @override
   String get weeklyPlanDayMon => 'Mon';
 
   @override
@@ -1326,6 +1365,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get progressSessionTempoRun => 'Tempo Run';
+
+  @override
+  String get sessionTypeTempoRun => 'Tempo Run';
 
   @override
   String get progressYesterday => 'Yesterday';

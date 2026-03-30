@@ -24,18 +24,36 @@ class WeeklyPlanScreen extends ConsumerWidget {
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
-      case SessionType.rest:
-        return l10n.weeklyPlanRestTitle;
+      // Rest
+      case SessionType.restDay:
+        return l10n.sessionTypeRestDay;
+      // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
-      case SessionType.intervals:
-        return l10n.weeklyPlanSessionIntervals;
       case SessionType.longRun:
         return l10n.weeklyPlanSessionLongRun;
+      case SessionType.progressionRun:
+        return l10n.sessionTypeProgressionRun;
+      // Speed Work
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.hillRepeats:
+        return l10n.sessionTypeHillRepeats;
+      case SessionType.fartlek:
+        return l10n.sessionTypeFartlek;
+      // Threshold
+      case SessionType.tempoRun:
+        return l10n.sessionTypeTempoRun;
+      case SessionType.thresholdRun:
+        return l10n.sessionTypeThresholdRun;
+      // Race Specific
+      case SessionType.racePaceRun:
+        return l10n.sessionTypeRacePaceRun;
+      // Recovery
       case SessionType.recoveryRun:
         return l10n.weeklyPlanSessionRecoveryRun;
-      case SessionType.tempoRun:
-        return l10n.progressSessionTempoRun;
+      case SessionType.crossTraining:
+        return l10n.sessionTypeCrossTraining;
     }
   }
 
@@ -113,7 +131,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
                     dayLabel: _dayLabel(s, l10n),
                     dateNumber: s.date.day.toString(),
                     title: _sessionTitle(s.type, l10n),
-                    subtitle: s.type == SessionType.rest
+                    subtitle: s.type.isRest
                         ? l10n.weeklyPlanRestSubtitle
                         : null,
                     distance: s.distanceKm != null
@@ -123,10 +141,10 @@ class WeeklyPlanScreen extends ConsumerWidget {
                         ? UnitFormatter.formatDuration(s.durationMinutes!)
                         : null,
                     status: s.status,
-                    isRest: s.type == SessionType.rest,
+                    isRest: s.type.isRest,
                     trailingIcon: s.type.iconAsset,
                     nowLabel: l10n.weeklyPlanNowBadge,
-                    onTap: s.type == SessionType.rest
+                    onTap: s.type.isRest
                         ? null
                         : () => context.push(
                             RouteNames.sessionDetail,
