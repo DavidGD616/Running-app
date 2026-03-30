@@ -186,7 +186,6 @@ class HomeScreen extends ConsumerWidget {
                           RouteNames.sessionDetail,
                           extra: SessionDetailArgs(
                             session: nextSession,
-                            status: nextSession.status,
                             showStartWorkout:
                                 nextSession.status == SessionStatus.today,
                           ),
@@ -240,7 +239,6 @@ class HomeScreen extends ConsumerWidget {
         RouteNames.sessionDetail,
         extra: SessionDetailArgs(
           session: session,
-          status: session.status,
           showStartWorkout: session.status == SessionStatus.today,
         ),
       ),

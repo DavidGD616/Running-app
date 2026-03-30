@@ -1752,4 +1752,11 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get workoutOptionsSkipWorkoutDescription =>
       'Elimina esta sesión del plan de esta semana';
+
+  @override
+  String get workoutOptionsRestoreWorkout => 'Restaurar Entrenamiento';
+
+  @override
+  String get workoutOptionsRestoreWorkoutDescription =>
+      'Vuelve a poner esta sesión en el calendario';
 }

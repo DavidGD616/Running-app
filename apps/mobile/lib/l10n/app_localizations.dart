@@ -3322,6 +3322,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Removes this session from this week schedule'**
   String get workoutOptionsSkipWorkoutDescription;
+
+  /// Restore workout option label
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Workout'**
+  String get workoutOptionsRestoreWorkout;
+
+  /// Restore workout option description
+  ///
+  /// In en, this message translates to:
+  /// **'Put this session back on the schedule'**
+  String get workoutOptionsRestoreWorkoutDescription;
 }
 
 class _AppLocalizationsDelegate

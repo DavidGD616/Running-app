@@ -1695,5 +1695,11 @@
   "@workoutOptionsSkipWorkout": { "description": "Skip workout option label" },
 
   "workoutOptionsSkipWorkoutDescription": "Removes this session from this week schedule",
-  "@workoutOptionsSkipWorkoutDescription": { "description": "Skip workout option description" }
+  "@workoutOptionsSkipWorkoutDescription": { "description": "Skip workout option description" },
+
+  "workoutOptionsRestoreWorkout": "Restore Workout",
+  "@workoutOptionsRestoreWorkout": { "description": "Restore workout option label" },
+
+  "workoutOptionsRestoreWorkoutDescription": "Put this session back on the schedule",
+  "@workoutOptionsRestoreWorkoutDescription": { "description": "Restore workout option description" }
 }

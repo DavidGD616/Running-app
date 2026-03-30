@@ -114,7 +114,6 @@ final appRouter = GoRouter(
         final args = state.extra as SessionDetailArgs;
         return SessionDetailScreen(
           session: args.session,
-          status: args.status,
           showStartWorkout: args.showStartWorkout,
         );
       },

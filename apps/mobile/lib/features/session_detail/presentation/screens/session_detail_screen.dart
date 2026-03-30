@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -12,33 +13,30 @@ import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
 
 // ── Navigation args ───────────────────────────────────────────────────────────
 
 class SessionDetailArgs {
   const SessionDetailArgs({
     required this.session,
-    this.status,
     this.showStartWorkout = true,
   });
 
   final TrainingSession session;
-  final SessionStatus? status;
   final bool showStartWorkout;
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
-class SessionDetailScreen extends StatelessWidget {
+class SessionDetailScreen extends ConsumerWidget {
   const SessionDetailScreen({
     super.key,
     required this.session,
-    this.status,
     this.showStartWorkout = true,
   });
 
   final TrainingSession session;
-  final SessionStatus? status;
   final bool showStartWorkout;
 
   // ── Helpers ──────────────────────────────────────────────────────────────
@@ -130,18 +128,18 @@ class SessionDetailScreen extends StatelessWidget {
     }
   }
 
-  bool get _isHardSession =>
+  bool _isHardSession(TrainingSession session) =>
       session.type.category == SessionCategory.speedWork ||
       session.type.category == SessionCategory.threshold ||
       session.type == SessionType.racePaceRun;
 
-  bool get _canStartWorkout {
+  bool _canStartWorkout(SessionStatus status) {
     if (!showStartWorkout) return false;
     if (status != SessionStatus.today) return false;
     return true;
   }
 
-  List<_PhaseData> _phasesFor(AppLocalizations l10n) {
+  List<_PhaseData> _phasesFor(AppLocalizations l10n, TrainingSession session) {
     final mainTitle = _sessionTitle(session.type, l10n);
     final warm = l10n.sessionDetailWarmUp;
     final cool = l10n.sessionDetailCoolDown;
@@ -293,12 +291,14 @@ class SessionDetailScreen extends StatelessWidget {
     }
   }
 
-  Color _phaseIconColor(_PT type) {
+  Color _phaseIconColor(_PT type, TrainingSession session) {
     switch (type) {
       case _PT.warmUp:
         return AppColors.warning;
       case _PT.main:
-        return _isHardSession ? AppColors.error : AppColors.accentPrimary;
+        return _isHardSession(session)
+            ? AppColors.error
+            : AppColors.accentPrimary;
       case _PT.cool:
         return AppColors.info;
     }
@@ -307,29 +307,50 @@ class SessionDetailScreen extends StatelessWidget {
   // ── Build ─────────────────────────────────────────────────────────────────
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final plan = ref.watch(trainingPlanProvider);
+    final freshSession = plan.sessions.firstWhere((s) => s.id == session.id);
+    final status = freshSession.status;
+
     final l10n = AppLocalizations.of(context)!;
-    final title = _sessionTitle(session.type, l10n);
-    final categoryLabel = _categoryLabel(session.type.category, l10n);
-    final distanceText = session.distanceKm != null
-        ? '${UnitFormatter.formatDistanceKm(session.distanceKm!)} '
+    final title = _sessionTitle(freshSession.type, l10n);
+    final categoryLabel = _categoryLabel(freshSession.type.category, l10n);
+    final distanceText = freshSession.distanceKm != null
+        ? '${UnitFormatter.formatDistanceKm(freshSession.distanceKm!)} '
         : '';
     final titleWithDistance = '$distanceText$title';
-    final description = session.description?.isNotEmpty == true
-        ? session.description!
-        : _sessionDescription(session.type, l10n);
-    final phases = _phasesFor(l10n);
+    final description = freshSession.description?.isNotEmpty == true
+        ? freshSession.description!
+        : _sessionDescription(freshSession.type, l10n);
+    final phases = _phasesFor(l10n, freshSession);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppDetailHeaderBar(
         title: l10n.sessionDetailTitle,
         onBack: () => context.pop(),
-        onMore: () => showSkipWorkoutBottomSheet(
-          context: context,
-          sessionName: title,
-          onSkip: () {},
-        ),
+        onMore:
+            (status == SessionStatus.today ||
+                status == SessionStatus.upcoming ||
+                status == SessionStatus.skipped)
+            ? () => showSkipWorkoutBottomSheet(
+                context: context,
+                sessionName: title,
+                status: status,
+                onSkip: () {
+                  ref
+                      .read(trainingPlanProvider.notifier)
+                      .skipSession(session.id);
+                  context.pop();
+                },
+                onRestore: () {
+                  ref
+                      .read(trainingPlanProvider.notifier)
+                      .restoreSession(session.id);
+                  context.pop();
+                },
+              )
+            : null,
       ),
       body: Column(
         children: [
@@ -414,7 +435,10 @@ class SessionDetailScreen extends StatelessWidget {
                       final index = entry.key;
                       final phase = entry.value;
                       final isLast = index == phases.length - 1;
-                      final iconColor = _phaseIconColor(phase.type);
+                      final iconColor = _phaseIconColor(
+                        phase.type,
+                        freshSession,
+                      );
                       return _PhaseItem(
                         iconAsset: phase.iconAsset,
                         iconBgColor: iconColor.withValues(alpha: 0.08),
@@ -436,7 +460,7 @@ class SessionDetailScreen extends StatelessWidget {
           ),
 
           // ── Start Workout button ───────────────────────────────
-          if (_canStartWorkout)
+          if (_canStartWorkout(status))
             _StartButton(
               label: l10n.sessionDetailStartWorkout,
               onTap: () => context.push(RouteNames.preRun),

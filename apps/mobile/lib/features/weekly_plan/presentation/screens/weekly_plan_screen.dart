@@ -57,10 +57,17 @@ class WeeklyPlanScreen extends ConsumerWidget {
     }
   }
 
+  bool _isTodayDate(DateTime date) {
+    final now = DateTime.now();
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
+  }
+
   /// Short weekday label for the date badge, e.g. 'MON', 'TUE'.
-  /// Uses 'TODAY' when the session is marked as today.
+  /// Uses 'TODAY' when the session date matches today, regardless of status.
   String _dayLabel(TrainingSession s, AppLocalizations l10n) {
-    if (s.status == SessionStatus.today) return l10n.weeklyPlanDayToday;
+    if (_isTodayDate(s.date)) return l10n.weeklyPlanDayToday;
     switch (s.date.weekday) {
       case 1:
         return l10n.weeklyPlanDayMon;
@@ -130,6 +137,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
                   child: _SessionRow(
                     dayLabel: _dayLabel(s, l10n),
                     dateNumber: s.date.day.toString(),
+                    sessionDate: s.date,
                     title: _sessionTitle(s.type, l10n),
                     subtitle: s.type.isRest
                         ? l10n.weeklyPlanRestSubtitle
@@ -148,10 +156,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
                         ? null
                         : () => context.push(
                             RouteNames.sessionDetail,
-                            extra: SessionDetailArgs(
-                              session: s,
-                              status: s.status,
-                            ),
+                            extra: SessionDetailArgs(session: s),
                           ),
                   ),
                 ),
@@ -265,6 +270,7 @@ class _SessionRow extends StatelessWidget {
   const _SessionRow({
     required this.dayLabel,
     required this.dateNumber,
+    required this.sessionDate,
     required this.title,
     this.subtitle,
     this.distance,
@@ -278,6 +284,7 @@ class _SessionRow extends StatelessWidget {
 
   final String dayLabel;
   final String dateNumber;
+  final DateTime sessionDate;
   final String title;
   final String? subtitle;
   final String? distance;
@@ -290,7 +297,11 @@ class _SessionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final bool isToday = status == SessionStatus.today;
+    final now = DateTime.now();
+    final bool isToday =
+        sessionDate.year == now.year &&
+        sessionDate.month == now.month &&
+        sessionDate.day == now.day;
     final bool isSkipped = status == SessionStatus.skipped;
     final Color rowBg;
     final Color rowBorder;

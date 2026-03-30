@@ -586,5 +586,8 @@
 
   "workoutOptionsTitle": "Opciones de Entrenamiento",
   "workoutOptionsSkipWorkout": "Omitir Entrenamiento",
-  "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana"
+  "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana",
+
+  "workoutOptionsRestoreWorkout": "Restaurar Entrenamiento",
+  "workoutOptionsRestoreWorkoutDescription": "Vuelve a poner esta sesión en el calendario"
 }
