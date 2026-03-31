@@ -47,7 +47,7 @@ TrainingPlan buildSeedTrainingPlan() {
     return SessionStatus.upcoming;
   }
 
-  int _estimateElevationGain(SessionType type, double? distanceKm) {
+  int estimateElevationGain(SessionType type, double? distanceKm) {
     if (type == SessionType.restDay) return 0;
     final distance = distanceKm ?? 5.0;
     final perKm = switch (type) {
@@ -105,7 +105,7 @@ TrainingPlan buildSeedTrainingPlan() {
         warmUpMinutes: 5,
         coolDownMinutes: 3,
         elevationGainMeters:
-            _estimateElevationGain(SessionType.easyRun, easyKm),
+            estimateElevationGain(SessionType.easyRun, easyKm),
       ),
       TrainingSession(
         id: 'w$weekNum-wed',
@@ -121,7 +121,7 @@ TrainingPlan buildSeedTrainingPlan() {
         intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
-        elevationGainMeters: _estimateElevationGain(workoutType, workoutKm),
+        elevationGainMeters: estimateElevationGain(workoutType, workoutKm),
       ),
       TrainingSession(
         id: 'w$weekNum-thu',
@@ -142,7 +142,7 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 5,
         coolDownMinutes: 3,
-        elevationGainMeters: _estimateElevationGain(
+        elevationGainMeters: estimateElevationGain(
           SessionType.easyRun,
           easyKm - 1,
         ),
@@ -159,7 +159,7 @@ TrainingPlan buildSeedTrainingPlan() {
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters:
-            _estimateElevationGain(SessionType.longRun, longKm),
+            estimateElevationGain(SessionType.longRun, longKm),
       ),
       TrainingSession(
         id: 'w$weekNum-sun',
@@ -173,7 +173,7 @@ TrainingPlan buildSeedTrainingPlan() {
         warmUpMinutes: 3,
         coolDownMinutes: 3,
         elevationGainMeters:
-            _estimateElevationGain(SessionType.recoveryRun, recoveryKm),
+            estimateElevationGain(SessionType.recoveryRun, recoveryKm),
       ),
     ];
   }
@@ -214,7 +214,7 @@ TrainingPlan buildSeedTrainingPlan() {
         warmUpMinutes: 5,
         coolDownMinutes: 3,
         elevationGainMeters:
-            _estimateElevationGain(SessionType.easyRun, easyKm),
+            estimateElevationGain(SessionType.easyRun, easyKm),
       ),
       TrainingSession(
         id: 'w$weekNum-wed',
@@ -230,7 +230,7 @@ TrainingPlan buildSeedTrainingPlan() {
         intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
-        elevationGainMeters: _estimateElevationGain(workoutType, workoutKm),
+        elevationGainMeters: estimateElevationGain(workoutType, workoutKm),
       ),
       TrainingSession(
         id: 'w$weekNum-thu',
@@ -251,7 +251,7 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 5,
         coolDownMinutes: 3,
-        elevationGainMeters: _estimateElevationGain(
+        elevationGainMeters: estimateElevationGain(
           SessionType.easyRun,
           easyKm - 1,
         ),
@@ -268,7 +268,7 @@ TrainingPlan buildSeedTrainingPlan() {
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters:
-            _estimateElevationGain(SessionType.longRun, longKm),
+            estimateElevationGain(SessionType.longRun, longKm),
       ),
       TrainingSession(
         id: 'w$weekNum-sun',
@@ -282,7 +282,7 @@ TrainingPlan buildSeedTrainingPlan() {
         warmUpMinutes: 3,
         coolDownMinutes: 3,
         elevationGainMeters:
-            _estimateElevationGain(SessionType.recoveryRun, recoveryKm),
+            estimateElevationGain(SessionType.recoveryRun, recoveryKm),
       ),
     ];
   }
@@ -339,7 +339,7 @@ TrainingPlan buildSeedTrainingPlan() {
       warmUpMinutes: 5,
       coolDownMinutes: 3,
       elevationGainMeters:
-          _estimateElevationGain(SessionType.easyRun, 5.0),
+          estimateElevationGain(SessionType.easyRun, 5.0),
     ),
     TrainingSession(
       id: 'w4-wed',
@@ -353,7 +353,7 @@ TrainingPlan buildSeedTrainingPlan() {
       warmUpMinutes: 5,
       coolDownMinutes: 3,
       elevationGainMeters:
-          _estimateElevationGain(SessionType.easyRun, 4.0),
+          estimateElevationGain(SessionType.easyRun, 4.0),
     ),
     TrainingSession(
       id: 'w4-thu',
@@ -370,7 +370,7 @@ TrainingPlan buildSeedTrainingPlan() {
       warmUpMinutes: 10,
       coolDownMinutes: 10,
       elevationGainMeters:
-          _estimateElevationGain(SessionType.intervals, 6.0),
+          estimateElevationGain(SessionType.intervals, 6.0),
     ),
     TrainingSession(
       id: 'w4-fri',
@@ -392,7 +392,7 @@ TrainingPlan buildSeedTrainingPlan() {
       warmUpMinutes: 10,
       coolDownMinutes: 10,
       elevationGainMeters:
-          _estimateElevationGain(SessionType.longRun, 12.0),
+          estimateElevationGain(SessionType.longRun, 12.0),
     ),
     TrainingSession(
       id: 'w4-sun',
@@ -406,7 +406,7 @@ TrainingPlan buildSeedTrainingPlan() {
       warmUpMinutes: 3,
       coolDownMinutes: 3,
       elevationGainMeters:
-          _estimateElevationGain(SessionType.recoveryRun, 3.0),
+          estimateElevationGain(SessionType.recoveryRun, 3.0),
     ),
 
     // ── Week 5 (future) ────────────────────────────────────────────────────
