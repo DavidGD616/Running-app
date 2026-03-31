@@ -32,6 +32,7 @@ class TrainingSession {
     this.description,
     this.effortLabel,
     this.phases = const [],
+    this.elevationGainMeters,
     this.intervalReps,
     this.intervalRepDistance,
     this.intervalRecoverySeconds,
@@ -49,6 +50,7 @@ class TrainingSession {
   final String? description;
   final String? effortLabel;
   final List<WorkoutPhase> phases;
+  final int? elevationGainMeters;
   final int? intervalReps;
   final String? intervalRepDistance;
   final int? intervalRecoverySeconds;
@@ -66,6 +68,7 @@ class TrainingSession {
     String? description,
     String? effortLabel,
     List<WorkoutPhase>? phases,
+    int? elevationGainMeters,
     int? intervalReps,
     String? intervalRepDistance,
     int? intervalRecoverySeconds,
@@ -83,6 +86,7 @@ class TrainingSession {
       description: description ?? this.description,
       effortLabel: effortLabel ?? this.effortLabel,
       phases: phases ?? this.phases,
+      elevationGainMeters: elevationGainMeters ?? this.elevationGainMeters,
       intervalReps: intervalReps ?? this.intervalReps,
       intervalRepDistance: intervalRepDistance ?? this.intervalRepDistance,
       intervalRecoverySeconds:

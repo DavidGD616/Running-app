@@ -19,6 +19,7 @@ class TrainingSession {
   +SessionStatus status
   +double? distanceKm
   +int? durationMinutes
+  +int? elevationGainMeters
   +List<WorkoutPhase> phases
 }
 class WorkoutPhase {
@@ -77,9 +78,11 @@ TrainingSession --> SessionStatus
 WeekProgress ..> TrainingSession : calcFrom
 RecentSession --> SessionType
 UserPreferences --> UnitSystem
+WeeklyVolumeData ..> TrainingSession : aggregatedFrom
 UserStats ..> TrainingSession : streakWeeksFrom
 
 ```
 
 ### Derived data notes
 - `WeekProgress` and `UserStats` never own raw session data; they recompute aggregates from the live `TrainingSession` list. The new streak logic walks Mondays backwards and only counts weeks containing a completed or today non-rest session, so gaps or rest-only weeks break the streak.
+- `WeeklyVolumeData` now mirrors the same session source: we slice the last six ISO weeks from `trainingPlan.sessions`, sum each week’s completed non-rest runs (`SessionStatus.completed`), and synthesize the date-range labels from real Monday–Sunday spans. Upcoming/today sessions never inflate the bar; the current week grows only as you complete workouts.

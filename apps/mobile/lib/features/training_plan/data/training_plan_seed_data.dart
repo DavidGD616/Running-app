@@ -47,6 +47,26 @@ TrainingPlan buildSeedTrainingPlan() {
     return SessionStatus.upcoming;
   }
 
+  int _estimateElevationGain(SessionType type, double? distanceKm) {
+    if (type == SessionType.restDay) return 0;
+    final distance = distanceKm ?? 5.0;
+    final perKm = switch (type) {
+      SessionType.longRun => 12,
+      SessionType.hillRepeats => 18,
+      SessionType.intervals => 15,
+      SessionType.fartlek => 14,
+      SessionType.tempoRun => 11,
+      SessionType.thresholdRun => 12,
+      SessionType.racePaceRun => 10,
+      SessionType.progressionRun => 9,
+      SessionType.recoveryRun => 6,
+      SessionType.crossTraining => 5,
+      SessionType.easyRun => 7,
+      SessionType.restDay => 0,
+    };
+    return (distance * perKm).round();
+  }
+
   // ── Helpers to build a standard week of sessions ──────────────────────────
 
   List<TrainingSession> buildPastWeek(int weekNum, {
@@ -71,6 +91,7 @@ TrainingPlan buildSeedTrainingPlan() {
         type: SessionType.restDay,
         status: pastStatus(day(weekNum, 0)),
         weekNumber: weekNum,
+        elevationGainMeters: 0,
       ),
       TrainingSession(
         id: 'w$weekNum-tue',
@@ -83,6 +104,8 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 5,
         coolDownMinutes: 3,
+        elevationGainMeters:
+            _estimateElevationGain(SessionType.easyRun, easyKm),
       ),
       TrainingSession(
         id: 'w$weekNum-wed',
@@ -98,6 +121,7 @@ TrainingPlan buildSeedTrainingPlan() {
         intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
+        elevationGainMeters: _estimateElevationGain(workoutType, workoutKm),
       ),
       TrainingSession(
         id: 'w$weekNum-thu',
@@ -105,6 +129,7 @@ TrainingPlan buildSeedTrainingPlan() {
         type: SessionType.restDay,
         status: pastStatus(day(weekNum, 3)),
         weekNumber: weekNum,
+        elevationGainMeters: 0,
       ),
       TrainingSession(
         id: 'w$weekNum-fri',
@@ -117,6 +142,10 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 5,
         coolDownMinutes: 3,
+        elevationGainMeters: _estimateElevationGain(
+          SessionType.easyRun,
+          easyKm - 1,
+        ),
       ),
       TrainingSession(
         id: 'w$weekNum-sat',
@@ -129,6 +158,8 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 10,
         coolDownMinutes: 10,
+        elevationGainMeters:
+            _estimateElevationGain(SessionType.longRun, longKm),
       ),
       TrainingSession(
         id: 'w$weekNum-sun',
@@ -141,6 +172,8 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Very easy effort',
         warmUpMinutes: 3,
         coolDownMinutes: 3,
+        elevationGainMeters:
+            _estimateElevationGain(SessionType.recoveryRun, recoveryKm),
       ),
     ];
   }
@@ -167,6 +200,7 @@ TrainingPlan buildSeedTrainingPlan() {
         type: SessionType.restDay,
         status: futureStatus(day(weekNum, 0)),
         weekNumber: weekNum,
+        elevationGainMeters: 0,
       ),
       TrainingSession(
         id: 'w$weekNum-tue',
@@ -179,6 +213,8 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 5,
         coolDownMinutes: 3,
+        elevationGainMeters:
+            _estimateElevationGain(SessionType.easyRun, easyKm),
       ),
       TrainingSession(
         id: 'w$weekNum-wed',
@@ -194,6 +230,7 @@ TrainingPlan buildSeedTrainingPlan() {
         intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
+        elevationGainMeters: _estimateElevationGain(workoutType, workoutKm),
       ),
       TrainingSession(
         id: 'w$weekNum-thu',
@@ -201,6 +238,7 @@ TrainingPlan buildSeedTrainingPlan() {
         type: SessionType.restDay,
         status: futureStatus(day(weekNum, 3)),
         weekNumber: weekNum,
+        elevationGainMeters: 0,
       ),
       TrainingSession(
         id: 'w$weekNum-fri',
@@ -213,6 +251,10 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 5,
         coolDownMinutes: 3,
+        elevationGainMeters: _estimateElevationGain(
+          SessionType.easyRun,
+          easyKm - 1,
+        ),
       ),
       TrainingSession(
         id: 'w$weekNum-sat',
@@ -225,6 +267,8 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Easy effort',
         warmUpMinutes: 10,
         coolDownMinutes: 10,
+        elevationGainMeters:
+            _estimateElevationGain(SessionType.longRun, longKm),
       ),
       TrainingSession(
         id: 'w$weekNum-sun',
@@ -237,6 +281,8 @@ TrainingPlan buildSeedTrainingPlan() {
         effortLabel: 'Very easy effort',
         warmUpMinutes: 3,
         coolDownMinutes: 3,
+        elevationGainMeters:
+            _estimateElevationGain(SessionType.recoveryRun, recoveryKm),
       ),
     ];
   }
@@ -279,6 +325,7 @@ TrainingPlan buildSeedTrainingPlan() {
       type: SessionType.restDay,
       status: currentStatus(day(4, 0)),
       weekNumber: 4,
+      elevationGainMeters: 0,
     ),
     TrainingSession(
       id: 'w4-tue',
@@ -291,6 +338,8 @@ TrainingPlan buildSeedTrainingPlan() {
       effortLabel: 'Easy effort',
       warmUpMinutes: 5,
       coolDownMinutes: 3,
+      elevationGainMeters:
+          _estimateElevationGain(SessionType.easyRun, 5.0),
     ),
     TrainingSession(
       id: 'w4-wed',
@@ -303,6 +352,8 @@ TrainingPlan buildSeedTrainingPlan() {
       effortLabel: 'Easy effort',
       warmUpMinutes: 5,
       coolDownMinutes: 3,
+      elevationGainMeters:
+          _estimateElevationGain(SessionType.easyRun, 4.0),
     ),
     TrainingSession(
       id: 'w4-thu',
@@ -318,6 +369,8 @@ TrainingPlan buildSeedTrainingPlan() {
       intervalRecoverySeconds: 90,
       warmUpMinutes: 10,
       coolDownMinutes: 10,
+      elevationGainMeters:
+          _estimateElevationGain(SessionType.intervals, 6.0),
     ),
     TrainingSession(
       id: 'w4-fri',
@@ -325,6 +378,7 @@ TrainingPlan buildSeedTrainingPlan() {
       type: SessionType.restDay,
       status: currentStatus(day(4, 4)),
       weekNumber: 4,
+      elevationGainMeters: 0,
     ),
     TrainingSession(
       id: 'w4-sat',
@@ -337,6 +391,8 @@ TrainingPlan buildSeedTrainingPlan() {
       effortLabel: 'Easy effort',
       warmUpMinutes: 10,
       coolDownMinutes: 10,
+      elevationGainMeters:
+          _estimateElevationGain(SessionType.longRun, 12.0),
     ),
     TrainingSession(
       id: 'w4-sun',
@@ -349,6 +405,8 @@ TrainingPlan buildSeedTrainingPlan() {
       effortLabel: 'Very easy effort',
       warmUpMinutes: 3,
       coolDownMinutes: 3,
+      elevationGainMeters:
+          _estimateElevationGain(SessionType.recoveryRun, 3.0),
     ),
 
     // ── Week 5 (future) ────────────────────────────────────────────────────

@@ -5,6 +5,7 @@ import '../domain/models/recent_session.dart';
 import '../domain/models/user_stats.dart';
 import '../domain/models/weekly_volume_data.dart';
 import '../domain/services/streak_weeks_calculator.dart';
+import '../domain/services/weekly_volume_builder.dart';
 import '../../training_plan/presentation/training_plan_provider.dart';
 
 /// Provides overall user stats (streak, totals, trends, longest run).
@@ -31,7 +32,8 @@ final userStatsProvider = Provider<UserStats>((ref) {
 
 /// Provides weekly volume data for the chart (most recent weeks first-last).
 final weeklyVolumeProvider = Provider<List<WeeklyVolumeData>>((ref) {
-  return kSeedWeeklyVolume;
+  final trainingPlan = ref.watch(trainingPlanProvider);
+  return buildWeeklyVolumeSeries(sessions: trainingPlan.sessions);
 });
 
 /// Provides the list of recent completed sessions shown on the progress screen.
