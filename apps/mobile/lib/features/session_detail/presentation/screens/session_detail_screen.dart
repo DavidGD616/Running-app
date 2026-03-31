@@ -133,9 +133,10 @@ class SessionDetailScreen extends ConsumerWidget {
       session.type.category == SessionCategory.threshold ||
       session.type == SessionType.racePaceRun;
 
-  bool _canStartWorkout(SessionStatus status) {
+  bool _canStartWorkout(SessionStatus status, TrainingSession session) {
     if (!showStartWorkout) return false;
     if (status != SessionStatus.today) return false;
+    if (session.type.isRest) return false;
     return true;
   }
 
@@ -331,8 +332,9 @@ class SessionDetailScreen extends ConsumerWidget {
         onBack: () => context.pop(),
         onMore:
             (status == SessionStatus.today ||
-                status == SessionStatus.upcoming ||
-                status == SessionStatus.skipped)
+                    status == SessionStatus.upcoming ||
+                    status == SessionStatus.skipped) &&
+                !freshSession.type.isRest
             ? () => showSkipWorkoutBottomSheet(
                 context: context,
                 sessionName: title,
@@ -459,7 +461,7 @@ class SessionDetailScreen extends ConsumerWidget {
           ),
 
           // ── Start Workout button ───────────────────────────────
-          if (_canStartWorkout(status))
+          if (_canStartWorkout(status, freshSession))
             _StartButton(
               label: l10n.sessionDetailStartWorkout,
               onTap: () => context.push(RouteNames.preRun),
