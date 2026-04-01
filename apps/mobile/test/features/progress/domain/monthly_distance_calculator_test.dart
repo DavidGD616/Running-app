@@ -9,6 +9,7 @@ void main() {
     double? distanceKm,
     SessionType type = SessionType.easyRun,
     SessionStatus status = SessionStatus.completed,
+    int? durationMinutes,
   }) {
     return TrainingSession(
       id: 'session-${date.toIso8601String()}-${type.name}',
@@ -16,6 +17,7 @@ void main() {
       type: type,
       status: status,
       distanceKm: distanceKm,
+      durationMinutes: durationMinutes,
     );
   }
 
@@ -81,5 +83,61 @@ void main() {
     expect(stats.previousKm, isNull);
     expect(stats.trendPct, isNull);
     expect(stats.hasComparison, isFalse);
+  });
+
+  test('duration stats compute current month minutes', () {
+    final clock = DateTime(2024, 4, 10);
+    final sessions = [
+      buildSession(
+        date: DateTime(2024, 4, 1),
+        distanceKm: 5,
+        durationMinutes: 30,
+      ),
+      buildSession(
+        date: DateTime(2024, 4, 2),
+        distanceKm: 6,
+        durationMinutes: 40,
+      ),
+      buildSession(
+        date: DateTime(2024, 3, 30),
+        distanceKm: 6,
+        durationMinutes: 35,
+      ),
+      buildSession(
+        date: DateTime(2024, 4, 5),
+        distanceKm: 4,
+        status: SessionStatus.today,
+        durationMinutes: 25,
+      ),
+    ];
+
+    final minutes = calculateMonthDurationMinutes(
+      sessions: sessions,
+      clock: clock,
+    );
+    expect(minutes, 70);
+  });
+
+  test('duration stats provide trend only when previous month exists', () {
+    final clock = DateTime(2024, 4, 10);
+    final sessions = [
+      buildSession(
+        date: DateTime(2024, 4, 1),
+        distanceKm: 5,
+        durationMinutes: 30,
+      ),
+      buildSession(
+        date: DateTime(2024, 3, 2),
+        distanceKm: 6,
+        durationMinutes: 60,
+      ),
+    ];
+
+    final stats =
+        calculateMonthlyDurationStats(sessions: sessions, clock: clock);
+    expect(stats.currentMinutes, 30);
+    expect(stats.previousMinutes, 60);
+    expect(stats.trendPct, closeTo(-50, 0.001));
+    expect(stats.hasComparison, isTrue);
   });
 }

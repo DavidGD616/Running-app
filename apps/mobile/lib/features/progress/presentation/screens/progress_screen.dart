@@ -64,21 +64,24 @@ class ProgressScreen extends ConsumerWidget {
     final volumeData = ref.watch(weeklyVolumeProvider);
     final monthlyDistanceStats =
         ref.watch(monthlyDistanceStatsProvider);
+    final monthlyTimeStats =
+        ref.watch(monthlyTimeStatsProvider);
     final distanceTrendPct = monthlyDistanceStats.trendPct;
-    final distanceTrendText = distanceTrendPct == null
-        ? null
-        : distanceTrendPct >= 0
-            ? l10n.progressTrendUp(
-                distanceTrendPct.abs().round().toString(),
-              )
-            : l10n.progressTrendDown(
-                distanceTrendPct.abs().round().toString(),
-              );
-    final distanceTrendColor = distanceTrendPct == null
-        ? null
-        : distanceTrendPct >= 0
-            ? AppColors.success
-            : AppColors.error;
+    final hasDistanceTrend =
+        distanceTrendPct != null && distanceTrendPct > 0;
+    final distanceTrendText = hasDistanceTrend
+        ? l10n.progressTrendUp(distanceTrendPct!.round().toString())
+        : null;
+
+    final timeTrendPct = monthlyTimeStats.trendPct;
+    final hasTimeTrend = timeTrendPct != null && timeTrendPct > 0;
+    final timeTrendText = hasTimeTrend
+        ? l10n.progressTrendUp(timeTrendPct!.round().toString())
+        : null;
+    final currentMinutes = monthlyTimeStats.currentMinutes;
+    final timeHoursValue = (currentMinutes ~/ 60).toString();
+    final timeMinutesValue =
+        (currentMinutes % 60).toString().padLeft(2, '0');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -132,7 +135,9 @@ class ProgressScreen extends ConsumerWidget {
                         value: monthlyDistanceStats.currentKm.toStringAsFixed(1),
                         unit: 'km',
                         trend: distanceTrendText,
-                        trendColor: distanceTrendColor,
+                        trendColor: hasDistanceTrend
+                            ? AppColors.accentPrimary
+                            : null,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -141,16 +146,13 @@ class ProgressScreen extends ConsumerWidget {
                         iconAsset: 'assets/icons/clock.svg',
                         iconColor: AppColors.info,
                         label: l10n.progressTimeLabel,
-                        timeHours: stats.totalTimeHours.toString(),
-                        timeMinutes: stats.totalTimeRemainingMinutes
-                            .toString()
-                            .padLeft(2, '0'),
+                        timeHours: timeHoursValue,
+                        timeMinutes: timeMinutesValue,
                         hourUnit: l10n.progressHourUnit,
                         minuteUnit: l10n.progressMinuteUnit,
-                        trend: l10n.progressTrendUp(
-                          stats.timeTrendPct.round().toString(),
-                        ),
-                        trendColor: AppColors.info,
+                        trend: timeTrendText,
+                        trendColor:
+                            hasTimeTrend ? AppColors.info : null,
                       ),
                     ),
                   ],
@@ -787,7 +789,7 @@ class _ProgressStatTile extends StatelessWidget {
             Text(
               trend!,
               style: AppTypography.caption.copyWith(
-                color: trendColor ?? AppColors.textSecondary,
+                color: trendColor ?? iconColor,
                 fontSize: 11,
                 letterSpacing: 0,
               ),

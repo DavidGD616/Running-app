@@ -46,6 +46,13 @@ final monthlyDistanceStatsProvider =
   );
 });
 
+final monthlyTimeStatsProvider = Provider<MonthlyTimeStats>((ref) {
+  final trainingPlan = ref.watch(trainingPlanProvider);
+  return calculateMonthlyDurationStats(
+    sessions: trainingPlan.sessions,
+  );
+});
+
 /// Provides the list of recent completed sessions shown on the progress screen.
 final recentSessionsProvider = Provider<List<RecentSession>>((ref) {
   return kSeedRecentSessions;
