@@ -1358,8 +1358,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressLongestRunTitle => 'Longest Run';
 
   @override
-  String progressLongestRunImproved(String km) {
-    return '+$km km since start';
+  String progressLongestRunImproved(String distance) {
+    return '+$distance since start';
   }
 
   @override

@@ -2648,8 +2648,8 @@ abstract class AppLocalizations {
   /// Longest run improvement since plan start
   ///
   /// In en, this message translates to:
-  /// **'+{km} km since start'**
-  String progressLongestRunImproved(String km);
+  /// **'+{distance} since start'**
+  String progressLongestRunImproved(String distance);
 
   /// Recent sessions section title
   ///
