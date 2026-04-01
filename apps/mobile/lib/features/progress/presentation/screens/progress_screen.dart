@@ -62,6 +62,8 @@ class ProgressScreen extends ConsumerWidget {
     final stats = ref.watch(userStatsProvider);
     final sessions = ref.watch(recentSessionsProvider);
     final volumeData = ref.watch(weeklyVolumeProvider);
+    final currentMonthDistance =
+        ref.watch(currentMonthDistanceProvider);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -112,7 +114,7 @@ class ProgressScreen extends ConsumerWidget {
                         iconAsset: 'assets/icons/compass.svg',
                         iconColor: AppColors.accentPrimary,
                         label: l10n.progressDistanceLabel,
-                        value: stats.totalDistanceKm.toStringAsFixed(1),
+                        value: currentMonthDistance.toStringAsFixed(1),
                         unit: 'km',
                         trend: l10n.progressTrendUp(
                           stats.distanceTrendPct.round().toString(),
