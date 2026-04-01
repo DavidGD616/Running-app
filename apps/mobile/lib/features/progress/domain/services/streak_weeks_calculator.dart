@@ -2,7 +2,7 @@ import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 
 /// Counts consecutive active weeks ending with the most recent week that has
-/// at least one completed (or in-progress) non-rest workout.
+/// at least one completed non-rest workout.
 int calculateStreakWeeks({
   required Iterable<TrainingSession> sessions,
   DateTime? clock,
@@ -13,8 +13,7 @@ int calculateStreakWeeks({
   for (final session in sessions) {
     if (session.date.isAfter(now)) continue;
     final status = session.status;
-    final isActiveStatus =
-        status == SessionStatus.completed || status == SessionStatus.today;
+    final isActiveStatus = status == SessionStatus.completed;
     if (!isActiveStatus) continue;
     if (session.type.isRest) continue;
 

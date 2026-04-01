@@ -83,13 +83,19 @@ TrainingPlan buildSeedTrainingPlan() {
     int? intervalReps,
     String? intervalRepDistance,
     int? intervalRecoverySeconds,
+    Set<int> skippedOffsets = const {},
   }) {
+    SessionStatus pastStatusForOffset(int offset) {
+      if (skippedOffsets.contains(offset)) return SessionStatus.skipped;
+      return pastStatus(day(weekNum, offset));
+    }
+
     return [
       TrainingSession(
         id: 'w$weekNum-mon',
         date: day(weekNum, 0),
         type: SessionType.restDay,
-        status: pastStatus(day(weekNum, 0)),
+        status: pastStatusForOffset(0),
         weekNumber: weekNum,
         elevationGainMeters: 0,
       ),
@@ -97,7 +103,7 @@ TrainingPlan buildSeedTrainingPlan() {
         id: 'w$weekNum-tue',
         date: day(weekNum, 1),
         type: SessionType.easyRun,
-        status: pastStatus(day(weekNum, 1)),
+        status: pastStatusForOffset(1),
         weekNumber: weekNum,
         distanceKm: easyKm,
         durationMinutes: easyMin,
@@ -111,7 +117,7 @@ TrainingPlan buildSeedTrainingPlan() {
         id: 'w$weekNum-wed',
         date: day(weekNum, 2),
         type: workoutType,
-        status: pastStatus(day(weekNum, 2)),
+        status: pastStatusForOffset(2),
         weekNumber: weekNum,
         distanceKm: workoutKm,
         durationMinutes: workoutMin,
@@ -127,7 +133,7 @@ TrainingPlan buildSeedTrainingPlan() {
         id: 'w$weekNum-thu',
         date: day(weekNum, 3),
         type: SessionType.restDay,
-        status: pastStatus(day(weekNum, 3)),
+        status: pastStatusForOffset(3),
         weekNumber: weekNum,
         elevationGainMeters: 0,
       ),
@@ -135,7 +141,7 @@ TrainingPlan buildSeedTrainingPlan() {
         id: 'w$weekNum-fri',
         date: day(weekNum, 4),
         type: SessionType.easyRun,
-        status: pastStatus(day(weekNum, 4)),
+        status: pastStatusForOffset(4),
         weekNumber: weekNum,
         distanceKm: easyKm - 1,
         durationMinutes: easyMin - 5,
@@ -151,7 +157,7 @@ TrainingPlan buildSeedTrainingPlan() {
         id: 'w$weekNum-sat',
         date: day(weekNum, 5),
         type: SessionType.longRun,
-        status: pastStatus(day(weekNum, 5)),
+        status: pastStatusForOffset(5),
         weekNumber: weekNum,
         distanceKm: longKm,
         durationMinutes: longMin,
@@ -165,7 +171,7 @@ TrainingPlan buildSeedTrainingPlan() {
         id: 'w$weekNum-sun',
         date: day(weekNum, 6),
         type: SessionType.recoveryRun,
-        status: pastStatus(day(weekNum, 6)),
+        status: pastStatusForOffset(6),
         weekNumber: weekNum,
         distanceKm: recoveryKm,
         durationMinutes: recoveryMin,
@@ -296,6 +302,7 @@ TrainingPlan buildSeedTrainingPlan() {
       workoutType: SessionType.easyRun, workoutKm: 5.0, workoutMin: 30,
       longKm: 8.0, longMin: 55,
       recoveryKm: 3.0, recoveryMin: 20,
+      skippedOffsets: {4},
     ),
 
     // ── Week 2 (past) ──────────────────────────────────────────────────────
@@ -304,6 +311,7 @@ TrainingPlan buildSeedTrainingPlan() {
       workoutType: SessionType.tempoRun, workoutKm: 6.0, workoutMin: 38,
       longKm: 10.0, longMin: 65,
       recoveryKm: 3.0, recoveryMin: 20,
+      skippedOffsets: {1},
     ),
 
     // ── Week 3 (past) ──────────────────────────────────────────────────────
@@ -316,6 +324,7 @@ TrainingPlan buildSeedTrainingPlan() {
       intervalReps: 5,
       intervalRepDistance: '400 m',
       intervalRecoverySeconds: 90,
+      skippedOffsets: {6},
     ),
 
     // ── Week 4 (current) ───────────────────────────────────────────────────

@@ -38,7 +38,7 @@ void main() {
     );
   });
 
-  test('streak stops when a week has no activity', () {
+  test('streak stops when the latest week has only today sessions', () {
     final sessions = [
       buildSession(date: dayOfWeek(0, 2), status: SessionStatus.today),
       buildSession(date: dayOfWeek(2, 4)),
