@@ -1348,6 +1348,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String progressTrendDown(String percent) {
+    return '▼ $percent% vs mes ant.';
+  }
+
+  @override
   String get progressWeeksUnit => 'sem';
 
   @override

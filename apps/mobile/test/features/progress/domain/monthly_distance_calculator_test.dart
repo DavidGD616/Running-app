@@ -46,4 +46,40 @@ void main() {
     final total = calculateMonthDistance(sessions: sessions, clock: clock);
     expect(total, 0);
   });
+
+  test('monthly stats return previous comparison and trend', () {
+    final clock = DateTime(2024, 4, 20);
+    final sessions = [
+      buildSession(date: DateTime(2024, 4, 1), distanceKm: 5),
+      buildSession(date: DateTime(2024, 4, 2), distanceKm: 5),
+      buildSession(date: DateTime(2024, 3, 5), distanceKm: 5),
+      buildSession(date: DateTime(2024, 3, 6), distanceKm: 5),
+      buildSession(
+        date: DateTime(2024, 4, 3),
+        distanceKm: 3,
+        status: SessionStatus.today,
+      ),
+    ];
+
+    final stats =
+        calculateMonthlyDistanceStats(sessions: sessions, clock: clock);
+    expect(stats.currentKm, closeTo(10, 0.001));
+    expect(stats.previousKm, closeTo(10, 0.001));
+    expect(stats.trendPct, closeTo(0, 0.001));
+    expect(stats.hasComparison, isTrue);
+  });
+
+  test('stats omit trend when previous month has no distance', () {
+    final clock = DateTime(2024, 4, 20);
+    final sessions = [
+      buildSession(date: DateTime(2024, 4, 1), distanceKm: 5),
+    ];
+
+    final stats =
+        calculateMonthlyDistanceStats(sessions: sessions, clock: clock);
+    expect(stats.currentKm, closeTo(5, 0.001));
+    expect(stats.previousKm, isNull);
+    expect(stats.trendPct, isNull);
+    expect(stats.hasComparison, isFalse);
+  });
 }

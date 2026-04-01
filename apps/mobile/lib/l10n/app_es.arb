@@ -457,6 +457,7 @@
   "progressRunsCompleted": "Completadas",
   "progressStreakSubtitle": "{count} semanas seguidas",
   "progressTrendUp": "▲ {percent}% vs mes ant.",
+  "progressTrendDown": "▼ {percent}% vs mes ant.",
   "progressWeeksUnit": "sem",
   "progressHourUnit": "h",
   "progressMinuteUnit": "m",

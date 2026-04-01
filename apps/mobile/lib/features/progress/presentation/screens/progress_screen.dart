@@ -62,8 +62,23 @@ class ProgressScreen extends ConsumerWidget {
     final stats = ref.watch(userStatsProvider);
     final sessions = ref.watch(recentSessionsProvider);
     final volumeData = ref.watch(weeklyVolumeProvider);
-    final currentMonthDistance =
-        ref.watch(currentMonthDistanceProvider);
+    final monthlyDistanceStats =
+        ref.watch(monthlyDistanceStatsProvider);
+    final distanceTrendPct = monthlyDistanceStats.trendPct;
+    final distanceTrendText = distanceTrendPct == null
+        ? null
+        : distanceTrendPct >= 0
+            ? l10n.progressTrendUp(
+                distanceTrendPct.abs().round().toString(),
+              )
+            : l10n.progressTrendDown(
+                distanceTrendPct.abs().round().toString(),
+              );
+    final distanceTrendColor = distanceTrendPct == null
+        ? null
+        : distanceTrendPct >= 0
+            ? AppColors.success
+            : AppColors.error;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -114,12 +129,10 @@ class ProgressScreen extends ConsumerWidget {
                         iconAsset: 'assets/icons/compass.svg',
                         iconColor: AppColors.accentPrimary,
                         label: l10n.progressDistanceLabel,
-                        value: currentMonthDistance.toStringAsFixed(1),
+                        value: monthlyDistanceStats.currentKm.toStringAsFixed(1),
                         unit: 'km',
-                        trend: l10n.progressTrendUp(
-                          stats.distanceTrendPct.round().toString(),
-                        ),
-                        trendColor: AppColors.accentPrimary,
+                        trend: distanceTrendText,
+                        trendColor: distanceTrendColor,
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),
@@ -708,8 +721,8 @@ class _ProgressStatTile extends StatelessWidget {
     required this.iconAsset,
     required this.iconColor,
     required this.label,
-    required this.trend,
-    required this.trendColor,
+    this.trend,
+    this.trendColor,
     this.value,
     this.unit,
     this.valueColor,
@@ -729,8 +742,8 @@ class _ProgressStatTile extends StatelessWidget {
   final String? timeMinutes;
   final String? hourUnit;
   final String? minuteUnit;
-  final String trend;
-  final Color trendColor;
+  final String? trend;
+  final Color? trendColor;
 
   @override
   Widget build(BuildContext context) {
@@ -769,17 +782,17 @@ class _ProgressStatTile extends StatelessWidget {
           // Value
           _buildValue(),
 
-          const SizedBox(height: AppSpacing.xs),
-
-          // Trend
-          Text(
-            trend,
-            style: AppTypography.caption.copyWith(
-              color: trendColor,
-              fontSize: 11,
-              letterSpacing: 0,
+          if (trend != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              trend!,
+              style: AppTypography.caption.copyWith(
+                color: trendColor ?? AppColors.textSecondary,
+                fontSize: 11,
+                letterSpacing: 0,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );

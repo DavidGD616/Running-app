@@ -1312,6 +1312,12 @@
     "placeholders": { "percent": { "type": "String" } }
   },
 
+  "progressTrendDown": "▼ {percent}% vs last mo",
+  "@progressTrendDown": {
+    "description": "Downward trend label on stat tiles",
+    "placeholders": { "percent": { "type": "String" } }
+  },
+
   "progressWeeksUnit": "wks",
   "@progressWeeksUnit": { "description": "Weeks unit abbreviation" },
 

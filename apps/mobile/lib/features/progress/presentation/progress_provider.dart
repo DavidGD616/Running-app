@@ -38,9 +38,12 @@ final weeklyVolumeProvider = Provider<List<WeeklyVolumeData>>((ref) {
 });
 
 /// Total distance (km) logged in the current calendar month.
-final currentMonthDistanceProvider = Provider<double>((ref) {
+final monthlyDistanceStatsProvider =
+    Provider<MonthlyDistanceStats>((ref) {
   final trainingPlan = ref.watch(trainingPlanProvider);
-  return calculateMonthDistance(sessions: trainingPlan.sessions);
+  return calculateMonthlyDistanceStats(
+    sessions: trainingPlan.sessions,
+  );
 });
 
 /// Provides the list of recent completed sessions shown on the progress screen.

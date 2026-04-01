@@ -2615,6 +2615,12 @@ abstract class AppLocalizations {
   /// **'▲ {percent}% vs last mo'**
   String progressTrendUp(String percent);
 
+  /// Downward trend label on stat tiles
+  ///
+  /// In en, this message translates to:
+  /// **'▼ {percent}% vs last mo'**
+  String progressTrendDown(String percent);
+
   /// Weeks unit abbreviation
   ///
   /// In en, this message translates to:
