@@ -462,7 +462,7 @@
   "progressHourUnit": "h",
   "progressMinuteUnit": "m",
   "progressLongestRunTitle": "Carrera Más Larga",
-  "progressLongestRunImproved": "+{km} km desde el inicio",
+  "progressLongestRunImproved": "+{distance} desde el inicio",
   "progressRecentSessionsTitle": "Sesiones Recientes",
   "progressViewAll": "Ver Todo ›",
   "progressSessionTempoRun": "Carrera Tempo",

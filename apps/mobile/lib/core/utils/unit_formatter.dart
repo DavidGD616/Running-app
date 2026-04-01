@@ -59,6 +59,21 @@ class UnitFormatter {
     return isWhole ? '${km.toInt()} km' : '${km.toStringAsFixed(1)} km';
   }
 
+  static double _convertDistance(double km, UnitSystem unit) =>
+      unit == UnitSystem.km ? km : km * 0.621371;
+
+  /// Returns the numeric distance formatted without unit, respecting unit system.
+  static String formatDistanceValue(double km, UnitSystem unit) {
+    final converted = _convertDistance(km, unit);
+    return converted.toStringAsFixed(1);
+  }
+
+  /// Returns distance string with unit label (e.g. '5 km' or '3.1 mi').
+  static String formatDistanceWithUnit(double km, UnitSystem unit) {
+    final value = formatDistanceValue(km, unit);
+    return '$value ${unitLabel(unit)}';
+  }
+
   /// Options for "Longest recent run" in CurrentFitnessScreen.
   static List<String> longestRunOptions(UnitSystem unit) =>
       unit == UnitSystem.km

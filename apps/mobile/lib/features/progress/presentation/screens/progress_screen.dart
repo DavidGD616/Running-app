@@ -14,6 +14,8 @@ import '../../../progress/domain/models/recent_session.dart';
 import '../../../progress/domain/models/weekly_volume_data.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../presentation/progress_provider.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
 
 // ── Icon data helper ──────────────────────────────────────────────────────────
 
@@ -66,18 +68,25 @@ class ProgressScreen extends ConsumerWidget {
         ref.watch(monthlyDistanceStatsProvider);
     final monthlyTimeStats =
         ref.watch(monthlyTimeStatsProvider);
+    final longestRunStats = ref.watch(longestRunStatsProvider);
+    final unitPrefs = ref.watch(userPreferencesProvider);
+    final unitSystem =
+        unitPrefs.value?.unitSystem ?? UnitSystem.km;
     final distanceTrendPct = monthlyDistanceStats.trendPct;
     final hasDistanceTrend =
         distanceTrendPct != null && distanceTrendPct > 0;
-    final distanceTrendText = hasDistanceTrend
-        ? l10n.progressTrendUp(distanceTrendPct!.round().toString())
-        : null;
+    final distanceTrendValue =
+        hasDistanceTrend ? distanceTrendPct : null;
+    final distanceTrendText = distanceTrendValue == null
+        ? null
+        : l10n.progressTrendUp(distanceTrendValue.round().toString());
 
     final timeTrendPct = monthlyTimeStats.trendPct;
     final hasTimeTrend = timeTrendPct != null && timeTrendPct > 0;
-    final timeTrendText = hasTimeTrend
-        ? l10n.progressTrendUp(timeTrendPct!.round().toString())
-        : null;
+    final timeTrendValue = hasTimeTrend ? timeTrendPct : null;
+    final timeTrendText = timeTrendValue == null
+        ? null
+        : l10n.progressTrendUp(timeTrendValue.round().toString());
     final currentMinutes = monthlyTimeStats.currentMinutes;
     final timeHoursValue = (currentMinutes ~/ 60).toString();
     final timeMinutesValue =
@@ -199,8 +208,9 @@ class ProgressScreen extends ConsumerWidget {
               // ── Longest run card ──────────────────────────────────
               _LongestRunCard(
                 l10n: l10n,
-                longestRunKm: stats.longestRunKm,
-                improvementKm: stats.longestRunImprovementKm,
+                unitSystem: unitSystem,
+                longestRunKm: longestRunStats.bestDistanceKm,
+                improvementKm: longestRunStats.improvementKm,
               ),
 
               const SizedBox(height: AppSpacing.md),
@@ -872,16 +882,35 @@ class _ProgressStatTile extends StatelessWidget {
 class _LongestRunCard extends StatelessWidget {
   const _LongestRunCard({
     required this.l10n,
+    required this.unitSystem,
     required this.longestRunKm,
     required this.improvementKm,
   });
 
   final AppLocalizations l10n;
-  final double longestRunKm;
-  final double improvementKm;
+  final UnitSystem unitSystem;
+  final double? longestRunKm;
+  final double? improvementKm;
 
   @override
   Widget build(BuildContext context) {
+    final hasRecord = longestRunKm != null && longestRunKm! > 0;
+    final valueText = hasRecord
+        ? UnitFormatter.formatDistanceValue(
+            longestRunKm!,
+            unitSystem,
+          )
+        : '--';
+    final unitLabel = UnitFormatter.unitLabel(unitSystem);
+    final improvementText = (improvementKm ?? 0) > 0
+        ? l10n.progressLongestRunImproved(
+            UnitFormatter.formatDistanceWithUnit(
+              improvementKm!,
+              unitSystem,
+            ),
+          )
+        : null;
+
     return Container(
       padding: const EdgeInsets.symmetric(
         horizontal: AppSpacing.lg,
@@ -936,15 +965,14 @@ class _LongestRunCard extends StatelessWidget {
                   style: AppTypography.titleMedium.copyWith(fontSize: 15),
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  l10n.progressLongestRunImproved(
-                    improvementKm.toStringAsFixed(1),
+                if (improvementText != null)
+                  Text(
+                    improvementText,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.textDisabled,
+                      fontSize: 12,
+                    ),
                   ),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textDisabled,
-                    fontSize: 12,
-                  ),
-                ),
               ],
             ),
           ),
@@ -954,7 +982,7 @@ class _LongestRunCard extends StatelessWidget {
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: longestRunKm.toStringAsFixed(1),
+                  text: valueText,
                   style: TextStyle(
                     color: AppColors.textPrimary,
                     fontSize: 28,
@@ -962,7 +990,7 @@ class _LongestRunCard extends StatelessWidget {
                   ),
                 ),
                 TextSpan(
-                  text: ' km',
+                  text: ' $unitLabel',
                   style: TextStyle(
                     color: AppColors.textSecondary,
                     fontSize: 14,

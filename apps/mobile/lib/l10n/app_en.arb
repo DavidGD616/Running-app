@@ -1330,10 +1330,10 @@
   "progressLongestRunTitle": "Longest Run",
   "@progressLongestRunTitle": { "description": "Longest run card title" },
 
-  "progressLongestRunImproved": "+{km} km since start",
+  "progressLongestRunImproved": "+{distance} since start",
   "@progressLongestRunImproved": {
     "description": "Longest run improvement since plan start",
-    "placeholders": { "km": { "type": "String" } }
+    "placeholders": { "distance": { "type": "String" } }
   },
 
   "progressRecentSessionsTitle": "Recent Sessions",
