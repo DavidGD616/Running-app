@@ -2,10 +2,11 @@ import 'plan_week.dart';
 import 'training_session.dart';
 import 'session_type.dart';
 
+enum TrainingPlanRaceType { fiveK, tenK, halfMarathon, marathon, other }
+
 class TrainingPlan {
   const TrainingPlan({
     required this.id,
-    required this.name,
     required this.raceType,
     required this.totalWeeks,
     required this.currentWeekNumber,
@@ -13,8 +14,7 @@ class TrainingPlan {
   });
 
   final String id;
-  final String name;
-  final String raceType;
+  final TrainingPlanRaceType raceType;
   final int totalWeeks;
   final int currentWeekNumber;
   final List<TrainingSession> sessions;

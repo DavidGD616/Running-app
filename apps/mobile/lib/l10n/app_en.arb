@@ -1401,6 +1401,18 @@
     }
   },
 
+  "trainingPlanEffortEasy": "Easy",
+  "@trainingPlanEffortEasy": { "description": "Training plan effort label: easy" },
+
+  "trainingPlanEffortModerate": "Moderate",
+  "@trainingPlanEffortModerate": { "description": "Training plan effort label: moderate" },
+
+  "trainingPlanEffortHard": "Hard",
+  "@trainingPlanEffortHard": { "description": "Training plan effort label: hard" },
+
+  "trainingPlanEffortVeryEasy": "Very Easy",
+  "@trainingPlanEffortVeryEasy": { "description": "Training plan effort label: very easy" },
+
   "sessionCompletedAt": "Completed · {time}",
   "@sessionCompletedAt": {
     "description": "Completed session subtitle with completion time",

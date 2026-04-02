@@ -1428,6 +1428,18 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get trainingPlanEffortEasy => 'Fácil';
+
+  @override
+  String get trainingPlanEffortModerate => 'Moderado';
+
+  @override
+  String get trainingPlanEffortHard => 'Duro';
+
+  @override
+  String get trainingPlanEffortVeryEasy => 'Muy fácil';
+
+  @override
   String sessionCompletedAt(String time) {
     return 'Completado · $time';
   }

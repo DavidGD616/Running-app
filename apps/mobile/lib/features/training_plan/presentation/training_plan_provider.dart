@@ -28,7 +28,6 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
 
     state = TrainingPlan(
       id: state.id,
-      name: state.name,
       raceType: state.raceType,
       totalWeeks: state.totalWeeks,
       currentWeekNumber: state.currentWeekNumber,
@@ -53,7 +52,6 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
 
     state = TrainingPlan(
       id: state.id,
-      name: state.name,
       raceType: state.raceType,
       totalWeeks: state.totalWeeks,
       currentWeekNumber: state.currentWeekNumber,

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../training_plan/domain/models/training_plan.dart';
 import '../domain/user_preferences.dart';
 import '../../training_plan/presentation/training_plan_provider.dart';
 
@@ -62,12 +63,12 @@ final userPreferencesProvider =
 /// from [trainingPlanProvider].
 class UserProfileDisplay {
   const UserProfileDisplay({
-    required this.planName,
+    required this.raceType,
     required this.currentWeekNumber,
     required this.totalWeeks,
   });
 
-  final String planName;
+  final TrainingPlanRaceType raceType;
   final int currentWeekNumber;
   final int totalWeeks;
 }
@@ -75,7 +76,7 @@ class UserProfileDisplay {
 final userProfileDisplayProvider = Provider<UserProfileDisplay>((ref) {
   final plan = ref.watch(trainingPlanProvider);
   return UserProfileDisplay(
-    planName: plan.name,
+    raceType: plan.raceType,
     currentWeekNumber: plan.currentWeekNumber,
     totalWeeks: plan.totalWeeks,
   );

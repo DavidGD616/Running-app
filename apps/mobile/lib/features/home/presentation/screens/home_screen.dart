@@ -17,6 +17,7 @@ import '../../../../core/widgets/workout_hero_card.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
+import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
@@ -125,6 +126,11 @@ class HomeScreen extends ConsumerWidget {
     final profile = ref.watch(userProfileDisplayProvider);
     final todaySession = plan.todaySession;
     final nextSession = plan.nextUpcomingSession;
+    final planName = localizedTrainingPlanName(
+      raceType: profile.raceType,
+      totalWeeks: profile.totalWeeks,
+      l10n: l10n,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -147,7 +153,7 @@ class HomeScreen extends ConsumerWidget {
                   planBadge: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      PlanBadgePill(planName: profile.planName),
+                      PlanBadgePill(planName: planName),
                       const SizedBox(width: AppSpacing.sm),
                       Text(
                         l10n.profileWeekShort(
@@ -190,7 +196,12 @@ class HomeScreen extends ConsumerWidget {
                         duration: UnitFormatter.formatDuration(
                           nextSession.durationMinutes ?? 0,
                         ),
-                        effortLabel: nextSession.effortLabel ?? '',
+                        effortLabel: nextSession.effort != null
+                            ? localizedTrainingSessionEffort(
+                                nextSession.effort!,
+                                l10n,
+                              )
+                            : '',
                         iconAsset: nextSession.type.iconAsset,
                         onTap: () => context.push(
                           RouteNames.sessionDetail,

@@ -1,6 +1,7 @@
 import 'session_type.dart';
 
 enum WorkoutPhaseType { warmUp, main, coolDown }
+enum TrainingSessionEffort { easy, moderate, hard, veryEasy }
 
 class WorkoutPhase {
   const WorkoutPhase({
@@ -30,7 +31,7 @@ class TrainingSession {
     this.distanceKm,
     this.durationMinutes,
     this.description,
-    this.effortLabel,
+    this.effort,
     this.phases = const [],
     this.elevationGainMeters,
     this.intervalReps,
@@ -48,7 +49,7 @@ class TrainingSession {
   final double? distanceKm;
   final int? durationMinutes;
   final String? description;
-  final String? effortLabel;
+  final TrainingSessionEffort? effort;
   final List<WorkoutPhase> phases;
   final int? elevationGainMeters;
   final int? intervalReps;
@@ -66,7 +67,7 @@ class TrainingSession {
     double? distanceKm,
     int? durationMinutes,
     String? description,
-    String? effortLabel,
+    TrainingSessionEffort? effort,
     List<WorkoutPhase>? phases,
     int? elevationGainMeters,
     int? intervalReps,
@@ -84,7 +85,7 @@ class TrainingSession {
       distanceKm: distanceKm ?? this.distanceKm,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       description: description ?? this.description,
-      effortLabel: effortLabel ?? this.effortLabel,
+      effort: effort ?? this.effort,
       phases: phases ?? this.phases,
       elevationGainMeters: elevationGainMeters ?? this.elevationGainMeters,
       intervalReps: intervalReps ?? this.intervalReps,

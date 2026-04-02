@@ -9,6 +9,7 @@ import '../../../../core/widgets/profile_card.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/settings_row.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
@@ -18,6 +19,11 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final profile = ref.watch(userProfileDisplayProvider);
+    final planName = localizedTrainingPlanName(
+      raceType: profile.raceType,
+      totalWeeks: profile.totalWeeks,
+      l10n: l10n,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -38,7 +44,7 @@ class SettingsScreen extends ConsumerWidget {
               // ── Profile card ───────────────────────────────────
               ProfileCard(
                 name: l10n.profileDefaultName,
-                planName: profile.planName,
+                planName: planName,
                 weekInfo: l10n.profileWeekFull(
                   profile.currentWeekNumber.toString(),
                   profile.totalWeeks.toString(),

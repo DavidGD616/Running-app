@@ -493,6 +493,10 @@
       "total": { "type": "String" }
     }
   },
+  "trainingPlanEffortEasy": "Fácil",
+  "trainingPlanEffortModerate": "Moderado",
+  "trainingPlanEffortHard": "Duro",
+  "trainingPlanEffortVeryEasy": "Muy fácil",
   "sessionCompletedAt": "Completado · {time}",
   "@sessionCompletedAt": {
     "placeholders": {

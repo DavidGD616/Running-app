@@ -2759,6 +2759,30 @@ abstract class AppLocalizations {
   /// **'Week {week} of {total}'**
   String profileWeekFull(String week, String total);
 
+  /// Training plan effort label: easy
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get trainingPlanEffortEasy;
+
+  /// Training plan effort label: moderate
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get trainingPlanEffortModerate;
+
+  /// Training plan effort label: hard
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get trainingPlanEffortHard;
+
+  /// Training plan effort label: very easy
+  ///
+  /// In en, this message translates to:
+  /// **'Very Easy'**
+  String get trainingPlanEffortVeryEasy;
+
   /// Completed session subtitle with completion time
   ///
   /// In en, this message translates to:

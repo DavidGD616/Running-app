@@ -1,6 +1,6 @@
 import '../domain/models/session_type.dart';
-import '../domain/models/training_session.dart';
 import '../domain/models/training_plan.dart';
+import '../domain/models/training_session.dart';
 
 /// Returns a [TrainingPlan] seeded with mock data for all 12 weeks.
 /// The current week is week 4. Weeks 1–3 are past (completed), week 4 is
@@ -107,7 +107,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: easyKm,
         durationMinutes: easyMin,
-        effortLabel: 'Easy effort',
+        effort: TrainingSessionEffort.easy,
         warmUpMinutes: 5,
         coolDownMinutes: 3,
         elevationGainMeters:
@@ -121,7 +121,9 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: workoutKm,
         durationMinutes: workoutMin,
-        effortLabel: workoutIsIntervals ? 'Hard effort' : 'Moderate effort',
+        effort: workoutIsIntervals
+            ? TrainingSessionEffort.hard
+            : TrainingSessionEffort.moderate,
         intervalReps: workoutIsIntervals ? intervalReps : null,
         intervalRepDistance: workoutIsIntervals ? intervalRepDistance : null,
         intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
@@ -145,7 +147,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: easyKm - 1,
         durationMinutes: easyMin - 5,
-        effortLabel: 'Easy effort',
+        effort: TrainingSessionEffort.easy,
         warmUpMinutes: 5,
         coolDownMinutes: 3,
         elevationGainMeters: estimateElevationGain(
@@ -161,7 +163,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: longKm,
         durationMinutes: longMin,
-        effortLabel: 'Easy effort',
+        effort: TrainingSessionEffort.easy,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters:
@@ -175,7 +177,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: recoveryKm,
         durationMinutes: recoveryMin,
-        effortLabel: 'Very easy effort',
+        effort: TrainingSessionEffort.veryEasy,
         warmUpMinutes: 3,
         coolDownMinutes: 3,
         elevationGainMeters:
@@ -216,7 +218,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: easyKm,
         durationMinutes: easyMin,
-        effortLabel: 'Easy effort',
+        effort: TrainingSessionEffort.easy,
         warmUpMinutes: 5,
         coolDownMinutes: 3,
         elevationGainMeters:
@@ -230,7 +232,9 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: workoutKm,
         durationMinutes: workoutMin,
-        effortLabel: workoutIsIntervals ? 'Hard effort' : 'Moderate effort',
+        effort: workoutIsIntervals
+            ? TrainingSessionEffort.hard
+            : TrainingSessionEffort.moderate,
         intervalReps: workoutIsIntervals ? intervalReps : null,
         intervalRepDistance: workoutIsIntervals ? intervalRepDistance : null,
         intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
@@ -254,7 +258,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: easyKm - 1,
         durationMinutes: easyMin - 5,
-        effortLabel: 'Easy effort',
+        effort: TrainingSessionEffort.easy,
         warmUpMinutes: 5,
         coolDownMinutes: 3,
         elevationGainMeters: estimateElevationGain(
@@ -270,7 +274,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: longKm,
         durationMinutes: longMin,
-        effortLabel: 'Easy effort',
+        effort: TrainingSessionEffort.easy,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters:
@@ -284,7 +288,7 @@ TrainingPlan buildSeedTrainingPlan() {
         weekNumber: weekNum,
         distanceKm: recoveryKm,
         durationMinutes: recoveryMin,
-        effortLabel: 'Very easy effort',
+        effort: TrainingSessionEffort.veryEasy,
         warmUpMinutes: 3,
         coolDownMinutes: 3,
         elevationGainMeters:
@@ -344,7 +348,7 @@ TrainingPlan buildSeedTrainingPlan() {
       weekNumber: 4,
       distanceKm: 5.0,
       durationMinutes: 30,
-      effortLabel: 'Easy effort',
+      effort: TrainingSessionEffort.easy,
       warmUpMinutes: 5,
       coolDownMinutes: 3,
       elevationGainMeters:
@@ -358,7 +362,7 @@ TrainingPlan buildSeedTrainingPlan() {
       weekNumber: 4,
       distanceKm: 4.0,
       durationMinutes: 25,
-      effortLabel: 'Easy effort',
+      effort: TrainingSessionEffort.easy,
       warmUpMinutes: 5,
       coolDownMinutes: 3,
       elevationGainMeters:
@@ -372,7 +376,7 @@ TrainingPlan buildSeedTrainingPlan() {
       weekNumber: 4,
       distanceKm: 6.0,
       durationMinutes: 45,
-      effortLabel: 'Hard effort',
+      effort: TrainingSessionEffort.hard,
       intervalReps: 6,
       intervalRepDistance: '400 m',
       intervalRecoverySeconds: 90,
@@ -397,7 +401,7 @@ TrainingPlan buildSeedTrainingPlan() {
       weekNumber: 4,
       distanceKm: 12.0,
       durationMinutes: 75,
-      effortLabel: 'Easy effort',
+      effort: TrainingSessionEffort.easy,
       warmUpMinutes: 10,
       coolDownMinutes: 10,
       elevationGainMeters:
@@ -411,7 +415,7 @@ TrainingPlan buildSeedTrainingPlan() {
       weekNumber: 4,
       distanceKm: 3.0,
       durationMinutes: 20,
-      effortLabel: 'Very easy effort',
+      effort: TrainingSessionEffort.veryEasy,
       warmUpMinutes: 3,
       coolDownMinutes: 3,
       elevationGainMeters:
@@ -493,8 +497,7 @@ TrainingPlan buildSeedTrainingPlan() {
 
   return TrainingPlan(
     id: 'seed-plan',
-    name: 'Half Marathon Plan',
-    raceType: 'Half Marathon',
+    raceType: TrainingPlanRaceType.halfMarathon,
     totalWeeks: 12,
     currentWeekNumber: 4,
     sessions: sessions,
