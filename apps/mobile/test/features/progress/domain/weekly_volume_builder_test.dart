@@ -1,9 +1,14 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:running_app/features/progress/domain/services/weekly_volume_builder.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/training_session.dart';
 
 void main() {
+  setUpAll(() async {
+    await initializeDateFormatting('es');
+  });
+
   final baseMonday = DateTime(2024, 3, 25);
 
   TrainingSession buildSession({
@@ -110,5 +115,31 @@ void main() {
       numberOfWeeks: 0,
     );
     expect(result, isEmpty);
+  });
+
+  test('formats historical week date ranges using the requested locale', () {
+    final baseMonday = DateTime(2024, 4, 15);
+    final sessions = [
+      buildSession(
+        date: baseMonday.subtract(const Duration(days: 7)),
+        distance: 8,
+        minutes: 45,
+      ),
+      buildSession(
+        date: baseMonday,
+        distance: 5,
+        minutes: 30,
+      ),
+    ];
+
+    final result = buildWeeklyVolumeSeries(
+      sessions: sessions,
+      numberOfWeeks: 2,
+      clock: baseMonday,
+      locale: 'es',
+    );
+
+    expect(result.first.dateRange, 'ABR 08 - ABR 14');
+    expect(result.last.dateRange, isNull);
   });
 }

@@ -8,6 +8,7 @@ import '../domain/services/streak_weeks_calculator.dart';
 import '../domain/services/weekly_volume_builder.dart';
 import '../domain/services/monthly_distance_calculator.dart';
 import '../domain/services/longest_run_calculator.dart';
+import '../../localization/presentation/locale_provider.dart';
 import '../../training_plan/presentation/training_plan_provider.dart';
 
 /// Provides overall user stats (streak, totals, trends, longest run).
@@ -35,7 +36,11 @@ final userStatsProvider = Provider<UserStats>((ref) {
 /// Provides weekly volume data for the chart (most recent weeks first-last).
 final weeklyVolumeProvider = Provider<List<WeeklyVolumeData>>((ref) {
   final trainingPlan = ref.watch(trainingPlanProvider);
-  return buildWeeklyVolumeSeries(sessions: trainingPlan.sessions);
+  final locale = ref.watch(localeProvider).value?.languageCode;
+  return buildWeeklyVolumeSeries(
+    sessions: trainingPlan.sessions,
+    locale: locale,
+  );
 });
 
 /// Total distance (km) logged in the current calendar month.

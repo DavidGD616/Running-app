@@ -9,12 +9,13 @@ List<WeeklyVolumeData> buildWeeklyVolumeSeries({
   required Iterable<TrainingSession> sessions,
   int numberOfWeeks = 6,
   DateTime? clock,
+  String? locale,
 }) {
   if (numberOfWeeks <= 0) return const [];
 
   final now = clock ?? DateTime.now();
   final currentWeekStart = _mondayOf(now);
-  final formatter = DateFormat('MMM dd');
+  final formatter = DateFormat('MMM dd', locale);
   final completedRuns = sessions
       .where(
         (s) =>

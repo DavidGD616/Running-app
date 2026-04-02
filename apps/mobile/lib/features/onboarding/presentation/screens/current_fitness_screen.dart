@@ -13,7 +13,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
-import '../../../../core/utils/unit_formatter.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -26,6 +25,8 @@ class CurrentFitnessScreen extends ConsumerStatefulWidget {
 }
 
 class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
+  static const _benchmarkSkipKey = 'Skip for now';
+
   String? _experience;
 
   // Brand new only
@@ -48,14 +49,18 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
     if (_experience == null) return false;
     if (_isBrandNew) {
       return _canRun10Min != null &&
-          (_benchmark == null || _benchmark == 'Skip for now' || _benchmarkTime != null);
+          (_benchmark == null ||
+              _benchmark == _benchmarkSkipKey ||
+              _benchmarkTime != null);
     }
     return _runningDays != null &&
         _weeklyVolume != null &&
         _longestRun != null &&
         _canCompleteGoalDist != null &&
         _raceDistanceBefore != null &&
-        (_benchmark == null || _benchmark == 'Skip for now' || _benchmarkTime != null);
+        (_benchmark == null ||
+            _benchmark == _benchmarkSkipKey ||
+            _benchmarkTime != null);
   }
 
   void _scrollToBottom() {
@@ -131,7 +136,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
             ('5K time', l10n.benchmark5K),
             ('10K time', l10n.benchmark10K),
             ('Half marathon time', l10n.benchmarkHalfMarathon),
-            ('Skip for now', l10n.benchmarkSkipForNow),
+            (_benchmarkSkipKey, l10n.benchmarkSkipForNow),
           ]
         : [
             ('1-mile run time', l10n.benchmarkMiRun),
@@ -139,11 +144,15 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
             ('5K time', l10n.benchmark5K),
             ('10K time', l10n.benchmark10K),
             ('Half marathon time', l10n.benchmarkHalfMarathon),
-            ('Skip for now', l10n.benchmarkSkipForNow),
+            (_benchmarkSkipKey, l10n.benchmarkSkipForNow),
           ];
     final benchmarkLabelFor = Map<String, String>.fromEntries(
       benchmarkOptions.map((t) => MapEntry(t.$1, t.$2)),
     );
+
+    final weeklyVolumeOptions = unitSystem == UnitSystem.km
+        ? const ['0 km', '1–13 km', '10–16 km', '17–24 km', '25–32 km', '33–48 km', '49+']
+        : const ['0 mi', '1–5 mi', '6–10 mi', '11–15 mi', '16–20 mi', '21–30 mi', '31+'];
 
     final longestRunOptions = unitSystem == UnitSystem.km
         ? [l10n.longestRunNone, l10n.longestRunLessThan5km, '5–8 km', '9–13 km', '14–16 km', '17–21 km', '21+ km']
@@ -378,7 +387,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.weeklyVolumeOptions(unitSystem)
+                        children: weeklyVolumeOptions
                         .map((vol) => _Chip(
                           label: vol,
                           isSelected: _weeklyVolume == vol,
@@ -514,14 +523,14 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                               _benchmark = t.$1;
                               _benchmarkTime = null;
                             });
-                            if (t.$1 != 'Skip for now') {
+                            if (t.$1 != _benchmarkSkipKey) {
                               _scrollToBottom();
                               _showTimePicker();
                             }
                           },
                         )).toList(),
                       ),
-                      if (_benchmark != null && _benchmark != 'Skip for now') ...[
+                      if (_benchmark != null && _benchmark != _benchmarkSkipKey) ...[
                         const SizedBox(height: AppSpacing.lg),
                         Text(
                           l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'l10n/app_localizations.dart';
 
 import 'core/router/app_router.dart';
@@ -9,6 +10,7 @@ import 'features/localization/presentation/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await initializeDateFormatting();
   runApp(const ProviderScope(child: RunningApp()));
 }
 

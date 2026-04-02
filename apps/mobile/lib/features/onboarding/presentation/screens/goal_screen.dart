@@ -13,7 +13,6 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
-import '../../../../core/utils/unit_formatter.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -44,12 +43,33 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     });
   }
 
+  String _raceSubtitle(
+    String raceName,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
+    switch (raceName) {
+      case '5K':
+        return unit == UnitSystem.km ? '5 km' : '3.1 mi';
+      case '10K':
+        return unit == UnitSystem.km ? '10 km' : '6.2 mi';
+      case 'Half Marathon':
+        return unit == UnitSystem.km ? '21.1 km' : '13.1 mi';
+      case 'Marathon':
+        return unit == UnitSystem.km ? '42.2 km' : '26.2 mi';
+      case 'Other':
+        return l10n.raceCustomDistance;
+      default:
+        return raceName;
+    }
+  }
+
   List<_Race> _buildRaces(UnitSystem unit, AppLocalizations l10n) => [
-    _Race('5K', l10n.race5K, UnitFormatter.raceSubtitle('5K', unit), 'assets/icons/flame.svg'),
-    _Race('10K', l10n.race10K, UnitFormatter.raceSubtitle('10K', unit), 'assets/icons/flame.svg'),
-    _Race('Half Marathon', l10n.raceHalfMarathon, UnitFormatter.raceSubtitle('Half Marathon', unit), 'assets/icons/trophy.svg'),
-    _Race('Marathon', l10n.raceMarathon, UnitFormatter.raceSubtitle('Marathon', unit), 'assets/icons/medal.svg'),
-    _Race('Other', l10n.raceOther, UnitFormatter.raceSubtitle('Other', unit), 'assets/icons/mountain.svg'),
+    _Race('5K', l10n.race5K, _raceSubtitle('5K', unit, l10n), 'assets/icons/flame.svg'),
+    _Race('10K', l10n.race10K, _raceSubtitle('10K', unit, l10n), 'assets/icons/flame.svg'),
+    _Race('Half Marathon', l10n.raceHalfMarathon, _raceSubtitle('Half Marathon', unit, l10n), 'assets/icons/trophy.svg'),
+    _Race('Marathon', l10n.raceMarathon, _raceSubtitle('Marathon', unit, l10n), 'assets/icons/medal.svg'),
+    _Race('Other', l10n.raceOther, _raceSubtitle('Other', unit, l10n), 'assets/icons/mountain.svg'),
   ];
 
   static const _priorities = [
