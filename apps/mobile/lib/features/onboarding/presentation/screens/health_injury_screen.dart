@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class HealthInjuryScreen extends ConsumerStatefulWidget {
@@ -53,7 +54,17 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final painOptions = [l10n.painNo, l10n.painMild, l10n.painModerate, l10n.painSevere];
+    final painOptions = [
+      OnboardingValues.painNo,
+      OnboardingValues.painMild,
+      OnboardingValues.painModerate,
+      OnboardingValues.painSevere,
+    ];
+    final injuryOptions = [
+      (key: OnboardingValues.injuryNo, label: l10n.injuryNo),
+      (key: OnboardingValues.injuryOnce, label: l10n.injuryOnce),
+      (key: OnboardingValues.injuryMultiple, label: l10n.injuryMultiple),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -134,7 +145,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                         .map((option) => Padding(
                               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                               child: _SelectCard(
-                                label: option,
+                                label: OnboardingValues.localizePainLevel(
+                                  option,
+                                  l10n,
+                                ),
                                 isSelected: _painLevel == option,
                                 onTap: () {
                                   setState(() {
@@ -157,7 +171,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [l10n.injuryNo, l10n.injuryOnce, l10n.injuryMultiple],
+                        options: injuryOptions,
                         selected: _injuryHistory,
                         onSelect: (val) {
                           setState(() {
@@ -183,10 +197,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           Expanded(
                             child: _ToggleButton(
                               label: l10n.no,
-                              isSelected: _healthConditions == 'No',
+                              isSelected: _healthConditions == OnboardingValues.no,
                               onTap: () {
                                 setState(() {
-                                  _healthConditions = 'No';
+                                  _healthConditions = OnboardingValues.no;
                                   _planPreference = null;
                                 });
                                 _scrollToBottom();
@@ -197,10 +211,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           Expanded(
                             child: _ToggleButton(
                               label: l10n.yes,
-                              isSelected: _healthConditions == 'Yes',
+                              isSelected: _healthConditions == OnboardingValues.yes,
                               onTap: () {
                                 setState(() {
-                                  _healthConditions = 'Yes';
+                                  _healthConditions = OnboardingValues.yes;
                                   _planPreference = null;
                                 });
                                 _scrollToBottom();
@@ -219,22 +233,32 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                       _SelectCard(
                         label: l10n.planSafest,
                         subtitle: l10n.planSafestSub,
-                        isSelected: _planPreference == 'Safest possible',
-                        onTap: () => setState(() => _planPreference = 'Safest possible'),
+                        isSelected:
+                            _planPreference == OnboardingValues.planSafest,
+                        onTap: () => setState(
+                          () => _planPreference = OnboardingValues.planSafest,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
                         label: l10n.planBalanced,
                         subtitle: l10n.planBalancedSub,
-                        isSelected: _planPreference == 'Balanced',
-                        onTap: () => setState(() => _planPreference = 'Balanced'),
+                        isSelected:
+                            _planPreference == OnboardingValues.planBalanced,
+                        onTap: () => setState(
+                          () => _planPreference = OnboardingValues.planBalanced,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
                         label: l10n.planPerformance,
                         subtitle: l10n.planPerformanceSub,
-                        isSelected: _planPreference == 'Performance-focused',
-                        onTap: () => setState(() => _planPreference = 'Performance-focused'),
+                        isSelected:
+                            _planPreference == OnboardingValues.planPerformance,
+                        onTap: () => setState(
+                          () => _planPreference =
+                              OnboardingValues.planPerformance,
+                        ),
                       ),
                     ],
                   ],
@@ -384,7 +408,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -398,10 +422,10 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
@@ -411,7 +435,7 @@ class _SegmentedControl extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.backgroundPrimary

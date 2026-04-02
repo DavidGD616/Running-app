@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class TrainingPreferencesScreen extends ConsumerStatefulWidget {
@@ -60,8 +61,57 @@ class _TrainingPreferencesScreenState
     final l10n = AppLocalizations.of(context)!;
 
     final surfaceOptions = [
-      l10n.surfaceRoad, l10n.surfaceTreadmill, l10n.surfaceTrack,
-      l10n.surfaceTrail, l10n.surfaceMixed,
+      OnboardingValues.surfaceRoad,
+      OnboardingValues.surfaceTreadmill,
+      OnboardingValues.surfaceTrack,
+      OnboardingValues.surfaceTrail,
+      OnboardingValues.surfaceMixed,
+    ];
+    final guidanceOptions = [
+      (
+        key: OnboardingValues.guidanceEffort,
+        label: l10n.guidanceEffort,
+        subtitle: l10n.guidanceEffortSub,
+        icon: 'assets/icons/effort.svg',
+      ),
+      (
+        key: OnboardingValues.guidancePace,
+        label: l10n.guidancePace,
+        subtitle: l10n.guidancePaceSub,
+        icon: 'assets/icons/pace.svg',
+      ),
+      (
+        key: OnboardingValues.guidanceHeartRate,
+        label: l10n.guidanceHeartRate,
+        subtitle: l10n.guidanceHeartRateSub,
+        icon: 'assets/icons/heart_rate.svg',
+      ),
+      (
+        key: OnboardingValues.guidanceDecideForMe,
+        label: l10n.guidanceDecideForMe,
+        subtitle: l10n.guidanceDecideForMeSub,
+        icon: 'assets/icons/decide_for_me.svg',
+      ),
+    ];
+    final speedWorkoutOptions = [
+      (key: OnboardingValues.yes, label: l10n.yes),
+      (key: OnboardingValues.no, label: l10n.no),
+      (key: OnboardingValues.onlyIfNeeded, label: l10n.onlyIfNeeded),
+    ];
+    final strengthOptions = [
+      (key: OnboardingValues.strengthNone, label: l10n.no),
+      (key: OnboardingValues.strength1Day, label: l10n.strength1DayWeek),
+      (key: OnboardingValues.strength2Days, label: l10n.strength2DaysWeek),
+      (key: OnboardingValues.strength3Days, label: l10n.strength3DaysWeek),
+    ];
+    final terrainOptions = [
+      (key: OnboardingValues.terrainFlat, label: l10n.terrainFlat),
+      (
+        key: OnboardingValues.terrainSomeHills,
+        label: l10n.terrainSomeHills,
+      ),
+      (key: OnboardingValues.terrainHilly, label: l10n.terrainHilly),
+      (key: OnboardingValues.terrainMixed, label: l10n.terrainMixed),
     ];
 
     return Scaffold(
@@ -141,77 +191,33 @@ class _TrainingPreferencesScreenState
                     Text(l10n.guidanceModeLabel,
                         style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
-                    _IconCard(
-                      icon: 'assets/icons/effort.svg',
-                      label: l10n.guidanceEffort,
-                      subtitle: l10n.guidanceEffortSub,
-                      isSelected: _guidanceMode == 'Effort',
-                      onTap: () {
-                        setState(() {
-                          _guidanceMode = 'Effort';
-                          _speedWorkouts = null;
-                          _strengthTraining = null;
-                          _runSurface = null;
-                          _terrain = null;
-                          _walkRunIntervals = null;
-                        });
-                        _scrollToBottom();
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _IconCard(
-                      icon: 'assets/icons/pace.svg',
-                      label: l10n.guidancePace,
-                      subtitle: l10n.guidancePaceSub,
-                      isSelected: _guidanceMode == 'Pace',
-                      onTap: () {
-                        setState(() {
-                          _guidanceMode = 'Pace';
-                          _speedWorkouts = null;
-                          _strengthTraining = null;
-                          _runSurface = null;
-                          _terrain = null;
-                          _walkRunIntervals = null;
-                        });
-                        _scrollToBottom();
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _IconCard(
-                      icon: 'assets/icons/heart_rate.svg',
-                      label: l10n.guidanceHeartRate,
-                      subtitle: l10n.guidanceHeartRateSub,
-                      isSelected: _guidanceMode == 'Heart rate',
-                      onTap: () {
-                        setState(() {
-                          _guidanceMode = 'Heart rate';
-                          _speedWorkouts = null;
-                          _strengthTraining = null;
-                          _runSurface = null;
-                          _terrain = null;
-                          _walkRunIntervals = null;
-                        });
-                        _scrollToBottom();
-                      },
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _IconCard(
-                      icon: 'assets/icons/decide_for_me.svg',
-                      label: l10n.guidanceDecideForMe,
-                      subtitle: l10n.guidanceDecideForMeSub,
-                      isSelected: _guidanceMode == 'Decide for me',
-                      onTap: () {
-                        setState(() {
-                          _guidanceMode = 'Decide for me';
-                          _speedWorkouts = null;
-                          _strengthTraining = null;
-                          _runSurface = null;
-                          _terrain = null;
-                          _walkRunIntervals = null;
-                        });
-                        _scrollToBottom();
-                      },
-                    ),
+                    ...guidanceOptions.asMap().entries.map((entry) {
+                      final option = entry.value;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: entry.key == guidanceOptions.length - 1
+                              ? 0
+                              : AppSpacing.sm,
+                        ),
+                        child: _IconCard(
+                          icon: option.icon,
+                          label: option.label,
+                          subtitle: option.subtitle,
+                          isSelected: _guidanceMode == option.key,
+                          onTap: () {
+                            setState(() {
+                              _guidanceMode = option.key;
+                              _speedWorkouts = null;
+                              _strengthTraining = null;
+                              _runSurface = null;
+                              _terrain = null;
+                              _walkRunIntervals = null;
+                            });
+                            _scrollToBottom();
+                          },
+                        ),
+                      );
+                    }),
 
                     // ── 2. Speed workouts included? ───────────────────────────
                     if (_guidanceMode != null) ...[
@@ -220,7 +226,7 @@ class _TrainingPreferencesScreenState
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [l10n.yes, l10n.no, l10n.onlyIfNeeded],
+                        options: speedWorkoutOptions,
                         selected: _speedWorkouts,
                         itemHeight: 64,
                         onSelect: (val) {
@@ -243,12 +249,7 @@ class _TrainingPreferencesScreenState
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [
-                          l10n.no,
-                          l10n.strength1DayWeek,
-                          l10n.strength2DaysWeek,
-                          l10n.strength3DaysWeek,
-                        ],
+                        options: strengthOptions,
                         selected: _strengthTraining,
                         itemHeight: 64,
                         onSelect: (val) {
@@ -274,7 +275,10 @@ class _TrainingPreferencesScreenState
                         runSpacing: AppSpacing.sm,
                         children: surfaceOptions
                             .map((s) => _Chip(
-                                  label: s,
+                                  label: OnboardingValues.localizeSurface(
+                                    s,
+                                    l10n,
+                                  ),
                                   isSelected: _runSurface == s,
                                   onTap: () {
                                     setState(() {
@@ -295,12 +299,7 @@ class _TrainingPreferencesScreenState
                       Text(l10n.terrainLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [
-                          l10n.terrainFlat,
-                          l10n.terrainSomeHills,
-                          l10n.terrainHilly,
-                          l10n.terrainMixed,
-                        ],
+                        options: terrainOptions,
                         selected: _terrain,
                         itemHeight: 64,
                         onSelect: (val) {
@@ -320,7 +319,7 @@ class _TrainingPreferencesScreenState
                           style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [l10n.yes, l10n.no, l10n.onlyIfNeeded],
+                        options: speedWorkoutOptions,
                         selected: _walkRunIntervals,
                         itemHeight: 64,
                         onSelect: (val) => setState(() => _walkRunIntervals = val),
@@ -454,7 +453,7 @@ class _SegmentedControl extends StatelessWidget {
     this.itemHeight = 44,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
   final double itemHeight;
@@ -469,10 +468,10 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: itemHeight,
@@ -483,7 +482,7 @@ class _SegmentedControl extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     textAlign: TextAlign.center,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected

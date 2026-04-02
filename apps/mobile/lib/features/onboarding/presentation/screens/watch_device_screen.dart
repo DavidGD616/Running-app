@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class WatchDeviceScreen extends ConsumerStatefulWidget {
@@ -21,7 +22,7 @@ class WatchDeviceScreen extends ConsumerStatefulWidget {
 
 class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
   // ── Shared ────────────────────────────────────────────────────────────────
-  String? _hasWatch; // 'Yes' | 'No'
+  String? _hasWatch;
 
   // ── Yes path ──────────────────────────────────────────────────────────────
   String? _device;
@@ -39,11 +40,11 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
 
   bool get _isComplete {
     if (_hasWatch == null) return false;
-    if (_hasWatch == 'Yes') {
+    if (_hasWatch == OnboardingValues.yes) {
       return _device != null &&
           _dataUsage != null &&
           _watchMetrics != null &&
-          (_watchMetrics != 'Yes' || _metrics.isNotEmpty) &&
+          (_watchMetrics != OnboardingValues.yes || _metrics.isNotEmpty) &&
           _hrZones != null &&
           _paceRecs != null &&
           _autoAdjust != null;
@@ -78,11 +79,11 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
 
   void _toggleMetric(String metric) {
     setState(() {
-      if (metric == 'None') {
+      if (metric == OnboardingValues.none) {
         _metrics.clear();
-        _metrics.add('None');
+        _metrics.add(OnboardingValues.none);
       } else {
-        _metrics.remove('None');
+        _metrics.remove(OnboardingValues.none);
         if (_metrics.contains(metric)) {
           _metrics.remove(metric);
         } else {
@@ -104,32 +105,101 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     final deviceOptions = [
-      (l10n.deviceGarmin, l10n.deviceGarmin),
-      (l10n.deviceAppleWatch, l10n.deviceAppleWatch),
-      (l10n.deviceCOROS, l10n.deviceCOROS),
-      (l10n.devicePolar, l10n.devicePolar),
-      (l10n.deviceSuunto, l10n.deviceSuunto),
-      (l10n.deviceFitbit, l10n.deviceFitbit),
-      (l10n.deviceOther, l10n.deviceOther),
+      (key: OnboardingValues.deviceGarmin, label: l10n.deviceGarmin),
+      (
+        key: OnboardingValues.deviceAppleWatch,
+        label: l10n.deviceAppleWatch,
+      ),
+      (key: OnboardingValues.deviceCoros, label: l10n.deviceCOROS),
+      (key: OnboardingValues.devicePolar, label: l10n.devicePolar),
+      (key: OnboardingValues.deviceSuunto, label: l10n.deviceSuunto),
+      (key: OnboardingValues.deviceFitbit, label: l10n.deviceFitbit),
+      (key: OnboardingValues.deviceOther, label: l10n.deviceOther),
+    ];
+    final dataUsageOptions = [
+      (
+        key: OnboardingValues.dataUsageImportAuto,
+        label: l10n.dataUsageImportAuto,
+      ),
+      (key: OnboardingValues.dataUsageHrOnly, label: l10n.dataUsageHROnly),
+      (
+        key: OnboardingValues.dataUsagePaceDistance,
+        label: l10n.dataUsagePaceDistance,
+      ),
+      (key: OnboardingValues.dataUsageAll, label: l10n.dataUsageAll),
+      (
+        key: OnboardingValues.dataUsageNotSure,
+        label: l10n.dataUsageNotSure,
+      ),
     ];
 
     final metricOptions = [
-      ('Heart rate', l10n.metricHeartRate),
-      ('Heart rate zones', l10n.metricHRZones),
-      ('Pace', l10n.metricPace),
-      ('Distance', l10n.metricDistance),
-      ('Cadence', l10n.metricCadence),
-      ('Elevation', l10n.metricElevation),
-      ('Training load', l10n.metricTrainingLoad),
-      ('Recovery time', l10n.metricRecoveryTime),
-      ('None', l10n.metricNone),
+      (key: OnboardingValues.metricHeartRate, label: l10n.metricHeartRate),
+      (
+        key: OnboardingValues.metricHeartRateZones,
+        label: l10n.metricHRZones,
+      ),
+      (key: OnboardingValues.metricPace, label: l10n.metricPace),
+      (key: OnboardingValues.metricDistance, label: l10n.metricDistance),
+      (key: OnboardingValues.metricCadence, label: l10n.metricCadence),
+      (key: OnboardingValues.metricElevation, label: l10n.metricElevation),
+      (
+        key: OnboardingValues.metricTrainingLoad,
+        label: l10n.metricTrainingLoad,
+      ),
+      (
+        key: OnboardingValues.metricRecoveryTime,
+        label: l10n.metricRecoveryTime,
+      ),
+      (key: OnboardingValues.none, label: l10n.metricNone),
+    ];
+    final watchMetricOptions = [
+      (key: OnboardingValues.yes, label: l10n.yes),
+      (key: OnboardingValues.no, label: l10n.no),
+      (key: OnboardingValues.hrOnly, label: l10n.hrOnly),
+    ];
+    final hrZoneOptions = [
+      (key: OnboardingValues.yes, label: l10n.yes),
+      (key: OnboardingValues.no, label: l10n.no),
+      (key: OnboardingValues.ifSupported, label: l10n.ifSupported),
+    ];
+    final yesNoOptions = [
+      (key: OnboardingValues.yes, label: l10n.yes),
+      (key: OnboardingValues.no, label: l10n.no),
+    ];
+    final autoAdjustOptions = [
+      (
+        key: OnboardingValues.autoAdjustAuto,
+        label: l10n.autoAdjustAuto,
+      ),
+      (
+        key: OnboardingValues.autoAdjustAskFirst,
+        label: l10n.autoAdjustAskFirst,
+      ),
+      (key: OnboardingValues.no, label: l10n.no),
     ];
 
     final noWatchOptions = [
-      ('Effort only', l10n.noWatchEffortOnly, l10n.noWatchEffortOnlySub),
-      ('Time-based runs', l10n.noWatchTimeBased, l10n.noWatchTimeBasedSub),
-      ('Simple beginner guidance', l10n.noWatchBeginner, l10n.noWatchBeginnerSub),
-      ('Decide for me', l10n.noWatchDecideForMe, l10n.noWatchDecideForMeSub),
+      (
+        key: OnboardingValues.noWatchEffortOnly,
+        label: l10n.noWatchEffortOnly,
+        subtitle: l10n.noWatchEffortOnlySub,
+      ),
+      (
+        key: OnboardingValues.noWatchTimeBased,
+        label: l10n.noWatchTimeBased,
+        subtitle: l10n.noWatchTimeBasedSub,
+      ),
+      (
+        key: OnboardingValues.noWatchBeginner,
+        label: l10n.noWatchBeginner,
+        subtitle: l10n.noWatchBeginnerSub,
+      ),
+      (
+        key: OnboardingValues.noWatchDecideForMe,
+        label: l10n.noWatchDecideForMe,
+        subtitle: l10n.noWatchDecideForMeSub,
+      ),
     ];
 
     return Scaffold(
@@ -216,8 +286,8 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                           child: _IconToggleButton(
                             icon: 'assets/icons/watch.svg',
                             label: l10n.yes,
-                            isSelected: _hasWatch == 'Yes',
-                            onTap: () => _selectHasWatch('Yes'),
+                            isSelected: _hasWatch == OnboardingValues.yes,
+                            onTap: () => _selectHasWatch(OnboardingValues.yes),
                           ),
                         ),
                         const SizedBox(width: AppSpacing.md),
@@ -225,8 +295,8 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                           child: _IconToggleButton(
                             icon: 'assets/icons/smartphone.svg',
                             label: l10n.no,
-                            isSelected: _hasWatch == 'No',
-                            onTap: () => _selectHasWatch('No'),
+                            isSelected: _hasWatch == OnboardingValues.no,
+                            onTap: () => _selectHasWatch(OnboardingValues.no),
                           ),
                         ),
                       ],
@@ -237,7 +307,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     // ═══════════════════════════════════════════════════════════
 
                     // ── Which device? ─────────────────────────────────────────
-                    if (_hasWatch == 'Yes') ...[
+                    if (_hasWatch == OnboardingValues.yes) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(l10n.deviceLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
@@ -245,11 +315,11 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: deviceOptions.map((opt) => _Chip(
-                          label: opt.$2,
-                          isSelected: _device == opt.$1,
+                          label: opt.label,
+                          isSelected: _device == opt.key,
                           onTap: () {
                             setState(() {
-                              _device = opt.$1;
+                              _device = opt.key;
                               _dataUsage = null;
                               _watchMetrics = null;
                               _metrics.clear();
@@ -264,27 +334,21 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     ],
 
                     // ── How should the app use your device data? ──────────────
-                    if (_hasWatch == 'Yes' && _device != null) ...[
+                    if (_hasWatch == OnboardingValues.yes && _device != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
                         l10n.deviceDataUsageLabel,
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      ...([
-                        l10n.dataUsageImportAuto,
-                        l10n.dataUsageHROnly,
-                        l10n.dataUsagePaceDistance,
-                        l10n.dataUsageAll,
-                        l10n.dataUsageNotSure,
-                      ].map((opt) => Padding(
+                      ...(dataUsageOptions.map((opt) => Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: _SelectCard(
-                          label: opt,
-                          isSelected: _dataUsage == opt,
+                          label: opt.label,
+                          isSelected: _dataUsage == opt.key,
                           onTap: () {
                             setState(() {
-                              _dataUsage = opt;
+                              _dataUsage = opt.key;
                               _watchMetrics = null;
                               _metrics.clear();
                               _hrZones = null;
@@ -298,7 +362,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     ],
 
                     // ── Use watch-based metrics? ──────────────────────────────
-                    if (_hasWatch == 'Yes' && _dataUsage != null) ...[
+                    if (_hasWatch == OnboardingValues.yes && _dataUsage != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
                         l10n.useWatchMetricsLabel,
@@ -306,7 +370,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Yes', 'No', 'HR only'],
+                        options: watchMetricOptions,
                         selected: _watchMetrics,
                         onSelect: (val) {
                           setState(() {
@@ -322,25 +386,27 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     ],
 
                     // ── Which metrics? (multi-select, only when Yes) ──────────
-                    if (_hasWatch == 'Yes' && _watchMetrics == 'Yes') ...[
+                    if (_hasWatch == OnboardingValues.yes &&
+                        _watchMetrics == OnboardingValues.yes) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(l10n.metricsLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: metricOptions.map(((String, String) m) => _Chip(
-                          label: m.$2,
-                          isSelected: _metrics.contains(m.$1),
-                          onTap: () => _toggleMetric(m.$1),
+                        children: metricOptions.map((m) => _Chip(
+                          label: m.label,
+                          isSelected: _metrics.contains(m.key),
+                          onTap: () => _toggleMetric(m.key),
                         )).toList(),
                       ),
                     ],
 
                     // ── Heart-rate-based training zones? ──────────────────────
-                    if (_hasWatch == 'Yes' &&
+                    if (_hasWatch == OnboardingValues.yes &&
                         _watchMetrics != null &&
-                        (_watchMetrics != 'Yes' || _metrics.isNotEmpty)) ...[
+                        (_watchMetrics != OnboardingValues.yes ||
+                            _metrics.isNotEmpty)) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
                         l10n.hrZonesLabel,
@@ -348,7 +414,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Yes', 'No', 'If supported'],
+                        options: hrZoneOptions,
                         selected: _hrZones,
                         onSelect: (val) {
                           setState(() {
@@ -362,7 +428,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     ],
 
                     // ── Pace recommendations from watch? ──────────────────────
-                    if (_hasWatch == 'Yes' && _hrZones != null) ...[
+                    if (_hasWatch == OnboardingValues.yes && _hrZones != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
                         l10n.paceFromWatchLabel,
@@ -370,7 +436,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['Yes', 'No'],
+                        options: yesNoOptions,
                         selected: _paceRecs,
                         onSelect: (val) {
                           setState(() {
@@ -383,7 +449,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     ],
 
                     // ── Auto-adjust plan from watch data? ─────────────────────
-                    if (_hasWatch == 'Yes' && _paceRecs != null) ...[
+                    if (_hasWatch == OnboardingValues.yes && _paceRecs != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
                         l10n.autoAdjustLabel,
@@ -391,7 +457,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [l10n.autoAdjustAuto, l10n.autoAdjustAskFirst, l10n.no],
+                        options: autoAdjustOptions,
                         selected: _autoAdjust,
                         onSelect: (val) => setState(() => _autoAdjust = val),
                       ),
@@ -401,7 +467,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                     // NO PATH
                     // ═══════════════════════════════════════════════════════════
 
-                    if (_hasWatch == 'No') ...[
+                    if (_hasWatch == OnboardingValues.no) ...[
                       const SizedBox(height: AppSpacing.xl),
                       // Info card
                       Container(
@@ -442,14 +508,14 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         style: AppTypography.labelLarge,
                       ),
                       const SizedBox(height: AppSpacing.md),
-                      ...(noWatchOptions.map(((String, String, String) opt) => Padding(
+                      ...(noWatchOptions.map((opt) => Padding(
                         padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                         child: _SelectCard(
-                          label: opt.$2,
-                          subtitle: opt.$3,
-                          isSelected: _noWatchGuidance == opt.$1,
+                          label: opt.label,
+                          subtitle: opt.subtitle,
+                          isSelected: _noWatchGuidance == opt.key,
                           onTap: () =>
-                              setState(() => _noWatchGuidance = opt.$1),
+                              setState(() => _noWatchGuidance = opt.key),
                         ),
                       ))),
                     ],
@@ -621,7 +687,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -635,10 +701,10 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
@@ -648,7 +714,7 @@ class _SegmentedControl extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.backgroundPrimary

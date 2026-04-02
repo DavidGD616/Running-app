@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_slider.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class MotivationScreen extends ConsumerStatefulWidget {
@@ -84,24 +85,24 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     final motivationOptions = [
-      l10n.motivationPersonalChallenge,
-      l10n.motivationHealth,
-      l10n.motivationWeightLoss,
-      l10n.motivationImprovePerformance,
-      l10n.motivationRaceFriends,
-      l10n.motivationDiscipline,
-      l10n.motivationOther,
+      OnboardingValues.motivationPersonalChallenge,
+      OnboardingValues.motivationHealth,
+      OnboardingValues.motivationWeightLoss,
+      OnboardingValues.motivationImprovePerformance,
+      OnboardingValues.motivationRaceFriends,
+      OnboardingValues.motivationDiscipline,
+      OnboardingValues.motivationOther,
     ];
 
     final barrierOptions = [
-      l10n.barrierTime,
-      l10n.barrierMotivation,
-      l10n.barrierFatigue,
-      l10n.barrierStress,
-      l10n.barrierPain,
-      l10n.barrierBoredom,
-      l10n.barrierDontKnowHow,
-      l10n.barrierOther,
+      OnboardingValues.barrierTime,
+      OnboardingValues.barrierMotivation,
+      OnboardingValues.barrierFatigue,
+      OnboardingValues.barrierStress,
+      OnboardingValues.barrierPain,
+      OnboardingValues.barrierBoredom,
+      OnboardingValues.barrierDontKnowHow,
+      OnboardingValues.barrierOther,
     ];
 
     return Scaffold(
@@ -193,7 +194,10 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                       runSpacing: AppSpacing.sm,
                       children: motivationOptions
                           .map((label) => _Chip(
-                                label: label,
+                                label: OnboardingValues.localizeMotivation(
+                                  label,
+                                  l10n,
+                                ),
                                 isSelected: _motivations.contains(label),
                                 onTap: () => _toggleMotivation(label),
                               ))
@@ -218,7 +222,10 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                         runSpacing: AppSpacing.sm,
                         children: barrierOptions
                             .map((label) => _Chip(
-                                  label: label,
+                                  label: OnboardingValues.localizeBarrier(
+                                    label,
+                                    l10n,
+                                  ),
                                   isSelected: _barriers.contains(label),
                                   onTap: () => _toggleBarrier(label),
                                 ))
@@ -249,34 +256,41 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                       _SelectCard(
                         label: l10n.toneSimple,
                         subtitle: l10n.toneSimpleSub,
-                        isSelected: _coachingTone == 'Simple and direct',
+                        isSelected:
+                            _coachingTone == OnboardingValues.toneSimple,
                         onTap: () => setState(
-                            () => _coachingTone = 'Simple and direct'),
+                          () => _coachingTone = OnboardingValues.toneSimple,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
                         label: l10n.toneEncouraging,
                         subtitle: l10n.toneEncouragingSub,
-                        isSelected: _coachingTone == 'Encouraging',
-                        onTap: () =>
-                            setState(() => _coachingTone = 'Encouraging'),
+                        isSelected:
+                            _coachingTone == OnboardingValues.toneEncouraging,
+                        onTap: () => setState(
+                          () => _coachingTone = OnboardingValues.toneEncouraging,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
                         label: l10n.toneDetailed,
                         subtitle: l10n.toneDetailedSub,
-                        isSelected: _coachingTone == 'Detailed and data-driven',
+                        isSelected:
+                            _coachingTone == OnboardingValues.toneDetailed,
                         onTap: () => setState(
-                            () => _coachingTone = 'Detailed and data-driven'),
+                          () => _coachingTone = OnboardingValues.toneDetailed,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _SelectCard(
                         label: l10n.toneStrict,
                         subtitle: l10n.toneStrictSub,
                         isSelected:
-                            _coachingTone == 'Strict and performance-focused',
-                        onTap: () => setState(() =>
-                            _coachingTone = 'Strict and performance-focused'),
+                            _coachingTone == OnboardingValues.toneStrict,
+                        onTap: () => setState(
+                          () => _coachingTone = OnboardingValues.toneStrict,
+                        ),
                       ),
                     ],
                   ],

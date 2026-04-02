@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class SummaryScreen extends ConsumerWidget {
@@ -25,91 +26,20 @@ class SummaryScreen extends ConsumerWidget {
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
-  // ── Canonical → localized mappers ─────────────────────────────────────────
-
-  String _localizedRace(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case '5K': return l10n.race5K;
-      case '10K': return l10n.race10K;
-      case 'Half Marathon': return l10n.raceHalfMarathon;
-      case 'Marathon': return l10n.raceMarathon;
-      case 'Other': return l10n.raceOther;
-      default: return canonical;
-    }
-  }
-
-  String _localizedPriority(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case 'Just finish': return l10n.priorityJustFinish;
-      case 'Finish feeling strong': return l10n.priorityFinishStrong;
-      case 'Improve my time': return l10n.priorityImproveTime;
-      case 'Build consistency': return l10n.priorityConsistency;
-      case 'General fitness': return l10n.priorityGeneralFitness;
-      default: return canonical;
-    }
-  }
-
-  String _localizedExperience(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case 'Brand new': return l10n.experienceBrandNew;
-      case 'Beginner': return l10n.experienceBeginner;
-      case 'Intermediate': return l10n.experienceIntermediate;
-      case 'Experienced': return l10n.experienceExperienced;
-      default: return canonical;
-    }
-  }
-
-  String _localizedGuidanceMode(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case 'Effort': return l10n.guidanceEffort;
-      case 'Pace': return l10n.guidancePace;
-      case 'Heart rate': return l10n.guidanceHeartRate;
-      case 'Decide for me': return l10n.guidanceDecideForMe;
-      default: return canonical;
-    }
-  }
-
-  String _localizedPlanPref(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case 'Safest possible': return l10n.planSafest;
-      case 'Balanced': return l10n.planBalanced;
-      case 'Performance-focused': return l10n.planPerformance;
-      default: return canonical;
-    }
-  }
-
-  String _localizedNoWatchGuidance(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case 'Effort only': return l10n.noWatchEffortOnly;
-      case 'Time-based runs': return l10n.noWatchTimeBased;
-      case 'Simple beginner guidance': return l10n.noWatchBeginner;
-      case 'Decide for me': return l10n.noWatchDecideForMe;
-      default: return canonical;
-    }
-  }
-
-  String _localizedCoachingTone(String canonical, AppLocalizations l10n) {
-    switch (canonical) {
-      case 'Simple and direct': return l10n.toneSimple;
-      case 'Encouraging': return l10n.toneEncouraging;
-      case 'Detailed and data-driven': return l10n.toneDetailed;
-      case 'Strict and performance-focused': return l10n.toneStrict;
-      default: return canonical;
-    }
-  }
-
   // ── Build display values from provider data ───────────────────────────────
 
   String _goalValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final race = a['race'] as String?;
     if (race == null) return '—';
-    return _localizedRace(race, l10n);
+    return OnboardingValues.localizeRace(race, l10n);
   }
 
   String _goalDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final date = a['raceDate'] as DateTime?;
     final priority = a['priority'] as String?;
-    final localizedPriority = priority != null ? _localizedPriority(priority, l10n) : '—';
+    final localizedPriority = priority != null
+        ? OnboardingValues.localizePriority(priority, l10n)
+        : '—';
     if (date != null) return '${_formatDate(date, l10n)} · $localizedPriority';
     return localizedPriority;
   }
@@ -117,12 +47,12 @@ class SummaryScreen extends ConsumerWidget {
   String _fitnessValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final exp = a['experience'] as String?;
     if (exp == null) return '—';
-    return _localizedExperience(exp, l10n);
+    return OnboardingValues.localizeExperience(exp, l10n);
   }
 
   String _fitnessDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final experience = a['experience'] as String?;
-    if (experience == 'Brand new') {
+    if (experience == OnboardingValues.experienceBrandNew) {
       final can = a['canRun10Min'] as bool?;
       if (can == null) return '—';
       return l10n.summaryCanRun10Min(can ? l10n.yes : l10n.no);
@@ -138,26 +68,38 @@ class SummaryScreen extends ConsumerWidget {
   }
 
   String _scheduleDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final longRun = (a['longRunDay'] as String?) ?? '—';
-    final time = (a['preferredTimeOfDay'] as String?) ?? '—';
-    final weekday = (a['weekdayTime'] as String?) ?? '—';
-    return l10n.summaryScheduleDetail(longRun, time, weekday);
+    final longRun = a['longRunDay'] as String?;
+    final time = a['preferredTimeOfDay'] as String?;
+    final weekday = a['weekdayTime'] as String?;
+    return l10n.summaryScheduleDetail(
+      longRun != null ? OnboardingValues.localizeDay(longRun, l10n) : '—',
+      time != null ? OnboardingValues.localizeTimeOfDay(time, l10n) : '—',
+      weekday != null ? OnboardingValues.localizeTimeSlot(weekday, l10n) : '—',
+    );
   }
 
   String _healthValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final pain = a['painLevel'] as String?;
     if (pain == null) return '—';
-    return pain == 'No' ? l10n.summaryNoPain : l10n.summaryWithPain(pain);
+    return pain == OnboardingValues.painNo
+        ? l10n.summaryNoPain
+        : l10n.summaryWithPain(OnboardingValues.localizePainLevel(pain, l10n));
   }
 
   String _healthDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final pref = (a['planPreference'] as String?) ?? '—';
-    return l10n.summaryPlanPref(_localizedPlanPref(pref, l10n));
+    return l10n.summaryPlanPref(
+      OnboardingValues.localizePlanPreference(pref, l10n),
+    );
   }
 
   String _trainingValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final mode = a['guidanceMode'] as String?;
-    return mode != null ? l10n.summaryGuidanceBased(_localizedGuidanceMode(mode, l10n)) : '—';
+    return mode != null
+        ? l10n.summaryGuidanceBased(
+            OnboardingValues.localizeGuidanceMode(mode, l10n),
+          )
+        : '—';
   }
 
   String _trainingDetail(Map<String, dynamic> a, AppLocalizations l10n) {
@@ -165,53 +107,78 @@ class SummaryScreen extends ConsumerWidget {
     final strength = (a['strengthTraining'] as String?) ?? '—';
     final surface = (a['runSurface'] as String?) ?? '—';
     final terrain = (a['terrain'] as String?) ?? '—';
-    return l10n.summaryTrainingDetail(speed, strength, surface, terrain);
+    return l10n.summaryTrainingDetail(
+      OnboardingValues.localizeBinary(speed, l10n),
+      OnboardingValues.localizeStrengthTraining(strength, l10n),
+      OnboardingValues.localizeSurface(surface, l10n),
+      OnboardingValues.localizeTerrain(terrain, l10n),
+    );
   }
 
   String _deviceValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final hasWatch = a['hasWatch'] as String?;
-    if (hasWatch == 'Yes') {
-      final device = (a['device'] as String?) ?? 'Watch';
-      return l10n.summaryDeviceConnected(device);
+    if (hasWatch == OnboardingValues.yes) {
+      final device = (a['device'] as String?) ?? OnboardingValues.deviceOther;
+      return l10n.summaryDeviceConnected(
+        OnboardingValues.localizeDevice(device, l10n),
+      );
     }
-    if (hasWatch == 'No') return l10n.summaryNoWatch;
+    if (hasWatch == OnboardingValues.no) return l10n.summaryNoWatch;
     return '—';
   }
 
   String _deviceDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final hasWatch = a['hasWatch'] as String?;
-    if (hasWatch == 'Yes') {
+    if (hasWatch == OnboardingValues.yes) {
       final usage = (a['dataUsage'] as String?) ?? '—';
       final hr = (a['hrZones'] as String?) ?? '—';
       final auto = (a['autoAdjust'] as String?) ?? '—';
-      return l10n.summaryDeviceDetail(usage, hr, auto);
+      return l10n.summaryDeviceDetail(
+        OnboardingValues.localizeDataUsage(usage, l10n),
+        OnboardingValues.localizeBinary(hr, l10n),
+        OnboardingValues.localizeAutoAdjust(auto, l10n),
+      );
     }
     final guidance = a['noWatchGuidance'] as String?;
-    return guidance != null ? _localizedNoWatchGuidance(guidance, l10n) : '—';
+    return guidance != null
+        ? OnboardingValues.localizeNoWatchGuidance(guidance, l10n)
+        : '—';
   }
 
   String _recoveryValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final sleep = a['sleep'] as String?;
-    return sleep != null ? l10n.summarySleepHours(sleep) : '—';
+    return sleep != null
+        ? l10n.summarySleepHours(OnboardingValues.localizeSleep(sleep, l10n))
+        : '—';
   }
 
   String _recoveryDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final work = (a['workLevel'] as String?) ?? '—';
     final stress = (a['stressLevel'] as String?) ?? '—';
     final feel = (a['dayFeeling'] as String?) ?? '—';
-    return l10n.summaryRecoveryDetail(work, stress, feel);
+    return l10n.summaryRecoveryDetail(
+      OnboardingValues.localizeWorkLevel(work, l10n),
+      OnboardingValues.localizeStress(stress, l10n),
+      OnboardingValues.localizeDayFeeling(feel, l10n),
+    );
   }
 
-  String _motivationValue(Map<String, dynamic> a) {
+  String _motivationValue(Map<String, dynamic> a, AppLocalizations l10n) {
     final list = a['motivations'] as List?;
     if (list == null || list.isEmpty) return '—';
-    return list.join(', ');
+    return list
+        .cast<String>()
+        .map((item) => OnboardingValues.localizeMotivation(item, l10n))
+        .join(', ');
   }
 
   String _motivationDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final tone = (a['coachingTone'] as String?) ?? '—';
     final conf = (a['confidence'] as int?) ?? 5;
-    return l10n.summaryMotivationDetail(_localizedCoachingTone(tone, l10n), conf.toString());
+    return l10n.summaryMotivationDetail(
+      OnboardingValues.localizeCoachingTone(tone, l10n),
+      conf.toString(),
+    );
   }
 
   @override
@@ -351,7 +318,7 @@ class SummaryScreen extends ConsumerWidget {
                     _SummaryCard(
                       icon: 'assets/icons/motivation.svg',
                       category: l10n.summaryMotivation,
-                      value: _motivationValue(answers),
+                      value: _motivationValue(answers, l10n),
                       detail: _motivationDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.motivation),
                     ),

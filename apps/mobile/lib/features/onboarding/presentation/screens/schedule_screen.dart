@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class ScheduleScreen extends ConsumerStatefulWidget {
@@ -57,25 +58,41 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     final days = [
-      l10n.dayMon, l10n.dayTue, l10n.dayWed,
-      l10n.dayThu, l10n.dayFri, l10n.daySat, l10n.daySun,
+      OnboardingValues.dayMon,
+      OnboardingValues.dayTue,
+      OnboardingValues.dayWed,
+      OnboardingValues.dayThu,
+      OnboardingValues.dayFri,
+      OnboardingValues.daySat,
+      OnboardingValues.daySun,
     ];
 
     final weekdayTimeOptions = [
-      l10n.time20min, l10n.time30min, l10n.time45min, l10n.time60min, l10n.time75plusMin,
+      OnboardingValues.time20min,
+      OnboardingValues.time30min,
+      OnboardingValues.time45min,
+      OnboardingValues.time60min,
+      OnboardingValues.time75plusMin,
     ];
 
     final weekendTimeOptions = [
-      l10n.time30min, l10n.time45min, l10n.time60min, l10n.time90min, l10n.time2plusHours,
+      OnboardingValues.time30min,
+      OnboardingValues.time45min,
+      OnboardingValues.time60min,
+      OnboardingValues.time90min,
+      OnboardingValues.time2plusHours,
     ];
 
     final timeOfDayOptions = [
-      l10n.timeOfDayEarlyMorning,
-      l10n.timeOfDayMorning,
-      l10n.timeOfDayAfternoon,
-      l10n.timeOfDayEvening,
-      l10n.timeOfDayNoPreference,
+      OnboardingValues.timeOfDayEarlyMorning,
+      OnboardingValues.timeOfDayMorning,
+      OnboardingValues.timeOfDayAfternoon,
+      OnboardingValues.timeOfDayEvening,
+      OnboardingValues.timeOfDayNoPreference,
     ];
+    final trainingDayOptions = const ['2', '3', '4', '5', '6', '7']
+        .map((day) => (key: day, label: day))
+        .toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -153,7 +170,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     Text(l10n.trainingDaysLabel, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     _SegmentedControl(
-                      options: const ['2', '3', '4', '5', '6', '7'],
+                      options: trainingDayOptions,
                       selected: _trainingDays,
                       onSelect: (val) {
                         setState(() {
@@ -185,7 +202,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         runSpacing: AppSpacing.sm,
                         children: days
                             .map((day) => _Chip(
-                                  label: day,
+                                  label: OnboardingValues.localizeDay(day, l10n),
                                   isSelected: _longRunDay == day,
                                   onTap: () {
                                     setState(() {
@@ -212,7 +229,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         runSpacing: AppSpacing.sm,
                         children: weekdayTimeOptions
                             .map((t) => _Chip(
-                                  label: t,
+                                  label: OnboardingValues.localizeTimeSlot(
+                                    t,
+                                    l10n,
+                                  ),
                                   isSelected: _weekdayTime == t,
                                   onTap: () {
                                     setState(() {
@@ -238,7 +258,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         runSpacing: AppSpacing.sm,
                         children: weekendTimeOptions
                             .map((t) => _Chip(
-                                  label: t,
+                                  label: OnboardingValues.localizeTimeSlot(
+                                    t,
+                                    l10n,
+                                  ),
                                   isSelected: _weekendTime == t,
                                   onTap: () {
                                     setState(() {
@@ -270,7 +293,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         runSpacing: AppSpacing.sm,
                         children: days
                             .map((day) => _Chip(
-                                  label: day,
+                                  label: OnboardingValues.localizeDay(day, l10n),
                                   isSelected: _hardDays.contains(day),
                                   onTap: () {
                                     setState(() {
@@ -296,7 +319,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         runSpacing: AppSpacing.sm,
                         children: timeOfDayOptions
                             .map((t) => _Chip(
-                                  label: t,
+                                  label: OnboardingValues.localizeTimeOfDay(
+                                    t,
+                                    l10n,
+                                  ),
                                   isSelected: _preferredTimeOfDay == t,
                                   onTap: () {
                                     setState(() => _preferredTimeOfDay = t);
@@ -349,7 +375,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -363,10 +389,10 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
@@ -376,7 +402,7 @@ class _SegmentedControl extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.backgroundPrimary

@@ -13,6 +13,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -43,53 +44,50 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     });
   }
 
-  String _raceSubtitle(
-    String raceName,
-    UnitSystem unit,
-    AppLocalizations l10n,
-  ) {
-    switch (raceName) {
-      case '5K':
-        return unit == UnitSystem.km ? '5 km' : '3.1 mi';
-      case '10K':
-        return unit == UnitSystem.km ? '10 km' : '6.2 mi';
-      case 'Half Marathon':
-        return unit == UnitSystem.km ? '21.1 km' : '13.1 mi';
-      case 'Marathon':
-        return unit == UnitSystem.km ? '42.2 km' : '26.2 mi';
-      case 'Other':
-        return l10n.raceCustomDistance;
-      default:
-        return raceName;
-    }
-  }
-
   List<_Race> _buildRaces(UnitSystem unit, AppLocalizations l10n) => [
-    _Race('5K', l10n.race5K, _raceSubtitle('5K', unit, l10n), 'assets/icons/flame.svg'),
-    _Race('10K', l10n.race10K, _raceSubtitle('10K', unit, l10n), 'assets/icons/flame.svg'),
-    _Race('Half Marathon', l10n.raceHalfMarathon, _raceSubtitle('Half Marathon', unit, l10n), 'assets/icons/trophy.svg'),
-    _Race('Marathon', l10n.raceMarathon, _raceSubtitle('Marathon', unit, l10n), 'assets/icons/medal.svg'),
-    _Race('Other', l10n.raceOther, _raceSubtitle('Other', unit, l10n), 'assets/icons/mountain.svg'),
+    _Race(
+      OnboardingValues.race5k,
+      OnboardingValues.localizeRace(OnboardingValues.race5k, l10n),
+      OnboardingValues.raceSubtitle(OnboardingValues.race5k, unit, l10n),
+      'assets/icons/flame.svg',
+    ),
+    _Race(
+      OnboardingValues.race10k,
+      OnboardingValues.localizeRace(OnboardingValues.race10k, l10n),
+      OnboardingValues.raceSubtitle(OnboardingValues.race10k, unit, l10n),
+      'assets/icons/flame.svg',
+    ),
+    _Race(
+      OnboardingValues.raceHalfMarathon,
+      OnboardingValues.localizeRace(OnboardingValues.raceHalfMarathon, l10n),
+      OnboardingValues.raceSubtitle(
+        OnboardingValues.raceHalfMarathon,
+        unit,
+        l10n,
+      ),
+      'assets/icons/trophy.svg',
+    ),
+    _Race(
+      OnboardingValues.raceMarathon,
+      OnboardingValues.localizeRace(OnboardingValues.raceMarathon, l10n),
+      OnboardingValues.raceSubtitle(OnboardingValues.raceMarathon, unit, l10n),
+      'assets/icons/medal.svg',
+    ),
+    _Race(
+      OnboardingValues.raceOther,
+      OnboardingValues.localizeRace(OnboardingValues.raceOther, l10n),
+      OnboardingValues.raceSubtitle(OnboardingValues.raceOther, unit, l10n),
+      'assets/icons/mountain.svg',
+    ),
   ];
 
   static const _priorities = [
-    'Just finish',
-    'Finish feeling strong',
-    'Improve my time',
-    'Build consistency',
-    'General fitness',
+    OnboardingValues.priorityJustFinish,
+    OnboardingValues.priorityFinishStrong,
+    OnboardingValues.priorityImproveTime,
+    OnboardingValues.priorityConsistency,
+    OnboardingValues.priorityGeneralFitness,
   ];
-
-  String _priorityLabel(String key, AppLocalizations l10n) {
-    switch (key) {
-      case 'Just finish': return l10n.priorityJustFinish;
-      case 'Finish feeling strong': return l10n.priorityFinishStrong;
-      case 'Improve my time': return l10n.priorityImproveTime;
-      case 'Build consistency': return l10n.priorityConsistency;
-      case 'General fitness': return l10n.priorityGeneralFitness;
-      default: return key;
-    }
-  }
 
   String get _raceDateDisplay {
     if (_raceDate == null) return '';
@@ -161,13 +159,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     final showRaceDateQuestion = _selectedRace != null;
     final showRaceDate = _hasRaceDate == true;
     final showPriority = _selectedRace != null && _hasRaceDate != null;
-    final showTimeFields = _priority == 'Improve my time';
+    final showTimeFields = _priority == OnboardingValues.priorityImproveTime;
 
     final isComplete = _selectedRace != null &&
         _hasRaceDate != null &&
         (_hasRaceDate == false || _raceDate != null) &&
         _priority != null &&
-        (_priority != 'Improve my time' ||
+        (_priority != OnboardingValues.priorityImproveTime ||
             (_currentTime != null && _targetTime != null));
 
     return Scaffold(
@@ -332,7 +330,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                         (p) => Padding(
                           padding: const EdgeInsets.only(bottom: AppSpacing.md),
                           child: _PriorityCard(
-                            label: _priorityLabel(p, l10n),
+                            label: OnboardingValues.localizePriority(p, l10n),
                             isSelected: _priority == p,
                             onTap: () {
                             setState(() => _priority = p);

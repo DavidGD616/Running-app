@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class RecoveryLifestyleScreen extends ConsumerStatefulWidget {
@@ -55,20 +56,24 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
     final l10n = AppLocalizations.of(context)!;
 
     final sleepOptions = [
-      l10n.sleepLessThan5h,
-      l10n.sleep5to6h,
-      l10n.sleep6to7h,
-      l10n.sleep7to8h,
-      l10n.sleep8plusH,
+      (key: OnboardingValues.sleepLessThan5h, label: l10n.sleepLessThan5h),
+      (key: OnboardingValues.sleep5to6h, label: l10n.sleep5to6h),
+      (key: OnboardingValues.sleep6to7h, label: l10n.sleep6to7h),
+      (key: OnboardingValues.sleep7to8h, label: l10n.sleep7to8h),
+      (key: OnboardingValues.sleep8plusH, label: l10n.sleep8plusH),
     ];
 
-    final stressOptions = [l10n.stressLow, l10n.stressModerate, l10n.stressHigh];
+    final stressOptions = [
+      (key: OnboardingValues.stressLow, label: l10n.stressLow),
+      (key: OnboardingValues.stressModerate, label: l10n.stressModerate),
+      (key: OnboardingValues.stressHigh, label: l10n.stressHigh),
+    ];
 
     final feelingOptions = [
-      l10n.feelingFresh,
-      l10n.feelingSometimesTired,
-      l10n.feelingOftenTired,
-      l10n.feelingAlwaysTired,
+      OnboardingValues.feelingFresh,
+      OnboardingValues.feelingSometimesTired,
+      OnboardingValues.feelingOftenTired,
+      OnboardingValues.feelingAlwaysTired,
     ];
 
     return Scaffold(
@@ -171,10 +176,11 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                       _SelectCard(
                         label: l10n.workMostlyDesk,
                         subtitle: l10n.workMostlyDeskSub,
-                        isSelected: _workLevel == l10n.workMostlyDesk,
+                        isSelected:
+                            _workLevel == OnboardingValues.workMostlyDesk,
                         onTap: () {
                           setState(() {
-                            _workLevel = l10n.workMostlyDesk;
+                            _workLevel = OnboardingValues.workMostlyDesk;
                             _stressLevel = null;
                             _dayFeeling = null;
                           });
@@ -185,10 +191,10 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                       _SelectCard(
                         label: l10n.workMixed,
                         subtitle: l10n.workMixedSub,
-                        isSelected: _workLevel == l10n.workMixed,
+                        isSelected: _workLevel == OnboardingValues.workMixed,
                         onTap: () {
                           setState(() {
-                            _workLevel = l10n.workMixed;
+                            _workLevel = OnboardingValues.workMixed;
                             _stressLevel = null;
                             _dayFeeling = null;
                           });
@@ -199,10 +205,11 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                       _SelectCard(
                         label: l10n.workPhysical,
                         subtitle: l10n.workPhysicalSub,
-                        isSelected: _workLevel == l10n.workPhysical,
+                        isSelected:
+                            _workLevel == OnboardingValues.workPhysical,
                         onTap: () {
                           setState(() {
-                            _workLevel = l10n.workPhysical;
+                            _workLevel = OnboardingValues.workPhysical;
                             _stressLevel = null;
                             _dayFeeling = null;
                           });
@@ -241,7 +248,10 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                                 padding: const EdgeInsets.only(
                                     bottom: AppSpacing.sm),
                                 child: _SelectCard(
-                                  label: option,
+                                  label: OnboardingValues.localizeDayFeeling(
+                                    option,
+                                    l10n,
+                                  ),
                                   isSelected: _dayFeeling == option,
                                   onTap: () =>
                                       setState(() => _dayFeeling = option),
@@ -355,7 +365,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -369,10 +379,10 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
@@ -383,7 +393,7 @@ class _SegmentedControl extends StatelessWidget {
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     textAlign: TextAlign.center,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
