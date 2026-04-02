@@ -17,24 +17,21 @@ const kSeedUserStats = UserStats(
 const kSeedRecentSessions = [
   RecentSession(
     id: 'recent-1',
-    title: 'Tempo Run',
-    dateLabel: 'Yesterday',
+    dateLabel: RecentSessionDateLabel.yesterday,
     distanceKm: 8.0,
     durationMinutes: 45,
     type: SessionType.tempoRun,
   ),
   RecentSession(
     id: 'recent-2',
-    title: 'Easy Run',
-    dateLabel: 'Tuesday',
+    dateLabel: RecentSessionDateLabel.tuesday,
     distanceKm: 5.0,
     durationMinutes: 30,
     type: SessionType.easyRun,
   ),
   RecentSession(
     id: 'recent-3',
-    title: 'Long Run',
-    dateLabel: 'Last Sunday',
+    dateLabel: RecentSessionDateLabel.lastSunday,
     distanceKm: 12.0,
     durationMinutes: 75,
     type: SessionType.longRun,

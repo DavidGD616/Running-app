@@ -53,6 +53,49 @@ import '../../../user_preferences/domain/user_preferences.dart';
   };
 }
 
+String _recentSessionTitle(SessionType type, AppLocalizations l10n) {
+  switch (type) {
+    case SessionType.restDay:
+      return l10n.weeklyPlanRestTitle;
+    case SessionType.easyRun:
+      return l10n.weeklyPlanSessionEasyRun;
+    case SessionType.longRun:
+      return l10n.weeklyPlanSessionLongRun;
+    case SessionType.progressionRun:
+      return l10n.sessionTypeProgressionRun;
+    case SessionType.intervals:
+      return l10n.weeklyPlanSessionIntervals;
+    case SessionType.hillRepeats:
+      return l10n.sessionTypeHillRepeats;
+    case SessionType.fartlek:
+      return l10n.sessionTypeFartlek;
+    case SessionType.tempoRun:
+      return l10n.progressSessionTempoRun;
+    case SessionType.thresholdRun:
+      return l10n.sessionTypeThresholdRun;
+    case SessionType.racePaceRun:
+      return l10n.sessionTypeRacePaceRun;
+    case SessionType.recoveryRun:
+      return l10n.weeklyPlanSessionRecoveryRun;
+    case SessionType.crossTraining:
+      return l10n.sessionTypeCrossTraining;
+  }
+}
+
+String _recentSessionDateLabel(
+  RecentSessionDateLabel label,
+  AppLocalizations l10n,
+) {
+  switch (label) {
+    case RecentSessionDateLabel.yesterday:
+      return l10n.progressYesterday;
+    case RecentSessionDateLabel.tuesday:
+      return l10n.progressTuesdayLabel;
+    case RecentSessionDateLabel.lastSunday:
+      return l10n.progressLastSunday;
+  }
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 class ProgressScreen extends ConsumerWidget {
@@ -1051,7 +1094,8 @@ class _RecentSessionsCard extends StatelessWidget {
             final s = entry.value;
             final iconData = _sessionIconData(s.type);
             final meta =
-                '${s.dateLabel} • ${UnitFormatter.formatDistanceKm(s.distanceKm)}';
+                '${_recentSessionDateLabel(s.dateLabel, l10n)} • '
+                '${UnitFormatter.formatDistanceKm(s.distanceKm)}';
             final duration = UnitFormatter.formatDuration(s.durationMinutes);
             return Column(
               children: [
@@ -1086,7 +1130,7 @@ class _RecentSessionsCard extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              s.title,
+                              _recentSessionTitle(s.type, l10n),
                               style: AppTypography.titleMedium.copyWith(
                                 fontSize: 14,
                               ),

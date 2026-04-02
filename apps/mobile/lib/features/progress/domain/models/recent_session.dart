@@ -1,9 +1,14 @@
 import '../../../training_plan/domain/models/session_type.dart';
 
+enum RecentSessionDateLabel {
+  yesterday,
+  tuesday,
+  lastSunday,
+}
+
 class RecentSession {
   const RecentSession({
     required this.id,
-    required this.title,
     required this.dateLabel,
     required this.distanceKm,
     required this.durationMinutes,
@@ -11,10 +16,7 @@ class RecentSession {
   });
 
   final String id;
-  final String title;
-
-  /// Human-readable date label, e.g. 'Yesterday', 'Tuesday', 'Last Sunday'.
-  final String dateLabel;
+  final RecentSessionDateLabel dateLabel;
 
   final double distanceKm;
   final int durationMinutes;
