@@ -52,6 +52,12 @@ Always use Context7 MCP when I need library/API documentation, code generation, 
   - Supported locales are English and Spanish
   - Locale defaults from device locale, then persists via `localeProvider`
   - Treat `app_en.arb` and `app_es.arb` as the source of truth; never hand-edit generated localization Dart files
+  - Never use visible UI text as internal state, persisted values, model fields, or provider keys. Store canonical keys/enums/ids and localize only at the UI boundary.
+  - When creating or modifying any user-facing screen, widget, provider, formatter, seed data, or summary view, audit every visible string and confirm it comes from localization or from locale-aware formatting.
+  - If a stored value will later be rendered to the user, do not store the translated label. Store a stable canonical value and map it through `AppLocalizations` when displaying it.
+  - Avoid hardcoded English or Spanish display strings in feature files outside `l10n/`, except for non-translatable internal identifiers.
+  - Dates, times, month names, and any locale-sensitive formatting must use the active locale.
+  - After touching localized UI flows, verify the affected path conceptually in both English and Spanish and check for mixed-language regressions.
 - Useful docs when planning larger changes:
   - `docs/running_app_mvp_plan.md` for product scope
   - `docs/data-models.md` for current domain model intent
@@ -78,3 +84,12 @@ Example:
 ```
 
 After editing any ARB file, run `flutter gen-l10n` from `apps/mobile/` to regenerate the `.dart` l10n files. Never edit the generated files by hand.
+
+## Localization Workflow
+
+- If you touch or create a user-facing file, check whether any visible text is bypassing localization.
+- Treat raw English or Spanish UI text in `apps/mobile/lib/` as a likely bug unless it is an intentional internal identifier.
+- Do not compare logic against translated strings like `Yes`, `No`, `Half Marathon`, or `Skip for now`. Compare against canonical keys/enums instead.
+- Do not place display copy in seed data, provider state, or domain models unless the field is explicitly designed as localized presentation output.
+- Summary screens, review screens, and confirmation screens must localize from canonical stored values, not render previously saved labels directly.
+- When adding a new option list, define stable internal values first, then map them to `app_en.arb` and `app_es.arb`.
