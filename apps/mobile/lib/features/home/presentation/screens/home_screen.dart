@@ -96,17 +96,25 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 
-  String _weekdayName(int weekday) {
-    const names = [
-      'Monday',
-      'Tuesday',
-      'Wednesday',
-      'Thursday',
-      'Friday',
-      'Saturday',
-      'Sunday',
-    ];
-    return names[(weekday - 1).clamp(0, 6)];
+  String _weekdayName(int weekday, AppLocalizations l10n) {
+    switch (weekday) {
+      case DateTime.monday:
+        return l10n.weekdayMonday;
+      case DateTime.tuesday:
+        return l10n.weekdayTuesday;
+      case DateTime.wednesday:
+        return l10n.weekdayWednesday;
+      case DateTime.thursday:
+        return l10n.weekdayThursday;
+      case DateTime.friday:
+        return l10n.weekdayFriday;
+      case DateTime.saturday:
+        return l10n.weekdaySaturday;
+      case DateTime.sunday:
+        return l10n.weekdaySunday;
+      default:
+        return l10n.weekdayMonday;
+    }
   }
 
   @override
@@ -142,7 +150,9 @@ class HomeScreen extends ConsumerWidget {
                       PlanBadgePill(planName: profile.planName),
                       const SizedBox(width: AppSpacing.sm),
                       Text(
-                        profile.weekShort,
+                        l10n.profileWeekShort(
+                          profile.currentWeekNumber.toString(),
+                        ),
                         style: AppTypography.caption.copyWith(
                           color: AppColors.textDisabled,
                         ),
@@ -176,7 +186,7 @@ class HomeScreen extends ConsumerWidget {
                     if (nextSession != null)
                       UpNextRowCard(
                         sessionName: _sessionTitle(nextSession.type, l10n),
-                        dayLabel: _weekdayName(nextSession.date.weekday),
+                        dayLabel: _weekdayName(nextSession.date.weekday, l10n),
                         duration: UnitFormatter.formatDuration(
                           nextSession.durationMinutes ?? 0,
                         ),

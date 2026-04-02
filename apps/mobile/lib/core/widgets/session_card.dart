@@ -45,6 +45,8 @@ class SessionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (variant == SessionCardVariant.restDay) {
       return _RestDayCard(day: day);
     }
@@ -116,7 +118,7 @@ class SessionCard extends StatelessWidget {
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Text(
-                          'Completed · $completedTime',
+                          l10n.sessionCompletedAt(completedTime!),
                           style: AppTypography.caption.copyWith(
                             color: AppColors.success,
                           ),

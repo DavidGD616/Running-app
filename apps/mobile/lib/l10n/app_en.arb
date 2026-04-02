@@ -385,6 +385,27 @@
   "daySun": "Sun",
   "@daySun": { "description": "Sunday chip label" },
 
+  "weekdayMonday": "Monday",
+  "@weekdayMonday": { "description": "Full weekday label for Monday" },
+
+  "weekdayTuesday": "Tuesday",
+  "@weekdayTuesday": { "description": "Full weekday label for Tuesday" },
+
+  "weekdayWednesday": "Wednesday",
+  "@weekdayWednesday": { "description": "Full weekday label for Wednesday" },
+
+  "weekdayThursday": "Thursday",
+  "@weekdayThursday": { "description": "Full weekday label for Thursday" },
+
+  "weekdayFriday": "Friday",
+  "@weekdayFriday": { "description": "Full weekday label for Friday" },
+
+  "weekdaySaturday": "Saturday",
+  "@weekdaySaturday": { "description": "Full weekday label for Saturday" },
+
+  "weekdaySunday": "Sunday",
+  "@weekdaySunday": { "description": "Full weekday label for Sunday" },
+
   "weekdayTimeLabel": "Weekday time available",
   "@weekdayTimeLabel": { "description": "Section label on schedule screen" },
 
@@ -1359,6 +1380,43 @@
 
   "progressWeekPrefix": "W",
   "@progressWeekPrefix": { "description": "Week label prefix in volume chart (W1, W2...). S for Spanish (Semana)." },
+
+  "profileDefaultName": "User Name",
+  "@profileDefaultName": { "description": "Fallback profile name shown in settings when no name is stored" },
+
+  "profileWeekShort": "Week {week}",
+  "@profileWeekShort": {
+    "description": "Short week label used in the home header",
+    "placeholders": {
+      "week": { "type": "String" }
+    }
+  },
+
+  "profileWeekFull": "Week {week} of {total}",
+  "@profileWeekFull": {
+    "description": "Full week label used in the settings profile card",
+    "placeholders": {
+      "week": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "sessionCompletedAt": "Completed · {time}",
+  "@sessionCompletedAt": {
+    "description": "Completed session subtitle with completion time",
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+
+  "weeklyCalendarSessionsDone": "{completed} of {total} sessions done",
+  "@weeklyCalendarSessionsDone": {
+    "description": "Progress summary on the weekly calendar card",
+    "placeholders": {
+      "completed": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
 
   "progressCurrentWeek": "CURRENT WEEK",
   "@progressCurrentWeek": { "description": "Label for the current week stats card inside the volume chart" },

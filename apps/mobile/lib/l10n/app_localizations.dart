@@ -860,6 +860,48 @@ abstract class AppLocalizations {
   /// **'Sun'**
   String get daySun;
 
+  /// Full weekday label for Monday
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get weekdayMonday;
+
+  /// Full weekday label for Tuesday
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get weekdayTuesday;
+
+  /// Full weekday label for Wednesday
+  ///
+  /// In en, this message translates to:
+  /// **'Wednesday'**
+  String get weekdayWednesday;
+
+  /// Full weekday label for Thursday
+  ///
+  /// In en, this message translates to:
+  /// **'Thursday'**
+  String get weekdayThursday;
+
+  /// Full weekday label for Friday
+  ///
+  /// In en, this message translates to:
+  /// **'Friday'**
+  String get weekdayFriday;
+
+  /// Full weekday label for Saturday
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get weekdaySaturday;
+
+  /// Full weekday label for Sunday
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get weekdaySunday;
+
   /// Section label on schedule screen
   ///
   /// In en, this message translates to:
@@ -2698,6 +2740,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'W'**
   String get progressWeekPrefix;
+
+  /// Fallback profile name shown in settings when no name is stored
+  ///
+  /// In en, this message translates to:
+  /// **'User Name'**
+  String get profileDefaultName;
+
+  /// Short week label used in the home header
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week}'**
+  String profileWeekShort(String week);
+
+  /// Full week label used in the settings profile card
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week} of {total}'**
+  String profileWeekFull(String week, String total);
+
+  /// Completed session subtitle with completion time
+  ///
+  /// In en, this message translates to:
+  /// **'Completed · {time}'**
+  String sessionCompletedAt(String time);
+
+  /// Progress summary on the weekly calendar card
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} sessions done'**
+  String weeklyCalendarSessionsDone(String completed, String total);
 
   /// Label for the current week stats card inside the volume chart
   ///

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
@@ -25,13 +26,22 @@ class WeeklyCalendarCard extends StatelessWidget {
   final int? selectedDayIndex;
   final ValueChanged<int>? onDayTap;
 
-  static const _days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
-
   double get _progress =>
       totalSessions == 0 ? 0 : sessionsCompleted / totalSessions;
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final dayLabels = [
+      l10n.dayMon,
+      l10n.dayTue,
+      l10n.dayWed,
+      l10n.dayThu,
+      l10n.dayFri,
+      l10n.daySat,
+      l10n.daySun,
+    ];
+
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
@@ -43,14 +53,17 @@ class WeeklyCalendarCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Week $currentWeek of $totalWeeks',
+            l10n.weeklyPlanTitle(
+              currentWeek.toString(),
+              totalWeeks.toString(),
+            ),
             style: AppTypography.titleMedium,
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: List.generate(7, (i) => _DayDot(
-              label: _days[i],
+              label: dayLabels[i],
               isActive: activeDayIndices.contains(i),
               isSelected: selectedDayIndex == i,
               onTap: onDayTap != null ? () => onDayTap!(i) : null,
@@ -63,7 +76,10 @@ class WeeklyCalendarCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '$sessionsCompleted of $totalSessions sessions done',
+                l10n.weeklyCalendarSessionsDone(
+                  sessionsCompleted.toString(),
+                  totalSessions.toString(),
+                ),
                 style: AppTypography.bodyMedium,
               ),
               Text(

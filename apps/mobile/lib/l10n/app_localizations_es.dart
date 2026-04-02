@@ -405,6 +405,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get daySun => 'Dom';
 
   @override
+  String get weekdayMonday => 'Lunes';
+
+  @override
+  String get weekdayTuesday => 'Martes';
+
+  @override
+  String get weekdayWednesday => 'Miércoles';
+
+  @override
+  String get weekdayThursday => 'Jueves';
+
+  @override
+  String get weekdayFriday => 'Viernes';
+
+  @override
+  String get weekdaySaturday => 'Sábado';
+
+  @override
+  String get weekdaySunday => 'Domingo';
+
+  @override
   String get weekdayTimeLabel => 'Tiempo disponible entre semana';
 
   @override
@@ -1392,6 +1413,29 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get progressWeekPrefix => 'S';
+
+  @override
+  String get profileDefaultName => 'Nombre de usuario';
+
+  @override
+  String profileWeekShort(String week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String profileWeekFull(String week, String total) {
+    return 'Semana $week de $total';
+  }
+
+  @override
+  String sessionCompletedAt(String time) {
+    return 'Completado · $time';
+  }
+
+  @override
+  String weeklyCalendarSessionsDone(String completed, String total) {
+    return '$completed de $total sesiones completadas';
+  }
 
   @override
   String get progressCurrentWeek => 'SEMANA ACTUAL';

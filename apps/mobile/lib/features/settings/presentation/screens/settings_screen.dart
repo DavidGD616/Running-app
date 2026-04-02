@@ -37,9 +37,12 @@ class SettingsScreen extends ConsumerWidget {
 
               // ── Profile card ───────────────────────────────────
               ProfileCard(
-                name: profile.name,
+                name: l10n.profileDefaultName,
                 planName: profile.planName,
-                weekInfo: profile.weekFull,
+                weekInfo: l10n.profileWeekFull(
+                  profile.currentWeekNumber.toString(),
+                  profile.totalWeeks.toString(),
+                ),
               ),
 
               const SizedBox(height: AppSpacing.xl),

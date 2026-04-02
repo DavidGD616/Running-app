@@ -144,6 +144,13 @@
   "dayFri": "Vie",
   "daySat": "Sáb",
   "daySun": "Dom",
+  "weekdayMonday": "Lunes",
+  "weekdayTuesday": "Martes",
+  "weekdayWednesday": "Miércoles",
+  "weekdayThursday": "Jueves",
+  "weekdayFriday": "Viernes",
+  "weekdaySaturday": "Sábado",
+  "weekdaySunday": "Domingo",
   "weekdayTimeLabel": "Tiempo disponible entre semana",
   "time20min": "20 min",
   "time30min": "30 min",
@@ -472,6 +479,33 @@
   "progressLastSunday": "Último Domingo",
 
   "progressWeekPrefix": "S",
+  "profileDefaultName": "Nombre de usuario",
+  "profileWeekShort": "Semana {week}",
+  "@profileWeekShort": {
+    "placeholders": {
+      "week": { "type": "String" }
+    }
+  },
+  "profileWeekFull": "Semana {week} de {total}",
+  "@profileWeekFull": {
+    "placeholders": {
+      "week": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+  "sessionCompletedAt": "Completado · {time}",
+  "@sessionCompletedAt": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "weeklyCalendarSessionsDone": "{completed} de {total} sesiones completadas",
+  "@weeklyCalendarSessionsDone": {
+    "placeholders": {
+      "completed": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
 
   "progressCurrentWeek": "SEMANA ACTUAL",
   "progressElevationLabel": "Elevación",

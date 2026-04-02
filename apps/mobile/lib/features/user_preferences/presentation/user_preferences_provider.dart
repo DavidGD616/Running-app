@@ -57,33 +57,26 @@ final userPreferencesProvider =
 
 // ── User profile display ───────────────────────────────────────────────────────
 
-/// Display-ready strings for the profile card and home header.
+/// Display-ready plan metadata for the profile card and home header.
 /// In a future sprint this will derive name from auth state and plan info
 /// from [trainingPlanProvider].
 class UserProfileDisplay {
   const UserProfileDisplay({
-    required this.name,
     required this.planName,
-    required this.weekShort,
-    required this.weekFull,
+    required this.currentWeekNumber,
+    required this.totalWeeks,
   });
 
-  final String name;
   final String planName;
-
-  /// Short label for the home header, e.g. 'Week 4'.
-  final String weekShort;
-
-  /// Full label for the settings profile card, e.g. 'Week 4 of 12'.
-  final String weekFull;
+  final int currentWeekNumber;
+  final int totalWeeks;
 }
 
 final userProfileDisplayProvider = Provider<UserProfileDisplay>((ref) {
   final plan = ref.watch(trainingPlanProvider);
   return UserProfileDisplay(
-    name: 'User Name',
     planName: plan.name,
-    weekShort: 'Week ${plan.currentWeekNumber}',
-    weekFull: 'Week ${plan.currentWeekNumber} of ${plan.totalWeeks}',
+    currentWeekNumber: plan.currentWeekNumber,
+    totalWeeks: plan.totalWeeks,
   );
 });
