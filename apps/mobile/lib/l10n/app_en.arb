@@ -1782,6 +1782,9 @@
   "fullPlanTitle": "Full Plan",
   "@fullPlanTitle": { "description": "Title of the full plan screen" },
 
+  "trainingHistoryTitle": "Training History",
+  "@trainingHistoryTitle": { "description": "Title of the training history screen" },
+
   "fullPlanNote": "This is your estimated full plan. It may change over time based on your progress and training adjustments.",
   "@fullPlanNote": { "description": "Informational note at the top of the full plan screen" },
 

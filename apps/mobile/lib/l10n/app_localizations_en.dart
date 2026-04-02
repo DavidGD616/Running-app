@@ -1815,6 +1815,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get fullPlanTitle => 'Full Plan';
 
   @override
+  String get trainingHistoryTitle => 'Training History';
+
+  @override
   String get fullPlanNote =>
       'This is your estimated full plan. It may change over time based on your progress and training adjustments.';
 

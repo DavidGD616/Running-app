@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -518,47 +520,51 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
           const SizedBox(height: AppSpacing.base),
 
           // ── See Full Data footer ────────────────────────────
-          Container(
-            width: double.infinity,
-            decoration: const BoxDecoration(
-              border: Border(top: BorderSide(color: Color(0xFF2A2A2A))),
-              borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+          GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () => context.push(RouteNames.trainingHistory),
+            child: Container(
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                border: Border(top: BorderSide(color: Color(0xFF2A2A2A))),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
               ),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SvgPicture.asset(
-                  'assets/icons/bar_chart.svg',
-                  width: 16,
-                  height: 16,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.accentPrimary,
-                    BlendMode.srcIn,
+              padding: const EdgeInsets.symmetric(vertical: AppSpacing.base),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SvgPicture.asset(
+                    'assets/icons/bar_chart.svg',
+                    width: 16,
+                    height: 16,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.accentPrimary,
+                      BlendMode.srcIn,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 6),
-                Text(
-                  l10n.progressSeeFullData,
-                  style: AppTypography.titleMedium.copyWith(
-                    color: AppColors.accentPrimary,
-                    fontSize: 14,
+                  const SizedBox(width: 6),
+                  Text(
+                    l10n.progressSeeFullData,
+                    style: AppTypography.titleMedium.copyWith(
+                      color: AppColors.accentPrimary,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
-                const SizedBox(width: 4),
-                SvgPicture.asset(
-                  'assets/icons/chevron_right.svg',
-                  width: 16,
-                  height: 16,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.accentPrimary,
-                    BlendMode.srcIn,
+                  const SizedBox(width: 4),
+                  SvgPicture.asset(
+                    'assets/icons/chevron_right.svg',
+                    width: 16,
+                    height: 16,
+                    colorFilter: const ColorFilter.mode(
+                      AppColors.accentPrimary,
+                      BlendMode.srcIn,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

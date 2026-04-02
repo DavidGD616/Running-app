@@ -631,6 +631,7 @@
   "workoutOptionsRestoreWorkoutDescription": "Vuelve a poner esta sesión en el calendario",
 
   "fullPlanTitle": "Plan Completo",
+  "trainingHistoryTitle": "Historial de Entrenamiento",
   "fullPlanNote": "Este es tu plan estimado completo. Puede cambiar con el tiempo según tu progreso y ajustes de entrenamiento.",
   "fullPlanWeeksLabel": "SEMANAS",
   "fullPlanDistanceLabel": "DISTANCIA",

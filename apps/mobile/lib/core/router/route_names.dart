@@ -26,4 +26,5 @@ abstract class RouteNames {
   static const preRun          = '/pre-run';
   static const logRun          = '/log-run';
   static const fullPlan        = '/full-plan';
+  static const trainingHistory = '/training-history';
 }

@@ -3443,6 +3443,12 @@ abstract class AppLocalizations {
   /// **'Full Plan'**
   String get fullPlanTitle;
 
+  /// Title of the training history screen
+  ///
+  /// In en, this message translates to:
+  /// **'Training History'**
+  String get trainingHistoryTitle;
+
   /// Informational note at the top of the full plan screen
   ///
   /// In en, this message translates to:
