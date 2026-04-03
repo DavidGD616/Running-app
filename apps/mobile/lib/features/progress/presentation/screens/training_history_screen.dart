@@ -18,6 +18,25 @@ import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../domain/models/training_history_point.dart';
 import '../progress_provider.dart';
 
+const double _trainingHistoryPlotHorizontalInset = 16;
+
+double _trainingHistoryPointX({
+  required int index,
+  required int count,
+  required double width,
+}) {
+  if (count <= 1) {
+    return width / 2;
+  }
+
+  final usableWidth = math.max(
+    0.0,
+    width - (_trainingHistoryPlotHorizontalInset * 2),
+  );
+  return _trainingHistoryPlotHorizontalInset +
+      (usableWidth * index / (count - 1));
+}
+
 class TrainingHistoryScreen extends ConsumerStatefulWidget {
   const TrainingHistoryScreen({super.key});
 
@@ -244,7 +263,11 @@ class _TrainingHistoryChartCard extends StatelessWidget {
     int nearest = 0;
     double minDistance = double.infinity;
     for (int index = 0; index < points.length; index++) {
-      final pointX = chartWidth * index / (points.length - 1);
+      final pointX = _trainingHistoryPointX(
+        index: index,
+        count: points.length,
+        width: chartWidth,
+      );
       final distance = (pointX - localX).abs();
       if (distance < minDistance) {
         minDistance = distance;
@@ -393,9 +416,11 @@ class _TrainingHistoryChartPainter extends CustomPainter {
     if (data.isEmpty) return;
 
     double yFor(double value) => size.height * (1 - (value / maxValue));
-    double xFor(int index) => data.length == 1
-        ? size.width / 2
-        : size.width * index / (data.length - 1);
+    double xFor(int index) => _trainingHistoryPointX(
+      index: index,
+      count: data.length,
+      width: size.width,
+    );
 
     final points = List.generate(
       data.length,
@@ -534,9 +559,13 @@ class _TrainingHistoryAxisLabelsPainter extends CustomPainter {
         maxLines: 1,
       )..layout();
 
-      final x = labels.length == 1
-          ? (size.width - textPainter.width) / 2
-          : (size.width * index / (labels.length - 1)) - textPainter.width / 2;
+      final x =
+          _trainingHistoryPointX(
+            index: index,
+            count: labels.length,
+            width: size.width,
+          ) -
+          textPainter.width / 2;
       final clampedX = x
           .clamp(0.0, math.max(0.0, size.width - textPainter.width))
           .toDouble();
