@@ -209,6 +209,7 @@ class _TrainingHistoryChartCard extends StatelessWidget {
   final UnitSystem unitSystem;
   final int selectedIndex;
   final ValueChanged<int> onSelectedIndexChanged;
+  static const double _yAxisWidth = 58;
 
   double _maxValue(List<double> values) {
     final peak = values.fold<double>(0, math.max);
@@ -291,35 +292,38 @@ class _TrainingHistoryChartCard extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      _formatAxisValue(maxValue),
-                      style: AppTypography.caption.copyWith(
-                        color: const Color(0xFF666666),
-                        fontSize: 11,
-                        letterSpacing: 0,
+                SizedBox(
+                  width: _yAxisWidth,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        _formatAxisValue(maxValue),
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF666666),
+                          fontSize: 11,
+                          letterSpacing: 0,
+                        ),
                       ),
-                    ),
-                    Text(
-                      _formatAxisValue(maxValue / 2),
-                      style: AppTypography.caption.copyWith(
-                        color: const Color(0xFF666666),
-                        fontSize: 11,
-                        letterSpacing: 0,
+                      Text(
+                        _formatAxisValue(maxValue / 2),
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF666666),
+                          fontSize: 11,
+                          letterSpacing: 0,
+                        ),
                       ),
-                    ),
-                    Text(
-                      _formatAxisValue(0),
-                      style: AppTypography.caption.copyWith(
-                        color: const Color(0xFF666666),
-                        fontSize: 11,
-                        letterSpacing: 0,
+                      Text(
+                        _formatAxisValue(0),
+                        style: AppTypography.caption.copyWith(
+                          color: const Color(0xFF666666),
+                          fontSize: 11,
+                          letterSpacing: 0,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
@@ -348,6 +352,24 @@ class _TrainingHistoryChartCard extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              const SizedBox(width: _yAxisWidth),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: SizedBox(
+                  height: 18,
+                  child: CustomPaint(
+                    painter: _TrainingHistoryAxisLabelsPainter(
+                      labels: points.map((point) => point.axisLabel).toList(),
+                      selectedIndex: selectedIndex,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -476,4 +498,64 @@ class _TrainingHistoryChartPainter extends CustomPainter {
       oldDelegate.data != data ||
       oldDelegate.selectedIndex != selectedIndex ||
       oldDelegate.maxValue != maxValue;
+}
+
+class _TrainingHistoryAxisLabelsPainter extends CustomPainter {
+  const _TrainingHistoryAxisLabelsPainter({
+    required this.labels,
+    required this.selectedIndex,
+  });
+
+  final List<String> labels;
+  final int selectedIndex;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    if (labels.isEmpty) return;
+
+    for (int index = 0; index < labels.length; index++) {
+      if (!_shouldShowLabel(index)) continue;
+
+      final isSelected = index == selectedIndex;
+      final textPainter = TextPainter(
+        text: TextSpan(
+          text: labels[index],
+          style: TextStyle(
+            color: isSelected
+                ? AppColors.accentPrimary
+                : const Color(0xFF666666),
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+            letterSpacing: 0,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+        textAlign: TextAlign.center,
+        maxLines: 1,
+      )..layout();
+
+      final x = labels.length == 1
+          ? (size.width - textPainter.width) / 2
+          : (size.width * index / (labels.length - 1)) - textPainter.width / 2;
+      final clampedX = x
+          .clamp(0.0, math.max(0.0, size.width - textPainter.width))
+          .toDouble();
+      textPainter.paint(canvas, Offset(clampedX, 0));
+    }
+  }
+
+  bool _shouldShowLabel(int index) {
+    if (labels.length <= 7) return true;
+
+    final step = labels.length <= 12 ? 2 : 3;
+    return index == 0 ||
+        index == labels.length - 1 ||
+        index == selectedIndex ||
+        index % step == 0;
+  }
+
+  @override
+  bool shouldRepaint(_TrainingHistoryAxisLabelsPainter oldDelegate) =>
+      oldDelegate.labels != labels ||
+      oldDelegate.selectedIndex != selectedIndex;
 }

@@ -78,6 +78,7 @@ List<TrainingHistoryPoint> buildTrainingHistorySeries({
           startDate: bucket.startDate,
           endDate: bucket.endDate,
           label: bucket.label,
+          axisLabel: bucket.axisLabel,
           distanceKm: totalDistanceKm,
           durationMinutes: totalMinutes,
           elevationMeters: totalElevation,
@@ -110,13 +111,15 @@ List<_BucketSpec> _buildDailyBuckets({
   required DateTime now,
   required String? locale,
 }) {
-  final formatter = DateFormat('EEE, MMM d', locale);
+  final labelFormatter = DateFormat('EEE, MMM d', locale);
+  final axisFormatter = DateFormat('EEE', locale);
   return List.generate(7, (index) {
     final startDate = now.subtract(Duration(days: 6 - index));
     return _BucketSpec(
       startDate: startDate,
       endDate: startDate.add(const Duration(days: 1)),
-      label: formatter.format(startDate),
+      label: labelFormatter.format(startDate),
+      axisLabel: axisFormatter.format(startDate),
       isCurrent: index == 6,
     );
   });
@@ -128,6 +131,7 @@ List<_BucketSpec> _buildRollingWeeklyBuckets({
   required int bucketCount,
 }) {
   final currentWeekStart = _mondayOf(now);
+  final axisFormatter = DateFormat('MMM d', locale);
   return List.generate(bucketCount, (index) {
     final startDate = currentWeekStart.subtract(
       Duration(days: (bucketCount - 1 - index) * 7),
@@ -141,6 +145,7 @@ List<_BucketSpec> _buildRollingWeeklyBuckets({
         endDate.subtract(const Duration(days: 1)),
         locale,
       ),
+      axisLabel: axisFormatter.format(startDate),
       isCurrent: index == bucketCount - 1,
     );
   });
@@ -153,6 +158,7 @@ List<_BucketSpec> _buildFortnightBuckets({
 }) {
   final currentWeekStart = _mondayOf(now);
   final latestBucketStart = currentWeekStart.subtract(const Duration(days: 7));
+  final axisFormatter = DateFormat('MMM d', locale);
 
   return List.generate(bucketCount, (index) {
     final startDate = latestBucketStart.subtract(
@@ -167,6 +173,7 @@ List<_BucketSpec> _buildFortnightBuckets({
         endDate.subtract(const Duration(days: 1)),
         locale,
       ),
+      axisLabel: axisFormatter.format(startDate),
       isCurrent: index == bucketCount - 1,
     );
   });
@@ -178,7 +185,8 @@ List<_BucketSpec> _buildMonthlyBuckets({
   required int monthCount,
 }) {
   final currentMonthStart = DateTime(now.year, now.month);
-  final formatter = DateFormat('MMMM yyyy', locale);
+  final labelFormatter = DateFormat('MMMM yyyy', locale);
+  final axisFormatter = DateFormat('MMM', locale);
 
   return List.generate(monthCount, (index) {
     final startDate = _addMonths(currentMonthStart, -(monthCount - 1 - index));
@@ -186,7 +194,8 @@ List<_BucketSpec> _buildMonthlyBuckets({
     return _BucketSpec(
       startDate: startDate,
       endDate: endDate,
-      label: formatter.format(startDate),
+      label: labelFormatter.format(startDate),
+      axisLabel: axisFormatter.format(startDate),
       isCurrent: index == monthCount - 1,
     );
   });
@@ -214,6 +223,7 @@ List<_BucketSpec> _buildQuarterBuckets({
         startDate: startDate,
         endDate: endDate,
         label: _formatQuarterLabel(startDate, locale),
+        axisLabel: _formatQuarterAxisLabel(startDate),
         isCurrent: _isSameMonth(startDate, currentQuarterStart),
       ),
     );
@@ -246,6 +256,12 @@ String _formatQuarterLabel(DateTime startDate, String? locale) {
   return '${startFormatter.format(startDate)} - ${endFormatter.format(endDate)}';
 }
 
+String _formatQuarterAxisLabel(DateTime startDate) {
+  final quarter = ((startDate.month - 1) ~/ 3) + 1;
+  final year = (startDate.year % 100).toString().padLeft(2, '0');
+  return 'Q$quarter $year';
+}
+
 DateTime _startOfDay(DateTime date) =>
     DateTime(date.year, date.month, date.day);
 
@@ -275,11 +291,13 @@ class _BucketSpec {
     required this.startDate,
     required this.endDate,
     required this.label,
+    required this.axisLabel,
     required this.isCurrent,
   });
 
   final DateTime startDate;
   final DateTime endDate;
   final String label;
+  final String axisLabel;
   final bool isCurrent;
 }

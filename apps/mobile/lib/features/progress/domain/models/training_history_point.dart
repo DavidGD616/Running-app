@@ -5,6 +5,7 @@ class TrainingHistoryPoint {
     required this.startDate,
     required this.endDate,
     required this.label,
+    required this.axisLabel,
     required this.distanceKm,
     required this.durationMinutes,
     required this.elevationMeters,
@@ -15,6 +16,7 @@ class TrainingHistoryPoint {
   final DateTime startDate;
   final DateTime endDate;
   final String label;
+  final String axisLabel;
   final double distanceKm;
   final int durationMinutes;
   final int elevationMeters;
@@ -28,6 +30,7 @@ class TrainingHistoryPoint {
     DateTime? startDate,
     DateTime? endDate,
     String? label,
+    String? axisLabel,
     double? distanceKm,
     int? durationMinutes,
     int? elevationMeters,
@@ -38,6 +41,7 @@ class TrainingHistoryPoint {
       startDate: startDate ?? this.startDate,
       endDate: endDate ?? this.endDate,
       label: label ?? this.label,
+      axisLabel: axisLabel ?? this.axisLabel,
       distanceKm: distanceKm ?? this.distanceKm,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       elevationMeters: elevationMeters ?? this.elevationMeters,
