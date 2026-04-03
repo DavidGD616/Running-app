@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -11,7 +12,6 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_segmented_control.dart';
-import '../../../../core/widgets/stat_column.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
@@ -184,27 +184,121 @@ class _SelectedPeriodSummaryCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          SizedBox(
-            height: 72,
+          IntrinsicHeight(
             child: Row(
               children: [
-                StatColumn(
-                  label: l10n.progressDistanceLabel,
-                  value: UnitFormatter.formatDistanceWithUnit(
-                    point.distanceKm,
-                    unitSystem,
+                Expanded(
+                  child: _TrainingHistoryMetricItem(
+                    iconAsset: 'assets/icons/compass.svg',
+                    iconColor: AppColors.accentPrimary,
+                    label: l10n.progressDistanceLabel,
+                    value: UnitFormatter.formatDistanceValue(
+                      point.distanceKm,
+                      unitSystem,
+                    ),
+                    unit: ' ${UnitFormatter.unitLabel(unitSystem)}',
                   ),
                 ),
-                StatColumn(
-                  label: l10n.progressTimeLabel,
-                  value: UnitFormatter.formatDuration(point.durationMinutes),
-                  hasDivider: true,
+                Container(
+                  width: 1,
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  color: const Color(0xFF2A2A2A),
                 ),
-                StatColumn(
-                  label: l10n.progressElevationLabel,
-                  value: '${point.elevationMeters} m',
-                  hasDivider: true,
+                Expanded(
+                  child: _TrainingHistoryMetricItem(
+                    iconAsset: 'assets/icons/clock.svg',
+                    iconColor: AppColors.info,
+                    label: l10n.progressTimeLabel,
+                    value: UnitFormatter.formatDuration(point.durationMinutes),
+                  ),
                 ),
+                Container(
+                  width: 1,
+                  margin: const EdgeInsets.symmetric(vertical: 2),
+                  color: const Color(0xFF2A2A2A),
+                ),
+                Expanded(
+                  child: _TrainingHistoryMetricItem(
+                    iconAsset: 'assets/icons/mountain.svg',
+                    iconColor: AppColors.warning,
+                    label: l10n.progressElevationLabel,
+                    value: point.elevationMeters.toString(),
+                    unit: ' m',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TrainingHistoryMetricItem extends StatelessWidget {
+  const _TrainingHistoryMetricItem({
+    required this.iconAsset,
+    required this.iconColor,
+    required this.label,
+    required this.value,
+    this.unit = '',
+  });
+
+  final String iconAsset;
+  final Color iconColor;
+  final String label;
+  final String value;
+  final String unit;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              SvgPicture.asset(
+                iconAsset,
+                width: 11,
+                height: 11,
+                colorFilter: ColorFilter.mode(iconColor, BlendMode.srcIn),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: AppTypography.caption.copyWith(
+                  color: const Color(0xFF888888),
+                  fontSize: 11,
+                  letterSpacing: 0.06,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          RichText(
+            text: TextSpan(
+              children: [
+                TextSpan(
+                  text: value,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: -0.31,
+                  ),
+                ),
+                if (unit.isNotEmpty)
+                  TextSpan(
+                    text: unit,
+                    style: const TextStyle(
+                      color: Color(0xFFB3B3B3),
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
               ],
             ),
           ),
