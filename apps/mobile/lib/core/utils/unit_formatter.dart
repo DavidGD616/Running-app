@@ -30,6 +30,10 @@ class UnitFormatter {
   static double _convertDistance(double km, UnitSystem unit) =>
       unit == UnitSystem.km ? km : km * 0.621371;
 
+  /// Returns distance converted to the active unit system without formatting.
+  static double distanceValue(double km, UnitSystem unit) =>
+      _convertDistance(km, unit);
+
   /// Returns the numeric distance formatted without unit, respecting unit system.
   static String formatDistanceValue(double km, UnitSystem unit) {
     final converted = _convertDistance(km, unit);
