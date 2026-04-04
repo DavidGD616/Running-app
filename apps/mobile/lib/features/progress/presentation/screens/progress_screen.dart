@@ -175,7 +175,11 @@ class ProgressScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
 
               // ── Weekly volume chart ───────────────────────────────
-              _VolumeChartCard(l10n: l10n, weeks: volumeData),
+              _VolumeChartCard(
+                l10n: l10n,
+                weeks: volumeData,
+                unitSystem: unitSystem,
+              ),
 
               const SizedBox(height: AppSpacing.md),
 
@@ -189,10 +193,11 @@ class ProgressScreen extends ConsumerWidget {
                         iconAsset: 'assets/icons/compass.svg',
                         iconColor: AppColors.accentPrimary,
                         label: l10n.progressDistanceLabel,
-                        value: monthlyDistanceStats.currentKm.toStringAsFixed(
-                          1,
+                        value: UnitFormatter.formatDistanceValue(
+                          monthlyDistanceStats.currentKm,
+                          unitSystem,
                         ),
-                        unit: 'km',
+                        unit: UnitFormatter.unitLabel(unitSystem, l10n),
                         trend: distanceTrendText,
                         trendColor: hasDistanceTrend
                             ? AppColors.accentPrimary
@@ -283,10 +288,15 @@ class ProgressScreen extends ConsumerWidget {
 // ── Weekly volume chart card ──────────────────────────────────────────────────
 
 class _VolumeChartCard extends StatefulWidget {
-  const _VolumeChartCard({required this.l10n, required this.weeks});
+  const _VolumeChartCard({
+    required this.l10n,
+    required this.weeks,
+    required this.unitSystem,
+  });
 
   final AppLocalizations l10n;
   final List<WeeklyVolumeData> weeks;
+  final UnitSystem unitSystem;
 
   @override
   State<_VolumeChartCard> createState() => _VolumeChartCardState();
@@ -295,11 +305,16 @@ class _VolumeChartCard extends StatefulWidget {
 class _VolumeChartCardState extends State<_VolumeChartCard> {
   int _selectedIndex = 5;
 
+  List<double> get _displayDistances => widget.weeks
+      .map(
+        (week) =>
+            UnitFormatter.distanceValue(week.distanceKm, widget.unitSystem),
+      )
+      .toList();
+
   double get _maxVal {
     if (widget.weeks.isEmpty) return 50.0;
-    final maxDist = widget.weeks
-        .map((w) => w.distanceKm)
-        .reduce((a, b) => a > b ? a : b);
+    final maxDist = _displayDistances.reduce((a, b) => a > b ? a : b);
     return ((maxDist * 1.2) / 10).ceil() * 10.0;
   }
 
@@ -324,6 +339,11 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
   Widget build(BuildContext context) {
     final l10n = widget.l10n;
     final selected = widget.weeks[_selectedIndex];
+    final selectedDistance = UnitFormatter.formatDistanceValue(
+      selected.distanceKm,
+      widget.unitSystem,
+    );
+    final unitLabel = UnitFormatter.unitLabel(widget.unitSystem, l10n);
     final maxVal = _maxVal;
     final weekLabel = selected.isCurrentWeek
         ? l10n.progressCurrentWeek
@@ -412,8 +432,8 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/compass.svg',
                             iconColor: AppColors.accentPrimary,
                             label: l10n.progressDistanceLabel,
-                            value: selected.distanceKm.toInt().toString(),
-                            unit: ' km',
+                            value: selectedDistance,
+                            unit: ' $unitLabel',
                           ),
                         ),
                         Container(
@@ -468,7 +488,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
-                        '${maxVal.round()} km',
+                        '${maxVal.round()} $unitLabel',
                         style: AppTypography.caption.copyWith(
                           color: const Color(0xFF666666),
                           fontSize: 11,
@@ -476,7 +496,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                         ),
                       ),
                       Text(
-                        '${(maxVal / 2).round()} km',
+                        '${(maxVal / 2).round()} $unitLabel',
                         style: AppTypography.caption.copyWith(
                           color: const Color(0xFF666666),
                           fontSize: 11,
@@ -484,7 +504,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                         ),
                       ),
                       Text(
-                        '0 km',
+                        '0 $unitLabel',
                         style: AppTypography.caption.copyWith(
                           color: const Color(0xFF666666),
                           fontSize: 11,
@@ -509,9 +529,7 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                           ),
                           child: CustomPaint(
                             painter: _ChartPainter(
-                              data: widget.weeks
-                                  .map((w) => w.distanceKm)
-                                  .toList(),
+                              data: _displayDistances,
                               selectedIndex: _selectedIndex,
                               maxVal: maxVal,
                             ),
