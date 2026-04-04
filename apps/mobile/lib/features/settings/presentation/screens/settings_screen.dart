@@ -1,24 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/profile_card.dart';
+import '../../../../core/widgets/settings_card.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/settings_row.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../localization/presentation/locale_provider.dart';
 import '../../../training_plan/presentation/training_plan_localization.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
+  String _languageValueLabel(AppLocalizations l10n, Locale locale) {
+    return switch (locale.languageCode) {
+      'es' => l10n.settingsLanguageSpanish,
+      _ => l10n.settingsLanguageEnglish,
+    };
+  }
+
+  String _unitValueLabel(AppLocalizations l10n, UnitSystem unitSystem) {
+    return unitSystem == UnitSystem.miles
+        ? l10n.settingsUnitsImperial
+        : l10n.settingsUnitsMetric;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final profile = ref.watch(userProfileDisplayProvider);
+    final currentLocale =
+        ref.watch(localeProvider).value ?? Localizations.localeOf(context);
+    final currentUnitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final planName = localizedTrainingPlanName(
       raceType: profile.raceType,
       totalWeeks: profile.totalWeeks,
@@ -30,8 +52,10 @@ class SettingsScreen extends ConsumerWidget {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen, AppSpacing.lg,
-            AppSpacing.screen, AppSpacing.xl,
+            AppSpacing.screen,
+            AppSpacing.lg,
+            AppSpacing.screen,
+            AppSpacing.xl,
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,7 +80,7 @@ class SettingsScreen extends ConsumerWidget {
               // ── Plan & Goals ───────────────────────────────────
               SectionLabel(label: l10n.settingsPlanGoalsSection),
               const SizedBox(height: AppSpacing.md),
-              _SettingsCard(
+              SettingsCard(
                 children: [
                   SettingsRow(
                     label: l10n.settingsUpdatePlanInfo,
@@ -73,21 +97,21 @@ class SettingsScreen extends ConsumerWidget {
               // ── Preferences ────────────────────────────────────
               SectionLabel(label: l10n.settingsPreferencesSection),
               const SizedBox(height: AppSpacing.md),
-              _SettingsCard(
+              SettingsCard(
                 children: [
                   SettingsRow(
                     label: l10n.settingsLanguage,
                     iconAsset: 'assets/icons/globe.svg',
                     variant: SettingsRowVariant.value,
-                    valueLabel: l10n.settingsLanguageValue,
-                    onTap: () {},
+                    valueLabel: _languageValueLabel(l10n, currentLocale),
+                    onTap: () => context.push(RouteNames.settingsLanguage),
                   ),
                   SettingsRow(
                     label: l10n.settingsUnits,
                     iconAsset: 'assets/icons/ruler.svg',
                     variant: SettingsRowVariant.value,
-                    valueLabel: l10n.settingsUnitsValue,
-                    onTap: () {},
+                    valueLabel: _unitValueLabel(l10n, currentUnitSystem),
+                    onTap: () => context.push(RouteNames.settingsUnits),
                   ),
                   SettingsRow(
                     label: l10n.settingsAudioGuidance,
@@ -111,7 +135,7 @@ class SettingsScreen extends ConsumerWidget {
               // ── Connected Devices ──────────────────────────────
               SectionLabel(label: l10n.settingsConnectedDevicesSection),
               const SizedBox(height: AppSpacing.md),
-              _SettingsCard(
+              SettingsCard(
                 children: [
                   SettingsRow(
                     label: l10n.settingsGarminConnect,
@@ -143,40 +167,6 @@ class SettingsScreen extends ConsumerWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ── Settings card (groups rows with dividers) ─────────────────────────────────
-
-class _SettingsCard extends StatelessWidget {
-  const _SettingsCard({required this.children});
-
-  final List<Widget> children;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        borderRadius: AppRadius.borderLg,
-        border: Border.all(color: AppColors.borderDefault),
-      ),
-      child: Column(
-        children: [
-          for (int i = 0; i < children.length; i++) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
-              child: children[i],
-            ),
-            if (i < children.length - 1)
-              Divider(
-                height: 1,
-                color: AppColors.borderDefault.withValues(alpha: 0.5),
-              ),
-          ],
-        ],
       ),
     );
   }

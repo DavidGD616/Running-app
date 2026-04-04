@@ -1468,11 +1468,23 @@
   "settingsLanguage": "Language",
   "@settingsLanguage": { "description": "Language preference row label" },
 
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": { "description": "English language option in settings" },
+
+  "settingsLanguageSpanish": "Spanish",
+  "@settingsLanguageSpanish": { "description": "Spanish language option in settings" },
+
   "settingsLanguageValue": "English",
   "@settingsLanguageValue": { "description": "Current language value" },
 
   "settingsUnits": "Units",
   "@settingsUnits": { "description": "Units preference row label" },
+
+  "settingsUnitsMetric": "Metric (km)",
+  "@settingsUnitsMetric": { "description": "Metric unit option in settings" },
+
+  "settingsUnitsImperial": "Imperial (mi)",
+  "@settingsUnitsImperial": { "description": "Imperial unit option in settings" },
 
   "settingsUnitsValue": "Metric (km)",
   "@settingsUnitsValue": { "description": "Current units value" },

@@ -4,7 +4,14 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_typography.dart';
 
-enum SettingsRowVariant { chevron, badge, toggleOn, toggleOff, value }
+enum SettingsRowVariant {
+  chevron,
+  badge,
+  toggleOn,
+  toggleOff,
+  value,
+  selection,
+}
 
 class SettingsRow extends StatelessWidget {
   const SettingsRow({
@@ -18,6 +25,7 @@ class SettingsRow extends StatelessWidget {
     this.onTap,
     this.onToggle,
     this.isDestructive = false,
+    this.isSelected = false,
   });
 
   final String label;
@@ -29,11 +37,13 @@ class SettingsRow extends StatelessWidget {
   final VoidCallback? onTap;
   final ValueChanged<bool>? onToggle;
   final bool isDestructive;
+  final bool isSelected;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: variant == SettingsRowVariant.toggleOn ||
+      onTap:
+          variant == SettingsRowVariant.toggleOn ||
               variant == SettingsRowVariant.toggleOff
           ? null
           : onTap,
@@ -67,7 +77,9 @@ class SettingsRow extends StatelessWidget {
               child: Text(
                 label,
                 style: AppTypography.bodyLarge.copyWith(
-                  color: isDestructive ? AppColors.error : AppColors.textPrimary,
+                  color: isDestructive
+                      ? AppColors.error
+                      : AppColors.textPrimary,
                 ),
               ),
             ),
@@ -86,7 +98,9 @@ class SettingsRow extends StatelessWidget {
           width: 20,
           height: 20,
           colorFilter: const ColorFilter.mode(
-              AppColors.textSecondary, BlendMode.srcIn),
+            AppColors.textSecondary,
+            BlendMode.srcIn,
+          ),
         );
       case SettingsRowVariant.badge:
         return Row(
@@ -99,7 +113,9 @@ class SettingsRow extends StatelessWidget {
               width: 16,
               height: 16,
               colorFilter: const ColorFilter.mode(
-                  AppColors.textSecondary, BlendMode.srcIn),
+                AppColors.textSecondary,
+                BlendMode.srcIn,
+              ),
             ),
           ],
         );
@@ -131,9 +147,24 @@ class SettingsRow extends StatelessWidget {
               width: 16,
               height: 16,
               colorFilter: const ColorFilter.mode(
-                  AppColors.textSecondary, BlendMode.srcIn),
+                AppColors.textSecondary,
+                BlendMode.srcIn,
+              ),
             ),
           ],
+        );
+      case SettingsRowVariant.selection:
+        return Opacity(
+          opacity: isSelected ? 1 : 0,
+          child: SvgPicture.asset(
+            'assets/icons/circle_check.svg',
+            width: 18,
+            height: 18,
+            colorFilter: const ColorFilter.mode(
+              AppColors.accentPrimary,
+              BlendMode.srcIn,
+            ),
+          ),
         );
     }
   }
@@ -147,11 +178,16 @@ class _StatusBadgeInline extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: 4),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: AppColors.accentPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AppColors.accentPrimary.withValues(alpha: 0.25)),
+        border: Border.all(
+          color: AppColors.accentPrimary.withValues(alpha: 0.25),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -206,7 +242,9 @@ class DestructiveRow extends StatelessWidget {
               width: 20,
               height: 20,
               colorFilter: const ColorFilter.mode(
-                  AppColors.error, BlendMode.srcIn),
+                AppColors.error,
+                BlendMode.srcIn,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Text(

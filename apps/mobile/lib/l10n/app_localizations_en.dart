@@ -1478,10 +1478,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguage => 'Language';
 
   @override
+  String get settingsLanguageEnglish => 'English';
+
+  @override
+  String get settingsLanguageSpanish => 'Spanish';
+
+  @override
   String get settingsLanguageValue => 'English';
 
   @override
   String get settingsUnits => 'Units';
+
+  @override
+  String get settingsUnitsMetric => 'Metric (km)';
+
+  @override
+  String get settingsUnitsImperial => 'Imperial (mi)';
 
   @override
   String get settingsUnitsValue => 'Metric (km)';

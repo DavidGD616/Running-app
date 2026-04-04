@@ -2861,6 +2861,18 @@ abstract class AppLocalizations {
   /// **'Language'**
   String get settingsLanguage;
 
+  /// English language option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageEnglish;
+
+  /// Spanish language option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish'**
+  String get settingsLanguageSpanish;
+
   /// Current language value
   ///
   /// In en, this message translates to:
@@ -2872,6 +2884,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Units'**
   String get settingsUnits;
+
+  /// Metric unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Metric (km)'**
+  String get settingsUnitsMetric;
+
+  /// Imperial unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Imperial (mi)'**
+  String get settingsUnitsImperial;
 
   /// Current units value
   ///
