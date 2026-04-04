@@ -7,6 +7,7 @@ import '../../training_plan/presentation/training_plan_provider.dart';
 
 class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
   static const _keyUnit = 'pref_unit_system';
+  static const _keyShortDistanceUnit = 'pref_short_distance_unit';
   static const _keyGender = 'pref_gender';
   static const _keyDob = 'pref_dob_ms';
 
@@ -14,22 +15,46 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
   Future<UserPreferences> build() async {
     final prefs = await SharedPreferences.getInstance();
     final unitRaw = prefs.getString(_keyUnit);
+    final shortDistanceRaw = prefs.getString(_keyShortDistanceUnit);
     final gender = prefs.getString(_keyGender);
     final dobMs = prefs.getInt(_keyDob);
+    final unitSystem = unitRaw == 'miles' ? UnitSystem.miles : UnitSystem.km;
+    final shortDistanceUnit = switch (shortDistanceRaw) {
+      'feet' => ShortDistanceUnit.feet,
+      'meters' => ShortDistanceUnit.meters,
+      _ => _defaultShortDistanceUnit(unitSystem),
+    };
 
     return UserPreferences(
-      unitSystem: unitRaw == 'miles' ? UnitSystem.miles : UnitSystem.km,
+      unitSystem: unitSystem,
+      shortDistanceUnit: shortDistanceUnit,
       gender: gender,
-      dateOfBirth:
-          dobMs != null ? DateTime.fromMillisecondsSinceEpoch(dobMs) : null,
+      dateOfBirth: dobMs != null
+          ? DateTime.fromMillisecondsSinceEpoch(dobMs)
+          : null,
     );
   }
 
   Future<void> setUnitSystem(UnitSystem unit) async {
     final prefs = await SharedPreferences.getInstance();
+    final shortDistanceUnit = _defaultShortDistanceUnit(unit);
     await prefs.setString(_keyUnit, unit.name);
+    await prefs.setString(_keyShortDistanceUnit, shortDistanceUnit.name);
     state = AsyncData(
-      (state.value ?? const UserPreferences()).copyWith(unitSystem: unit),
+      (state.value ?? const UserPreferences()).copyWith(
+        unitSystem: unit,
+        shortDistanceUnit: shortDistanceUnit,
+      ),
+    );
+  }
+
+  Future<void> setShortDistanceUnit(ShortDistanceUnit unit) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyShortDistanceUnit, unit.name);
+    state = AsyncData(
+      (state.value ?? const UserPreferences()).copyWith(
+        shortDistanceUnit: unit,
+      ),
     );
   }
 
@@ -45,16 +70,21 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_keyDob, dob.millisecondsSinceEpoch);
     state = AsyncData(
-      (state.value ?? const UserPreferences())
-          .copyWith(dateOfBirth: dob),
+      (state.value ?? const UserPreferences()).copyWith(dateOfBirth: dob),
     );
+  }
+
+  ShortDistanceUnit _defaultShortDistanceUnit(UnitSystem unit) {
+    return unit == UnitSystem.miles
+        ? ShortDistanceUnit.feet
+        : ShortDistanceUnit.meters;
   }
 }
 
 final userPreferencesProvider =
     AsyncNotifierProvider<UserPreferencesNotifier, UserPreferences>(
-  UserPreferencesNotifier.new,
-);
+      UserPreferencesNotifier.new,
+    );
 
 // ── User profile display ───────────────────────────────────────────────────────
 

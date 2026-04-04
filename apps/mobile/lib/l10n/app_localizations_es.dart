@@ -114,6 +114,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get unitMi => 'mi';
 
   @override
+  String get unitM => 'm';
+
+  @override
+  String get unitFt => 'ft';
+
+  @override
   String get genderLabel => 'Género';
 
   @override
@@ -1501,6 +1507,18 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsUnitsImperial => 'Imperial (mi)';
+
+  @override
+  String get settingsUnitsDistanceSection => 'Distancia';
+
+  @override
+  String get settingsUnitsElevationSection => 'Elevación y distancia corta';
+
+  @override
+  String get settingsUnitsMeters => 'Metros (m)';
+
+  @override
+  String get settingsUnitsFeet => 'Pies (ft)';
 
   @override
   String get settingsUnitsValue => 'Métrico (km)';

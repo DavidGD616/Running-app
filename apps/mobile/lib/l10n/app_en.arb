@@ -103,6 +103,12 @@
   "unitMi": "mi",
   "@unitMi": { "description": "Miles unit option" },
 
+  "unitM": "m",
+  "@unitM": { "description": "Meters unit option" },
+
+  "unitFt": "ft",
+  "@unitFt": { "description": "Feet unit option" },
+
   "genderLabel": "Gender",
   "@genderLabel": { "description": "Section label on account setup screen" },
 
@@ -1485,6 +1491,18 @@
 
   "settingsUnitsImperial": "Imperial (mi)",
   "@settingsUnitsImperial": { "description": "Imperial unit option in settings" },
+
+  "settingsUnitsDistanceSection": "Distance",
+  "@settingsUnitsDistanceSection": { "description": "Distance units section title in settings" },
+
+  "settingsUnitsElevationSection": "Elevation & Short Distance",
+  "@settingsUnitsElevationSection": { "description": "Elevation and short distance units section title in settings" },
+
+  "settingsUnitsMeters": "Meters (m)",
+  "@settingsUnitsMeters": { "description": "Meters unit option in settings" },
+
+  "settingsUnitsFeet": "Feet (ft)",
+  "@settingsUnitsFeet": { "description": "Feet unit option in settings" },
 
   "settingsUnitsValue": "Metric (km)",
   "@settingsUnitsValue": { "description": "Current units value" },

@@ -302,6 +302,18 @@ abstract class AppLocalizations {
   /// **'mi'**
   String get unitMi;
 
+  /// Meters unit option
+  ///
+  /// In en, this message translates to:
+  /// **'m'**
+  String get unitM;
+
+  /// Feet unit option
+  ///
+  /// In en, this message translates to:
+  /// **'ft'**
+  String get unitFt;
+
   /// Section label on account setup screen
   ///
   /// In en, this message translates to:
@@ -2896,6 +2908,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Imperial (mi)'**
   String get settingsUnitsImperial;
+
+  /// Distance units section title in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get settingsUnitsDistanceSection;
+
+  /// Elevation and short distance units section title in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation & Short Distance'**
+  String get settingsUnitsElevationSection;
+
+  /// Meters unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Meters (m)'**
+  String get settingsUnitsMeters;
+
+  /// Feet unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Feet (ft)'**
+  String get settingsUnitsFeet;
 
   /// Current units value
   ///

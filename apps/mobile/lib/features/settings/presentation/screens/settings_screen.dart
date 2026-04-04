@@ -33,14 +33,25 @@ class SettingsScreen extends ConsumerWidget {
         : l10n.settingsUnitsMetric;
   }
 
+  String _shortDistanceValueLabel(
+    AppLocalizations l10n,
+    ShortDistanceUnit shortDistanceUnit,
+  ) {
+    return shortDistanceUnit == ShortDistanceUnit.feet
+        ? l10n.unitFt
+        : l10n.unitM;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final profile = ref.watch(userProfileDisplayProvider);
     final currentLocale =
         ref.watch(localeProvider).value ?? Localizations.localeOf(context);
-    final currentUnitSystem =
-        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final preferences = ref.watch(userPreferencesProvider).value;
+    final currentUnitSystem = preferences?.unitSystem ?? UnitSystem.km;
+    final currentShortDistanceUnit =
+        preferences?.shortDistanceUnit ?? ShortDistanceUnit.meters;
     final planName = localizedTrainingPlanName(
       raceType: profile.raceType,
       totalWeeks: profile.totalWeeks,
@@ -110,7 +121,8 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.settingsUnits,
                     iconAsset: 'assets/icons/ruler.svg',
                     variant: SettingsRowVariant.value,
-                    valueLabel: _unitValueLabel(l10n, currentUnitSystem),
+                    valueLabel:
+                        '${_unitValueLabel(l10n, currentUnitSystem)} · ${_shortDistanceValueLabel(l10n, currentShortDistanceUnit)}',
                     onTap: () => context.push(RouteNames.settingsUnits),
                   ),
                   SettingsRow(

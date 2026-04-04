@@ -14,6 +14,11 @@ class UnitFormatter {
       ? '${l10n.logSessionMinUnit}/${l10n.unitKm}'
       : '${l10n.logSessionMinUnit}/${l10n.unitMi}';
 
+  static String shortDistanceUnitLabel(
+    ShortDistanceUnit unit,
+    AppLocalizations l10n,
+  ) => unit == ShortDistanceUnit.meters ? l10n.unitM : l10n.unitFt;
+
   /// Formats a duration in minutes to a human-readable string.
   /// e.g. 30 → '30 min', 75 → '1h 15m', 60 → '1h'
   static String formatDuration(int minutes) {
@@ -53,5 +58,25 @@ class UnitFormatter {
   ) {
     final value = formatDistanceValue(km, unit);
     return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static double _convertShortDistance(double meters, ShortDistanceUnit unit) =>
+      unit == ShortDistanceUnit.meters ? meters : meters * 3.28084;
+
+  static String formatShortDistanceValue(
+    double meters,
+    ShortDistanceUnit unit,
+  ) {
+    final converted = _convertShortDistance(meters, unit);
+    return converted.round().toString();
+  }
+
+  static String formatShortDistanceLabel(
+    double meters,
+    ShortDistanceUnit unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatShortDistanceValue(meters, unit);
+    return '$value ${shortDistanceUnitLabel(unit, l10n)}';
   }
 }

@@ -123,6 +123,8 @@ class ProgressScreen extends ConsumerWidget {
     final longestRunStats = ref.watch(longestRunStatsProvider);
     final unitPrefs = ref.watch(userPreferencesProvider);
     final unitSystem = unitPrefs.value?.unitSystem ?? UnitSystem.km;
+    final shortDistanceUnit =
+        unitPrefs.value?.shortDistanceUnit ?? ShortDistanceUnit.meters;
     final distanceTrendPct = monthlyDistanceStats.trendPct;
     final hasDistanceTrend = distanceTrendPct != null && distanceTrendPct > 0;
     final distanceTrendValue = hasDistanceTrend ? distanceTrendPct : null;
@@ -179,6 +181,7 @@ class ProgressScreen extends ConsumerWidget {
                 l10n: l10n,
                 weeks: volumeData,
                 unitSystem: unitSystem,
+                shortDistanceUnit: shortDistanceUnit,
               ),
 
               const SizedBox(height: AppSpacing.md),
@@ -292,11 +295,13 @@ class _VolumeChartCard extends StatefulWidget {
     required this.l10n,
     required this.weeks,
     required this.unitSystem,
+    required this.shortDistanceUnit,
   });
 
   final AppLocalizations l10n;
   final List<WeeklyVolumeData> weeks;
   final UnitSystem unitSystem;
+  final ShortDistanceUnit shortDistanceUnit;
 
   @override
   State<_VolumeChartCard> createState() => _VolumeChartCardState();
@@ -461,8 +466,12 @@ class _VolumeChartCardState extends State<_VolumeChartCard> {
                             iconAsset: 'assets/icons/mountain.svg',
                             iconColor: AppColors.warning,
                             label: l10n.progressElevationLabel,
-                            value: selected.elevationMeters.toString(),
-                            unit: ' m',
+                            value: UnitFormatter.formatShortDistanceValue(
+                              selected.elevationMeters.toDouble(),
+                              widget.shortDistanceUnit,
+                            ),
+                            unit:
+                                ' ${UnitFormatter.shortDistanceUnitLabel(widget.shortDistanceUnit, l10n)}',
                           ),
                         ),
                       ],

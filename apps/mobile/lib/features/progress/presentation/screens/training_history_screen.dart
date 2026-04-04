@@ -61,6 +61,8 @@ class _TrainingHistoryScreenState extends ConsumerState<TrainingHistoryScreen> {
     final l10n = AppLocalizations.of(context)!;
     final unitPrefs = ref.watch(userPreferencesProvider);
     final unitSystem = unitPrefs.value?.unitSystem ?? UnitSystem.km;
+    final shortDistanceUnit =
+        unitPrefs.value?.shortDistanceUnit ?? ShortDistanceUnit.meters;
     final points = ref.watch(trainingHistorySeriesProvider(_selectedRange));
     final selectedIndex = points.isEmpty
         ? 0
@@ -89,6 +91,7 @@ class _TrainingHistoryScreenState extends ConsumerState<TrainingHistoryScreen> {
                 _SelectedPeriodSummaryCard(
                   point: selectedPoint,
                   unitSystem: unitSystem,
+                  shortDistanceUnit: shortDistanceUnit,
                   l10n: l10n,
                 ),
 
@@ -124,11 +127,13 @@ class _SelectedPeriodSummaryCard extends StatelessWidget {
   const _SelectedPeriodSummaryCard({
     required this.point,
     required this.unitSystem,
+    required this.shortDistanceUnit,
     required this.l10n,
   });
 
   final TrainingHistoryPoint point;
   final UnitSystem unitSystem;
+  final ShortDistanceUnit shortDistanceUnit;
   final AppLocalizations l10n;
 
   @override
@@ -223,8 +228,12 @@ class _SelectedPeriodSummaryCard extends StatelessWidget {
                     iconAsset: 'assets/icons/mountain.svg',
                     iconColor: AppColors.warning,
                     label: l10n.progressElevationLabel,
-                    value: point.elevationMeters.toString(),
-                    unit: ' m',
+                    value: UnitFormatter.formatShortDistanceValue(
+                      point.elevationMeters.toDouble(),
+                      shortDistanceUnit,
+                    ),
+                    unit:
+                        ' ${UnitFormatter.shortDistanceUnitLabel(shortDistanceUnit, l10n)}',
                   ),
                 ),
               ],
