@@ -80,5 +80,27 @@ final longestRunStatsProvider = Provider<LongestRunStats>((ref) {
 
 /// Provides the list of recent completed sessions shown on the progress screen.
 final recentSessionsProvider = Provider<List<RecentSession>>((ref) {
-  return kSeedRecentSessions;
+  final trainingPlan = ref.watch(trainingPlanProvider);
+  final recentSessions =
+      trainingPlan.sessions
+          .where(
+            (session) =>
+                session.status == SessionStatus.completed &&
+                !session.type.isRest,
+          )
+          .toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+  return recentSessions
+      .take(3)
+      .map(
+        (session) => RecentSession(
+          id: session.id,
+          date: session.date,
+          distanceKm: session.distanceKm ?? 0,
+          durationMinutes: session.durationMinutes ?? 0,
+          type: session.type,
+        ),
+      )
+      .toList(growable: false);
 });

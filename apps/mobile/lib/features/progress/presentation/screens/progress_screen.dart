@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -85,17 +86,25 @@ String _recentSessionTitle(SessionType type, AppLocalizations l10n) {
 }
 
 String _recentSessionDateLabel(
-  RecentSessionDateLabel label,
+  DateTime date,
+  BuildContext context,
   AppLocalizations l10n,
 ) {
-  switch (label) {
-    case RecentSessionDateLabel.yesterday:
-      return l10n.progressYesterday;
-    case RecentSessionDateLabel.tuesday:
-      return l10n.progressTuesdayLabel;
-    case RecentSessionDateLabel.lastSunday:
-      return l10n.progressLastSunday;
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  final today = DateTime.now();
+  final normalizedToday = DateTime(today.year, today.month, today.day);
+  final normalizedDate = DateTime(date.year, date.month, date.day);
+  final dayDifference = normalizedToday.difference(normalizedDate).inDays;
+
+  if (dayDifference == 1) {
+    return l10n.progressYesterday;
   }
+
+  if (dayDifference > 1 && dayDifference < 7) {
+    return DateFormat('EEEE', locale).format(normalizedDate);
+  }
+
+  return DateFormat('MMM d', locale).format(normalizedDate);
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -109,19 +118,14 @@ class ProgressScreen extends ConsumerWidget {
     final stats = ref.watch(userStatsProvider);
     final sessions = ref.watch(recentSessionsProvider);
     final volumeData = ref.watch(weeklyVolumeProvider);
-    final monthlyDistanceStats =
-        ref.watch(monthlyDistanceStatsProvider);
-    final monthlyTimeStats =
-        ref.watch(monthlyTimeStatsProvider);
+    final monthlyDistanceStats = ref.watch(monthlyDistanceStatsProvider);
+    final monthlyTimeStats = ref.watch(monthlyTimeStatsProvider);
     final longestRunStats = ref.watch(longestRunStatsProvider);
     final unitPrefs = ref.watch(userPreferencesProvider);
-    final unitSystem =
-        unitPrefs.value?.unitSystem ?? UnitSystem.km;
+    final unitSystem = unitPrefs.value?.unitSystem ?? UnitSystem.km;
     final distanceTrendPct = monthlyDistanceStats.trendPct;
-    final hasDistanceTrend =
-        distanceTrendPct != null && distanceTrendPct > 0;
-    final distanceTrendValue =
-        hasDistanceTrend ? distanceTrendPct : null;
+    final hasDistanceTrend = distanceTrendPct != null && distanceTrendPct > 0;
+    final distanceTrendValue = hasDistanceTrend ? distanceTrendPct : null;
     final distanceTrendText = distanceTrendValue == null
         ? null
         : l10n.progressTrendUp(distanceTrendValue.round().toString());
@@ -134,8 +138,7 @@ class ProgressScreen extends ConsumerWidget {
         : l10n.progressTrendUp(timeTrendValue.round().toString());
     final currentMinutes = monthlyTimeStats.currentMinutes;
     final timeHoursValue = (currentMinutes ~/ 60).toString();
-    final timeMinutesValue =
-        (currentMinutes % 60).toString().padLeft(2, '0');
+    final timeMinutesValue = (currentMinutes % 60).toString().padLeft(2, '0');
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -186,7 +189,9 @@ class ProgressScreen extends ConsumerWidget {
                         iconAsset: 'assets/icons/compass.svg',
                         iconColor: AppColors.accentPrimary,
                         label: l10n.progressDistanceLabel,
-                        value: monthlyDistanceStats.currentKm.toStringAsFixed(1),
+                        value: monthlyDistanceStats.currentKm.toStringAsFixed(
+                          1,
+                        ),
                         unit: 'km',
                         trend: distanceTrendText,
                         trendColor: hasDistanceTrend
@@ -205,8 +210,7 @@ class ProgressScreen extends ConsumerWidget {
                         hourUnit: l10n.progressHourUnit,
                         minuteUnit: l10n.progressMinuteUnit,
                         trend: timeTrendText,
-                        trendColor:
-                            hasTimeTrend ? AppColors.info : null,
+                        trendColor: hasTimeTrend ? AppColors.info : null,
                       ),
                     ),
                   ],
@@ -945,18 +949,12 @@ class _LongestRunCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasRecord = longestRunKm != null && longestRunKm! > 0;
     final valueText = hasRecord
-        ? UnitFormatter.formatDistanceValue(
-            longestRunKm!,
-            unitSystem,
-          )
+        ? UnitFormatter.formatDistanceValue(longestRunKm!, unitSystem)
         : '--';
     final unitLabel = UnitFormatter.unitLabel(unitSystem);
     final improvementText = (improvementKm ?? 0) > 0
         ? l10n.progressLongestRunImproved(
-            UnitFormatter.formatDistanceWithUnit(
-              improvementKm!,
-              unitSystem,
-            ),
+            UnitFormatter.formatDistanceWithUnit(improvementKm!, unitSystem),
           )
         : null;
 
@@ -1100,7 +1098,7 @@ class _RecentSessionsCard extends StatelessWidget {
             final s = entry.value;
             final iconData = _sessionIconData(s.type);
             final meta =
-                '${_recentSessionDateLabel(s.dateLabel, l10n)} • '
+                '${_recentSessionDateLabel(s.date, context, l10n)} • '
                 '${UnitFormatter.formatDistanceKm(s.distanceKm)}';
             final duration = UnitFormatter.formatDuration(s.durationMinutes);
             return Column(
