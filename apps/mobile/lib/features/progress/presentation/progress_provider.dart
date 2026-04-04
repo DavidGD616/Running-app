@@ -11,6 +11,7 @@ import '../domain/services/training_history_builder.dart';
 import '../domain/services/monthly_distance_calculator.dart';
 import '../domain/services/longest_run_calculator.dart';
 import '../../localization/presentation/locale_provider.dart';
+import '../../training_plan/domain/models/session_type.dart';
 import '../../training_plan/presentation/training_plan_provider.dart';
 
 /// Provides overall user stats (streak, totals, trends, longest run).
@@ -18,13 +19,17 @@ import '../../training_plan/presentation/training_plan_provider.dart';
 final userStatsProvider = Provider<UserStats>((ref) {
   final trainingPlan = ref.watch(trainingPlanProvider);
   final streakWeeks = calculateStreakWeeks(sessions: trainingPlan.sessions);
+  final completedSessions = trainingPlan.sessions.where(
+    (session) =>
+        session.status == SessionStatus.completed && !session.type.isRest,
+  );
 
   final seed = kSeedUserStats;
   return UserStats(
     streakWeeks: streakWeeks,
     totalDistanceKm: seed.totalDistanceKm,
     totalTimeMinutes: seed.totalTimeMinutes,
-    totalRuns: seed.totalRuns,
+    totalRuns: completedSessions.length,
     avgPacePerKm: seed.avgPacePerKm,
     distanceTrendPct: seed.distanceTrendPct,
     timeTrendPct: seed.timeTrendPct,
