@@ -1512,12 +1512,6 @@
   "settingsUnitsValue": "Metric (km)",
   "@settingsUnitsValue": { "description": "Current units value" },
 
-  "settingsAudioGuidance": "Audio Guidance",
-  "@settingsAudioGuidance": { "description": "Audio guidance preference row label" },
-
-  "settingsAudioValue": "Minimal",
-  "@settingsAudioValue": { "description": "Current audio guidance value" },
-
   "settingsNotifications": "Notifications",
   "@settingsNotifications": { "description": "Notifications preference row label" },
 

@@ -126,13 +126,6 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => context.push(RouteNames.settingsUnits),
                   ),
                   SettingsRow(
-                    label: l10n.settingsAudioGuidance,
-                    iconAsset: 'assets/icons/speaker.svg',
-                    variant: SettingsRowVariant.value,
-                    valueLabel: l10n.settingsAudioValue,
-                    onTap: () {},
-                  ),
-                  SettingsRow(
                     label: l10n.settingsNotifications,
                     iconAsset: 'assets/icons/bell.svg',
                     variant: SettingsRowVariant.value,

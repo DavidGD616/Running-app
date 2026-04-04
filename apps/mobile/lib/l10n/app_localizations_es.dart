@@ -1527,12 +1527,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsUnitsValue => 'Métrico (km)';
 
   @override
-  String get settingsAudioGuidance => 'Guía de audio';
-
-  @override
-  String get settingsAudioValue => 'Mínimo';
-
-  @override
   String get settingsNotifications => 'Notificaciones';
 
   @override

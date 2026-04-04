@@ -542,8 +542,6 @@
   "settingsUnitsMeters": "Metros (m)",
   "settingsUnitsFeet": "Pies (ft)",
   "settingsUnitsValue": "Métrico (km)",
-  "settingsAudioGuidance": "Guía de audio",
-  "settingsAudioValue": "Mínimo",
   "settingsNotifications": "Notificaciones",
   "settingsNotificationsValue": "Activado",
   "settingsConnectedDevicesSection": "Dispositivos conectados",

@@ -2945,18 +2945,6 @@ abstract class AppLocalizations {
   /// **'Metric (km)'**
   String get settingsUnitsValue;
 
-  /// Audio guidance preference row label
-  ///
-  /// In en, this message translates to:
-  /// **'Audio Guidance'**
-  String get settingsAudioGuidance;
-
-  /// Current audio guidance value
-  ///
-  /// In en, this message translates to:
-  /// **'Minimal'**
-  String get settingsAudioValue;
-
   /// Notifications preference row label
   ///
   /// In en, this message translates to:
