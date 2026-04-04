@@ -279,7 +279,11 @@ class SessionRow extends StatelessWidget {
 // ── "Now" badge ───────────────────────────────────────────────────────────────
 
 class NowBadge extends StatelessWidget {
-  const NowBadge({super.key, required this.label, this.color = AppColors.accentPrimary});
+  const NowBadge({
+    super.key,
+    required this.label,
+    this.color = AppColors.accentPrimary,
+  });
 
   final String label;
   final Color color;

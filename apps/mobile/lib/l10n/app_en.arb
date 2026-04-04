@@ -1363,6 +1363,20 @@
   "progressViewAll": "View All ›",
   "@progressViewAll": { "description": "View all sessions link" },
 
+  "completedSessionsTitle": "Completed Sessions",
+  "@completedSessionsTitle": { "description": "Title of the completed sessions screen" },
+
+  "completedSessionsSummary": "{count} sessions completed",
+  "@completedSessionsSummary": {
+    "description": "Summary text shown at the top of the completed sessions screen",
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+
+  "completedSessionsEmpty": "No completed sessions yet",
+  "@completedSessionsEmpty": { "description": "Empty state message for the completed sessions screen" },
+
   "progressSessionTempoRun": "Tempo Run",
   "@progressSessionTempoRun": { "description": "Tempo run session type name" },
 

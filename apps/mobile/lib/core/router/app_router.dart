@@ -29,6 +29,7 @@ import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
 import '../../features/log_run/presentation/screens/log_run_screen.dart';
 import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
+import '../../features/progress/presentation/screens/completed_sessions_screen.dart';
 
 final appRouter = GoRouter(
   initialLocation: RouteNames.splash,
@@ -127,6 +128,10 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.trainingHistory,
       builder: (context, state) => const TrainingHistoryScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.completedSessions,
+      builder: (context, state) => const CompletedSessionsScreen(),
     ),
     GoRoute(
       path: RouteNames.preRun,

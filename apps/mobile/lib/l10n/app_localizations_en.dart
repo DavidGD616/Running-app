@@ -1390,6 +1390,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get progressViewAll => 'View All ›';
 
   @override
+  String get completedSessionsTitle => 'Completed Sessions';
+
+  @override
+  String completedSessionsSummary(String count) {
+    return '$count sessions completed';
+  }
+
+  @override
+  String get completedSessionsEmpty => 'No completed sessions yet';
+
+  @override
   String get progressSessionTempoRun => 'Tempo Run';
 
   @override

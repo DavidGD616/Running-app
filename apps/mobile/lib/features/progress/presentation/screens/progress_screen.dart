@@ -1080,11 +1080,15 @@ class _RecentSessionsCard extends StatelessWidget {
                 l10n.progressRecentSessionsTitle,
                 style: AppTypography.titleMedium.copyWith(fontSize: 18),
               ),
-              Text(
-                l10n.progressViewAll,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.accentPrimary,
-                  fontSize: 13,
+              GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => context.push(RouteNames.completedSessions),
+                child: Text(
+                  l10n.progressViewAll,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.accentPrimary,
+                    fontSize: 13,
+                  ),
                 ),
               ),
             ],

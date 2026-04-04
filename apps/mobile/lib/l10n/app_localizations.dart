@@ -2705,6 +2705,24 @@ abstract class AppLocalizations {
   /// **'View All ›'**
   String get progressViewAll;
 
+  /// Title of the completed sessions screen
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Sessions'**
+  String get completedSessionsTitle;
+
+  /// Summary text shown at the top of the completed sessions screen
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions completed'**
+  String completedSessionsSummary(String count);
+
+  /// Empty state message for the completed sessions screen
+  ///
+  /// In en, this message translates to:
+  /// **'No completed sessions yet'**
+  String get completedSessionsEmpty;
+
   /// Tempo run session type name
   ///
   /// In en, this message translates to:

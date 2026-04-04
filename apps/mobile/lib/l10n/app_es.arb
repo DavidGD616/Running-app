@@ -472,6 +472,14 @@
   "progressLongestRunImproved": "+{distance} desde el inicio",
   "progressRecentSessionsTitle": "Sesiones Recientes",
   "progressViewAll": "Ver Todo ›",
+  "completedSessionsTitle": "Sesiones Completadas",
+  "completedSessionsSummary": "{count} sesiones completadas",
+  "@completedSessionsSummary": {
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+  "completedSessionsEmpty": "Aún no hay sesiones completadas",
   "progressSessionTempoRun": "Carrera Tempo",
   "sessionTypeTempoRun": "Carrera Tempo",
   "progressYesterday": "Ayer",

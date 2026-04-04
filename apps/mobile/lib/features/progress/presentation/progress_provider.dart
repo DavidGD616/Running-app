@@ -11,21 +11,34 @@ import '../domain/services/monthly_distance_calculator.dart';
 import '../domain/services/longest_run_calculator.dart';
 import '../../localization/presentation/locale_provider.dart';
 import '../../training_plan/domain/models/session_type.dart';
+import '../../training_plan/domain/models/training_session.dart';
 import '../../training_plan/presentation/training_plan_provider.dart';
 
 /// Provides the derived progress stats still used directly by the screen.
 final userStatsProvider = Provider<UserStats>((ref) {
   final trainingPlan = ref.watch(trainingPlanProvider);
+  final completedSessions = ref.watch(completedSessionsProvider);
   final streakWeeks = calculateStreakWeeks(sessions: trainingPlan.sessions);
-  final completedSessions = trainingPlan.sessions.where(
-    (session) =>
-        session.status == SessionStatus.completed && !session.type.isRest,
-  );
 
   return UserStats(
     streakWeeks: streakWeeks,
     totalRuns: completedSessions.length,
   );
+});
+
+final completedSessionsProvider = Provider<List<TrainingSession>>((ref) {
+  final trainingPlan = ref.watch(trainingPlanProvider);
+  final completedSessions =
+      trainingPlan.sessions
+          .where(
+            (session) =>
+                session.status == SessionStatus.completed &&
+                !session.type.isRest,
+          )
+          .toList()
+        ..sort((a, b) => b.date.compareTo(a.date));
+
+  return completedSessions;
 });
 
 /// Provides weekly volume data for the chart (most recent weeks first-last).
@@ -70,16 +83,7 @@ final longestRunStatsProvider = Provider<LongestRunStats>((ref) {
 
 /// Provides the list of recent completed sessions shown on the progress screen.
 final recentSessionsProvider = Provider<List<RecentSession>>((ref) {
-  final trainingPlan = ref.watch(trainingPlanProvider);
-  final recentSessions =
-      trainingPlan.sessions
-          .where(
-            (session) =>
-                session.status == SessionStatus.completed &&
-                !session.type.isRest,
-          )
-          .toList()
-        ..sort((a, b) => b.date.compareTo(a.date));
+  final recentSessions = ref.watch(completedSessionsProvider);
 
   return recentSessions
       .take(3)
