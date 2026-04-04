@@ -1,6 +1,7 @@
 import 'session_type.dart';
 
 enum WorkoutPhaseType { warmUp, main, coolDown }
+
 enum TrainingSessionEffort { easy, moderate, hard, veryEasy }
 
 class WorkoutPhase {
@@ -35,7 +36,7 @@ class TrainingSession {
     this.phases = const [],
     this.elevationGainMeters,
     this.intervalReps,
-    this.intervalRepDistance,
+    this.intervalRepDistanceMeters,
     this.intervalRecoverySeconds,
     this.warmUpMinutes,
     this.coolDownMinutes,
@@ -53,7 +54,7 @@ class TrainingSession {
   final List<WorkoutPhase> phases;
   final int? elevationGainMeters;
   final int? intervalReps;
-  final String? intervalRepDistance;
+  final int? intervalRepDistanceMeters;
   final int? intervalRecoverySeconds;
   final int? warmUpMinutes;
   final int? coolDownMinutes;
@@ -71,7 +72,7 @@ class TrainingSession {
     List<WorkoutPhase>? phases,
     int? elevationGainMeters,
     int? intervalReps,
-    String? intervalRepDistance,
+    int? intervalRepDistanceMeters,
     int? intervalRecoverySeconds,
     int? warmUpMinutes,
     int? coolDownMinutes,
@@ -89,7 +90,8 @@ class TrainingSession {
       phases: phases ?? this.phases,
       elevationGainMeters: elevationGainMeters ?? this.elevationGainMeters,
       intervalReps: intervalReps ?? this.intervalReps,
-      intervalRepDistance: intervalRepDistance ?? this.intervalRepDistance,
+      intervalRepDistanceMeters:
+          intervalRepDistanceMeters ?? this.intervalRepDistanceMeters,
       intervalRecoverySeconds:
           intervalRecoverySeconds ?? this.intervalRecoverySeconds,
       warmUpMinutes: warmUpMinutes ?? this.warmUpMinutes,

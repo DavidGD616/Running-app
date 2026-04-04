@@ -17,7 +17,7 @@ class SettingsRow extends StatelessWidget {
   const SettingsRow({
     super.key,
     required this.label,
-    required this.iconAsset,
+    this.iconAsset,
     this.iconColor = AppColors.textSecondary,
     this.variant = SettingsRowVariant.chevron,
     this.badgeLabel,
@@ -29,7 +29,7 @@ class SettingsRow extends StatelessWidget {
   });
 
   final String label;
-  final String iconAsset;
+  final String? iconAsset;
   final Color iconColor;
   final SettingsRowVariant variant;
   final String? badgeLabel;
@@ -51,28 +51,30 @@ class SettingsRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
         child: Row(
           children: [
-            Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(
-                color: isDestructive
-                    ? AppColors.error.withValues(alpha: 0.08)
-                    : iconColor.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  iconAsset,
-                  width: 18,
-                  height: 18,
-                  colorFilter: ColorFilter.mode(
-                    isDestructive ? AppColors.error : iconColor,
-                    BlendMode.srcIn,
+            if (iconAsset != null) ...[
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: isDestructive
+                      ? AppColors.error.withValues(alpha: 0.08)
+                      : iconColor.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: SvgPicture.asset(
+                    iconAsset!,
+                    width: 18,
+                    height: 18,
+                    colorFilter: ColorFilter.mode(
+                      isDestructive ? AppColors.error : iconColor,
+                      BlendMode.srcIn,
+                    ),
                   ),
                 ),
               ),
-            ),
-            const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.md),
+            ],
             Expanded(
               child: Text(
                 label,

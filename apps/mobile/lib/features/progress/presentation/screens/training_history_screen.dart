@@ -215,7 +215,10 @@ class _SelectedPeriodSummaryCard extends StatelessWidget {
                     iconAsset: 'assets/icons/clock.svg',
                     iconColor: AppColors.info,
                     label: l10n.progressTimeLabel,
-                    value: UnitFormatter.formatDuration(point.durationMinutes),
+                    value: UnitFormatter.formatDuration(
+                      point.durationMinutes,
+                      l10n,
+                    ),
                   ),
                 ),
                 Container(

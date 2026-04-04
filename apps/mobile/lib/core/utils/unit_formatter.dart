@@ -19,13 +19,22 @@ class UnitFormatter {
     AppLocalizations l10n,
   ) => unit == ShortDistanceUnit.meters ? l10n.unitM : l10n.unitFt;
 
+  static String formatDistanceCompactValue(double km, UnitSystem unit) {
+    final converted = _convertDistance(km, unit);
+    final isWhole = converted == converted.roundToDouble();
+    return isWhole
+        ? converted.round().toString()
+        : converted.toStringAsFixed(1);
+  }
+
   /// Formats a duration in minutes to a human-readable string.
   /// e.g. 30 → '30 min', 75 → '1h 15m', 60 → '1h'
-  static String formatDuration(int minutes) {
-    if (minutes < 60) return '$minutes min';
+  static String formatDuration(int minutes, AppLocalizations l10n) {
+    if (minutes < 60) return '$minutes ${l10n.logSessionMinUnit}';
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    return m == 0 ? '${h}h' : '${h}h ${m}m';
+    if (m == 0) return '$h${l10n.progressHourUnit}';
+    return '$h${l10n.progressHourUnit} $m${l10n.progressMinuteUnit}';
   }
 
   static double _convertDistance(double km, UnitSystem unit) =>
@@ -58,6 +67,37 @@ class UnitFormatter {
   ) {
     final value = formatDistanceValue(km, unit);
     return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static String formatDistanceCompactLabel(
+    double km,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatDistanceCompactValue(km, unit);
+    return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static String formatWorkoutRepDistance(
+    int meters,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (unitSystem == UnitSystem.km) {
+      return '$meters ${l10n.unitM}';
+    }
+
+    const metersPerMile = 1609.344;
+    if (meters < metersPerMile) {
+      return '$meters ${l10n.unitM}';
+    }
+
+    final miles = meters / metersPerMile;
+    final rounded = (miles * 100).round() / 100;
+    final value = rounded == rounded.roundToDouble()
+        ? rounded.round().toString()
+        : rounded.toStringAsFixed(2);
+    return '$value ${l10n.unitMi}';
   }
 
   static double _convertShortDistance(double meters, ShortDistanceUnit unit) =>

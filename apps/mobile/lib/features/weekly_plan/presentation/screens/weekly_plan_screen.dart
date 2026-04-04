@@ -160,7 +160,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
                           )
                         : null,
                     duration: s.durationMinutes != null
-                        ? UnitFormatter.formatDuration(s.durationMinutes!)
+                        ? UnitFormatter.formatDuration(s.durationMinutes!, l10n)
                         : null,
                     status: s.status,
                     isRest: s.type.isRest,
@@ -225,7 +225,10 @@ class _WeekStatsSummary extends StatelessWidget {
           ),
           StatColumn(
             label: l10n.weeklyPlanTimeLabel,
-            value: UnitFormatter.formatDuration(progress.totalDurationMinutes),
+            value: UnitFormatter.formatDuration(
+              progress.totalDurationMinutes,
+              l10n,
+            ),
             hasDivider: true,
           ),
           StatColumn(

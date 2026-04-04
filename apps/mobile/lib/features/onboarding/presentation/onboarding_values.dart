@@ -1,4 +1,5 @@
 import '../../user_preferences/domain/user_preferences.dart';
+import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 
 typedef OnboardingOption = ({String key, String label});
@@ -48,6 +49,22 @@ abstract final class OnboardingValues {
   static const raceDistanceOnce = 'race_distance_once';
   static const raceDistance2to3 = 'race_distance_2_to_3';
   static const raceDistance4plus = 'race_distance_4_plus';
+
+  static const weeklyVolume0 = 'weekly_volume_0';
+  static const weeklyVolume1 = 'weekly_volume_1';
+  static const weeklyVolume2 = 'weekly_volume_2';
+  static const weeklyVolume3 = 'weekly_volume_3';
+  static const weeklyVolume4 = 'weekly_volume_4';
+  static const weeklyVolume5 = 'weekly_volume_5';
+  static const weeklyVolume6 = 'weekly_volume_6';
+
+  static const longestRun0 = 'longest_run_0';
+  static const longestRun1 = 'longest_run_1';
+  static const longestRun2 = 'longest_run_2';
+  static const longestRun3 = 'longest_run_3';
+  static const longestRun4 = 'longest_run_4';
+  static const longestRun5 = 'longest_run_5';
+  static const longestRun6 = 'longest_run_6';
 
   static const dayMon = 'day_mon';
   static const dayTue = 'day_tue';
@@ -201,18 +218,123 @@ abstract final class OnboardingValues {
   ) {
     switch (key) {
       case race5k:
-        return unitSystem == UnitSystem.km ? '5 km' : '3.1 mi';
+        return UnitFormatter.formatDistanceCompactLabel(5, unitSystem, l10n);
       case race10k:
-        return unitSystem == UnitSystem.km ? '10 km' : '6.2 mi';
+        return UnitFormatter.formatDistanceCompactLabel(10, unitSystem, l10n);
       case raceHalfMarathon:
-        return unitSystem == UnitSystem.km ? '21.1 km' : '13.1 mi';
+        return UnitFormatter.formatDistanceCompactLabel(21.1, unitSystem, l10n);
       case raceMarathon:
-        return unitSystem == UnitSystem.km ? '42.2 km' : '26.2 mi';
+        return UnitFormatter.formatDistanceCompactLabel(42.2, unitSystem, l10n);
       case raceOther:
         return l10n.raceCustomDistance;
       default:
         return key;
     }
+  }
+
+  static List<OnboardingOption> weeklyVolumeOptions(
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (unitSystem == UnitSystem.km) {
+      return [
+        (key: weeklyVolume0, label: _singleValueLabel(0, unitSystem, l10n)),
+        (key: weeklyVolume1, label: _rangeLabel(1, 13, unitSystem, l10n)),
+        (key: weeklyVolume2, label: _rangeLabel(10, 16, unitSystem, l10n)),
+        (key: weeklyVolume3, label: _rangeLabel(17, 24, unitSystem, l10n)),
+        (key: weeklyVolume4, label: _rangeLabel(25, 32, unitSystem, l10n)),
+        (key: weeklyVolume5, label: _rangeLabel(33, 48, unitSystem, l10n)),
+        (key: weeklyVolume6, label: _plusLabel(49, unitSystem, l10n)),
+      ];
+    }
+
+    return [
+      (key: weeklyVolume0, label: _singleValueLabel(0, unitSystem, l10n)),
+      (key: weeklyVolume1, label: _rangeLabel(1, 5, unitSystem, l10n)),
+      (key: weeklyVolume2, label: _rangeLabel(6, 10, unitSystem, l10n)),
+      (key: weeklyVolume3, label: _rangeLabel(11, 15, unitSystem, l10n)),
+      (key: weeklyVolume4, label: _rangeLabel(16, 20, unitSystem, l10n)),
+      (key: weeklyVolume5, label: _rangeLabel(21, 30, unitSystem, l10n)),
+      (key: weeklyVolume6, label: _plusLabel(31, unitSystem, l10n)),
+    ];
+  }
+
+  static String localizeWeeklyVolume(
+    String key,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final labels = Map<String, String>.fromEntries(
+      weeklyVolumeOptions(unitSystem, l10n).map((option) {
+        return MapEntry(option.key, option.label);
+      }),
+    );
+    return labels[key] ?? key;
+  }
+
+  static List<OnboardingOption> longestRunOptions(
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (unitSystem == UnitSystem.km) {
+      return [
+        (key: longestRun0, label: l10n.longestRunNone),
+        (key: longestRun1, label: l10n.longestRunLessThan5km),
+        (key: longestRun2, label: _rangeLabel(5, 8, unitSystem, l10n)),
+        (key: longestRun3, label: _rangeLabel(9, 13, unitSystem, l10n)),
+        (key: longestRun4, label: _rangeLabel(14, 16, unitSystem, l10n)),
+        (key: longestRun5, label: _rangeLabel(17, 21, unitSystem, l10n)),
+        (key: longestRun6, label: _plusLabel(21, unitSystem, l10n)),
+      ];
+    }
+
+    return [
+      (key: longestRun0, label: l10n.longestRunNone),
+      (key: longestRun1, label: l10n.longestRunLessThan3mi),
+      (key: longestRun2, label: _rangeLabel(3, 5, unitSystem, l10n)),
+      (key: longestRun3, label: _rangeLabel(6, 8, unitSystem, l10n)),
+      (key: longestRun4, label: _rangeLabel(9, 10, unitSystem, l10n)),
+      (key: longestRun5, label: _rangeLabel(11, 13, unitSystem, l10n)),
+      (key: longestRun6, label: _plusLabel(13, unitSystem, l10n)),
+    ];
+  }
+
+  static String localizeLongestRun(
+    String key,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final labels = Map<String, String>.fromEntries(
+      longestRunOptions(unitSystem, l10n).map((option) {
+        return MapEntry(option.key, option.label);
+      }),
+    );
+    return labels[key] ?? key;
+  }
+
+  static String _singleValueLabel(
+    int value,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    return '$value ${unitSystem == UnitSystem.km ? l10n.unitKm : l10n.unitMi}';
+  }
+
+  static String _rangeLabel(
+    int start,
+    int end,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    return '$start–$end ${unitSystem == UnitSystem.km ? l10n.unitKm : l10n.unitMi}';
+  }
+
+  static String _plusLabel(
+    int value,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    return '$value+ ${unitSystem == UnitSystem.km ? l10n.unitKm : l10n.unitMi}';
   }
 
   static String localizePriority(String key, AppLocalizations l10n) {

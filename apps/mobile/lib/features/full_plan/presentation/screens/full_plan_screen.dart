@@ -414,7 +414,10 @@ class _WeekCardState extends State<_WeekCard> {
                             )
                           : null,
                       duration: s.durationMinutes != null
-                          ? UnitFormatter.formatDuration(s.durationMinutes!)
+                          ? UnitFormatter.formatDuration(
+                              s.durationMinutes!,
+                              l10n,
+                            )
                           : null,
                       status: s.status,
                       isRest: s.type.isRest,

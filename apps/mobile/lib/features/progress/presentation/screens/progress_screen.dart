@@ -1144,7 +1144,10 @@ class _RecentSessionsCard extends StatelessWidget {
             final meta =
                 '${_recentSessionDateLabel(s.date, context, l10n)} • '
                 '${UnitFormatter.formatDistanceLabel(s.distanceKm, unitSystem, l10n)}';
-            final duration = UnitFormatter.formatDuration(s.durationMinutes);
+            final duration = UnitFormatter.formatDuration(
+              s.durationMinutes,
+              l10n,
+            );
             return Column(
               children: [
                 Padding(

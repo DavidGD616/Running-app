@@ -2,10 +2,12 @@ enum UnitSystem { km, miles }
 
 enum ShortDistanceUnit { meters, feet }
 
+enum ProfileGender { male, female, other }
+
 class UserPreferences {
   final UnitSystem unitSystem;
   final ShortDistanceUnit shortDistanceUnit;
-  final String? gender;
+  final ProfileGender? gender;
   final DateTime? dateOfBirth;
 
   const UserPreferences({
@@ -18,7 +20,7 @@ class UserPreferences {
   UserPreferences copyWith({
     UnitSystem? unitSystem,
     ShortDistanceUnit? shortDistanceUnit,
-    String? gender,
+    ProfileGender? gender,
     DateTime? dateOfBirth,
   }) => UserPreferences(
     unitSystem: unitSystem ?? this.unitSystem,

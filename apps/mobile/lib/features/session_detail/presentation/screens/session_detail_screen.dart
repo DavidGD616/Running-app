@@ -41,6 +41,16 @@ class SessionDetailScreen extends ConsumerWidget {
   final TrainingSession session;
   final bool showStartWorkout;
 
+  String _intervalRepDistanceLabel(
+    TrainingSession session,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final meters = session.intervalRepDistanceMeters;
+    if (meters == null) return '—';
+    return UnitFormatter.formatWorkoutRepDistance(meters, unitSystem, l10n);
+  }
+
   // ── Helpers ──────────────────────────────────────────────────────────────
 
   String _categoryLabel(SessionCategory category, AppLocalizations l10n) {
@@ -95,7 +105,12 @@ class SessionDetailScreen extends ConsumerWidget {
     }
   }
 
-  String _sessionDescription(SessionType type, AppLocalizations l10n) {
+  String _sessionDescription(
+    TrainingSession session,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final type = session.type;
     switch (type) {
       // Rest
       case SessionType.restDay:
@@ -111,7 +126,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.intervals:
         return l10n.sessionDescIntervals(
           session.intervalReps ?? 0,
-          session.intervalRepDistance ?? '—',
+          _intervalRepDistanceLabel(session, unitSystem, l10n),
           session.intervalRecoverySeconds ?? 0,
         );
       case SessionType.hillRepeats:
@@ -142,7 +157,11 @@ class SessionDetailScreen extends ConsumerWidget {
     return true;
   }
 
-  List<_PhaseData> _phasesFor(AppLocalizations l10n, TrainingSession session) {
+  List<_PhaseData> _phasesFor(
+    AppLocalizations l10n,
+    TrainingSession session,
+    UnitSystem unitSystem,
+  ) {
     final mainTitle = _sessionTitle(session.type, l10n);
     final warm = l10n.sessionDetailWarmUp;
     final cool = l10n.sessionDetailCoolDown;
@@ -189,7 +208,7 @@ class SessionDetailScreen extends ConsumerWidget {
             ),
             l10n.sessionPhaseIntervalsMainNote(
               session.intervalReps ?? 0,
-              session.intervalRepDistance ?? '—',
+              _intervalRepDistanceLabel(session, unitSystem, l10n),
             ),
             recoveryNote: l10n.sessionPhaseIntervalsMainRecovery(
               session.intervalRecoverySeconds ?? 0,
@@ -326,8 +345,8 @@ class SessionDetailScreen extends ConsumerWidget {
     final titleWithDistance = '$distanceText$title';
     final description = freshSession.description?.isNotEmpty == true
         ? freshSession.description!
-        : _sessionDescription(freshSession.type, l10n);
-    final phases = _phasesFor(l10n, freshSession);
+        : _sessionDescription(freshSession, unitSystem, l10n);
+    final phases = _phasesFor(l10n, freshSession, unitSystem);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -423,6 +442,7 @@ class SessionDetailScreen extends ConsumerWidget {
                           value: session.durationMinutes != null
                               ? UnitFormatter.formatDuration(
                                   session.durationMinutes!,
+                                  l10n,
                                 )
                               : '—',
                         ),

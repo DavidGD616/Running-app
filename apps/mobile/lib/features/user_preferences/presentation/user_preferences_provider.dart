@@ -16,7 +16,7 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     final prefs = await SharedPreferences.getInstance();
     final unitRaw = prefs.getString(_keyUnit);
     final shortDistanceRaw = prefs.getString(_keyShortDistanceUnit);
-    final gender = prefs.getString(_keyGender);
+    final gender = _parseGender(prefs.getString(_keyGender));
     final dobMs = prefs.getInt(_keyDob);
     final unitSystem = unitRaw == 'miles' ? UnitSystem.miles : UnitSystem.km;
     final shortDistanceUnit = switch (shortDistanceRaw) {
@@ -58,9 +58,9 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     );
   }
 
-  Future<void> setGender(String gender) async {
+  Future<void> setGender(ProfileGender gender) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyGender, gender);
+    await prefs.setString(_keyGender, gender.name);
     state = AsyncData(
       (state.value ?? const UserPreferences()).copyWith(gender: gender),
     );
@@ -78,6 +78,15 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     return unit == UnitSystem.miles
         ? ShortDistanceUnit.feet
         : ShortDistanceUnit.meters;
+  }
+
+  ProfileGender? _parseGender(String? raw) {
+    return switch (raw?.toLowerCase()) {
+      'male' || 'hombre' => ProfileGender.male,
+      'female' || 'mujer' => ProfileGender.female,
+      'other' || 'otro' => ProfileGender.other,
+      _ => null,
+    };
   }
 }
 

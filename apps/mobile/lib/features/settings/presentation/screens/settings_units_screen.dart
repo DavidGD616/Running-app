@@ -43,10 +43,6 @@ class SettingsUnitsScreen extends ConsumerWidget {
                 children: [
                   SettingsRow(
                     label: l10n.settingsUnitsMetric,
-                    iconAsset: 'assets/icons/ruler.svg',
-                    iconColor: currentUnitSystem == UnitSystem.km
-                        ? AppColors.accentPrimary
-                        : AppColors.textSecondary,
                     variant: SettingsRowVariant.selection,
                     isSelected: currentUnitSystem == UnitSystem.km,
                     onTap: () => ref
@@ -55,10 +51,6 @@ class SettingsUnitsScreen extends ConsumerWidget {
                   ),
                   SettingsRow(
                     label: l10n.settingsUnitsImperial,
-                    iconAsset: 'assets/icons/ruler.svg',
-                    iconColor: currentUnitSystem == UnitSystem.miles
-                        ? AppColors.accentPrimary
-                        : AppColors.textSecondary,
                     variant: SettingsRowVariant.selection,
                     isSelected: currentUnitSystem == UnitSystem.miles,
                     onTap: () => ref
@@ -74,11 +66,6 @@ class SettingsUnitsScreen extends ConsumerWidget {
                 children: [
                   SettingsRow(
                     label: l10n.settingsUnitsMeters,
-                    iconAsset: 'assets/icons/mountain.svg',
-                    iconColor:
-                        currentShortDistanceUnit == ShortDistanceUnit.meters
-                        ? AppColors.accentPrimary
-                        : AppColors.textSecondary,
                     variant: SettingsRowVariant.selection,
                     isSelected:
                         currentShortDistanceUnit == ShortDistanceUnit.meters,
@@ -88,11 +75,6 @@ class SettingsUnitsScreen extends ConsumerWidget {
                   ),
                   SettingsRow(
                     label: l10n.settingsUnitsFeet,
-                    iconAsset: 'assets/icons/mountain.svg',
-                    iconColor:
-                        currentShortDistanceUnit == ShortDistanceUnit.feet
-                        ? AppColors.accentPrimary
-                        : AppColors.textSecondary,
                     variant: SettingsRowVariant.selection,
                     isSelected:
                         currentShortDistanceUnit == ShortDistanceUnit.feet,

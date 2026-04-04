@@ -97,6 +97,11 @@
   "preferredUnits": "Preferred Units",
   "@preferredUnits": { "description": "Section label on account setup screen" },
 
+  "accountSetupShortDistanceUnits": "Short Distance & Elevation",
+  "@accountSetupShortDistanceUnits": {
+    "description": "Section label for short distance and elevation units on account setup screen"
+  },
+
   "unitKm": "km",
   "@unitKm": { "description": "Kilometers unit option" },
 
@@ -1495,8 +1500,8 @@
   "settingsUnitsDistanceSection": "Distance",
   "@settingsUnitsDistanceSection": { "description": "Distance units section title in settings" },
 
-  "settingsUnitsElevationSection": "Elevation & Short Distance",
-  "@settingsUnitsElevationSection": { "description": "Elevation and short distance units section title in settings" },
+  "settingsUnitsElevationSection": "Elevation",
+  "@settingsUnitsElevationSection": { "description": "Elevation units section title in settings" },
 
   "settingsUnitsMeters": "Meters (m)",
   "@settingsUnitsMeters": { "description": "Meters unit option in settings" },

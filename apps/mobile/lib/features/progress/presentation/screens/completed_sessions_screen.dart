@@ -173,6 +173,7 @@ class CompletedSessionsScreen extends ConsumerWidget {
                                   '${UnitFormatter.formatDistanceLabel(session.distanceKm ?? 0, unitSystem, l10n)}',
                               duration: UnitFormatter.formatDuration(
                                 session.durationMinutes ?? 0,
+                                l10n,
                               ),
                               onTap: () => context.push(
                                 RouteNames.sessionDetail,

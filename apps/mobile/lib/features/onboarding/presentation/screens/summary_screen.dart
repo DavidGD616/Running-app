@@ -12,6 +12,8 @@ import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 class SummaryScreen extends ConsumerWidget {
   const SummaryScreen({super.key});
@@ -19,9 +21,18 @@ class SummaryScreen extends ConsumerWidget {
   // ── Helper: format DateTime as "Month DD, YYYY" ──────────────────────────
   String _formatDate(DateTime d, AppLocalizations l10n) {
     final months = [
-      l10n.monthJanuary, l10n.monthFebruary, l10n.monthMarch, l10n.monthApril,
-      l10n.monthMay, l10n.monthJune, l10n.monthJuly, l10n.monthAugust,
-      l10n.monthSeptember, l10n.monthOctober, l10n.monthNovember, l10n.monthDecember,
+      l10n.monthJanuary,
+      l10n.monthFebruary,
+      l10n.monthMarch,
+      l10n.monthApril,
+      l10n.monthMay,
+      l10n.monthJune,
+      l10n.monthJuly,
+      l10n.monthAugust,
+      l10n.monthSeptember,
+      l10n.monthOctober,
+      l10n.monthNovember,
+      l10n.monthDecember,
     ];
     return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
@@ -50,7 +61,11 @@ class SummaryScreen extends ConsumerWidget {
     return OnboardingValues.localizeExperience(exp, l10n);
   }
 
-  String _fitnessDetail(Map<String, dynamic> a, AppLocalizations l10n) {
+  String _fitnessDetail(
+    Map<String, dynamic> a,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
     final experience = a['experience'] as String?;
     if (experience == OnboardingValues.experienceBrandNew) {
       final can = a['canRun10Min'] as bool?;
@@ -58,7 +73,10 @@ class SummaryScreen extends ConsumerWidget {
       return l10n.summaryCanRun10Min(can ? l10n.yes : l10n.no);
     }
     final days = (a['runningDays'] as String?) ?? '—';
-    final volume = (a['weeklyVolume'] as String?) ?? '—';
+    final weeklyVolume = a['weeklyVolume'] as String?;
+    final volume = weeklyVolume != null
+        ? OnboardingValues.localizeWeeklyVolume(weeklyVolume, unitSystem, l10n)
+        : '—';
     return l10n.summaryFitnessDetail(days, volume);
   }
 
@@ -185,6 +203,8 @@ class SummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final answers = ref.watch(onboardingProvider);
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -194,7 +214,10 @@ class SummaryScreen extends ConsumerWidget {
             // ── Top nav ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.screen,
+                0,
               ),
               child: Column(
                 children: [
@@ -241,14 +264,18 @@ class SummaryScreen extends ConsumerWidget {
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.summaryTitle,
-                        style: AppTypography.headlineMedium),
+                    Text(
+                      l10n.summaryTitle,
+                      style: AppTypography.headlineMedium,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       l10n.summarySubtitle,
@@ -271,7 +298,7 @@ class SummaryScreen extends ConsumerWidget {
                       icon: 'assets/icons/trending_up.svg',
                       category: l10n.summaryCurrentLevel,
                       value: _fitnessValue(answers, l10n),
-                      detail: _fitnessDetail(answers, l10n),
+                      detail: _fitnessDetail(answers, unitSystem, l10n),
                       onEdit: () => context.go(RouteNames.fitness),
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -355,8 +382,10 @@ class SummaryScreen extends ConsumerWidget {
             // ── Buttons ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: Column(
                 children: [
@@ -402,7 +431,10 @@ class _SummaryCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(
-        AppSpacing.base, AppSpacing.base, 0, AppSpacing.base,
+        AppSpacing.base,
+        AppSpacing.base,
+        0,
+        AppSpacing.base,
       ),
       decoration: BoxDecoration(
         color: AppColors.backgroundCard,

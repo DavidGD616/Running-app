@@ -25,6 +25,16 @@ import '../../../user_preferences/presentation/user_preferences_provider.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  String _intervalRepDistanceLabel(
+    TrainingSession session,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final meters = session.intervalRepDistanceMeters;
+    if (meters == null) return '—';
+    return UnitFormatter.formatWorkoutRepDistance(meters, unitSystem, l10n);
+  }
+
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
       // Rest
@@ -60,7 +70,11 @@ class HomeScreen extends ConsumerWidget {
     }
   }
 
-  String? _sessionDescription(TrainingSession session, AppLocalizations l10n) {
+  String? _sessionDescription(
+    TrainingSession session,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
     switch (session.type) {
       // Rest
       case SessionType.restDay:
@@ -76,7 +90,7 @@ class HomeScreen extends ConsumerWidget {
       case SessionType.intervals:
         return l10n.sessionDescIntervals(
           session.intervalReps ?? 0,
-          session.intervalRepDistance ?? '—',
+          _intervalRepDistanceLabel(session, unitSystem, l10n),
           session.intervalRecoverySeconds ?? 0,
         );
       case SessionType.hillRepeats:
@@ -198,6 +212,7 @@ class HomeScreen extends ConsumerWidget {
                         dayLabel: _weekdayName(nextSession.date.weekday, l10n),
                         duration: UnitFormatter.formatDuration(
                           nextSession.durationMinutes ?? 0,
+                          l10n,
                         ),
                         effortLabel: nextSession.effort != null
                             ? localizedTrainingSessionEffort(
@@ -259,7 +274,7 @@ class HomeScreen extends ConsumerWidget {
       sessionType: _sessionTitle(session.type, l10n),
       sessionName: _sessionTitle(session.type, l10n),
       duration: session.durationMinutes != null
-          ? UnitFormatter.formatDuration(session.durationMinutes!)
+          ? UnitFormatter.formatDuration(session.durationMinutes!, l10n)
           : '-',
       distance: session.distanceKm != null
           ? UnitFormatter.formatDistanceLabel(
@@ -268,7 +283,8 @@ class HomeScreen extends ConsumerWidget {
               l10n,
             )
           : '-',
-      targetGuidance: session.description ?? _sessionDescription(session, l10n),
+      targetGuidance:
+          session.description ?? _sessionDescription(session, unitSystem, l10n),
       sessionTypeIconAsset: session.type.iconAsset,
       onViewDetails: () => context.push(
         RouteNames.sessionDetail,

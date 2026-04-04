@@ -69,7 +69,8 @@ TrainingPlan buildSeedTrainingPlan() {
 
   // ── Helpers to build a standard week of sessions ──────────────────────────
 
-  List<TrainingSession> buildPastWeek(int weekNum, {
+  List<TrainingSession> buildPastWeek(
+    int weekNum, {
     required double easyKm,
     required int easyMin,
     required double workoutKm,
@@ -81,7 +82,7 @@ TrainingPlan buildSeedTrainingPlan() {
     required int recoveryMin,
     bool workoutIsIntervals = false,
     int? intervalReps,
-    String? intervalRepDistance,
+    int? intervalRepDistanceMeters,
     int? intervalRecoverySeconds,
     Set<int> skippedOffsets = const {},
   }) {
@@ -110,8 +111,7 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: TrainingSessionEffort.easy,
         warmUpMinutes: 5,
         coolDownMinutes: 3,
-        elevationGainMeters:
-            estimateElevationGain(SessionType.easyRun, easyKm),
+        elevationGainMeters: estimateElevationGain(SessionType.easyRun, easyKm),
       ),
       TrainingSession(
         id: 'w$weekNum-wed',
@@ -125,8 +125,12 @@ TrainingPlan buildSeedTrainingPlan() {
             ? TrainingSessionEffort.hard
             : TrainingSessionEffort.moderate,
         intervalReps: workoutIsIntervals ? intervalReps : null,
-        intervalRepDistance: workoutIsIntervals ? intervalRepDistance : null,
-        intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
+        intervalRepDistanceMeters: workoutIsIntervals
+            ? intervalRepDistanceMeters
+            : null,
+        intervalRecoverySeconds: workoutIsIntervals
+            ? intervalRecoverySeconds
+            : null,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters: estimateElevationGain(workoutType, workoutKm),
@@ -166,8 +170,7 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: TrainingSessionEffort.easy,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
-        elevationGainMeters:
-            estimateElevationGain(SessionType.longRun, longKm),
+        elevationGainMeters: estimateElevationGain(SessionType.longRun, longKm),
       ),
       TrainingSession(
         id: 'w$weekNum-sun',
@@ -180,13 +183,16 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: TrainingSessionEffort.veryEasy,
         warmUpMinutes: 3,
         coolDownMinutes: 3,
-        elevationGainMeters:
-            estimateElevationGain(SessionType.recoveryRun, recoveryKm),
+        elevationGainMeters: estimateElevationGain(
+          SessionType.recoveryRun,
+          recoveryKm,
+        ),
       ),
     ];
   }
 
-  List<TrainingSession> buildFutureWeek(int weekNum, {
+  List<TrainingSession> buildFutureWeek(
+    int weekNum, {
     required double easyKm,
     required int easyMin,
     required double workoutKm,
@@ -198,7 +204,7 @@ TrainingPlan buildSeedTrainingPlan() {
     required int recoveryMin,
     bool workoutIsIntervals = false,
     int? intervalReps,
-    String? intervalRepDistance,
+    int? intervalRepDistanceMeters,
     int? intervalRecoverySeconds,
   }) {
     return [
@@ -221,8 +227,7 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: TrainingSessionEffort.easy,
         warmUpMinutes: 5,
         coolDownMinutes: 3,
-        elevationGainMeters:
-            estimateElevationGain(SessionType.easyRun, easyKm),
+        elevationGainMeters: estimateElevationGain(SessionType.easyRun, easyKm),
       ),
       TrainingSession(
         id: 'w$weekNum-wed',
@@ -236,8 +241,12 @@ TrainingPlan buildSeedTrainingPlan() {
             ? TrainingSessionEffort.hard
             : TrainingSessionEffort.moderate,
         intervalReps: workoutIsIntervals ? intervalReps : null,
-        intervalRepDistance: workoutIsIntervals ? intervalRepDistance : null,
-        intervalRecoverySeconds: workoutIsIntervals ? intervalRecoverySeconds : null,
+        intervalRepDistanceMeters: workoutIsIntervals
+            ? intervalRepDistanceMeters
+            : null,
+        intervalRecoverySeconds: workoutIsIntervals
+            ? intervalRecoverySeconds
+            : null,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters: estimateElevationGain(workoutType, workoutKm),
@@ -277,8 +286,7 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: TrainingSessionEffort.easy,
         warmUpMinutes: 10,
         coolDownMinutes: 10,
-        elevationGainMeters:
-            estimateElevationGain(SessionType.longRun, longKm),
+        elevationGainMeters: estimateElevationGain(SessionType.longRun, longKm),
       ),
       TrainingSession(
         id: 'w$weekNum-sun',
@@ -291,8 +299,10 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: TrainingSessionEffort.veryEasy,
         warmUpMinutes: 3,
         coolDownMinutes: 3,
-        elevationGainMeters:
-            estimateElevationGain(SessionType.recoveryRun, recoveryKm),
+        elevationGainMeters: estimateElevationGain(
+          SessionType.recoveryRun,
+          recoveryKm,
+        ),
       ),
     ];
   }
@@ -301,32 +311,50 @@ TrainingPlan buildSeedTrainingPlan() {
 
   final sessions = <TrainingSession>[
     // ── Week 1 (past) ──────────────────────────────────────────────────────
-    ...buildPastWeek(1,
-      easyKm: 4.0, easyMin: 25,
-      workoutType: SessionType.easyRun, workoutKm: 5.0, workoutMin: 30,
-      longKm: 8.0, longMin: 55,
-      recoveryKm: 3.0, recoveryMin: 20,
+    ...buildPastWeek(
+      1,
+      easyKm: 4.0,
+      easyMin: 25,
+      workoutType: SessionType.easyRun,
+      workoutKm: 5.0,
+      workoutMin: 30,
+      longKm: 8.0,
+      longMin: 55,
+      recoveryKm: 3.0,
+      recoveryMin: 20,
       skippedOffsets: {4},
     ),
 
     // ── Week 2 (past) ──────────────────────────────────────────────────────
-    ...buildPastWeek(2,
-      easyKm: 5.0, easyMin: 30,
-      workoutType: SessionType.tempoRun, workoutKm: 6.0, workoutMin: 38,
-      longKm: 10.0, longMin: 65,
-      recoveryKm: 3.0, recoveryMin: 20,
+    ...buildPastWeek(
+      2,
+      easyKm: 5.0,
+      easyMin: 30,
+      workoutType: SessionType.tempoRun,
+      workoutKm: 6.0,
+      workoutMin: 38,
+      longKm: 10.0,
+      longMin: 65,
+      recoveryKm: 3.0,
+      recoveryMin: 20,
       skippedOffsets: {1},
     ),
 
     // ── Week 3 (past) ──────────────────────────────────────────────────────
-    ...buildPastWeek(3,
-      easyKm: 5.0, easyMin: 30,
-      workoutType: SessionType.intervals, workoutKm: 6.0, workoutMin: 42,
-      longKm: 11.0, longMin: 70,
-      recoveryKm: 3.0, recoveryMin: 20,
+    ...buildPastWeek(
+      3,
+      easyKm: 5.0,
+      easyMin: 30,
+      workoutType: SessionType.intervals,
+      workoutKm: 6.0,
+      workoutMin: 42,
+      longKm: 11.0,
+      longMin: 70,
+      recoveryKm: 3.0,
+      recoveryMin: 20,
       workoutIsIntervals: true,
       intervalReps: 5,
-      intervalRepDistance: '400 m',
+      intervalRepDistanceMeters: 400,
       intervalRecoverySeconds: 90,
       skippedOffsets: {6},
     ),
@@ -351,8 +379,7 @@ TrainingPlan buildSeedTrainingPlan() {
       effort: TrainingSessionEffort.easy,
       warmUpMinutes: 5,
       coolDownMinutes: 3,
-      elevationGainMeters:
-          estimateElevationGain(SessionType.easyRun, 5.0),
+      elevationGainMeters: estimateElevationGain(SessionType.easyRun, 5.0),
     ),
     TrainingSession(
       id: 'w4-wed',
@@ -365,8 +392,7 @@ TrainingPlan buildSeedTrainingPlan() {
       effort: TrainingSessionEffort.easy,
       warmUpMinutes: 5,
       coolDownMinutes: 3,
-      elevationGainMeters:
-          estimateElevationGain(SessionType.easyRun, 4.0),
+      elevationGainMeters: estimateElevationGain(SessionType.easyRun, 4.0),
     ),
     TrainingSession(
       id: 'w4-thu',
@@ -378,12 +404,11 @@ TrainingPlan buildSeedTrainingPlan() {
       durationMinutes: 45,
       effort: TrainingSessionEffort.hard,
       intervalReps: 6,
-      intervalRepDistance: '400 m',
+      intervalRepDistanceMeters: 400,
       intervalRecoverySeconds: 90,
       warmUpMinutes: 10,
       coolDownMinutes: 10,
-      elevationGainMeters:
-          estimateElevationGain(SessionType.intervals, 6.0),
+      elevationGainMeters: estimateElevationGain(SessionType.intervals, 6.0),
     ),
     TrainingSession(
       id: 'w4-fri',
@@ -404,8 +429,7 @@ TrainingPlan buildSeedTrainingPlan() {
       effort: TrainingSessionEffort.easy,
       warmUpMinutes: 10,
       coolDownMinutes: 10,
-      elevationGainMeters:
-          estimateElevationGain(SessionType.longRun, 12.0),
+      elevationGainMeters: estimateElevationGain(SessionType.longRun, 12.0),
     ),
     TrainingSession(
       id: 'w4-sun',
@@ -418,80 +442,127 @@ TrainingPlan buildSeedTrainingPlan() {
       effort: TrainingSessionEffort.veryEasy,
       warmUpMinutes: 3,
       coolDownMinutes: 3,
-      elevationGainMeters:
-          estimateElevationGain(SessionType.recoveryRun, 3.0),
+      elevationGainMeters: estimateElevationGain(SessionType.recoveryRun, 3.0),
     ),
 
     // ── Week 5 (future) ────────────────────────────────────────────────────
-    ...buildFutureWeek(5,
-      easyKm: 6.0, easyMin: 35,
-      workoutType: SessionType.tempoRun, workoutKm: 7.0, workoutMin: 44,
-      longKm: 13.0, longMin: 80,
-      recoveryKm: 4.0, recoveryMin: 25,
+    ...buildFutureWeek(
+      5,
+      easyKm: 6.0,
+      easyMin: 35,
+      workoutType: SessionType.tempoRun,
+      workoutKm: 7.0,
+      workoutMin: 44,
+      longKm: 13.0,
+      longMin: 80,
+      recoveryKm: 4.0,
+      recoveryMin: 25,
     ),
 
     // ── Week 6 (future) ────────────────────────────────────────────────────
-    ...buildFutureWeek(6,
-      easyKm: 6.0, easyMin: 35,
-      workoutType: SessionType.intervals, workoutKm: 7.0, workoutMin: 48,
-      longKm: 14.0, longMin: 88,
-      recoveryKm: 4.0, recoveryMin: 25,
+    ...buildFutureWeek(
+      6,
+      easyKm: 6.0,
+      easyMin: 35,
+      workoutType: SessionType.intervals,
+      workoutKm: 7.0,
+      workoutMin: 48,
+      longKm: 14.0,
+      longMin: 88,
+      recoveryKm: 4.0,
+      recoveryMin: 25,
       workoutIsIntervals: true,
       intervalReps: 6,
-      intervalRepDistance: '600 m',
+      intervalRepDistanceMeters: 600,
       intervalRecoverySeconds: 120,
     ),
 
     // ── Week 7 (future) — recovery week ───────────────────────────────────
-    ...buildFutureWeek(7,
-      easyKm: 5.0, easyMin: 30,
-      workoutType: SessionType.easyRun, workoutKm: 6.0, workoutMin: 35,
-      longKm: 10.0, longMin: 65,
-      recoveryKm: 3.0, recoveryMin: 20,
+    ...buildFutureWeek(
+      7,
+      easyKm: 5.0,
+      easyMin: 30,
+      workoutType: SessionType.easyRun,
+      workoutKm: 6.0,
+      workoutMin: 35,
+      longKm: 10.0,
+      longMin: 65,
+      recoveryKm: 3.0,
+      recoveryMin: 20,
     ),
 
     // ── Week 8 (future) ────────────────────────────────────────────────────
-    ...buildFutureWeek(8,
-      easyKm: 7.0, easyMin: 40,
-      workoutType: SessionType.tempoRun, workoutKm: 8.0, workoutMin: 50,
-      longKm: 16.0, longMin: 100,
-      recoveryKm: 4.0, recoveryMin: 25,
+    ...buildFutureWeek(
+      8,
+      easyKm: 7.0,
+      easyMin: 40,
+      workoutType: SessionType.tempoRun,
+      workoutKm: 8.0,
+      workoutMin: 50,
+      longKm: 16.0,
+      longMin: 100,
+      recoveryKm: 4.0,
+      recoveryMin: 25,
     ),
 
     // ── Week 9 (future) ────────────────────────────────────────────────────
-    ...buildFutureWeek(9,
-      easyKm: 7.0, easyMin: 40,
-      workoutType: SessionType.intervals, workoutKm: 8.0, workoutMin: 52,
-      longKm: 18.0, longMin: 112,
-      recoveryKm: 4.0, recoveryMin: 25,
+    ...buildFutureWeek(
+      9,
+      easyKm: 7.0,
+      easyMin: 40,
+      workoutType: SessionType.intervals,
+      workoutKm: 8.0,
+      workoutMin: 52,
+      longKm: 18.0,
+      longMin: 112,
+      recoveryKm: 4.0,
+      recoveryMin: 25,
       workoutIsIntervals: true,
       intervalReps: 8,
-      intervalRepDistance: '400 m',
+      intervalRepDistanceMeters: 400,
       intervalRecoverySeconds: 90,
     ),
 
     // ── Week 10 (future) ───────────────────────────────────────────────────
-    ...buildFutureWeek(10,
-      easyKm: 8.0, easyMin: 45,
-      workoutType: SessionType.racePaceRun, workoutKm: 9.0, workoutMin: 54,
-      longKm: 19.0, longMin: 118,
-      recoveryKm: 5.0, recoveryMin: 30,
+    ...buildFutureWeek(
+      10,
+      easyKm: 8.0,
+      easyMin: 45,
+      workoutType: SessionType.racePaceRun,
+      workoutKm: 9.0,
+      workoutMin: 54,
+      longKm: 19.0,
+      longMin: 118,
+      recoveryKm: 5.0,
+      recoveryMin: 30,
     ),
 
     // ── Week 11 (future) — taper begins ───────────────────────────────────
-    ...buildFutureWeek(11,
-      easyKm: 6.0, easyMin: 35,
-      workoutType: SessionType.tempoRun, workoutKm: 6.0, workoutMin: 38,
-      longKm: 14.0, longMin: 88,
-      recoveryKm: 3.0, recoveryMin: 20,
+    ...buildFutureWeek(
+      11,
+      easyKm: 6.0,
+      easyMin: 35,
+      workoutType: SessionType.tempoRun,
+      workoutKm: 6.0,
+      workoutMin: 38,
+      longKm: 14.0,
+      longMin: 88,
+      recoveryKm: 3.0,
+      recoveryMin: 20,
     ),
 
     // ── Week 12 (future) — race week ──────────────────────────────────────
-    ...buildFutureWeek(12,
-      easyKm: 4.0, easyMin: 25,
-      workoutType: SessionType.easyRun, workoutKm: 3.0, workoutMin: 20,
-      longKm: 21.1, longMin: 130,
-      recoveryKm: 2.0, recoveryMin: 15,
+    ...buildFutureWeek(
+      12,
+      easyKm: 4.0,
+      easyMin: 25,
+      workoutType: SessionType.easyRun,
+      workoutKm: 3.0,
+      workoutMin: 20,
+      longKm: 21.1,
+      longMin: 130,
+      recoveryKm: 2.0,
+      recoveryMin: 15,
     ),
   ];
 
