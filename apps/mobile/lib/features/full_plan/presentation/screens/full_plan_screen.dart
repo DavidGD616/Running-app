@@ -21,6 +21,8 @@ import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../training_plan/domain/models/week_progress.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -31,6 +33,8 @@ class FullPlanScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final plan = ref.watch(trainingPlanProvider);
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -54,7 +58,7 @@ class FullPlanScreen extends ConsumerWidget {
 
               const SizedBox(height: AppSpacing.xl),
 
-              _PlanStatsSummary(plan: plan, l10n: l10n),
+              _PlanStatsSummary(plan: plan, l10n: l10n, unitSystem: unitSystem),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -69,6 +73,7 @@ class FullPlanScreen extends ConsumerWidget {
                     week: week,
                     currentWeekNumber: plan.currentWeekNumber,
                     l10n: l10n,
+                    unitSystem: unitSystem,
                   ),
                 ),
               ),
@@ -131,10 +136,15 @@ class _PlanNote extends StatelessWidget {
 // ── Plan stats summary card ───────────────────────────────────────────────────
 
 class _PlanStatsSummary extends StatelessWidget {
-  const _PlanStatsSummary({required this.plan, required this.l10n});
+  const _PlanStatsSummary({
+    required this.plan,
+    required this.l10n,
+    required this.unitSystem,
+  });
 
   final TrainingPlan plan;
   final AppLocalizations l10n;
+  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -159,7 +169,11 @@ class _PlanStatsSummary extends StatelessWidget {
           ),
           StatColumn(
             label: l10n.fullPlanDistanceLabel,
-            value: UnitFormatter.formatDistanceKm(totalDistance),
+            value: UnitFormatter.formatDistanceLabel(
+              totalDistance,
+              unitSystem,
+              l10n,
+            ),
             hasDivider: true,
           ),
           StatColumn(
@@ -180,11 +194,13 @@ class _WeekCard extends StatefulWidget {
     required this.week,
     required this.currentWeekNumber,
     required this.l10n,
+    required this.unitSystem,
   });
 
   final PlanWeek week;
   final int currentWeekNumber;
   final AppLocalizations l10n;
+  final UnitSystem unitSystem;
 
   @override
   State<_WeekCard> createState() => _WeekCardState();
@@ -240,13 +256,20 @@ class _WeekCardState extends State<_WeekCard> {
     final l10n = widget.l10n;
     if (_isTodayDate(s.date)) return l10n.weeklyPlanDayToday;
     switch (s.date.weekday) {
-      case 1: return l10n.weeklyPlanDayMon;
-      case 2: return l10n.weeklyPlanDayTue;
-      case 3: return l10n.weeklyPlanDayWed;
-      case 4: return l10n.weeklyPlanDayThu;
-      case 5: return l10n.weeklyPlanDayFri;
-      case 6: return l10n.weeklyPlanDaySat;
-      default: return l10n.weeklyPlanDaySun;
+      case 1:
+        return l10n.weeklyPlanDayMon;
+      case 2:
+        return l10n.weeklyPlanDayTue;
+      case 3:
+        return l10n.weeklyPlanDayWed;
+      case 4:
+        return l10n.weeklyPlanDayThu;
+      case 5:
+        return l10n.weeklyPlanDayFri;
+      case 6:
+        return l10n.weeklyPlanDaySat;
+      default:
+        return l10n.weeklyPlanDaySun;
     }
   }
 
@@ -319,7 +342,11 @@ class _WeekCardState extends State<_WeekCard> {
                   // Aggregate stats
                   if (!_expanded) ...[
                     Text(
-                      UnitFormatter.formatDistanceKm(progress.totalVolumeKm),
+                      UnitFormatter.formatDistanceLabel(
+                        progress.totalVolumeKm,
+                        widget.unitSystem,
+                        l10n,
+                      ),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textDisabled,
                         fontSize: 12,
@@ -359,10 +386,7 @@ class _WeekCardState extends State<_WeekCard> {
 
           // ── Expanded session list ────────────────────────────
           if (_expanded) ...[
-            Divider(
-              height: 1,
-              color: AppColors.backgroundCard,
-            ),
+            Divider(height: 1, color: AppColors.backgroundCard),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.base,
@@ -379,9 +403,15 @@ class _WeekCardState extends State<_WeekCard> {
                       dateNumber: s.date.day.toString(),
                       sessionDate: s.date,
                       title: _sessionTitle(s.type),
-                      subtitle: s.type.isRest ? l10n.weeklyPlanRestSubtitle : null,
+                      subtitle: s.type.isRest
+                          ? l10n.weeklyPlanRestSubtitle
+                          : null,
                       distance: s.distanceKm != null
-                          ? UnitFormatter.formatDistanceKm(s.distanceKm!)
+                          ? UnitFormatter.formatDistanceLabel(
+                              s.distanceKm!,
+                              widget.unitSystem,
+                              l10n,
+                            )
                           : null,
                       duration: s.durationMinutes != null
                           ? UnitFormatter.formatDuration(s.durationMinutes!)

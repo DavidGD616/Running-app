@@ -14,6 +14,8 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 // ── Navigation args ───────────────────────────────────────────────────────────
 
@@ -312,12 +314,14 @@ class SessionDetailScreen extends ConsumerWidget {
     final plan = ref.watch(trainingPlanProvider);
     final freshSession = plan.sessions.firstWhere((s) => s.id == session.id);
     final status = freshSession.status;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
     final l10n = AppLocalizations.of(context)!;
     final title = _sessionTitle(freshSession.type, l10n);
     final categoryLabel = _categoryLabel(freshSession.type.category, l10n);
     final distanceText = freshSession.distanceKm != null
-        ? '${UnitFormatter.formatDistanceKm(freshSession.distanceKm!)} '
+        ? '${UnitFormatter.formatDistanceLabel(freshSession.distanceKm!, unitSystem, l10n)} '
         : '';
     final titleWithDistance = '$distanceText$title';
     final description = freshSession.description?.isNotEmpty == true
@@ -403,8 +407,10 @@ class SessionDetailScreen extends ConsumerWidget {
                           iconAsset: 'assets/icons/route.svg',
                           label: l10n.sessionDetailTotalDistanceLabel,
                           value: session.distanceKm != null
-                              ? UnitFormatter.formatDistanceKm(
+                              ? UnitFormatter.formatDistanceLabel(
                                   session.distanceKm!,
+                                  unitSystem,
+                                  l10n,
                                 )
                               : '—',
                         ),

@@ -265,7 +265,11 @@ class ProgressScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
 
               // ── Recent sessions ───────────────────────────────────
-              _RecentSessionsCard(sessions: sessions, l10n: l10n),
+              _RecentSessionsCard(
+                sessions: sessions,
+                l10n: l10n,
+                unitSystem: unitSystem,
+              ),
             ],
           ),
         ),
@@ -951,10 +955,14 @@ class _LongestRunCard extends StatelessWidget {
     final valueText = hasRecord
         ? UnitFormatter.formatDistanceValue(longestRunKm!, unitSystem)
         : '--';
-    final unitLabel = UnitFormatter.unitLabel(unitSystem);
+    final unitLabel = UnitFormatter.unitLabel(unitSystem, l10n);
     final improvementText = (improvementKm ?? 0) > 0
         ? l10n.progressLongestRunImproved(
-            UnitFormatter.formatDistanceWithUnit(improvementKm!, unitSystem),
+            UnitFormatter.formatDistanceWithUnit(
+              improvementKm!,
+              unitSystem,
+              l10n,
+            ),
           )
         : null;
 
@@ -1056,10 +1064,15 @@ class _LongestRunCard extends StatelessWidget {
 // ── Recent sessions card ──────────────────────────────────────────────────────
 
 class _RecentSessionsCard extends StatelessWidget {
-  const _RecentSessionsCard({required this.sessions, required this.l10n});
+  const _RecentSessionsCard({
+    required this.sessions,
+    required this.l10n,
+    required this.unitSystem,
+  });
 
   final List<RecentSession> sessions;
   final AppLocalizations l10n;
+  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -1103,7 +1116,7 @@ class _RecentSessionsCard extends StatelessWidget {
             final iconData = _sessionIconData(s.type);
             final meta =
                 '${_recentSessionDateLabel(s.date, context, l10n)} • '
-                '${UnitFormatter.formatDistanceKm(s.distanceKm)}';
+                '${UnitFormatter.formatDistanceLabel(s.distanceKm, unitSystem, l10n)}';
             final duration = UnitFormatter.formatDuration(s.durationMinutes);
             return Column(
               children: [

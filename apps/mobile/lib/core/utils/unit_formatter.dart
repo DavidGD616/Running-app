@@ -1,15 +1,18 @@
 import '../../../features/user_preferences/domain/user_preferences.dart';
+import '../../l10n/app_localizations.dart';
 
 class UnitFormatter {
   UnitFormatter._();
 
   /// Label used after a number — e.g. "5 km" suffix part.
-  static String unitLabel(UnitSystem unit) =>
-      unit == UnitSystem.km ? 'km' : 'mi';
+  static String unitLabel(UnitSystem unit, AppLocalizations l10n) =>
+      unit == UnitSystem.km ? l10n.unitKm : l10n.unitMi;
 
   /// Pace label shown in training plans.
-  static String paceLabel(UnitSystem unit) =>
-      unit == UnitSystem.km ? 'min/km' : 'min/mi';
+  static String paceLabel(UnitSystem unit, AppLocalizations l10n) =>
+      unit == UnitSystem.km
+      ? '${l10n.logSessionMinUnit}/${l10n.unitKm}'
+      : '${l10n.logSessionMinUnit}/${l10n.unitMi}';
 
   /// Formats a duration in minutes to a human-readable string.
   /// e.g. 30 → '30 min', 75 → '1h 15m', 60 → '1h'
@@ -18,13 +21,6 @@ class UnitFormatter {
     final h = minutes ~/ 60;
     final m = minutes % 60;
     return m == 0 ? '${h}h' : '${h}h ${m}m';
-  }
-
-  /// Formats a distance in km to a human-readable string.
-  /// e.g. 5.0 → '5 km', 6.5 → '6.5 km'
-  static String formatDistanceKm(double km) {
-    final isWhole = km == km.truncateToDouble();
-    return isWhole ? '${km.toInt()} km' : '${km.toStringAsFixed(1)} km';
   }
 
   static double _convertDistance(double km, UnitSystem unit) =>
@@ -41,8 +37,21 @@ class UnitFormatter {
   }
 
   /// Returns distance string with unit label (e.g. '5 km' or '3.1 mi').
-  static String formatDistanceWithUnit(double km, UnitSystem unit) {
+  static String formatDistanceWithUnit(
+    double km,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
     final value = formatDistanceValue(km, unit);
-    return '$value ${unitLabel(unit)}';
+    return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static String formatDistanceLabel(
+    double km,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatDistanceValue(km, unit);
+    return '$value ${unitLabel(unit, l10n)}';
   }
 }

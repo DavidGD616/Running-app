@@ -97,6 +97,7 @@ class _TrainingHistoryScreenState extends ConsumerState<TrainingHistoryScreen> {
               _TrainingHistoryChartCard(
                 title: l10n.weekProgressVolumeLabel,
                 points: points,
+                l10n: l10n,
                 unitSystem: unitSystem,
                 selectedIndex: selectedIndex,
                 onSelectedIndexChanged: (index) {
@@ -196,7 +197,7 @@ class _SelectedPeriodSummaryCard extends StatelessWidget {
                       point.distanceKm,
                       unitSystem,
                     ),
-                    unit: ' ${UnitFormatter.unitLabel(unitSystem)}',
+                    unit: ' ${UnitFormatter.unitLabel(unitSystem, l10n)}',
                   ),
                 ),
                 Container(
@@ -312,6 +313,7 @@ class _TrainingHistoryChartCard extends StatelessWidget {
   const _TrainingHistoryChartCard({
     required this.title,
     required this.points,
+    required this.l10n,
     required this.unitSystem,
     required this.selectedIndex,
     required this.onSelectedIndexChanged,
@@ -319,6 +321,7 @@ class _TrainingHistoryChartCard extends StatelessWidget {
 
   final String title;
   final List<TrainingHistoryPoint> points;
+  final AppLocalizations l10n;
   final UnitSystem unitSystem;
   final int selectedIndex;
   final ValueChanged<int> onSelectedIndexChanged;
@@ -344,7 +347,7 @@ class _TrainingHistoryChartCard extends StatelessWidget {
   String _formatAxisValue(double value) {
     final isWhole = value == value.roundToDouble();
     final text = isWhole ? value.round().toString() : value.toStringAsFixed(1);
-    return '$text ${UnitFormatter.unitLabel(unitSystem)}';
+    return '$text ${UnitFormatter.unitLabel(unitSystem, l10n)}';
   }
 
   void _updateSelection(double localX, double chartWidth) {

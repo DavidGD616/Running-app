@@ -19,6 +19,7 @@ import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -124,6 +125,8 @@ class HomeScreen extends ConsumerWidget {
     final plan = ref.watch(trainingPlanProvider);
     final progress = ref.watch(weekProgressProvider);
     final profile = ref.watch(userProfileDisplayProvider);
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final todaySession = plan.todaySession;
     final nextSession = plan.nextUpcomingSession;
     final planName = localizedTrainingPlanName(
@@ -182,7 +185,7 @@ class HomeScreen extends ConsumerWidget {
                     // ── Today's Workout ────────────────────────────────
                     SectionLabel(label: l10n.homeSectionTodaysWorkout),
                     const SizedBox(height: AppSpacing.md),
-                    _buildTodayCard(context, l10n, todaySession),
+                    _buildTodayCard(context, l10n, todaySession, unitSystem),
 
                     const SizedBox(height: AppSpacing.xl),
 
@@ -221,9 +224,15 @@ class HomeScreen extends ConsumerWidget {
                     WeekProgressCard(
                       sessionsCompleted: progress.completedSessions,
                       totalSessions: progress.totalSessions,
-                      volumeCompleted: progress.completedVolumeKm,
-                      totalVolume: progress.totalVolumeKm,
-                      volumeUnit: l10n.homeVolumeUnit,
+                      volumeCompleted: UnitFormatter.distanceValue(
+                        progress.completedVolumeKm,
+                        unitSystem,
+                      ),
+                      totalVolume: UnitFormatter.distanceValue(
+                        progress.totalVolumeKm,
+                        unitSystem,
+                      ),
+                      volumeUnit: UnitFormatter.unitLabel(unitSystem, l10n),
                       onTap: () => context.go(RouteNames.plan),
                     ),
                   ],
@@ -240,6 +249,7 @@ class HomeScreen extends ConsumerWidget {
     BuildContext context,
     AppLocalizations l10n,
     TrainingSession? session,
+    UnitSystem unitSystem,
   ) {
     if (session == null) {
       return const SizedBox.shrink();
@@ -252,7 +262,11 @@ class HomeScreen extends ConsumerWidget {
           ? UnitFormatter.formatDuration(session.durationMinutes!)
           : '-',
       distance: session.distanceKm != null
-          ? UnitFormatter.formatDistanceKm(session.distanceKm!)
+          ? UnitFormatter.formatDistanceLabel(
+              session.distanceKm!,
+              unitSystem,
+              l10n,
+            )
           : '-',
       targetGuidance: session.description ?? _sessionDescription(session, l10n),
       sessionTypeIconAsset: session.type.iconAsset,

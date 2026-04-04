@@ -18,6 +18,8 @@ import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../training_plan/domain/models/week_progress.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 // ── Screen ────────────────────────────────────────────────────────────────────
 
@@ -93,6 +95,8 @@ class WeeklyPlanScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context)!;
     final plan = ref.watch(trainingPlanProvider);
     final progress = ref.watch(weekProgressProvider);
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final sessions = plan.currentWeekSessions;
     final weekStart = sessions.isNotEmpty
         ? sessions.first.date.day.toString()
@@ -123,7 +127,11 @@ class WeeklyPlanScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.xl),
 
               // Week stats card
-              _WeekStatsSummary(l10n: l10n, progress: progress),
+              _WeekStatsSummary(
+                l10n: l10n,
+                progress: progress,
+                unitSystem: unitSystem,
+              ),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -145,7 +153,11 @@ class WeeklyPlanScreen extends ConsumerWidget {
                         ? l10n.weeklyPlanRestSubtitle
                         : null,
                     distance: s.distanceKm != null
-                        ? UnitFormatter.formatDistanceKm(s.distanceKm!)
+                        ? UnitFormatter.formatDistanceLabel(
+                            s.distanceKm!,
+                            unitSystem,
+                            l10n,
+                          )
                         : null,
                     duration: s.durationMinutes != null
                         ? UnitFormatter.formatDuration(s.durationMinutes!)
@@ -182,10 +194,15 @@ class WeeklyPlanScreen extends ConsumerWidget {
 // ── Week stats summary card ───────────────────────────────────────────────────
 
 class _WeekStatsSummary extends StatelessWidget {
-  const _WeekStatsSummary({required this.l10n, required this.progress});
+  const _WeekStatsSummary({
+    required this.l10n,
+    required this.progress,
+    required this.unitSystem,
+  });
 
   final AppLocalizations l10n;
   final WeekProgress progress;
+  final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
@@ -200,7 +217,11 @@ class _WeekStatsSummary extends StatelessWidget {
         children: [
           StatColumn(
             label: l10n.weeklyPlanDistanceLabel,
-            value: UnitFormatter.formatDistanceKm(progress.totalVolumeKm),
+            value: UnitFormatter.formatDistanceLabel(
+              progress.totalVolumeKm,
+              unitSystem,
+              l10n,
+            ),
           ),
           StatColumn(
             label: l10n.weeklyPlanTimeLabel,

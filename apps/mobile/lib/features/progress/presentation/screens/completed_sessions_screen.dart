@@ -15,6 +15,8 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../session_detail/presentation/screens/session_detail_screen.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../progress_provider.dart';
 
 ({String iconAsset, Color iconColor, Color iconBg}) _completedSessionIconData(
@@ -106,6 +108,8 @@ class CompletedSessionsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final sessions = ref.watch(completedSessionsProvider);
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -166,7 +170,7 @@ class CompletedSessionsScreen extends ConsumerWidget {
                               title: _completedSessionTitle(session.type, l10n),
                               meta:
                                   '${_completedSessionDateLabel(session.date, context, l10n)} • '
-                                  '${UnitFormatter.formatDistanceKm(session.distanceKm ?? 0)}',
+                                  '${UnitFormatter.formatDistanceLabel(session.distanceKm ?? 0, unitSystem, l10n)}',
                               duration: UnitFormatter.formatDuration(
                                 session.durationMinutes ?? 0,
                               ),
