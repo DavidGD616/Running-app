@@ -135,6 +135,12 @@
   "continueButton": "Continue",
   "@continueButton": { "description": "Generic continue button label" },
 
+  "saveChangesButton": "Save Changes",
+  "@saveChangesButton": { "description": "Generic save changes button label" },
+
+  "setGoalButton": "Set Goal",
+  "@setGoalButton": { "description": "Button label to save a new goal" },
+
   "homeReady": "Your plan is ready!",
   "@homeReady": { "description": "Heading on the home screen" },
 
@@ -1472,6 +1478,45 @@
 
   "settingsUpdatePlanInfo": "Update Plan Info",
   "@settingsUpdatePlanInfo": { "description": "Row label to update training plan info" },
+
+  "settingsEditGoal": "Edit Goal",
+  "@settingsEditGoal": { "description": "Settings row label to edit the current goal" },
+
+  "settingsNewGoal": "New Goal",
+  "@settingsNewGoal": { "description": "Settings row label to create a new goal" },
+
+  "settingsChangeSchedule": "Change Schedule",
+  "@settingsChangeSchedule": { "description": "Settings row label to edit the training schedule" },
+
+  "settingsEditGoalIntroTitle": "Update the goal you are already training for",
+  "@settingsEditGoalIntroTitle": { "description": "Title on the intro screen before editing the current goal" },
+
+  "settingsEditGoalIntroSubtitle": "You can review your race, date, priority, and time targets before saving the changes.",
+  "@settingsEditGoalIntroSubtitle": { "description": "Subtitle on the intro screen before editing the current goal" },
+
+  "settingsEditGoalIntroPointRace": "Adjust your race or target distance.",
+  "@settingsEditGoalIntroPointRace": { "description": "First explainer item for edit goal intro screen" },
+
+  "settingsEditGoalIntroPointDate": "Update the race date if your timeline has changed.",
+  "@settingsEditGoalIntroPointDate": { "description": "Second explainer item for edit goal intro screen" },
+
+  "settingsEditGoalIntroPointPriority": "Review your priority and pacing targets before saving.",
+  "@settingsEditGoalIntroPointPriority": { "description": "Third explainer item for edit goal intro screen" },
+
+  "settingsNewGoalIntroTitle": "Set a brand-new goal for your training",
+  "@settingsNewGoalIntroTitle": { "description": "Title on the intro screen before creating a new goal" },
+
+  "settingsNewGoalIntroSubtitle": "This flow starts fresh so you can choose a different target and save a new goal for your plan.",
+  "@settingsNewGoalIntroSubtitle": { "description": "Subtitle on the intro screen before creating a new goal" },
+
+  "settingsNewGoalIntroPointRace": "Choose a new race or custom distance.",
+  "@settingsNewGoalIntroPointRace": { "description": "First explainer item for new goal intro screen" },
+
+  "settingsNewGoalIntroPointDate": "Set a new date and timeline for the goal.",
+  "@settingsNewGoalIntroPointDate": { "description": "Second explainer item for new goal intro screen" },
+
+  "settingsNewGoalIntroPointPlan": "Save a fresh goal without changing your schedule here.",
+  "@settingsNewGoalIntroPointPlan": { "description": "Third explainer item for new goal intro screen" },
 
   "settingsPreferencesSection": "Preferences",
   "@settingsPreferencesSection": { "description": "Preferences section header" },

@@ -144,6 +144,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueButton => 'Continue';
 
   @override
+  String get saveChangesButton => 'Save Changes';
+
+  @override
+  String get setGoalButton => 'Set Goal';
+
+  @override
   String get homeReady => 'Your plan is ready!';
 
   @override
@@ -1479,6 +1485,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsUpdatePlanInfo => 'Update Plan Info';
+
+  @override
+  String get settingsEditGoal => 'Edit Goal';
+
+  @override
+  String get settingsNewGoal => 'New Goal';
+
+  @override
+  String get settingsChangeSchedule => 'Change Schedule';
+
+  @override
+  String get settingsEditGoalIntroTitle =>
+      'Update the goal you are already training for';
+
+  @override
+  String get settingsEditGoalIntroSubtitle =>
+      'You can review your race, date, priority, and time targets before saving the changes.';
+
+  @override
+  String get settingsEditGoalIntroPointRace =>
+      'Adjust your race or target distance.';
+
+  @override
+  String get settingsEditGoalIntroPointDate =>
+      'Update the race date if your timeline has changed.';
+
+  @override
+  String get settingsEditGoalIntroPointPriority =>
+      'Review your priority and pacing targets before saving.';
+
+  @override
+  String get settingsNewGoalIntroTitle =>
+      'Set a brand-new goal for your training';
+
+  @override
+  String get settingsNewGoalIntroSubtitle =>
+      'This flow starts fresh so you can choose a different target and save a new goal for your plan.';
+
+  @override
+  String get settingsNewGoalIntroPointRace =>
+      'Choose a new race or custom distance.';
+
+  @override
+  String get settingsNewGoalIntroPointDate =>
+      'Set a new date and timeline for the goal.';
+
+  @override
+  String get settingsNewGoalIntroPointPlan =>
+      'Save a fresh goal without changing your schedule here.';
 
   @override
   String get settingsPreferencesSection => 'Preferences';

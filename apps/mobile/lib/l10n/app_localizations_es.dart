@@ -144,6 +144,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get continueButton => 'Continuar';
 
   @override
+  String get saveChangesButton => 'Guardar cambios';
+
+  @override
+  String get setGoalButton => 'Definir objetivo';
+
+  @override
   String get homeReady => '¡Tu plan está listo!';
 
   @override
@@ -1486,6 +1492,55 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsUpdatePlanInfo => 'Actualizar plan';
+
+  @override
+  String get settingsEditGoal => 'Editar objetivo';
+
+  @override
+  String get settingsNewGoal => 'Nuevo objetivo';
+
+  @override
+  String get settingsChangeSchedule => 'Cambiar horario';
+
+  @override
+  String get settingsEditGoalIntroTitle =>
+      'Actualiza el objetivo para el que ya estás entrenando';
+
+  @override
+  String get settingsEditGoalIntroSubtitle =>
+      'Podrás revisar tu carrera, fecha, prioridad y tiempos objetivo antes de guardar los cambios.';
+
+  @override
+  String get settingsEditGoalIntroPointRace =>
+      'Ajusta tu carrera o distancia objetivo.';
+
+  @override
+  String get settingsEditGoalIntroPointDate =>
+      'Actualiza la fecha si tu calendario cambió.';
+
+  @override
+  String get settingsEditGoalIntroPointPriority =>
+      'Revisa tu prioridad y tus tiempos antes de guardar.';
+
+  @override
+  String get settingsNewGoalIntroTitle =>
+      'Define un objetivo completamente nuevo';
+
+  @override
+  String get settingsNewGoalIntroSubtitle =>
+      'Este flujo empieza desde cero para que puedas elegir una meta distinta y guardarla para tu plan.';
+
+  @override
+  String get settingsNewGoalIntroPointRace =>
+      'Elige una nueva carrera o una distancia personalizada.';
+
+  @override
+  String get settingsNewGoalIntroPointDate =>
+      'Define una nueva fecha y el nuevo plazo.';
+
+  @override
+  String get settingsNewGoalIntroPointPlan =>
+      'Guarda un nuevo objetivo sin cambiar aquí tu horario.';
 
   @override
   String get settingsPreferencesSection => 'Preferencias';

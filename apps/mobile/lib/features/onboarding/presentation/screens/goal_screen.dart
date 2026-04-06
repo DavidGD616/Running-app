@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
@@ -18,8 +19,12 @@ import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../../l10n/app_localizations.dart';
 
+enum GoalFlowMode { onboarding, editGoal, newGoal }
+
 class GoalScreen extends ConsumerStatefulWidget {
-  const GoalScreen({super.key});
+  const GoalScreen({super.key, this.mode = GoalFlowMode.onboarding});
+
+  final GoalFlowMode mode;
 
   @override
   ConsumerState<GoalScreen> createState() => _GoalScreenState();
@@ -33,6 +38,20 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   Duration? _currentTime;
   Duration? _targetTime;
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.mode != GoalFlowMode.newGoal) {
+      final answers = ref.read(onboardingProvider);
+      _selectedRace = answers['race'] as String?;
+      _hasRaceDate = answers['hasRaceDate'] as bool?;
+      _raceDate = answers['raceDate'] as DateTime?;
+      _priority = answers['priority'] as String?;
+      _currentTime = answers['currentTime'] as Duration?;
+      _targetTime = answers['targetTime'] as Duration?;
+    }
+  }
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -150,10 +169,19 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final unitSystem = ref
-        .watch(userPreferencesProvider)
-        .value
-        ?.unitSystem ?? UnitSystem.km;
+    final isSettingsFlow = widget.mode != GoalFlowMode.onboarding;
+    final screenTitle = switch (widget.mode) {
+      GoalFlowMode.onboarding => l10n.goalTitle,
+      GoalFlowMode.editGoal => l10n.settingsEditGoal,
+      GoalFlowMode.newGoal => l10n.settingsNewGoal,
+    };
+    final ctaLabel = switch (widget.mode) {
+      GoalFlowMode.onboarding => l10n.continueButton,
+      GoalFlowMode.editGoal => l10n.saveChangesButton,
+      GoalFlowMode.newGoal => l10n.setGoalButton,
+    };
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final races = _buildRaces(unitSystem, l10n);
 
     final showRaceDateQuestion = _selectedRace != null;
@@ -161,7 +189,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     final showPriority = _selectedRace != null && _hasRaceDate != null;
     final showTimeFields = _priority == OnboardingValues.priorityImproveTime;
 
-    final isComplete = _selectedRace != null &&
+    final isComplete =
+        _selectedRace != null &&
         _hasRaceDate != null &&
         (_hasRaceDate == false || _raceDate != null) &&
         _priority != null &&
@@ -170,58 +199,59 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
+      appBar: isSettingsFlow ? AppDetailHeaderBar(title: screenTitle) : null,
       body: SafeArea(
+        top: !isSettingsFlow,
         child: Column(
           children: [
-            // Top nav: back + step counter + progress bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm,
-                AppSpacing.xs,
-                AppSpacing.screen,
-                0,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/chevron_left.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.textPrimary,
-                                BlendMode.srcIn,
+            if (!isSettingsFlow)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/chevron_left.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Text(
-                        l10n.onboardingStep(1, 9),
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          l10n.onboardingStep(1, 9),
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 1, total: 9),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: AppProgressBar(current: 1, total: 9),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            // Scrollable form
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
@@ -234,15 +264,17 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.goalTitle, style: AppTypography.headlineMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      l10n.goalSubtitle,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    if (!isSettingsFlow) ...[
+                      Text(l10n.goalTitle, style: AppTypography.headlineMedium),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.goalSubtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
 
                     // Goal race cards
                     Text(l10n.goalRaceLabel, style: AppTypography.labelLarge),
@@ -269,7 +301,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     // Do you have a race date? (reveals after selecting goal)
                     if (showRaceDateQuestion) ...[
                       const SizedBox(height: AppSpacing.sm),
-                      Text(l10n.raceHasDateLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.raceHasDateLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Row(
                         children: [
@@ -333,16 +368,19 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                             label: OnboardingValues.localizePriority(p, l10n),
                             isSelected: _priority == p,
                             onTap: () {
-                            setState(() => _priority = p);
-                            _scrollToBottom();
-                          },
+                              setState(() => _priority = p);
+                              _scrollToBottom();
+                            },
                           ),
                         ),
                       ),
 
                       // Time pickers (only if Improve my time)
                       if (showTimeFields) ...[
-                        Text(l10n.currentRaceTime, style: AppTypography.labelLarge),
+                        Text(
+                          l10n.currentRaceTime,
+                          style: AppTypography.labelLarge,
+                        ),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
                           hint: l10n.tapToSetTime,
@@ -352,12 +390,14 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                           onTap: () => _showTimePicker(
                             title: l10n.currentRaceTime,
                             initial: _currentTime,
-                            onConfirm: (d) =>
-                                setState(() => _currentTime = d),
+                            onConfirm: (d) => setState(() => _currentTime = d),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.lg),
-                        Text(l10n.targetRaceTime, style: AppTypography.labelLarge),
+                        Text(
+                          l10n.targetRaceTime,
+                          style: AppTypography.labelLarge,
+                        ),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
                           hint: l10n.tapToSetTime,
@@ -367,8 +407,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                           onTap: () => _showTimePicker(
                             title: l10n.targetRaceTime,
                             initial: _targetTime,
-                            onConfirm: (d) =>
-                                setState(() => _targetTime = d),
+                            onConfirm: (d) => setState(() => _targetTime = d),
                           ),
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -379,7 +418,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
               ),
             ),
 
-            // Continue button
+            // Continue / Save button
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screen,
@@ -388,10 +427,12 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: l10n.continueButton,
+                label: ctaLabel,
                 onPressed: isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setGoal(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setGoal(
                               race: _selectedRace!,
                               hasRaceDate: _hasRaceDate!,
                               raceDate: _raceDate,
@@ -399,7 +440,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                               currentTime: _currentTime,
                               targetTime: _targetTime,
                             );
-                        context.push(RouteNames.fitness);
+                        if (isSettingsFlow) {
+                          context.pop();
+                        } else {
+                          context.push(RouteNames.fitness);
+                        }
                       }
                     : null,
               ),
@@ -415,7 +460,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
 class _Race {
   const _Race(this.name, this.displayName, this.subtitle, this.icon);
-  final String name;        // canonical key — used for comparisons
+  final String name; // canonical key — used for comparisons
   final String displayName; // localized — shown in UI
   final String subtitle;
   final String icon;
@@ -445,7 +490,9 @@ class _RaceCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
@@ -523,14 +570,18 @@ class _ToggleButton extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: AppTypography.textTheme.titleMedium?.copyWith(
-              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -564,7 +615,9 @@ class _PriorityCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
@@ -691,8 +744,9 @@ class _WheelColumn extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Expanded(
             child: CupertinoPicker(
-              scrollController:
-                  FixedExtentScrollController(initialItem: initial),
+              scrollController: FixedExtentScrollController(
+                initialItem: initial,
+              ),
               itemExtent: 40,
               onSelectedItemChanged: onChanged,
               selectionOverlay: CupertinoPickerDefaultSelectionOverlay(

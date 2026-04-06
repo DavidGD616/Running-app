@@ -8,6 +8,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
@@ -19,7 +20,9 @@ import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class CurrentFitnessScreen extends ConsumerStatefulWidget {
-  const CurrentFitnessScreen({super.key});
+  const CurrentFitnessScreen({super.key, this.isEditingPlanInfo = false});
+
+  final bool isEditingPlanInfo;
 
   @override
   ConsumerState<CurrentFitnessScreen> createState() =>
@@ -44,6 +47,21 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
   Duration? _benchmarkTime;
 
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    final answers = ref.read(onboardingProvider);
+    _experience = answers['experience'] as String?;
+    _canRun10Min = answers['canRun10Min'] as bool?;
+    _runningDays = answers['runningDays'] as String?;
+    _weeklyVolume = answers['weeklyVolume'] as String?;
+    _longestRun = answers['longestRun'] as String?;
+    _canCompleteGoalDist = answers['canCompleteGoalDist'] as String?;
+    _raceDistanceBefore = answers['raceDistanceBefore'] as String?;
+    _benchmark = answers['benchmark'] as String?;
+    _benchmarkTime = answers['benchmarkTime'] as Duration?;
+  }
 
   bool get _isBrandNew => _experience == OnboardingValues.experienceBrandNew;
 
@@ -211,57 +229,61 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
+      appBar: widget.isEditingPlanInfo
+          ? AppDetailHeaderBar(title: l10n.fitnessTitle)
+          : null,
       body: SafeArea(
+        top: !widget.isEditingPlanInfo,
         child: Column(
           children: [
-            // ── Top nav ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm,
-                AppSpacing.xs,
-                AppSpacing.screen,
-                0,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/chevron_left.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.textPrimary,
-                                BlendMode.srcIn,
+            if (!widget.isEditingPlanInfo)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/chevron_left.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Text(
-                        l10n.onboardingStep(2, 9),
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          l10n.onboardingStep(2, 9),
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 2, total: 9),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: AppProgressBar(current: 2, total: 9),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
@@ -276,18 +298,20 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      l10n.fitnessTitle,
-                      style: AppTypography.headlineMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      l10n.fitnessSubtitle,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    if (!widget.isEditingPlanInfo) ...[
+                      Text(
+                        l10n.fitnessTitle,
+                        style: AppTypography.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.fitnessSubtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
 
                     // ── Running experience ───────────────────────────────────
                     Text(
@@ -646,7 +670,9 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: l10n.continueButton,
+                label: widget.isEditingPlanInfo
+                    ? l10n.saveChangesButton
+                    : l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref
@@ -662,7 +688,11 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                               benchmark: _benchmark,
                               benchmarkTime: _benchmarkTime,
                             );
-                        context.push(RouteNames.schedule);
+                        if (widget.isEditingPlanInfo) {
+                          context.pop();
+                        } else {
+                          context.push(RouteNames.schedule);
+                        }
                       }
                     : null,
               ),

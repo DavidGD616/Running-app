@@ -22,6 +22,14 @@ abstract class RouteNames {
   static const plan = '/plan';
   static const progress = '/progress';
   static const settings = '/settings';
+  static const settingsUpdatePlan = '/settings/update-plan';
+  static const settingsUpdatePlanEditGoal = '/settings/update-plan/edit-goal';
+  static const settingsUpdatePlanEditGoalForm =
+      '/settings/update-plan/edit-goal/form';
+  static const settingsUpdatePlanNewGoal = '/settings/update-plan/new-goal';
+  static const settingsUpdatePlanNewGoalForm =
+      '/settings/update-plan/new-goal/form';
+  static const settingsUpdatePlanSchedule = '/settings/update-plan/schedule';
   static const settingsLanguage = '/settings/language';
   static const settingsUnits = '/settings/units';
   static const sessionDetail = '/session-detail';

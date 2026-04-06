@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
@@ -14,7 +15,9 @@ import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class ScheduleScreen extends ConsumerStatefulWidget {
-  const ScheduleScreen({super.key});
+  const ScheduleScreen({super.key, this.isEditingPlanInfo = false});
+
+  final bool isEditingPlanInfo;
 
   @override
   ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -29,6 +32,20 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   String? _preferredTimeOfDay;
 
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    final answers = ref.read(onboardingProvider);
+    _trainingDays = answers['trainingDays'] as String?;
+    _longRunDay = answers['longRunDay'] as String?;
+    _weekdayTime = answers['weekdayTime'] as String?;
+    _weekendTime = answers['weekendTime'] as String?;
+    _hardDays.addAll(
+      (answers['hardDays'] as List?)?.cast<String>() ?? const [],
+    );
+    _preferredTimeOfDay = answers['preferredTimeOfDay'] as String?;
+  }
 
   bool get _isComplete =>
       _trainingDays != null &&
@@ -90,84 +107,106 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
       OnboardingValues.timeOfDayEvening,
       OnboardingValues.timeOfDayNoPreference,
     ];
-    final trainingDayOptions = const ['2', '3', '4', '5', '6', '7']
-        .map((day) => (key: day, label: day))
-        .toList();
+    final trainingDayOptions = const [
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+    ].map((day) => (key: day, label: day)).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
+      appBar: widget.isEditingPlanInfo
+          ? AppDetailHeaderBar(title: l10n.scheduleTitle)
+          : null,
       body: SafeArea(
+        top: !widget.isEditingPlanInfo,
         child: Column(
           children: [
-            // ── Top nav ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/chevron_left.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                AppColors.textPrimary,
-                                BlendMode.srcIn,
+            if (!widget.isEditingPlanInfo)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/chevron_left.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Text(
-                        l10n.onboardingStep(3, 9),
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          l10n.onboardingStep(3, 9),
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 3, total: 9),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: AppProgressBar(current: 3, total: 9),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.scheduleTitle, style: AppTypography.headlineMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      l10n.scheduleSubtitle,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    if (!widget.isEditingPlanInfo) ...[
+                      Text(
+                        l10n.scheduleTitle,
+                        style: AppTypography.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.scheduleSubtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
 
                     // ── 1. Training days per week ─────────────────────────────
-                    Text(l10n.trainingDaysLabel, style: AppTypography.labelLarge),
+                    Text(
+                      l10n.trainingDaysLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     _SegmentedControl(
                       options: trainingDayOptions,
@@ -188,7 +227,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 2. Preferred long run day ─────────────────────────────
                     if (_trainingDays != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.longRunDayLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.longRunDayLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         l10n.longRunDayHelper,
@@ -201,20 +243,22 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: days
-                            .map((day) => _Chip(
-                                  label: OnboardingValues.localizeDay(day, l10n),
-                                  isSelected: _longRunDay == day,
-                                  onTap: () {
-                                    setState(() {
-                                      _longRunDay = day;
-                                      _weekdayTime = null;
-                                      _weekendTime = null;
-                                      _hardDays.clear();
-                                      _preferredTimeOfDay = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (day) => _Chip(
+                                label: OnboardingValues.localizeDay(day, l10n),
+                                isSelected: _longRunDay == day,
+                                onTap: () {
+                                  setState(() {
+                                    _longRunDay = day;
+                                    _weekdayTime = null;
+                                    _weekendTime = null;
+                                    _hardDays.clear();
+                                    _preferredTimeOfDay = null;
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -222,28 +266,33 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 3. Weekday time available ─────────────────────────────
                     if (_longRunDay != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.weekdayTimeLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.weekdayTimeLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: weekdayTimeOptions
-                            .map((t) => _Chip(
-                                  label: OnboardingValues.localizeTimeSlot(
-                                    t,
-                                    l10n,
-                                  ),
-                                  isSelected: _weekdayTime == t,
-                                  onTap: () {
-                                    setState(() {
-                                      _weekdayTime = t;
-                                      _weekendTime = null;
-                                      _hardDays.clear();
-                                      _preferredTimeOfDay = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (t) => _Chip(
+                                label: OnboardingValues.localizeTimeSlot(
+                                  t,
+                                  l10n,
+                                ),
+                                isSelected: _weekdayTime == t,
+                                onTap: () {
+                                  setState(() {
+                                    _weekdayTime = t;
+                                    _weekendTime = null;
+                                    _hardDays.clear();
+                                    _preferredTimeOfDay = null;
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -251,27 +300,32 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 4. Weekend time available ─────────────────────────────
                     if (_weekdayTime != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.weekendTimeLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.weekendTimeLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: weekendTimeOptions
-                            .map((t) => _Chip(
-                                  label: OnboardingValues.localizeTimeSlot(
-                                    t,
-                                    l10n,
-                                  ),
-                                  isSelected: _weekendTime == t,
-                                  onTap: () {
-                                    setState(() {
-                                      _weekendTime = t;
-                                      _hardDays.clear();
-                                      _preferredTimeOfDay = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (t) => _Chip(
+                                label: OnboardingValues.localizeTimeSlot(
+                                  t,
+                                  l10n,
+                                ),
+                                isSelected: _weekendTime == t,
+                                onTap: () {
+                                  setState(() {
+                                    _weekendTime = t;
+                                    _hardDays.clear();
+                                    _preferredTimeOfDay = null;
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -292,19 +346,21 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: days
-                            .map((day) => _Chip(
-                                  label: OnboardingValues.localizeDay(day, l10n),
-                                  isSelected: _hardDays.contains(day),
-                                  onTap: () {
-                                    setState(() {
-                                      if (_hardDays.contains(day)) {
-                                        _hardDays.remove(day);
-                                      } else {
-                                        _hardDays.add(day);
-                                      }
-                                    });
-                                  },
-                                ))
+                            .map(
+                              (day) => _Chip(
+                                label: OnboardingValues.localizeDay(day, l10n),
+                                isSelected: _hardDays.contains(day),
+                                onTap: () {
+                                  setState(() {
+                                    if (_hardDays.contains(day)) {
+                                      _hardDays.remove(day);
+                                    } else {
+                                      _hardDays.add(day);
+                                    }
+                                  });
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -312,22 +368,27 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 6. Preferred time of day ──────────────────────────────
                     if (_weekendTime != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.timeOfDayLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.timeOfDayLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: timeOfDayOptions
-                            .map((t) => _Chip(
-                                  label: OnboardingValues.localizeTimeOfDay(
-                                    t,
-                                    l10n,
-                                  ),
-                                  isSelected: _preferredTimeOfDay == t,
-                                  onTap: () {
-                                    setState(() => _preferredTimeOfDay = t);
-                                  },
-                                ))
+                            .map(
+                              (t) => _Chip(
+                                label: OnboardingValues.localizeTimeOfDay(
+                                  t,
+                                  l10n,
+                                ),
+                                isSelected: _preferredTimeOfDay == t,
+                                onTap: () {
+                                  setState(() => _preferredTimeOfDay = t);
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -339,14 +400,20 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
-                label: l10n.continueButton,
+                label: widget.isEditingPlanInfo
+                    ? l10n.saveChangesButton
+                    : l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setSchedule(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setSchedule(
                               trainingDays: _trainingDays!,
                               longRunDay: _longRunDay!,
                               weekdayTime: _weekdayTime!,
@@ -354,7 +421,11 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                               hardDays: _hardDays.toList(),
                               preferredTimeOfDay: _preferredTimeOfDay!,
                             );
-                        context.push(RouteNames.health);
+                        if (widget.isEditingPlanInfo) {
+                          context.pop();
+                        } else {
+                          context.push(RouteNames.health);
+                        }
                       }
                     : null,
               ),
@@ -397,7 +468,9 @@ class _SegmentedControl extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
@@ -443,10 +516,14 @@ class _Chip extends StatelessWidget {
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.accentPrimary : AppColors.backgroundCard,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.backgroundCard,
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-              color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+              color: isSelected
+                  ? AppColors.accentPrimary
+                  : AppColors.borderDefault,
             ),
           ),
           child: Center(

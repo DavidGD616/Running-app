@@ -24,6 +24,8 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/weekly_plan/presentation/screens/weekly_plan_screen.dart';
 import '../../features/progress/presentation/screens/progress_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
+import '../../features/settings/presentation/screens/settings_goal_intro_screen.dart';
+import '../../features/settings/presentation/screens/settings_update_plan_screen.dart';
 import '../../features/settings/presentation/screens/settings_language_screen.dart';
 import '../../features/settings/presentation/screens/settings_units_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
@@ -112,6 +114,34 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.planReady,
       builder: (context, state) => const PlanReadyScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlan,
+      builder: (context, state) => const SettingsUpdatePlanScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoal,
+      builder: (context, state) =>
+          const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.editGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoalForm,
+      builder: (context, state) =>
+          const GoalScreen(mode: GoalFlowMode.editGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoal,
+      builder: (context, state) =>
+          const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.newGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoalForm,
+      builder: (context, state) => const GoalScreen(mode: GoalFlowMode.newGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanSchedule,
+      builder: (context, state) =>
+          const ScheduleScreen(isEditingPlanInfo: true),
     ),
     GoRoute(
       path: RouteNames.settingsLanguage,

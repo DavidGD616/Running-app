@@ -362,6 +362,18 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get continueButton;
 
+  /// Generic save changes button label
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChangesButton;
+
+  /// Button label to save a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'Set Goal'**
+  String get setGoalButton;
+
   /// Heading on the home screen
   ///
   /// In en, this message translates to:
@@ -2866,6 +2878,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Update Plan Info'**
   String get settingsUpdatePlanInfo;
+
+  /// Settings row label to edit the current goal
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Goal'**
+  String get settingsEditGoal;
+
+  /// Settings row label to create a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'New Goal'**
+  String get settingsNewGoal;
+
+  /// Settings row label to edit the training schedule
+  ///
+  /// In en, this message translates to:
+  /// **'Change Schedule'**
+  String get settingsChangeSchedule;
+
+  /// Title on the intro screen before editing the current goal
+  ///
+  /// In en, this message translates to:
+  /// **'Update the goal you are already training for'**
+  String get settingsEditGoalIntroTitle;
+
+  /// Subtitle on the intro screen before editing the current goal
+  ///
+  /// In en, this message translates to:
+  /// **'You can review your race, date, priority, and time targets before saving the changes.'**
+  String get settingsEditGoalIntroSubtitle;
+
+  /// First explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust your race or target distance.'**
+  String get settingsEditGoalIntroPointRace;
+
+  /// Second explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Update the race date if your timeline has changed.'**
+  String get settingsEditGoalIntroPointDate;
+
+  /// Third explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review your priority and pacing targets before saving.'**
+  String get settingsEditGoalIntroPointPriority;
+
+  /// Title on the intro screen before creating a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'Set a brand-new goal for your training'**
+  String get settingsNewGoalIntroTitle;
+
+  /// Subtitle on the intro screen before creating a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'This flow starts fresh so you can choose a different target and save a new goal for your plan.'**
+  String get settingsNewGoalIntroSubtitle;
+
+  /// First explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new race or custom distance.'**
+  String get settingsNewGoalIntroPointRace;
+
+  /// Second explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new date and timeline for the goal.'**
+  String get settingsNewGoalIntroPointDate;
+
+  /// Third explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Save a fresh goal without changing your schedule here.'**
+  String get settingsNewGoalIntroPointPlan;
 
   /// Preferences section header
   ///

@@ -98,7 +98,7 @@ class SettingsScreen extends ConsumerWidget {
                     iconAsset: 'assets/icons/target.svg',
                     iconColor: AppColors.accentPrimary,
                     variant: SettingsRowVariant.chevron,
-                    onTap: () {},
+                    onTap: () => context.push(RouteNames.settingsUpdatePlan),
                   ),
                 ],
               ),
