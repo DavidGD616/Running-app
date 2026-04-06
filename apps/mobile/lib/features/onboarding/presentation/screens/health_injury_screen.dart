@@ -74,7 +74,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
             // ── Top nav ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.screen,
+                0,
               ),
               child: Column(
                 children: [
@@ -100,7 +103,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(4, 9),
+                        l10n.onboardingStep(4, 7),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -111,7 +114,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 4, total: 9),
+                    child: AppProgressBar(current: 4, total: 7),
                   ),
                 ],
               ),
@@ -122,8 +125,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,28 +144,32 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Current pain or injury? ────────────────────────────
-                    Text(l10n.currentPainLabel, style: AppTypography.labelLarge),
+                    Text(
+                      l10n.currentPainLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.md),
-                    ...painOptions
-                        .map((option) => Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: _SelectCard(
-                                label: OnboardingValues.localizePainLevel(
-                                  option,
-                                  l10n,
-                                ),
-                                isSelected: _painLevel == option,
-                                onTap: () {
-                                  setState(() {
-                                    _painLevel = option;
-                                    _injuryHistory = null;
-                                    _healthConditions = null;
-                                    _planPreference = null;
-                                  });
-                                  _scrollToBottom();
-                                },
-                              ),
-                            )),
+                    ...painOptions.map(
+                      (option) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _SelectCard(
+                          label: OnboardingValues.localizePainLevel(
+                            option,
+                            l10n,
+                          ),
+                          isSelected: _painLevel == option,
+                          onTap: () {
+                            setState(() {
+                              _painLevel = option;
+                              _injuryHistory = null;
+                              _healthConditions = null;
+                              _planPreference = null;
+                            });
+                            _scrollToBottom();
+                          },
+                        ),
+                      ),
+                    ),
 
                     // ── 2. Running-related injury in the last 12 months? ──────
                     if (_painLevel != null) ...[
@@ -197,7 +206,8 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           Expanded(
                             child: _ToggleButton(
                               label: l10n.no,
-                              isSelected: _healthConditions == OnboardingValues.no,
+                              isSelected:
+                                  _healthConditions == OnboardingValues.no,
                               onTap: () {
                                 setState(() {
                                   _healthConditions = OnboardingValues.no;
@@ -211,7 +221,8 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           Expanded(
                             child: _ToggleButton(
                               label: l10n.yes,
-                              isSelected: _healthConditions == OnboardingValues.yes,
+                              isSelected:
+                                  _healthConditions == OnboardingValues.yes,
                               onTap: () {
                                 setState(() {
                                   _healthConditions = OnboardingValues.yes;
@@ -228,7 +239,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     // ── 4. Plan preference ────────────────────────────────────
                     if (_healthConditions != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.planPreferenceLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.planPreferenceLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _SelectCard(
                         label: l10n.planSafest,
@@ -269,14 +283,18 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
                 label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setHealth(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setHealth(
                               painLevel: _painLevel!,
                               injuryHistory: _injuryHistory!,
                               healthConditions: _healthConditions!,
@@ -324,7 +342,9 @@ class _SelectCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: subtitle != null
@@ -383,14 +403,18 @@ class _ToggleButton extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: AppTypography.titleMedium.copyWith(
-              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
             ),
           ),
         ),
@@ -430,7 +454,9 @@ class _SegmentedControl extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(

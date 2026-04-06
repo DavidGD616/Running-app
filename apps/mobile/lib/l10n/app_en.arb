@@ -185,7 +185,7 @@
   "onboardingIntroFeature3": "Schedule and preferences",
   "@onboardingIntroFeature3": { "description": "Third bullet on onboarding intro screen" },
 
-  "onboardingIntroFooter": "9 short sections · You can edit answers later",
+  "onboardingIntroFooter": "7 short sections · You can edit answers later",
   "@onboardingIntroFooter": { "description": "Footer note on onboarding intro screen" },
 
   "letsGo": "Let's Go",
@@ -980,10 +980,10 @@
     "description": "Schedule value in summary",
     "placeholders": { "days": { "type": "String" } }
   },
-  "summaryScheduleDetail": "Long run {longRun} · {time} · {weekday} weekdays",
+  "summaryScheduleDetail": "Long run {longRun} · Weekdays {weekday}",
   "@summaryScheduleDetail": {
     "description": "Schedule detail in summary",
-    "placeholders": { "longRun": { "type": "String" }, "time": { "type": "String" }, "weekday": { "type": "String" } }
+    "placeholders": { "longRun": { "type": "String" }, "weekday": { "type": "String" } }
   },
   "summaryNoPain": "No current pain",
   "@summaryNoPain": { "description": "Health value when no pain" },
@@ -1002,10 +1002,10 @@
     "description": "Training value showing guidance mode",
     "placeholders": { "mode": { "type": "String" } }
   },
-  "summaryTrainingDetail": "Speed: {speed} · Strength: {strength} · {surface} · {terrain}",
+  "summaryTrainingDetail": "Speed: {speed} · Walk/run: {walkRun}",
   "@summaryTrainingDetail": {
     "description": "Training detail in summary",
-    "placeholders": { "speed": { "type": "String" }, "strength": { "type": "String" }, "surface": { "type": "String" }, "terrain": { "type": "String" } }
+    "placeholders": { "speed": { "type": "String" }, "walkRun": { "type": "String" } }
   },
   "summaryDeviceConnected": "{device} connected",
   "@summaryDeviceConnected": {

@@ -443,7 +443,7 @@ abstract class AppLocalizations {
   /// Footer note on onboarding intro screen
   ///
   /// In en, this message translates to:
-  /// **'9 short sections · You can edit answers later'**
+  /// **'7 short sections · You can edit answers later'**
   String get onboardingIntroFooter;
 
   /// CTA button on the onboarding intro screen
@@ -2027,8 +2027,8 @@ abstract class AppLocalizations {
   /// Schedule detail in summary
   ///
   /// In en, this message translates to:
-  /// **'Long run {longRun} · {time} · {weekday} weekdays'**
-  String summaryScheduleDetail(String longRun, String time, String weekday);
+  /// **'Long run {longRun} · Weekdays {weekday}'**
+  String summaryScheduleDetail(String longRun, String weekday);
 
   /// Health value when no pain
   ///
@@ -2057,13 +2057,8 @@ abstract class AppLocalizations {
   /// Training detail in summary
   ///
   /// In en, this message translates to:
-  /// **'Speed: {speed} · Strength: {strength} · {surface} · {terrain}'**
-  String summaryTrainingDetail(
-    String speed,
-    String strength,
-    String surface,
-    String terrain,
-  );
+  /// **'Speed: {speed} · Walk/run: {walkRun}'**
+  String summaryTrainingDetail(String speed, String walkRun);
 
   /// Device value when watch is connected
   ///

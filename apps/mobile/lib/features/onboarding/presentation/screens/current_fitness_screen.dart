@@ -268,7 +268,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(2, 9),
+                          l10n.onboardingStep(2, 7),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -279,7 +279,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 2, total: 9),
+                      child: AppProgressBar(current: 2, total: 7),
                     ),
                   ],
                 ),

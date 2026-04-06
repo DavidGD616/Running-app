@@ -33,9 +33,6 @@ class _TrainingPreferencesScreenState
     extends ConsumerState<TrainingPreferencesScreen> {
   String? _guidanceMode;
   String? _speedWorkouts;
-  String? _strengthTraining;
-  String? _runSurface;
-  String? _terrain;
   String? _walkRunIntervals;
 
   final _scrollController = ScrollController();
@@ -46,18 +43,12 @@ class _TrainingPreferencesScreenState
     final answers = ref.read(onboardingProvider);
     _guidanceMode = answers['guidanceMode'] as String?;
     _speedWorkouts = answers['speedWorkouts'] as String?;
-    _strengthTraining = answers['strengthTraining'] as String?;
-    _runSurface = answers['runSurface'] as String?;
-    _terrain = answers['terrain'] as String?;
     _walkRunIntervals = answers['walkRunIntervals'] as String?;
   }
 
   bool get _isComplete =>
       _guidanceMode != null &&
       _speedWorkouts != null &&
-      _strengthTraining != null &&
-      _runSurface != null &&
-      _terrain != null &&
       _walkRunIntervals != null;
 
   void _scrollToBottom() {
@@ -88,14 +79,6 @@ class _TrainingPreferencesScreenState
       TrainingPreferencesFlowMode.newGoal =>
         RouteNames.settingsUpdatePlanNewGoalSummary,
     };
-
-    final surfaceOptions = [
-      OnboardingValues.surfaceRoad,
-      OnboardingValues.surfaceTreadmill,
-      OnboardingValues.surfaceTrack,
-      OnboardingValues.surfaceTrail,
-      OnboardingValues.surfaceMixed,
-    ];
     final guidanceOptions = [
       (
         key: OnboardingValues.guidanceEffort,
@@ -127,17 +110,9 @@ class _TrainingPreferencesScreenState
       (key: OnboardingValues.no, label: l10n.no),
       (key: OnboardingValues.onlyIfNeeded, label: l10n.onlyIfNeeded),
     ];
-    final strengthOptions = [
-      (key: OnboardingValues.strengthNone, label: l10n.no),
-      (key: OnboardingValues.strength1Day, label: l10n.strength1DayWeek),
-      (key: OnboardingValues.strength2Days, label: l10n.strength2DaysWeek),
-      (key: OnboardingValues.strength3Days, label: l10n.strength3DaysWeek),
-    ];
-    final terrainOptions = [
-      (key: OnboardingValues.terrainFlat, label: l10n.terrainFlat),
-      (key: OnboardingValues.terrainSomeHills, label: l10n.terrainSomeHills),
-      (key: OnboardingValues.terrainHilly, label: l10n.terrainHilly),
-      (key: OnboardingValues.terrainMixed, label: l10n.terrainMixed),
+    final yesNoOptions = [
+      (key: OnboardingValues.yes, label: l10n.yes),
+      (key: OnboardingValues.no, label: l10n.no),
     ];
 
     return Scaffold(
@@ -181,7 +156,7 @@ class _TrainingPreferencesScreenState
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(5, 9),
+                          l10n.onboardingStep(5, 7),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -192,7 +167,7 @@ class _TrainingPreferencesScreenState
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 5, total: 9),
+                      child: AppProgressBar(current: 5, total: 7),
                     ),
                   ],
                 ),
@@ -249,9 +224,6 @@ class _TrainingPreferencesScreenState
                             setState(() {
                               _guidanceMode = option.key;
                               _speedWorkouts = null;
-                              _strengthTraining = null;
-                              _runSurface = null;
-                              _terrain = null;
                               _walkRunIntervals = null;
                             });
                             _scrollToBottom();
@@ -275,9 +247,6 @@ class _TrainingPreferencesScreenState
                         onSelect: (val) {
                           setState(() {
                             _speedWorkouts = val;
-                            _strengthTraining = null;
-                            _runSurface = null;
-                            _terrain = null;
                             _walkRunIntervals = null;
                           });
                           _scrollToBottom();
@@ -285,89 +254,13 @@ class _TrainingPreferencesScreenState
                       ),
                     ],
 
-                    // ── 3. Strength training? ─────────────────────────────────
+                    // ── 3. Walk/run intervals? ────────────────────────────────
                     if (_speedWorkouts != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        l10n.strengthTrainingLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SegmentedControl(
-                        options: strengthOptions,
-                        selected: _strengthTraining,
-                        itemHeight: 64,
-                        onSelect: (val) {
-                          setState(() {
-                            _strengthTraining = val;
-                            _runSurface = null;
-                            _terrain = null;
-                            _walkRunIntervals = null;
-                          });
-                          _scrollToBottom();
-                        },
-                      ),
-                    ],
-
-                    // ── 4. Where do you run most? ─────────────────────────────
-                    if (_strengthTraining != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        l10n.runSurfaceLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: surfaceOptions
-                            .map(
-                              (s) => _Chip(
-                                label: OnboardingValues.localizeSurface(
-                                  s,
-                                  l10n,
-                                ),
-                                isSelected: _runSurface == s,
-                                onTap: () {
-                                  setState(() {
-                                    _runSurface = s;
-                                    _terrain = null;
-                                    _walkRunIntervals = null;
-                                  });
-                                  _scrollToBottom();
-                                },
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ],
-
-                    // ── 5. Terrain ────────────────────────────────────────────
-                    if (_runSurface != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.terrainLabel, style: AppTypography.labelLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      _SegmentedControl(
-                        options: terrainOptions,
-                        selected: _terrain,
-                        itemHeight: 64,
-                        onSelect: (val) {
-                          setState(() {
-                            _terrain = val;
-                            _walkRunIntervals = null;
-                          });
-                          _scrollToBottom();
-                        },
-                      ),
-                    ],
-
-                    // ── 6. Walk/run intervals? ────────────────────────────────
-                    if (_terrain != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(l10n.walkRunLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: speedWorkoutOptions,
+                        options: yesNoOptions,
                         selected: _walkRunIntervals,
                         itemHeight: 64,
                         onSelect: (val) =>
@@ -396,9 +289,6 @@ class _TrainingPreferencesScreenState
                             .setTraining(
                               guidanceMode: _guidanceMode!,
                               speedWorkouts: _speedWorkouts!,
-                              strengthTraining: _strengthTraining!,
-                              runSurface: _runSurface!,
-                              terrain: _terrain!,
                               walkRunIntervals: _walkRunIntervals!,
                             );
                         context.push(nextRoute);
@@ -552,55 +442,6 @@ class _SegmentedControl extends StatelessWidget {
             ),
           );
         }).toList(),
-      ),
-    );
-  }
-}
-
-// ─── Pill chip ────────────────────────────────────────────────────────────────
-
-class _Chip extends StatelessWidget {
-  const _Chip({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: IntrinsicWidth(
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          height: 48,
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
-          decoration: BoxDecoration(
-            color: isSelected
-                ? AppColors.accentPrimary
-                : AppColors.backgroundCard,
-            borderRadius: BorderRadius.circular(100),
-            border: Border.all(
-              color: isSelected
-                  ? AppColors.accentPrimary
-                  : AppColors.borderDefault,
-            ),
-          ),
-          child: Center(
-            child: Text(
-              label,
-              style: AppTypography.labelMedium.copyWith(
-                color: isSelected
-                    ? AppColors.backgroundPrimary
-                    : AppColors.textSecondary,
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -55,9 +55,6 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
 
     final guidanceMode = answers['guidanceMode'] as String?;
     final speedWorkouts = answers['speedWorkouts'] as String?;
-    final strengthTraining = answers['strengthTraining'] as String?;
-    final runSurface = answers['runSurface'] as String?;
-    final terrain = answers['terrain'] as String?;
     final walkRunIntervals = answers['walkRunIntervals'] as String?;
 
     return Scaffold(
@@ -146,39 +143,6 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
                               speedWorkouts != null
                                   ? OnboardingValues.localizeBinary(
                                       speedWorkouts,
-                                      l10n,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          _SummaryRow(
-                            label: l10n.strengthTrainingLabel,
-                            value: _valueOrDash(
-                              strengthTraining != null
-                                  ? OnboardingValues.localizeStrengthTraining(
-                                      strengthTraining,
-                                      l10n,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          _SummaryRow(
-                            label: l10n.runSurfaceLabel,
-                            value: _valueOrDash(
-                              runSurface != null
-                                  ? OnboardingValues.localizeSurface(
-                                      runSurface,
-                                      l10n,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          _SummaryRow(
-                            label: l10n.terrainLabel,
-                            value: _valueOrDash(
-                              terrain != null
-                                  ? OnboardingValues.localizeTerrain(
-                                      terrain,
                                       l10n,
                                     )
                                   : null,

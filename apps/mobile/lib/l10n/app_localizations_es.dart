@@ -189,7 +189,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '9 secciones cortas · Puedes editar tus respuestas después';
+      '7 secciones cortas · Puedes editar tus respuestas después';
 
   @override
   String get letsGo => '¡Empecemos!';
@@ -1006,8 +1006,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String summaryScheduleDetail(String longRun, String time, String weekday) {
-    return 'Carrera larga $longRun · $time · $weekday entre semana';
+  String summaryScheduleDetail(String longRun, String weekday) {
+    return 'Tirada larga $longRun · Entre semana $weekday';
   }
 
   @override
@@ -1029,13 +1029,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String summaryTrainingDetail(
-    String speed,
-    String strength,
-    String surface,
-    String terrain,
-  ) {
-    return 'Velocidad: $speed · Fuerza: $strength · $surface · $terrain';
+  String summaryTrainingDetail(String speed, String walkRun) {
+    return 'Velocidad: $speed · Caminar/correr: $walkRun';
   }
 
   @override

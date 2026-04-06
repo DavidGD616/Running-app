@@ -87,11 +87,9 @@ class SummaryScreen extends ConsumerWidget {
 
   String _scheduleDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final longRun = a['longRunDay'] as String?;
-    final time = a['preferredTimeOfDay'] as String?;
     final weekday = a['weekdayTime'] as String?;
     return l10n.summaryScheduleDetail(
       longRun != null ? OnboardingValues.localizeDay(longRun, l10n) : '—',
-      time != null ? OnboardingValues.localizeTimeOfDay(time, l10n) : '—',
       weekday != null ? OnboardingValues.localizeTimeSlot(weekday, l10n) : '—',
     );
   }
@@ -122,14 +120,10 @@ class SummaryScreen extends ConsumerWidget {
 
   String _trainingDetail(Map<String, dynamic> a, AppLocalizations l10n) {
     final speed = (a['speedWorkouts'] as String?) ?? '—';
-    final strength = (a['strengthTraining'] as String?) ?? '—';
-    final surface = (a['runSurface'] as String?) ?? '—';
-    final terrain = (a['terrain'] as String?) ?? '—';
+    final walkRun = (a['walkRunIntervals'] as String?) ?? '—';
     return l10n.summaryTrainingDetail(
       OnboardingValues.localizeBinary(speed, l10n),
-      OnboardingValues.localizeStrengthTraining(strength, l10n),
-      OnboardingValues.localizeSurface(surface, l10n),
-      OnboardingValues.localizeTerrain(terrain, l10n),
+      OnboardingValues.localizeBinary(walkRun, l10n),
     );
   }
 
@@ -137,67 +131,13 @@ class SummaryScreen extends ConsumerWidget {
     final hasWatch = a['hasWatch'] as String?;
     if (hasWatch == OnboardingValues.yes) {
       final device = (a['device'] as String?) ?? OnboardingValues.deviceOther;
-      return l10n.summaryDeviceConnected(
-        OnboardingValues.localizeDevice(device, l10n),
-      );
+      return OnboardingValues.localizeDevice(device, l10n);
     }
     if (hasWatch == OnboardingValues.no) return l10n.summaryNoWatch;
     return '—';
   }
 
-  String _deviceDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final hasWatch = a['hasWatch'] as String?;
-    if (hasWatch == OnboardingValues.yes) {
-      final usage = (a['dataUsage'] as String?) ?? '—';
-      final hr = (a['hrZones'] as String?) ?? '—';
-      final auto = (a['autoAdjust'] as String?) ?? '—';
-      return l10n.summaryDeviceDetail(
-        OnboardingValues.localizeDataUsage(usage, l10n),
-        OnboardingValues.localizeBinary(hr, l10n),
-        OnboardingValues.localizeAutoAdjust(auto, l10n),
-      );
-    }
-    final guidance = a['noWatchGuidance'] as String?;
-    return guidance != null
-        ? OnboardingValues.localizeNoWatchGuidance(guidance, l10n)
-        : '—';
-  }
-
-  String _recoveryValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final sleep = a['sleep'] as String?;
-    return sleep != null
-        ? l10n.summarySleepHours(OnboardingValues.localizeSleep(sleep, l10n))
-        : '—';
-  }
-
-  String _recoveryDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final work = (a['workLevel'] as String?) ?? '—';
-    final stress = (a['stressLevel'] as String?) ?? '—';
-    final feel = (a['dayFeeling'] as String?) ?? '—';
-    return l10n.summaryRecoveryDetail(
-      OnboardingValues.localizeWorkLevel(work, l10n),
-      OnboardingValues.localizeStress(stress, l10n),
-      OnboardingValues.localizeDayFeeling(feel, l10n),
-    );
-  }
-
-  String _motivationValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final list = a['motivations'] as List?;
-    if (list == null || list.isEmpty) return '—';
-    return list
-        .cast<String>()
-        .map((item) => OnboardingValues.localizeMotivation(item, l10n))
-        .join(', ');
-  }
-
-  String _motivationDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final tone = (a['coachingTone'] as String?) ?? '—';
-    final conf = (a['confidence'] as int?) ?? 5;
-    return l10n.summaryMotivationDetail(
-      OnboardingValues.localizeCoachingTone(tone, l10n),
-      conf.toString(),
-    );
-  }
+  String _deviceDetail(Map<String, dynamic> a, AppLocalizations l10n) => '—';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -243,7 +183,7 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(9, 9),
+                        l10n.onboardingStep(7, 7),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -254,7 +194,7 @@ class SummaryScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 9, total: 9),
+                    child: AppProgressBar(current: 7, total: 7),
                   ),
                 ],
               ),
@@ -332,22 +272,6 @@ class SummaryScreen extends ConsumerWidget {
                       value: _deviceValue(answers, l10n),
                       detail: _deviceDetail(answers, l10n),
                       onEdit: () => context.go(RouteNames.device),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _SummaryCard(
-                      icon: 'assets/icons/moon.svg',
-                      category: l10n.summaryRecovery,
-                      value: _recoveryValue(answers, l10n),
-                      detail: _recoveryDetail(answers, l10n),
-                      onEdit: () => context.go(RouteNames.recovery),
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    _SummaryCard(
-                      icon: 'assets/icons/motivation.svg',
-                      category: l10n.summaryMotivation,
-                      value: _motivationValue(answers, l10n),
-                      detail: _motivationDetail(answers, l10n),
-                      onEdit: () => context.go(RouteNames.motivation),
                     ),
                     const SizedBox(height: AppSpacing.xl),
 

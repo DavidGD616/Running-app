@@ -25,15 +25,32 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     Duration? currentTime,
     Duration? targetTime,
   }) {
-    state = {
+    final next = <String, dynamic>{
       ...state,
       'race': race,
       'hasRaceDate': hasRaceDate,
-      'raceDate': ?raceDate,
       'priority': priority,
-      'currentTime': ?currentTime,
-      'targetTime': ?targetTime,
     };
+
+    if (raceDate != null) {
+      next['raceDate'] = raceDate;
+    } else {
+      next.remove('raceDate');
+    }
+
+    if (currentTime != null) {
+      next['currentTime'] = currentTime;
+    } else {
+      next.remove('currentTime');
+    }
+
+    if (targetTime != null) {
+      next['targetTime'] = targetTime;
+    } else {
+      next.remove('targetTime');
+    }
+
+    state = next;
   }
 
   void setFitness({
@@ -67,17 +84,24 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     required String weekdayTime,
     required String weekendTime,
     required List<String> hardDays,
-    required String preferredTimeOfDay,
+    String? preferredTimeOfDay,
   }) {
-    state = {
+    final next = <String, dynamic>{
       ...state,
       'trainingDays': trainingDays,
       'longRunDay': longRunDay,
       'weekdayTime': weekdayTime,
       'weekendTime': weekendTime,
       'hardDays': hardDays,
-      'preferredTimeOfDay': preferredTimeOfDay,
     };
+
+    if (preferredTimeOfDay != null) {
+      next['preferredTimeOfDay'] = preferredTimeOfDay;
+    } else {
+      next.remove('preferredTimeOfDay');
+    }
+
+    state = next;
   }
 
   void setHealth({
@@ -98,20 +122,37 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
   void setTraining({
     required String guidanceMode,
     required String speedWorkouts,
-    required String strengthTraining,
-    required String runSurface,
-    required String terrain,
+    String? strengthTraining,
+    String? runSurface,
+    String? terrain,
     required String walkRunIntervals,
   }) {
-    state = {
+    final next = <String, dynamic>{
       ...state,
       'guidanceMode': guidanceMode,
       'speedWorkouts': speedWorkouts,
-      'strengthTraining': strengthTraining,
-      'runSurface': runSurface,
-      'terrain': terrain,
       'walkRunIntervals': walkRunIntervals,
     };
+
+    if (strengthTraining != null) {
+      next['strengthTraining'] = strengthTraining;
+    } else {
+      next.remove('strengthTraining');
+    }
+
+    if (runSurface != null) {
+      next['runSurface'] = runSurface;
+    } else {
+      next.remove('runSurface');
+    }
+
+    if (terrain != null) {
+      next['terrain'] = terrain;
+    } else {
+      next.remove('terrain');
+    }
+
+    state = next;
   }
 
   void setDevice({
@@ -125,18 +166,57 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     String? autoAdjust,
     String? noWatchGuidance,
   }) {
-    state = {
-      ...state,
-      'hasWatch': hasWatch,
-      'device': ?device,
-      'dataUsage': ?dataUsage,
-      'watchMetrics': ?watchMetrics,
-      'metrics': ?metrics,
-      'hrZones': ?hrZones,
-      'paceRecs': ?paceRecs,
-      'autoAdjust': ?autoAdjust,
-      'noWatchGuidance': ?noWatchGuidance,
-    };
+    final next = <String, dynamic>{...state, 'hasWatch': hasWatch};
+
+    if (device != null) {
+      next['device'] = device;
+    } else {
+      next.remove('device');
+    }
+
+    if (dataUsage != null) {
+      next['dataUsage'] = dataUsage;
+    } else {
+      next.remove('dataUsage');
+    }
+
+    if (watchMetrics != null) {
+      next['watchMetrics'] = watchMetrics;
+    } else {
+      next.remove('watchMetrics');
+    }
+
+    if (metrics != null) {
+      next['metrics'] = metrics;
+    } else {
+      next.remove('metrics');
+    }
+
+    if (hrZones != null) {
+      next['hrZones'] = hrZones;
+    } else {
+      next.remove('hrZones');
+    }
+
+    if (paceRecs != null) {
+      next['paceRecs'] = paceRecs;
+    } else {
+      next.remove('paceRecs');
+    }
+
+    if (autoAdjust != null) {
+      next['autoAdjust'] = autoAdjust;
+    } else {
+      next.remove('autoAdjust');
+    }
+
+    if (noWatchGuidance != null) {
+      next['noWatchGuidance'] = noWatchGuidance;
+    } else {
+      next.remove('noWatchGuidance');
+    }
+
+    state = next;
   }
 
   void setRecovery({
@@ -172,5 +252,5 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
 
 final onboardingProvider =
     NotifierProvider<OnboardingNotifier, Map<String, dynamic>>(
-  OnboardingNotifier.new,
-);
+      OnboardingNotifier.new,
+    );

@@ -29,7 +29,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   String? _weekdayTime;
   String? _weekendTime;
   final Set<String> _hardDays = {};
-  String? _preferredTimeOfDay;
 
   final _scrollController = ScrollController();
 
@@ -44,15 +43,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     _hardDays.addAll(
       (answers['hardDays'] as List?)?.cast<String>() ?? const [],
     );
-    _preferredTimeOfDay = answers['preferredTimeOfDay'] as String?;
   }
 
   bool get _isComplete =>
       _trainingDays != null &&
       _longRunDay != null &&
       _weekdayTime != null &&
-      _weekendTime != null &&
-      _preferredTimeOfDay != null;
+      _weekendTime != null;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,13 +97,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
       OnboardingValues.time2plusHours,
     ];
 
-    final timeOfDayOptions = [
-      OnboardingValues.timeOfDayEarlyMorning,
-      OnboardingValues.timeOfDayMorning,
-      OnboardingValues.timeOfDayAfternoon,
-      OnboardingValues.timeOfDayEvening,
-      OnboardingValues.timeOfDayNoPreference,
-    ];
     final trainingDayOptions = const [
       '2',
       '3',
@@ -157,7 +147,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(3, 9),
+                          l10n.onboardingStep(3, 7),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -168,7 +158,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 3, total: 9),
+                      child: AppProgressBar(current: 3, total: 7),
                     ),
                   ],
                 ),
@@ -218,7 +208,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                           _weekdayTime = null;
                           _weekendTime = null;
                           _hardDays.clear();
-                          _preferredTimeOfDay = null;
                         });
                         _scrollToBottom();
                       },
@@ -253,7 +242,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                                     _weekdayTime = null;
                                     _weekendTime = null;
                                     _hardDays.clear();
-                                    _preferredTimeOfDay = null;
                                   });
                                   _scrollToBottom();
                                 },
@@ -287,7 +275,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                                     _weekdayTime = t;
                                     _weekendTime = null;
                                     _hardDays.clear();
-                                    _preferredTimeOfDay = null;
                                   });
                                   _scrollToBottom();
                                 },
@@ -320,7 +307,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                                   setState(() {
                                     _weekendTime = t;
                                     _hardDays.clear();
-                                    _preferredTimeOfDay = null;
                                   });
                                   _scrollToBottom();
                                 },
@@ -364,34 +350,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                             .toList(),
                       ),
                     ],
-
-                    // ── 6. Preferred time of day ──────────────────────────────
-                    if (_weekendTime != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        l10n.timeOfDayLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: timeOfDayOptions
-                            .map(
-                              (t) => _Chip(
-                                label: OnboardingValues.localizeTimeOfDay(
-                                  t,
-                                  l10n,
-                                ),
-                                isSelected: _preferredTimeOfDay == t,
-                                onTap: () {
-                                  setState(() => _preferredTimeOfDay = t);
-                                },
-                              ),
-                            )
-                            .toList(),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -419,7 +377,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                               weekdayTime: _weekdayTime!,
                               weekendTime: _weekendTime!,
                               hardDays: _hardDays.toList(),
-                              preferredTimeOfDay: _preferredTimeOfDay!,
                             );
                         if (widget.isEditingPlanInfo) {
                           context.pop();
