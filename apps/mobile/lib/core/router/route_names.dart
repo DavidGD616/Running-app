@@ -28,11 +28,15 @@ abstract class RouteNames {
       '/settings/update-plan/edit-goal/form';
   static const settingsUpdatePlanEditGoalTraining =
       '/settings/update-plan/edit-goal/training';
+  static const settingsUpdatePlanEditGoalSummary =
+      '/settings/update-plan/edit-goal/summary';
   static const settingsUpdatePlanNewGoal = '/settings/update-plan/new-goal';
   static const settingsUpdatePlanNewGoalForm =
       '/settings/update-plan/new-goal/form';
   static const settingsUpdatePlanNewGoalTraining =
       '/settings/update-plan/new-goal/training';
+  static const settingsUpdatePlanNewGoalSummary =
+      '/settings/update-plan/new-goal/summary';
   static const settingsUpdatePlanSchedule = '/settings/update-plan/schedule';
   static const settingsLanguage = '/settings/language';
   static const settingsUnits = '/settings/units';

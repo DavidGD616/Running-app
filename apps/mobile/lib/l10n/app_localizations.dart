@@ -374,6 +374,24 @@ abstract class AppLocalizations {
   /// **'Set Goal'**
   String get setGoalButton;
 
+  /// Button label to accept reviewed settings changes
+  ///
+  /// In en, this message translates to:
+  /// **'Accept Changes'**
+  String get settingsAcceptChanges;
+
+  /// Title for the settings goal review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review Changes'**
+  String get settingsReviewChangesTitle;
+
+  /// Subtitle for the settings goal review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review your {flowLabel} details and training preferences before applying them.'**
+  String settingsReviewChangesSubtitle(String flowLabel);
+
   /// Heading on the home screen
   ///
   /// In en, this message translates to:
@@ -2896,6 +2914,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Change Schedule'**
   String get settingsChangeSchedule;
+
+  /// Goal section label on the settings review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get settingsSummaryGoalSection;
+
+  /// Training section label on the settings review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Training Preferences'**
+  String get settingsSummaryTrainingSection;
 
   /// Title on the intro screen before editing the current goal
   ///

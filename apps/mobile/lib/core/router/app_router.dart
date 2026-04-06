@@ -25,6 +25,7 @@ import '../../features/weekly_plan/presentation/screens/weekly_plan_screen.dart'
 import '../../features/progress/presentation/screens/progress_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
 import '../../features/settings/presentation/screens/settings_goal_intro_screen.dart';
+import '../../features/settings/presentation/screens/settings_goal_review_screen.dart';
 import '../../features/settings/presentation/screens/settings_update_plan_screen.dart';
 import '../../features/settings/presentation/screens/settings_language_screen.dart';
 import '../../features/settings/presentation/screens/settings_units_screen.dart';
@@ -136,6 +137,11 @@ final appRouter = GoRouter(
       ),
     ),
     GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoalSummary,
+      builder: (context, state) =>
+          const SettingsGoalReviewScreen(mode: SettingsGoalReviewMode.editGoal),
+    ),
+    GoRoute(
       path: RouteNames.settingsUpdatePlanNewGoal,
       builder: (context, state) =>
           const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.newGoal),
@@ -149,6 +155,11 @@ final appRouter = GoRouter(
       builder: (context, state) => const TrainingPreferencesScreen(
         mode: TrainingPreferencesFlowMode.newGoal,
       ),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoalSummary,
+      builder: (context, state) =>
+          const SettingsGoalReviewScreen(mode: SettingsGoalReviewMode.newGoal),
     ),
     GoRoute(
       path: RouteNames.settingsUpdatePlanSchedule,

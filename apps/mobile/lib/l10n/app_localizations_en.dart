@@ -150,6 +150,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get setGoalButton => 'Set Goal';
 
   @override
+  String get settingsAcceptChanges => 'Accept Changes';
+
+  @override
+  String get settingsReviewChangesTitle => 'Review Changes';
+
+  @override
+  String settingsReviewChangesSubtitle(String flowLabel) {
+    return 'Review your $flowLabel details and training preferences before applying them.';
+  }
+
+  @override
   String get homeReady => 'Your plan is ready!';
 
   @override
@@ -1494,6 +1505,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsChangeSchedule => 'Change Schedule';
+
+  @override
+  String get settingsSummaryGoalSection => 'Goal';
+
+  @override
+  String get settingsSummaryTrainingSection => 'Training Preferences';
 
   @override
   String get settingsEditGoalIntroTitle =>

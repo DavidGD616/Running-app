@@ -141,6 +141,20 @@
   "setGoalButton": "Set Goal",
   "@setGoalButton": { "description": "Button label to save a new goal" },
 
+  "settingsAcceptChanges": "Accept Changes",
+  "@settingsAcceptChanges": { "description": "Button label to accept reviewed settings changes" },
+
+  "settingsReviewChangesTitle": "Review Changes",
+  "@settingsReviewChangesTitle": { "description": "Title for the settings goal review screen" },
+
+  "settingsReviewChangesSubtitle": "Review your {flowLabel} details and training preferences before applying them.",
+  "@settingsReviewChangesSubtitle": {
+    "description": "Subtitle for the settings goal review screen",
+    "placeholders": {
+      "flowLabel": { "type": "String" }
+    }
+  },
+
   "homeReady": "Your plan is ready!",
   "@homeReady": { "description": "Heading on the home screen" },
 
@@ -1487,6 +1501,12 @@
 
   "settingsChangeSchedule": "Change Schedule",
   "@settingsChangeSchedule": { "description": "Settings row label to edit the training schedule" },
+
+  "settingsSummaryGoalSection": "Goal",
+  "@settingsSummaryGoalSection": { "description": "Goal section label on the settings review screen" },
+
+  "settingsSummaryTrainingSection": "Training Preferences",
+  "@settingsSummaryTrainingSection": { "description": "Training section label on the settings review screen" },
 
   "settingsEditGoalIntroTitle": "Update the goal you are already training for",
   "@settingsEditGoalIntroTitle": { "description": "Title on the intro screen before editing the current goal" },

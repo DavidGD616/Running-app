@@ -56,6 +56,9 @@
   "saveChangesButton": "Guardar cambios",
 
   "setGoalButton": "Definir objetivo",
+  "settingsAcceptChanges": "Aceptar cambios",
+  "settingsReviewChangesTitle": "Revisar cambios",
+  "settingsReviewChangesSubtitle": "Revisa los detalles de {flowLabel} y tus preferencias de entrenamiento antes de aplicarlos.",
 
   "homeReady": "¡Tu plan está listo!",
   "homeComingSoon": "Pantalla de inicio próximamente.",
@@ -536,6 +539,8 @@
   "settingsEditGoal": "Editar objetivo",
   "settingsNewGoal": "Nuevo objetivo",
   "settingsChangeSchedule": "Cambiar horario",
+  "settingsSummaryGoalSection": "Objetivo",
+  "settingsSummaryTrainingSection": "Preferencias de entrenamiento",
   "settingsEditGoalIntroTitle": "Actualiza el objetivo para el que ya estás entrenando",
   "settingsEditGoalIntroSubtitle": "Podrás revisar tu carrera, fecha, prioridad y tiempos objetivo antes de guardar los cambios.",
   "settingsEditGoalIntroPointRace": "Ajusta tu carrera o distancia objetivo.",

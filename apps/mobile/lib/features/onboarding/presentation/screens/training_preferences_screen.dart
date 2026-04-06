@@ -81,10 +81,12 @@ class _TrainingPreferencesScreenState
     final l10n = AppLocalizations.of(context)!;
     final isSettingsFlow =
         widget.mode != TrainingPreferencesFlowMode.onboarding;
-    final ctaLabel = switch (widget.mode) {
-      TrainingPreferencesFlowMode.onboarding => l10n.continueButton,
-      TrainingPreferencesFlowMode.editGoal => l10n.saveChangesButton,
-      TrainingPreferencesFlowMode.newGoal => l10n.setGoalButton,
+    final nextRoute = switch (widget.mode) {
+      TrainingPreferencesFlowMode.onboarding => RouteNames.device,
+      TrainingPreferencesFlowMode.editGoal =>
+        RouteNames.settingsUpdatePlanEditGoalSummary,
+      TrainingPreferencesFlowMode.newGoal =>
+        RouteNames.settingsUpdatePlanNewGoalSummary,
     };
 
     final surfaceOptions = [
@@ -386,7 +388,7 @@ class _TrainingPreferencesScreenState
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: ctaLabel,
+                label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
                         ref
@@ -399,11 +401,7 @@ class _TrainingPreferencesScreenState
                               terrain: _terrain!,
                               walkRunIntervals: _walkRunIntervals!,
                             );
-                        if (isSettingsFlow) {
-                          context.go(RouteNames.settingsUpdatePlan);
-                        } else {
-                          context.push(RouteNames.device);
-                        }
+                        context.push(nextRoute);
                       }
                     : null,
               ),
