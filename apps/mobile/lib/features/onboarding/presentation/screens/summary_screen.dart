@@ -103,28 +103,29 @@ class SummaryScreen extends ConsumerWidget {
   }
 
   String _healthDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final pref = (a['planPreference'] as String?) ?? '—';
-    return l10n.summaryPlanPref(
-      OnboardingValues.localizePlanPreference(pref, l10n),
+    final injury = a['injuryHistory'] as String?;
+    final conditions = a['healthConditions'] as String?;
+    return l10n.summaryHealthDetail(
+      injury != null
+          ? OnboardingValues.localizeInjuryHistory(injury, l10n)
+          : '—',
+      conditions != null
+          ? OnboardingValues.localizeBinary(conditions, l10n)
+          : '—',
     );
   }
 
   String _trainingValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final mode = a['guidanceMode'] as String?;
-    return mode != null
-        ? l10n.summaryGuidanceBased(
-            OnboardingValues.localizeGuidanceMode(mode, l10n),
-          )
+    final preference = a['planPreference'] as String?;
+    return preference != null
+        ? OnboardingValues.localizePlanPreference(preference, l10n)
         : '—';
   }
 
   String _trainingDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final speed = (a['speedWorkouts'] as String?) ?? '—';
-    final walkRun = (a['walkRunIntervals'] as String?) ?? '—';
-    return l10n.summaryTrainingDetail(
-      OnboardingValues.localizeBinary(speed, l10n),
-      OnboardingValues.localizeBinary(walkRun, l10n),
-    );
+    final preference = a['planPreference'] as String?;
+    if (preference == null) return '—';
+    return OnboardingValues.localizePlanPreferenceSubtitle(preference, l10n);
   }
 
   String _deviceValue(Map<String, dynamic> a, AppLocalizations l10n) {

@@ -53,9 +53,7 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
     final currentTime = answers['currentTime'] as Duration?;
     final targetTime = answers['targetTime'] as Duration?;
 
-    final guidanceMode = answers['guidanceMode'] as String?;
-    final speedWorkouts = answers['speedWorkouts'] as String?;
-    final walkRunIntervals = answers['walkRunIntervals'] as String?;
+    final planPreference = answers['planPreference'] as String?;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -127,33 +125,11 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
                       SettingsCard(
                         children: [
                           _SummaryRow(
-                            label: l10n.guidanceModeLabel,
+                            label: l10n.planPreferenceLabel,
                             value: _valueOrDash(
-                              guidanceMode != null
-                                  ? OnboardingValues.localizeGuidanceMode(
-                                      guidanceMode,
-                                      l10n,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          _SummaryRow(
-                            label: l10n.speedWorkoutsLabel,
-                            value: _valueOrDash(
-                              speedWorkouts != null
-                                  ? OnboardingValues.localizeBinary(
-                                      speedWorkouts,
-                                      l10n,
-                                    )
-                                  : null,
-                            ),
-                          ),
-                          _SummaryRow(
-                            label: l10n.walkRunLabel,
-                            value: _valueOrDash(
-                              walkRunIntervals != null
-                                  ? OnboardingValues.localizeBinary(
-                                      walkRunIntervals,
+                              planPreference != null
+                                  ? OnboardingValues.localizePlanPreference(
+                                      planPreference,
                                       l10n,
                                     )
                                   : null,

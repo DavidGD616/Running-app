@@ -24,15 +24,11 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   String? _painLevel;
   String? _injuryHistory;
   String? _healthConditions;
-  String? _planPreference;
 
   final _scrollController = ScrollController();
 
   bool get _isComplete =>
-      _painLevel != null &&
-      _injuryHistory != null &&
-      _healthConditions != null &&
-      _planPreference != null;
+      _painLevel != null && _injuryHistory != null && _healthConditions != null;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -163,7 +159,6 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                               _painLevel = option;
                               _injuryHistory = null;
                               _healthConditions = null;
-                              _planPreference = null;
                             });
                             _scrollToBottom();
                           },
@@ -186,7 +181,6 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           setState(() {
                             _injuryHistory = val;
                             _healthConditions = null;
-                            _planPreference = null;
                           });
                           _scrollToBottom();
                         },
@@ -211,7 +205,6 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                               onTap: () {
                                 setState(() {
                                   _healthConditions = OnboardingValues.no;
-                                  _planPreference = null;
                                 });
                                 _scrollToBottom();
                               },
@@ -226,53 +219,12 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                               onTap: () {
                                 setState(() {
                                   _healthConditions = OnboardingValues.yes;
-                                  _planPreference = null;
                                 });
                                 _scrollToBottom();
                               },
                             ),
                           ),
                         ],
-                      ),
-                    ],
-
-                    // ── 4. Plan preference ────────────────────────────────────
-                    if (_healthConditions != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        l10n.planPreferenceLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SelectCard(
-                        label: l10n.planSafest,
-                        subtitle: l10n.planSafestSub,
-                        isSelected:
-                            _planPreference == OnboardingValues.planSafest,
-                        onTap: () => setState(
-                          () => _planPreference = OnboardingValues.planSafest,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _SelectCard(
-                        label: l10n.planBalanced,
-                        subtitle: l10n.planBalancedSub,
-                        isSelected:
-                            _planPreference == OnboardingValues.planBalanced,
-                        onTap: () => setState(
-                          () => _planPreference = OnboardingValues.planBalanced,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _SelectCard(
-                        label: l10n.planPerformance,
-                        subtitle: l10n.planPerformanceSub,
-                        isSelected:
-                            _planPreference == OnboardingValues.planPerformance,
-                        onTap: () => setState(
-                          () => _planPreference =
-                              OnboardingValues.planPerformance,
-                        ),
                       ),
                     ],
                   ],
@@ -298,7 +250,6 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                               painLevel: _painLevel!,
                               injuryHistory: _injuryHistory!,
                               healthConditions: _healthConditions!,
-                              planPreference: _planPreference!,
                             );
                         context.push(RouteNames.training);
                       }
@@ -312,18 +263,16 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   }
 }
 
-// ─── Full-width select card ───────────────────────────────────────────────────
+// ─── Full-width select card ─────────────────────────────────────────────────
 
 class _SelectCard extends StatelessWidget {
   const _SelectCard({
     required this.label,
-    this.subtitle,
     required this.isSelected,
     required this.onTap,
   });
 
   final String label;
-  final String? subtitle;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -347,33 +296,13 @@ class _SelectCard extends StatelessWidget {
                 : AppColors.borderDefault,
           ),
         ),
-        child: subtitle != null
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: AppTypography.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                label,
-                style: AppTypography.titleMedium.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+        child: Text(
+          label,
+          style: AppTypography.titleMedium.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }

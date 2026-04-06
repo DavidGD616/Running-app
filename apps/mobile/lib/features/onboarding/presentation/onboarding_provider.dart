@@ -108,49 +108,24 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     required String painLevel,
     required String injuryHistory,
     required String healthConditions,
-    required String planPreference,
   }) {
     state = {
       ...state,
       'painLevel': painLevel,
       'injuryHistory': injuryHistory,
       'healthConditions': healthConditions,
-      'planPreference': planPreference,
     };
   }
 
-  void setTraining({
-    required String guidanceMode,
-    required String speedWorkouts,
-    String? strengthTraining,
-    String? runSurface,
-    String? terrain,
-    required String walkRunIntervals,
-  }) {
-    final next = <String, dynamic>{
-      ...state,
-      'guidanceMode': guidanceMode,
-      'speedWorkouts': speedWorkouts,
-      'walkRunIntervals': walkRunIntervals,
-    };
+  void setTraining({required String planPreference}) {
+    final next = <String, dynamic>{...state, 'planPreference': planPreference};
 
-    if (strengthTraining != null) {
-      next['strengthTraining'] = strengthTraining;
-    } else {
-      next.remove('strengthTraining');
-    }
-
-    if (runSurface != null) {
-      next['runSurface'] = runSurface;
-    } else {
-      next.remove('runSurface');
-    }
-
-    if (terrain != null) {
-      next['terrain'] = terrain;
-    } else {
-      next.remove('terrain');
-    }
+    next.remove('walkRunIntervals');
+    next.remove('guidanceMode');
+    next.remove('speedWorkouts');
+    next.remove('strengthTraining');
+    next.remove('runSurface');
+    next.remove('terrain');
 
     state = next;
   }

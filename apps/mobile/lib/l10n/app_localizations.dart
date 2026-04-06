@@ -1175,7 +1175,7 @@ abstract class AppLocalizations {
   /// Subtitle on the training preferences screen
   ///
   /// In en, this message translates to:
-  /// **'Customize how your plan is structured.'**
+  /// **'Choose how you want your plan to feel.'**
   String get trainingPrefsSubtitle;
 
   /// Section label on training preferences screen
@@ -1333,12 +1333,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mixed'**
   String get terrainMixed;
-
-  /// Section label on training preferences screen
-  ///
-  /// In en, this message translates to:
-  /// **'Walk/run intervals?'**
-  String get walkRunLabel;
 
   /// Heading on the watch & device screen
   ///
@@ -2042,6 +2036,12 @@ abstract class AppLocalizations {
   /// **'Pain: {level}'**
   String summaryWithPain(String level);
 
+  /// Health detail showing injury history and health conditions
+  ///
+  /// In en, this message translates to:
+  /// **'Injury history: {injury} · Conditions: {conditions}'**
+  String summaryHealthDetail(String injury, String conditions);
+
   /// Health detail showing plan preference
   ///
   /// In en, this message translates to:
@@ -2053,12 +2053,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{mode}-based guidance'**
   String summaryGuidanceBased(String mode);
-
-  /// Training detail in summary
-  ///
-  /// In en, this message translates to:
-  /// **'Speed: {speed} · Walk/run: {walkRun}'**
-  String summaryTrainingDetail(String speed, String walkRun);
 
   /// Device value when watch is connected
   ///

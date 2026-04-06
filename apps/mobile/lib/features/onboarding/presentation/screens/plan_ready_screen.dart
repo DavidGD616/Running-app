@@ -47,10 +47,10 @@ class PlanReadyScreen extends ConsumerWidget {
     return day != null ? OnboardingValues.localizeDay(day, l10n) : '—';
   }
 
-  String _guidanceMode(Map<String, dynamic> a, AppLocalizations l10n) {
-    final mode = a['guidanceMode'] as String?;
-    return mode != null
-        ? OnboardingValues.localizeGuidanceMode(mode, l10n)
+  String _planPreference(Map<String, dynamic> a, AppLocalizations l10n) {
+    final preference = a['planPreference'] as String?;
+    return preference != null
+        ? OnboardingValues.localizePlanPreference(preference, l10n)
         : '—';
   }
 
@@ -149,8 +149,8 @@ class PlanReadyScreen extends ConsumerWidget {
                           const SizedBox(height: AppSpacing.base),
                           _PlanDetailRow(
                             iconAsset: 'assets/icons/heart_rate.svg',
-                            label: l10n.planReadyGuidanceModeLabel,
-                            value: _guidanceMode(answers, l10n),
+                            label: l10n.planPreferenceLabel,
+                            value: _planPreference(answers, l10n),
                           ),
                         ],
                       ),
@@ -183,7 +183,9 @@ class PlanReadyScreen extends ConsumerWidget {
                   AppButton(
                     label: l10n.planReadyStartPlan,
                     onPressed: () async {
-                      await ref.read(onboardingProvider.notifier).markCompleted();
+                      await ref
+                          .read(onboardingProvider.notifier)
+                          .markCompleted();
                       if (context.mounted) context.go(RouteNames.today);
                     },
                   ),
@@ -192,7 +194,9 @@ class PlanReadyScreen extends ConsumerWidget {
                     label: l10n.planReadyViewFullWeek,
                     variant: AppButtonVariant.secondary,
                     onPressed: () async {
-                      await ref.read(onboardingProvider.notifier).markCompleted();
+                      await ref
+                          .read(onboardingProvider.notifier)
+                          .markCompleted();
                       if (context.mounted) context.go(RouteNames.plan);
                     },
                   ),
@@ -247,7 +251,12 @@ class _PlanDetailRow extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(label, style: AppTypography.caption.copyWith(color: AppColors.textSecondary)),
+            Text(
+              label,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
             const SizedBox(height: 2),
             Text(value, style: AppTypography.titleMedium),
           ],

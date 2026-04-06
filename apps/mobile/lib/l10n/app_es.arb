@@ -200,7 +200,7 @@
   "planPerformanceSub": "Buscar resultados",
 
   "trainingPrefsTitle": "Preferencias de Entrenamiento",
-  "trainingPrefsSubtitle": "Personaliza cómo se estructura tu plan.",
+  "trainingPrefsSubtitle": "Elige cómo quieres que se sienta tu plan.",
   "guidanceModeLabel": "Modo de guía preferido",
   "guidanceEffort": "Esfuerzo",
   "guidanceEffortSub": "Entrena por esfuerzo percibido",
@@ -227,8 +227,6 @@
   "terrainSomeHills": "Algunas cuestas",
   "terrainHilly": "Con cuestas",
   "terrainMixed": "Mixto",
-  "walkRunLabel": "¿Intervalos caminar/correr?",
-
   "watchTitle": "Reloj y Dispositivo",
   "watchSubtitle": "Cuéntanos qué fuentes de datos tienes disponibles.",
   "usesWatchLabel": "¿Usas un reloj o dispositivo para correr?",
@@ -350,9 +348,9 @@
   "summaryScheduleDetail": "Tirada larga {longRun} · Entre semana {weekday}",
   "summaryNoPain": "Sin dolor actualmente",
   "summaryWithPain": "Dolor: {level}",
+  "summaryHealthDetail": "Historial de lesiones: {injury} · Condiciones: {conditions}",
   "summaryPlanPref": "Preferencia: {preference}",
   "summaryGuidanceBased": "Guía basada en {mode}",
-  "summaryTrainingDetail": "Velocidad: {speed} · Caminar/correr: {walkRun}",
   "summaryDeviceConnected": "{device} conectado",
   "summaryNoWatch": "Sin reloj",
   "summaryDeviceDetail": "{usage} · Zonas FC: {hrZones} · Ajuste auto: {auto}",

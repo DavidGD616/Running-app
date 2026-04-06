@@ -566,7 +566,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trainingPrefsTitle => 'Preferencias de Entrenamiento';
 
   @override
-  String get trainingPrefsSubtitle => 'Personaliza cómo se estructura tu plan.';
+  String get trainingPrefsSubtitle =>
+      'Elige cómo quieres que se sienta tu plan.';
 
   @override
   String get guidanceModeLabel => 'Modo de guía preferido';
@@ -645,9 +646,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get terrainMixed => 'Mixto';
-
-  @override
-  String get walkRunLabel => '¿Intervalos caminar/correr?';
 
   @override
   String get watchTitle => 'Reloj y Dispositivo';
@@ -1019,6 +1017,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String summaryHealthDetail(String injury, String conditions) {
+    return 'Historial de lesiones: $injury · Condiciones: $conditions';
+  }
+
+  @override
   String summaryPlanPref(String preference) {
     return 'Preferencia: $preference';
   }
@@ -1026,11 +1029,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String summaryGuidanceBased(String mode) {
     return 'Guía basada en $mode';
-  }
-
-  @override
-  String summaryTrainingDetail(String speed, String walkRun) {
-    return 'Velocidad: $speed · Caminar/correr: $walkRun';
   }
 
   @override

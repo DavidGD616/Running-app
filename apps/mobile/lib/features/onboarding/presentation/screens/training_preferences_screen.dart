@@ -31,41 +31,16 @@ class TrainingPreferencesScreen extends ConsumerStatefulWidget {
 
 class _TrainingPreferencesScreenState
     extends ConsumerState<TrainingPreferencesScreen> {
-  String? _guidanceMode;
-  String? _speedWorkouts;
-  String? _walkRunIntervals;
-
-  final _scrollController = ScrollController();
+  String? _planPreference;
 
   @override
   void initState() {
     super.initState();
     final answers = ref.read(onboardingProvider);
-    _guidanceMode = answers['guidanceMode'] as String?;
-    _speedWorkouts = answers['speedWorkouts'] as String?;
-    _walkRunIntervals = answers['walkRunIntervals'] as String?;
+    _planPreference = answers['planPreference'] as String?;
   }
 
-  bool get _isComplete =>
-      _guidanceMode != null &&
-      _speedWorkouts != null &&
-      _walkRunIntervals != null;
-
-  void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 400),
-        curve: Curves.easeOut,
-      );
-    });
-  }
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    super.dispose();
-  }
+  bool get _isComplete => _planPreference != null;
 
   @override
   Widget build(BuildContext context) {
@@ -79,42 +54,23 @@ class _TrainingPreferencesScreenState
       TrainingPreferencesFlowMode.newGoal =>
         RouteNames.settingsUpdatePlanNewGoalSummary,
     };
-    final guidanceOptions = [
+    final planPreferenceOptions = [
       (
-        key: OnboardingValues.guidanceEffort,
-        label: l10n.guidanceEffort,
-        subtitle: l10n.guidanceEffortSub,
-        icon: 'assets/icons/effort.svg',
+        key: OnboardingValues.planSafest,
+        label: l10n.planSafest,
+        subtitle: l10n.planSafestSub,
       ),
       (
-        key: OnboardingValues.guidancePace,
-        label: l10n.guidancePace,
-        subtitle: l10n.guidancePaceSub,
-        icon: 'assets/icons/pace.svg',
+        key: OnboardingValues.planBalanced,
+        label: l10n.planBalanced,
+        subtitle: l10n.planBalancedSub,
       ),
       (
-        key: OnboardingValues.guidanceHeartRate,
-        label: l10n.guidanceHeartRate,
-        subtitle: l10n.guidanceHeartRateSub,
-        icon: 'assets/icons/heart_rate.svg',
-      ),
-      (
-        key: OnboardingValues.guidanceDecideForMe,
-        label: l10n.guidanceDecideForMe,
-        subtitle: l10n.guidanceDecideForMeSub,
-        icon: 'assets/icons/decide_for_me.svg',
+        key: OnboardingValues.planPerformance,
+        label: l10n.planPerformance,
+        subtitle: l10n.planPerformanceSub,
       ),
     ];
-    final speedWorkoutOptions = [
-      (key: OnboardingValues.yes, label: l10n.yes),
-      (key: OnboardingValues.no, label: l10n.no),
-      (key: OnboardingValues.onlyIfNeeded, label: l10n.onlyIfNeeded),
-    ];
-    final yesNoOptions = [
-      (key: OnboardingValues.yes, label: l10n.yes),
-      (key: OnboardingValues.no, label: l10n.no),
-    ];
-
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: isSettingsFlow
@@ -176,7 +132,6 @@ class _TrainingPreferencesScreenState
             // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
-                controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.screen,
                   AppSpacing.lg,
@@ -201,72 +156,29 @@ class _TrainingPreferencesScreenState
                       const SizedBox(height: AppSpacing.xl),
                     ],
 
-                    // ── 1. Preferred guidance mode ────────────────────────────
+                    // ── 1. Plan preference ───────────────────────────────────
                     Text(
-                      l10n.guidanceModeLabel,
+                      l10n.planPreferenceLabel,
                       style: AppTypography.labelLarge,
                     ),
                     const SizedBox(height: AppSpacing.md),
-                    ...guidanceOptions.asMap().entries.map((entry) {
+                    ...planPreferenceOptions.asMap().entries.map((entry) {
                       final option = entry.value;
                       return Padding(
                         padding: EdgeInsets.only(
-                          bottom: entry.key == guidanceOptions.length - 1
+                          bottom: entry.key == planPreferenceOptions.length - 1
                               ? 0
                               : AppSpacing.sm,
                         ),
-                        child: _IconCard(
-                          icon: option.icon,
+                        child: _SelectCard(
                           label: option.label,
                           subtitle: option.subtitle,
-                          isSelected: _guidanceMode == option.key,
-                          onTap: () {
-                            setState(() {
-                              _guidanceMode = option.key;
-                              _speedWorkouts = null;
-                              _walkRunIntervals = null;
-                            });
-                            _scrollToBottom();
-                          },
+                          isSelected: _planPreference == option.key,
+                          onTap: () =>
+                              setState(() => _planPreference = option.key),
                         ),
                       );
                     }),
-
-                    // ── 2. Speed workouts included? ───────────────────────────
-                    if (_guidanceMode != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        l10n.speedWorkoutsLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SegmentedControl(
-                        options: speedWorkoutOptions,
-                        selected: _speedWorkouts,
-                        itemHeight: 64,
-                        onSelect: (val) {
-                          setState(() {
-                            _speedWorkouts = val;
-                            _walkRunIntervals = null;
-                          });
-                          _scrollToBottom();
-                        },
-                      ),
-                    ],
-
-                    // ── 3. Walk/run intervals? ────────────────────────────────
-                    if (_speedWorkouts != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.walkRunLabel, style: AppTypography.labelLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      _SegmentedControl(
-                        options: yesNoOptions,
-                        selected: _walkRunIntervals,
-                        itemHeight: 64,
-                        onSelect: (val) =>
-                            setState(() => _walkRunIntervals = val),
-                      ),
-                    ],
                   ],
                 ),
               ),
@@ -286,11 +198,7 @@ class _TrainingPreferencesScreenState
                     ? () {
                         ref
                             .read(onboardingProvider.notifier)
-                            .setTraining(
-                              guidanceMode: _guidanceMode!,
-                              speedWorkouts: _speedWorkouts!,
-                              walkRunIntervals: _walkRunIntervals!,
-                            );
+                            .setTraining(planPreference: _planPreference!);
                         context.push(nextRoute);
                       }
                     : null,
@@ -303,18 +211,16 @@ class _TrainingPreferencesScreenState
   }
 }
 
-// ─── Icon card ────────────────────────────────────────────────────────────────
+// ─── Full-width select card ─────────────────────────────────────────────────
 
-class _IconCard extends StatelessWidget {
-  const _IconCard({
-    required this.icon,
+class _SelectCard extends StatelessWidget {
+  const _SelectCard({
     required this.label,
     required this.subtitle,
     required this.isSelected,
     required this.onTap,
   });
 
-  final String icon;
   final String label;
   final String subtitle;
   final bool isSelected;
@@ -326,6 +232,7 @@ class _IconCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
+        width: double.infinity,
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.base,
           vertical: AppSpacing.base,
@@ -339,109 +246,25 @@ class _IconCard extends StatelessWidget {
                 : AppColors.borderDefault,
           ),
         ),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: AppColors.accentMuted,
-                borderRadius: AppRadius.borderMd,
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  icon,
-                  width: 20,
-                  height: 20,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.accentPrimary,
-                    BlendMode.srcIn,
-                  ),
-                ),
+            Text(
+              label,
+              style: AppTypography.titleMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            const SizedBox(width: AppSpacing.base),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: AppTypography.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  Text(
-                    subtitle,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-// ─── Segmented control ────────────────────────────────────────────────────────
-
-class _SegmentedControl extends StatelessWidget {
-  const _SegmentedControl({
-    required this.options,
-    required this.selected,
-    required this.onSelect,
-    this.itemHeight = 44,
-  });
-
-  final List<OnboardingOption> options;
-  final String? selected;
-  final void Function(String) onSelect;
-  final double itemHeight;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        borderRadius: AppRadius.borderLg,
-      ),
-      child: Row(
-        children: options.map((opt) {
-          final isSelected = selected == opt.key;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onSelect(opt.key),
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                height: itemHeight,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.accentPrimary
-                      : Colors.transparent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Center(
-                  child: Text(
-                    opt.label,
-                    textAlign: TextAlign.center,
-                    style: AppTypography.labelMedium.copyWith(
-                      color: isSelected
-                          ? AppColors.backgroundPrimary
-                          : AppColors.textSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
       ),
     );
   }

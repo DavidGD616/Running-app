@@ -530,6 +530,22 @@ abstract final class OnboardingValues {
     }
   }
 
+  static String localizePlanPreferenceSubtitle(
+    String key,
+    AppLocalizations l10n,
+  ) {
+    switch (key) {
+      case planSafest:
+        return l10n.planSafestSub;
+      case planBalanced:
+        return l10n.planBalancedSub;
+      case planPerformance:
+        return l10n.planPerformanceSub;
+      default:
+        return key;
+    }
+  }
+
   static String localizeGuidanceMode(String key, AppLocalizations l10n) {
     switch (key) {
       case guidanceEffort:

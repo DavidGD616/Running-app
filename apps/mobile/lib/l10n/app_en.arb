@@ -548,7 +548,7 @@
   "trainingPrefsTitle": "Training Preferences",
   "@trainingPrefsTitle": { "description": "Heading on the training preferences screen" },
 
-  "trainingPrefsSubtitle": "Customize how your plan is structured.",
+  "trainingPrefsSubtitle": "Choose how you want your plan to feel.",
   "@trainingPrefsSubtitle": { "description": "Subtitle on the training preferences screen" },
 
   "guidanceModeLabel": "Preferred guidance mode",
@@ -628,9 +628,6 @@
 
   "terrainMixed": "Mixed",
   "@terrainMixed": { "description": "Terrain option: mixed" },
-
-  "walkRunLabel": "Walk/run intervals?",
-  "@walkRunLabel": { "description": "Section label on training preferences screen" },
 
   "watchTitle": "Watch & Device",
   "@watchTitle": { "description": "Heading on the watch & device screen" },
@@ -992,6 +989,14 @@
     "description": "Health value when there is pain",
     "placeholders": { "level": { "type": "String" } }
   },
+  "summaryHealthDetail": "Injury history: {injury} · Conditions: {conditions}",
+  "@summaryHealthDetail": {
+    "description": "Health detail showing injury history and health conditions",
+    "placeholders": {
+      "injury": { "type": "String" },
+      "conditions": { "type": "String" }
+    }
+  },
   "summaryPlanPref": "{preference} plan preference",
   "@summaryPlanPref": {
     "description": "Health detail showing plan preference",
@@ -1001,11 +1006,6 @@
   "@summaryGuidanceBased": {
     "description": "Training value showing guidance mode",
     "placeholders": { "mode": { "type": "String" } }
-  },
-  "summaryTrainingDetail": "Speed: {speed} · Walk/run: {walkRun}",
-  "@summaryTrainingDetail": {
-    "description": "Training detail in summary",
-    "placeholders": { "speed": { "type": "String" }, "walkRun": { "type": "String" } }
   },
   "summaryDeviceConnected": "{device} connected",
   "@summaryDeviceConnected": {
