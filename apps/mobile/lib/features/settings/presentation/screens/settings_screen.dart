@@ -88,6 +88,34 @@ class SettingsScreen extends ConsumerWidget {
 
               const SizedBox(height: AppSpacing.xl),
 
+              // ── General ────────────────────────────────────────
+              SectionLabel(label: l10n.settingsGeneralSection),
+              const SizedBox(height: AppSpacing.md),
+              SettingsCard(
+                children: [
+                  SettingsRow(
+                    label: l10n.settingsAccount,
+                    iconAsset: 'assets/icons/person.svg',
+                    variant: SettingsRowVariant.chevron,
+                    onTap: () {},
+                  ),
+                  SettingsRow(
+                    label: l10n.settingsSubscription,
+                    iconAsset: 'assets/icons/star.svg',
+                    variant: SettingsRowVariant.chevron,
+                    onTap: () {},
+                  ),
+                  SettingsRow(
+                    label: l10n.settingsIntegrations,
+                    iconAsset: 'assets/icons/wifi.svg',
+                    variant: SettingsRowVariant.chevron,
+                    onTap: () {},
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: AppSpacing.xl),
+
               // ── Plan & Goals ───────────────────────────────────
               SectionLabel(label: l10n.settingsPlanGoalsSection),
               const SizedBox(height: AppSpacing.md),

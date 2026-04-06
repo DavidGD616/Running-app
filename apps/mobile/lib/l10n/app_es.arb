@@ -532,6 +532,10 @@
   "progressSeeFullData": "Ver datos completos",
 
   "settingsTitle": "Configuración",
+  "settingsGeneralSection": "General",
+  "settingsAccount": "Cuenta",
+  "settingsSubscription": "Suscripción",
+  "settingsIntegrations": "Integraciones",
   "settingsPlanGoalsSection": "Plan y objetivos",
   "settingsUpdatePlanInfo": "Actualizar plan",
   "settingsEditGoal": "Editar objetivo",

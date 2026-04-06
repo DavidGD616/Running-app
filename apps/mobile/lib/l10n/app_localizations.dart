@@ -2874,6 +2874,30 @@ abstract class AppLocalizations {
   /// **'Settings'**
   String get settingsTitle;
 
+  /// General section header on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get settingsGeneralSection;
+
+  /// Account row label on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsAccount;
+
+  /// Subscription row label on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get settingsSubscription;
+
+  /// Integrations row label on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Integrations'**
+  String get settingsIntegrations;
+
   /// Plan & Goals section header
   ///
   /// In en, this message translates to:

@@ -1487,6 +1487,18 @@
   "settingsTitle": "Settings",
   "@settingsTitle": { "description": "Settings screen title" },
 
+  "settingsGeneralSection": "General",
+  "@settingsGeneralSection": { "description": "General section header on settings screen" },
+
+  "settingsAccount": "Account",
+  "@settingsAccount": { "description": "Account row label on settings screen" },
+
+  "settingsSubscription": "Subscription",
+  "@settingsSubscription": { "description": "Subscription row label on settings screen" },
+
+  "settingsIntegrations": "Integrations",
+  "@settingsIntegrations": { "description": "Integrations row label on settings screen" },
+
   "settingsPlanGoalsSection": "Plan & Goals",
   "@settingsPlanGoalsSection": { "description": "Plan & Goals section header" },
 
