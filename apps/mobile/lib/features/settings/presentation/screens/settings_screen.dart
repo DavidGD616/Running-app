@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/profile_card.dart';
@@ -52,6 +50,7 @@ class SettingsScreen extends ConsumerWidget {
     final currentUnitSystem = preferences?.unitSystem ?? UnitSystem.km;
     final currentShortDistanceUnit =
         preferences?.shortDistanceUnit ?? ShortDistanceUnit.meters;
+    final displayName = preferences?.displayName?.trim();
     final planName = localizedTrainingPlanName(
       raceType: profile.raceType,
       totalWeeks: profile.totalWeeks,
@@ -78,7 +77,9 @@ class SettingsScreen extends ConsumerWidget {
 
               // ── Profile card ───────────────────────────────────
               ProfileCard(
-                name: l10n.profileDefaultName,
+                name: displayName != null && displayName.isNotEmpty
+                    ? displayName
+                    : l10n.profileDefaultName,
                 planName: planName,
                 weekInfo: l10n.profileWeekFull(
                   profile.currentWeekNumber.toString(),
@@ -97,7 +98,7 @@ class SettingsScreen extends ConsumerWidget {
                     label: l10n.settingsAccount,
                     iconAsset: 'assets/icons/person.svg',
                     variant: SettingsRowVariant.chevron,
-                    onTap: () {},
+                    onTap: () => context.push(RouteNames.settingsAccount),
                   ),
                   SettingsRow(
                     label: l10n.settingsSubscription,
@@ -180,11 +181,6 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
 
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── Log Out ────────────────────────────────────────
-              _LogOutCard(label: l10n.settingsLogOut),
-
               const SizedBox(height: AppSpacing.lg),
 
               // ── Version ────────────────────────────────────────
@@ -199,64 +195,6 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-// ── Log out card ──────────────────────────────────────────────────────────────
-
-class _LogOutCard extends StatelessWidget {
-  const _LogOutCard({required this.label});
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () {},
-      child: Container(
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.base,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.error.withValues(alpha: 0.06),
-          borderRadius: AppRadius.borderLg,
-          border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Center(
-                child: SvgPicture.asset(
-                  'assets/icons/logout.svg',
-                  width: 18,
-                  height: 18,
-                  colorFilter: const ColorFilter.mode(
-                    AppColors.error,
-                    BlendMode.srcIn,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Text(
-              label,
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.error,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
         ),
       ),
     );

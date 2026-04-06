@@ -1504,6 +1504,32 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsIntegrations => 'Integraciones';
 
   @override
+  String get settingsAccountProfileSection => 'Perfil';
+
+  @override
+  String get settingsAccountSecuritySection => 'Seguridad';
+
+  @override
+  String get settingsAccountNameLabel => 'Nombre';
+
+  @override
+  String get settingsAccountSexLabel => 'Sexo';
+
+  @override
+  String get settingsAccountNotSet => 'Sin definir';
+
+  @override
+  String get settingsAccountSecurityUnavailableTitle => 'Próximamente';
+
+  @override
+  String get settingsAccountEmailUnavailableSubtitle =>
+      'Los cambios de correo estarán disponibles cuando la autenticación de la cuenta esté conectada.';
+
+  @override
+  String get settingsAccountPasswordUnavailableSubtitle =>
+      'Los cambios de contraseña estarán disponibles cuando la autenticación de la cuenta esté conectada.';
+
+  @override
   String get settingsPlanGoalsSection => 'Plan y objetivos';
 
   @override

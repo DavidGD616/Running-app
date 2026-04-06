@@ -29,6 +29,10 @@ import '../../features/settings/presentation/screens/settings_goal_review_screen
 import '../../features/settings/presentation/screens/settings_update_plan_screen.dart';
 import '../../features/settings/presentation/screens/settings_language_screen.dart';
 import '../../features/settings/presentation/screens/settings_units_screen.dart';
+import '../../features/settings/presentation/screens/settings_account_screen.dart';
+import '../../features/settings/presentation/screens/settings_account_name_screen.dart';
+import '../../features/settings/presentation/screens/settings_account_sex_screen.dart';
+import '../../features/settings/presentation/screens/settings_account_security_info_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
 import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
 import '../../features/log_run/presentation/screens/log_run_screen.dart';
@@ -115,6 +119,30 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.planReady,
       builder: (context, state) => const PlanReadyScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settingsAccount,
+      builder: (context, state) => const SettingsAccountScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settingsAccountName,
+      builder: (context, state) => const SettingsAccountNameScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settingsAccountSex,
+      builder: (context, state) => const SettingsAccountSexScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.settingsAccountEmail,
+      builder: (context, state) => const SettingsAccountSecurityInfoScreen(
+        mode: SettingsAccountSecurityInfoMode.email,
+      ),
+    ),
+    GoRoute(
+      path: RouteNames.settingsAccountPassword,
+      builder: (context, state) => const SettingsAccountSecurityInfoScreen(
+        mode: SettingsAccountSecurityInfoMode.password,
+      ),
     ),
     GoRoute(
       path: RouteNames.settingsUpdatePlan,

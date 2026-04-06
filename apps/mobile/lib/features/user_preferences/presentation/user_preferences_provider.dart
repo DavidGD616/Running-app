@@ -8,6 +8,7 @@ import '../../training_plan/presentation/training_plan_provider.dart';
 class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
   static const _keyUnit = 'pref_unit_system';
   static const _keyShortDistanceUnit = 'pref_short_distance_unit';
+  static const _keyDisplayName = 'pref_display_name';
   static const _keyGender = 'pref_gender';
   static const _keyDob = 'pref_dob_ms';
 
@@ -16,6 +17,7 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     final prefs = await SharedPreferences.getInstance();
     final unitRaw = prefs.getString(_keyUnit);
     final shortDistanceRaw = prefs.getString(_keyShortDistanceUnit);
+    final displayName = prefs.getString(_keyDisplayName);
     final gender = _parseGender(prefs.getString(_keyGender));
     final dobMs = prefs.getInt(_keyDob);
     final unitSystem = unitRaw == 'miles' ? UnitSystem.miles : UnitSystem.km;
@@ -28,6 +30,7 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
     return UserPreferences(
       unitSystem: unitSystem,
       shortDistanceUnit: shortDistanceUnit,
+      displayName: displayName,
       gender: gender,
       dateOfBirth: dobMs != null
           ? DateTime.fromMillisecondsSinceEpoch(dobMs)
@@ -55,6 +58,14 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
       (state.value ?? const UserPreferences()).copyWith(
         shortDistanceUnit: unit,
       ),
+    );
+  }
+
+  Future<void> setDisplayName(String name) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyDisplayName, name);
+    state = AsyncData(
+      (state.value ?? const UserPreferences()).copyWith(displayName: name),
     );
   }
 

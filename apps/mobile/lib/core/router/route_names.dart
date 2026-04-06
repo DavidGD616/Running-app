@@ -22,6 +22,11 @@ abstract class RouteNames {
   static const plan = '/plan';
   static const progress = '/progress';
   static const settings = '/settings';
+  static const settingsAccount = '/settings/account';
+  static const settingsAccountName = '/settings/account/name';
+  static const settingsAccountSex = '/settings/account/sex';
+  static const settingsAccountEmail = '/settings/account/email';
+  static const settingsAccountPassword = '/settings/account/password';
   static const settingsUpdatePlan = '/settings/update-plan';
   static const settingsUpdatePlanEditGoal = '/settings/update-plan/edit-goal';
   static const settingsUpdatePlanEditGoalForm =

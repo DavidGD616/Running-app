@@ -2898,6 +2898,54 @@ abstract class AppLocalizations {
   /// **'Integrations'**
   String get settingsIntegrations;
 
+  /// Profile section header on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get settingsAccountProfileSection;
+
+  /// Security section header on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get settingsAccountSecuritySection;
+
+  /// Name row label on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get settingsAccountNameLabel;
+
+  /// Sex row label on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Sex'**
+  String get settingsAccountSexLabel;
+
+  /// Placeholder value when an account field has not been set
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get settingsAccountNotSet;
+
+  /// Title shown on placeholder account security screens
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get settingsAccountSecurityUnavailableTitle;
+
+  /// Subtitle shown on the placeholder email screen inside account settings
+  ///
+  /// In en, this message translates to:
+  /// **'Email changes will be available when account authentication is connected.'**
+  String get settingsAccountEmailUnavailableSubtitle;
+
+  /// Subtitle shown on the placeholder password screen inside account settings
+  ///
+  /// In en, this message translates to:
+  /// **'Password changes will be available when account authentication is connected.'**
+  String get settingsAccountPasswordUnavailableSubtitle;
+
   /// Plan & Goals section header
   ///
   /// In en, this message translates to:

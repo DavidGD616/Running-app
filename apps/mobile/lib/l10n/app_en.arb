@@ -1499,6 +1499,30 @@
   "settingsIntegrations": "Integrations",
   "@settingsIntegrations": { "description": "Integrations row label on settings screen" },
 
+  "settingsAccountProfileSection": "Profile",
+  "@settingsAccountProfileSection": { "description": "Profile section header on account settings screen" },
+
+  "settingsAccountSecuritySection": "Security",
+  "@settingsAccountSecuritySection": { "description": "Security section header on account settings screen" },
+
+  "settingsAccountNameLabel": "Name",
+  "@settingsAccountNameLabel": { "description": "Name row label on account settings screen" },
+
+  "settingsAccountSexLabel": "Sex",
+  "@settingsAccountSexLabel": { "description": "Sex row label on account settings screen" },
+
+  "settingsAccountNotSet": "Not set",
+  "@settingsAccountNotSet": { "description": "Placeholder value when an account field has not been set" },
+
+  "settingsAccountSecurityUnavailableTitle": "Coming soon",
+  "@settingsAccountSecurityUnavailableTitle": { "description": "Title shown on placeholder account security screens" },
+
+  "settingsAccountEmailUnavailableSubtitle": "Email changes will be available when account authentication is connected.",
+  "@settingsAccountEmailUnavailableSubtitle": { "description": "Subtitle shown on the placeholder email screen inside account settings" },
+
+  "settingsAccountPasswordUnavailableSubtitle": "Password changes will be available when account authentication is connected.",
+  "@settingsAccountPasswordUnavailableSubtitle": { "description": "Subtitle shown on the placeholder password screen inside account settings" },
+
   "settingsPlanGoalsSection": "Plan & Goals",
   "@settingsPlanGoalsSection": { "description": "Plan & Goals section header" },
 
