@@ -175,10 +175,10 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
       GoalFlowMode.editGoal => l10n.settingsEditGoal,
       GoalFlowMode.newGoal => l10n.settingsNewGoal,
     };
-    final ctaLabel = switch (widget.mode) {
-      GoalFlowMode.onboarding => l10n.continueButton,
-      GoalFlowMode.editGoal => l10n.saveChangesButton,
-      GoalFlowMode.newGoal => l10n.setGoalButton,
+    final nextRoute = switch (widget.mode) {
+      GoalFlowMode.onboarding => RouteNames.fitness,
+      GoalFlowMode.editGoal => RouteNames.settingsUpdatePlanEditGoalTraining,
+      GoalFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalTraining,
     };
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
@@ -427,7 +427,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: ctaLabel,
+                label: l10n.continueButton,
                 onPressed: isComplete
                     ? () {
                         ref
@@ -440,11 +440,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                               currentTime: _currentTime,
                               targetTime: _targetTime,
                             );
-                        if (isSettingsFlow) {
-                          context.pop();
-                        } else {
-                          context.push(RouteNames.fitness);
-                        }
+                        context.push(nextRoute);
                       }
                     : null,
               ),

@@ -130,6 +130,12 @@ final appRouter = GoRouter(
           const GoalScreen(mode: GoalFlowMode.editGoal),
     ),
     GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoalTraining,
+      builder: (context, state) => const TrainingPreferencesScreen(
+        mode: TrainingPreferencesFlowMode.editGoal,
+      ),
+    ),
+    GoRoute(
       path: RouteNames.settingsUpdatePlanNewGoal,
       builder: (context, state) =>
           const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.newGoal),
@@ -137,6 +143,12 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.settingsUpdatePlanNewGoalForm,
       builder: (context, state) => const GoalScreen(mode: GoalFlowMode.newGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoalTraining,
+      builder: (context, state) => const TrainingPreferencesScreen(
+        mode: TrainingPreferencesFlowMode.newGoal,
+      ),
     ),
     GoRoute(
       path: RouteNames.settingsUpdatePlanSchedule,

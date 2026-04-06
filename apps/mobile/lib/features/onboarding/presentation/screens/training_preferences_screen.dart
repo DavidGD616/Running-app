@@ -7,14 +7,22 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
+enum TrainingPreferencesFlowMode { onboarding, editGoal, newGoal }
+
 class TrainingPreferencesScreen extends ConsumerStatefulWidget {
-  const TrainingPreferencesScreen({super.key});
+  const TrainingPreferencesScreen({
+    super.key,
+    this.mode = TrainingPreferencesFlowMode.onboarding,
+  });
+
+  final TrainingPreferencesFlowMode mode;
 
   @override
   ConsumerState<TrainingPreferencesScreen> createState() =>
@@ -31,6 +39,18 @@ class _TrainingPreferencesScreenState
   String? _walkRunIntervals;
 
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    final answers = ref.read(onboardingProvider);
+    _guidanceMode = answers['guidanceMode'] as String?;
+    _speedWorkouts = answers['speedWorkouts'] as String?;
+    _strengthTraining = answers['strengthTraining'] as String?;
+    _runSurface = answers['runSurface'] as String?;
+    _terrain = answers['terrain'] as String?;
+    _walkRunIntervals = answers['walkRunIntervals'] as String?;
+  }
 
   bool get _isComplete =>
       _guidanceMode != null &&
@@ -59,6 +79,13 @@ class _TrainingPreferencesScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isSettingsFlow =
+        widget.mode != TrainingPreferencesFlowMode.onboarding;
+    final ctaLabel = switch (widget.mode) {
+      TrainingPreferencesFlowMode.onboarding => l10n.continueButton,
+      TrainingPreferencesFlowMode.editGoal => l10n.saveChangesButton,
+      TrainingPreferencesFlowMode.newGoal => l10n.setGoalButton,
+    };
 
     final surfaceOptions = [
       OnboardingValues.surfaceRoad,
@@ -106,90 +133,102 @@ class _TrainingPreferencesScreenState
     ];
     final terrainOptions = [
       (key: OnboardingValues.terrainFlat, label: l10n.terrainFlat),
-      (
-        key: OnboardingValues.terrainSomeHills,
-        label: l10n.terrainSomeHills,
-      ),
+      (key: OnboardingValues.terrainSomeHills, label: l10n.terrainSomeHills),
       (key: OnboardingValues.terrainHilly, label: l10n.terrainHilly),
       (key: OnboardingValues.terrainMixed, label: l10n.terrainMixed),
     ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
+      appBar: isSettingsFlow
+          ? AppDetailHeaderBar(title: l10n.trainingPrefsTitle)
+          : null,
       body: SafeArea(
+        top: !isSettingsFlow,
         child: Column(
           children: [
-            // ── Top nav ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/chevron_left.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.textPrimary,
-                                BlendMode.srcIn,
+            if (!isSettingsFlow)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/chevron_left.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Text(
-                        l10n.onboardingStep(5, 9),
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          l10n.onboardingStep(5, 9),
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 5, total: 9),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: AppProgressBar(current: 5, total: 9),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.trainingPrefsTitle,
-                        style: AppTypography.headlineMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      l10n.trainingPrefsSubtitle,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    if (!isSettingsFlow) ...[
+                      Text(
+                        l10n.trainingPrefsTitle,
+                        style: AppTypography.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.trainingPrefsSubtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
 
                     // ── 1. Preferred guidance mode ────────────────────────────
-                    Text(l10n.guidanceModeLabel,
-                        style: AppTypography.labelLarge),
+                    Text(
+                      l10n.guidanceModeLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     ...guidanceOptions.asMap().entries.map((entry) {
                       final option = entry.value;
@@ -222,8 +261,10 @@ class _TrainingPreferencesScreenState
                     // ── 2. Speed workouts included? ───────────────────────────
                     if (_guidanceMode != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.speedWorkoutsLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.speedWorkoutsLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
                         options: speedWorkoutOptions,
@@ -245,8 +286,10 @@ class _TrainingPreferencesScreenState
                     // ── 3. Strength training? ─────────────────────────────────
                     if (_speedWorkouts != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.strengthTrainingLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.strengthTrainingLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
                         options: strengthOptions,
@@ -267,28 +310,32 @@ class _TrainingPreferencesScreenState
                     // ── 4. Where do you run most? ─────────────────────────────
                     if (_strengthTraining != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.runSurfaceLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.runSurfaceLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: surfaceOptions
-                            .map((s) => _Chip(
-                                  label: OnboardingValues.localizeSurface(
-                                    s,
-                                    l10n,
-                                  ),
-                                  isSelected: _runSurface == s,
-                                  onTap: () {
-                                    setState(() {
-                                      _runSurface = s;
-                                      _terrain = null;
-                                      _walkRunIntervals = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (s) => _Chip(
+                                label: OnboardingValues.localizeSurface(
+                                  s,
+                                  l10n,
+                                ),
+                                isSelected: _runSurface == s,
+                                onTap: () {
+                                  setState(() {
+                                    _runSurface = s;
+                                    _terrain = null;
+                                    _walkRunIntervals = null;
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -315,14 +362,14 @@ class _TrainingPreferencesScreenState
                     // ── 6. Walk/run intervals? ────────────────────────────────
                     if (_terrain != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.walkRunLabel,
-                          style: AppTypography.labelLarge),
+                      Text(l10n.walkRunLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
                         options: speedWorkoutOptions,
                         selected: _walkRunIntervals,
                         itemHeight: 64,
-                        onSelect: (val) => setState(() => _walkRunIntervals = val),
+                        onSelect: (val) =>
+                            setState(() => _walkRunIntervals = val),
                       ),
                     ],
                   ],
@@ -333,14 +380,18 @@ class _TrainingPreferencesScreenState
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
-                label: l10n.continueButton,
+                label: ctaLabel,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setTraining(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setTraining(
                               guidanceMode: _guidanceMode!,
                               speedWorkouts: _speedWorkouts!,
                               strengthTraining: _strengthTraining!,
@@ -348,7 +399,11 @@ class _TrainingPreferencesScreenState
                               terrain: _terrain!,
                               walkRunIntervals: _walkRunIntervals!,
                             );
-                        context.push(RouteNames.device);
+                        if (isSettingsFlow) {
+                          context.go(RouteNames.settingsUpdatePlan);
+                        } else {
+                          context.push(RouteNames.device);
+                        }
                       }
                     : null,
               ),
@@ -391,7 +446,9 @@ class _IconCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Row(
@@ -476,8 +533,9 @@ class _SegmentedControl extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 height: itemHeight,
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(

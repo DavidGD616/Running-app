@@ -1523,6 +1523,10 @@ class AppLocalizationsEs extends AppLocalizations {
       'Revisa tu prioridad y tus tiempos antes de guardar.';
 
   @override
+  String get settingsEditGoalIntroPointTraining =>
+      'Revisa tus preferencias de entrenamiento antes de terminar la actualización.';
+
+  @override
   String get settingsNewGoalIntroTitle =>
       'Define un objetivo completamente nuevo';
 
@@ -1541,6 +1545,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get settingsNewGoalIntroPointPlan =>
       'Guarda un nuevo objetivo sin cambiar aquí tu horario.';
+
+  @override
+  String get settingsNewGoalIntroPointTraining =>
+      'Define las preferencias de entrenamiento que quieres usar con este objetivo.';
 
   @override
   String get settingsPreferencesSection => 'Preferencias';

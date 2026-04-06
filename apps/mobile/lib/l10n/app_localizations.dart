@@ -2927,6 +2927,12 @@ abstract class AppLocalizations {
   /// **'Review your priority and pacing targets before saving.'**
   String get settingsEditGoalIntroPointPriority;
 
+  /// Training preferences explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review your training preferences before finishing the update.'**
+  String get settingsEditGoalIntroPointTraining;
+
   /// Title on the intro screen before creating a new goal
   ///
   /// In en, this message translates to:
@@ -2956,6 +2962,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save a fresh goal without changing your schedule here.'**
   String get settingsNewGoalIntroPointPlan;
+
+  /// Training preferences explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Set the training preferences you want to use with this goal.'**
+  String get settingsNewGoalIntroPointTraining;
 
   /// Preferences section header
   ///

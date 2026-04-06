@@ -56,6 +56,10 @@ class SettingsGoalIntroScreen extends StatelessWidget {
           icon: 'assets/icons/trophy.svg',
           text: l10n.settingsEditGoalIntroPointPriority,
         ),
+        (
+          icon: 'assets/icons/sparkles.svg',
+          text: l10n.settingsEditGoalIntroPointTraining,
+        ),
       ],
       SettingsGoalIntroMode.newGoal => [
         (
@@ -69,6 +73,10 @@ class SettingsGoalIntroScreen extends StatelessWidget {
         (
           icon: 'assets/icons/trophy.svg',
           text: l10n.settingsNewGoalIntroPointPlan,
+        ),
+        (
+          icon: 'assets/icons/sparkles.svg',
+          text: l10n.settingsNewGoalIntroPointTraining,
         ),
       ],
     };

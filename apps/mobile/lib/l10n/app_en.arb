@@ -1503,6 +1503,9 @@
   "settingsEditGoalIntroPointPriority": "Review your priority and pacing targets before saving.",
   "@settingsEditGoalIntroPointPriority": { "description": "Third explainer item for edit goal intro screen" },
 
+  "settingsEditGoalIntroPointTraining": "Review your training preferences before finishing the update.",
+  "@settingsEditGoalIntroPointTraining": { "description": "Training preferences explainer item for edit goal intro screen" },
+
   "settingsNewGoalIntroTitle": "Set a brand-new goal for your training",
   "@settingsNewGoalIntroTitle": { "description": "Title on the intro screen before creating a new goal" },
 
@@ -1517,6 +1520,9 @@
 
   "settingsNewGoalIntroPointPlan": "Save a fresh goal without changing your schedule here.",
   "@settingsNewGoalIntroPointPlan": { "description": "Third explainer item for new goal intro screen" },
+
+  "settingsNewGoalIntroPointTraining": "Set the training preferences you want to use with this goal.",
+  "@settingsNewGoalIntroPointTraining": { "description": "Training preferences explainer item for new goal intro screen" },
 
   "settingsPreferencesSection": "Preferences",
   "@settingsPreferencesSection": { "description": "Preferences section header" },

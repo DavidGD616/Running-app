@@ -1516,6 +1516,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Review your priority and pacing targets before saving.';
 
   @override
+  String get settingsEditGoalIntroPointTraining =>
+      'Review your training preferences before finishing the update.';
+
+  @override
   String get settingsNewGoalIntroTitle =>
       'Set a brand-new goal for your training';
 
@@ -1534,6 +1538,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get settingsNewGoalIntroPointPlan =>
       'Save a fresh goal without changing your schedule here.';
+
+  @override
+  String get settingsNewGoalIntroPointTraining =>
+      'Set the training preferences you want to use with this goal.';
 
   @override
   String get settingsPreferencesSection => 'Preferences';
