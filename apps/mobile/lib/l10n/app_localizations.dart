@@ -2898,6 +2898,24 @@ abstract class AppLocalizations {
   /// **'Integrations'**
   String get settingsIntegrations;
 
+  /// Available integrations section header on integrations settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Available Integrations'**
+  String get settingsAvailableIntegrationsSection;
+
+  /// Apple Health integration row label
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Health'**
+  String get settingsAppleHealth;
+
+  /// Health Connect integration row label
+  ///
+  /// In en, this message translates to:
+  /// **'Health Connect'**
+  String get settingsHealthConnect;
+
   /// Profile section header on account settings screen
   ///
   /// In en, this message translates to:

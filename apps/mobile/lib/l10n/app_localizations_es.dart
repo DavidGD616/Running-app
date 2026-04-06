@@ -1504,6 +1504,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsIntegrations => 'Integraciones';
 
   @override
+  String get settingsAvailableIntegrationsSection =>
+      'Integraciones disponibles';
+
+  @override
+  String get settingsAppleHealth => 'Apple Health';
+
+  @override
+  String get settingsHealthConnect => 'Health Connect';
+
+  @override
   String get settingsAccountProfileSection => 'Perfil';
 
   @override

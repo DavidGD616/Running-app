@@ -19,6 +19,9 @@ class SettingsRow extends StatelessWidget {
     required this.label,
     this.iconAsset,
     this.iconColor = AppColors.textSecondary,
+    this.preserveIconColors = false,
+    this.iconSize = 18,
+    this.iconContainerSize = 32,
     this.variant = SettingsRowVariant.chevron,
     this.badgeLabel,
     this.valueLabel,
@@ -31,6 +34,9 @@ class SettingsRow extends StatelessWidget {
   final String label;
   final String? iconAsset;
   final Color iconColor;
+  final bool preserveIconColors;
+  final double iconSize;
+  final double iconContainerSize;
   final SettingsRowVariant variant;
   final String? badgeLabel;
   final String? valueLabel;
@@ -53,10 +59,12 @@ class SettingsRow extends StatelessWidget {
           children: [
             if (iconAsset != null) ...[
               Container(
-                width: 32,
-                height: 32,
+                width: iconContainerSize,
+                height: iconContainerSize,
                 decoration: BoxDecoration(
-                  color: isDestructive
+                  color: preserveIconColors
+                      ? AppColors.backgroundSecondary
+                      : isDestructive
                       ? AppColors.error.withValues(alpha: 0.08)
                       : iconColor.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(8),
@@ -64,12 +72,14 @@ class SettingsRow extends StatelessWidget {
                 child: Center(
                   child: SvgPicture.asset(
                     iconAsset!,
-                    width: 18,
-                    height: 18,
-                    colorFilter: ColorFilter.mode(
-                      isDestructive ? AppColors.error : iconColor,
-                      BlendMode.srcIn,
-                    ),
+                    width: iconSize,
+                    height: iconSize,
+                    colorFilter: preserveIconColors
+                        ? null
+                        : ColorFilter.mode(
+                            isDestructive ? AppColors.error : iconColor,
+                            BlendMode.srcIn,
+                          ),
                   ),
                 ),
               ),

@@ -1499,6 +1499,15 @@
   "settingsIntegrations": "Integrations",
   "@settingsIntegrations": { "description": "Integrations row label on settings screen" },
 
+  "settingsAvailableIntegrationsSection": "Available Integrations",
+  "@settingsAvailableIntegrationsSection": { "description": "Available integrations section header on integrations settings screen" },
+
+  "settingsAppleHealth": "Apple Health",
+  "@settingsAppleHealth": { "description": "Apple Health integration row label" },
+
+  "settingsHealthConnect": "Health Connect",
+  "@settingsHealthConnect": { "description": "Health Connect integration row label" },
+
   "settingsAccountProfileSection": "Profile",
   "@settingsAccountProfileSection": { "description": "Profile section header on account settings screen" },
 
