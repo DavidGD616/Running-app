@@ -1493,6 +1493,67 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSubscription => 'Subscription';
 
   @override
+  String get settingsSubscriptionActivePlan => 'Active Plan';
+
+  @override
+  String get settingsSubscriptionPlanName => 'RunFlow Pro';
+
+  @override
+  String get settingsSubscriptionNextBillingDate => 'Next Billing Date';
+
+  @override
+  String get settingsSubscriptionAutoRenewNotice =>
+      'Your subscription will automatically renew. If you don\'t want to continue your subscription, cancel it before the next billing date.';
+
+  @override
+  String get settingsCancelSubscription => 'Cancel Subscription';
+
+  @override
+  String get settingsCancelSubscriptionPrompt =>
+      'Please tell us why you\'re cancelling RunFlow Pro';
+
+  @override
+  String get settingsCancelSubscriptionReasonTooExpensive =>
+      'It\'s too expensive';
+
+  @override
+  String get settingsCancelSubscriptionReasonNotUsingEnough =>
+      'I\'m not using it enough';
+
+  @override
+  String get settingsCancelSubscriptionReasonNotHelpingGoals =>
+      'It\'s not helping me reach my goals';
+
+  @override
+  String get settingsCancelSubscriptionReasonMissingFeatures =>
+      'It\'s missing features I need';
+
+  @override
+  String get settingsCancelSubscriptionReasonSwitchingApps =>
+      'I\'m switching to another app';
+
+  @override
+  String get settingsCancelSubscriptionReasonTakingBreak =>
+      'I\'m taking a break from running';
+
+  @override
+  String get settingsCancelSubscriptionReasonOther => 'Other';
+
+  @override
+  String get settingsNotNow => 'Not now';
+
+  @override
+  String get settingsSubscriptionCancellationInfoTitle =>
+      'Manage your subscription in the store';
+
+  @override
+  String get settingsSubscriptionCancellationInfoBody =>
+      'Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.';
+
+  @override
+  String get settingsSubscriptionDialogButton => 'OK';
+
+  @override
   String get settingsIntegrations => 'Integrations';
 
   @override

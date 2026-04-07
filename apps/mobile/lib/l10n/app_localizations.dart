@@ -2892,6 +2892,108 @@ abstract class AppLocalizations {
   /// **'Subscription'**
   String get settingsSubscription;
 
+  /// Label for the active paid plan on the subscription screen
+  ///
+  /// In en, this message translates to:
+  /// **'Active Plan'**
+  String get settingsSubscriptionActivePlan;
+
+  /// Visible plan name for the paid RunFlow subscription
+  ///
+  /// In en, this message translates to:
+  /// **'RunFlow Pro'**
+  String get settingsSubscriptionPlanName;
+
+  /// Label for the next billing date on the subscription screen
+  ///
+  /// In en, this message translates to:
+  /// **'Next Billing Date'**
+  String get settingsSubscriptionNextBillingDate;
+
+  /// Helper copy explaining the subscription auto-renew behavior
+  ///
+  /// In en, this message translates to:
+  /// **'Your subscription will automatically renew. If you don\'t want to continue your subscription, cancel it before the next billing date.'**
+  String get settingsSubscriptionAutoRenewNotice;
+
+  /// Button and page title for the subscription cancellation flow
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Subscription'**
+  String get settingsCancelSubscription;
+
+  /// Prompt shown at the top of the cancel subscription reasons screen
+  ///
+  /// In en, this message translates to:
+  /// **'Please tell us why you\'re cancelling RunFlow Pro'**
+  String get settingsCancelSubscriptionPrompt;
+
+  /// Cancellation reason: subscription cost is too high
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s too expensive'**
+  String get settingsCancelSubscriptionReasonTooExpensive;
+
+  /// Cancellation reason: not getting enough use from the subscription
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m not using it enough'**
+  String get settingsCancelSubscriptionReasonNotUsingEnough;
+
+  /// Cancellation reason: product is not helping enough
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s not helping me reach my goals'**
+  String get settingsCancelSubscriptionReasonNotHelpingGoals;
+
+  /// Cancellation reason: important features are missing
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s missing features I need'**
+  String get settingsCancelSubscriptionReasonMissingFeatures;
+
+  /// Cancellation reason: moving to another app
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m switching to another app'**
+  String get settingsCancelSubscriptionReasonSwitchingApps;
+
+  /// Cancellation reason: user is taking a break from running
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m taking a break from running'**
+  String get settingsCancelSubscriptionReasonTakingBreak;
+
+  /// Fallback cancellation reason option
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get settingsCancelSubscriptionReasonOther;
+
+  /// Secondary action to leave a flow without continuing
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get settingsNotNow;
+
+  /// Title shown after the user submits cancellation reasons
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your subscription in the store'**
+  String get settingsSubscriptionCancellationInfoTitle;
+
+  /// Helper copy shown after the user submits cancellation reasons
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.'**
+  String get settingsSubscriptionCancellationInfoBody;
+
+  /// Confirmation button label on the cancellation info dialog
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get settingsSubscriptionDialogButton;
+
   /// Integrations row label on settings screen
   ///
   /// In en, this message translates to:

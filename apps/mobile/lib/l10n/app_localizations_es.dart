@@ -1501,6 +1501,67 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSubscription => 'Suscripción';
 
   @override
+  String get settingsSubscriptionActivePlan => 'Plan activo';
+
+  @override
+  String get settingsSubscriptionPlanName => 'RunFlow Pro';
+
+  @override
+  String get settingsSubscriptionNextBillingDate => 'Próxima fecha de cobro';
+
+  @override
+  String get settingsSubscriptionAutoRenewNotice =>
+      'Tu suscripción se renovará automáticamente. Si no quieres continuar con tu suscripción, cancélala antes de la próxima fecha de cobro.';
+
+  @override
+  String get settingsCancelSubscription => 'Cancelar suscripción';
+
+  @override
+  String get settingsCancelSubscriptionPrompt =>
+      'Cuéntanos por qué estás cancelando RunFlow Pro';
+
+  @override
+  String get settingsCancelSubscriptionReasonTooExpensive =>
+      'Es demasiado caro';
+
+  @override
+  String get settingsCancelSubscriptionReasonNotUsingEnough =>
+      'No lo estoy usando lo suficiente';
+
+  @override
+  String get settingsCancelSubscriptionReasonNotHelpingGoals =>
+      'No me está ayudando a alcanzar mis objetivos';
+
+  @override
+  String get settingsCancelSubscriptionReasonMissingFeatures =>
+      'Le faltan funciones que necesito';
+
+  @override
+  String get settingsCancelSubscriptionReasonSwitchingApps =>
+      'Me cambiaré a otra app';
+
+  @override
+  String get settingsCancelSubscriptionReasonTakingBreak =>
+      'Estoy tomando un descanso del running';
+
+  @override
+  String get settingsCancelSubscriptionReasonOther => 'Otro';
+
+  @override
+  String get settingsNotNow => 'Ahora no';
+
+  @override
+  String get settingsSubscriptionCancellationInfoTitle =>
+      'Administra tu suscripción en la tienda';
+
+  @override
+  String get settingsSubscriptionCancellationInfoBody =>
+      'Gracias por compartir tus comentarios. Para completar la cancelación de RunFlow Pro, administra tu suscripción en la tienda donde la compraste.';
+
+  @override
+  String get settingsSubscriptionDialogButton => 'OK';
+
+  @override
   String get settingsIntegrations => 'Integraciones';
 
   @override

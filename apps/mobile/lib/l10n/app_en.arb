@@ -1495,6 +1495,74 @@
 
   "settingsSubscription": "Subscription",
   "@settingsSubscription": { "description": "Subscription row label on settings screen" },
+  "settingsSubscriptionActivePlan": "Active Plan",
+  "@settingsSubscriptionActivePlan": {
+    "description": "Label for the active paid plan on the subscription screen"
+  },
+  "settingsSubscriptionPlanName": "RunFlow Pro",
+  "@settingsSubscriptionPlanName": {
+    "description": "Visible plan name for the paid RunFlow subscription"
+  },
+  "settingsSubscriptionNextBillingDate": "Next Billing Date",
+  "@settingsSubscriptionNextBillingDate": {
+    "description": "Label for the next billing date on the subscription screen"
+  },
+  "settingsSubscriptionAutoRenewNotice": "Your subscription will automatically renew. If you don't want to continue your subscription, cancel it before the next billing date.",
+  "@settingsSubscriptionAutoRenewNotice": {
+    "description": "Helper copy explaining the subscription auto-renew behavior"
+  },
+  "settingsCancelSubscription": "Cancel Subscription",
+  "@settingsCancelSubscription": {
+    "description": "Button and page title for the subscription cancellation flow"
+  },
+  "settingsCancelSubscriptionPrompt": "Please tell us why you're cancelling RunFlow Pro",
+  "@settingsCancelSubscriptionPrompt": {
+    "description": "Prompt shown at the top of the cancel subscription reasons screen"
+  },
+  "settingsCancelSubscriptionReasonTooExpensive": "It's too expensive",
+  "@settingsCancelSubscriptionReasonTooExpensive": {
+    "description": "Cancellation reason: subscription cost is too high"
+  },
+  "settingsCancelSubscriptionReasonNotUsingEnough": "I'm not using it enough",
+  "@settingsCancelSubscriptionReasonNotUsingEnough": {
+    "description": "Cancellation reason: not getting enough use from the subscription"
+  },
+  "settingsCancelSubscriptionReasonNotHelpingGoals": "It's not helping me reach my goals",
+  "@settingsCancelSubscriptionReasonNotHelpingGoals": {
+    "description": "Cancellation reason: product is not helping enough"
+  },
+  "settingsCancelSubscriptionReasonMissingFeatures": "It's missing features I need",
+  "@settingsCancelSubscriptionReasonMissingFeatures": {
+    "description": "Cancellation reason: important features are missing"
+  },
+  "settingsCancelSubscriptionReasonSwitchingApps": "I'm switching to another app",
+  "@settingsCancelSubscriptionReasonSwitchingApps": {
+    "description": "Cancellation reason: moving to another app"
+  },
+  "settingsCancelSubscriptionReasonTakingBreak": "I'm taking a break from running",
+  "@settingsCancelSubscriptionReasonTakingBreak": {
+    "description": "Cancellation reason: user is taking a break from running"
+  },
+  "settingsCancelSubscriptionReasonOther": "Other",
+  "@settingsCancelSubscriptionReasonOther": {
+    "description": "Fallback cancellation reason option"
+  },
+  "settingsNotNow": "Not now",
+  "@settingsNotNow": {
+    "description": "Secondary action to leave a flow without continuing"
+  },
+  "settingsSubscriptionCancellationInfoTitle": "Manage your subscription in the store",
+  "@settingsSubscriptionCancellationInfoTitle": {
+    "description": "Title shown after the user submits cancellation reasons"
+  },
+  "settingsSubscriptionCancellationInfoBody": "Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.",
+  "@settingsSubscriptionCancellationInfoBody": {
+    "description": "Helper copy shown after the user submits cancellation reasons"
+  },
+  "settingsSubscriptionDialogButton": "OK",
+  "@settingsSubscriptionDialogButton": {
+    "description": "Confirmation button label on the cancellation info dialog"
+  },
 
   "settingsIntegrations": "Integrations",
   "@settingsIntegrations": { "description": "Integrations row label on settings screen" },

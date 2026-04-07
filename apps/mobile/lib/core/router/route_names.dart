@@ -27,6 +27,8 @@ abstract class RouteNames {
   static const settingsAccountSex = '/settings/account/sex';
   static const settingsAccountEmail = '/settings/account/email';
   static const settingsAccountPassword = '/settings/account/password';
+  static const settingsSubscription = '/settings/subscription';
+  static const settingsSubscriptionCancel = '/settings/subscription/cancel';
   static const settingsIntegrations = '/settings/integrations';
   static const settingsUpdatePlan = '/settings/update-plan';
   static const settingsUpdatePlanEditGoal = '/settings/update-plan/edit-goal';
