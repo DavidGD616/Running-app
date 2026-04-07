@@ -104,6 +104,21 @@ class _SettingsIntegrationsScreenState
                       )
                       .toList(),
                 ),
+              if (integrations.isNotEmpty)
+                const SizedBox(height: AppSpacing.xl),
+              SectionLabel(label: l10n.settingsConnectedDevicesSection),
+              const SizedBox(height: AppSpacing.md),
+              SettingsCard(
+                children: [
+                  SettingsRow(
+                    label: l10n.settingsGarminConnect,
+                    iconAsset: 'assets/icons/watch.svg',
+                    variant: SettingsRowVariant.badge,
+                    badgeLabel: l10n.settingsConnected,
+                    onTap: () {},
+                  ),
+                ],
+              ),
             ],
           ),
         ),

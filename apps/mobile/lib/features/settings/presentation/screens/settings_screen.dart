@@ -164,23 +164,6 @@ class SettingsScreen extends ConsumerWidget {
                 ],
               ),
 
-              const SizedBox(height: AppSpacing.xl),
-
-              // ── Connected Devices ──────────────────────────────
-              SectionLabel(label: l10n.settingsConnectedDevicesSection),
-              const SizedBox(height: AppSpacing.md),
-              SettingsCard(
-                children: [
-                  SettingsRow(
-                    label: l10n.settingsGarminConnect,
-                    iconAsset: 'assets/icons/watch.svg',
-                    variant: SettingsRowVariant.badge,
-                    badgeLabel: l10n.settingsConnected,
-                    onTap: () {},
-                  ),
-                ],
-              ),
-
               const SizedBox(height: AppSpacing.lg),
 
               // ── Version ────────────────────────────────────────
