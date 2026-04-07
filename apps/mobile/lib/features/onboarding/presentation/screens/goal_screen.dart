@@ -43,13 +43,13 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   void initState() {
     super.initState();
     if (widget.mode != GoalFlowMode.newGoal) {
-      final answers = ref.read(onboardingProvider);
-      _selectedRace = answers['race'] as String?;
-      _hasRaceDate = answers['hasRaceDate'] as bool?;
-      _raceDate = answers['raceDate'] as DateTime?;
-      _priority = answers['priority'] as String?;
-      _currentTime = answers['currentTime'] as Duration?;
-      _targetTime = answers['targetTime'] as Duration?;
+      final draft = ref.read(onboardingProvider);
+      _selectedRace = draft.goal.raceKey;
+      _hasRaceDate = draft.goal.hasRaceDate;
+      _raceDate = draft.goal.raceDate;
+      _priority = draft.goal.priorityKey;
+      _currentTime = draft.goal.currentTime;
+      _targetTime = draft.goal.targetTime;
     }
   }
 

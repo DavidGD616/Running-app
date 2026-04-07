@@ -52,20 +52,20 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
         RouteNames.settingsUpdatePlanNewGoalGenerating,
     };
 
-    final race = answers['race'] as String?;
-    final hasRaceDate = answers['hasRaceDate'] as bool?;
-    final raceDate = answers['raceDate'] as DateTime?;
-    final priority = answers['priority'] as String?;
-    final currentTime = answers['currentTime'] as Duration?;
-    final targetTime = answers['targetTime'] as Duration?;
+    final race = answers.goal.raceKey;
+    final hasRaceDate = answers.goal.hasRaceDate;
+    final raceDate = answers.goal.raceDate;
+    final priority = answers.goal.priorityKey;
+    final currentTime = answers.goal.currentTime;
+    final targetTime = answers.goal.targetTime;
 
-    final trainingDays = answers['trainingDays'] as String?;
-    final longRunDay = answers['longRunDay'] as String?;
-    final weekdayTime = answers['weekdayTime'] as String?;
-    final weekendTime = answers['weekendTime'] as String?;
-    final hardDays = (answers['hardDays'] as List?)?.cast<String>() ?? const [];
+    final trainingDays = answers.schedule.trainingDaysKey;
+    final longRunDay = answers.schedule.longRunDayKey;
+    final weekdayTime = answers.schedule.weekdayTimeKey;
+    final weekendTime = answers.schedule.weekendTimeKey;
+    final hardDays = answers.schedule.hardDayKeys;
 
-    final planPreference = answers['planPreference'] as String?;
+    final planPreference = answers.trainingPreferences.planPreferenceKey;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,

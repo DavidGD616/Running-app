@@ -21,13 +21,24 @@ class RecoveryLifestyleScreen extends ConsumerStatefulWidget {
       _RecoveryLifestyleScreenState();
 }
 
-class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScreen> {
+class _RecoveryLifestyleScreenState
+    extends ConsumerState<RecoveryLifestyleScreen> {
   String? _sleep;
   String? _workLevel;
   String? _stressLevel;
   String? _dayFeeling;
 
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _sleep = draft.recovery.sleepKey;
+    _workLevel = draft.recovery.workLevelKey;
+    _stressLevel = draft.recovery.stressLevelKey;
+    _dayFeeling = draft.recovery.dayFeelingKey;
+  }
 
   bool get _isComplete =>
       _sleep != null &&
@@ -84,7 +95,10 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
             // ── Top nav ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.screen,
+                0,
               ),
               child: Column(
                 children: [
@@ -132,14 +146,18 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.recoveryTitle,
-                        style: AppTypography.headlineMedium),
+                    Text(
+                      l10n.recoveryTitle,
+                      style: AppTypography.headlineMedium,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       l10n.recoverySubtitle,
@@ -150,8 +168,7 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Average weekday sleep ──────────────────────────────
-                    Text(l10n.sleepLabel,
-                        style: AppTypography.labelLarge),
+                    Text(l10n.sleepLabel, style: AppTypography.labelLarge),
                     const SizedBox(height: AppSpacing.md),
                     _SegmentedControl(
                       options: sleepOptions,
@@ -170,8 +187,10 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     // ── 2. Work / activity level ──────────────────────────────
                     if (_sleep != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.workLevelLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.workLevelLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _SelectCard(
                         label: l10n.workMostlyDesk,
@@ -205,8 +224,7 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                       _SelectCard(
                         label: l10n.workPhysical,
                         subtitle: l10n.workPhysicalSub,
-                        isSelected:
-                            _workLevel == OnboardingValues.workPhysical,
+                        isSelected: _workLevel == OnboardingValues.workPhysical,
                         onTap: () {
                           setState(() {
                             _workLevel = OnboardingValues.workPhysical;
@@ -221,8 +239,7 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     // ── 3. Average stress level ───────────────────────────────
                     if (_workLevel != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.stressLabel,
-                          style: AppTypography.labelLarge),
+                      Text(l10n.stressLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
                         options: stressOptions,
@@ -240,23 +257,24 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
                     // ── 4. How do you feel day-to-day? ────────────────────────
                     if (_stressLevel != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.dayFeelingLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.dayFeelingLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
-                      ...feelingOptions
-                          .map((option) => Padding(
-                                padding: const EdgeInsets.only(
-                                    bottom: AppSpacing.sm),
-                                child: _SelectCard(
-                                  label: OnboardingValues.localizeDayFeeling(
-                                    option,
-                                    l10n,
-                                  ),
-                                  isSelected: _dayFeeling == option,
-                                  onTap: () =>
-                                      setState(() => _dayFeeling = option),
-                                ),
-                              )),
+                      ...feelingOptions.map(
+                        (option) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _SelectCard(
+                            label: OnboardingValues.localizeDayFeeling(
+                              option,
+                              l10n,
+                            ),
+                            isSelected: _dayFeeling == option,
+                            onTap: () => setState(() => _dayFeeling = option),
+                          ),
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -266,14 +284,18 @@ class _RecoveryLifestyleScreenState extends ConsumerState<RecoveryLifestyleScree
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
                 label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setRecovery(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setRecovery(
                               sleep: _sleep!,
                               workLevel: _workLevel!,
                               stressLevel: _stressLevel!,
@@ -321,7 +343,9 @@ class _SelectCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: subtitle != null
@@ -387,8 +411,9 @@ class _SegmentedControl extends StatelessWidget {
                 duration: const Duration(milliseconds: 200),
                 height: 44,
                 decoration: BoxDecoration(
-                  color:
-                      isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(

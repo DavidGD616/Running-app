@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
+import '../../profile/domain/models/runner_profile.dart';
+
+class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
   static const _keyCompleted = 'onboarding_completed';
 
   static Future<bool> isCompleted() async {
@@ -15,7 +17,7 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
   }
 
   @override
-  Map<String, dynamic> build() => {};
+  RunnerProfileDraft build() => const RunnerProfileDraft();
 
   void setGoal({
     required String race,
@@ -25,32 +27,16 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     Duration? currentTime,
     Duration? targetTime,
   }) {
-    final next = <String, dynamic>{
-      ...state,
-      'race': race,
-      'hasRaceDate': hasRaceDate,
-      'priority': priority,
-    };
-
-    if (raceDate != null) {
-      next['raceDate'] = raceDate;
-    } else {
-      next.remove('raceDate');
-    }
-
-    if (currentTime != null) {
-      next['currentTime'] = currentTime;
-    } else {
-      next.remove('currentTime');
-    }
-
-    if (targetTime != null) {
-      next['targetTime'] = targetTime;
-    } else {
-      next.remove('targetTime');
-    }
-
-    state = next;
+    state = state.copyWith(
+      goal: GoalProfileDraft(
+        race: RunnerGoalRace.fromKey(race),
+        hasRaceDate: hasRaceDate,
+        raceDate: raceDate,
+        priority: GoalPriority.fromKey(priority),
+        currentTime: currentTime,
+        targetTime: targetTime,
+      ),
+    );
   }
 
   void setFitness({
@@ -64,18 +50,19 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     String? benchmark,
     Duration? benchmarkTime,
   }) {
-    state = {
-      ...state,
-      'experience': experience,
-      'canRun10Min': ?canRun10Min,
-      'runningDays': ?runningDays,
-      'weeklyVolume': ?weeklyVolume,
-      'longestRun': ?longestRun,
-      'canCompleteGoalDist': ?canCompleteGoalDist,
-      'raceDistanceBefore': ?raceDistanceBefore,
-      'benchmark': ?benchmark,
-      'benchmarkTime': ?benchmarkTime,
-    };
+    state = state.copyWith(
+      fitness: RunnerProfileDraft.fitnessFromInput(
+        experience: experience,
+        canRun10Min: canRun10Min,
+        runningDays: runningDays,
+        weeklyVolume: weeklyVolume,
+        longestRun: longestRun,
+        canCompleteGoalDist: canCompleteGoalDist,
+        raceDistanceBefore: raceDistanceBefore,
+        benchmark: benchmark,
+        benchmarkTime: benchmarkTime,
+      ),
+    );
   }
 
   void setSchedule({
@@ -86,22 +73,16 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     required List<String> hardDays,
     String? preferredTimeOfDay,
   }) {
-    final next = <String, dynamic>{
-      ...state,
-      'trainingDays': trainingDays,
-      'longRunDay': longRunDay,
-      'weekdayTime': weekdayTime,
-      'weekendTime': weekendTime,
-      'hardDays': hardDays,
-    };
-
-    if (preferredTimeOfDay != null) {
-      next['preferredTimeOfDay'] = preferredTimeOfDay;
-    } else {
-      next.remove('preferredTimeOfDay');
-    }
-
-    state = next;
+    state = state.copyWith(
+      schedule: RunnerProfileDraft.scheduleFromInput(
+        trainingDays: trainingDays,
+        longRunDay: longRunDay,
+        weekdayTime: weekdayTime,
+        weekendTime: weekendTime,
+        hardDays: hardDays,
+        preferredTimeOfDay: preferredTimeOfDay,
+      ),
+    );
   }
 
   void setHealth({
@@ -109,25 +90,21 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     required String injuryHistory,
     required String healthConditions,
   }) {
-    state = {
-      ...state,
-      'painLevel': painLevel,
-      'injuryHistory': injuryHistory,
-      'healthConditions': healthConditions,
-    };
+    state = state.copyWith(
+      health: RunnerProfileDraft.healthFromInput(
+        painLevel: painLevel,
+        injuryHistory: injuryHistory,
+        healthConditions: healthConditions,
+      ),
+    );
   }
 
   void setTraining({required String planPreference}) {
-    final next = <String, dynamic>{...state, 'planPreference': planPreference};
-
-    next.remove('walkRunIntervals');
-    next.remove('guidanceMode');
-    next.remove('speedWorkouts');
-    next.remove('strengthTraining');
-    next.remove('runSurface');
-    next.remove('terrain');
-
-    state = next;
+    state = state.copyWith(
+      trainingPreferences: RunnerProfileDraft.trainingFromInput(
+        planPreference: planPreference,
+      ),
+    );
   }
 
   void setDevice({
@@ -141,57 +118,19 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     String? autoAdjust,
     String? noWatchGuidance,
   }) {
-    final next = <String, dynamic>{...state, 'hasWatch': hasWatch};
-
-    if (device != null) {
-      next['device'] = device;
-    } else {
-      next.remove('device');
-    }
-
-    if (dataUsage != null) {
-      next['dataUsage'] = dataUsage;
-    } else {
-      next.remove('dataUsage');
-    }
-
-    if (watchMetrics != null) {
-      next['watchMetrics'] = watchMetrics;
-    } else {
-      next.remove('watchMetrics');
-    }
-
-    if (metrics != null) {
-      next['metrics'] = metrics;
-    } else {
-      next.remove('metrics');
-    }
-
-    if (hrZones != null) {
-      next['hrZones'] = hrZones;
-    } else {
-      next.remove('hrZones');
-    }
-
-    if (paceRecs != null) {
-      next['paceRecs'] = paceRecs;
-    } else {
-      next.remove('paceRecs');
-    }
-
-    if (autoAdjust != null) {
-      next['autoAdjust'] = autoAdjust;
-    } else {
-      next.remove('autoAdjust');
-    }
-
-    if (noWatchGuidance != null) {
-      next['noWatchGuidance'] = noWatchGuidance;
-    } else {
-      next.remove('noWatchGuidance');
-    }
-
-    state = next;
+    state = state.copyWith(
+      device: RunnerProfileDraft.deviceFromInput(
+        hasWatch: hasWatch,
+        device: device,
+        dataUsage: dataUsage,
+        watchMetrics: watchMetrics,
+        metrics: metrics,
+        hrZones: hrZones,
+        paceRecs: paceRecs,
+        autoAdjust: autoAdjust,
+        noWatchGuidance: noWatchGuidance,
+      ),
+    );
   }
 
   void setRecovery({
@@ -200,13 +139,14 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     required String stressLevel,
     required String dayFeeling,
   }) {
-    state = {
-      ...state,
-      'sleep': sleep,
-      'workLevel': workLevel,
-      'stressLevel': stressLevel,
-      'dayFeeling': dayFeeling,
-    };
+    state = state.copyWith(
+      recovery: RunnerProfileDraft.recoveryFromInput(
+        sleep: sleep,
+        workLevel: workLevel,
+        stressLevel: stressLevel,
+        dayFeeling: dayFeeling,
+      ),
+    );
   }
 
   void setMotivation({
@@ -215,17 +155,18 @@ class OnboardingNotifier extends Notifier<Map<String, dynamic>> {
     required int confidence,
     required String coachingTone,
   }) {
-    state = {
-      ...state,
-      'motivations': motivations,
-      'barriers': barriers,
-      'confidence': confidence,
-      'coachingTone': coachingTone,
-    };
+    state = state.copyWith(
+      motivation: RunnerProfileDraft.motivationFromInput(
+        motivations: motivations,
+        barriers: barriers,
+        confidence: confidence,
+        coachingTone: coachingTone,
+      ),
+    );
   }
 }
 
 final onboardingProvider =
-    NotifierProvider<OnboardingNotifier, Map<String, dynamic>>(
+    NotifierProvider<OnboardingNotifier, RunnerProfileDraft>(
       OnboardingNotifier.new,
     );

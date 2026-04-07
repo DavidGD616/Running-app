@@ -51,16 +51,16 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
   @override
   void initState() {
     super.initState();
-    final answers = ref.read(onboardingProvider);
-    _experience = answers['experience'] as String?;
-    _canRun10Min = answers['canRun10Min'] as bool?;
-    _runningDays = answers['runningDays'] as String?;
-    _weeklyVolume = answers['weeklyVolume'] as String?;
-    _longestRun = answers['longestRun'] as String?;
-    _canCompleteGoalDist = answers['canCompleteGoalDist'] as String?;
-    _raceDistanceBefore = answers['raceDistanceBefore'] as String?;
-    _benchmark = answers['benchmark'] as String?;
-    _benchmarkTime = answers['benchmarkTime'] as Duration?;
+    final draft = ref.read(onboardingProvider);
+    _experience = draft.fitness.experienceKey;
+    _canRun10Min = draft.fitness.canRun10Min;
+    _runningDays = draft.fitness.runningDaysKey;
+    _weeklyVolume = draft.fitness.weeklyVolumeKey;
+    _longestRun = draft.fitness.longestRunKey;
+    _canCompleteGoalDist = draft.fitness.canCompleteGoalDistanceKey;
+    _raceDistanceBefore = draft.fitness.raceDistanceBeforeKey;
+    _benchmark = draft.fitness.benchmarkKey;
+    _benchmarkTime = draft.fitness.benchmarkTime;
   }
 
   bool get _isBrandNew => _experience == OnboardingValues.experienceBrandNew;

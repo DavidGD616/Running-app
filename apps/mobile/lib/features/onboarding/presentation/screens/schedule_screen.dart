@@ -37,14 +37,12 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    final answers = ref.read(onboardingProvider);
-    _trainingDays = answers['trainingDays'] as String?;
-    _longRunDay = answers['longRunDay'] as String?;
-    _weekdayTime = answers['weekdayTime'] as String?;
-    _weekendTime = answers['weekendTime'] as String?;
-    _hardDays.addAll(
-      (answers['hardDays'] as List?)?.cast<String>() ?? const [],
-    );
+    final draft = ref.read(onboardingProvider);
+    _trainingDays = draft.schedule.trainingDaysKey;
+    _longRunDay = draft.schedule.longRunDayKey;
+    _weekdayTime = draft.schedule.weekdayTimeKey;
+    _weekendTime = draft.schedule.weekendTimeKey;
+    _hardDays.addAll(draft.schedule.hardDayKeys);
   }
 
   bool get _isComplete =>

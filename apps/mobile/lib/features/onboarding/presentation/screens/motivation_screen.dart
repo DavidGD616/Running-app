@@ -29,10 +29,18 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
 
   final _scrollController = ScrollController();
 
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _motivations.addAll(draft.motivation.motivationKeys);
+    _barriers.addAll(draft.motivation.barrierKeys);
+    _confidence = draft.motivation.confidence ?? 5;
+    _coachingTone = draft.motivation.coachingToneKey;
+  }
+
   bool get _isComplete =>
-      _motivations.isNotEmpty &&
-      _barriers.isNotEmpty &&
-      _coachingTone != null;
+      _motivations.isNotEmpty && _barriers.isNotEmpty && _coachingTone != null;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -113,7 +121,10 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
             // ── Top nav ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.screen,
+                0,
               ),
               child: Column(
                 children: [
@@ -161,14 +172,18 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.motivationTitle,
-                        style: AppTypography.headlineMedium),
+                    Text(
+                      l10n.motivationTitle,
+                      style: AppTypography.headlineMedium,
+                    ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
                       l10n.motivationSubtitle,
@@ -179,8 +194,10 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Why are you doing this? ────────────────────────────
-                    Text(l10n.whyDoingThisLabel,
-                        style: AppTypography.labelLarge),
+                    Text(
+                      l10n.whyDoingThisLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.xs),
                     Text(
                       l10n.selectAllThatApply,
@@ -193,22 +210,23 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                       spacing: AppSpacing.sm,
                       runSpacing: AppSpacing.sm,
                       children: motivationOptions
-                          .map((label) => _Chip(
-                                label: OnboardingValues.localizeMotivation(
-                                  label,
-                                  l10n,
-                                ),
-                                isSelected: _motivations.contains(label),
-                                onTap: () => _toggleMotivation(label),
-                              ))
+                          .map(
+                            (label) => _Chip(
+                              label: OnboardingValues.localizeMotivation(
+                                label,
+                                l10n,
+                              ),
+                              isSelected: _motivations.contains(label),
+                              onTap: () => _toggleMotivation(label),
+                            ),
+                          )
                           .toList(),
                     ),
 
                     // ── 2. What gets in the way of consistency? ───────────────
                     if (_motivations.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.barriersLabel,
-                          style: AppTypography.labelLarge),
+                      Text(l10n.barriersLabel, style: AppTypography.labelLarge),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         l10n.selectAllThatApply,
@@ -221,14 +239,16 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: barrierOptions
-                            .map((label) => _Chip(
-                                  label: OnboardingValues.localizeBarrier(
-                                    label,
-                                    l10n,
-                                  ),
-                                  isSelected: _barriers.contains(label),
-                                  onTap: () => _toggleBarrier(label),
-                                ))
+                            .map(
+                              (label) => _Chip(
+                                label: OnboardingValues.localizeBarrier(
+                                  label,
+                                  l10n,
+                                ),
+                                isSelected: _barriers.contains(label),
+                                onTap: () => _toggleBarrier(label),
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -236,8 +256,10 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     // ── 3. Confidence slider ──────────────────────────────────
                     if (_barriers.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.confidenceLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.confidenceLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       AppSlider(
                         value: _confidence,
@@ -250,8 +272,10 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                     // ── 4. Preferred coaching tone ────────────────────────────
                     if (_barriers.isNotEmpty) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.coachingToneLabel,
-                          style: AppTypography.labelLarge),
+                      Text(
+                        l10n.coachingToneLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _SelectCard(
                         label: l10n.toneSimple,
@@ -269,7 +293,8 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
                         isSelected:
                             _coachingTone == OnboardingValues.toneEncouraging,
                         onTap: () => setState(
-                          () => _coachingTone = OnboardingValues.toneEncouraging,
+                          () =>
+                              _coachingTone = OnboardingValues.toneEncouraging,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.sm),
@@ -301,14 +326,18 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
                 label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setMotivation(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setMotivation(
                               motivations: _motivations.toList(),
                               barriers: _barriers.toList(),
                               confidence: _confidence,
@@ -356,7 +385,9 @@ class _SelectCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: subtitle != null

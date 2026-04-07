@@ -36,8 +36,8 @@ class _TrainingPreferencesScreenState
   @override
   void initState() {
     super.initState();
-    final answers = ref.read(onboardingProvider);
-    _planPreference = answers['planPreference'] as String?;
+    final draft = ref.read(onboardingProvider);
+    _planPreference = draft.trainingPreferences.planPreferenceKey;
   }
 
   bool get _isComplete => _planPreference != null;

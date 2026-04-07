@@ -27,6 +27,15 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
 
   final _scrollController = ScrollController();
 
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _painLevel = draft.health.painLevelKey;
+    _injuryHistory = draft.health.injuryHistoryKey;
+    _healthConditions = draft.health.healthConditionsKey;
+  }
+
   bool get _isComplete =>
       _painLevel != null && _injuryHistory != null && _healthConditions != null;
 

@@ -9,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -39,15 +40,15 @@ class SummaryScreen extends ConsumerWidget {
 
   // ── Build display values from provider data ───────────────────────────────
 
-  String _goalValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final race = a['race'] as String?;
+  String _goalValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final race = a.goal.raceKey;
     if (race == null) return '—';
     return OnboardingValues.localizeRace(race, l10n);
   }
 
-  String _goalDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final date = a['raceDate'] as DateTime?;
-    final priority = a['priority'] as String?;
+  String _goalDetail(RunnerProfileDraft a, AppLocalizations l10n) {
+    final date = a.goal.raceDate;
+    final priority = a.goal.priorityKey;
     final localizedPriority = priority != null
         ? OnboardingValues.localizePriority(priority, l10n)
         : '—';
@@ -55,56 +56,56 @@ class SummaryScreen extends ConsumerWidget {
     return localizedPriority;
   }
 
-  String _fitnessValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final exp = a['experience'] as String?;
+  String _fitnessValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final exp = a.fitness.experienceKey;
     if (exp == null) return '—';
     return OnboardingValues.localizeExperience(exp, l10n);
   }
 
   String _fitnessDetail(
-    Map<String, dynamic> a,
+    RunnerProfileDraft a,
     UnitSystem unitSystem,
     AppLocalizations l10n,
   ) {
-    final experience = a['experience'] as String?;
+    final experience = a.fitness.experienceKey;
     if (experience == OnboardingValues.experienceBrandNew) {
-      final can = a['canRun10Min'] as bool?;
+      final can = a.fitness.canRun10Min;
       if (can == null) return '—';
       return l10n.summaryCanRun10Min(can ? l10n.yes : l10n.no);
     }
-    final days = (a['runningDays'] as String?) ?? '—';
-    final weeklyVolume = a['weeklyVolume'] as String?;
+    final days = a.fitness.runningDaysKey ?? '—';
+    final weeklyVolume = a.fitness.weeklyVolumeKey;
     final volume = weeklyVolume != null
         ? OnboardingValues.localizeWeeklyVolume(weeklyVolume, unitSystem, l10n)
         : '—';
     return l10n.summaryFitnessDetail(days, volume);
   }
 
-  String _scheduleValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final days = a['trainingDays'] as String?;
+  String _scheduleValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final days = a.schedule.trainingDaysKey;
     return days != null ? l10n.summaryDaysPerWeek(days) : '—';
   }
 
-  String _scheduleDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final longRun = a['longRunDay'] as String?;
-    final weekday = a['weekdayTime'] as String?;
+  String _scheduleDetail(RunnerProfileDraft a, AppLocalizations l10n) {
+    final longRun = a.schedule.longRunDayKey;
+    final weekday = a.schedule.weekdayTimeKey;
     return l10n.summaryScheduleDetail(
       longRun != null ? OnboardingValues.localizeDay(longRun, l10n) : '—',
       weekday != null ? OnboardingValues.localizeTimeSlot(weekday, l10n) : '—',
     );
   }
 
-  String _healthValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final pain = a['painLevel'] as String?;
+  String _healthValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final pain = a.health.painLevelKey;
     if (pain == null) return '—';
     return pain == OnboardingValues.painNo
         ? l10n.summaryNoPain
         : l10n.summaryWithPain(OnboardingValues.localizePainLevel(pain, l10n));
   }
 
-  String _healthDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final injury = a['injuryHistory'] as String?;
-    final conditions = a['healthConditions'] as String?;
+  String _healthDetail(RunnerProfileDraft a, AppLocalizations l10n) {
+    final injury = a.health.injuryHistoryKey;
+    final conditions = a.health.healthConditionsKey;
     return l10n.summaryHealthDetail(
       injury != null
           ? OnboardingValues.localizeInjuryHistory(injury, l10n)
@@ -115,30 +116,30 @@ class SummaryScreen extends ConsumerWidget {
     );
   }
 
-  String _trainingValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final preference = a['planPreference'] as String?;
+  String _trainingValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final preference = a.trainingPreferences.planPreferenceKey;
     return preference != null
         ? OnboardingValues.localizePlanPreference(preference, l10n)
         : '—';
   }
 
-  String _trainingDetail(Map<String, dynamic> a, AppLocalizations l10n) {
-    final preference = a['planPreference'] as String?;
+  String _trainingDetail(RunnerProfileDraft a, AppLocalizations l10n) {
+    final preference = a.trainingPreferences.planPreferenceKey;
     if (preference == null) return '—';
     return OnboardingValues.localizePlanPreferenceSubtitle(preference, l10n);
   }
 
-  String _deviceValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final hasWatch = a['hasWatch'] as String?;
+  String _deviceValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final hasWatch = a.device.hasWatchKey;
     if (hasWatch == OnboardingValues.yes) {
-      final device = (a['device'] as String?) ?? OnboardingValues.deviceOther;
+      final device = a.device.deviceKey ?? OnboardingValues.deviceOther;
       return OnboardingValues.localizeDevice(device, l10n);
     }
     if (hasWatch == OnboardingValues.no) return l10n.summaryNoWatch;
     return '—';
   }
 
-  String _deviceDetail(Map<String, dynamic> a, AppLocalizations l10n) => '—';
+  String _deviceDetail(RunnerProfileDraft a, AppLocalizations l10n) => '—';
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {

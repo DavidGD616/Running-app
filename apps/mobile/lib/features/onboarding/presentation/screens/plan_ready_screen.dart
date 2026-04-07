@@ -8,6 +8,7 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -21,9 +22,9 @@ class PlanReadyScreen extends ConsumerWidget {
 
   // ── Build display values ──────────────────────────────────────────────────
 
-  String _planSubtitle(Map<String, dynamic> a, AppLocalizations l10n) {
-    final race = (a['race'] as String?) ?? '';
-    final experience = (a['experience'] as String?) ?? '';
+  String _planSubtitle(RunnerProfileDraft a, AppLocalizations l10n) {
+    final race = a.goal.raceKey ?? '';
+    final experience = a.fitness.experienceKey ?? '';
     final weeks = OnboardingValues.planWeeksForRace(race);
     final localizedRace = OnboardingValues.localizeRace(race, l10n);
     final localizedExp = OnboardingValues.localizeExperience(experience, l10n);
@@ -31,28 +32,28 @@ class PlanReadyScreen extends ConsumerWidget {
     return '$planName • $localizedExp';
   }
 
-  String _goalDescription(Map<String, dynamic> a, AppLocalizations l10n) {
-    final race = (a['race'] as String?) ?? '';
+  String _goalDescription(RunnerProfileDraft a, AppLocalizations l10n) {
+    final race = a.goal.raceKey ?? '';
     if (race.isEmpty) return '—';
     return l10n.planReadyGoalDescription(
       OnboardingValues.localizeRace(race, l10n),
     );
   }
 
-  String _scheduleValue(Map<String, dynamic> a, AppLocalizations l10n) {
-    final race = (a['race'] as String?) ?? '';
-    final days = (a['trainingDays'] as String?) ?? '—';
+  String _scheduleValue(RunnerProfileDraft a, AppLocalizations l10n) {
+    final race = a.goal.raceKey ?? '';
+    final days = a.schedule.trainingDaysKey ?? '—';
     final weeks = OnboardingValues.planWeeksForRace(race);
     return l10n.planReadyScheduleValue(weeks, days);
   }
 
-  String _longRunDay(Map<String, dynamic> a, AppLocalizations l10n) {
-    final day = a['longRunDay'] as String?;
+  String _longRunDay(RunnerProfileDraft a, AppLocalizations l10n) {
+    final day = a.schedule.longRunDayKey;
     return day != null ? OnboardingValues.localizeDay(day, l10n) : '—';
   }
 
-  String _planPreference(Map<String, dynamic> a, AppLocalizations l10n) {
-    final preference = a['planPreference'] as String?;
+  String _planPreference(RunnerProfileDraft a, AppLocalizations l10n) {
+    final preference = a.trainingPreferences.planPreferenceKey;
     return preference != null
         ? OnboardingValues.localizePlanPreference(preference, l10n)
         : '—';

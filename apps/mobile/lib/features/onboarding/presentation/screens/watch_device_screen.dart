@@ -27,6 +27,14 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
 
   final _scrollController = ScrollController();
 
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _hasWatch = draft.device.hasWatchKey;
+    _device = draft.device.deviceKey;
+  }
+
   bool get _isComplete {
     if (_hasWatch == null) return false;
     if (_hasWatch == OnboardingValues.yes) return _device != null;
