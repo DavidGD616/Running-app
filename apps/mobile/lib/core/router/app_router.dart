@@ -174,6 +174,11 @@ final appRouter = GoRouter(
           const GoalScreen(mode: GoalFlowMode.editGoal),
     ),
     GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoalSchedule,
+      builder: (context, state) =>
+          const ScheduleScreen(mode: ScheduleFlowMode.editGoal),
+    ),
+    GoRoute(
       path: RouteNames.settingsUpdatePlanEditGoalTraining,
       builder: (context, state) => const TrainingPreferencesScreen(
         mode: TrainingPreferencesFlowMode.editGoal,
@@ -185,6 +190,16 @@ final appRouter = GoRouter(
           const SettingsGoalReviewScreen(mode: SettingsGoalReviewMode.editGoal),
     ),
     GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoalGenerating,
+      builder: (context, state) =>
+          const PlanGenerationScreen(mode: PlanGenerationFlowMode.editGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanEditGoalReady,
+      builder: (context, state) =>
+          const PlanReadyScreen(mode: PlanReadyFlowMode.editGoal),
+    ),
+    GoRoute(
       path: RouteNames.settingsUpdatePlanNewGoal,
       builder: (context, state) =>
           const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.newGoal),
@@ -192,6 +207,11 @@ final appRouter = GoRouter(
     GoRoute(
       path: RouteNames.settingsUpdatePlanNewGoalForm,
       builder: (context, state) => const GoalScreen(mode: GoalFlowMode.newGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoalSchedule,
+      builder: (context, state) =>
+          const ScheduleScreen(mode: ScheduleFlowMode.newGoal),
     ),
     GoRoute(
       path: RouteNames.settingsUpdatePlanNewGoalTraining,
@@ -205,9 +225,19 @@ final appRouter = GoRouter(
           const SettingsGoalReviewScreen(mode: SettingsGoalReviewMode.newGoal),
     ),
     GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoalGenerating,
+      builder: (context, state) =>
+          const PlanGenerationScreen(mode: PlanGenerationFlowMode.newGoal),
+    ),
+    GoRoute(
+      path: RouteNames.settingsUpdatePlanNewGoalReady,
+      builder: (context, state) =>
+          const PlanReadyScreen(mode: PlanReadyFlowMode.newGoal),
+    ),
+    GoRoute(
       path: RouteNames.settingsUpdatePlanSchedule,
       builder: (context, state) =>
-          const ScheduleScreen(isEditingPlanInfo: true),
+          const ScheduleScreen(mode: ScheduleFlowMode.changeSchedule),
     ),
     GoRoute(
       path: RouteNames.settingsLanguage,

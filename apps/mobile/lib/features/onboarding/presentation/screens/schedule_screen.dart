@@ -14,10 +14,12 @@ import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
-class ScheduleScreen extends ConsumerStatefulWidget {
-  const ScheduleScreen({super.key, this.isEditingPlanInfo = false});
+enum ScheduleFlowMode { onboarding, changeSchedule, editGoal, newGoal }
 
-  final bool isEditingPlanInfo;
+class ScheduleScreen extends ConsumerStatefulWidget {
+  const ScheduleScreen({super.key, this.mode = ScheduleFlowMode.onboarding});
+
+  final ScheduleFlowMode mode;
 
   @override
   ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -70,6 +72,15 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isSettingsFlow = widget.mode != ScheduleFlowMode.onboarding;
+    final isChangeSchedule = widget.mode == ScheduleFlowMode.changeSchedule;
+    final nextRoute = switch (widget.mode) {
+      ScheduleFlowMode.onboarding => RouteNames.health,
+      ScheduleFlowMode.changeSchedule => null,
+      ScheduleFlowMode.editGoal =>
+        RouteNames.settingsUpdatePlanEditGoalTraining,
+      ScheduleFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalTraining,
+    };
 
     final days = [
       OnboardingValues.dayMon,
@@ -108,14 +119,14 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: widget.isEditingPlanInfo
+      appBar: isSettingsFlow
           ? AppDetailHeaderBar(title: l10n.scheduleTitle)
           : null,
       body: SafeArea(
-        top: !widget.isEditingPlanInfo,
+        top: !isSettingsFlow,
         child: Column(
           children: [
-            if (!widget.isEditingPlanInfo)
+            if (!isSettingsFlow)
               Padding(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.sm,
@@ -177,7 +188,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (!widget.isEditingPlanInfo) ...[
+                    if (!isSettingsFlow) ...[
                       Text(
                         l10n.scheduleTitle,
                         style: AppTypography.headlineMedium,
@@ -364,7 +375,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: widget.isEditingPlanInfo
+                label: isChangeSchedule
                     ? l10n.saveChangesButton
                     : l10n.continueButton,
                 onPressed: _isComplete
@@ -378,10 +389,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                               weekendTime: _weekendTime!,
                               hardDays: _hardDays.toList(),
                             );
-                        if (widget.isEditingPlanInfo) {
+                        if (isChangeSchedule) {
                           context.pop();
                         } else {
-                          context.push(RouteNames.health);
+                          context.push(nextRoute!);
                         }
                       }
                     : null,

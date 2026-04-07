@@ -147,6 +147,9 @@
   "settingsReviewChangesTitle": "Review Changes",
   "@settingsReviewChangesTitle": { "description": "Title for the settings goal review screen" },
 
+  "settingsViewPlan": "View Plan",
+  "@settingsViewPlan": { "description": "Primary CTA on the settings plan-ready screen" },
+
   "settingsReviewChangesSubtitle": "Review your {flowLabel} details and training preferences before applying them.",
   "@settingsReviewChangesSubtitle": {
     "description": "Subtitle for the settings goal review screen",

@@ -45,6 +45,12 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
       SettingsGoalReviewMode.editGoal => l10n.settingsEditGoal,
       SettingsGoalReviewMode.newGoal => l10n.settingsNewGoal,
     };
+    final nextRoute = switch (mode) {
+      SettingsGoalReviewMode.editGoal =>
+        RouteNames.settingsUpdatePlanEditGoalGenerating,
+      SettingsGoalReviewMode.newGoal =>
+        RouteNames.settingsUpdatePlanNewGoalGenerating,
+    };
 
     final race = answers['race'] as String?;
     final hasRaceDate = answers['hasRaceDate'] as bool?;
@@ -52,6 +58,12 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
     final priority = answers['priority'] as String?;
     final currentTime = answers['currentTime'] as Duration?;
     final targetTime = answers['targetTime'] as Duration?;
+
+    final trainingDays = answers['trainingDays'] as String?;
+    final longRunDay = answers['longRunDay'] as String?;
+    final weekdayTime = answers['weekdayTime'] as String?;
+    final weekendTime = answers['weekendTime'] as String?;
+    final hardDays = (answers['hardDays'] as List?)?.cast<String>() ?? const [];
 
     final planPreference = answers['planPreference'] as String?;
 
@@ -120,6 +132,63 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
+                      SectionLabel(label: l10n.scheduleTitle),
+                      const SizedBox(height: AppSpacing.sm),
+                      SettingsCard(
+                        children: [
+                          _SummaryRow(
+                            label: l10n.trainingDaysLabel,
+                            value: _valueOrDash(trainingDays),
+                          ),
+                          _SummaryRow(
+                            label: l10n.longRunDayLabel,
+                            value: _valueOrDash(
+                              longRunDay != null
+                                  ? OnboardingValues.localizeDay(
+                                      longRunDay,
+                                      l10n,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          _SummaryRow(
+                            label: l10n.weekdayTimeLabel,
+                            value: _valueOrDash(
+                              weekdayTime != null
+                                  ? OnboardingValues.localizeTimeSlot(
+                                      weekdayTime,
+                                      l10n,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          _SummaryRow(
+                            label: l10n.weekendTimeLabel,
+                            value: _valueOrDash(
+                              weekendTime != null
+                                  ? OnboardingValues.localizeTimeSlot(
+                                      weekendTime,
+                                      l10n,
+                                    )
+                                  : null,
+                            ),
+                          ),
+                          _SummaryRow(
+                            label: l10n.hardDaysLabel,
+                            value: hardDays.isEmpty
+                                ? '—'
+                                : hardDays
+                                      .map(
+                                        (day) => OnboardingValues.localizeDay(
+                                          day,
+                                          l10n,
+                                        ),
+                                      )
+                                      .join(', '),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
                       SectionLabel(label: l10n.settingsSummaryTrainingSection),
                       const SizedBox(height: AppSpacing.sm),
                       SettingsCard(
@@ -145,7 +214,7 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
               AppButton(
                 label: l10n.settingsAcceptChanges,
-                onPressed: () => context.go(RouteNames.settingsUpdatePlan),
+                onPressed: () => context.push(nextRoute),
               ),
             ],
           ),

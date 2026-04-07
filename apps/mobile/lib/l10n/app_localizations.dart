@@ -386,6 +386,12 @@ abstract class AppLocalizations {
   /// **'Review Changes'**
   String get settingsReviewChangesTitle;
 
+  /// Primary CTA on the settings plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'View Plan'**
+  String get settingsViewPlan;
+
   /// Subtitle for the settings goal review screen
   ///
   /// In en, this message translates to:

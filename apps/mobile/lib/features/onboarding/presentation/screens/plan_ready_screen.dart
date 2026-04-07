@@ -12,8 +12,12 @@ import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
+enum PlanReadyFlowMode { onboarding, editGoal, newGoal }
+
 class PlanReadyScreen extends ConsumerWidget {
-  const PlanReadyScreen({super.key});
+  const PlanReadyScreen({super.key, this.mode = PlanReadyFlowMode.onboarding});
+
+  final PlanReadyFlowMode mode;
 
   // ── Build display values ──────────────────────────────────────────────────
 
@@ -60,6 +64,12 @@ class PlanReadyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final answers = ref.watch(onboardingProvider);
+    final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
+    final primaryLabel = switch (mode) {
+      PlanReadyFlowMode.onboarding => l10n.planReadyStartPlan,
+      PlanReadyFlowMode.editGoal => l10n.settingsViewPlan,
+      PlanReadyFlowMode.newGoal => l10n.settingsViewPlan,
+    };
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -181,25 +191,33 @@ class PlanReadyScreen extends ConsumerWidget {
               child: Column(
                 children: [
                   AppButton(
-                    label: l10n.planReadyStartPlan,
+                    label: primaryLabel,
                     onPressed: () async {
-                      await ref
-                          .read(onboardingProvider.notifier)
-                          .markCompleted();
-                      if (context.mounted) context.go(RouteNames.today);
+                      if (!isSettingsFlow) {
+                        await ref
+                            .read(onboardingProvider.notifier)
+                            .markCompleted();
+                      }
+                      if (!context.mounted) return;
+                      context.go(
+                        isSettingsFlow ? RouteNames.plan : RouteNames.today,
+                      );
                     },
                   ),
-                  const SizedBox(height: AppSpacing.md),
-                  AppButton(
-                    label: l10n.planReadyViewFullWeek,
-                    variant: AppButtonVariant.secondary,
-                    onPressed: () async {
-                      await ref
-                          .read(onboardingProvider.notifier)
-                          .markCompleted();
-                      if (context.mounted) context.go(RouteNames.plan);
-                    },
-                  ),
+                  if (!isSettingsFlow) ...[
+                    const SizedBox(height: AppSpacing.md),
+                    AppButton(
+                      label: l10n.planReadyViewFullWeek,
+                      variant: AppButtonVariant.secondary,
+                      onPressed: () async {
+                        await ref
+                            .read(onboardingProvider.notifier)
+                            .markCompleted();
+                        if (!context.mounted) return;
+                        context.go(RouteNames.plan);
+                      },
+                    ),
+                  ],
                 ],
               ),
             ),

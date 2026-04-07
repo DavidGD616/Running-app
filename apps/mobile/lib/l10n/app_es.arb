@@ -58,6 +58,7 @@
   "setGoalButton": "Definir objetivo",
   "settingsAcceptChanges": "Aceptar cambios",
   "settingsReviewChangesTitle": "Revisar cambios",
+  "settingsViewPlan": "Ver plan",
   "settingsReviewChangesSubtitle": "Revisa los detalles de {flowLabel} y tus preferencias de entrenamiento antes de aplicarlos.",
 
   "homeReady": "¡Tu plan está listo!",

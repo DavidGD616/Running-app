@@ -34,17 +34,29 @@ abstract class RouteNames {
   static const settingsUpdatePlanEditGoal = '/settings/update-plan/edit-goal';
   static const settingsUpdatePlanEditGoalForm =
       '/settings/update-plan/edit-goal/form';
+  static const settingsUpdatePlanEditGoalSchedule =
+      '/settings/update-plan/edit-goal/schedule';
   static const settingsUpdatePlanEditGoalTraining =
       '/settings/update-plan/edit-goal/training';
   static const settingsUpdatePlanEditGoalSummary =
       '/settings/update-plan/edit-goal/summary';
+  static const settingsUpdatePlanEditGoalGenerating =
+      '/settings/update-plan/edit-goal/generating';
+  static const settingsUpdatePlanEditGoalReady =
+      '/settings/update-plan/edit-goal/ready';
   static const settingsUpdatePlanNewGoal = '/settings/update-plan/new-goal';
   static const settingsUpdatePlanNewGoalForm =
       '/settings/update-plan/new-goal/form';
+  static const settingsUpdatePlanNewGoalSchedule =
+      '/settings/update-plan/new-goal/schedule';
   static const settingsUpdatePlanNewGoalTraining =
       '/settings/update-plan/new-goal/training';
   static const settingsUpdatePlanNewGoalSummary =
       '/settings/update-plan/new-goal/summary';
+  static const settingsUpdatePlanNewGoalGenerating =
+      '/settings/update-plan/new-goal/generating';
+  static const settingsUpdatePlanNewGoalReady =
+      '/settings/update-plan/new-goal/ready';
   static const settingsUpdatePlanSchedule = '/settings/update-plan/schedule';
   static const settingsLanguage = '/settings/language';
   static const settingsUnits = '/settings/units';

@@ -156,6 +156,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsReviewChangesTitle => 'Revisar cambios';
 
   @override
+  String get settingsViewPlan => 'Ver plan';
+
+  @override
   String settingsReviewChangesSubtitle(String flowLabel) {
     return 'Revisa los detalles de $flowLabel y tus preferencias de entrenamiento antes de aplicarlos.';
   }

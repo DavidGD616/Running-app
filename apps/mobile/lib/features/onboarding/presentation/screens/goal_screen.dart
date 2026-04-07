@@ -177,8 +177,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     };
     final nextRoute = switch (widget.mode) {
       GoalFlowMode.onboarding => RouteNames.fitness,
-      GoalFlowMode.editGoal => RouteNames.settingsUpdatePlanEditGoalTraining,
-      GoalFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalTraining,
+      GoalFlowMode.editGoal => RouteNames.settingsUpdatePlanEditGoalSchedule,
+      GoalFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalSchedule,
     };
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
