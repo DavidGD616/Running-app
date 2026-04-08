@@ -194,12 +194,10 @@ class PlanReadyScreen extends ConsumerWidget {
                   AppButton(
                     label: primaryLabel,
                     onPressed: () async {
-                      if (!isSettingsFlow) {
-                        await ref
-                            .read(onboardingProvider.notifier)
-                            .markCompleted();
-                      }
-                      if (!context.mounted) return;
+                      final saved = await ref
+                          .read(onboardingProvider.notifier)
+                          .saveProfile(markOnboardingComplete: !isSettingsFlow);
+                      if (!saved || !context.mounted) return;
                       context.go(
                         isSettingsFlow ? RouteNames.plan : RouteNames.today,
                       );
@@ -211,10 +209,10 @@ class PlanReadyScreen extends ConsumerWidget {
                       label: l10n.planReadyViewFullWeek,
                       variant: AppButtonVariant.secondary,
                       onPressed: () async {
-                        await ref
+                        final saved = await ref
                             .read(onboardingProvider.notifier)
                             .markCompleted();
-                        if (!context.mounted) return;
+                        if (!saved || !context.mounted) return;
                         context.go(RouteNames.plan);
                       },
                     ),

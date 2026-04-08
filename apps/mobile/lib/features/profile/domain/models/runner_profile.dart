@@ -28,6 +28,67 @@ Set<T> _enumSetByKeys<T extends Enum>(
 int? _intFromString(String? value) =>
     value == null ? null : int.tryParse(value);
 
+String? _stringOrNull(Object? value) => value is String ? value : null;
+
+int? _intOrNull(Object? value) {
+  if (value is int) return value;
+  if (value is double) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+bool? _boolOrNull(Object? value) {
+  if (value is bool) return value;
+  if (value is String) {
+    return switch (value.toLowerCase()) {
+      'true' => true,
+      'false' => false,
+      _ => null,
+    };
+  }
+  return null;
+}
+
+DateTime? _dateTimeFromJson(Object? value) {
+  final raw = _stringOrNull(value);
+  if (raw == null || raw.isEmpty) return null;
+  return DateTime.tryParse(raw);
+}
+
+int? _durationToJson(Duration? value) => value?.inMilliseconds;
+
+Duration? _durationFromJson(Object? value) {
+  final milliseconds = _intOrNull(value);
+  return milliseconds == null ? null : Duration(milliseconds: milliseconds);
+}
+
+List<String> _stringListOrEmpty(Object? value) {
+  if (value is! List) return const [];
+  return value.whereType<String>().toList(growable: false)..sort();
+}
+
+Map<String, dynamic> _mapOrEmpty(Object? value) {
+  if (value is! Map) return const {};
+  return value.map((key, nestedValue) => MapEntry('$key', nestedValue));
+}
+
+List<String> _sortedCanonicalKeys<T extends CanonicalKeyed>(
+  Iterable<T> values,
+) {
+  final keys = values.map((value) => value.key).toList(growable: false);
+  keys.sort();
+  return keys;
+}
+
+ProfileGender? _profileGenderFromName(String? value) {
+  return switch (value) {
+    'male' => ProfileGender.male,
+    'female' => ProfileGender.female,
+    'other' => ProfileGender.other,
+    _ => null,
+  };
+}
+
 enum BinaryChoice implements CanonicalKeyed {
   yes('yes'),
   no('no');
@@ -952,6 +1013,70 @@ class RunnerProfile {
   final DateTime? dateOfBirth;
   final int schemaVersion;
   final DateTime updatedAt;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'goal': _goalProfileToJson(goal),
+      'fitness': _fitnessProfileToJson(fitness),
+      'schedule': _scheduleProfileToJson(schedule),
+      'health': _healthProfileToJson(health),
+      'trainingPreferences': _trainingPreferencesProfileToJson(
+        trainingPreferences,
+      ),
+      'device': _deviceProfileToJson(device),
+      'recovery': _recoveryProfileToJson(recovery),
+      'motivation': _motivationProfileToJson(motivation),
+      'gender': gender?.name,
+      'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'schemaVersion': schemaVersion,
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
+
+  static RunnerProfile? fromJson(Map<String, dynamic> json) {
+    final goal = _goalProfileFromJson(_mapOrEmpty(json['goal']));
+    final fitness = _fitnessProfileFromJson(_mapOrEmpty(json['fitness']));
+    final schedule = _scheduleProfileFromJson(_mapOrEmpty(json['schedule']));
+    final health = _healthProfileFromJson(_mapOrEmpty(json['health']));
+    final trainingPreferences = _trainingPreferencesProfileFromJson(
+      _mapOrEmpty(json['trainingPreferences']),
+    );
+    final device = _deviceProfileFromJson(_mapOrEmpty(json['device']));
+    final recovery = _recoveryProfileFromJson(_mapOrEmpty(json['recovery']));
+    final motivation = _motivationProfileFromJson(
+      _mapOrEmpty(json['motivation']),
+    );
+    final updatedAt = _dateTimeFromJson(json['updatedAt']);
+    final schemaVersion = _intOrNull(json['schemaVersion']);
+
+    if (goal == null ||
+        fitness == null ||
+        schedule == null ||
+        health == null ||
+        trainingPreferences == null ||
+        device == null ||
+        recovery == null ||
+        motivation == null ||
+        updatedAt == null ||
+        schemaVersion == null) {
+      return null;
+    }
+
+    return RunnerProfile(
+      goal: goal,
+      fitness: fitness,
+      schedule: schedule,
+      health: health,
+      trainingPreferences: trainingPreferences,
+      device: device,
+      recovery: recovery,
+      motivation: motivation,
+      gender: _profileGenderFromName(_stringOrNull(json['gender'])),
+      dateOfBirth: _dateTimeFromJson(json['dateOfBirth']),
+      schemaVersion: schemaVersion,
+      updatedAt: updatedAt,
+    );
+  }
 }
 
 class RunnerProfileDraft {
@@ -975,6 +1100,21 @@ class RunnerProfileDraft {
   final RecoveryProfileDraft recovery;
   final MotivationProfileDraft motivation;
 
+  Map<String, dynamic> toJson() {
+    return {
+      'goal': _goalProfileDraftToJson(goal),
+      'fitness': _fitnessProfileDraftToJson(fitness),
+      'schedule': _scheduleProfileDraftToJson(schedule),
+      'health': _healthProfileDraftToJson(health),
+      'trainingPreferences': _trainingPreferencesProfileDraftToJson(
+        trainingPreferences,
+      ),
+      'device': _deviceProfileDraftToJson(device),
+      'recovery': _recoveryProfileDraftToJson(recovery),
+      'motivation': _motivationProfileDraftToJson(motivation),
+    };
+  }
+
   RunnerProfileDraft copyWith({
     GoalProfileDraft? goal,
     FitnessProfileDraft? fitness,
@@ -994,6 +1134,23 @@ class RunnerProfileDraft {
       device: device ?? this.device,
       recovery: recovery ?? this.recovery,
       motivation: motivation ?? this.motivation,
+    );
+  }
+
+  static RunnerProfileDraft fromJson(Map<String, dynamic> json) {
+    return RunnerProfileDraft(
+      goal: _goalProfileDraftFromJson(_mapOrEmpty(json['goal'])),
+      fitness: _fitnessProfileDraftFromJson(_mapOrEmpty(json['fitness'])),
+      schedule: _scheduleProfileDraftFromJson(_mapOrEmpty(json['schedule'])),
+      health: _healthProfileDraftFromJson(_mapOrEmpty(json['health'])),
+      trainingPreferences: _trainingPreferencesProfileDraftFromJson(
+        _mapOrEmpty(json['trainingPreferences']),
+      ),
+      device: _deviceProfileDraftFromJson(_mapOrEmpty(json['device'])),
+      recovery: _recoveryProfileDraftFromJson(_mapOrEmpty(json['recovery'])),
+      motivation: _motivationProfileDraftFromJson(
+        _mapOrEmpty(json['motivation']),
+      ),
     );
   }
 
@@ -1054,6 +1211,69 @@ class RunnerProfileDraft {
         priority: GoalPriority.fromKey(priority),
         currentTime: currentTime,
         targetTime: targetTime,
+      ),
+    );
+  }
+
+  static RunnerProfileDraft fromRunnerProfile(RunnerProfile profile) {
+    return RunnerProfileDraft(
+      goal: GoalProfileDraft(
+        race: profile.goal.race,
+        hasRaceDate: profile.goal.hasRaceDate,
+        raceDate: profile.goal.raceDate,
+        priority: profile.goal.priority,
+        currentTime: profile.goal.currentTime,
+        targetTime: profile.goal.targetTime,
+      ),
+      fitness: FitnessProfileDraft(
+        experience: profile.fitness.experience,
+        canRun10Min: profile.fitness.canRun10Min,
+        runningDays: profile.fitness.runningDays,
+        weeklyVolume: profile.fitness.weeklyVolume,
+        longestRun: profile.fitness.longestRun,
+        canCompleteGoalDistance: profile.fitness.canCompleteGoalDistance,
+        raceDistanceBefore: profile.fitness.raceDistanceBefore,
+        benchmark: profile.fitness.benchmark,
+        benchmarkTime: profile.fitness.benchmarkTime,
+      ),
+      schedule: ScheduleProfileDraft(
+        trainingDays: profile.schedule.trainingDays,
+        longRunDay: profile.schedule.longRunDay,
+        weekdayTime: profile.schedule.weekdayTime,
+        weekendTime: profile.schedule.weekendTime,
+        hardDays: profile.schedule.hardDays,
+        preferredTimeOfDay: profile.schedule.preferredTimeOfDay,
+      ),
+      health: HealthProfileDraft(
+        painLevel: profile.health.painLevel,
+        injuryHistory: profile.health.injuryHistory,
+        hasHealthConditions: profile.health.hasHealthConditions,
+      ),
+      trainingPreferences: TrainingPreferencesProfileDraft(
+        planPreference: profile.trainingPreferences.planPreference,
+      ),
+      device: DeviceProfileDraft(
+        hasWatch: profile.device.hasWatch,
+        device: profile.device.device,
+        dataUsage: profile.device.dataUsage,
+        watchMetrics: profile.device.watchMetrics,
+        metrics: profile.device.metrics,
+        hrZones: profile.device.hrZones,
+        paceRecommendations: profile.device.paceRecommendations,
+        autoAdjust: profile.device.autoAdjust,
+        noWatchGuidance: profile.device.noWatchGuidance,
+      ),
+      recovery: RecoveryProfileDraft(
+        sleep: profile.recovery.sleep,
+        workLevel: profile.recovery.workLevel,
+        stressLevel: profile.recovery.stressLevel,
+        dayFeeling: profile.recovery.dayFeeling,
+      ),
+      motivation: MotivationProfileDraft(
+        motivations: profile.motivation.motivations,
+        barriers: profile.motivation.barriers,
+        confidence: profile.motivation.confidence,
+        coachingTone: profile.motivation.coachingTone,
       ),
     );
   }
@@ -1188,3 +1408,318 @@ class RunnerProfileDraft {
     );
   }
 }
+
+Map<String, dynamic> _goalProfileDraftToJson(GoalProfileDraft value) {
+  return {
+    'race': value.raceKey,
+    'hasRaceDate': value.hasRaceDate,
+    'raceDate': value.raceDate?.toIso8601String(),
+    'priority': value.priorityKey,
+    'currentTimeMs': _durationToJson(value.currentTime),
+    'targetTimeMs': _durationToJson(value.targetTime),
+  };
+}
+
+GoalProfileDraft _goalProfileDraftFromJson(Map<String, dynamic> json) {
+  return GoalProfileDraft(
+    race: RunnerGoalRace.fromKey(_stringOrNull(json['race'])),
+    hasRaceDate: _boolOrNull(json['hasRaceDate']),
+    raceDate: _dateTimeFromJson(json['raceDate']),
+    priority: GoalPriority.fromKey(_stringOrNull(json['priority'])),
+    currentTime: _durationFromJson(json['currentTimeMs']),
+    targetTime: _durationFromJson(json['targetTimeMs']),
+  );
+}
+
+Map<String, dynamic> _goalProfileToJson(GoalProfile value) {
+  return {
+    'race': value.race.key,
+    'hasRaceDate': value.hasRaceDate,
+    'raceDate': value.raceDate?.toIso8601String(),
+    'priority': value.priority.key,
+    'currentTimeMs': _durationToJson(value.currentTime),
+    'targetTimeMs': _durationToJson(value.targetTime),
+  };
+}
+
+GoalProfile? _goalProfileFromJson(Map<String, dynamic> json) =>
+    _goalProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _fitnessProfileDraftToJson(FitnessProfileDraft value) {
+  return {
+    'experience': value.experienceKey,
+    'canRun10Min': value.canRun10Min,
+    'runningDays': value.runningDays,
+    'weeklyVolume': value.weeklyVolumeKey,
+    'longestRun': value.longestRunKey,
+    'canCompleteGoalDistance': value.canCompleteGoalDistanceKey,
+    'raceDistanceBefore': value.raceDistanceBeforeKey,
+    'benchmark': value.benchmarkKey,
+    'benchmarkTimeMs': _durationToJson(value.benchmarkTime),
+  };
+}
+
+FitnessProfileDraft _fitnessProfileDraftFromJson(Map<String, dynamic> json) {
+  return FitnessProfileDraft(
+    experience: RunnerExperience.fromKey(_stringOrNull(json['experience'])),
+    canRun10Min: _boolOrNull(json['canRun10Min']),
+    runningDays: _intOrNull(json['runningDays']),
+    weeklyVolume: WeeklyVolumeRange.fromKey(
+      _stringOrNull(json['weeklyVolume']),
+    ),
+    longestRun: LongestRunRange.fromKey(_stringOrNull(json['longestRun'])),
+    canCompleteGoalDistance: TernaryChoice.fromKey(
+      _stringOrNull(json['canCompleteGoalDistance']),
+    ),
+    raceDistanceBefore: RaceDistanceExperience.fromKey(
+      _stringOrNull(json['raceDistanceBefore']),
+    ),
+    benchmark: BenchmarkType.fromKey(_stringOrNull(json['benchmark'])),
+    benchmarkTime: _durationFromJson(json['benchmarkTimeMs']),
+  );
+}
+
+Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
+  return {
+    'experience': value.experience.key,
+    'canRun10Min': value.canRun10Min,
+    'runningDays': value.runningDays,
+    'weeklyVolume': value.weeklyVolume?.key,
+    'longestRun': value.longestRun?.key,
+    'canCompleteGoalDistance': value.canCompleteGoalDistance?.key,
+    'raceDistanceBefore': value.raceDistanceBefore?.key,
+    'benchmark': value.benchmark?.key,
+    'benchmarkTimeMs': _durationToJson(value.benchmarkTime),
+  };
+}
+
+FitnessProfile? _fitnessProfileFromJson(Map<String, dynamic> json) =>
+    _fitnessProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _scheduleProfileDraftToJson(ScheduleProfileDraft value) {
+  return {
+    'trainingDays': value.trainingDays,
+    'longRunDay': value.longRunDayKey,
+    'weekdayTime': value.weekdayTimeKey,
+    'weekendTime': value.weekendTimeKey,
+    'hardDays': value.hardDayKeys,
+    'preferredTimeOfDay': value.preferredTimeOfDayKey,
+  };
+}
+
+ScheduleProfileDraft _scheduleProfileDraftFromJson(Map<String, dynamic> json) {
+  return ScheduleProfileDraft(
+    trainingDays: _intOrNull(json['trainingDays']),
+    longRunDay: WeekdayChoice.fromKey(_stringOrNull(json['longRunDay'])),
+    weekdayTime: TimeSlot.fromKey(_stringOrNull(json['weekdayTime'])),
+    weekendTime: TimeSlot.fromKey(_stringOrNull(json['weekendTime'])),
+    hardDays: _enumSetByKeys(
+      _stringListOrEmpty(json['hardDays']),
+      WeekdayChoice.values,
+      (value) => value.key,
+    ),
+    preferredTimeOfDay: PreferredTimeOfDay.fromKey(
+      _stringOrNull(json['preferredTimeOfDay']),
+    ),
+  );
+}
+
+Map<String, dynamic> _scheduleProfileToJson(ScheduleProfile value) {
+  return {
+    'trainingDays': value.trainingDays,
+    'longRunDay': value.longRunDay.key,
+    'weekdayTime': value.weekdayTime.key,
+    'weekendTime': value.weekendTime.key,
+    'hardDays': _sortedCanonicalKeys(value.hardDays),
+    'preferredTimeOfDay': value.preferredTimeOfDay?.key,
+  };
+}
+
+ScheduleProfile? _scheduleProfileFromJson(Map<String, dynamic> json) =>
+    _scheduleProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _healthProfileDraftToJson(HealthProfileDraft value) {
+  return {
+    'painLevel': value.painLevelKey,
+    'injuryHistory': value.injuryHistoryKey,
+    'hasHealthConditions': value.healthConditionsKey,
+  };
+}
+
+HealthProfileDraft _healthProfileDraftFromJson(Map<String, dynamic> json) {
+  return HealthProfileDraft(
+    painLevel: PainLevelChoice.fromKey(_stringOrNull(json['painLevel'])),
+    injuryHistory: InjuryHistoryChoice.fromKey(
+      _stringOrNull(json['injuryHistory']),
+    ),
+    hasHealthConditions: BinaryChoice.fromKey(
+      _stringOrNull(json['hasHealthConditions']),
+    ),
+  );
+}
+
+Map<String, dynamic> _healthProfileToJson(HealthProfile value) {
+  return {
+    'painLevel': value.painLevel.key,
+    'injuryHistory': value.injuryHistory.key,
+    'hasHealthConditions': value.hasHealthConditions.key,
+  };
+}
+
+HealthProfile? _healthProfileFromJson(Map<String, dynamic> json) =>
+    _healthProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _trainingPreferencesProfileDraftToJson(
+  TrainingPreferencesProfileDraft value,
+) {
+  return {'planPreference': value.planPreferenceKey};
+}
+
+TrainingPreferencesProfileDraft _trainingPreferencesProfileDraftFromJson(
+  Map<String, dynamic> json,
+) {
+  return TrainingPreferencesProfileDraft(
+    planPreference: PlanPreferenceChoice.fromKey(
+      _stringOrNull(json['planPreference']),
+    ),
+  );
+}
+
+Map<String, dynamic> _trainingPreferencesProfileToJson(
+  TrainingPreferencesProfile value,
+) {
+  return {'planPreference': value.planPreference.key};
+}
+
+TrainingPreferencesProfile? _trainingPreferencesProfileFromJson(
+  Map<String, dynamic> json,
+) => _trainingPreferencesProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _deviceProfileDraftToJson(DeviceProfileDraft value) {
+  return {
+    'hasWatch': value.hasWatchKey,
+    'device': value.deviceKey,
+    'dataUsage': value.dataUsageKey,
+    'watchMetrics': value.watchMetricsKey,
+    'metrics': value.metricKeys,
+    'hrZones': value.hrZonesKey,
+    'paceRecommendations': value.paceRecommendationsKey,
+    'autoAdjust': value.autoAdjustKey,
+    'noWatchGuidance': value.noWatchGuidanceKey,
+  };
+}
+
+DeviceProfileDraft _deviceProfileDraftFromJson(Map<String, dynamic> json) {
+  return DeviceProfileDraft(
+    hasWatch: BinaryChoice.fromKey(_stringOrNull(json['hasWatch'])),
+    device: WatchDeviceType.fromKey(_stringOrNull(json['device'])),
+    dataUsage: DataUsagePreference.fromKey(_stringOrNull(json['dataUsage'])),
+    watchMetrics: WatchMetricsPreference.fromKey(
+      _stringOrNull(json['watchMetrics']),
+    ),
+    metrics: _enumSetByKeys(
+      _stringListOrEmpty(json['metrics']),
+      WatchMetric.values,
+      (value) => value.key,
+    ),
+    hrZones: BinaryChoice.fromKey(_stringOrNull(json['hrZones'])),
+    paceRecommendations: BinaryChoice.fromKey(
+      _stringOrNull(json['paceRecommendations']),
+    ),
+    autoAdjust: AutoAdjustPreference.fromKey(_stringOrNull(json['autoAdjust'])),
+    noWatchGuidance: NoWatchGuidanceChoice.fromKey(
+      _stringOrNull(json['noWatchGuidance']),
+    ),
+  );
+}
+
+Map<String, dynamic> _deviceProfileToJson(DeviceProfile value) {
+  return {
+    'hasWatch': value.hasWatch.key,
+    'device': value.device?.key,
+    'dataUsage': value.dataUsage?.key,
+    'watchMetrics': value.watchMetrics?.key,
+    'metrics': _sortedCanonicalKeys(value.metrics),
+    'hrZones': value.hrZones?.key,
+    'paceRecommendations': value.paceRecommendations?.key,
+    'autoAdjust': value.autoAdjust?.key,
+    'noWatchGuidance': value.noWatchGuidance?.key,
+  };
+}
+
+DeviceProfile? _deviceProfileFromJson(Map<String, dynamic> json) =>
+    _deviceProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _recoveryProfileDraftToJson(RecoveryProfileDraft value) {
+  return {
+    'sleep': value.sleepKey,
+    'workLevel': value.workLevelKey,
+    'stressLevel': value.stressLevelKey,
+    'dayFeeling': value.dayFeelingKey,
+  };
+}
+
+RecoveryProfileDraft _recoveryProfileDraftFromJson(Map<String, dynamic> json) {
+  return RecoveryProfileDraft(
+    sleep: SleepRange.fromKey(_stringOrNull(json['sleep'])),
+    workLevel: WorkLevelChoice.fromKey(_stringOrNull(json['workLevel'])),
+    stressLevel: StressLevelChoice.fromKey(_stringOrNull(json['stressLevel'])),
+    dayFeeling: DayFeelingChoice.fromKey(_stringOrNull(json['dayFeeling'])),
+  );
+}
+
+Map<String, dynamic> _recoveryProfileToJson(RecoveryProfile value) {
+  return {
+    'sleep': value.sleep.key,
+    'workLevel': value.workLevel.key,
+    'stressLevel': value.stressLevel.key,
+    'dayFeeling': value.dayFeeling.key,
+  };
+}
+
+RecoveryProfile? _recoveryProfileFromJson(Map<String, dynamic> json) =>
+    _recoveryProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _motivationProfileDraftToJson(
+  MotivationProfileDraft value,
+) {
+  return {
+    'motivations': value.motivationKeys,
+    'barriers': value.barrierKeys,
+    'confidence': value.confidence,
+    'coachingTone': value.coachingToneKey,
+  };
+}
+
+MotivationProfileDraft _motivationProfileDraftFromJson(
+  Map<String, dynamic> json,
+) {
+  return MotivationProfileDraft(
+    motivations: _enumSetByKeys(
+      _stringListOrEmpty(json['motivations']),
+      MotivationReason.values,
+      (value) => value.key,
+    ),
+    barriers: _enumSetByKeys(
+      _stringListOrEmpty(json['barriers']),
+      BarrierReason.values,
+      (value) => value.key,
+    ),
+    confidence: _intOrNull(json['confidence']),
+    coachingTone: CoachingToneChoice.fromKey(
+      _stringOrNull(json['coachingTone']),
+    ),
+  );
+}
+
+Map<String, dynamic> _motivationProfileToJson(MotivationProfile value) {
+  return {
+    'motivations': _sortedCanonicalKeys(value.motivations),
+    'barriers': _sortedCanonicalKeys(value.barriers),
+    'confidence': value.confidence,
+    'coachingTone': value.coachingTone.key,
+  };
+}
+
+MotivationProfile? _motivationProfileFromJson(Map<String, dynamic> json) =>
+    _motivationProfileDraftFromJson(json).toProfileOrNull();

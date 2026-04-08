@@ -1,15 +1,30 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../onboarding/presentation/onboarding_provider.dart';
-import '../../user_preferences/presentation/user_preferences_provider.dart';
+import '../data/runner_profile_repository.dart';
 import '../domain/models/runner_profile.dart';
 
-final runnerProfileProvider = Provider<RunnerProfile?>((ref) {
-  final draft = ref.watch(onboardingProvider);
-  final preferences = ref.watch(userPreferencesProvider).value;
+class RunnerProfileNotifier extends Notifier<RunnerProfile?> {
+  @override
+  RunnerProfile? build() {
+    return ref.watch(runnerProfileRepositoryProvider).loadProfile();
+  }
 
-  return draft.toRunnerProfile(
-    gender: preferences?.gender,
-    dateOfBirth: preferences?.dateOfBirth,
-  );
-});
+  Future<void> setProfile(RunnerProfile profile) async {
+    state = profile;
+    await ref.read(runnerProfileRepositoryProvider).saveProfile(profile);
+  }
+
+  Future<void> clearProfile() async {
+    state = null;
+    await ref.read(runnerProfileRepositoryProvider).clearProfile();
+  }
+
+  void reloadFromStorage() {
+    state = ref.read(runnerProfileRepositoryProvider).loadProfile();
+  }
+}
+
+final runnerProfileProvider =
+    NotifierProvider<RunnerProfileNotifier, RunnerProfile?>(
+      RunnerProfileNotifier.new,
+    );

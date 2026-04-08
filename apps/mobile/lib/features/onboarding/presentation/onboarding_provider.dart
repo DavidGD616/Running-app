@@ -1,23 +1,61 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:async';
 
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../profile/data/runner_profile_repository.dart';
 import '../../profile/domain/models/runner_profile.dart';
+import '../../profile/presentation/runner_profile_provider.dart';
+import '../../user_preferences/presentation/user_preferences_provider.dart';
 
 class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
   static const _keyCompleted = 'onboarding_completed';
 
-  static Future<bool> isCompleted() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getBool(_keyCompleted) ?? false;
-  }
-
-  Future<void> markCompleted() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(_keyCompleted, true);
-  }
-
   @override
-  RunnerProfileDraft build() => const RunnerProfileDraft();
+  RunnerProfileDraft build() {
+    final repository = ref.watch(runnerProfileRepositoryProvider);
+    final persistedDraft = repository.loadDraft();
+    if (persistedDraft != null) return persistedDraft;
+
+    final persistedProfile = repository.loadProfile();
+    if (persistedProfile != null) {
+      return RunnerProfileDraft.fromRunnerProfile(persistedProfile);
+    }
+
+    return const RunnerProfileDraft();
+  }
+
+  void _setState(RunnerProfileDraft nextState) {
+    state = nextState;
+    unawaited(ref.read(runnerProfileRepositoryProvider).saveDraft(nextState));
+  }
+
+  Future<bool> saveProfile({
+    bool markOnboardingComplete = false,
+    DateTime? clock,
+  }) async {
+    final preferences = await ref.read(userPreferencesProvider.future);
+    final profile = state.toRunnerProfile(
+      gender: preferences.gender,
+      dateOfBirth: preferences.dateOfBirth,
+      clock: clock,
+    );
+    if (profile == null) return false;
+
+    final repository = ref.read(runnerProfileRepositoryProvider);
+    await repository.saveDraft(state);
+    await ref.read(runnerProfileProvider.notifier).setProfile(profile);
+
+    if (markOnboardingComplete) {
+      await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
+    }
+
+    return true;
+  }
+
+  Future<bool> markCompleted({DateTime? clock}) {
+    return saveProfile(markOnboardingComplete: true, clock: clock);
+  }
 
   void setGoal({
     required String race,
@@ -27,14 +65,16 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     Duration? currentTime,
     Duration? targetTime,
   }) {
-    state = state.copyWith(
-      goal: GoalProfileDraft(
-        race: RunnerGoalRace.fromKey(race),
-        hasRaceDate: hasRaceDate,
-        raceDate: raceDate,
-        priority: GoalPriority.fromKey(priority),
-        currentTime: currentTime,
-        targetTime: targetTime,
+    _setState(
+      state.copyWith(
+        goal: GoalProfileDraft(
+          race: RunnerGoalRace.fromKey(race),
+          hasRaceDate: hasRaceDate,
+          raceDate: raceDate,
+          priority: GoalPriority.fromKey(priority),
+          currentTime: currentTime,
+          targetTime: targetTime,
+        ),
       ),
     );
   }
@@ -50,17 +90,19 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     String? benchmark,
     Duration? benchmarkTime,
   }) {
-    state = state.copyWith(
-      fitness: RunnerProfileDraft.fitnessFromInput(
-        experience: experience,
-        canRun10Min: canRun10Min,
-        runningDays: runningDays,
-        weeklyVolume: weeklyVolume,
-        longestRun: longestRun,
-        canCompleteGoalDist: canCompleteGoalDist,
-        raceDistanceBefore: raceDistanceBefore,
-        benchmark: benchmark,
-        benchmarkTime: benchmarkTime,
+    _setState(
+      state.copyWith(
+        fitness: RunnerProfileDraft.fitnessFromInput(
+          experience: experience,
+          canRun10Min: canRun10Min,
+          runningDays: runningDays,
+          weeklyVolume: weeklyVolume,
+          longestRun: longestRun,
+          canCompleteGoalDist: canCompleteGoalDist,
+          raceDistanceBefore: raceDistanceBefore,
+          benchmark: benchmark,
+          benchmarkTime: benchmarkTime,
+        ),
       ),
     );
   }
@@ -73,14 +115,16 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required List<String> hardDays,
     String? preferredTimeOfDay,
   }) {
-    state = state.copyWith(
-      schedule: RunnerProfileDraft.scheduleFromInput(
-        trainingDays: trainingDays,
-        longRunDay: longRunDay,
-        weekdayTime: weekdayTime,
-        weekendTime: weekendTime,
-        hardDays: hardDays,
-        preferredTimeOfDay: preferredTimeOfDay,
+    _setState(
+      state.copyWith(
+        schedule: RunnerProfileDraft.scheduleFromInput(
+          trainingDays: trainingDays,
+          longRunDay: longRunDay,
+          weekdayTime: weekdayTime,
+          weekendTime: weekendTime,
+          hardDays: hardDays,
+          preferredTimeOfDay: preferredTimeOfDay,
+        ),
       ),
     );
   }
@@ -90,19 +134,23 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required String injuryHistory,
     required String healthConditions,
   }) {
-    state = state.copyWith(
-      health: RunnerProfileDraft.healthFromInput(
-        painLevel: painLevel,
-        injuryHistory: injuryHistory,
-        healthConditions: healthConditions,
+    _setState(
+      state.copyWith(
+        health: RunnerProfileDraft.healthFromInput(
+          painLevel: painLevel,
+          injuryHistory: injuryHistory,
+          healthConditions: healthConditions,
+        ),
       ),
     );
   }
 
   void setTraining({required String planPreference}) {
-    state = state.copyWith(
-      trainingPreferences: RunnerProfileDraft.trainingFromInput(
-        planPreference: planPreference,
+    _setState(
+      state.copyWith(
+        trainingPreferences: RunnerProfileDraft.trainingFromInput(
+          planPreference: planPreference,
+        ),
       ),
     );
   }
@@ -118,17 +166,19 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     String? autoAdjust,
     String? noWatchGuidance,
   }) {
-    state = state.copyWith(
-      device: RunnerProfileDraft.deviceFromInput(
-        hasWatch: hasWatch,
-        device: device,
-        dataUsage: dataUsage,
-        watchMetrics: watchMetrics,
-        metrics: metrics,
-        hrZones: hrZones,
-        paceRecs: paceRecs,
-        autoAdjust: autoAdjust,
-        noWatchGuidance: noWatchGuidance,
+    _setState(
+      state.copyWith(
+        device: RunnerProfileDraft.deviceFromInput(
+          hasWatch: hasWatch,
+          device: device,
+          dataUsage: dataUsage,
+          watchMetrics: watchMetrics,
+          metrics: metrics,
+          hrZones: hrZones,
+          paceRecs: paceRecs,
+          autoAdjust: autoAdjust,
+          noWatchGuidance: noWatchGuidance,
+        ),
       ),
     );
   }
@@ -139,12 +189,14 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required String stressLevel,
     required String dayFeeling,
   }) {
-    state = state.copyWith(
-      recovery: RunnerProfileDraft.recoveryFromInput(
-        sleep: sleep,
-        workLevel: workLevel,
-        stressLevel: stressLevel,
-        dayFeeling: dayFeeling,
+    _setState(
+      state.copyWith(
+        recovery: RunnerProfileDraft.recoveryFromInput(
+          sleep: sleep,
+          workLevel: workLevel,
+          stressLevel: stressLevel,
+          dayFeeling: dayFeeling,
+        ),
       ),
     );
   }
@@ -155,12 +207,14 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required int confidence,
     required String coachingTone,
   }) {
-    state = state.copyWith(
-      motivation: RunnerProfileDraft.motivationFromInput(
-        motivations: motivations,
-        barriers: barriers,
-        confidence: confidence,
-        coachingTone: coachingTone,
+    _setState(
+      state.copyWith(
+        motivation: RunnerProfileDraft.motivationFromInput(
+          motivations: motivations,
+          barriers: barriers,
+          confidence: confidence,
+          coachingTone: coachingTone,
+        ),
       ),
     );
   }

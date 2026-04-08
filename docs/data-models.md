@@ -1,17 +1,20 @@
 # Data Models
 
-## Current state summary
+## Current state
 
-- `TrainingPlan` is the primary app data model today. It is seeded locally in `training_plan_seed_data.dart` and exposed through `trainingPlanProvider`.
-- `UserPreferences` and `Locale` are the only structured values persisted across launches.
-- Onboarding answers are not yet represented by a typed domain object. They currently live as a `Map<String, dynamic>` inside `onboardingProvider`.
-- Progress-facing models such as `WeekProgress`, `RecentSession`, and `TrainingHistoryPoint` are read models used by the UI and built from `TrainingSession` data.
+The app now has a typed profile layer alongside the seeded training-plan domain:
+
+- `TrainingPlan` remains the main source for planned workouts and most progress projections. It is still seeded locally in `training_plan_seed_data.dart`.
+- `RunnerProfileDraft` is the typed, editable onboarding/settings draft state. It is owned by `onboardingProvider` and persisted locally with `SharedPreferences`.
+- `RunnerProfile` is the durable completed-profile model. It is owned by `runnerProfileProvider`, persisted locally with `SharedPreferences`, and used for onboarding-complete gating.
+- `UserPreferences` and `Locale` remain separate lightweight persisted settings.
+- Progress-facing models such as `WeekProgress`, `RecentSession`, and `TrainingHistoryPoint` are still read models derived from `TrainingSession` seed data.
 
 ## State ownership
 
 | Owner | State shape | Persistence | Notes |
 | --- | --- | --- | --- |
-| `trainingPlanProvider` | `TrainingPlan` | In memory only | Built from seed data. `skipSession` and `restoreSession` only mutate the Riverpod state for the current app run. |
+| `trainingPlanProvider` | `TrainingPlan` | In memory only | Built from seed data. `skipSession` and `restoreSession` still affect only the current app run. |
 | `weekProgressProvider` | `WeekProgress` | None | Computed from `TrainingPlan.currentWeekSessions`. |
 | `completedSessionsProvider` | `List<TrainingSession>` | None | Filters completed non-rest sessions and sorts newest first. |
 | `weeklyVolumeProvider` | `List<WeeklyVolumeData>` | None | Weekly chart projection derived from completed sessions. |
@@ -21,187 +24,89 @@
 | `monthlyDistanceStatsProvider` | `MonthlyDistanceStats` | None | Current month vs previous month distance totals. |
 | `monthlyTimeStatsProvider` | `MonthlyTimeStats` | None | Current month vs previous month duration totals. |
 | `longestRunStatsProvider` | `LongestRunStats` | None | Best completed run distance and previous-best comparison. |
+| `onboardingProvider` | `RunnerProfileDraft` | `SharedPreferences` | Persists the editable typed draft with versioned storage keys. |
+| `runnerProfileProvider` | `RunnerProfile?` | `SharedPreferences` | Persists the completed typed profile and is the current profile source of truth. |
 | `userPreferencesProvider` | `AsyncValue<UserPreferences>` | `SharedPreferences` | Persists unit system, short-distance unit, display name, gender, and DOB. |
-| `userProfileDisplayProvider` | `UserProfileDisplay` | None | Read-only plan metadata for profile/home UI. |
 | `localeProvider` | `AsyncValue<Locale>` | `SharedPreferences` | Persists selected locale with device-locale fallback on first launch. |
-| `onboardingProvider` | `Map<String, dynamic>` | In memory only | Stores onboarding answers during the flow. Only the completion flag is persisted. |
+| `userProfileDisplayProvider` | `UserProfileDisplay` | None | Read-only plan metadata for profile/home UI. |
 
-## Core model graph
+## Current typed profile domain
 
-```mermaid
-classDiagram
-class TrainingPlan {
-  +String id
-  +TrainingPlanRaceType raceType
-  +int totalWeeks
-  +int currentWeekNumber
-  +List~TrainingSession~ sessions
-}
-class PlanWeek {
-  +int weekNumber
-  +List~TrainingSession~ sessions
-}
-class TrainingSession {
-  +String id
-  +DateTime date
-  +SessionType type
-  +SessionStatus status
-  +int weekNumber
-  +double? distanceKm
-  +int? durationMinutes
-  +String? description
-  +TrainingSessionEffort? effort
-  +List~WorkoutPhase~ phases
-  +int? elevationGainMeters
-  +int? intervalReps
-  +int? intervalRepDistanceMeters
-  +int? intervalRecoverySeconds
-  +int? warmUpMinutes
-  +int? coolDownMinutes
-}
-class WorkoutPhase {
-  +WorkoutPhaseType type
-  +String iconAsset
-  +String title
-  +String duration
-  +String note
-  +String? recoveryNote
-}
-class WeekProgress {
-  +int completedSessions
-  +int totalSessions
-  +double completedVolumeKm
-  +double totalVolumeKm
-  +int totalDurationMinutes
-}
-class RecentSession {
-  +String id
-  +DateTime date
-  +double distanceKm
-  +int durationMinutes
-  +SessionType type
-}
-class WeeklyVolumeData {
-  +double distanceKm
-  +int timeHours
-  +int timeMinutes
-  +int elevationMeters
-  +String? dateRange
-}
-class TrainingHistoryPoint {
-  +DateTime startDate
-  +DateTime endDate
-  +String label
-  +String axisLabel
-  +double distanceKm
-  +int durationMinutes
-  +int elevationMeters
-  +bool isCurrent
-  +bool isBest
-}
-class UserStats {
-  +int streakWeeks
-  +int totalRuns
-}
-class MonthlyDistanceStats {
-  +double currentKm
-  +double? previousKm
-  +double? trendPct
-}
-class MonthlyTimeStats {
-  +int currentMinutes
-  +int? previousMinutes
-  +double? trendPct
-}
-class LongestRunStats {
-  +double? bestDistanceKm
-  +double? previousBestKm
-}
-class UserPreferences {
-  +UnitSystem unitSystem
-  +ShortDistanceUnit shortDistanceUnit
-  +String? displayName
-  +ProfileGender? gender
-  +DateTime? dateOfBirth
-}
-class UserProfileDisplay {
-  +TrainingPlanRaceType raceType
-  +int currentWeekNumber
-  +int totalWeeks
-}
+### Editable draft
 
-TrainingPlan o-- TrainingSession : sessions
-TrainingPlan --> PlanWeek : allWeeks
-TrainingSession *-- WorkoutPhase : phases
-WeekProgress ..> TrainingSession : fromSessions
-RecentSession ..> TrainingSession : mappedFrom
-WeeklyVolumeData ..> TrainingSession : aggregatedFrom
-TrainingHistoryPoint ..> TrainingSession : aggregatedFrom
-UserStats ..> TrainingSession : summarizedFrom
-MonthlyDistanceStats ..> TrainingSession : summarizedFrom
-MonthlyTimeStats ..> TrainingSession : summarizedFrom
-LongestRunStats ..> TrainingSession : summarizedFrom
-UserProfileDisplay ..> TrainingPlan : projectedFrom
-```
+`RunnerProfileDraft` is a composition of typed draft submodels:
 
-## Model inventory
+- `GoalProfileDraft`
+- `FitnessProfileDraft`
+- `ScheduleProfileDraft`
+- `HealthProfileDraft`
+- `TrainingPreferencesProfileDraft`
+- `DeviceProfileDraft`
+- `RecoveryProfileDraft`
+- `MotivationProfileDraft`
+
+Each draft section stores canonical enums, numbers, booleans, dates, and durations. It does not store localized labels.
+
+### Completed profile
+
+`RunnerProfile` contains the finalized counterparts of the same sections plus profile metadata:
+
+- `goal: GoalProfile`
+- `fitness: FitnessProfile`
+- `schedule: ScheduleProfile`
+- `health: HealthProfile`
+- `trainingPreferences: TrainingPreferencesProfile`
+- `device: DeviceProfile`
+- `recovery: RecoveryProfile`
+- `motivation: MotivationProfile`
+- `gender: ProfileGender?`
+- `dateOfBirth: DateTime?`
+- `schemaVersion: int`
+- `updatedAt: DateTime`
+
+The completed profile is created from the draft only when every required section can be promoted into a valid final model.
+
+## Persistence boundaries
+
+- `RunnerProfileDraft` is stored under the versioned key `runner_profile_draft_v1`.
+- `RunnerProfile` is stored under the versioned key `runner_profile_v1`.
+- Values are serialized as JSON with canonical enum keys such as `race_half_marathon`, `priority_improve_time`, and `day_sun`.
+- Routing no longer treats `onboarding_completed` as sufficient by itself. The app only considers onboarding complete when a valid persisted `RunnerProfile` exists.
+- The old `onboarding_completed` flag can still exist for compatibility, but it is no longer the source of truth for entering the main app.
+
+## Other implemented model layers
 
 ### Training plan domain
 
 | Model | Fields | Notes |
 | --- | --- | --- |
 | `TrainingPlan` | `id`, `raceType`, `totalWeeks`, `currentWeekNumber`, `sessions` | Also exposes computed getters `currentWeekSessions`, `todaySession`, `nextUpcomingSession`, and `allWeeks`. |
-| `TrainingPlanRaceType` | `fiveK`, `tenK`, `halfMarathon`, `marathon`, `other` | Enum stored on the plan, not localized display text. |
 | `PlanWeek` | `weekNumber`, `sessions` | Grouping object returned by `TrainingPlan.allWeeks`. |
-| `TrainingSession` | `id`, `date`, `type`, `status`, `weekNumber`, `distanceKm`, `durationMinutes`, `description`, `effort`, `phases`, `elevationGainMeters`, `intervalReps`, `intervalRepDistanceMeters`, `intervalRecoverySeconds`, `warmUpMinutes`, `coolDownMinutes` | The core session entity. Most metrics are nullable so rest days and simpler sessions can omit them. |
-| `WorkoutPhase` | `type`, `iconAsset`, `title`, `duration`, `note`, `recoveryNote` | Used by detailed workout views when a session is broken into warm-up/main/cool-down phases. |
-| `WorkoutPhaseType` | `warmUp`, `main`, `coolDown` | Enum for workout substructure. |
+| `TrainingSession` | `id`, `date`, `type`, `status`, `weekNumber`, `distanceKm`, `durationMinutes`, `description`, `effort`, `phases`, `elevationGainMeters`, `intervalReps`, `intervalRepDistanceMeters`, `intervalRecoverySeconds`, `warmUpMinutes`, `coolDownMinutes` | Planned session entity; still mock-data driven. |
+| `WorkoutPhase` | `type`, `iconAsset`, `title`, `duration`, `note`, `recoveryNote` | Used by detailed workout views. |
 | `TrainingSessionEffort` | `easy`, `moderate`, `hard`, `veryEasy` | Optional effort metadata on a session. |
-| `SessionType` | `easyRun`, `longRun`, `progressionRun`, `intervals`, `hillRepeats`, `fartlek`, `tempoRun`, `thresholdRun`, `racePaceRun`, `recoveryRun`, `crossTraining`, `restDay` | Canonical session type enum. |
-| `SessionCategory` | `endurance`, `speedWork`, `threshold`, `raceSpecific`, `recovery`, `rest` | Derived from `SessionType.category`. |
+| `SessionType` | canonical session enum | Stored as domain values, not localized strings. |
 | `SessionStatus` | `upcoming`, `today`, `completed`, `skipped` | Drives plan and progress UI state. |
-| `WeekProgress` | `completedSessions`, `totalSessions`, `completedVolumeKm`, `totalVolumeKm`, `totalDurationMinutes` | Created via `WeekProgress.fromSessions(...)` for the current week. |
+| `WeekProgress` | `completedSessions`, `totalSessions`, `completedVolumeKm`, `totalVolumeKm`, `totalDurationMinutes` | Current-week completion summary. |
 
 ### Progress read models
 
 | Model | Fields | Notes |
 | --- | --- | --- |
-| `RecentSession` | `id`, `date`, `distanceKm`, `durationMinutes`, `type` | Small card/list projection for recent completed runs. |
-| `WeeklyVolumeData` | `distanceKm`, `timeHours`, `timeMinutes`, `elevationMeters`, `dateRange` | Chart bucket model. `dateRange == null` means the current week. |
-| `TrainingHistoryRange` | `week`, `month`, `threeMonths`, `sixMonths`, `year`, `all` | Controls training-history bucketing. |
-| `TrainingHistoryPoint` | `startDate`, `endDate`, `label`, `axisLabel`, `distanceKm`, `durationMinutes`, `elevationMeters`, `isCurrent`, `isBest` | General-purpose chart point for training history. |
-| `UserStats` | `streakWeeks`, `totalRuns` | The current screen only uses a compact summary model. |
-| `MonthlyDistanceStats` | `currentKm`, `previousKm`, `trendPct` | `previousKm` and `trendPct` are nullable when comparison is unavailable. |
-| `MonthlyTimeStats` | `currentMinutes`, `previousMinutes`, `trendPct` | Time counterpart to `MonthlyDistanceStats`. |
-| `LongestRunStats` | `bestDistanceKm`, `previousBestKm` | Exposes `improvementKm` and `hasRecord` as computed getters. |
+| `RecentSession` | `id`, `date`, `distanceKm`, `durationMinutes`, `type` | Small recent-run projection. |
+| `WeeklyVolumeData` | `distanceKm`, `timeHours`, `timeMinutes`, `elevationMeters`, `dateRange` | Weekly chart bucket model. |
+| `TrainingHistoryPoint` | `startDate`, `endDate`, `label`, `axisLabel`, `distanceKm`, `durationMinutes`, `elevationMeters`, `isCurrent`, `isBest` | General-purpose chart point. |
+| `UserStats` | `streakWeeks`, `totalRuns` | Compact progress summary. |
+| `MonthlyDistanceStats` | `currentKm`, `previousKm`, `trendPct` | Month-over-month distance summary. |
+| `MonthlyTimeStats` | `currentMinutes`, `previousMinutes`, `trendPct` | Month-over-month time summary. |
+| `LongestRunStats` | `bestDistanceKm`, `previousBestKm` | Longest-run summary with computed deltas. |
 
-### Preferences and lightweight profile state
+## Target state
 
-| Model | Fields | Notes |
-| --- | --- | --- |
-| `UserPreferences` | `unitSystem`, `shortDistanceUnit`, `displayName`, `gender`, `dateOfBirth` | Persisted locally with `SharedPreferences`. |
-| `UnitSystem` | `km`, `miles` | Primary long-distance unit preference. |
-| `ShortDistanceUnit` | `meters`, `feet` | Derived default follows `unitSystem`, but can also be stored explicitly. |
-| `ProfileGender` | `male`, `female`, `other` | Stored canonically as enum names, not localized labels. |
-| `UserProfileDisplay` | `raceType`, `currentWeekNumber`, `totalWeeks` | Small read model assembled from `TrainingPlan`. |
+The next domain-model expansions planned after the typed profile foundation are:
 
-## Onboarding answer schema
-
-The app does not yet have a typed `RunnerProfile` or `OnboardingAnswers` model. Instead, `onboardingProvider` stores grouped answers in a `Map<String, dynamic>`, and string values are expected to use canonical IDs from `onboarding_values.dart`.
-
-| Group | Keys currently written by `OnboardingNotifier` |
-| --- | --- |
-| Goal | `race:String`, `hasRaceDate:bool`, `raceDate:DateTime?`, `priority:String`, `currentTime:Duration?`, `targetTime:Duration?` |
-| Fitness | `experience:String`, `canRun10Min:bool?`, `runningDays:String?`, `weeklyVolume:String?`, `longestRun:String?`, `canCompleteGoalDist:String?`, `raceDistanceBefore:String?`, `benchmark:String?`, `benchmarkTime:Duration?` |
-| Schedule | `trainingDays:String`, `longRunDay:String`, `weekdayTime:String`, `weekendTime:String`, `hardDays:List<String>`, `preferredTimeOfDay:String?` |
-| Health | `painLevel:String`, `injuryHistory:String`, `healthConditions:String` |
-| Training preference | `planPreference:String` |
-| Device | `hasWatch:String`, `device:String?`, `dataUsage:String?`, `watchMetrics:String?`, `metrics:List<String>?`, `hrZones:String?`, `paceRecs:String?`, `autoAdjust:String?`, `noWatchGuidance:String?` |
-| Recovery | `sleep:String`, `workLevel:String`, `stressLevel:String`, `dayFeeling:String` |
-| Motivation | `motivations:List<String>`, `barriers:List<String>`, `confidence:int`, `coachingTone:String` |
-
-## Current modeling gaps
-
-- There is no typed persisted runner-profile model yet. Onboarding answers are still ephemeral map state.
-- There is no stored run-log entity separate from `TrainingSession`; completed and skipped status changes live only in the in-memory training plan.
-- The seed plan is the only source of session/history data in the repository today.
+1. `Goal` models that separate reusable goal state from onboarding/profile fields.
+2. `ActivityRecord` models so logged workouts become durable completed activities independent of planned sessions.
+3. Structured `WorkoutTarget` and workout-step models so intervals and targets are machine-readable.
+4. `DeviceConnection` and related integration models so watch state lives outside onboarding answers.
+5. Adaptation foundations such as session feedback and plan revision records.
