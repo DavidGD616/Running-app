@@ -54,6 +54,7 @@ class SharedPreferencesRunnerProfileRepository
   @override
   Future<void> saveProfile(RunnerProfile profile) async {
     await _prefs.setString(profileStorageKey, jsonEncode(profile.toJson()));
+    await _prefs.remove(draftStorageKey);
   }
 
   @override
@@ -64,6 +65,7 @@ class SharedPreferencesRunnerProfileRepository
   @override
   Future<void> clearProfile() async {
     await _prefs.remove(profileStorageKey);
+    await _prefs.remove(draftStorageKey);
   }
 
   Map<String, dynamic>? _decode(String raw) {

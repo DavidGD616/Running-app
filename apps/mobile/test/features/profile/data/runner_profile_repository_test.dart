@@ -96,4 +96,71 @@ void main() {
       );
     },
   );
+
+  test('saving a final profile clears any stale draft copy', () async {
+    final staleDraft = buildRunnerProfileDraft().copyWith(
+      trainingPreferences: const TrainingPreferencesProfileDraft(
+        planPreference: PlanPreferenceChoice.performance,
+      ),
+    );
+    final profile = buildRunnerProfile(clock: DateTime(2026, 4, 7, 8, 0));
+
+    SharedPreferences.setMockInitialValues({
+      SharedPreferencesRunnerProfileRepository.draftStorageKey: jsonEncode(
+        staleDraft.toJson(),
+      ),
+    });
+    final prefs = await SharedPreferences.getInstance();
+    final repository = SharedPreferencesRunnerProfileRepository(prefs);
+
+    await repository.saveProfile(profile);
+
+    expect(
+      prefs.getString(SharedPreferencesRunnerProfileRepository.draftStorageKey),
+      isNull,
+    );
+    expect(repository.loadDraft(), isNull);
+    expect(repository.loadProfile(), isNotNull);
+    expect(repository.loadProfile()!.goal.race, RunnerGoalRace.halfMarathon);
+  });
+
+  test(
+    'clearing the final profile also removes any stale draft copy',
+    () async {
+      final staleDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.performance,
+        ),
+      );
+      final profile = buildRunnerProfile(clock: DateTime(2026, 4, 7, 8, 0));
+
+      SharedPreferences.setMockInitialValues({
+        SharedPreferencesRunnerProfileRepository.draftStorageKey: jsonEncode(
+          staleDraft.toJson(),
+        ),
+        SharedPreferencesRunnerProfileRepository.profileStorageKey: jsonEncode(
+          profile.toJson(),
+        ),
+      });
+      final prefs = await SharedPreferences.getInstance();
+      final repository = SharedPreferencesRunnerProfileRepository(prefs);
+
+      await repository.clearProfile();
+
+      expect(
+        prefs.getString(
+          SharedPreferencesRunnerProfileRepository.draftStorageKey,
+        ),
+        isNull,
+      );
+      expect(
+        prefs.getString(
+          SharedPreferencesRunnerProfileRepository.profileStorageKey,
+        ),
+        isNull,
+      );
+      expect(repository.loadDraft(), isNull);
+      expect(repository.loadProfile(), isNull);
+    },
+  );
 }

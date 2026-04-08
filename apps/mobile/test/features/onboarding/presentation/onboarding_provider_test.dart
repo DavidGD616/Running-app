@@ -1,12 +1,17 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
+import 'package:running_app/features/profile/data/runner_profile_repository.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/profile/presentation/runner_profile_provider.dart';
 import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
 import 'package:running_app/features/user_preferences/presentation/user_preferences_provider.dart';
+
+import '../../../helpers/runner_profile_fixtures.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -116,6 +121,52 @@ void main() {
       expect(restoredProfile.gender, ProfileGender.female);
       expect(restoredProfile.dateOfBirth, DateTime(1994, 6, 20));
       expect(restoredProfile.updatedAt, DateTime(2026, 4, 7, 10, 15));
+    },
+  );
+
+  test(
+    'prefers the persisted final profile over unsaved settings draft edits after recreation',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final profile = buildRunnerProfile(
+        gender: ProfileGender.female,
+        dateOfBirth: DateTime(1994, 6, 20),
+        clock: DateTime(2026, 4, 7, 10, 15),
+      );
+      final staleDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.performance,
+        ),
+      );
+
+      await prefs.setString(
+        SharedPreferencesRunnerProfileRepository.profileStorageKey,
+        jsonEncode(profile.toJson()),
+      );
+      await prefs.setString(
+        SharedPreferencesRunnerProfileRepository.draftStorageKey,
+        jsonEncode(staleDraft.toJson()),
+      );
+
+      final recreatedContainer = ProviderContainer.test(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(recreatedContainer.dispose);
+
+      final restoredDraft = recreatedContainer.read(onboardingProvider);
+
+      expect(
+        restoredDraft.trainingPreferences.planPreference,
+        PlanPreferenceChoice.balanced,
+      );
+      expect(recreatedContainer.read(runnerProfileProvider), isNotNull);
+      expect(
+        recreatedContainer
+            .read(runnerProfileProvider)!
+            .trainingPreferences
+            .planPreference,
+        PlanPreferenceChoice.balanced,
+      );
     },
   );
 }

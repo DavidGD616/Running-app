@@ -14,20 +14,23 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
   @override
   RunnerProfileDraft build() {
     final repository = ref.watch(runnerProfileRepositoryProvider);
-    final persistedDraft = repository.loadDraft();
-    if (persistedDraft != null) return persistedDraft;
-
     final persistedProfile = repository.loadProfile();
     if (persistedProfile != null) {
       return RunnerProfileDraft.fromRunnerProfile(persistedProfile);
     }
+
+    final persistedDraft = repository.loadDraft();
+    if (persistedDraft != null) return persistedDraft;
 
     return const RunnerProfileDraft();
   }
 
   void _setState(RunnerProfileDraft nextState) {
     state = nextState;
-    unawaited(ref.read(runnerProfileRepositoryProvider).saveDraft(nextState));
+    final repository = ref.read(runnerProfileRepositoryProvider);
+    if (!repository.hasPersistedProfile()) {
+      unawaited(repository.saveDraft(nextState));
+    }
   }
 
   Future<bool> saveProfile({
@@ -42,8 +45,6 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     );
     if (profile == null) return false;
 
-    final repository = ref.read(runnerProfileRepositoryProvider);
-    await repository.saveDraft(state);
     await ref.read(runnerProfileProvider.notifier).setProfile(profile);
 
     if (markOnboardingComplete) {
