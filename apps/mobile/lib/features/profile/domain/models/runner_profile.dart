@@ -993,8 +993,6 @@ class RunnerProfile {
     required this.health,
     required this.trainingPreferences,
     required this.device,
-    required this.recovery,
-    required this.motivation,
     required this.schemaVersion,
     required this.updatedAt,
     this.gender,
@@ -1007,8 +1005,6 @@ class RunnerProfile {
   final HealthProfile health;
   final TrainingPreferencesProfile trainingPreferences;
   final DeviceProfile device;
-  final RecoveryProfile recovery;
-  final MotivationProfile motivation;
   final ProfileGender? gender;
   final DateTime? dateOfBirth;
   final int schemaVersion;
@@ -1024,8 +1020,6 @@ class RunnerProfile {
         trainingPreferences,
       ),
       'device': _deviceProfileToJson(device),
-      'recovery': _recoveryProfileToJson(recovery),
-      'motivation': _motivationProfileToJson(motivation),
       'gender': gender?.name,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
       'schemaVersion': schemaVersion,
@@ -1042,10 +1036,6 @@ class RunnerProfile {
       _mapOrEmpty(json['trainingPreferences']),
     );
     final device = _deviceProfileFromJson(_mapOrEmpty(json['device']));
-    final recovery = _recoveryProfileFromJson(_mapOrEmpty(json['recovery']));
-    final motivation = _motivationProfileFromJson(
-      _mapOrEmpty(json['motivation']),
-    );
     final updatedAt = _dateTimeFromJson(json['updatedAt']);
     final schemaVersion = _intOrNull(json['schemaVersion']);
 
@@ -1055,8 +1045,6 @@ class RunnerProfile {
         health == null ||
         trainingPreferences == null ||
         device == null ||
-        recovery == null ||
-        motivation == null ||
         updatedAt == null ||
         schemaVersion == null) {
       return null;
@@ -1069,8 +1057,6 @@ class RunnerProfile {
       health: health,
       trainingPreferences: trainingPreferences,
       device: device,
-      recovery: recovery,
-      motivation: motivation,
       gender: _profileGenderFromName(_stringOrNull(json['gender'])),
       dateOfBirth: _dateTimeFromJson(json['dateOfBirth']),
       schemaVersion: schemaVersion,
@@ -1165,17 +1151,13 @@ class RunnerProfileDraft {
     final healthProfile = health.toProfileOrNull();
     final trainingPreferencesProfile = trainingPreferences.toProfileOrNull();
     final deviceProfile = device.toProfileOrNull();
-    final recoveryProfile = recovery.toProfileOrNull();
-    final motivationProfile = motivation.toProfileOrNull();
 
     if (goalProfile == null ||
         fitnessProfile == null ||
         scheduleProfile == null ||
         healthProfile == null ||
         trainingPreferencesProfile == null ||
-        deviceProfile == null ||
-        recoveryProfile == null ||
-        motivationProfile == null) {
+        deviceProfile == null) {
       return null;
     }
 
@@ -1186,8 +1168,6 @@ class RunnerProfileDraft {
       health: healthProfile,
       trainingPreferences: trainingPreferencesProfile,
       device: deviceProfile,
-      recovery: recoveryProfile,
-      motivation: motivationProfile,
       gender: gender,
       dateOfBirth: dateOfBirth,
       schemaVersion: 1,
@@ -1262,18 +1242,6 @@ class RunnerProfileDraft {
         paceRecommendations: profile.device.paceRecommendations,
         autoAdjust: profile.device.autoAdjust,
         noWatchGuidance: profile.device.noWatchGuidance,
-      ),
-      recovery: RecoveryProfileDraft(
-        sleep: profile.recovery.sleep,
-        workLevel: profile.recovery.workLevel,
-        stressLevel: profile.recovery.stressLevel,
-        dayFeeling: profile.recovery.dayFeeling,
-      ),
-      motivation: MotivationProfileDraft(
-        motivations: profile.motivation.motivations,
-        barriers: profile.motivation.barriers,
-        confidence: profile.motivation.confidence,
-        coachingTone: profile.motivation.coachingTone,
       ),
     );
   }
@@ -1668,18 +1636,6 @@ RecoveryProfileDraft _recoveryProfileDraftFromJson(Map<String, dynamic> json) {
   );
 }
 
-Map<String, dynamic> _recoveryProfileToJson(RecoveryProfile value) {
-  return {
-    'sleep': value.sleep.key,
-    'workLevel': value.workLevel.key,
-    'stressLevel': value.stressLevel.key,
-    'dayFeeling': value.dayFeeling.key,
-  };
-}
-
-RecoveryProfile? _recoveryProfileFromJson(Map<String, dynamic> json) =>
-    _recoveryProfileDraftFromJson(json).toProfileOrNull();
-
 Map<String, dynamic> _motivationProfileDraftToJson(
   MotivationProfileDraft value,
 ) {
@@ -1711,15 +1667,3 @@ MotivationProfileDraft _motivationProfileDraftFromJson(
     ),
   );
 }
-
-Map<String, dynamic> _motivationProfileToJson(MotivationProfile value) {
-  return {
-    'motivations': _sortedCanonicalKeys(value.motivations),
-    'barriers': _sortedCanonicalKeys(value.barriers),
-    'confidence': value.confidence,
-    'coachingTone': value.coachingTone.key,
-  };
-}
-
-MotivationProfile? _motivationProfileFromJson(Map<String, dynamic> json) =>
-    _motivationProfileDraftFromJson(json).toProfileOrNull();

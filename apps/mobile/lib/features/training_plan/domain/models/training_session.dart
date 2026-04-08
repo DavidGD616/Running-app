@@ -1,4 +1,6 @@
 import 'session_type.dart';
+import 'workout_step.dart';
+import 'workout_target.dart';
 
 enum WorkoutPhaseType { warmUp, main, coolDown }
 
@@ -34,6 +36,9 @@ class TrainingSession {
     this.description,
     this.effort,
     this.phases = const [],
+    this.workoutTarget,
+    this.workoutSteps = const [],
+    this.supplementalType,
     this.elevationGainMeters,
     this.intervalReps,
     this.intervalRepDistanceMeters,
@@ -52,12 +57,27 @@ class TrainingSession {
   final String? description;
   final TrainingSessionEffort? effort;
   final List<WorkoutPhase> phases;
+  final WorkoutTarget? workoutTarget;
+  final List<WorkoutStep> workoutSteps;
+  final SupplementalSessionType? supplementalType;
   final int? elevationGainMeters;
   final int? intervalReps;
   final int? intervalRepDistanceMeters;
   final int? intervalRecoverySeconds;
   final int? warmUpMinutes;
   final int? coolDownMinutes;
+
+  bool get hasStructuredWorkout =>
+      workoutTarget != null || workoutSteps.isNotEmpty;
+
+  bool get isSupportSession => supplementalType != null;
+
+  bool get isRunSession => !isSupportSession && type.isRunSession;
+
+  bool get countsAsRun => !isSupportSession && type.countsAsRun;
+
+  SessionCategory get category =>
+      isSupportSession ? SessionCategory.recovery : type.category;
 
   TrainingSession copyWith({
     String? id,
@@ -70,6 +90,9 @@ class TrainingSession {
     String? description,
     TrainingSessionEffort? effort,
     List<WorkoutPhase>? phases,
+    WorkoutTarget? workoutTarget,
+    List<WorkoutStep>? workoutSteps,
+    SupplementalSessionType? supplementalType,
     int? elevationGainMeters,
     int? intervalReps,
     int? intervalRepDistanceMeters,
@@ -88,6 +111,9 @@ class TrainingSession {
       description: description ?? this.description,
       effort: effort ?? this.effort,
       phases: phases ?? this.phases,
+      workoutTarget: workoutTarget ?? this.workoutTarget,
+      workoutSteps: workoutSteps ?? this.workoutSteps,
+      supplementalType: supplementalType ?? this.supplementalType,
       elevationGainMeters: elevationGainMeters ?? this.elevationGainMeters,
       intervalReps: intervalReps ?? this.intervalReps,
       intervalRepDistanceMeters:

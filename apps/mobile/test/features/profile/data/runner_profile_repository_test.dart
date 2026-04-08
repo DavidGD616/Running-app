@@ -29,7 +29,6 @@ void main() {
       WeekdayChoice.tuesday,
     });
     expect(restored.device.metrics, {WatchMetric.heartRate, WatchMetric.pace});
-    expect(restored.motivation.coachingTone, CoachingToneChoice.encouraging);
   });
 
   test('runner profile JSON round-trips persisted metadata', () {
@@ -73,7 +72,10 @@ void main() {
       expect(restoredDraft, isNotNull);
       expect(restoredDraft!.schedule.trainingDays, 4);
       expect(restoredProfile, isNotNull);
-      expect(restoredProfile!.motivation.confidence, 8);
+      expect(
+        restoredProfile!.trainingPreferences.planPreference,
+        PlanPreferenceChoice.balanced,
+      );
       expect(repository.hasPersistedProfile(), isTrue);
 
       await repository.saveDraft(

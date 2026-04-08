@@ -8,6 +8,9 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../goals/domain/models/goal.dart';
+import '../../../goals/presentation/goal_presenter.dart';
+import '../../../goals/presentation/goal_provider.dart';
 import '../../../profile/domain/models/runner_profile.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
@@ -22,28 +25,29 @@ class PlanReadyScreen extends ConsumerWidget {
 
   // ── Build display values ──────────────────────────────────────────────────
 
-  String _planSubtitle(RunnerProfileDraft a, AppLocalizations l10n) {
-    final race = a.goal.raceKey ?? '';
+  String _planSubtitle(
+    Goal? goal,
+    RunnerProfileDraft a,
+    AppLocalizations l10n,
+  ) {
     final experience = a.fitness.experienceKey ?? '';
-    final weeks = OnboardingValues.planWeeksForRace(race);
-    final localizedRace = OnboardingValues.localizeRace(race, l10n);
+    final weeks = goalPlanWeeks(goal);
+    final localizedRace = goalRaceLabel(goal, l10n);
     final localizedExp = OnboardingValues.localizeExperience(experience, l10n);
     final planName = l10n.planReadyWeekPlanName(weeks, localizedRace);
     return '$planName • $localizedExp';
   }
 
-  String _goalDescription(RunnerProfileDraft a, AppLocalizations l10n) {
-    final race = a.goal.raceKey ?? '';
-    if (race.isEmpty) return '—';
-    return l10n.planReadyGoalDescription(
-      OnboardingValues.localizeRace(race, l10n),
-    );
-  }
+  String _goalDescription(Goal? goal, AppLocalizations l10n) =>
+      goalDescription(goal, l10n);
 
-  String _scheduleValue(RunnerProfileDraft a, AppLocalizations l10n) {
-    final race = a.goal.raceKey ?? '';
+  String _scheduleValue(
+    Goal? goal,
+    RunnerProfileDraft a,
+    AppLocalizations l10n,
+  ) {
     final days = a.schedule.trainingDaysKey ?? '—';
-    final weeks = OnboardingValues.planWeeksForRace(race);
+    final weeks = goalPlanWeeks(goal);
     return l10n.planReadyScheduleValue(weeks, days);
   }
 
@@ -65,6 +69,7 @@ class PlanReadyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final answers = ref.watch(onboardingProvider);
+    final goal = ref.watch(onboardingGoalProvider);
     final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
     final primaryLabel = switch (mode) {
       PlanReadyFlowMode.onboarding => l10n.planReadyStartPlan,
@@ -122,7 +127,7 @@ class PlanReadyScreen extends ConsumerWidget {
 
                     // Subtitle — plan name + level
                     Text(
-                      _planSubtitle(answers, l10n),
+                      _planSubtitle(goal, answers, l10n),
                       style: AppTypography.bodyLarge.copyWith(
                         color: AppColors.textSecondary,
                       ),
@@ -143,13 +148,13 @@ class PlanReadyScreen extends ConsumerWidget {
                           _PlanDetailRow(
                             iconAsset: 'assets/icons/target.svg',
                             label: l10n.planReadyGoalLabel,
-                            value: _goalDescription(answers, l10n),
+                            value: _goalDescription(goal, l10n),
                           ),
                           const SizedBox(height: AppSpacing.base),
                           _PlanDetailRow(
                             iconAsset: 'assets/icons/calendar.svg',
                             label: l10n.planReadyScheduleLabel,
-                            value: _scheduleValue(answers, l10n),
+                            value: _scheduleValue(goal, answers, l10n),
                           ),
                           const SizedBox(height: AppSpacing.base),
                           _PlanDetailRow(

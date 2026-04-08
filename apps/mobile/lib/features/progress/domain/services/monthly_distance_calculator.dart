@@ -123,7 +123,7 @@ double _distanceForMonth(
           s.date.year == year &&
           s.date.month == month &&
           s.status == SessionStatus.completed &&
-          !s.type.isRest)
+          s.countsAsRun)
       .fold(0.0, (sum, s) => sum + (s.distanceKm ?? 0.0));
 }
 
@@ -137,6 +137,6 @@ int _minutesForMonth(
           s.date.year == year &&
           s.date.month == month &&
           s.status == SessionStatus.completed &&
-          !s.type.isRest)
+          s.countsAsRun)
       .fold(0, (sum, s) => sum + (s.durationMinutes ?? 0));
 }

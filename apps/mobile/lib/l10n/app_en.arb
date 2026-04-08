@@ -1713,6 +1713,10 @@
 
   "settingsConnected": "Connected",
   "@settingsConnected": { "description": "Connected device badge label" },
+  "settingsNoConnectedDevices": "No connected devices yet",
+  "@settingsNoConnectedDevices": {
+    "description": "Empty state text shown when no wearable connections exist in settings integrations"
+  },
 
   "settingsLogOut": "Log Out",
   "@settingsLogOut": { "description": "Log out button label" },

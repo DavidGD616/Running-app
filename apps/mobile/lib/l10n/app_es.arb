@@ -602,6 +602,7 @@
   "settingsConnectedDevicesSection": "Dispositivos conectados",
   "settingsGarminConnect": "Garmin Connect",
   "settingsConnected": "Conectado",
+  "settingsNoConnectedDevices": "Aun no hay dispositivos conectados",
   "settingsLogOut": "Cerrar sesión",
   "settingsVersion": "RunFlow v1.0.0 (Build 42)",
 

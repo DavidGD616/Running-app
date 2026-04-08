@@ -37,6 +37,7 @@ import '../../features/settings/presentation/screens/settings_subscription_scree
 import '../../features/settings/presentation/screens/settings_cancel_subscription_screen.dart';
 import '../../features/settings/presentation/screens/settings_integrations_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
+import '../../features/pre_run/presentation/run_flow_context.dart';
 import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
 import '../../features/log_run/presentation/screens/log_run_screen.dart';
 import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
@@ -285,11 +286,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.preRun,
-        builder: (context, state) => const PreRunScreen(),
+        builder: (context, state) {
+          final args = state.extra as PreRunArgs?;
+          return PreRunScreen(args: args);
+        },
       ),
       GoRoute(
         path: RouteNames.logRun,
-        builder: (context, state) => const LogRunScreen(),
+        builder: (context, state) {
+          final args = state.extra as LogRunArgs?;
+          return LogRunScreen(args: args);
+        },
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) =>

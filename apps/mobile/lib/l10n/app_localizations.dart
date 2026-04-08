@@ -3294,6 +3294,12 @@ abstract class AppLocalizations {
   /// **'Connected'**
   String get settingsConnected;
 
+  /// Empty state text shown when no wearable connections exist in settings integrations
+  ///
+  /// In en, this message translates to:
+  /// **'No connected devices yet'**
+  String get settingsNoConnectedDevices;
+
   /// Log out button label
   ///
   /// In en, this message translates to:

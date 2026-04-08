@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../integrations/presentation/device_connection_provider.dart';
 import '../../profile/data/runner_profile_repository.dart';
 import '../../profile/domain/models/runner_profile.dart';
 import '../../profile/presentation/runner_profile_provider.dart';
@@ -20,7 +21,9 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     }
 
     final persistedDraft = repository.loadDraft();
-    if (persistedDraft != null) return persistedDraft;
+    if (persistedDraft != null) {
+      return persistedDraft;
+    }
 
     return const RunnerProfileDraft();
   }
@@ -43,9 +46,14 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
       dateOfBirth: preferences.dateOfBirth,
       clock: clock,
     );
-    if (profile == null) return false;
+    if (profile == null) {
+      return false;
+    }
 
     await ref.read(runnerProfileProvider.notifier).setProfile(profile);
+    await ref
+        .read(deviceConnectionsProvider.notifier)
+        .seedWatchFromDeviceProfileIfAbsent(profile.device);
 
     if (markOnboardingComplete) {
       await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);

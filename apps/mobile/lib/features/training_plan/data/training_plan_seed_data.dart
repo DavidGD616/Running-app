@@ -1,6 +1,9 @@
 import '../domain/models/session_type.dart';
+import '../domain/models/support_session.dart';
 import '../domain/models/training_plan.dart';
 import '../domain/models/training_session.dart';
+import '../domain/models/workout_step.dart';
+import '../domain/models/workout_target.dart';
 
 /// Returns a [TrainingPlan] seeded with mock data for all 12 weeks.
 /// The current week is week 4. Weeks 1–3 are past (completed), week 4 is
@@ -67,6 +70,134 @@ TrainingPlan buildSeedTrainingPlan() {
     return (distance * perKm).round();
   }
 
+  List<WorkoutPhase> buildStructuredWorkoutPhases(
+    SessionType type, {
+    required int warmUpMinutes,
+    required int mainMinutes,
+    required int coolDownMinutes,
+    int? intervalReps,
+    int? intervalRepDistanceMeters,
+    int? intervalRecoverySeconds,
+  }) {
+    return [
+      WorkoutPhase(
+        type: WorkoutPhaseType.warmUp,
+        iconAsset: 'assets/icons/flame.svg',
+        title: 'warm_up',
+        duration: warmUpMinutes.toString(),
+        note: '${type.name}_warm_up',
+      ),
+      WorkoutPhase(
+        type: WorkoutPhaseType.main,
+        iconAsset: switch (type) {
+          SessionType.longRun => 'assets/icons/target.svg',
+          SessionType.recoveryRun => 'assets/icons/stopwatch.svg',
+          SessionType.easyRun => 'assets/icons/route.svg',
+          SessionType.intervals => 'assets/icons/activity.svg',
+          SessionType.tempoRun => 'assets/icons/activity.svg',
+          SessionType.thresholdRun => 'assets/icons/activity.svg',
+          SessionType.racePaceRun => 'assets/icons/activity.svg',
+          SessionType.progressionRun => 'assets/icons/route.svg',
+          SessionType.hillRepeats => 'assets/icons/activity.svg',
+          SessionType.fartlek => 'assets/icons/activity.svg',
+          SessionType.crossTraining => 'assets/icons/activity.svg',
+          SessionType.restDay => 'assets/icons/route.svg',
+        },
+        title: 'main',
+        duration: mainMinutes.toString(),
+        note:
+            intervalReps != null && intervalRepDistanceMeters != null
+            ? '${type.name}_${intervalReps}x${intervalRepDistanceMeters}m'
+            : '${type.name}_main',
+        recoveryNote:
+            intervalRecoverySeconds != null
+            ? 'recovery_${intervalRecoverySeconds}s'
+            : null,
+      ),
+      WorkoutPhase(
+        type: WorkoutPhaseType.coolDown,
+        iconAsset: 'assets/icons/heart_rate.svg',
+        title: 'cool_down',
+        duration: coolDownMinutes.toString(),
+        note: '${type.name}_cool_down',
+      ),
+    ];
+  }
+
+  WorkoutTarget? buildWorkoutTarget(SessionType type) {
+    return switch (type) {
+      SessionType.easyRun => const WorkoutTarget.effort(TargetZone.easy),
+      SessionType.longRun => const WorkoutTarget.effort(TargetZone.longRun),
+      SessionType.intervals => const WorkoutTarget.pace(TargetZone.interval),
+      SessionType.tempoRun => const WorkoutTarget.effort(TargetZone.tempo),
+      SessionType.thresholdRun => const WorkoutTarget.effort(
+        TargetZone.threshold,
+      ),
+      SessionType.racePaceRun => const WorkoutTarget.pace(TargetZone.racePace),
+      SessionType.recoveryRun => const WorkoutTarget.effort(TargetZone.recovery),
+      SessionType.progressionRun => const WorkoutTarget.effort(TargetZone.steady),
+      SessionType.hillRepeats => const WorkoutTarget.effort(TargetZone.interval),
+      SessionType.fartlek => const WorkoutTarget.effort(TargetZone.interval),
+      SessionType.crossTraining => const WorkoutTarget.heartRate(
+        TargetZone.easy,
+      ),
+      SessionType.restDay => null,
+    };
+  }
+
+  List<WorkoutStep> buildWorkoutSteps(
+    SessionType type, {
+    required int warmUpMinutes,
+    required int mainMinutes,
+    required int coolDownMinutes,
+    int? intervalReps,
+    int? intervalRepDistanceMeters,
+    int? intervalRecoverySeconds,
+  }) {
+    if (type == SessionType.intervals &&
+        intervalReps != null &&
+        intervalRepDistanceMeters != null) {
+      return [
+        WorkoutStep.warmUp(
+          duration: Duration(minutes: warmUpMinutes),
+          target: WorkoutTarget.effort(TargetZone.easy),
+        ),
+        WorkoutStep.repeat(
+          repetitions: intervalReps,
+          steps: [
+            WorkoutStep.work(
+              distanceMeters: intervalRepDistanceMeters,
+              target: const WorkoutTarget.pace(TargetZone.interval),
+            ),
+            WorkoutStep.recovery(
+              duration: Duration(seconds: intervalRecoverySeconds ?? 90),
+              target: const WorkoutTarget.effort(TargetZone.recovery),
+            ),
+          ],
+        ),
+        WorkoutStep.coolDown(
+          duration: Duration(minutes: coolDownMinutes),
+          target: WorkoutTarget.effort(TargetZone.recovery),
+        ),
+      ];
+    }
+
+    return [
+      WorkoutStep.warmUp(
+        duration: Duration(minutes: warmUpMinutes),
+        target: const WorkoutTarget.effort(TargetZone.easy),
+      ),
+      WorkoutStep.work(
+        duration: Duration(minutes: mainMinutes),
+        target: buildWorkoutTarget(type),
+      ),
+      WorkoutStep.coolDown(
+        duration: Duration(minutes: coolDownMinutes),
+        target: const WorkoutTarget.effort(TargetZone.recovery),
+      ),
+    ];
+  }
+
   // ── Helpers to build a standard week of sessions ──────────────────────────
 
   List<TrainingSession> buildPastWeek(
@@ -124,6 +255,29 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: workoutIsIntervals
             ? TrainingSessionEffort.hard
             : TrainingSessionEffort.moderate,
+        workoutTarget: buildWorkoutTarget(workoutType),
+        workoutSteps: buildWorkoutSteps(
+          workoutType,
+          warmUpMinutes: 10,
+          mainMinutes: workoutMin,
+          coolDownMinutes: 10,
+          intervalReps: workoutIsIntervals ? intervalReps : null,
+          intervalRepDistanceMeters: workoutIsIntervals
+              ? intervalRepDistanceMeters
+              : null,
+          intervalRecoverySeconds: workoutIsIntervals
+              ? intervalRecoverySeconds
+              : null,
+        ),
+        phases: buildStructuredWorkoutPhases(
+          workoutType,
+          warmUpMinutes: 10,
+          mainMinutes: workoutMin,
+          coolDownMinutes: 10,
+          intervalReps: intervalReps,
+          intervalRepDistanceMeters: intervalRepDistanceMeters,
+          intervalRecoverySeconds: intervalRecoverySeconds,
+        ),
         intervalReps: workoutIsIntervals ? intervalReps : null,
         intervalRepDistanceMeters: workoutIsIntervals
             ? intervalRepDistanceMeters
@@ -168,6 +322,19 @@ TrainingPlan buildSeedTrainingPlan() {
         distanceKm: longKm,
         durationMinutes: longMin,
         effort: TrainingSessionEffort.easy,
+        workoutTarget: buildWorkoutTarget(SessionType.longRun),
+        workoutSteps: buildWorkoutSteps(
+          SessionType.longRun,
+          warmUpMinutes: 10,
+          mainMinutes: longMin,
+          coolDownMinutes: 10,
+        ),
+        phases: buildStructuredWorkoutPhases(
+          SessionType.longRun,
+          warmUpMinutes: 10,
+          mainMinutes: longMin,
+          coolDownMinutes: 10,
+        ),
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters: estimateElevationGain(SessionType.longRun, longKm),
@@ -240,6 +407,29 @@ TrainingPlan buildSeedTrainingPlan() {
         effort: workoutIsIntervals
             ? TrainingSessionEffort.hard
             : TrainingSessionEffort.moderate,
+        workoutTarget: buildWorkoutTarget(workoutType),
+        workoutSteps: buildWorkoutSteps(
+          workoutType,
+          warmUpMinutes: 10,
+          mainMinutes: workoutMin,
+          coolDownMinutes: 10,
+          intervalReps: workoutIsIntervals ? intervalReps : null,
+          intervalRepDistanceMeters: workoutIsIntervals
+              ? intervalRepDistanceMeters
+              : null,
+          intervalRecoverySeconds: workoutIsIntervals
+              ? intervalRecoverySeconds
+              : null,
+        ),
+        phases: buildStructuredWorkoutPhases(
+          workoutType,
+          warmUpMinutes: 10,
+          mainMinutes: workoutMin,
+          coolDownMinutes: 10,
+          intervalReps: intervalReps,
+          intervalRepDistanceMeters: intervalRepDistanceMeters,
+          intervalRecoverySeconds: intervalRecoverySeconds,
+        ),
         intervalReps: workoutIsIntervals ? intervalReps : null,
         intervalRepDistanceMeters: workoutIsIntervals
             ? intervalRepDistanceMeters
@@ -284,6 +474,19 @@ TrainingPlan buildSeedTrainingPlan() {
         distanceKm: longKm,
         durationMinutes: longMin,
         effort: TrainingSessionEffort.easy,
+        workoutTarget: buildWorkoutTarget(SessionType.longRun),
+        workoutSteps: buildWorkoutSteps(
+          SessionType.longRun,
+          warmUpMinutes: 10,
+          mainMinutes: longMin,
+          coolDownMinutes: 10,
+        ),
+        phases: buildStructuredWorkoutPhases(
+          SessionType.longRun,
+          warmUpMinutes: 10,
+          mainMinutes: longMin,
+          coolDownMinutes: 10,
+        ),
         warmUpMinutes: 10,
         coolDownMinutes: 10,
         elevationGainMeters: estimateElevationGain(SessionType.longRun, longKm),
@@ -377,6 +580,19 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 5.0,
       durationMinutes: 30,
       effort: TrainingSessionEffort.easy,
+      workoutTarget: buildWorkoutTarget(SessionType.easyRun),
+      workoutSteps: buildWorkoutSteps(
+        SessionType.easyRun,
+        warmUpMinutes: 5,
+        mainMinutes: 30,
+        coolDownMinutes: 3,
+      ),
+      phases: buildStructuredWorkoutPhases(
+        SessionType.easyRun,
+        warmUpMinutes: 5,
+        mainMinutes: 30,
+        coolDownMinutes: 3,
+      ),
       warmUpMinutes: 5,
       coolDownMinutes: 3,
       elevationGainMeters: estimateElevationGain(SessionType.easyRun, 5.0),
@@ -390,6 +606,19 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 4.0,
       durationMinutes: 25,
       effort: TrainingSessionEffort.easy,
+      workoutTarget: buildWorkoutTarget(SessionType.easyRun),
+      workoutSteps: buildWorkoutSteps(
+        SessionType.easyRun,
+        warmUpMinutes: 5,
+        mainMinutes: 25,
+        coolDownMinutes: 3,
+      ),
+      phases: buildStructuredWorkoutPhases(
+        SessionType.easyRun,
+        warmUpMinutes: 5,
+        mainMinutes: 25,
+        coolDownMinutes: 3,
+      ),
       warmUpMinutes: 5,
       coolDownMinutes: 3,
       elevationGainMeters: estimateElevationGain(SessionType.easyRun, 4.0),
@@ -403,6 +632,25 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 6.0,
       durationMinutes: 45,
       effort: TrainingSessionEffort.hard,
+      workoutTarget: buildWorkoutTarget(SessionType.intervals),
+      workoutSteps: buildWorkoutSteps(
+        SessionType.intervals,
+        warmUpMinutes: 10,
+        mainMinutes: 45,
+        coolDownMinutes: 10,
+        intervalReps: 6,
+        intervalRepDistanceMeters: 400,
+        intervalRecoverySeconds: 90,
+      ),
+      phases: buildStructuredWorkoutPhases(
+        SessionType.intervals,
+        warmUpMinutes: 10,
+        mainMinutes: 45,
+        coolDownMinutes: 10,
+        intervalReps: 6,
+        intervalRepDistanceMeters: 400,
+        intervalRecoverySeconds: 90,
+      ),
       intervalReps: 6,
       intervalRepDistanceMeters: 400,
       intervalRecoverySeconds: 90,
@@ -427,6 +675,19 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 12.0,
       durationMinutes: 75,
       effort: TrainingSessionEffort.easy,
+      workoutTarget: buildWorkoutTarget(SessionType.longRun),
+      workoutSteps: buildWorkoutSteps(
+        SessionType.longRun,
+        warmUpMinutes: 10,
+        mainMinutes: 75,
+        coolDownMinutes: 10,
+      ),
+      phases: buildStructuredWorkoutPhases(
+        SessionType.longRun,
+        warmUpMinutes: 10,
+        mainMinutes: 75,
+        coolDownMinutes: 10,
+      ),
       warmUpMinutes: 10,
       coolDownMinutes: 10,
       elevationGainMeters: estimateElevationGain(SessionType.longRun, 12.0),
@@ -440,6 +701,19 @@ TrainingPlan buildSeedTrainingPlan() {
       distanceKm: 3.0,
       durationMinutes: 20,
       effort: TrainingSessionEffort.veryEasy,
+      workoutTarget: buildWorkoutTarget(SessionType.recoveryRun),
+      workoutSteps: buildWorkoutSteps(
+        SessionType.recoveryRun,
+        warmUpMinutes: 3,
+        mainMinutes: 20,
+        coolDownMinutes: 3,
+      ),
+      phases: buildStructuredWorkoutPhases(
+        SessionType.recoveryRun,
+        warmUpMinutes: 3,
+        mainMinutes: 20,
+        coolDownMinutes: 3,
+      ),
       warmUpMinutes: 3,
       coolDownMinutes: 3,
       elevationGainMeters: estimateElevationGain(SessionType.recoveryRun, 3.0),
@@ -566,12 +840,34 @@ TrainingPlan buildSeedTrainingPlan() {
     ),
   ];
 
+  final supportSessions = <SupportSession>[
+    SupportSession(
+      id: 'support-w4-mon-strength',
+      date: day(4, 0),
+      weekNumber: 4,
+      type: SupplementalSessionType.strength,
+      status: SupportSessionStatus.planned,
+      durationMinutes: 25,
+      notes: 'seed_strength_session',
+    ),
+    SupportSession(
+      id: 'support-w6-fri-mobility',
+      date: day(6, 4),
+      weekNumber: 6,
+      type: SupplementalSessionType.mobility,
+      status: SupportSessionStatus.planned,
+      durationMinutes: 15,
+      notes: 'seed_mobility_session',
+    ),
+  ];
+
   return TrainingPlan(
     id: 'seed-plan',
     raceType: TrainingPlanRaceType.halfMarathon,
     totalWeeks: 12,
     currentWeekNumber: 4,
     sessions: sessions,
+    supportSessions: supportSessions,
   );
 }
 

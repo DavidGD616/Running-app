@@ -1727,6 +1727,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsConnected => 'Conectado';
 
   @override
+  String get settingsNoConnectedDevices => 'Aun no hay dispositivos conectados';
+
+  @override
   String get settingsLogOut => 'Cerrar sesión';
 
   @override

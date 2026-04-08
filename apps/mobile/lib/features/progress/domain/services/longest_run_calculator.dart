@@ -27,7 +27,7 @@ LongestRunStats calculateLongestRunStats({
   final runs = sessions
       .where((s) =>
           s.status == SessionStatus.completed &&
-          !s.type.isRest &&
+          s.countsAsRun &&
           !s.date.isAfter(now) &&
           (s.distanceKm ?? 0) > 0)
       .toList();

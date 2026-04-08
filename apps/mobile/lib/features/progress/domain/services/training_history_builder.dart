@@ -15,8 +15,7 @@ List<TrainingHistoryPoint> buildTrainingHistorySeries({
   final now = _startOfDay(clock ?? DateTime.now());
   final completedRuns = sessions
       .where(
-        (session) =>
-            !session.type.isRest && session.status == SessionStatus.completed,
+        (session) => session.countsAsRun && session.status == SessionStatus.completed,
       )
       .toList(growable: false);
 

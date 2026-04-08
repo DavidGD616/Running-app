@@ -815,19 +815,4 @@ abstract final class OnboardingValues {
         return key;
     }
   }
-
-  static String planWeeksForRace(String key) {
-    switch (key) {
-      case race5k:
-        return '8';
-      case race10k:
-        return '10';
-      case raceHalfMarathon:
-        return '12';
-      case raceMarathon:
-        return '16';
-      default:
-        return '12';
-    }
-  }
 }

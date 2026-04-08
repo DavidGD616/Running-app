@@ -8,19 +8,22 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../run_flow_context.dart';
 
 class PreRunScreen extends StatefulWidget {
-  const PreRunScreen({super.key});
+  const PreRunScreen({super.key, this.args});
+
+  final PreRunArgs? args;
 
   @override
   State<PreRunScreen> createState() => _PreRunScreenState();
 }
 
 class _PreRunScreenState extends State<PreRunScreen> {
-  String? _legs;
-  String? _pain;
-  String? _sleep;
-  String? _readiness;
+  PreRunLegCondition? _legs;
+  PreRunPainLevel? _pain;
+  PreRunSleepLevel? _sleep;
+  PreRunReadinessLevel? _readiness;
 
   @override
   Widget build(BuildContext context) {
@@ -46,7 +49,6 @@ class _PreRunScreenState extends State<PreRunScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Heading ───────────────────────────────────────────
                     Text(
                       l10n.preRunHeading,
                       style: AppTypography.headlineLarge.copyWith(
@@ -63,7 +65,6 @@ class _PreRunScreenState extends State<PreRunScreen> {
 
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // ── Legs ──────────────────────────────────────────────
                     _QuestionSection(
                       label: l10n.preRunLegsQuestion,
                       child: Row(
@@ -71,24 +72,30 @@ class _PreRunScreenState extends State<PreRunScreen> {
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunFresh,
-                              isSelected: _legs == 'fresh',
-                              onTap: () => setState(() => _legs = 'fresh'),
+                              isSelected: _legs == PreRunLegCondition.fresh,
+                              onTap: () => setState(
+                                () => _legs = PreRunLegCondition.fresh,
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunNormal,
-                              isSelected: _legs == 'normal',
-                              onTap: () => setState(() => _legs = 'normal'),
+                              isSelected: _legs == PreRunLegCondition.normal,
+                              onTap: () => setState(
+                                () => _legs = PreRunLegCondition.normal,
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunHeavy,
-                              isSelected: _legs == 'heavy',
-                              onTap: () => setState(() => _legs = 'heavy'),
+                              isSelected: _legs == PreRunLegCondition.heavy,
+                              onTap: () => setState(
+                                () => _legs = PreRunLegCondition.heavy,
+                              ),
                             ),
                           ),
                         ],
@@ -97,7 +104,6 @@ class _PreRunScreenState extends State<PreRunScreen> {
 
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // ── Pain ──────────────────────────────────────────────
                     _QuestionSection(
                       label: l10n.preRunPainQuestion,
                       child: Column(
@@ -107,16 +113,20 @@ class _PreRunScreenState extends State<PreRunScreen> {
                               Expanded(
                                 child: _OptionButton(
                                   label: l10n.preRunNone,
-                                  isSelected: _pain == 'none',
-                                  onTap: () => setState(() => _pain = 'none'),
+                                  isSelected: _pain == PreRunPainLevel.none,
+                                  onTap: () => setState(
+                                    () => _pain = PreRunPainLevel.none,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.md),
                               Expanded(
                                 child: _OptionButton(
                                   label: l10n.preRunMildDiscomfort,
-                                  isSelected: _pain == 'mild',
-                                  onTap: () => setState(() => _pain = 'mild'),
+                                  isSelected: _pain == PreRunPainLevel.mild,
+                                  onTap: () => setState(
+                                    () => _pain = PreRunPainLevel.mild,
+                                  ),
                                 ),
                               ),
                             ],
@@ -127,16 +137,20 @@ class _PreRunScreenState extends State<PreRunScreen> {
                               Expanded(
                                 child: _OptionButton(
                                   label: l10n.preRunModeratePain,
-                                  isSelected: _pain == 'moderate',
-                                  onTap: () => setState(() => _pain = 'moderate'),
+                                  isSelected: _pain == PreRunPainLevel.moderate,
+                                  onTap: () => setState(
+                                    () => _pain = PreRunPainLevel.moderate,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: AppSpacing.md),
                               Expanded(
                                 child: _OptionButton(
                                   label: l10n.preRunSharpPain,
-                                  isSelected: _pain == 'sharp',
-                                  onTap: () => setState(() => _pain = 'sharp'),
+                                  isSelected: _pain == PreRunPainLevel.sharp,
+                                  onTap: () => setState(
+                                    () => _pain = PreRunPainLevel.sharp,
+                                  ),
                                 ),
                               ),
                             ],
@@ -147,7 +161,6 @@ class _PreRunScreenState extends State<PreRunScreen> {
 
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // ── Sleep ─────────────────────────────────────────────
                     _QuestionSection(
                       label: l10n.preRunSleepQuestion,
                       child: Row(
@@ -155,24 +168,30 @@ class _PreRunScreenState extends State<PreRunScreen> {
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunGreat,
-                              isSelected: _sleep == 'great',
-                              onTap: () => setState(() => _sleep = 'great'),
+                              isSelected: _sleep == PreRunSleepLevel.great,
+                              onTap: () => setState(
+                                () => _sleep = PreRunSleepLevel.great,
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunOkay,
-                              isSelected: _sleep == 'okay',
-                              onTap: () => setState(() => _sleep = 'okay'),
+                              isSelected: _sleep == PreRunSleepLevel.okay,
+                              onTap: () => setState(
+                                () => _sleep = PreRunSleepLevel.okay,
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunPoor,
-                              isSelected: _sleep == 'poor',
-                              onTap: () => setState(() => _sleep = 'poor'),
+                              isSelected: _sleep == PreRunSleepLevel.poor,
+                              onTap: () => setState(
+                                () => _sleep = PreRunSleepLevel.poor,
+                              ),
                             ),
                           ),
                         ],
@@ -181,7 +200,6 @@ class _PreRunScreenState extends State<PreRunScreen> {
 
                     const SizedBox(height: AppSpacing.xxl),
 
-                    // ── Readiness ─────────────────────────────────────────
                     _QuestionSection(
                       label: l10n.preRunReadinessQuestion,
                       child: Row(
@@ -189,16 +207,24 @@ class _PreRunScreenState extends State<PreRunScreen> {
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunLetsGo,
-                              isSelected: _readiness == 'lets_go',
-                              onTap: () => setState(() => _readiness = 'lets_go'),
+                              isSelected:
+                                  _readiness == PreRunReadinessLevel.letsGo,
+                              onTap: () => setState(
+                                () => _readiness = PreRunReadinessLevel.letsGo,
+                              ),
                             ),
                           ),
                           const SizedBox(width: AppSpacing.md),
                           Expanded(
                             child: _OptionButton(
                               label: l10n.preRunNotFullyReady,
-                              isSelected: _readiness == 'not_ready',
-                              onTap: () => setState(() => _readiness = 'not_ready'),
+                              isSelected:
+                                  _readiness ==
+                                  PreRunReadinessLevel.notFullyReady,
+                              onTap: () => setState(
+                                () => _readiness =
+                                    PreRunReadinessLevel.notFullyReady,
+                              ),
                             ),
                           ),
                         ],
@@ -209,10 +235,20 @@ class _PreRunScreenState extends State<PreRunScreen> {
               ),
             ),
 
-            // ── Continue button ───────────────────────────────────────────
             _ContinueButton(
               label: l10n.preRunContinue,
-              onTap: () => context.push(RouteNames.logRun),
+              onTap: () => context.push(
+                RouteNames.logRun,
+                extra: LogRunArgs(
+                  session: widget.args?.session,
+                  checkIn: PreRunCheckIn(
+                    legs: _legs,
+                    pain: _pain,
+                    sleep: _sleep,
+                    readiness: _readiness,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -220,8 +256,6 @@ class _PreRunScreenState extends State<PreRunScreen> {
     );
   }
 }
-
-// ── Question section wrapper ──────────────────────────────────────────────────
 
 class _QuestionSection extends StatelessWidget {
   const _QuestionSection({required this.label, required this.child});
@@ -247,8 +281,6 @@ class _QuestionSection extends StatelessWidget {
   }
 }
 
-// ── Option button ─────────────────────────────────────────────────────────────
-
 class _OptionButton extends StatelessWidget {
   const _OptionButton({
     required this.label,
@@ -271,14 +303,18 @@ class _OptionButton extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: AppTypography.titleMedium.copyWith(
-              color: isSelected ? AppColors.accentPrimary : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.accentPrimary
+                  : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -287,8 +323,6 @@ class _OptionButton extends StatelessWidget {
     );
   }
 }
-
-// ── Continue button ───────────────────────────────────────────────────────────
 
 class _ContinueButton extends StatelessWidget {
   const _ContinueButton({required this.label, required this.onTap});

@@ -9,6 +9,9 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../../../goals/domain/models/goal.dart';
+import '../../../goals/presentation/goal_presenter.dart';
+import '../../../goals/presentation/goal_provider.dart';
 import '../../../profile/domain/models/runner_profile.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
@@ -40,19 +43,15 @@ class SummaryScreen extends ConsumerWidget {
 
   // ── Build display values from provider data ───────────────────────────────
 
-  String _goalValue(RunnerProfileDraft a, AppLocalizations l10n) {
-    final race = a.goal.raceKey;
-    if (race == null) return '—';
-    return OnboardingValues.localizeRace(race, l10n);
-  }
+  String _goalValue(Goal? goal, AppLocalizations l10n) =>
+      goalRaceLabel(goal, l10n);
 
-  String _goalDetail(RunnerProfileDraft a, AppLocalizations l10n) {
-    final date = a.goal.raceDate;
-    final priority = a.goal.priorityKey;
-    final localizedPriority = priority != null
-        ? OnboardingValues.localizePriority(priority, l10n)
-        : '—';
-    if (date != null) return '${_formatDate(date, l10n)} · $localizedPriority';
+  String _goalDetail(Goal? goal, BuildContext context, AppLocalizations l10n) {
+    final eventDate = goal?.raceEvent?.eventDate;
+    final localizedPriority = goalPriorityLabel(goal, l10n);
+    if (eventDate != null) {
+      return '${_formatDate(eventDate, l10n)} · $localizedPriority';
+    }
     return localizedPriority;
   }
 
@@ -145,6 +144,7 @@ class SummaryScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final answers = ref.watch(onboardingProvider);
+    final goal = ref.watch(onboardingGoalProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
@@ -231,8 +231,8 @@ class SummaryScreen extends ConsumerWidget {
                     _SummaryCard(
                       icon: 'assets/icons/target.svg',
                       category: l10n.summaryGoalRace,
-                      value: _goalValue(answers, l10n),
-                      detail: _goalDetail(answers, l10n),
+                      value: _goalValue(goal, l10n),
+                      detail: _goalDetail(goal, context, l10n),
                       onEdit: () => context.go(RouteNames.goal),
                     ),
                     const SizedBox(height: AppSpacing.md),

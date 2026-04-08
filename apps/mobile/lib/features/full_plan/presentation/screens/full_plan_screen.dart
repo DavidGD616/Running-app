@@ -152,7 +152,7 @@ class _PlanStatsSummary extends StatelessWidget {
       0.0,
       (sum, s) => sum + (s.distanceKm ?? 0.0),
     );
-    final totalRuns = plan.sessions.where((s) => !s.type.isRest).length;
+    final totalRuns = plan.sessions.where((s) => s.countsAsRun).length;
 
     return Container(
       height: 68,
@@ -281,7 +281,7 @@ class _WeekCardState extends State<_WeekCard> {
     final isPast = week.weekNumber < widget.currentWeekNumber;
 
     final progress = WeekProgress.fromSessions(week.sessions);
-    final runCount = week.sessions.where((s) => !s.type.isRest).length;
+    final runCount = week.sessions.where((s) => s.countsAsRun).length;
 
     // Status badge
     final Color badgeColor;

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -11,6 +10,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/settings_card.dart';
+import '../../../goals/presentation/goal_presenter.dart';
+import '../../../goals/presentation/goal_provider.dart';
 import '../../../onboarding/presentation/onboarding_provider.dart';
 import '../../../onboarding/presentation/onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -22,18 +23,6 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
 
   final SettingsGoalReviewMode mode;
 
-  String _formatDate(BuildContext context, DateTime date) {
-    final locale = Localizations.localeOf(context).toLanguageTag();
-    return DateFormat.yMMMMd(locale).format(date);
-  }
-
-  String _formatDuration(Duration duration) {
-    final hours = duration.inHours;
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$hours:$minutes:$seconds';
-  }
-
   String _valueOrDash(String? value) =>
       value == null || value.isEmpty ? '—' : value;
 
@@ -41,6 +30,7 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final answers = ref.watch(onboardingProvider);
+    final goal = ref.watch(onboardingGoalProvider);
     final goalTitle = switch (mode) {
       SettingsGoalReviewMode.editGoal => l10n.settingsEditGoal,
       SettingsGoalReviewMode.newGoal => l10n.settingsNewGoal,
@@ -51,13 +41,6 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
       SettingsGoalReviewMode.newGoal =>
         RouteNames.settingsUpdatePlanNewGoalGenerating,
     };
-
-    final race = answers.goal.raceKey;
-    final hasRaceDate = answers.goal.hasRaceDate;
-    final raceDate = answers.goal.raceDate;
-    final priority = answers.goal.priorityKey;
-    final currentTime = answers.goal.currentTime;
-    final targetTime = answers.goal.targetTime;
 
     final trainingDays = answers.schedule.trainingDaysKey;
     final longRunDay = answers.schedule.longRunDayKey;
@@ -100,34 +83,25 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
                         children: [
                           _SummaryRow(
                             label: l10n.goalRaceLabel,
-                            value: race != null
-                                ? OnboardingValues.localizeRace(race, l10n)
-                                : '—',
+                            value: goalRaceLabel(goal, l10n),
                           ),
                           _SummaryRow(
                             label: l10n.raceDateLabel,
-                            value: hasRaceDate == true && raceDate != null
-                                ? _formatDate(context, raceDate)
-                                : l10n.no,
+                            value: formatGoalDate(context, goal),
                           ),
                           _SummaryRow(
                             label: l10n.priorityLabel,
-                            value: priority != null
-                                ? OnboardingValues.localizePriority(
-                                    priority,
-                                    l10n,
-                                  )
-                                : '—',
+                            value: goalPriorityLabel(goal, l10n),
                           ),
-                          if (currentTime != null)
+                          if (goal?.currentTime != null)
                             _SummaryRow(
                               label: l10n.currentRaceTime,
-                              value: _formatDuration(currentTime),
+                              value: formatGoalDuration(goal!.currentTime!),
                             ),
-                          if (targetTime != null)
+                          if (goal?.targetTime != null)
                             _SummaryRow(
                               label: l10n.targetRaceTime,
-                              value: _formatDuration(targetTime),
+                              value: formatGoalDuration(goal!.targetTime!),
                             ),
                         ],
                       ),

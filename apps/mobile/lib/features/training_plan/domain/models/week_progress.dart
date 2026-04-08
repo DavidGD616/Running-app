@@ -19,7 +19,7 @@ class WeekProgress {
   final int totalDurationMinutes;
 
   factory WeekProgress.fromSessions(List<TrainingSession> sessions) {
-    final runningSessions = sessions.where((s) => !s.type.isRest).toList();
+    final runningSessions = sessions.where((s) => s.countsAsRun).toList();
 
     final completed = runningSessions
         .where((s) => s.status == SessionStatus.completed)

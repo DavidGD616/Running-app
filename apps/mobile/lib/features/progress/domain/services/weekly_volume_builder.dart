@@ -18,8 +18,7 @@ List<WeeklyVolumeData> buildWeeklyVolumeSeries({
   final formatter = DateFormat('MMM dd', locale);
   final completedRuns = sessions
       .where(
-        (s) =>
-            !s.type.isRest && s.status == SessionStatus.completed,
+        (s) => s.countsAsRun && s.status == SessionStatus.completed,
       )
       .toList(growable: false);
 

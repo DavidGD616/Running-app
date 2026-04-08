@@ -15,7 +15,7 @@ int calculateStreakWeeks({
     final status = session.status;
     final isActiveStatus = status == SessionStatus.completed;
     if (!isActiveStatus) continue;
-    if (session.type.isRest) continue;
+    if (!session.countsAsRun) continue;
 
     activeWeekStarts.add(_mondayOf(session.date));
   }

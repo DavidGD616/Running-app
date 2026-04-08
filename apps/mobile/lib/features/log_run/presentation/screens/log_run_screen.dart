@@ -1,22 +1,34 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../activity/activity.dart';
+import '../../../pre_run/presentation/run_flow_context.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../training_plan/domain/models/session_type.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
-class LogRunScreen extends StatefulWidget {
-  const LogRunScreen({super.key});
+class LogRunScreen extends ConsumerStatefulWidget {
+  const LogRunScreen({super.key, this.args});
+
+  final LogRunArgs? args;
 
   @override
-  State<LogRunScreen> createState() => _LogRunScreenState();
+  ConsumerState<LogRunScreen> createState() => _LogRunScreenState();
 }
 
-class _LogRunScreenState extends State<LogRunScreen> {
-  String? _selectedFeeling;
+class _LogRunScreenState extends ConsumerState<LogRunScreen> {
+  ActivityPerceivedEffort? _selectedFeeling;
   final _notesController = TextEditingController();
 
   @override
@@ -25,9 +37,104 @@ class _LogRunScreenState extends State<LogRunScreen> {
     super.dispose();
   }
 
+  Future<void> _saveRun() async {
+    final session = widget.args?.session;
+    if (session == null || !session.isRunSession) {
+      if (mounted) Navigator.of(context).maybePop();
+      return;
+    }
+
+    final now = DateTime.now();
+    final actualDuration = session.durationMinutes != null
+        ? Duration(minutes: session.durationMinutes!)
+        : null;
+    final record = RunActivity(
+      id: session.sessionId,
+      linkedSessionId: session.sessionId,
+      source: ActivitySource.plannedSession,
+      completionStatus: ActivityCompletionStatus.completed,
+      recordedAt: now,
+      startedAt: actualDuration != null ? now.subtract(actualDuration) : now,
+      endedAt: now,
+      actualDuration: actualDuration,
+      actualDistanceKm: session.distanceKm,
+      actualElevationGainMeters: session.elevationGainMeters,
+      perceivedEffort: _selectedFeeling,
+      notes: _notesController.text.trim().isEmpty
+          ? null
+          : _notesController.text.trim(),
+    );
+
+    await ref.read(activitiesProvider.notifier).saveActivity(record);
+    ref.read(trainingPlanProvider.notifier).recordCompletedRunFeedback(
+      session: session,
+      activityId: record.id,
+      perceivedEffort: _selectedFeeling,
+      checkIn: widget.args?.checkIn,
+      notes: record.notes,
+      recordedAt: now,
+    );
+    if (!mounted) return;
+    context.go(RouteNames.today);
+  }
+
+  String _sessionTitle(SessionType type, AppLocalizations l10n) {
+    switch (type) {
+      case SessionType.restDay:
+        return l10n.sessionTypeRestDay;
+      case SessionType.easyRun:
+        return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.longRun:
+        return l10n.weeklyPlanSessionLongRun;
+      case SessionType.progressionRun:
+        return l10n.sessionTypeProgressionRun;
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.hillRepeats:
+        return l10n.sessionTypeHillRepeats;
+      case SessionType.fartlek:
+        return l10n.sessionTypeFartlek;
+      case SessionType.tempoRun:
+        return l10n.sessionTypeTempoRun;
+      case SessionType.thresholdRun:
+        return l10n.sessionTypeThresholdRun;
+      case SessionType.racePaceRun:
+        return l10n.sessionTypeRacePaceRun;
+      case SessionType.recoveryRun:
+        return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.crossTraining:
+        return l10n.sessionTypeCrossTraining;
+    }
+  }
+
+  String _feelingLabel(ActivityPerceivedEffort feeling, AppLocalizations l10n) {
+    return switch (feeling) {
+      ActivityPerceivedEffort.veryEasy => l10n.logSessionEasy,
+      ActivityPerceivedEffort.easy => l10n.logSessionEasy,
+      ActivityPerceivedEffort.moderate => l10n.logSessionModerate,
+      ActivityPerceivedEffort.hard => l10n.logSessionHard,
+      ActivityPerceivedEffort.veryHard => l10n.logSessionVeryHard,
+    };
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final session = widget.args?.session;
+    final plannedDistanceKm = session?.distanceKm;
+    final plannedDurationMinutes = session?.durationMinutes;
+    final displayDistanceKm = plannedDistanceKm ?? 6.02;
+    final displayDurationMinutes = plannedDurationMinutes ?? 45;
+    final plannedTitle = session != null
+        ? _sessionTitle(session.sessionType, l10n)
+        : l10n.logSessionSessionName;
+    final distanceLabel = UnitFormatter.formatDistanceValue(
+      displayDistanceKm,
+      unitSystem,
+    );
+    final distanceUnit = UnitFormatter.unitLabel(unitSystem, l10n);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -49,15 +156,13 @@ class _LogRunScreenState extends State<LogRunScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Planned session card ──────────────────────────────
                     _PlannedSessionCard(
                       label: l10n.logSessionPlannedSession,
-                      sessionName: l10n.logSessionSessionName,
+                      sessionName: plannedTitle,
                     ),
 
                     const SizedBox(height: AppSpacing.lg),
 
-                    // ── Metric cards ──────────────────────────────────────
                     Row(
                       children: [
                         Expanded(
@@ -65,7 +170,7 @@ class _LogRunScreenState extends State<LogRunScreen> {
                             glowColor: const Color(0xFF00D4FF),
                             iconAsset: 'assets/icons/clock.svg',
                             label: l10n.logSessionDurationLabel,
-                            value: '45:12',
+                            value: displayDurationMinutes.toString(),
                             unit: l10n.logSessionMinUnit,
                             subtitle: l10n.logSessionActiveTime,
                           ),
@@ -76,8 +181,8 @@ class _LogRunScreenState extends State<LogRunScreen> {
                             glowColor: const Color(0xFFFFC107),
                             iconAsset: 'assets/icons/activity.svg',
                             label: l10n.logSessionDistanceLabel,
-                            value: '6.02',
-                            unit: l10n.logSessionKmUnit,
+                            value: distanceLabel,
+                            unit: distanceUnit,
                             subtitle: l10n.logSessionPaceValue,
                           ),
                         ),
@@ -86,7 +191,6 @@ class _LogRunScreenState extends State<LogRunScreen> {
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // ── How did it feel? ──────────────────────────────────
                     Text(
                       l10n.logSessionHowDidItFeel,
                       style: AppTypography.titleMedium.copyWith(
@@ -100,17 +204,33 @@ class _LogRunScreenState extends State<LogRunScreen> {
                           children: [
                             Expanded(
                               child: _FeelButton(
-                                label: l10n.logSessionEasy,
-                                isSelected: _selectedFeeling == 'easy',
-                                onTap: () => setState(() => _selectedFeeling = 'easy'),
+                                label: _feelingLabel(
+                                  ActivityPerceivedEffort.easy,
+                                  l10n,
+                                ),
+                                isSelected:
+                                    _selectedFeeling ==
+                                    ActivityPerceivedEffort.easy,
+                                onTap: () => setState(
+                                  () => _selectedFeeling =
+                                      ActivityPerceivedEffort.easy,
+                                ),
                               ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: _FeelButton(
-                                label: l10n.logSessionModerate,
-                                isSelected: _selectedFeeling == 'moderate',
-                                onTap: () => setState(() => _selectedFeeling = 'moderate'),
+                                label: _feelingLabel(
+                                  ActivityPerceivedEffort.moderate,
+                                  l10n,
+                                ),
+                                isSelected:
+                                    _selectedFeeling ==
+                                    ActivityPerceivedEffort.moderate,
+                                onTap: () => setState(
+                                  () => _selectedFeeling =
+                                      ActivityPerceivedEffort.moderate,
+                                ),
                               ),
                             ),
                           ],
@@ -120,17 +240,33 @@ class _LogRunScreenState extends State<LogRunScreen> {
                           children: [
                             Expanded(
                               child: _FeelButton(
-                                label: l10n.logSessionHard,
-                                isSelected: _selectedFeeling == 'hard',
-                                onTap: () => setState(() => _selectedFeeling = 'hard'),
+                                label: _feelingLabel(
+                                  ActivityPerceivedEffort.hard,
+                                  l10n,
+                                ),
+                                isSelected:
+                                    _selectedFeeling ==
+                                    ActivityPerceivedEffort.hard,
+                                onTap: () => setState(
+                                  () => _selectedFeeling =
+                                      ActivityPerceivedEffort.hard,
+                                ),
                               ),
                             ),
                             const SizedBox(width: AppSpacing.sm),
                             Expanded(
                               child: _FeelButton(
-                                label: l10n.logSessionVeryHard,
-                                isSelected: _selectedFeeling == 'very_hard',
-                                onTap: () => setState(() => _selectedFeeling = 'very_hard'),
+                                label: _feelingLabel(
+                                  ActivityPerceivedEffort.veryHard,
+                                  l10n,
+                                ),
+                                isSelected:
+                                    _selectedFeeling ==
+                                    ActivityPerceivedEffort.veryHard,
+                                onTap: () => setState(
+                                  () => _selectedFeeling =
+                                      ActivityPerceivedEffort.veryHard,
+                                ),
                               ),
                             ),
                           ],
@@ -140,7 +276,6 @@ class _LogRunScreenState extends State<LogRunScreen> {
 
                     const SizedBox(height: AppSpacing.xl),
 
-                    // ── Notes ─────────────────────────────────────────────
                     Row(
                       children: [
                         Text(
@@ -185,16 +320,13 @@ class _LogRunScreenState extends State<LogRunScreen> {
               ),
             ),
 
-            // ── Save button ───────────────────────────────────────────────
-            _SaveButton(label: l10n.logSessionSaveButton),
+            _SaveButton(label: l10n.logSessionSaveButton, onTap: _saveRun),
           ],
         ),
       ),
     );
   }
 }
-
-// ── Planned session card ──────────────────────────────────────────────────────
 
 class _PlannedSessionCard extends StatelessWidget {
   const _PlannedSessionCard({required this.label, required this.sessionName});
@@ -260,8 +392,6 @@ class _PlannedSessionCard extends StatelessWidget {
   }
 }
 
-// ── Metric card with glow ─────────────────────────────────────────────────────
-
 class _MetricCard extends StatelessWidget {
   const _MetricCard({
     required this.glowColor,
@@ -287,15 +417,8 @@ class _MetricCard extends StatelessWidget {
         color: AppColors.backgroundCard,
         borderRadius: AppRadius.borderLg,
         boxShadow: [
-          BoxShadow(
-            color: glowColor,
-            blurRadius: 0,
-            spreadRadius: 1,
-          ),
-          BoxShadow(
-            color: glowColor,
-            blurRadius: 5,
-          ),
+          BoxShadow(color: glowColor, blurRadius: 0, spreadRadius: 1),
+          BoxShadow(color: glowColor, blurRadius: 5),
           BoxShadow(
             color: glowColor.withValues(alpha: 0.3),
             blurRadius: 12,
@@ -357,8 +480,6 @@ class _MetricCard extends StatelessWidget {
   }
 }
 
-// ── Feel button ───────────────────────────────────────────────────────────────
-
 class _FeelButton extends StatelessWidget {
   const _FeelButton({
     required this.label,
@@ -381,14 +502,18 @@ class _FeelButton extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: AppTypography.titleMedium.copyWith(
-              color: isSelected ? AppColors.accentPrimary : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.accentPrimary
+                  : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -398,12 +523,11 @@ class _FeelButton extends StatelessWidget {
   }
 }
 
-// ── Save button ───────────────────────────────────────────────────────────────
-
 class _SaveButton extends StatelessWidget {
-  const _SaveButton({required this.label});
+  const _SaveButton({required this.label, required this.onTap});
 
   final String label;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -427,7 +551,7 @@ class _SaveButton extends StatelessWidget {
         AppSpacing.xl,
       ),
       child: GestureDetector(
-        onTap: () => Navigator.of(context).maybePop(),
+        onTap: onTap,
         child: Container(
           height: 56,
           decoration: BoxDecoration(

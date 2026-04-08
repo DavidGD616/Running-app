@@ -47,21 +47,6 @@ RunnerProfileDraft buildRunnerProfileDraft() {
       paceRecommendations: BinaryChoice.yes,
       autoAdjust: AutoAdjustPreference.askFirst,
     ),
-    recovery: const RecoveryProfileDraft(
-      sleep: SleepRange.h7To8,
-      workLevel: WorkLevelChoice.mixed,
-      stressLevel: StressLevelChoice.moderate,
-      dayFeeling: DayFeelingChoice.fresh,
-    ),
-    motivation: const MotivationProfileDraft(
-      motivations: {
-        MotivationReason.health,
-        MotivationReason.improvePerformance,
-      },
-      barriers: {BarrierReason.time, BarrierReason.fatigue},
-      confidence: 8,
-      coachingTone: CoachingToneChoice.encouraging,
-    ),
   );
 }
 
