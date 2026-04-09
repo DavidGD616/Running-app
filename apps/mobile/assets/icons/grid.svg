@@ -1,0 +1,8 @@
+<svg preserveAspectRatio="none" width="100%" height="100%" overflow="visible" style="display: block;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Grid">
+<rect id="TopLeft" x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/>
+<rect id="TopRight" x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor"/>
+<rect id="BottomLeft" x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor"/>
+<rect id="BottomRight" x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor"/>
+</g>
+</svg>

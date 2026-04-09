@@ -1,51 +1,122 @@
 import '../../../features/user_preferences/domain/user_preferences.dart';
+import '../../l10n/app_localizations.dart';
 
 class UnitFormatter {
   UnitFormatter._();
 
   /// Label used after a number — e.g. "5 km" suffix part.
-  static String unitLabel(UnitSystem unit) =>
-      unit == UnitSystem.km ? 'km' : 'mi';
+  static String unitLabel(UnitSystem unit, AppLocalizations l10n) =>
+      unit == UnitSystem.km ? l10n.unitKm : l10n.unitMi;
 
   /// Pace label shown in training plans.
-  static String paceLabel(UnitSystem unit) =>
-      unit == UnitSystem.km ? 'min/km' : 'min/mi';
+  static String paceLabel(UnitSystem unit, AppLocalizations l10n) =>
+      unit == UnitSystem.km
+      ? '${l10n.logSessionMinUnit}/${l10n.unitKm}'
+      : '${l10n.logSessionMinUnit}/${l10n.unitMi}';
 
-  /// Subtitle shown on each race card in GoalScreen.
-  static String raceSubtitle(String raceName, UnitSystem unit) {
-    const km = {
-      '5K': '5 km',
-      '10K': '10 km',
-      'Half Marathon': '21.1 km',
-      'Marathon': '42.2 km',
-      'Other': 'Custom distance',
-    };
-    const mi = {
-      '5K': '3.1 mi',
-      '10K': '6.2 mi',
-      'Half Marathon': '13.1 mi',
-      'Marathon': '26.2 mi',
-      'Other': 'Custom distance',
-    };
-    final map = unit == UnitSystem.km ? km : mi;
-    return map[raceName] ?? raceName;
+  static String shortDistanceUnitLabel(
+    ShortDistanceUnit unit,
+    AppLocalizations l10n,
+  ) => unit == ShortDistanceUnit.meters ? l10n.unitM : l10n.unitFt;
+
+  static String formatDistanceCompactValue(double km, UnitSystem unit) {
+    final converted = _convertDistance(km, unit);
+    final isWhole = converted == converted.roundToDouble();
+    return isWhole
+        ? converted.round().toString()
+        : converted.toStringAsFixed(1);
   }
 
-  /// Options for "Average weekly volume" in CurrentFitnessScreen.
-  static List<String> weeklyVolumeOptions(UnitSystem unit) =>
-      unit == UnitSystem.km
-          ? ['0 km', '1–13 km', '10–16 km', '17–24 km', '25–32 km', '33–48 km', '49+']
-          : ['0 mi', '1–5 mi', '6–10 mi', '11–15 mi', '16–20 mi', '21–30 mi', '31+'];
+  /// Formats a duration in minutes to a human-readable string.
+  /// e.g. 30 → '30 min', 75 → '1h 15m', 60 → '1h'
+  static String formatDuration(int minutes, AppLocalizations l10n) {
+    if (minutes < 60) return '$minutes ${l10n.logSessionMinUnit}';
+    final h = minutes ~/ 60;
+    final m = minutes % 60;
+    if (m == 0) return '$h${l10n.progressHourUnit}';
+    return '$h${l10n.progressHourUnit} $m${l10n.progressMinuteUnit}';
+  }
 
-  /// Options for the optional benchmark picker in CurrentFitnessScreen.
-  static List<String> benchmarkOptions(UnitSystem unit) =>
-      unit == UnitSystem.km
-          ? ['1-km run time', '1-km walk time', '5K time', '10K time', 'Half marathon time', 'Skip for now']
-          : ['1-mile run time', '1-mile walk time', '5K time', '10K time', 'Half marathon time', 'Skip for now'];
+  static double _convertDistance(double km, UnitSystem unit) =>
+      unit == UnitSystem.km ? km : km * 0.621371;
 
-  /// Options for "Longest recent run" in CurrentFitnessScreen.
-  static List<String> longestRunOptions(UnitSystem unit) =>
-      unit == UnitSystem.km
-          ? ["I haven't done one", 'Less than 5 km', '5–8 km', '9–13 km', '14–16 km', '17–21 km', '21+ km']
-          : ["I haven't done one", 'Less than 3 mi', '3–5 mi', '6–8 mi', '9–10 mi', '11–13 mi', '13+ mi'];
+  /// Returns distance converted to the active unit system without formatting.
+  static double distanceValue(double km, UnitSystem unit) =>
+      _convertDistance(km, unit);
+
+  /// Returns the numeric distance formatted without unit, respecting unit system.
+  static String formatDistanceValue(double km, UnitSystem unit) {
+    final converted = _convertDistance(km, unit);
+    return converted.toStringAsFixed(1);
+  }
+
+  /// Returns distance string with unit label (e.g. '5 km' or '3.1 mi').
+  static String formatDistanceWithUnit(
+    double km,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatDistanceValue(km, unit);
+    return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static String formatDistanceLabel(
+    double km,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatDistanceValue(km, unit);
+    return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static String formatDistanceCompactLabel(
+    double km,
+    UnitSystem unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatDistanceCompactValue(km, unit);
+    return '$value ${unitLabel(unit, l10n)}';
+  }
+
+  static String formatWorkoutRepDistance(
+    int meters,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (unitSystem == UnitSystem.km) {
+      return '$meters ${l10n.unitM}';
+    }
+
+    const metersPerMile = 1609.344;
+    if (meters < metersPerMile) {
+      return '$meters ${l10n.unitM}';
+    }
+
+    final miles = meters / metersPerMile;
+    final rounded = (miles * 100).round() / 100;
+    final value = rounded == rounded.roundToDouble()
+        ? rounded.round().toString()
+        : rounded.toStringAsFixed(2);
+    return '$value ${l10n.unitMi}';
+  }
+
+  static double _convertShortDistance(double meters, ShortDistanceUnit unit) =>
+      unit == ShortDistanceUnit.meters ? meters : meters * 3.28084;
+
+  static String formatShortDistanceValue(
+    double meters,
+    ShortDistanceUnit unit,
+  ) {
+    final converted = _convertShortDistance(meters, unit);
+    return converted.round().toString();
+  }
+
+  static String formatShortDistanceLabel(
+    double meters,
+    ShortDistanceUnit unit,
+    AppLocalizations l10n,
+  ) {
+    final value = formatShortDistanceValue(meters, unit);
+    return '$value ${shortDistanceUnitLabel(unit, l10n)}';
+  }
 }

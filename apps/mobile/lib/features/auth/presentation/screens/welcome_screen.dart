@@ -25,7 +25,7 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final l10n = AppLocalizations.of(context)!;
 
     // Derive selected language from the locale provider — no local state needed
-    final locale = ref.watch(localeProvider).valueOrNull ?? const Locale('en');
+    final locale = ref.watch(localeProvider).value ?? const Locale('en');
     final selectedLanguage = locale.languageCode.toUpperCase(); // 'EN' or 'ES'
 
     return Scaffold(

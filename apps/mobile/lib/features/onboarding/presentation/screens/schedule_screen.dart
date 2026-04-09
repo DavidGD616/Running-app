@@ -7,13 +7,19 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
+enum ScheduleFlowMode { onboarding, changeSchedule, editGoal, newGoal }
+
 class ScheduleScreen extends ConsumerStatefulWidget {
-  const ScheduleScreen({super.key});
+  const ScheduleScreen({super.key, this.mode = ScheduleFlowMode.onboarding});
+
+  final ScheduleFlowMode mode;
 
   @override
   ConsumerState<ScheduleScreen> createState() => _ScheduleScreenState();
@@ -25,16 +31,25 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   String? _weekdayTime;
   String? _weekendTime;
   final Set<String> _hardDays = {};
-  String? _preferredTimeOfDay;
 
   final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _trainingDays = draft.schedule.trainingDaysKey;
+    _longRunDay = draft.schedule.longRunDayKey;
+    _weekdayTime = draft.schedule.weekdayTimeKey;
+    _weekendTime = draft.schedule.weekendTimeKey;
+    _hardDays.addAll(draft.schedule.hardDayKeys);
+  }
 
   bool get _isComplete =>
       _trainingDays != null &&
       _longRunDay != null &&
       _weekdayTime != null &&
-      _weekendTime != null &&
-      _preferredTimeOfDay != null;
+      _weekendTime != null;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -55,105 +70,145 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isSettingsFlow = widget.mode != ScheduleFlowMode.onboarding;
+    final isChangeSchedule = widget.mode == ScheduleFlowMode.changeSchedule;
+    final nextRoute = switch (widget.mode) {
+      ScheduleFlowMode.onboarding => RouteNames.health,
+      ScheduleFlowMode.changeSchedule => null,
+      ScheduleFlowMode.editGoal =>
+        RouteNames.settingsUpdatePlanEditGoalTraining,
+      ScheduleFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalTraining,
+    };
 
     final days = [
-      l10n.dayMon, l10n.dayTue, l10n.dayWed,
-      l10n.dayThu, l10n.dayFri, l10n.daySat, l10n.daySun,
+      OnboardingValues.dayMon,
+      OnboardingValues.dayTue,
+      OnboardingValues.dayWed,
+      OnboardingValues.dayThu,
+      OnboardingValues.dayFri,
+      OnboardingValues.daySat,
+      OnboardingValues.daySun,
     ];
 
     final weekdayTimeOptions = [
-      l10n.time20min, l10n.time30min, l10n.time45min, l10n.time60min, l10n.time75plusMin,
+      OnboardingValues.time20min,
+      OnboardingValues.time30min,
+      OnboardingValues.time45min,
+      OnboardingValues.time60min,
+      OnboardingValues.time75plusMin,
     ];
 
     final weekendTimeOptions = [
-      l10n.time30min, l10n.time45min, l10n.time60min, l10n.time90min, l10n.time2plusHours,
+      OnboardingValues.time30min,
+      OnboardingValues.time45min,
+      OnboardingValues.time60min,
+      OnboardingValues.time90min,
+      OnboardingValues.time2plusHours,
     ];
 
-    final timeOfDayOptions = [
-      l10n.timeOfDayEarlyMorning,
-      l10n.timeOfDayMorning,
-      l10n.timeOfDayAfternoon,
-      l10n.timeOfDayEvening,
-      l10n.timeOfDayNoPreference,
-    ];
+    final trainingDayOptions = const [
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '7',
+    ].map((day) => (key: day, label: day)).toList();
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
+      appBar: isSettingsFlow
+          ? AppDetailHeaderBar(title: l10n.scheduleTitle)
+          : null,
       body: SafeArea(
+        top: !isSettingsFlow,
         child: Column(
           children: [
-            // ── Top nav ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/chevron_left.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: ColorFilter.mode(
-                                AppColors.textPrimary,
-                                BlendMode.srcIn,
+            if (!isSettingsFlow)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/chevron_left.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Text(
-                        '3 / 9',
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          l10n.onboardingStep(3, 7),
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 3, total: 9),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: AppProgressBar(current: 3, total: 7),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.scheduleTitle, style: AppTypography.headlineMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      l10n.scheduleSubtitle,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    if (!isSettingsFlow) ...[
+                      Text(
+                        l10n.scheduleTitle,
+                        style: AppTypography.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.scheduleSubtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
 
                     // ── 1. Training days per week ─────────────────────────────
-                    Text(l10n.trainingDaysLabel, style: AppTypography.labelLarge),
+                    Text(
+                      l10n.trainingDaysLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.md),
                     _SegmentedControl(
-                      options: const ['2', '3', '4', '5', '6', '7'],
+                      options: trainingDayOptions,
                       selected: _trainingDays,
                       onSelect: (val) {
                         setState(() {
@@ -162,7 +217,6 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                           _weekdayTime = null;
                           _weekendTime = null;
                           _hardDays.clear();
-                          _preferredTimeOfDay = null;
                         });
                         _scrollToBottom();
                       },
@@ -171,7 +225,10 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 2. Preferred long run day ─────────────────────────────
                     if (_trainingDays != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.longRunDayLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.longRunDayLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.xs),
                       Text(
                         l10n.longRunDayHelper,
@@ -184,20 +241,21 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: days
-                            .map((day) => _Chip(
-                                  label: day,
-                                  isSelected: _longRunDay == day,
-                                  onTap: () {
-                                    setState(() {
-                                      _longRunDay = day;
-                                      _weekdayTime = null;
-                                      _weekendTime = null;
-                                      _hardDays.clear();
-                                      _preferredTimeOfDay = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (day) => _Chip(
+                                label: OnboardingValues.localizeDay(day, l10n),
+                                isSelected: _longRunDay == day,
+                                onTap: () {
+                                  setState(() {
+                                    _longRunDay = day;
+                                    _weekdayTime = null;
+                                    _weekendTime = null;
+                                    _hardDays.clear();
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -205,25 +263,32 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 3. Weekday time available ─────────────────────────────
                     if (_longRunDay != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.weekdayTimeLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.weekdayTimeLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: weekdayTimeOptions
-                            .map((t) => _Chip(
-                                  label: t,
-                                  isSelected: _weekdayTime == t,
-                                  onTap: () {
-                                    setState(() {
-                                      _weekdayTime = t;
-                                      _weekendTime = null;
-                                      _hardDays.clear();
-                                      _preferredTimeOfDay = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (t) => _Chip(
+                                label: OnboardingValues.localizeTimeSlot(
+                                  t,
+                                  l10n,
+                                ),
+                                isSelected: _weekdayTime == t,
+                                onTap: () {
+                                  setState(() {
+                                    _weekdayTime = t;
+                                    _weekendTime = null;
+                                    _hardDays.clear();
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -231,24 +296,31 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     // ── 4. Weekend time available ─────────────────────────────
                     if (_weekdayTime != null) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.weekendTimeLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.weekendTimeLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: weekendTimeOptions
-                            .map((t) => _Chip(
-                                  label: t,
-                                  isSelected: _weekendTime == t,
-                                  onTap: () {
-                                    setState(() {
-                                      _weekendTime = t;
-                                      _hardDays.clear();
-                                      _preferredTimeOfDay = null;
-                                    });
-                                    _scrollToBottom();
-                                  },
-                                ))
+                            .map(
+                              (t) => _Chip(
+                                label: OnboardingValues.localizeTimeSlot(
+                                  t,
+                                  l10n,
+                                ),
+                                isSelected: _weekendTime == t,
+                                onTap: () {
+                                  setState(() {
+                                    _weekendTime = t;
+                                    _hardDays.clear();
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -269,39 +341,21 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: days
-                            .map((day) => _Chip(
-                                  label: day,
-                                  isSelected: _hardDays.contains(day),
-                                  onTap: () {
-                                    setState(() {
-                                      if (_hardDays.contains(day)) {
-                                        _hardDays.remove(day);
-                                      } else {
-                                        _hardDays.add(day);
-                                      }
-                                    });
-                                  },
-                                ))
-                            .toList(),
-                      ),
-                    ],
-
-                    // ── 6. Preferred time of day ──────────────────────────────
-                    if (_weekendTime != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.timeOfDayLabel, style: AppTypography.labelLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: timeOfDayOptions
-                            .map((t) => _Chip(
-                                  label: t,
-                                  isSelected: _preferredTimeOfDay == t,
-                                  onTap: () {
-                                    setState(() => _preferredTimeOfDay = t);
-                                  },
-                                ))
+                            .map(
+                              (day) => _Chip(
+                                label: OnboardingValues.localizeDay(day, l10n),
+                                isSelected: _hardDays.contains(day),
+                                onTap: () {
+                                  setState(() {
+                                    if (_hardDays.contains(day)) {
+                                      _hardDays.remove(day);
+                                    } else {
+                                      _hardDays.add(day);
+                                    }
+                                  });
+                                },
+                              ),
+                            )
                             .toList(),
                       ),
                     ],
@@ -313,22 +367,31 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
-                label: l10n.continueButton,
+                label: isChangeSchedule
+                    ? l10n.saveChangesButton
+                    : l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setSchedule(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setSchedule(
                               trainingDays: _trainingDays!,
                               longRunDay: _longRunDay!,
                               weekdayTime: _weekdayTime!,
                               weekendTime: _weekendTime!,
                               hardDays: _hardDays.toList(),
-                              preferredTimeOfDay: _preferredTimeOfDay!,
                             );
-                        context.push(RouteNames.health);
+                        if (isChangeSchedule) {
+                          context.pop();
+                        } else {
+                          context.push(nextRoute!);
+                        }
                       }
                     : null,
               ),
@@ -349,7 +412,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -363,20 +426,22 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.backgroundPrimary
@@ -417,10 +482,14 @@ class _Chip extends StatelessWidget {
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.accentPrimary : AppColors.backgroundCard,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.backgroundCard,
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-              color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+              color: isSelected
+                  ? AppColors.accentPrimary
+                  : AppColors.borderDefault,
             ),
           ),
           child: Center(

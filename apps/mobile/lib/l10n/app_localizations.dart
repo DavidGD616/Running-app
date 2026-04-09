@@ -290,6 +290,12 @@ abstract class AppLocalizations {
   /// **'Preferred Units'**
   String get preferredUnits;
 
+  /// Section label for short distance and elevation units on account setup screen
+  ///
+  /// In en, this message translates to:
+  /// **'Short Distance & Elevation'**
+  String get accountSetupShortDistanceUnits;
+
   /// Kilometers unit option
   ///
   /// In en, this message translates to:
@@ -301,6 +307,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'mi'**
   String get unitMi;
+
+  /// Meters unit option
+  ///
+  /// In en, this message translates to:
+  /// **'m'**
+  String get unitM;
+
+  /// Feet unit option
+  ///
+  /// In en, this message translates to:
+  /// **'ft'**
+  String get unitFt;
 
   /// Section label on account setup screen
   ///
@@ -344,6 +362,42 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get continueButton;
 
+  /// Generic save changes button label
+  ///
+  /// In en, this message translates to:
+  /// **'Save Changes'**
+  String get saveChangesButton;
+
+  /// Button label to save a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'Set Goal'**
+  String get setGoalButton;
+
+  /// Button label to accept reviewed settings changes
+  ///
+  /// In en, this message translates to:
+  /// **'Accept Changes'**
+  String get settingsAcceptChanges;
+
+  /// Title for the settings goal review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review Changes'**
+  String get settingsReviewChangesTitle;
+
+  /// Primary CTA on the settings plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'View Plan'**
+  String get settingsViewPlan;
+
+  /// Subtitle for the settings goal review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review your {flowLabel} details and training preferences before applying them.'**
+  String settingsReviewChangesSubtitle(String flowLabel);
+
   /// Heading on the home screen
   ///
   /// In en, this message translates to:
@@ -355,6 +409,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Home screen coming soon.'**
   String get homeComingSoon;
+
+  /// Step counter displayed on onboarding screens, e.g. '1 / 9'
+  ///
+  /// In en, this message translates to:
+  /// **'{step} / {total}'**
+  String onboardingStep(int step, int total);
 
   /// Heading on the onboarding intro screen
   ///
@@ -389,7 +449,7 @@ abstract class AppLocalizations {
   /// Footer note on onboarding intro screen
   ///
   /// In en, this message translates to:
-  /// **'9 short sections · You can edit answers later'**
+  /// **'7 short sections · You can edit answers later'**
   String get onboardingIntroFooter;
 
   /// CTA button on the onboarding intro screen
@@ -854,6 +914,48 @@ abstract class AppLocalizations {
   /// **'Sun'**
   String get daySun;
 
+  /// Full weekday label for Monday
+  ///
+  /// In en, this message translates to:
+  /// **'Monday'**
+  String get weekdayMonday;
+
+  /// Full weekday label for Tuesday
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get weekdayTuesday;
+
+  /// Full weekday label for Wednesday
+  ///
+  /// In en, this message translates to:
+  /// **'Wednesday'**
+  String get weekdayWednesday;
+
+  /// Full weekday label for Thursday
+  ///
+  /// In en, this message translates to:
+  /// **'Thursday'**
+  String get weekdayThursday;
+
+  /// Full weekday label for Friday
+  ///
+  /// In en, this message translates to:
+  /// **'Friday'**
+  String get weekdayFriday;
+
+  /// Full weekday label for Saturday
+  ///
+  /// In en, this message translates to:
+  /// **'Saturday'**
+  String get weekdaySaturday;
+
+  /// Full weekday label for Sunday
+  ///
+  /// In en, this message translates to:
+  /// **'Sunday'**
+  String get weekdaySunday;
+
   /// Section label on schedule screen
   ///
   /// In en, this message translates to:
@@ -1079,7 +1181,7 @@ abstract class AppLocalizations {
   /// Subtitle on the training preferences screen
   ///
   /// In en, this message translates to:
-  /// **'Customize how your plan is structured.'**
+  /// **'Choose how you want your plan to feel.'**
   String get trainingPrefsSubtitle;
 
   /// Section label on training preferences screen
@@ -1237,12 +1339,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Mixed'**
   String get terrainMixed;
-
-  /// Section label on training preferences screen
-  ///
-  /// In en, this message translates to:
-  /// **'Walk/run intervals?'**
-  String get walkRunLabel;
 
   /// Heading on the watch & device screen
   ///
@@ -1931,8 +2027,8 @@ abstract class AppLocalizations {
   /// Schedule detail in summary
   ///
   /// In en, this message translates to:
-  /// **'Long run {longRun} · {time} · {weekday} weekdays'**
-  String summaryScheduleDetail(String longRun, String time, String weekday);
+  /// **'Long run {longRun} · Weekdays {weekday}'**
+  String summaryScheduleDetail(String longRun, String weekday);
 
   /// Health value when no pain
   ///
@@ -1946,6 +2042,12 @@ abstract class AppLocalizations {
   /// **'Pain: {level}'**
   String summaryWithPain(String level);
 
+  /// Health detail showing injury history and health conditions
+  ///
+  /// In en, this message translates to:
+  /// **'Injury history: {injury} · Conditions: {conditions}'**
+  String summaryHealthDetail(String injury, String conditions);
+
   /// Health detail showing plan preference
   ///
   /// In en, this message translates to:
@@ -1957,17 +2059,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{mode}-based guidance'**
   String summaryGuidanceBased(String mode);
-
-  /// Training detail in summary
-  ///
-  /// In en, this message translates to:
-  /// **'Speed: {speed} · Strength: {strength} · {surface} · {terrain}'**
-  String summaryTrainingDetail(
-    String speed,
-    String strength,
-    String surface,
-    String terrain,
-  );
 
   /// Device value when watch is connected
   ///
@@ -2118,6 +2209,1696 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get errorGeneric;
+
+  /// Plan name format e.g. '12-Week Half Marathon'
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks}-Week {race}'**
+  String planReadyWeekPlanName(String weeks, String race);
+
+  /// Heading on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is ready'**
+  String get planReadyTitle;
+
+  /// Label for the goal row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get planReadyGoalLabel;
+
+  /// Label for the schedule row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get planReadyScheduleLabel;
+
+  /// Label for the long runs row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Long Runs'**
+  String get planReadyLongRunsLabel;
+
+  /// Label for the guidance mode row on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Guidance Mode'**
+  String get planReadyGuidanceModeLabel;
+
+  /// Goal description shown on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Complete a {race}'**
+  String planReadyGoalDescription(String race);
+
+  /// Schedule summary shown on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'{weeks} weeks • {runsPerWeek} runs/week'**
+  String planReadyScheduleValue(String weeks, String runsPerWeek);
+
+  /// Motivational paragraph on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tailored exactly to your fitness and schedule. We\'ll safely build your endurance so you reach the finish line feeling strong.'**
+  String get planReadyDescription;
+
+  /// Primary CTA button on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'Start Plan'**
+  String get planReadyStartPlan;
+
+  /// Secondary CTA button on the plan-ready screen
+  ///
+  /// In en, this message translates to:
+  /// **'View Full Week'**
+  String get planReadyViewFullWeek;
+
+  /// Title of the home/today screen
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get homeTitle;
+
+  /// Section label for today's workout on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Workout'**
+  String get homeSectionTodaysWorkout;
+
+  /// Section label for upcoming session on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Up Next'**
+  String get homeSectionUpNext;
+
+  /// Section label for weekly progress on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'This Week'**
+  String get homeSectionThisWeek;
+
+  /// Quick action button to log a past run on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Log Past Run'**
+  String get homeLogPastRun;
+
+  /// Quick action button to view the full weekly plan on the home screen
+  ///
+  /// In en, this message translates to:
+  /// **'Full Week'**
+  String get homeFullWeek;
+
+  /// Stat label in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get workoutDurationLabel;
+
+  /// Stat label in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get workoutDistanceLabel;
+
+  /// Section label inside the target guidance box in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'Target Guidance'**
+  String get workoutTargetGuidanceLabel;
+
+  /// Target guidance for easy run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.'**
+  String get sessionDescEasyRun;
+
+  /// Target guidance for interval sessions
+  ///
+  /// In en, this message translates to:
+  /// **'{reps}×{repDistance} @ 5K pace. {recoverySeconds}s recovery jog between each rep.'**
+  String sessionDescIntervals(
+    int reps,
+    String repDistance,
+    int recoverySeconds,
+  );
+
+  /// Target guidance for long run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Your key long run this week. Builds the endurance needed for your Half Marathon race day.'**
+  String get sessionDescLongRun;
+
+  /// Target guidance for recovery run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Active recovery run to flush fatigue. Keep the effort very easy — slower than you think.'**
+  String get sessionDescRecoveryRun;
+
+  /// Target guidance for tempo run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortably hard effort. You should be able to speak a few words but not hold a conversation.'**
+  String get sessionDescTempoRun;
+
+  /// Primary button in the workout hero card
+  ///
+  /// In en, this message translates to:
+  /// **'View Workout'**
+  String get workoutViewDetailsButton;
+
+  /// Stat label for runs completed in the week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get weekProgressRunsLabel;
+
+  /// Stat label for volume in the week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'Volume'**
+  String get weekProgressVolumeLabel;
+
+  /// Footer message in the week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'On track to hit {totalVolume} {unit} planned'**
+  String weekProgressFooter(String totalVolume, String unit);
+
+  /// Volume unit displayed on the home week progress card
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get homeVolumeUnit;
+
+  /// Bottom nav tab label for the Today/Home tab
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get tabToday;
+
+  /// Bottom nav tab label for the Plan tab
+  ///
+  /// In en, this message translates to:
+  /// **'Plan'**
+  String get tabPlan;
+
+  /// Bottom nav tab label for the Progress tab
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get tabProgress;
+
+  /// Bottom nav tab label for the Settings tab
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get tabSettings;
+
+  /// Weekly plan screen title showing current week and total weeks
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week} of {total}'**
+  String weeklyPlanTitle(String week, String total);
+
+  /// Distance stat label in weekly plan summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get weeklyPlanDistanceLabel;
+
+  /// Time stat label in weekly plan summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get weeklyPlanTimeLabel;
+
+  /// Runs stat label in weekly plan summary card
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get weeklyPlanRunsLabel;
+
+  /// Schedule section label in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get weeklyPlanScheduleLabel;
+
+  /// Rest day session title
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get weeklyPlanRestTitle;
+
+  /// Rest day subtitle text
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery day'**
+  String get weeklyPlanRestSubtitle;
+
+  /// Badge label on today's session row
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get weeklyPlanNowBadge;
+
+  /// View full plan button label
+  ///
+  /// In en, this message translates to:
+  /// **'View Full Plan'**
+  String get weeklyPlanViewFullPlan;
+
+  /// Easy run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Easy Run'**
+  String get weeklyPlanSessionEasyRun;
+
+  /// Intervals session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get weeklyPlanSessionIntervals;
+
+  /// Long run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Long Run'**
+  String get weeklyPlanSessionLongRun;
+
+  /// Recovery run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery Run'**
+  String get weeklyPlanSessionRecoveryRun;
+
+  /// Progression run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Progression Run'**
+  String get sessionTypeProgressionRun;
+
+  /// Hill repeats session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Hill Repeats'**
+  String get sessionTypeHillRepeats;
+
+  /// Fartlek session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Fartlek'**
+  String get sessionTypeFartlek;
+
+  /// Threshold run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold Run'**
+  String get sessionTypeThresholdRun;
+
+  /// Race pace run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Race Pace Run'**
+  String get sessionTypeRacePaceRun;
+
+  /// Cross training session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Cross Training'**
+  String get sessionTypeCrossTraining;
+
+  /// Rest day session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Rest Day'**
+  String get sessionTypeRestDay;
+
+  /// No description provided for @sessionCategoryEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get sessionCategoryEndurance;
+
+  /// No description provided for @sessionCategorySpeedWork.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Work'**
+  String get sessionCategorySpeedWork;
+
+  /// No description provided for @sessionCategoryThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get sessionCategoryThreshold;
+
+  /// No description provided for @sessionCategoryRaceSpecific.
+  ///
+  /// In en, this message translates to:
+  /// **'Race Specific'**
+  String get sessionCategoryRaceSpecific;
+
+  /// No description provided for @sessionCategoryRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get sessionCategoryRecovery;
+
+  /// No description provided for @sessionCategoryRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get sessionCategoryRest;
+
+  /// Monday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Mon'**
+  String get weeklyPlanDayMon;
+
+  /// Tuesday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Tue'**
+  String get weeklyPlanDayTue;
+
+  /// Wednesday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Wed'**
+  String get weeklyPlanDayWed;
+
+  /// Thursday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Thu'**
+  String get weeklyPlanDayThu;
+
+  /// Friday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Fri'**
+  String get weeklyPlanDayFri;
+
+  /// Saturday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Sat'**
+  String get weeklyPlanDaySat;
+
+  /// Sunday abbreviation in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Sun'**
+  String get weeklyPlanDaySun;
+
+  /// Label for today's date box in weekly plan
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get weeklyPlanDayToday;
+
+  /// Progress screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Progress'**
+  String get progressTitle;
+
+  /// Progress screen subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re building a solid habit. Keep it up.'**
+  String get progressSubtitle;
+
+  /// Subtitle on the streak banner
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re staying consistently active.'**
+  String get progressStreakBannerSubtitle;
+
+  /// Weekly volume chart section title
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Volume'**
+  String get progressWeeklyVolumeTitle;
+
+  /// Trending up label in volume chart
+  ///
+  /// In en, this message translates to:
+  /// **'Trending Up'**
+  String get progressTrendingUp;
+
+  /// Label below runs counter in volume chart
+  ///
+  /// In en, this message translates to:
+  /// **'runs this week'**
+  String get progressRunsThisWeek;
+
+  /// Distance stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get progressDistanceLabel;
+
+  /// Time stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get progressTimeLabel;
+
+  /// Streak stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Streak'**
+  String get progressStreakLabel;
+
+  /// Runs stat label
+  ///
+  /// In en, this message translates to:
+  /// **'Runs'**
+  String get progressRunsLabel;
+
+  /// Completed label under runs count
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get progressRunsCompleted;
+
+  /// Streak subtitle below streak count
+  ///
+  /// In en, this message translates to:
+  /// **'{count} weeks in a row'**
+  String progressStreakSubtitle(String count);
+
+  /// Upward trend label on stat tiles
+  ///
+  /// In en, this message translates to:
+  /// **'▲ {percent}% vs last mo'**
+  String progressTrendUp(String percent);
+
+  /// Downward trend label on stat tiles
+  ///
+  /// In en, this message translates to:
+  /// **'▼ {percent}% vs last mo'**
+  String progressTrendDown(String percent);
+
+  /// Weeks unit abbreviation
+  ///
+  /// In en, this message translates to:
+  /// **'wks'**
+  String get progressWeeksUnit;
+
+  /// Hour unit abbreviation
+  ///
+  /// In en, this message translates to:
+  /// **'h'**
+  String get progressHourUnit;
+
+  /// Minute unit abbreviation
+  ///
+  /// In en, this message translates to:
+  /// **'m'**
+  String get progressMinuteUnit;
+
+  /// Longest run card title
+  ///
+  /// In en, this message translates to:
+  /// **'Longest Run'**
+  String get progressLongestRunTitle;
+
+  /// Longest run improvement since plan start
+  ///
+  /// In en, this message translates to:
+  /// **'+{distance} since start'**
+  String progressLongestRunImproved(String distance);
+
+  /// Recent sessions section title
+  ///
+  /// In en, this message translates to:
+  /// **'Recent Sessions'**
+  String get progressRecentSessionsTitle;
+
+  /// View all sessions link
+  ///
+  /// In en, this message translates to:
+  /// **'View All ›'**
+  String get progressViewAll;
+
+  /// Title of the completed sessions screen
+  ///
+  /// In en, this message translates to:
+  /// **'Completed Sessions'**
+  String get completedSessionsTitle;
+
+  /// Summary text shown at the top of the completed sessions screen
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions completed'**
+  String completedSessionsSummary(String count);
+
+  /// Empty state message for the completed sessions screen
+  ///
+  /// In en, this message translates to:
+  /// **'No completed sessions yet'**
+  String get completedSessionsEmpty;
+
+  /// Tempo run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo Run'**
+  String get progressSessionTempoRun;
+
+  /// Tempo run session type name
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo Run'**
+  String get sessionTypeTempoRun;
+
+  /// Yesterday relative date label
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get progressYesterday;
+
+  /// Tuesday label for recent session meta
+  ///
+  /// In en, this message translates to:
+  /// **'Tuesday'**
+  String get progressTuesdayLabel;
+
+  /// Last Sunday label for recent session meta
+  ///
+  /// In en, this message translates to:
+  /// **'Last Sunday'**
+  String get progressLastSunday;
+
+  /// Week label prefix in volume chart (W1, W2...). S for Spanish (Semana).
+  ///
+  /// In en, this message translates to:
+  /// **'W'**
+  String get progressWeekPrefix;
+
+  /// Fallback profile name shown in settings when no name is stored
+  ///
+  /// In en, this message translates to:
+  /// **'User Name'**
+  String get profileDefaultName;
+
+  /// Short week label used in the home header
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week}'**
+  String profileWeekShort(String week);
+
+  /// Full week label used in the settings profile card
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week} of {total}'**
+  String profileWeekFull(String week, String total);
+
+  /// Training plan effort label: easy
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get trainingPlanEffortEasy;
+
+  /// Training plan effort label: moderate
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get trainingPlanEffortModerate;
+
+  /// Training plan effort label: hard
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get trainingPlanEffortHard;
+
+  /// Training plan effort label: very easy
+  ///
+  /// In en, this message translates to:
+  /// **'Very Easy'**
+  String get trainingPlanEffortVeryEasy;
+
+  /// Completed session subtitle with completion time
+  ///
+  /// In en, this message translates to:
+  /// **'Completed · {time}'**
+  String sessionCompletedAt(String time);
+
+  /// Progress summary on the weekly calendar card
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {total} sessions done'**
+  String weeklyCalendarSessionsDone(String completed, String total);
+
+  /// Label for the current week stats card inside the volume chart
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT WEEK'**
+  String get progressCurrentWeek;
+
+  /// Elevation stat label in the current week stats card
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation'**
+  String get progressElevationLabel;
+
+  /// Footer link in the weekly volume chart card
+  ///
+  /// In en, this message translates to:
+  /// **'See Full Data'**
+  String get progressSeeFullData;
+
+  /// Settings screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settingsTitle;
+
+  /// General section header on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get settingsGeneralSection;
+
+  /// Account row label on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Account'**
+  String get settingsAccount;
+
+  /// Subscription row label on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Subscription'**
+  String get settingsSubscription;
+
+  /// Label for the active paid plan on the subscription screen
+  ///
+  /// In en, this message translates to:
+  /// **'Active Plan'**
+  String get settingsSubscriptionActivePlan;
+
+  /// Visible plan name for the paid RunFlow subscription
+  ///
+  /// In en, this message translates to:
+  /// **'RunFlow Pro'**
+  String get settingsSubscriptionPlanName;
+
+  /// Label for the next billing date on the subscription screen
+  ///
+  /// In en, this message translates to:
+  /// **'Next Billing Date'**
+  String get settingsSubscriptionNextBillingDate;
+
+  /// Helper copy explaining the subscription auto-renew behavior
+  ///
+  /// In en, this message translates to:
+  /// **'Your subscription will automatically renew. If you don\'t want to continue your subscription, cancel it before the next billing date.'**
+  String get settingsSubscriptionAutoRenewNotice;
+
+  /// Button and page title for the subscription cancellation flow
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel Subscription'**
+  String get settingsCancelSubscription;
+
+  /// Prompt shown at the top of the cancel subscription reasons screen
+  ///
+  /// In en, this message translates to:
+  /// **'Please tell us why you\'re cancelling RunFlow Pro'**
+  String get settingsCancelSubscriptionPrompt;
+
+  /// Cancellation reason: subscription cost is too high
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s too expensive'**
+  String get settingsCancelSubscriptionReasonTooExpensive;
+
+  /// Cancellation reason: not getting enough use from the subscription
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m not using it enough'**
+  String get settingsCancelSubscriptionReasonNotUsingEnough;
+
+  /// Cancellation reason: product is not helping enough
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s not helping me reach my goals'**
+  String get settingsCancelSubscriptionReasonNotHelpingGoals;
+
+  /// Cancellation reason: important features are missing
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s missing features I need'**
+  String get settingsCancelSubscriptionReasonMissingFeatures;
+
+  /// Cancellation reason: moving to another app
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m switching to another app'**
+  String get settingsCancelSubscriptionReasonSwitchingApps;
+
+  /// Cancellation reason: user is taking a break from running
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m taking a break from running'**
+  String get settingsCancelSubscriptionReasonTakingBreak;
+
+  /// Fallback cancellation reason option
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get settingsCancelSubscriptionReasonOther;
+
+  /// Secondary action to leave a flow without continuing
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get settingsNotNow;
+
+  /// Title shown after the user submits cancellation reasons
+  ///
+  /// In en, this message translates to:
+  /// **'Manage your subscription in the store'**
+  String get settingsSubscriptionCancellationInfoTitle;
+
+  /// Helper copy shown after the user submits cancellation reasons
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.'**
+  String get settingsSubscriptionCancellationInfoBody;
+
+  /// Confirmation button label on the cancellation info dialog
+  ///
+  /// In en, this message translates to:
+  /// **'OK'**
+  String get settingsSubscriptionDialogButton;
+
+  /// Integrations row label on settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Integrations'**
+  String get settingsIntegrations;
+
+  /// Available integrations section header on integrations settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Available Integrations'**
+  String get settingsAvailableIntegrationsSection;
+
+  /// Apple Health integration row label
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Health'**
+  String get settingsAppleHealth;
+
+  /// Health Connect integration row label
+  ///
+  /// In en, this message translates to:
+  /// **'Health Connect'**
+  String get settingsHealthConnect;
+
+  /// Profile section header on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Profile'**
+  String get settingsAccountProfileSection;
+
+  /// Security section header on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get settingsAccountSecuritySection;
+
+  /// Name row label on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get settingsAccountNameLabel;
+
+  /// Sex row label on account settings screen
+  ///
+  /// In en, this message translates to:
+  /// **'Sex'**
+  String get settingsAccountSexLabel;
+
+  /// Placeholder value when an account field has not been set
+  ///
+  /// In en, this message translates to:
+  /// **'Not set'**
+  String get settingsAccountNotSet;
+
+  /// Title shown on placeholder account security screens
+  ///
+  /// In en, this message translates to:
+  /// **'Coming soon'**
+  String get settingsAccountSecurityUnavailableTitle;
+
+  /// Subtitle shown on the placeholder email screen inside account settings
+  ///
+  /// In en, this message translates to:
+  /// **'Email changes will be available when account authentication is connected.'**
+  String get settingsAccountEmailUnavailableSubtitle;
+
+  /// Subtitle shown on the placeholder password screen inside account settings
+  ///
+  /// In en, this message translates to:
+  /// **'Password changes will be available when account authentication is connected.'**
+  String get settingsAccountPasswordUnavailableSubtitle;
+
+  /// Plan & Goals section header
+  ///
+  /// In en, this message translates to:
+  /// **'Plan & Goals'**
+  String get settingsPlanGoalsSection;
+
+  /// Row label to update training plan info
+  ///
+  /// In en, this message translates to:
+  /// **'Update Plan Info'**
+  String get settingsUpdatePlanInfo;
+
+  /// Settings row label to edit the current goal
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Goal'**
+  String get settingsEditGoal;
+
+  /// Settings row label to create a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'New Goal'**
+  String get settingsNewGoal;
+
+  /// Settings row label to edit the training schedule
+  ///
+  /// In en, this message translates to:
+  /// **'Change Schedule'**
+  String get settingsChangeSchedule;
+
+  /// Goal section label on the settings review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get settingsSummaryGoalSection;
+
+  /// Training section label on the settings review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Training Preferences'**
+  String get settingsSummaryTrainingSection;
+
+  /// Title on the intro screen before editing the current goal
+  ///
+  /// In en, this message translates to:
+  /// **'Update the goal you are already training for'**
+  String get settingsEditGoalIntroTitle;
+
+  /// Subtitle on the intro screen before editing the current goal
+  ///
+  /// In en, this message translates to:
+  /// **'You can review your race, date, priority, and time targets before saving the changes.'**
+  String get settingsEditGoalIntroSubtitle;
+
+  /// First explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust your race or target distance.'**
+  String get settingsEditGoalIntroPointRace;
+
+  /// Second explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Update the race date if your timeline has changed.'**
+  String get settingsEditGoalIntroPointDate;
+
+  /// Third explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review your priority and pacing targets before saving.'**
+  String get settingsEditGoalIntroPointPriority;
+
+  /// Training preferences explainer item for edit goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review your training preferences before finishing the update.'**
+  String get settingsEditGoalIntroPointTraining;
+
+  /// Title on the intro screen before creating a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'Set a brand-new goal for your training'**
+  String get settingsNewGoalIntroTitle;
+
+  /// Subtitle on the intro screen before creating a new goal
+  ///
+  /// In en, this message translates to:
+  /// **'This flow starts fresh so you can choose a different target and save a new goal for your plan.'**
+  String get settingsNewGoalIntroSubtitle;
+
+  /// First explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a new race or custom distance.'**
+  String get settingsNewGoalIntroPointRace;
+
+  /// Second explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Set a new date and timeline for the goal.'**
+  String get settingsNewGoalIntroPointDate;
+
+  /// Third explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Save a fresh goal without changing your schedule here.'**
+  String get settingsNewGoalIntroPointPlan;
+
+  /// Training preferences explainer item for new goal intro screen
+  ///
+  /// In en, this message translates to:
+  /// **'Set the training preferences you want to use with this goal.'**
+  String get settingsNewGoalIntroPointTraining;
+
+  /// Preferences section header
+  ///
+  /// In en, this message translates to:
+  /// **'Preferences'**
+  String get settingsPreferencesSection;
+
+  /// Language preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Language'**
+  String get settingsLanguage;
+
+  /// English language option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageEnglish;
+
+  /// Spanish language option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish'**
+  String get settingsLanguageSpanish;
+
+  /// Current language value
+  ///
+  /// In en, this message translates to:
+  /// **'English'**
+  String get settingsLanguageValue;
+
+  /// Units preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Units'**
+  String get settingsUnits;
+
+  /// Metric unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Metric (km)'**
+  String get settingsUnitsMetric;
+
+  /// Imperial unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Imperial (mi)'**
+  String get settingsUnitsImperial;
+
+  /// Distance units section title in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get settingsUnitsDistanceSection;
+
+  /// Elevation units section title in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Elevation'**
+  String get settingsUnitsElevationSection;
+
+  /// Meters unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Meters (m)'**
+  String get settingsUnitsMeters;
+
+  /// Feet unit option in settings
+  ///
+  /// In en, this message translates to:
+  /// **'Feet (ft)'**
+  String get settingsUnitsFeet;
+
+  /// Current units value
+  ///
+  /// In en, this message translates to:
+  /// **'Metric (km)'**
+  String get settingsUnitsValue;
+
+  /// Notifications preference row label
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsNotifications;
+
+  /// Current notifications value
+  ///
+  /// In en, this message translates to:
+  /// **'Enabled'**
+  String get settingsNotificationsValue;
+
+  /// Connected Devices section header
+  ///
+  /// In en, this message translates to:
+  /// **'Connected Devices'**
+  String get settingsConnectedDevicesSection;
+
+  /// Garmin Connect row label
+  ///
+  /// In en, this message translates to:
+  /// **'Garmin Connect'**
+  String get settingsGarminConnect;
+
+  /// Connected device badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get settingsConnected;
+
+  /// Empty state text shown when no wearable connections exist in settings integrations
+  ///
+  /// In en, this message translates to:
+  /// **'No connected devices yet'**
+  String get settingsNoConnectedDevices;
+
+  /// Log out button label
+  ///
+  /// In en, this message translates to:
+  /// **'Log Out'**
+  String get settingsLogOut;
+
+  /// App version string shown at bottom of settings
+  ///
+  /// In en, this message translates to:
+  /// **'RunFlow v1.0.0 (Build 42)'**
+  String get settingsVersion;
+
+  /// Header title on the session detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Workout'**
+  String get sessionDetailTitle;
+
+  /// Session type badge label
+  ///
+  /// In en, this message translates to:
+  /// **'Speed Work'**
+  String get sessionDetailSessionType;
+
+  /// Label for total distance stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'Total Distance'**
+  String get sessionDetailTotalDistanceLabel;
+
+  /// Label for estimated duration stat tile
+  ///
+  /// In en, this message translates to:
+  /// **'Est. Duration'**
+  String get sessionDetailEstDurationLabel;
+
+  /// Workout Structure section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Workout Structure'**
+  String get sessionDetailWorkoutStructure;
+
+  /// Warm-up phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up'**
+  String get sessionDetailWarmUp;
+
+  /// Warm-up phase zone note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy pace, Zone 2'**
+  String get sessionDetailWarmUpNote;
+
+  /// Intervals phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get sessionDetailIntervals;
+
+  /// Intervals phase zone note
+  ///
+  /// In en, this message translates to:
+  /// **'Hard effort, Zone 4'**
+  String get sessionDetailIntervalsNote;
+
+  /// Cool-down phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Cool-down'**
+  String get sessionDetailCoolDown;
+
+  /// Cool-down phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'10 min'**
+  String get sessionDetailCoolDownDuration;
+
+  /// Cool-down phase zone note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy pace or walk'**
+  String get sessionDetailCoolDownNote;
+
+  /// Start Workout CTA button label
+  ///
+  /// In en, this message translates to:
+  /// **'Start Workout'**
+  String get sessionDetailStartWorkout;
+
+  /// Easy run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseEasyRunWarmDuration(int minutes);
+
+  /// Easy run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Brisk walk + light dynamic leg swings'**
+  String get sessionPhaseEasyRunWarmNote;
+
+  /// Easy run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseEasyRunMainDuration(int minutes);
+
+  /// Easy run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Conversational pace · Zone 2 · keep it relaxed'**
+  String get sessionPhaseEasyRunMainNote;
+
+  /// Easy run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseEasyRunCoolDuration(int minutes);
+
+  /// Easy run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Walk it out · light static stretches'**
+  String get sessionPhaseEasyRunCoolNote;
+
+  /// Intervals warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseIntervalsWarmDuration(int minutes);
+
+  /// Intervals warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog · strides at the end to prime the legs'**
+  String get sessionPhaseIntervalsWarmNote;
+
+  /// Intervals main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseIntervalsMainDuration(int minutes);
+
+  /// Intervals main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {repDistance} at hard effort · RPE 8–9'**
+  String sessionPhaseIntervalsMainNote(int reps, String repDistance);
+
+  /// Intervals main phase recovery note
+  ///
+  /// In en, this message translates to:
+  /// **'{recoverySeconds} s easy jog recovery between each rep'**
+  String sessionPhaseIntervalsMainRecovery(int recoverySeconds);
+
+  /// Intervals cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseIntervalsCoolDuration(int minutes);
+
+  /// Intervals cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog → walk · full-body stretch'**
+  String get sessionPhaseIntervalsCoolNote;
+
+  /// Long run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseLongRunWarmDuration(int minutes);
+
+  /// Long run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Very easy jog · ease into the effort'**
+  String get sessionPhaseLongRunWarmNote;
+
+  /// Long run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseLongRunMainDuration(int minutes);
+
+  /// Long run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Steady easy effort · Zone 2 · stay comfortable throughout'**
+  String get sessionPhaseLongRunMainNote;
+
+  /// Long run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseLongRunCoolDuration(int minutes);
+
+  /// Long run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Walk to finish · thorough stretch · refuel'**
+  String get sessionPhaseLongRunCoolNote;
+
+  /// Recovery run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseRecoveryRunWarmDuration(int minutes);
+
+  /// Recovery run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle walk to get moving'**
+  String get sessionPhaseRecoveryRunWarmNote;
+
+  /// Recovery run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseRecoveryRunMainDuration(int minutes);
+
+  /// Recovery run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Very easy conversational pace · no watch pressure'**
+  String get sessionPhaseRecoveryRunMainNote;
+
+  /// Recovery run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseRecoveryRunCoolDuration(int minutes);
+
+  /// Recovery run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Walk · foam roll if available'**
+  String get sessionPhaseRecoveryRunCoolNote;
+
+  /// Tempo run warm-up duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseTempoRunWarmDuration(int minutes);
+
+  /// Tempo run warm-up note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog · build pace gradually'**
+  String get sessionPhaseTempoRunWarmNote;
+
+  /// Tempo run main phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseTempoRunMainDuration(int minutes);
+
+  /// Tempo run main phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortably hard effort · Zone 3–4'**
+  String get sessionPhaseTempoRunMainNote;
+
+  /// Tempo run cool-down duration
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String sessionPhaseTempoRunCoolDuration(int minutes);
+
+  /// Tempo run cool-down note
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog → walk · stretch thoroughly'**
+  String get sessionPhaseTempoRunCoolNote;
+
+  /// Log session screen title
+  ///
+  /// In en, this message translates to:
+  /// **'Log Session'**
+  String get logSessionTitle;
+
+  /// Label above planned session name on log session screen
+  ///
+  /// In en, this message translates to:
+  /// **'Planned Session'**
+  String get logSessionPlannedSession;
+
+  /// Demo planned session name on log session screen
+  ///
+  /// In en, this message translates to:
+  /// **'Morning Intervals'**
+  String get logSessionSessionName;
+
+  /// Duration metric card label
+  ///
+  /// In en, this message translates to:
+  /// **'DURATION'**
+  String get logSessionDurationLabel;
+
+  /// Duration metric card subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Active time'**
+  String get logSessionActiveTime;
+
+  /// Distance metric card label
+  ///
+  /// In en, this message translates to:
+  /// **'DISTANCE'**
+  String get logSessionDistanceLabel;
+
+  /// Minutes unit label
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get logSessionMinUnit;
+
+  /// Kilometers unit label
+  ///
+  /// In en, this message translates to:
+  /// **'km'**
+  String get logSessionKmUnit;
+
+  /// Pace subtitle on distance metric card
+  ///
+  /// In en, this message translates to:
+  /// **'7:31 / km pace'**
+  String get logSessionPaceValue;
+
+  /// Section heading for perceived effort selection
+  ///
+  /// In en, this message translates to:
+  /// **'How did it feel?'**
+  String get logSessionHowDidItFeel;
+
+  /// Perceived effort option: easy
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get logSessionEasy;
+
+  /// Perceived effort option: moderate
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get logSessionModerate;
+
+  /// Perceived effort option: hard
+  ///
+  /// In en, this message translates to:
+  /// **'Hard'**
+  String get logSessionHard;
+
+  /// Perceived effort option: very hard
+  ///
+  /// In en, this message translates to:
+  /// **'Very Hard'**
+  String get logSessionVeryHard;
+
+  /// Notes section heading
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get logSessionNotes;
+
+  /// Optional label next to Notes heading
+  ///
+  /// In en, this message translates to:
+  /// **'(Optional)'**
+  String get logSessionOptional;
+
+  /// Placeholder text in the notes text area
+  ///
+  /// In en, this message translates to:
+  /// **'How did the run go?'**
+  String get logSessionNotesHint;
+
+  /// Save session CTA button label
+  ///
+  /// In en, this message translates to:
+  /// **'Save Session'**
+  String get logSessionSaveButton;
+
+  /// Header title on the pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Pre-run Check'**
+  String get preRunTitle;
+
+  /// Large heading on the pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'How are you feeling?'**
+  String get preRunHeading;
+
+  /// Subtitle below heading on the pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Quick check to make sure today\'s interval session is still the right move.'**
+  String get preRunSubtitle;
+
+  /// Question label for legs feeling section
+  ///
+  /// In en, this message translates to:
+  /// **'How do your legs feel today?'**
+  String get preRunLegsQuestion;
+
+  /// Legs feeling option: fresh
+  ///
+  /// In en, this message translates to:
+  /// **'Fresh'**
+  String get preRunFresh;
+
+  /// Legs feeling option: normal
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get preRunNormal;
+
+  /// Legs feeling option: heavy
+  ///
+  /// In en, this message translates to:
+  /// **'Heavy'**
+  String get preRunHeavy;
+
+  /// Question label for pain level section
+  ///
+  /// In en, this message translates to:
+  /// **'Any pain right now?'**
+  String get preRunPainQuestion;
+
+  /// Pain level option: none
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get preRunNone;
+
+  /// Pain level option: mild discomfort
+  ///
+  /// In en, this message translates to:
+  /// **'Mild discomfort'**
+  String get preRunMildDiscomfort;
+
+  /// Pain level option: moderate pain
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate pain'**
+  String get preRunModeratePain;
+
+  /// Pain level option: sharp pain
+  ///
+  /// In en, this message translates to:
+  /// **'Sharp pain'**
+  String get preRunSharpPain;
+
+  /// Question label for sleep quality section
+  ///
+  /// In en, this message translates to:
+  /// **'How was your sleep?'**
+  String get preRunSleepQuestion;
+
+  /// Sleep quality option: great
+  ///
+  /// In en, this message translates to:
+  /// **'Great'**
+  String get preRunGreat;
+
+  /// Sleep quality option: okay
+  ///
+  /// In en, this message translates to:
+  /// **'Okay'**
+  String get preRunOkay;
+
+  /// Sleep quality option: poor
+  ///
+  /// In en, this message translates to:
+  /// **'Poor'**
+  String get preRunPoor;
+
+  /// Question label for readiness section
+  ///
+  /// In en, this message translates to:
+  /// **'Are you ready for this session?'**
+  String get preRunReadinessQuestion;
+
+  /// Readiness option: let's go
+  ///
+  /// In en, this message translates to:
+  /// **'Let\'s go'**
+  String get preRunLetsGo;
+
+  /// Readiness option: not fully ready
+  ///
+  /// In en, this message translates to:
+  /// **'Not fully ready'**
+  String get preRunNotFullyReady;
+
+  /// Continue CTA button on pre-run check screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get preRunContinue;
+
+  /// Title of the workout options bottom sheet
+  ///
+  /// In en, this message translates to:
+  /// **'Workout Options'**
+  String get workoutOptionsTitle;
+
+  /// Skip workout option label
+  ///
+  /// In en, this message translates to:
+  /// **'Skip Workout'**
+  String get workoutOptionsSkipWorkout;
+
+  /// Skip workout option description
+  ///
+  /// In en, this message translates to:
+  /// **'Removes this session from this week schedule'**
+  String get workoutOptionsSkipWorkoutDescription;
+
+  /// Restore workout option label
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Workout'**
+  String get workoutOptionsRestoreWorkout;
+
+  /// Restore workout option description
+  ///
+  /// In en, this message translates to:
+  /// **'Put this session back on the schedule'**
+  String get workoutOptionsRestoreWorkoutDescription;
+
+  /// Title of the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'Full Plan'**
+  String get fullPlanTitle;
+
+  /// Title of the training history screen
+  ///
+  /// In en, this message translates to:
+  /// **'Training History'**
+  String get trainingHistoryTitle;
+
+  /// Informational note at the top of the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'This is your estimated full plan. It may change over time based on your progress and training adjustments.'**
+  String get fullPlanNote;
+
+  /// Label for the weeks stat column on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'WEEKS'**
+  String get fullPlanWeeksLabel;
+
+  /// Label for the total distance stat column on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'DISTANCE'**
+  String get fullPlanDistanceLabel;
+
+  /// Label for the total runs stat column on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'RUNS'**
+  String get fullPlanRunsLabel;
+
+  /// Week card heading, e.g. 'Week 4'
+  ///
+  /// In en, this message translates to:
+  /// **'Week {number}'**
+  String fullPlanWeekLabel(int number);
+
+  /// Status badge label for the current week on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT'**
+  String get fullPlanCurrentBadge;
+
+  /// Status badge label for completed weeks on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'DONE'**
+  String get fullPlanCompletedBadge;
+
+  /// Status badge label for upcoming weeks on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'UPCOMING'**
+  String get fullPlanUpcomingBadge;
+
+  /// Section label above the week list on the full plan screen
+  ///
+  /// In en, this message translates to:
+  /// **'SCHEDULE'**
+  String get fullPlanScheduleLabel;
 }
 
 class _AppLocalizationsDelegate

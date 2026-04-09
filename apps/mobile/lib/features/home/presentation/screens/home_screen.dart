@@ -1,50 +1,256 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
+import '../../../session_detail/presentation/screens/session_detail_screen.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/unit_formatter.dart';
+import '../../../../core/widgets/app_header_bar.dart';
+import '../../../../core/widgets/plan_badge_pill.dart';
+import '../../../../core/widgets/section_label.dart';
+import '../../../../core/widgets/up_next_row_card.dart';
+import '../../../../core/widgets/week_progress_card.dart';
+import '../../../../core/widgets/workout_hero_card.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/training_session.dart';
+import '../../../training_plan/presentation/training_plan_localization.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  String _intervalRepDistanceLabel(
+    TrainingSession session,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final meters = session.intervalRepDistanceMeters;
+    if (meters == null) return '—';
+    return UnitFormatter.formatWorkoutRepDistance(meters, unitSystem, l10n);
+  }
+
+  String _sessionTitle(SessionType type, AppLocalizations l10n) {
+    switch (type) {
+      // Rest
+      case SessionType.restDay:
+        return l10n.sessionTypeRestDay;
+      // Endurance
+      case SessionType.easyRun:
+        return l10n.weeklyPlanSessionEasyRun;
+      case SessionType.longRun:
+        return l10n.weeklyPlanSessionLongRun;
+      case SessionType.progressionRun:
+        return l10n.sessionTypeProgressionRun;
+      // Speed Work
+      case SessionType.intervals:
+        return l10n.weeklyPlanSessionIntervals;
+      case SessionType.hillRepeats:
+        return l10n.sessionTypeHillRepeats;
+      case SessionType.fartlek:
+        return l10n.sessionTypeFartlek;
+      // Threshold
+      case SessionType.tempoRun:
+        return l10n.sessionTypeTempoRun;
+      case SessionType.thresholdRun:
+        return l10n.sessionTypeThresholdRun;
+      // Race Specific
+      case SessionType.racePaceRun:
+        return l10n.sessionTypeRacePaceRun;
+      // Recovery
+      case SessionType.recoveryRun:
+        return l10n.weeklyPlanSessionRecoveryRun;
+      case SessionType.crossTraining:
+        return l10n.sessionTypeCrossTraining;
+    }
+  }
+
+  String? _sessionDescription(
+    TrainingSession session,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    switch (session.type) {
+      // Rest
+      case SessionType.restDay:
+        return null;
+      // Endurance
+      case SessionType.easyRun:
+        return l10n.sessionDescEasyRun;
+      case SessionType.longRun:
+        return l10n.sessionDescLongRun;
+      case SessionType.progressionRun:
+        return null;
+      // Speed Work
+      case SessionType.intervals:
+        return l10n.sessionDescIntervals(
+          session.intervalReps ?? 0,
+          _intervalRepDistanceLabel(session, unitSystem, l10n),
+          session.intervalRecoverySeconds ?? 0,
+        );
+      case SessionType.hillRepeats:
+      case SessionType.fartlek:
+        return null;
+      // Threshold
+      case SessionType.tempoRun:
+        return l10n.sessionDescTempoRun;
+      case SessionType.thresholdRun:
+        return null;
+      // Race Specific
+      case SessionType.racePaceRun:
+        return null;
+      // Recovery
+      case SessionType.recoveryRun:
+        return l10n.sessionDescRecoveryRun;
+      case SessionType.crossTraining:
+        return null;
+    }
+  }
+
+  String _weekdayName(int weekday, AppLocalizations l10n) {
+    switch (weekday) {
+      case DateTime.monday:
+        return l10n.weekdayMonday;
+      case DateTime.tuesday:
+        return l10n.weekdayTuesday;
+      case DateTime.wednesday:
+        return l10n.weekdayWednesday;
+      case DateTime.thursday:
+        return l10n.weekdayThursday;
+      case DateTime.friday:
+        return l10n.weekdayFriday;
+      case DateTime.saturday:
+        return l10n.weekdaySaturday;
+      case DateTime.sunday:
+        return l10n.weekdaySunday;
+      default:
+        return l10n.weekdayMonday;
+    }
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final plan = ref.watch(trainingPlanProvider);
+    final progress = ref.watch(weekProgressProvider);
+    final profile = ref.watch(userProfileDisplayProvider);
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final todaySession = plan.todaySession;
+    final nextSession = plan.nextUpcomingSession;
+    final planName = localizedTrainingPlanName(
+      raceType: profile.raceType,
+      totalWeeks: profile.totalWeeks,
+      l10n: l10n,
+    );
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      body: SafeArea(
-        child: Center(
+      body: SingleChildScrollView(
+        child: SafeArea(
+          bottom: false,
           child: Column(
-            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.accentMuted,
-                  borderRadius: AppRadius.borderLg,
+              // ── Header ──────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen,
+                  AppSpacing.md,
+                  AppSpacing.screen,
+                  0,
                 ),
-                child: Center(
-                  child: SvgPicture.asset(
-                    'assets/icons/zap.svg',
-                    width: 28,
-                    height: 28,
-                    colorFilter: const ColorFilter.mode(
-                      AppColors.accentPrimary,
-                      BlendMode.srcIn,
-                    ),
+                child: AppHomeHeaderBar(
+                  title: l10n.homeTitle,
+                  planBadge: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PlanBadgePill(planName: planName),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        l10n.profileWeekShort(
+                          profile.currentWeekNumber.toString(),
+                        ),
+                        style: AppTypography.caption.copyWith(
+                          color: AppColors.textDisabled,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
-              Text(l10n.homeReady, style: AppTypography.headlineMedium),
-              const SizedBox(height: AppSpacing.sm),
-              Text(
-                l10n.homeComingSoon,
-                style: AppTypography.bodyMedium.copyWith(
-                  color: AppColors.textSecondary,
+
+              // ── Body ────────────────────────────────────────────────
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // ── Today's Workout ────────────────────────────────
+                    SectionLabel(label: l10n.homeSectionTodaysWorkout),
+                    const SizedBox(height: AppSpacing.md),
+                    _buildTodayCard(context, l10n, todaySession, unitSystem),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // ── Up Next ────────────────────────────────────────
+                    SectionLabel(label: l10n.homeSectionUpNext),
+                    const SizedBox(height: AppSpacing.md),
+                    if (nextSession != null)
+                      UpNextRowCard(
+                        sessionName: _sessionTitle(nextSession.type, l10n),
+                        dayLabel: _weekdayName(nextSession.date.weekday, l10n),
+                        duration: UnitFormatter.formatDuration(
+                          nextSession.durationMinutes ?? 0,
+                          l10n,
+                        ),
+                        effortLabel: nextSession.effort != null
+                            ? localizedTrainingSessionEffort(
+                                nextSession.effort!,
+                                l10n,
+                              )
+                            : '',
+                        iconAsset: nextSession.type.iconAsset,
+                        onTap: () => context.push(
+                          RouteNames.sessionDetail,
+                          extra: SessionDetailArgs(
+                            session: nextSession,
+                            showStartWorkout:
+                                nextSession.status == SessionStatus.today,
+                          ),
+                        ),
+                      ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
+                    // ── This Week ──────────────────────────────────────
+                    SectionLabel(label: l10n.homeSectionThisWeek),
+                    const SizedBox(height: AppSpacing.md),
+                    WeekProgressCard(
+                      sessionsCompleted: progress.completedSessions,
+                      totalSessions: progress.totalSessions,
+                      volumeCompleted: UnitFormatter.distanceValue(
+                        progress.completedVolumeKm,
+                        unitSystem,
+                      ),
+                      totalVolume: UnitFormatter.distanceValue(
+                        progress.totalVolumeKm,
+                        unitSystem,
+                      ),
+                      volumeUnit: UnitFormatter.unitLabel(unitSystem, l10n),
+                      onTap: () => context.go(RouteNames.plan),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -53,4 +259,42 @@ class HomeScreen extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildTodayCard(
+    BuildContext context,
+    AppLocalizations l10n,
+    TrainingSession? session,
+    UnitSystem unitSystem,
+  ) {
+    if (session == null) {
+      return const SizedBox.shrink();
+    }
+
+    return WorkoutHeroCard(
+      sessionType: _sessionTitle(session.type, l10n),
+      sessionName: _sessionTitle(session.type, l10n),
+      duration: session.durationMinutes != null
+          ? UnitFormatter.formatDuration(session.durationMinutes!, l10n)
+          : '-',
+      distance: session.distanceKm != null
+          ? UnitFormatter.formatDistanceLabel(
+              session.distanceKm!,
+              unitSystem,
+              l10n,
+            )
+          : '-',
+      targetGuidance:
+          session.description ?? _sessionDescription(session, unitSystem, l10n),
+      sessionTypeIconAsset: session.type.iconAsset,
+      onViewDetails: () => context.push(
+        RouteNames.sessionDetail,
+        extra: SessionDetailArgs(
+          session: session,
+          showStartWorkout: session.status == SessionStatus.today,
+        ),
+      ),
+    );
+  }
 }
+
+// ── Private widgets ─────────────────────────────────────────────────────────────

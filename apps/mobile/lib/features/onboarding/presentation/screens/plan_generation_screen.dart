@@ -7,19 +7,25 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
-import '../onboarding_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 
+enum PlanGenerationFlowMode { onboarding, editGoal, newGoal }
+
 class PlanGenerationScreen extends ConsumerStatefulWidget {
-  const PlanGenerationScreen({super.key});
+  const PlanGenerationScreen({
+    super.key,
+    this.mode = PlanGenerationFlowMode.onboarding,
+  });
+
+  final PlanGenerationFlowMode mode;
 
   @override
-  ConsumerState<PlanGenerationScreen> createState() => _PlanGenerationScreenState();
+  ConsumerState<PlanGenerationScreen> createState() =>
+      _PlanGenerationScreenState();
 }
 
 class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     with SingleTickerProviderStateMixin {
-
   int _messageIndex = 0;
   double _progress = 0.0;
   Timer? _timer;
@@ -62,8 +68,14 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         timer.cancel();
         Future.delayed(const Duration(milliseconds: 600), () async {
           if (!mounted) return;
-          await ref.read(onboardingProvider.notifier).markCompleted();
-          if (mounted) context.go(RouteNames.home);
+          final nextRoute = switch (widget.mode) {
+            PlanGenerationFlowMode.onboarding => RouteNames.planReady,
+            PlanGenerationFlowMode.editGoal =>
+              RouteNames.settingsUpdatePlanEditGoalReady,
+            PlanGenerationFlowMode.newGoal =>
+              RouteNames.settingsUpdatePlanNewGoalReady,
+          };
+          if (mounted) context.go(nextRoute);
         });
       }
     });

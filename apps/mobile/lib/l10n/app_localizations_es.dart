@@ -108,10 +108,19 @@ class AppLocalizationsEs extends AppLocalizations {
   String get preferredUnits => 'Unidades preferidas';
 
   @override
+  String get accountSetupShortDistanceUnits => 'Distancia corta y elevación';
+
+  @override
   String get unitKm => 'km';
 
   @override
   String get unitMi => 'mi';
+
+  @override
+  String get unitM => 'm';
+
+  @override
+  String get unitFt => 'ft';
 
   @override
   String get genderLabel => 'Género';
@@ -135,10 +144,35 @@ class AppLocalizationsEs extends AppLocalizations {
   String get continueButton => 'Continuar';
 
   @override
+  String get saveChangesButton => 'Guardar cambios';
+
+  @override
+  String get setGoalButton => 'Definir objetivo';
+
+  @override
+  String get settingsAcceptChanges => 'Aceptar cambios';
+
+  @override
+  String get settingsReviewChangesTitle => 'Revisar cambios';
+
+  @override
+  String get settingsViewPlan => 'Ver plan';
+
+  @override
+  String settingsReviewChangesSubtitle(String flowLabel) {
+    return 'Revisa los detalles de $flowLabel y tus preferencias de entrenamiento antes de aplicarlos.';
+  }
+
+  @override
   String get homeReady => '¡Tu plan está listo!';
 
   @override
   String get homeComingSoon => 'Pantalla de inicio próximamente.';
+
+  @override
+  String onboardingStep(int step, int total) {
+    return '$step / $total';
+  }
 
   @override
   String get onboardingIntroTitle => 'Construyamos tu plan';
@@ -158,7 +192,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '9 secciones cortas · Puedes editar tus respuestas después';
+      '7 secciones cortas · Puedes editar tus respuestas después';
 
   @override
   String get letsGo => '¡Empecemos!';
@@ -400,6 +434,27 @@ class AppLocalizationsEs extends AppLocalizations {
   String get daySun => 'Dom';
 
   @override
+  String get weekdayMonday => 'Lunes';
+
+  @override
+  String get weekdayTuesday => 'Martes';
+
+  @override
+  String get weekdayWednesday => 'Miércoles';
+
+  @override
+  String get weekdayThursday => 'Jueves';
+
+  @override
+  String get weekdayFriday => 'Viernes';
+
+  @override
+  String get weekdaySaturday => 'Sábado';
+
+  @override
+  String get weekdaySunday => 'Domingo';
+
+  @override
   String get weekdayTimeLabel => 'Tiempo disponible entre semana';
 
   @override
@@ -514,7 +569,8 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trainingPrefsTitle => 'Preferencias de Entrenamiento';
 
   @override
-  String get trainingPrefsSubtitle => 'Personaliza cómo se estructura tu plan.';
+  String get trainingPrefsSubtitle =>
+      'Elige cómo quieres que se sienta tu plan.';
 
   @override
   String get guidanceModeLabel => 'Modo de guía preferido';
@@ -593,9 +649,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get terrainMixed => 'Mixto';
-
-  @override
-  String get walkRunLabel => '¿Intervalos caminar/correr?';
 
   @override
   String get watchTitle => 'Reloj y Dispositivo';
@@ -954,8 +1007,8 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
-  String summaryScheduleDetail(String longRun, String time, String weekday) {
-    return 'Carrera larga $longRun · $time · $weekday entre semana';
+  String summaryScheduleDetail(String longRun, String weekday) {
+    return 'Tirada larga $longRun · Entre semana $weekday';
   }
 
   @override
@@ -967,6 +1020,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String summaryHealthDetail(String injury, String conditions) {
+    return 'Historial de lesiones: $injury · Condiciones: $conditions';
+  }
+
+  @override
   String summaryPlanPref(String preference) {
     return 'Preferencia: $preference';
   }
@@ -974,16 +1032,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String summaryGuidanceBased(String mode) {
     return 'Guía basada en $mode';
-  }
-
-  @override
-  String summaryTrainingDetail(
-    String speed,
-    String strength,
-    String surface,
-    String terrain,
-  ) {
-    return 'Velocidad: $speed · Fuerza: $strength · $surface · $terrain';
   }
 
   @override
@@ -1071,4 +1119,967 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get errorGeneric => 'Algo salió mal. Por favor intenta de nuevo.';
+
+  @override
+  String planReadyWeekPlanName(String weeks, String race) {
+    return '$race de $weeks semanas';
+  }
+
+  @override
+  String get planReadyTitle => 'Tu plan está listo';
+
+  @override
+  String get planReadyGoalLabel => 'Objetivo';
+
+  @override
+  String get planReadyScheduleLabel => 'Horario';
+
+  @override
+  String get planReadyLongRunsLabel => 'Carreras largas';
+
+  @override
+  String get planReadyGuidanceModeLabel => 'Modo de guía';
+
+  @override
+  String planReadyGoalDescription(String race) {
+    return 'Completar $race';
+  }
+
+  @override
+  String planReadyScheduleValue(String weeks, String runsPerWeek) {
+    return '$weeks semanas • $runsPerWeek carreras/semana';
+  }
+
+  @override
+  String get planReadyDescription =>
+      'Diseñado exactamente para tu condición física y horario. Construiremos tu resistencia de forma segura para que llegues a la meta sintiéndote fuerte.';
+
+  @override
+  String get planReadyStartPlan => 'Iniciar plan';
+
+  @override
+  String get planReadyViewFullWeek => 'Ver semana completa';
+
+  @override
+  String get homeTitle => 'Hoy';
+
+  @override
+  String get homeSectionTodaysWorkout => 'Entrenamiento de Hoy';
+
+  @override
+  String get homeSectionUpNext => 'A Continuación';
+
+  @override
+  String get homeSectionThisWeek => 'Esta Semana';
+
+  @override
+  String get homeLogPastRun => 'Registrar Carrera';
+
+  @override
+  String get homeFullWeek => 'Semana Completa';
+
+  @override
+  String get workoutDurationLabel => 'Duración';
+
+  @override
+  String get workoutDistanceLabel => 'Distancia';
+
+  @override
+  String get workoutTargetGuidanceLabel => 'Objetivo de Entrenamiento';
+
+  @override
+  String get sessionDescEasyRun =>
+      'Construye tu base aeróbica para la Media Maratón. Mantén un ritmo en el que puedas conversar.';
+
+  @override
+  String sessionDescIntervals(
+    int reps,
+    String repDistance,
+    int recoverySeconds,
+  ) {
+    return '$reps×$repDistance al ritmo de 5K. ${recoverySeconds}s de trote de recuperación entre cada repetición.';
+  }
+
+  @override
+  String get sessionDescLongRun =>
+      'Tu carrera larga clave de esta semana. Construye la resistencia necesaria para el día de tu Media Maratón.';
+
+  @override
+  String get sessionDescRecoveryRun =>
+      'Carrera de recuperación activa para eliminar la fatiga. Mantén el esfuerzo muy suave, más lento de lo que crees.';
+
+  @override
+  String get sessionDescTempoRun =>
+      'Esfuerzo cómodamente intenso. Puedes decir algunas palabras pero no mantener una conversación.';
+
+  @override
+  String get workoutViewDetailsButton => 'Ver Entrenamiento';
+
+  @override
+  String get weekProgressRunsLabel => 'Carreras';
+
+  @override
+  String get weekProgressVolumeLabel => 'Volumen';
+
+  @override
+  String weekProgressFooter(String totalVolume, String unit) {
+    return 'En camino de alcanzar $totalVolume $unit planificados';
+  }
+
+  @override
+  String get homeVolumeUnit => 'km';
+
+  @override
+  String get tabToday => 'Hoy';
+
+  @override
+  String get tabPlan => 'Plan';
+
+  @override
+  String get tabProgress => 'Progreso';
+
+  @override
+  String get tabSettings => 'Ajustes';
+
+  @override
+  String weeklyPlanTitle(String week, String total) {
+    return 'Semana $week de $total';
+  }
+
+  @override
+  String get weeklyPlanDistanceLabel => 'Distancia';
+
+  @override
+  String get weeklyPlanTimeLabel => 'Tiempo';
+
+  @override
+  String get weeklyPlanRunsLabel => 'Carreras';
+
+  @override
+  String get weeklyPlanScheduleLabel => 'Horario';
+
+  @override
+  String get weeklyPlanRestTitle => 'Descanso';
+
+  @override
+  String get weeklyPlanRestSubtitle => 'Día de recuperación';
+
+  @override
+  String get weeklyPlanNowBadge => 'Ahora';
+
+  @override
+  String get weeklyPlanViewFullPlan => 'Ver Plan Completo';
+
+  @override
+  String get weeklyPlanSessionEasyRun => 'Carrera Suave';
+
+  @override
+  String get weeklyPlanSessionIntervals => 'Intervalos';
+
+  @override
+  String get weeklyPlanSessionLongRun => 'Carrera Larga';
+
+  @override
+  String get weeklyPlanSessionRecoveryRun => 'Carrera de Recuperación';
+
+  @override
+  String get sessionTypeProgressionRun => 'Carrera de Progresión';
+
+  @override
+  String get sessionTypeHillRepeats => 'Subidas';
+
+  @override
+  String get sessionTypeFartlek => 'Fartlek';
+
+  @override
+  String get sessionTypeThresholdRun => 'Carrera de Umbral';
+
+  @override
+  String get sessionTypeRacePaceRun => 'Carrera a Ritmo de Carrera';
+
+  @override
+  String get sessionTypeCrossTraining => 'Entrenamiento Cruzado';
+
+  @override
+  String get sessionTypeRestDay => 'Día de Descanso';
+
+  @override
+  String get sessionCategoryEndurance => 'Resistencia';
+
+  @override
+  String get sessionCategorySpeedWork => 'Velocidad';
+
+  @override
+  String get sessionCategoryThreshold => 'Umbral';
+
+  @override
+  String get sessionCategoryRaceSpecific => 'Específico de Carrera';
+
+  @override
+  String get sessionCategoryRecovery => 'Recuperación';
+
+  @override
+  String get sessionCategoryRest => 'Descanso';
+
+  @override
+  String get weeklyPlanDayMon => 'Lun';
+
+  @override
+  String get weeklyPlanDayTue => 'Mar';
+
+  @override
+  String get weeklyPlanDayWed => 'Mié';
+
+  @override
+  String get weeklyPlanDayThu => 'Jue';
+
+  @override
+  String get weeklyPlanDayFri => 'Vie';
+
+  @override
+  String get weeklyPlanDaySat => 'Sáb';
+
+  @override
+  String get weeklyPlanDaySun => 'Dom';
+
+  @override
+  String get weeklyPlanDayToday => 'Hoy';
+
+  @override
+  String get progressTitle => 'Progreso';
+
+  @override
+  String get progressSubtitle =>
+      'Estás construyendo un buen hábito. Sigue así.';
+
+  @override
+  String get progressStreakBannerSubtitle =>
+      'Te estás manteniendo activo de forma constante.';
+
+  @override
+  String get progressWeeklyVolumeTitle => 'Volumen Semanal';
+
+  @override
+  String get progressTrendingUp => 'En Alza';
+
+  @override
+  String get progressRunsThisWeek => 'carreras esta semana';
+
+  @override
+  String get progressDistanceLabel => 'Distancia';
+
+  @override
+  String get progressTimeLabel => 'Tiempo';
+
+  @override
+  String get progressStreakLabel => 'Racha';
+
+  @override
+  String get progressRunsLabel => 'Carreras';
+
+  @override
+  String get progressRunsCompleted => 'Completadas';
+
+  @override
+  String progressStreakSubtitle(String count) {
+    return '$count semanas seguidas';
+  }
+
+  @override
+  String progressTrendUp(String percent) {
+    return '▲ $percent% vs mes ant.';
+  }
+
+  @override
+  String progressTrendDown(String percent) {
+    return '▼ $percent% vs mes ant.';
+  }
+
+  @override
+  String get progressWeeksUnit => 'sem';
+
+  @override
+  String get progressHourUnit => 'h';
+
+  @override
+  String get progressMinuteUnit => 'm';
+
+  @override
+  String get progressLongestRunTitle => 'Carrera Más Larga';
+
+  @override
+  String progressLongestRunImproved(String distance) {
+    return '+$distance desde el inicio';
+  }
+
+  @override
+  String get progressRecentSessionsTitle => 'Sesiones Recientes';
+
+  @override
+  String get progressViewAll => 'Ver Todo ›';
+
+  @override
+  String get completedSessionsTitle => 'Sesiones Completadas';
+
+  @override
+  String completedSessionsSummary(String count) {
+    return '$count sesiones completadas';
+  }
+
+  @override
+  String get completedSessionsEmpty => 'Aún no hay sesiones completadas';
+
+  @override
+  String get progressSessionTempoRun => 'Carrera Tempo';
+
+  @override
+  String get sessionTypeTempoRun => 'Carrera Tempo';
+
+  @override
+  String get progressYesterday => 'Ayer';
+
+  @override
+  String get progressTuesdayLabel => 'Martes';
+
+  @override
+  String get progressLastSunday => 'Último Domingo';
+
+  @override
+  String get progressWeekPrefix => 'S';
+
+  @override
+  String get profileDefaultName => 'Nombre de usuario';
+
+  @override
+  String profileWeekShort(String week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String profileWeekFull(String week, String total) {
+    return 'Semana $week de $total';
+  }
+
+  @override
+  String get trainingPlanEffortEasy => 'Fácil';
+
+  @override
+  String get trainingPlanEffortModerate => 'Moderado';
+
+  @override
+  String get trainingPlanEffortHard => 'Duro';
+
+  @override
+  String get trainingPlanEffortVeryEasy => 'Muy fácil';
+
+  @override
+  String sessionCompletedAt(String time) {
+    return 'Completado · $time';
+  }
+
+  @override
+  String weeklyCalendarSessionsDone(String completed, String total) {
+    return '$completed de $total sesiones completadas';
+  }
+
+  @override
+  String get progressCurrentWeek => 'SEMANA ACTUAL';
+
+  @override
+  String get progressElevationLabel => 'Elevación';
+
+  @override
+  String get progressSeeFullData => 'Ver datos completos';
+
+  @override
+  String get settingsTitle => 'Configuración';
+
+  @override
+  String get settingsGeneralSection => 'General';
+
+  @override
+  String get settingsAccount => 'Cuenta';
+
+  @override
+  String get settingsSubscription => 'Suscripción';
+
+  @override
+  String get settingsSubscriptionActivePlan => 'Plan activo';
+
+  @override
+  String get settingsSubscriptionPlanName => 'RunFlow Pro';
+
+  @override
+  String get settingsSubscriptionNextBillingDate => 'Próxima fecha de cobro';
+
+  @override
+  String get settingsSubscriptionAutoRenewNotice =>
+      'Tu suscripción se renovará automáticamente. Si no quieres continuar con tu suscripción, cancélala antes de la próxima fecha de cobro.';
+
+  @override
+  String get settingsCancelSubscription => 'Cancelar suscripción';
+
+  @override
+  String get settingsCancelSubscriptionPrompt =>
+      'Cuéntanos por qué estás cancelando RunFlow Pro';
+
+  @override
+  String get settingsCancelSubscriptionReasonTooExpensive =>
+      'Es demasiado caro';
+
+  @override
+  String get settingsCancelSubscriptionReasonNotUsingEnough =>
+      'No lo estoy usando lo suficiente';
+
+  @override
+  String get settingsCancelSubscriptionReasonNotHelpingGoals =>
+      'No me está ayudando a alcanzar mis objetivos';
+
+  @override
+  String get settingsCancelSubscriptionReasonMissingFeatures =>
+      'Le faltan funciones que necesito';
+
+  @override
+  String get settingsCancelSubscriptionReasonSwitchingApps =>
+      'Me cambiaré a otra app';
+
+  @override
+  String get settingsCancelSubscriptionReasonTakingBreak =>
+      'Estoy tomando un descanso del running';
+
+  @override
+  String get settingsCancelSubscriptionReasonOther => 'Otro';
+
+  @override
+  String get settingsNotNow => 'Ahora no';
+
+  @override
+  String get settingsSubscriptionCancellationInfoTitle =>
+      'Administra tu suscripción en la tienda';
+
+  @override
+  String get settingsSubscriptionCancellationInfoBody =>
+      'Gracias por compartir tus comentarios. Para completar la cancelación de RunFlow Pro, administra tu suscripción en la tienda donde la compraste.';
+
+  @override
+  String get settingsSubscriptionDialogButton => 'OK';
+
+  @override
+  String get settingsIntegrations => 'Integraciones';
+
+  @override
+  String get settingsAvailableIntegrationsSection =>
+      'Integraciones disponibles';
+
+  @override
+  String get settingsAppleHealth => 'Apple Health';
+
+  @override
+  String get settingsHealthConnect => 'Health Connect';
+
+  @override
+  String get settingsAccountProfileSection => 'Perfil';
+
+  @override
+  String get settingsAccountSecuritySection => 'Seguridad';
+
+  @override
+  String get settingsAccountNameLabel => 'Nombre';
+
+  @override
+  String get settingsAccountSexLabel => 'Sexo';
+
+  @override
+  String get settingsAccountNotSet => 'Sin definir';
+
+  @override
+  String get settingsAccountSecurityUnavailableTitle => 'Próximamente';
+
+  @override
+  String get settingsAccountEmailUnavailableSubtitle =>
+      'Los cambios de correo estarán disponibles cuando la autenticación de la cuenta esté conectada.';
+
+  @override
+  String get settingsAccountPasswordUnavailableSubtitle =>
+      'Los cambios de contraseña estarán disponibles cuando la autenticación de la cuenta esté conectada.';
+
+  @override
+  String get settingsPlanGoalsSection => 'Plan y objetivos';
+
+  @override
+  String get settingsUpdatePlanInfo => 'Actualizar plan';
+
+  @override
+  String get settingsEditGoal => 'Editar objetivo';
+
+  @override
+  String get settingsNewGoal => 'Nuevo objetivo';
+
+  @override
+  String get settingsChangeSchedule => 'Cambiar horario';
+
+  @override
+  String get settingsSummaryGoalSection => 'Objetivo';
+
+  @override
+  String get settingsSummaryTrainingSection => 'Preferencias de entrenamiento';
+
+  @override
+  String get settingsEditGoalIntroTitle =>
+      'Actualiza el objetivo para el que ya estás entrenando';
+
+  @override
+  String get settingsEditGoalIntroSubtitle =>
+      'Podrás revisar tu carrera, fecha, prioridad y tiempos objetivo antes de guardar los cambios.';
+
+  @override
+  String get settingsEditGoalIntroPointRace =>
+      'Ajusta tu carrera o distancia objetivo.';
+
+  @override
+  String get settingsEditGoalIntroPointDate =>
+      'Actualiza la fecha si tu calendario cambió.';
+
+  @override
+  String get settingsEditGoalIntroPointPriority =>
+      'Revisa tu prioridad y tus tiempos antes de guardar.';
+
+  @override
+  String get settingsEditGoalIntroPointTraining =>
+      'Revisa tus preferencias de entrenamiento antes de terminar la actualización.';
+
+  @override
+  String get settingsNewGoalIntroTitle =>
+      'Define un objetivo completamente nuevo';
+
+  @override
+  String get settingsNewGoalIntroSubtitle =>
+      'Este flujo empieza desde cero para que puedas elegir una meta distinta y guardarla para tu plan.';
+
+  @override
+  String get settingsNewGoalIntroPointRace =>
+      'Elige una nueva carrera o una distancia personalizada.';
+
+  @override
+  String get settingsNewGoalIntroPointDate =>
+      'Define una nueva fecha y el nuevo plazo.';
+
+  @override
+  String get settingsNewGoalIntroPointPlan =>
+      'Guarda un nuevo objetivo sin cambiar aquí tu horario.';
+
+  @override
+  String get settingsNewGoalIntroPointTraining =>
+      'Define las preferencias de entrenamiento que quieres usar con este objetivo.';
+
+  @override
+  String get settingsPreferencesSection => 'Preferencias';
+
+  @override
+  String get settingsLanguage => 'Idioma';
+
+  @override
+  String get settingsLanguageEnglish => 'Inglés';
+
+  @override
+  String get settingsLanguageSpanish => 'Español';
+
+  @override
+  String get settingsLanguageValue => 'Español';
+
+  @override
+  String get settingsUnits => 'Unidades';
+
+  @override
+  String get settingsUnitsMetric => 'Métrico (km)';
+
+  @override
+  String get settingsUnitsImperial => 'Imperial (mi)';
+
+  @override
+  String get settingsUnitsDistanceSection => 'Distancia';
+
+  @override
+  String get settingsUnitsElevationSection => 'Elevación';
+
+  @override
+  String get settingsUnitsMeters => 'Metros (m)';
+
+  @override
+  String get settingsUnitsFeet => 'Pies (ft)';
+
+  @override
+  String get settingsUnitsValue => 'Métrico (km)';
+
+  @override
+  String get settingsNotifications => 'Notificaciones';
+
+  @override
+  String get settingsNotificationsValue => 'Activado';
+
+  @override
+  String get settingsConnectedDevicesSection => 'Dispositivos conectados';
+
+  @override
+  String get settingsGarminConnect => 'Garmin Connect';
+
+  @override
+  String get settingsConnected => 'Conectado';
+
+  @override
+  String get settingsNoConnectedDevices => 'Aun no hay dispositivos conectados';
+
+  @override
+  String get settingsLogOut => 'Cerrar sesión';
+
+  @override
+  String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
+
+  @override
+  String get sessionDetailTitle => 'Entrenamiento';
+
+  @override
+  String get sessionDetailSessionType => 'Velocidad';
+
+  @override
+  String get sessionDetailTotalDistanceLabel => 'Distancia total';
+
+  @override
+  String get sessionDetailEstDurationLabel => 'Duración est.';
+
+  @override
+  String get sessionDetailWorkoutStructure => 'Estructura del entrenamiento';
+
+  @override
+  String get sessionDetailWarmUp => 'Calentamiento';
+
+  @override
+  String get sessionDetailWarmUpNote => 'Ritmo fácil, Zona 2';
+
+  @override
+  String get sessionDetailIntervals => 'Intervalos';
+
+  @override
+  String get sessionDetailIntervalsNote => 'Esfuerzo intenso, Zona 4';
+
+  @override
+  String get sessionDetailCoolDown => 'Enfriamiento';
+
+  @override
+  String get sessionDetailCoolDownDuration => '10 min';
+
+  @override
+  String get sessionDetailCoolDownNote => 'Ritmo fácil o caminata';
+
+  @override
+  String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
+
+  @override
+  String sessionPhaseEasyRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseEasyRunWarmNote =>
+      'Caminata rápida + estiramientos dinámicos suaves de piernas';
+
+  @override
+  String sessionPhaseEasyRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseEasyRunMainNote =>
+      'Ritmo conversacional · Zona 2 · mantente relajado';
+
+  @override
+  String sessionPhaseEasyRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseEasyRunCoolNote =>
+      'Caminata suave · estiramientos estáticos ligeros';
+
+  @override
+  String sessionPhaseIntervalsWarmDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseIntervalsWarmNote =>
+      'Trote suave · strides al final para activar las piernas';
+
+  @override
+  String sessionPhaseIntervalsMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String sessionPhaseIntervalsMainNote(int reps, String repDistance) {
+    return '$reps × $repDistance a esfuerzo intenso · RPE 8–9';
+  }
+
+  @override
+  String sessionPhaseIntervalsMainRecovery(int recoverySeconds) {
+    return '$recoverySeconds s de trote suave de recuperación entre cada repetición';
+  }
+
+  @override
+  String sessionPhaseIntervalsCoolDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseIntervalsCoolNote =>
+      'Trote suave → caminata · estiramientos completos';
+
+  @override
+  String sessionPhaseLongRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseLongRunWarmNote =>
+      'Trote muy suave · comienza sin prisa';
+
+  @override
+  String sessionPhaseLongRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseLongRunMainNote =>
+      'Esfuerzo constante y fácil · Zona 2 · mantente cómodo';
+
+  @override
+  String sessionPhaseLongRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseLongRunCoolNote =>
+      'Caminata al final · estiramientos completos · recarga energía';
+
+  @override
+  String sessionPhaseRecoveryRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseRecoveryRunWarmNote =>
+      'Caminata suave para empezar a moverse';
+
+  @override
+  String sessionPhaseRecoveryRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseRecoveryRunMainNote =>
+      'Ritmo muy suave y conversacional · sin presión';
+
+  @override
+  String sessionPhaseRecoveryRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseRecoveryRunCoolNote =>
+      'Caminata · rodillo de espuma si está disponible';
+
+  @override
+  String sessionPhaseTempoRunWarmDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseTempoRunWarmNote =>
+      'Trote suave · aumenta el ritmo gradualmente';
+
+  @override
+  String sessionPhaseTempoRunMainDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseTempoRunMainNote =>
+      'Esfuerzo cómodamente intenso · Zona 3–4';
+
+  @override
+  String sessionPhaseTempoRunCoolDuration(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get sessionPhaseTempoRunCoolNote =>
+      'Trote suave → caminata · estiramientos completos';
+
+  @override
+  String get logSessionTitle => 'Registrar Sesión';
+
+  @override
+  String get logSessionPlannedSession => 'Sesión Planificada';
+
+  @override
+  String get logSessionSessionName => 'Intervalos Matutinos';
+
+  @override
+  String get logSessionDurationLabel => 'DURACIÓN';
+
+  @override
+  String get logSessionActiveTime => 'Tiempo activo';
+
+  @override
+  String get logSessionDistanceLabel => 'DISTANCIA';
+
+  @override
+  String get logSessionMinUnit => 'min';
+
+  @override
+  String get logSessionKmUnit => 'km';
+
+  @override
+  String get logSessionPaceValue => '7:31 / ritmo km';
+
+  @override
+  String get logSessionHowDidItFeel => '¿Cómo te fue?';
+
+  @override
+  String get logSessionEasy => 'Fácil';
+
+  @override
+  String get logSessionModerate => 'Moderado';
+
+  @override
+  String get logSessionHard => 'Duro';
+
+  @override
+  String get logSessionVeryHard => 'Muy Duro';
+
+  @override
+  String get logSessionNotes => 'Notas';
+
+  @override
+  String get logSessionOptional => '(Opcional)';
+
+  @override
+  String get logSessionNotesHint => '¿Cómo fue la carrera?';
+
+  @override
+  String get logSessionSaveButton => 'Guardar Sesión';
+
+  @override
+  String get preRunTitle => 'Control Pre-carrera';
+
+  @override
+  String get preRunHeading => '¿Cómo te sientes?';
+
+  @override
+  String get preRunSubtitle =>
+      'Verificación rápida para asegurarte de que la sesión de intervalos de hoy sigue siendo la decisión correcta.';
+
+  @override
+  String get preRunLegsQuestion => '¿Cómo se sienten tus piernas hoy?';
+
+  @override
+  String get preRunFresh => 'Frescas';
+
+  @override
+  String get preRunNormal => 'Normal';
+
+  @override
+  String get preRunHeavy => 'Pesadas';
+
+  @override
+  String get preRunPainQuestion => '¿Tienes algún dolor ahora mismo?';
+
+  @override
+  String get preRunNone => 'Ninguno';
+
+  @override
+  String get preRunMildDiscomfort => 'Molestia leve';
+
+  @override
+  String get preRunModeratePain => 'Dolor moderado';
+
+  @override
+  String get preRunSharpPain => 'Dolor agudo';
+
+  @override
+  String get preRunSleepQuestion => '¿Cómo fue tu sueño?';
+
+  @override
+  String get preRunGreat => 'Excelente';
+
+  @override
+  String get preRunOkay => 'Regular';
+
+  @override
+  String get preRunPoor => 'Malo';
+
+  @override
+  String get preRunReadinessQuestion => '¿Estás listo para esta sesión?';
+
+  @override
+  String get preRunLetsGo => '¡Vamos!';
+
+  @override
+  String get preRunNotFullyReady => 'No del todo listo';
+
+  @override
+  String get preRunContinue => 'Continuar';
+
+  @override
+  String get workoutOptionsTitle => 'Opciones de Entrenamiento';
+
+  @override
+  String get workoutOptionsSkipWorkout => 'Omitir Entrenamiento';
+
+  @override
+  String get workoutOptionsSkipWorkoutDescription =>
+      'Elimina esta sesión del plan de esta semana';
+
+  @override
+  String get workoutOptionsRestoreWorkout => 'Restaurar Entrenamiento';
+
+  @override
+  String get workoutOptionsRestoreWorkoutDescription =>
+      'Vuelve a poner esta sesión en el calendario';
+
+  @override
+  String get fullPlanTitle => 'Plan Completo';
+
+  @override
+  String get trainingHistoryTitle => 'Historial de Entrenamiento';
+
+  @override
+  String get fullPlanNote =>
+      'Este es tu plan estimado completo. Puede cambiar con el tiempo según tu progreso y ajustes de entrenamiento.';
+
+  @override
+  String get fullPlanWeeksLabel => 'SEMANAS';
+
+  @override
+  String get fullPlanDistanceLabel => 'DISTANCIA';
+
+  @override
+  String get fullPlanRunsLabel => 'CARRERAS';
+
+  @override
+  String fullPlanWeekLabel(int number) {
+    return 'Semana $number';
+  }
+
+  @override
+  String get fullPlanCurrentBadge => 'ACTUAL';
+
+  @override
+  String get fullPlanCompletedBadge => 'HECHO';
+
+  @override
+  String get fullPlanUpcomingBadge => 'PRÓXIMA';
+
+  @override
+  String get fullPlanScheduleLabel => 'HORARIO';
 }

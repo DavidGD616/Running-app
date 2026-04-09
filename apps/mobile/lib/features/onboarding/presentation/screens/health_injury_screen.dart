@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
+import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class HealthInjuryScreen extends ConsumerStatefulWidget {
@@ -23,15 +24,20 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   String? _painLevel;
   String? _injuryHistory;
   String? _healthConditions;
-  String? _planPreference;
 
   final _scrollController = ScrollController();
 
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _painLevel = draft.health.painLevelKey;
+    _injuryHistory = draft.health.injuryHistoryKey;
+    _healthConditions = draft.health.healthConditionsKey;
+  }
+
   bool get _isComplete =>
-      _painLevel != null &&
-      _injuryHistory != null &&
-      _healthConditions != null &&
-      _planPreference != null;
+      _painLevel != null && _injuryHistory != null && _healthConditions != null;
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -53,7 +59,17 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    final painOptions = [l10n.painNo, l10n.painMild, l10n.painModerate, l10n.painSevere];
+    final painOptions = [
+      OnboardingValues.painNo,
+      OnboardingValues.painMild,
+      OnboardingValues.painModerate,
+      OnboardingValues.painSevere,
+    ];
+    final injuryOptions = [
+      (key: OnboardingValues.injuryNo, label: l10n.injuryNo),
+      (key: OnboardingValues.injuryOnce, label: l10n.injuryOnce),
+      (key: OnboardingValues.injuryMultiple, label: l10n.injuryMultiple),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -63,7 +79,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
             // ── Top nav ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
+                AppSpacing.sm,
+                AppSpacing.xs,
+                AppSpacing.screen,
+                0,
               ),
               child: Column(
                 children: [
@@ -89,7 +108,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                         ),
                       ),
                       Text(
-                        '4 / 9',
+                        l10n.onboardingStep(4, 7),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -100,7 +119,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 4, total: 9),
+                    child: AppProgressBar(current: 4, total: 7),
                   ),
                 ],
               ),
@@ -111,8 +130,10 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,25 +149,31 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                     const SizedBox(height: AppSpacing.xl),
 
                     // ── 1. Current pain or injury? ────────────────────────────
-                    Text(l10n.currentPainLabel, style: AppTypography.labelLarge),
+                    Text(
+                      l10n.currentPainLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.md),
-                    ...painOptions
-                        .map((option) => Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: _SelectCard(
-                                label: option,
-                                isSelected: _painLevel == option,
-                                onTap: () {
-                                  setState(() {
-                                    _painLevel = option;
-                                    _injuryHistory = null;
-                                    _healthConditions = null;
-                                    _planPreference = null;
-                                  });
-                                  _scrollToBottom();
-                                },
-                              ),
-                            )),
+                    ...painOptions.map(
+                      (option) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: _SelectCard(
+                          label: OnboardingValues.localizePainLevel(
+                            option,
+                            l10n,
+                          ),
+                          isSelected: _painLevel == option,
+                          onTap: () {
+                            setState(() {
+                              _painLevel = option;
+                              _injuryHistory = null;
+                              _healthConditions = null;
+                            });
+                            _scrollToBottom();
+                          },
+                        ),
+                      ),
+                    ),
 
                     // ── 2. Running-related injury in the last 12 months? ──────
                     if (_painLevel != null) ...[
@@ -157,13 +184,12 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [l10n.injuryNo, l10n.injuryOnce, l10n.injuryMultiple],
+                        options: injuryOptions,
                         selected: _injuryHistory,
                         onSelect: (val) {
                           setState(() {
                             _injuryHistory = val;
                             _healthConditions = null;
-                            _planPreference = null;
                           });
                           _scrollToBottom();
                         },
@@ -183,11 +209,11 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           Expanded(
                             child: _ToggleButton(
                               label: l10n.no,
-                              isSelected: _healthConditions == 'No',
+                              isSelected:
+                                  _healthConditions == OnboardingValues.no,
                               onTap: () {
                                 setState(() {
-                                  _healthConditions = 'No';
-                                  _planPreference = null;
+                                  _healthConditions = OnboardingValues.no;
                                 });
                                 _scrollToBottom();
                               },
@@ -197,44 +223,17 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                           Expanded(
                             child: _ToggleButton(
                               label: l10n.yes,
-                              isSelected: _healthConditions == 'Yes',
+                              isSelected:
+                                  _healthConditions == OnboardingValues.yes,
                               onTap: () {
                                 setState(() {
-                                  _healthConditions = 'Yes';
-                                  _planPreference = null;
+                                  _healthConditions = OnboardingValues.yes;
                                 });
                                 _scrollToBottom();
                               },
                             ),
                           ),
                         ],
-                      ),
-                    ],
-
-                    // ── 4. Plan preference ────────────────────────────────────
-                    if (_healthConditions != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.planPreferenceLabel, style: AppTypography.labelLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      _SelectCard(
-                        label: l10n.planSafest,
-                        subtitle: l10n.planSafestSub,
-                        isSelected: _planPreference == 'Safest possible',
-                        onTap: () => setState(() => _planPreference = 'Safest possible'),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _SelectCard(
-                        label: l10n.planBalanced,
-                        subtitle: l10n.planBalancedSub,
-                        isSelected: _planPreference == 'Balanced',
-                        onTap: () => setState(() => _planPreference = 'Balanced'),
-                      ),
-                      const SizedBox(height: AppSpacing.sm),
-                      _SelectCard(
-                        label: l10n.planPerformance,
-                        subtitle: l10n.planPerformanceSub,
-                        isSelected: _planPreference == 'Performance-focused',
-                        onTap: () => setState(() => _planPreference = 'Performance-focused'),
                       ),
                     ],
                   ],
@@ -245,18 +244,21 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
                 label: l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setHealth(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setHealth(
                               painLevel: _painLevel!,
                               injuryHistory: _injuryHistory!,
                               healthConditions: _healthConditions!,
-                              planPreference: _planPreference!,
                             );
                         context.push(RouteNames.training);
                       }
@@ -270,18 +272,16 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   }
 }
 
-// ─── Full-width select card ───────────────────────────────────────────────────
+// ─── Full-width select card ─────────────────────────────────────────────────
 
 class _SelectCard extends StatelessWidget {
   const _SelectCard({
     required this.label,
-    this.subtitle,
     required this.isSelected,
     required this.onTap,
   });
 
   final String label;
-  final String? subtitle;
   final bool isSelected;
   final VoidCallback onTap;
 
@@ -300,36 +300,18 @@ class _SelectCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
-        child: subtitle != null
-            ? Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: AppTypography.titleMedium.copyWith(
-                      color: AppColors.textPrimary,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle!,
-                    style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              )
-            : Text(
-                label,
-                style: AppTypography.titleMedium.copyWith(
-                  color: AppColors.textPrimary,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+        child: Text(
+          label,
+          style: AppTypography.titleMedium.copyWith(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
       ),
     );
   }
@@ -359,14 +341,18 @@ class _ToggleButton extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Center(
           child: Text(
             label,
             style: AppTypography.titleMedium.copyWith(
-              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
             ),
           ),
         ),
@@ -384,7 +370,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -398,20 +384,22 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.backgroundPrimary

@@ -8,24 +8,30 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
-import '../../../../core/utils/unit_formatter.dart';
+import '../onboarding_values.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class CurrentFitnessScreen extends ConsumerStatefulWidget {
-  const CurrentFitnessScreen({super.key});
+  const CurrentFitnessScreen({super.key, this.isEditingPlanInfo = false});
+
+  final bool isEditingPlanInfo;
 
   @override
-  ConsumerState<CurrentFitnessScreen> createState() => _CurrentFitnessScreenState();
+  ConsumerState<CurrentFitnessScreen> createState() =>
+      _CurrentFitnessScreenState();
 }
 
 class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
+  static const _benchmarkSkipKey = OnboardingValues.benchmarkSkip;
+
   String? _experience;
 
   // Brand new only
@@ -42,20 +48,39 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
 
   final _scrollController = ScrollController();
 
-  bool get _isBrandNew => _experience == 'Brand new';
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(onboardingProvider);
+    _experience = draft.fitness.experienceKey;
+    _canRun10Min = draft.fitness.canRun10Min;
+    _runningDays = draft.fitness.runningDaysKey;
+    _weeklyVolume = draft.fitness.weeklyVolumeKey;
+    _longestRun = draft.fitness.longestRunKey;
+    _canCompleteGoalDist = draft.fitness.canCompleteGoalDistanceKey;
+    _raceDistanceBefore = draft.fitness.raceDistanceBeforeKey;
+    _benchmark = draft.fitness.benchmarkKey;
+    _benchmarkTime = draft.fitness.benchmarkTime;
+  }
+
+  bool get _isBrandNew => _experience == OnboardingValues.experienceBrandNew;
 
   bool get _isComplete {
     if (_experience == null) return false;
     if (_isBrandNew) {
       return _canRun10Min != null &&
-          (_benchmark == null || _benchmark == 'Skip for now' || _benchmarkTime != null);
+          (_benchmark == null ||
+              _benchmark == _benchmarkSkipKey ||
+              _benchmarkTime != null);
     }
     return _runningDays != null &&
         _weeklyVolume != null &&
         _longestRun != null &&
         _canCompleteGoalDist != null &&
         _raceDistanceBefore != null &&
-        (_benchmark == null || _benchmark == 'Skip for now' || _benchmarkTime != null);
+        (_benchmark == null ||
+            _benchmark == _benchmarkSkipKey ||
+            _benchmarkTime != null);
   }
 
   void _scrollToBottom() {
@@ -103,7 +128,6 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
     );
   }
 
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -113,144 +137,204 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final unitSystem = ref
-        .watch(userPreferencesProvider)
-        .valueOrNull
-        ?.unitSystem ?? UnitSystem.km;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
     final goalDistOptions = [
-      ('Yes', l10n.yes),
-      ('No', l10n.no),
-      ('Not sure', l10n.notSure),
+      (key: OnboardingValues.yes, label: l10n.yes),
+      (key: OnboardingValues.no, label: l10n.no),
+      (key: OnboardingValues.notSure, label: l10n.notSure),
     ];
 
     final benchmarkOptions = unitSystem == UnitSystem.km
         ? [
-            ('1-km run time', l10n.benchmarkKmRun),
-            ('1-km walk time', l10n.benchmarkKmWalk),
-            ('5K time', l10n.benchmark5K),
-            ('10K time', l10n.benchmark10K),
-            ('Half marathon time', l10n.benchmarkHalfMarathon),
-            ('Skip for now', l10n.benchmarkSkipForNow),
+            (key: OnboardingValues.benchmark1KmRun, label: l10n.benchmarkKmRun),
+            (
+              key: OnboardingValues.benchmark1KmWalk,
+              label: l10n.benchmarkKmWalk,
+            ),
+            (key: OnboardingValues.benchmark5k, label: l10n.benchmark5K),
+            (key: OnboardingValues.benchmark10k, label: l10n.benchmark10K),
+            (
+              key: OnboardingValues.benchmarkHalfMarathon,
+              label: l10n.benchmarkHalfMarathon,
+            ),
+            (key: _benchmarkSkipKey, label: l10n.benchmarkSkipForNow),
           ]
         : [
-            ('1-mile run time', l10n.benchmarkMiRun),
-            ('1-mile walk time', l10n.benchmarkMiWalk),
-            ('5K time', l10n.benchmark5K),
-            ('10K time', l10n.benchmark10K),
-            ('Half marathon time', l10n.benchmarkHalfMarathon),
-            ('Skip for now', l10n.benchmarkSkipForNow),
+            (key: OnboardingValues.benchmark1MiRun, label: l10n.benchmarkMiRun),
+            (
+              key: OnboardingValues.benchmark1MiWalk,
+              label: l10n.benchmarkMiWalk,
+            ),
+            (key: OnboardingValues.benchmark5k, label: l10n.benchmark5K),
+            (key: OnboardingValues.benchmark10k, label: l10n.benchmark10K),
+            (
+              key: OnboardingValues.benchmarkHalfMarathon,
+              label: l10n.benchmarkHalfMarathon,
+            ),
+            (key: _benchmarkSkipKey, label: l10n.benchmarkSkipForNow),
           ];
     final benchmarkLabelFor = Map<String, String>.fromEntries(
-      benchmarkOptions.map((t) => MapEntry(t.$1, t.$2)),
+      benchmarkOptions.map((t) => MapEntry(t.key, t.label)),
     );
 
-    final longestRunOptions = unitSystem == UnitSystem.km
-        ? [l10n.longestRunNone, l10n.longestRunLessThan5km, '5–8 km', '9–13 km', '14–16 km', '17–21 km', '21+ km']
-        : [l10n.longestRunNone, l10n.longestRunLessThan3mi, '3–5 mi', '6–8 mi', '9–10 mi', '11–13 mi', '13+ mi'];
+    final experienceOptions = [
+      (
+        key: OnboardingValues.experienceBrandNew,
+        label: l10n.experienceBrandNew,
+        subtitle: l10n.experienceBrandNewSub,
+      ),
+      (
+        key: OnboardingValues.experienceBeginner,
+        label: l10n.experienceBeginner,
+        subtitle: l10n.experienceBeginnerSub,
+      ),
+      (
+        key: OnboardingValues.experienceIntermediate,
+        label: l10n.experienceIntermediate,
+        subtitle: l10n.experienceIntermediateSub,
+      ),
+      (
+        key: OnboardingValues.experienceExperienced,
+        label: l10n.experienceExperienced,
+        subtitle: l10n.experienceExperiencedSub,
+      ),
+    ];
+
+    final weeklyVolumeOptions = OnboardingValues.weeklyVolumeOptions(
+      unitSystem,
+      l10n,
+    );
+
+    final longestRunOptions = OnboardingValues.longestRunOptions(
+      unitSystem,
+      l10n,
+    );
+
+    final runningDayOptions = const [
+      '0',
+      '1',
+      '2',
+      '3',
+      '4',
+      '5+',
+    ].map((day) => (key: day, label: day)).toList();
+    final raceDistanceOptions = [
+      (key: OnboardingValues.raceDistanceNever, label: l10n.raceDistanceNever),
+      (key: OnboardingValues.raceDistanceOnce, label: l10n.raceDistanceOnce),
+      (key: OnboardingValues.raceDistance2to3, label: l10n.raceDistance2to3),
+      (key: OnboardingValues.raceDistance4plus, label: l10n.raceDistance4plus),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
+      appBar: widget.isEditingPlanInfo
+          ? AppDetailHeaderBar(title: l10n.fitnessTitle)
+          : null,
       body: SafeArea(
+        top: !widget.isEditingPlanInfo,
         child: Column(
           children: [
-            // ── Top nav ──────────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.sm, AppSpacing.xs, AppSpacing.screen, 0,
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      GestureDetector(
-                        onTap: () => context.pop(),
-                        child: SizedBox(
-                          width: 48,
-                          height: 48,
-                          child: Center(
-                            child: SvgPicture.asset(
-                              'assets/icons/chevron_left.svg',
-                              width: 24,
-                              height: 24,
-                              colorFilter: const ColorFilter.mode(
-                                AppColors.textPrimary,
-                                BlendMode.srcIn,
+            if (!widget.isEditingPlanInfo)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.sm,
+                  AppSpacing.xs,
+                  AppSpacing.screen,
+                  0,
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          onTap: () => context.pop(),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: Center(
+                              child: SvgPicture.asset(
+                                'assets/icons/chevron_left.svg',
+                                width: 24,
+                                height: 24,
+                                colorFilter: const ColorFilter.mode(
+                                  AppColors.textPrimary,
+                                  BlendMode.srcIn,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      Text(
-                        '2 / 9',
-                        style: AppTypography.textTheme.labelSmall?.copyWith(
-                          color: AppColors.textSecondary,
-                          fontWeight: FontWeight.w500,
+                        Text(
+                          l10n.onboardingStep(2, 7),
+                          style: AppTypography.textTheme.labelSmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
-                  const Padding(
-                    padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 2, total: 9),
-                  ),
-                ],
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.sm),
+                    const Padding(
+                      padding: EdgeInsets.only(left: AppSpacing.sm),
+                      child: AppProgressBar(current: 2, total: 7),
+                    ),
+                  ],
+                ),
               ),
-            ),
 
             // ── Scrollable body ──────────────────────────────────────────────
             Expanded(
               child: SingleChildScrollView(
                 controller: _scrollController,
                 padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.screen, AppSpacing.lg,
-                  AppSpacing.screen, AppSpacing.xl,
+                  AppSpacing.screen,
+                  AppSpacing.lg,
+                  AppSpacing.screen,
+                  AppSpacing.xl,
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(l10n.fitnessTitle, style: AppTypography.headlineMedium),
-                    const SizedBox(height: AppSpacing.sm),
-                    Text(
-                      l10n.fitnessSubtitle,
-                      style: AppTypography.bodyMedium.copyWith(
-                        color: AppColors.textSecondary,
+                    if (!widget.isEditingPlanInfo) ...[
+                      Text(
+                        l10n.fitnessTitle,
+                        style: AppTypography.headlineMedium,
                       ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
+                      const SizedBox(height: AppSpacing.sm),
+                      Text(
+                        l10n.fitnessSubtitle,
+                        style: AppTypography.bodyMedium.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
 
                     // ── Running experience ───────────────────────────────────
-                    Text(l10n.runningExperienceLabel, style: AppTypography.labelLarge),
+                    Text(
+                      l10n.runningExperienceLabel,
+                      style: AppTypography.labelLarge,
+                    ),
                     const SizedBox(height: AppSpacing.md),
-                    _SelectCard(
-                      label: l10n.experienceBrandNew,
-                      subtitle: l10n.experienceBrandNewSub,
-                      isSelected: _experience == 'Brand new',
-                      onTap: () => _selectExperience('Brand new'),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _SelectCard(
-                      label: l10n.experienceBeginner,
-                      subtitle: l10n.experienceBeginnerSub,
-                      isSelected: _experience == 'Beginner',
-                      onTap: () => _selectExperience('Beginner'),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _SelectCard(
-                      label: l10n.experienceIntermediate,
-                      subtitle: l10n.experienceIntermediateSub,
-                      isSelected: _experience == 'Intermediate',
-                      onTap: () => _selectExperience('Intermediate'),
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    _SelectCard(
-                      label: l10n.experienceExperienced,
-                      subtitle: l10n.experienceExperiencedSub,
-                      isSelected: _experience == 'Experienced',
-                      onTap: () => _selectExperience('Experienced'),
-                    ),
+                    ...experienceOptions.asMap().entries.map((entry) {
+                      final option = entry.value;
+                      return Padding(
+                        padding: EdgeInsets.only(
+                          bottom: entry.key == experienceOptions.length - 1
+                              ? 0
+                              : AppSpacing.sm,
+                        ),
+                        child: _SelectCard(
+                          label: option.label,
+                          subtitle: option.subtitle,
+                          isSelected: _experience == option.key,
+                          onTap: () => _selectExperience(option.key),
+                        ),
+                      );
+                    }),
 
                     // ── Brand new: 10-minute run question ────────────────────
                     if (_isBrandNew) ...[
@@ -300,7 +384,10 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       Row(
                         children: [
-                          Text(l10n.optionalBenchmark, style: AppTypography.labelLarge),
+                          Text(
+                            l10n.optionalBenchmark,
+                            style: AppTypography.labelLarge,
+                          ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
@@ -316,24 +403,34 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: benchmarkOptions.map(((String canonical, String label) t) => _Chip(
-                          label: t.$2,
-                          isSelected: _benchmark == t.$1,
-                          onTap: () {
-                            setState(() {
-                              _benchmark = t.$1;
-                              _benchmarkTime = null;
-                            });
-                            if (t.$1 != 'Skip for now') {
-                              _scrollToBottom();
-                              _showTimePicker();
-                            }
-                          },
-                        )).toList(),
+                        children: benchmarkOptions
+                            .map(
+                              (t) => _Chip(
+                                label: t.label,
+                                isSelected: _benchmark == t.key,
+                                onTap: () {
+                                  setState(() {
+                                    _benchmark = t.key;
+                                    _benchmarkTime = null;
+                                  });
+                                  if (t.key != _benchmarkSkipKey) {
+                                    _scrollToBottom();
+                                    _showTimePicker();
+                                  }
+                                },
+                              ),
+                            )
+                            .toList(),
                       ),
-                      if (_benchmark != null && _benchmark != 'Skip for now') ...[
+                      if (_benchmark != null &&
+                          _benchmark != _benchmarkSkipKey) ...[
                         const SizedBox(height: AppSpacing.lg),
-                        Text(l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!), style: AppTypography.labelLarge),
+                        Text(
+                          l10n.benchmarkSelectedLabel(
+                            benchmarkLabelFor[_benchmark]!,
+                          ),
+                          style: AppTypography.labelLarge,
+                        ),
                         const SizedBox(height: AppSpacing.sm),
                         AppPickerField(
                           hint: l10n.tapToSetTime,
@@ -350,10 +447,13 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     // 1. Running days per week
                     if (_experience != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.currentRunDaysLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.currentRunDaysLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: const ['0', '1', '2', '3', '4', '5+'],
+                        options: runningDayOptions,
                         selected: _runningDays,
                         onSelect: (val) {
                           setState(() {
@@ -373,53 +473,65 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     // 2. Average weekly volume
                     if (_runningDays != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.weeklyVolumeLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.weeklyVolumeLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: UnitFormatter.weeklyVolumeOptions(unitSystem)
-                        .map((vol) => _Chip(
-                          label: vol,
-                          isSelected: _weeklyVolume == vol,
-                          onTap: () {
-                            setState(() {
-                              _weeklyVolume = vol;
-                              _longestRun = null;
-                              _canCompleteGoalDist = null;
-                              _raceDistanceBefore = null;
-                              _benchmark = null;
-                              _benchmarkTime = null;
-                            });
-                            _scrollToBottom();
-                          },
-                        )).toList(),
+                        children: weeklyVolumeOptions
+                            .map(
+                              (vol) => _Chip(
+                                label: vol.label,
+                                isSelected: _weeklyVolume == vol.key,
+                                onTap: () {
+                                  setState(() {
+                                    _weeklyVolume = vol.key;
+                                    _longestRun = null;
+                                    _canCompleteGoalDist = null;
+                                    _raceDistanceBefore = null;
+                                    _benchmark = null;
+                                    _benchmarkTime = null;
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
+                            .toList(),
                       ),
                     ],
 
                     // 3. Longest recent run
                     if (_weeklyVolume != null && !_isBrandNew) ...[
                       const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.longestRunLabel, style: AppTypography.labelLarge),
+                      Text(
+                        l10n.longestRunLabel,
+                        style: AppTypography.labelLarge,
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
                         children: longestRunOptions
-                        .map((run) => _Chip(
-                          label: run,
-                          isSelected: _longestRun == run,
-                          onTap: () {
-                            setState(() {
-                              _longestRun = run;
-                              _canCompleteGoalDist = null;
-                              _raceDistanceBefore = null;
-                              _benchmark = null;
-                              _benchmarkTime = null;
-                            });
-                            _scrollToBottom();
-                          },
-                        )).toList(),
+                            .map(
+                              (run) => _Chip(
+                                label: run.label,
+                                isSelected: _longestRun == run.key,
+                                onTap: () {
+                                  setState(() {
+                                    _longestRun = run.key;
+                                    _canCompleteGoalDist = null;
+                                    _raceDistanceBefore = null;
+                                    _benchmark = null;
+                                    _benchmarkTime = null;
+                                  });
+                                  _scrollToBottom();
+                                },
+                              ),
+                            )
+                            .toList(),
                       ),
                     ],
 
@@ -434,11 +546,13 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Row(
                         children: goalDistOptions.asMap().entries.map((entry) {
                           final isLast = entry.key == 2;
-                          final key = entry.value.$1;
-                          final label = entry.value.$2;
+                          final key = entry.value.key;
+                          final label = entry.value.label;
                           return Expanded(
                             child: Padding(
-                              padding: EdgeInsets.only(right: isLast ? 0 : AppSpacing.md),
+                              padding: EdgeInsets.only(
+                                right: isLast ? 0 : AppSpacing.md,
+                              ),
                               child: _ToggleButton(
                                 label: label,
                                 isSelected: _canCompleteGoalDist == key,
@@ -467,12 +581,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _SegmentedControl(
-                        options: [
-                          l10n.raceDistanceNever,
-                          l10n.raceDistanceOnce,
-                          l10n.raceDistance2to3,
-                          l10n.raceDistance4plus,
-                        ],
+                        options: raceDistanceOptions,
                         selected: _raceDistanceBefore,
                         onSelect: (val) {
                           setState(() {
@@ -490,7 +599,10 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       Row(
                         children: [
-                          Text(l10n.optionalBenchmark, style: AppTypography.labelLarge),
+                          Text(
+                            l10n.optionalBenchmark,
+                            style: AppTypography.labelLarge,
+                          ),
                           const SizedBox(width: AppSpacing.sm),
                           Expanded(
                             child: Text(
@@ -506,25 +618,32 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                       Wrap(
                         spacing: AppSpacing.sm,
                         runSpacing: AppSpacing.sm,
-                        children: benchmarkOptions.map(((String canonical, String label) t) => _Chip(
-                          label: t.$2,
-                          isSelected: _benchmark == t.$1,
-                          onTap: () {
-                            setState(() {
-                              _benchmark = t.$1;
-                              _benchmarkTime = null;
-                            });
-                            if (t.$1 != 'Skip for now') {
-                              _scrollToBottom();
-                              _showTimePicker();
-                            }
-                          },
-                        )).toList(),
+                        children: benchmarkOptions
+                            .map(
+                              (t) => _Chip(
+                                label: t.label,
+                                isSelected: _benchmark == t.key,
+                                onTap: () {
+                                  setState(() {
+                                    _benchmark = t.key;
+                                    _benchmarkTime = null;
+                                  });
+                                  if (t.key != _benchmarkSkipKey) {
+                                    _scrollToBottom();
+                                    _showTimePicker();
+                                  }
+                                },
+                              ),
+                            )
+                            .toList(),
                       ),
-                      if (_benchmark != null && _benchmark != 'Skip for now') ...[
+                      if (_benchmark != null &&
+                          _benchmark != _benchmarkSkipKey) ...[
                         const SizedBox(height: AppSpacing.lg),
                         Text(
-                          l10n.benchmarkSelectedLabel(benchmarkLabelFor[_benchmark]!),
+                          l10n.benchmarkSelectedLabel(
+                            benchmarkLabelFor[_benchmark]!,
+                          ),
                           style: AppTypography.labelLarge,
                         ),
                         const SizedBox(height: AppSpacing.sm),
@@ -545,14 +664,20 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
             // ── Continue button ──────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.fromLTRB(
-                AppSpacing.screen, AppSpacing.sm,
-                AppSpacing.screen, AppSpacing.xl,
+                AppSpacing.screen,
+                AppSpacing.sm,
+                AppSpacing.screen,
+                AppSpacing.xl,
               ),
               child: AppButton(
-                label: l10n.continueButton,
+                label: widget.isEditingPlanInfo
+                    ? l10n.saveChangesButton
+                    : l10n.continueButton,
                 onPressed: _isComplete
                     ? () {
-                        ref.read(onboardingProvider.notifier).setFitness(
+                        ref
+                            .read(onboardingProvider.notifier)
+                            .setFitness(
                               experience: _experience!,
                               canRun10Min: _canRun10Min,
                               runningDays: _runningDays,
@@ -563,7 +688,11 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                               benchmark: _benchmark,
                               benchmarkTime: _benchmarkTime,
                             );
-                        context.push(RouteNames.schedule);
+                        if (widget.isEditingPlanInfo) {
+                          context.pop();
+                        } else {
+                          context.push(RouteNames.schedule);
+                        }
                       }
                     : null,
               ),
@@ -605,7 +734,9 @@ class _SelectCard extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Column(
@@ -656,7 +787,9 @@ class _ToggleButton extends StatelessWidget {
           color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
           ),
         ),
         child: Center(
@@ -664,7 +797,9 @@ class _ToggleButton extends StatelessWidget {
             label,
             textAlign: TextAlign.center,
             style: AppTypography.textTheme.titleMedium?.copyWith(
-              color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
+              color: isSelected
+                  ? AppColors.textPrimary
+                  : AppColors.textSecondary,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -683,7 +818,7 @@ class _SegmentedControl extends StatelessWidget {
     required this.onSelect,
   });
 
-  final List<String> options;
+  final List<OnboardingOption> options;
   final String? selected;
   final void Function(String) onSelect;
 
@@ -697,20 +832,22 @@ class _SegmentedControl extends StatelessWidget {
       ),
       child: Row(
         children: options.map((opt) {
-          final isSelected = selected == opt;
+          final isSelected = selected == opt.key;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onSelect(opt),
+              onTap: () => onSelect(opt.key),
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isSelected ? AppColors.accentPrimary : Colors.transparent,
+                  color: isSelected
+                      ? AppColors.accentPrimary
+                      : Colors.transparent,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Center(
                   child: Text(
-                    opt,
+                    opt.label,
                     style: AppTypography.labelMedium.copyWith(
                       color: isSelected
                           ? AppColors.backgroundPrimary
@@ -751,17 +888,23 @@ class _Chip extends StatelessWidget {
           height: 48,
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
           decoration: BoxDecoration(
-            color: isSelected ? AppColors.accentPrimary : AppColors.backgroundCard,
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.backgroundCard,
             borderRadius: BorderRadius.circular(100),
             border: Border.all(
-              color: isSelected ? AppColors.accentPrimary : AppColors.borderDefault,
+              color: isSelected
+                  ? AppColors.accentPrimary
+                  : AppColors.borderDefault,
             ),
           ),
           child: Center(
             child: Text(
               label,
               style: AppTypography.labelMedium.copyWith(
-                color: isSelected ? AppColors.backgroundPrimary : AppColors.textSecondary,
+                color: isSelected
+                    ? AppColors.backgroundPrimary
+                    : AppColors.textSecondary,
               ),
             ),
           ),
@@ -774,10 +917,7 @@ class _Chip extends StatelessWidget {
 // ─── Time picker bottom sheet ─────────────────────────────────────────────────
 
 class _TimePickerSheet extends StatefulWidget {
-  const _TimePickerSheet({
-    required this.initial,
-    required this.onConfirm,
-  });
+  const _TimePickerSheet({required this.initial, required this.onConfirm});
 
   final Duration initial;
   final ValueChanged<Duration> onConfirm;
@@ -805,10 +945,7 @@ class _TimePickerSheetState extends State<_TimePickerSheet> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          l10n.yourBenchmarkTime,
-          style: AppTypography.titleMedium,
-        ),
+        Text(l10n.yourBenchmarkTime, style: AppTypography.titleMedium),
         const SizedBox(height: AppSpacing.lg),
         SizedBox(
           height: 180,
@@ -867,12 +1004,16 @@ class _WheelColumn extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: AppSpacing.xs),
           Expanded(
             child: CupertinoPicker(
-              scrollController: FixedExtentScrollController(initialItem: initial),
+              scrollController: FixedExtentScrollController(
+                initialItem: initial,
+              ),
               itemExtent: 40,
               onSelectedItemChanged: onChanged,
               selectionOverlay: const CupertinoPickerDefaultSelectionOverlay(

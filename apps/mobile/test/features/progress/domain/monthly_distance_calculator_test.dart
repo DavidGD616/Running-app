@@ -1,0 +1,143 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:running_app/features/progress/domain/services/monthly_distance_calculator.dart';
+import 'package:running_app/features/training_plan/domain/models/session_type.dart';
+import 'package:running_app/features/training_plan/domain/models/training_session.dart';
+
+void main() {
+  TrainingSession buildSession({
+    required DateTime date,
+    double? distanceKm,
+    SessionType type = SessionType.easyRun,
+    SessionStatus status = SessionStatus.completed,
+    int? durationMinutes,
+  }) {
+    return TrainingSession(
+      id: 'session-${date.toIso8601String()}-${type.name}',
+      date: date,
+      type: type,
+      status: status,
+      distanceKm: distanceKm,
+      durationMinutes: durationMinutes,
+    );
+  }
+
+  test('sums completed non-rest sessions in the current month only', () {
+    final clock = DateTime(2024, 4, 15);
+    final sessions = [
+      buildSession(date: DateTime(2024, 4, 1), distanceKm: 5),
+      buildSession(date: DateTime(2024, 4, 5), distanceKm: 8),
+      buildSession(date: DateTime(2024, 4, 10), distanceKm: 7,
+          status: SessionStatus.today),
+      buildSession(date: DateTime(2024, 3, 30), distanceKm: 10),
+      buildSession(date: DateTime(2024, 4, 12), distanceKm: 3,
+          type: SessionType.restDay),
+      buildSession(date: DateTime(2024, 4, 14), distanceKm: 6),
+    ];
+
+    final total = calculateMonthDistance(sessions: sessions, clock: clock);
+    expect(total, closeTo(19, 0.001));
+  });
+
+  test('returns 0 when no matching sessions', () {
+    final clock = DateTime(2024, 6, 1);
+    final sessions = [
+      buildSession(date: DateTime(2024, 5, 20), distanceKm: 10),
+      buildSession(date: DateTime(2024, 7, 2), distanceKm: 5),
+    ];
+
+    final total = calculateMonthDistance(sessions: sessions, clock: clock);
+    expect(total, 0);
+  });
+
+  test('monthly stats return previous comparison and trend', () {
+    final clock = DateTime(2024, 4, 20);
+    final sessions = [
+      buildSession(date: DateTime(2024, 4, 1), distanceKm: 5),
+      buildSession(date: DateTime(2024, 4, 2), distanceKm: 5),
+      buildSession(date: DateTime(2024, 3, 5), distanceKm: 5),
+      buildSession(date: DateTime(2024, 3, 6), distanceKm: 5),
+      buildSession(
+        date: DateTime(2024, 4, 3),
+        distanceKm: 3,
+        status: SessionStatus.today,
+      ),
+    ];
+
+    final stats =
+        calculateMonthlyDistanceStats(sessions: sessions, clock: clock);
+    expect(stats.currentKm, closeTo(10, 0.001));
+    expect(stats.previousKm, closeTo(10, 0.001));
+    expect(stats.trendPct, closeTo(0, 0.001));
+    expect(stats.hasComparison, isTrue);
+  });
+
+  test('stats omit trend when previous month has no distance', () {
+    final clock = DateTime(2024, 4, 20);
+    final sessions = [
+      buildSession(date: DateTime(2024, 4, 1), distanceKm: 5),
+    ];
+
+    final stats =
+        calculateMonthlyDistanceStats(sessions: sessions, clock: clock);
+    expect(stats.currentKm, closeTo(5, 0.001));
+    expect(stats.previousKm, isNull);
+    expect(stats.trendPct, isNull);
+    expect(stats.hasComparison, isFalse);
+  });
+
+  test('duration stats compute current month minutes', () {
+    final clock = DateTime(2024, 4, 10);
+    final sessions = [
+      buildSession(
+        date: DateTime(2024, 4, 1),
+        distanceKm: 5,
+        durationMinutes: 30,
+      ),
+      buildSession(
+        date: DateTime(2024, 4, 2),
+        distanceKm: 6,
+        durationMinutes: 40,
+      ),
+      buildSession(
+        date: DateTime(2024, 3, 30),
+        distanceKm: 6,
+        durationMinutes: 35,
+      ),
+      buildSession(
+        date: DateTime(2024, 4, 5),
+        distanceKm: 4,
+        status: SessionStatus.today,
+        durationMinutes: 25,
+      ),
+    ];
+
+    final minutes = calculateMonthDurationMinutes(
+      sessions: sessions,
+      clock: clock,
+    );
+    expect(minutes, 70);
+  });
+
+  test('duration stats provide trend only when previous month exists', () {
+    final clock = DateTime(2024, 4, 10);
+    final sessions = [
+      buildSession(
+        date: DateTime(2024, 4, 1),
+        distanceKm: 5,
+        durationMinutes: 30,
+      ),
+      buildSession(
+        date: DateTime(2024, 3, 2),
+        distanceKm: 6,
+        durationMinutes: 60,
+      ),
+    ];
+
+    final stats =
+        calculateMonthlyDurationStats(sessions: sessions, clock: clock);
+    expect(stats.currentMinutes, 30);
+    expect(stats.previousMinutes, 60);
+    expect(stats.trendPct, closeTo(-50, 0.001));
+    expect(stats.hasComparison, isTrue);
+  });
+}

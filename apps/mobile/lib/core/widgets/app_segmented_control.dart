@@ -9,7 +9,9 @@ class AppSegmentedControl extends StatelessWidget {
     required this.options,
     required this.selectedIndex,
     required this.onChanged,
-  }) : assert(options.length >= 2 && options.length <= 4);
+  }) : assert(options.length >= 2),
+       assert(selectedIndex >= 0),
+       assert(selectedIndex < options.length);
 
   final List<String> options;
   final int selectedIndex;
@@ -20,6 +22,7 @@ class AppSegmentedControl extends StatelessWidget {
     return Container(
       height: 48,
       padding: const EdgeInsets.all(4),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
         color: AppColors.backgroundCard,
         borderRadius: AppRadius.borderLg,

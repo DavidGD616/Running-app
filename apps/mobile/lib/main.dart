@@ -1,15 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/date_symbol_data_local.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'l10n/app_localizations.dart';
 
+import 'core/persistence/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'features/localization/presentation/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const ProviderScope(child: RunningApp()));
+  await initializeDateFormatting();
+  final prefs = await SharedPreferences.getInstance();
+  runApp(
+    ProviderScope(
+      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      child: const RunningApp(),
+    ),
+  );
 }
 
 class RunningApp extends ConsumerWidget {
@@ -22,13 +32,13 @@ class RunningApp extends ConsumerWidget {
 
     // While locale is loading from disk, use English as a fallback
     // This prevents a flash of the wrong language on startup
-    final locale = localeAsync.valueOrNull ?? const Locale('en');
+    final locale = localeAsync.value ?? const Locale('en');
 
     return MaterialApp.router(
       title: 'RunFlow',
       theme: AppTheme.dark,
       debugShowCheckedModeBanner: false,
-      routerConfig: appRouter,
+      routerConfig: ref.watch(appRouterProvider),
 
       // Localization setup
       locale: locale,

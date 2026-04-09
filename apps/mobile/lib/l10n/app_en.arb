@@ -97,11 +97,22 @@
   "preferredUnits": "Preferred Units",
   "@preferredUnits": { "description": "Section label on account setup screen" },
 
+  "accountSetupShortDistanceUnits": "Short Distance & Elevation",
+  "@accountSetupShortDistanceUnits": {
+    "description": "Section label for short distance and elevation units on account setup screen"
+  },
+
   "unitKm": "km",
   "@unitKm": { "description": "Kilometers unit option" },
 
   "unitMi": "mi",
   "@unitMi": { "description": "Miles unit option" },
+
+  "unitM": "m",
+  "@unitM": { "description": "Meters unit option" },
+
+  "unitFt": "ft",
+  "@unitFt": { "description": "Feet unit option" },
 
   "genderLabel": "Gender",
   "@genderLabel": { "description": "Section label on account setup screen" },
@@ -124,11 +135,43 @@
   "continueButton": "Continue",
   "@continueButton": { "description": "Generic continue button label" },
 
+  "saveChangesButton": "Save Changes",
+  "@saveChangesButton": { "description": "Generic save changes button label" },
+
+  "setGoalButton": "Set Goal",
+  "@setGoalButton": { "description": "Button label to save a new goal" },
+
+  "settingsAcceptChanges": "Accept Changes",
+  "@settingsAcceptChanges": { "description": "Button label to accept reviewed settings changes" },
+
+  "settingsReviewChangesTitle": "Review Changes",
+  "@settingsReviewChangesTitle": { "description": "Title for the settings goal review screen" },
+
+  "settingsViewPlan": "View Plan",
+  "@settingsViewPlan": { "description": "Primary CTA on the settings plan-ready screen" },
+
+  "settingsReviewChangesSubtitle": "Review your {flowLabel} details and training preferences before applying them.",
+  "@settingsReviewChangesSubtitle": {
+    "description": "Subtitle for the settings goal review screen",
+    "placeholders": {
+      "flowLabel": { "type": "String" }
+    }
+  },
+
   "homeReady": "Your plan is ready!",
   "@homeReady": { "description": "Heading on the home screen" },
 
   "homeComingSoon": "Home screen coming soon.",
   "@homeComingSoon": { "description": "Placeholder subtitle on the home screen" },
+
+  "onboardingStep": "{step} / {total}",
+  "@onboardingStep": {
+    "description": "Step counter displayed on onboarding screens, e.g. '1 / 9'",
+    "placeholders": {
+      "step": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
 
   "onboardingIntroTitle": "Let's build your plan",
   "@onboardingIntroTitle": { "description": "Heading on the onboarding intro screen" },
@@ -145,7 +188,7 @@
   "onboardingIntroFeature3": "Schedule and preferences",
   "@onboardingIntroFeature3": { "description": "Third bullet on onboarding intro screen" },
 
-  "onboardingIntroFooter": "9 short sections · You can edit answers later",
+  "onboardingIntroFooter": "7 short sections · You can edit answers later",
   "@onboardingIntroFooter": { "description": "Footer note on onboarding intro screen" },
 
   "letsGo": "Let's Go",
@@ -376,6 +419,27 @@
   "daySun": "Sun",
   "@daySun": { "description": "Sunday chip label" },
 
+  "weekdayMonday": "Monday",
+  "@weekdayMonday": { "description": "Full weekday label for Monday" },
+
+  "weekdayTuesday": "Tuesday",
+  "@weekdayTuesday": { "description": "Full weekday label for Tuesday" },
+
+  "weekdayWednesday": "Wednesday",
+  "@weekdayWednesday": { "description": "Full weekday label for Wednesday" },
+
+  "weekdayThursday": "Thursday",
+  "@weekdayThursday": { "description": "Full weekday label for Thursday" },
+
+  "weekdayFriday": "Friday",
+  "@weekdayFriday": { "description": "Full weekday label for Friday" },
+
+  "weekdaySaturday": "Saturday",
+  "@weekdaySaturday": { "description": "Full weekday label for Saturday" },
+
+  "weekdaySunday": "Sunday",
+  "@weekdaySunday": { "description": "Full weekday label for Sunday" },
+
   "weekdayTimeLabel": "Weekday time available",
   "@weekdayTimeLabel": { "description": "Section label on schedule screen" },
 
@@ -487,7 +551,7 @@
   "trainingPrefsTitle": "Training Preferences",
   "@trainingPrefsTitle": { "description": "Heading on the training preferences screen" },
 
-  "trainingPrefsSubtitle": "Customize how your plan is structured.",
+  "trainingPrefsSubtitle": "Choose how you want your plan to feel.",
   "@trainingPrefsSubtitle": { "description": "Subtitle on the training preferences screen" },
 
   "guidanceModeLabel": "Preferred guidance mode",
@@ -567,9 +631,6 @@
 
   "terrainMixed": "Mixed",
   "@terrainMixed": { "description": "Terrain option: mixed" },
-
-  "walkRunLabel": "Walk/run intervals?",
-  "@walkRunLabel": { "description": "Section label on training preferences screen" },
 
   "watchTitle": "Watch & Device",
   "@watchTitle": { "description": "Heading on the watch & device screen" },
@@ -919,10 +980,10 @@
     "description": "Schedule value in summary",
     "placeholders": { "days": { "type": "String" } }
   },
-  "summaryScheduleDetail": "Long run {longRun} · {time} · {weekday} weekdays",
+  "summaryScheduleDetail": "Long run {longRun} · Weekdays {weekday}",
   "@summaryScheduleDetail": {
     "description": "Schedule detail in summary",
-    "placeholders": { "longRun": { "type": "String" }, "time": { "type": "String" }, "weekday": { "type": "String" } }
+    "placeholders": { "longRun": { "type": "String" }, "weekday": { "type": "String" } }
   },
   "summaryNoPain": "No current pain",
   "@summaryNoPain": { "description": "Health value when no pain" },
@@ -930,6 +991,14 @@
   "@summaryWithPain": {
     "description": "Health value when there is pain",
     "placeholders": { "level": { "type": "String" } }
+  },
+  "summaryHealthDetail": "Injury history: {injury} · Conditions: {conditions}",
+  "@summaryHealthDetail": {
+    "description": "Health detail showing injury history and health conditions",
+    "placeholders": {
+      "injury": { "type": "String" },
+      "conditions": { "type": "String" }
+    }
   },
   "summaryPlanPref": "{preference} plan preference",
   "@summaryPlanPref": {
@@ -940,11 +1009,6 @@
   "@summaryGuidanceBased": {
     "description": "Training value showing guidance mode",
     "placeholders": { "mode": { "type": "String" } }
-  },
-  "summaryTrainingDetail": "Speed: {speed} · Strength: {strength} · {surface} · {terrain}",
-  "@summaryTrainingDetail": {
-    "description": "Training detail in summary",
-    "placeholders": { "speed": { "type": "String" }, "strength": { "type": "String" }, "surface": { "type": "String" }, "terrain": { "type": "String" } }
   },
   "summaryDeviceConnected": "{device} connected",
   "@summaryDeviceConnected": {
@@ -1029,5 +1093,961 @@
   "@monthDecember": { "description": "Month name" },
 
   "errorGeneric": "Something went wrong. Please try again.",
-  "@errorGeneric": { "description": "Generic error message" }
+  "@errorGeneric": { "description": "Generic error message" },
+
+  "planReadyWeekPlanName": "{weeks}-Week {race}",
+  "@planReadyWeekPlanName": {
+    "description": "Plan name format e.g. '12-Week Half Marathon'",
+    "placeholders": {
+      "weeks": { "type": "String" },
+      "race": { "type": "String" }
+    }
+  },
+
+  "planReadyTitle": "Your plan is ready",
+  "@planReadyTitle": { "description": "Heading on the plan-ready screen" },
+
+  "planReadyGoalLabel": "Goal",
+  "@planReadyGoalLabel": { "description": "Label for the goal row on the plan-ready screen" },
+
+  "planReadyScheduleLabel": "Schedule",
+  "@planReadyScheduleLabel": { "description": "Label for the schedule row on the plan-ready screen" },
+
+  "planReadyLongRunsLabel": "Long Runs",
+  "@planReadyLongRunsLabel": { "description": "Label for the long runs row on the plan-ready screen" },
+
+  "planReadyGuidanceModeLabel": "Guidance Mode",
+  "@planReadyGuidanceModeLabel": { "description": "Label for the guidance mode row on the plan-ready screen" },
+
+  "planReadyGoalDescription": "Complete a {race}",
+  "@planReadyGoalDescription": {
+    "description": "Goal description shown on the plan-ready screen",
+    "placeholders": { "race": { "type": "String" } }
+  },
+
+  "planReadyScheduleValue": "{weeks} weeks • {runsPerWeek} runs/week",
+  "@planReadyScheduleValue": {
+    "description": "Schedule summary shown on the plan-ready screen",
+    "placeholders": {
+      "weeks": { "type": "String" },
+      "runsPerWeek": { "type": "String" }
+    }
+  },
+
+  "planReadyDescription": "Tailored exactly to your fitness and schedule. We'll safely build your endurance so you reach the finish line feeling strong.",
+  "@planReadyDescription": { "description": "Motivational paragraph on the plan-ready screen" },
+
+  "planReadyStartPlan": "Start Plan",
+  "@planReadyStartPlan": { "description": "Primary CTA button on the plan-ready screen" },
+
+  "planReadyViewFullWeek": "View Full Week",
+  "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" },
+
+  "homeTitle": "Today",
+  "@homeTitle": { "description": "Title of the home/today screen" },
+
+  "homeSectionTodaysWorkout": "Today's Workout",
+  "@homeSectionTodaysWorkout": { "description": "Section label for today's workout on the home screen" },
+
+  "homeSectionUpNext": "Up Next",
+  "@homeSectionUpNext": { "description": "Section label for upcoming session on the home screen" },
+
+  "homeSectionThisWeek": "This Week",
+  "@homeSectionThisWeek": { "description": "Section label for weekly progress on the home screen" },
+
+  "homeLogPastRun": "Log Past Run",
+  "@homeLogPastRun": { "description": "Quick action button to log a past run on the home screen" },
+
+  "homeFullWeek": "Full Week",
+  "@homeFullWeek": { "description": "Quick action button to view the full weekly plan on the home screen" },
+
+  "workoutDurationLabel": "Duration",
+  "@workoutDurationLabel": { "description": "Stat label in the workout hero card" },
+
+  "workoutDistanceLabel": "Distance",
+  "@workoutDistanceLabel": { "description": "Stat label in the workout hero card" },
+
+  "workoutTargetGuidanceLabel": "Target Guidance",
+  "@workoutTargetGuidanceLabel": { "description": "Section label inside the target guidance box in the workout hero card" },
+
+  "sessionDescEasyRun": "Build your aerobic base for the Half Marathon. Keep the pace conversational throughout.",
+  "@sessionDescEasyRun": { "description": "Target guidance for easy run sessions" },
+
+  "sessionDescIntervals": "{reps}×{repDistance} @ 5K pace. {recoverySeconds}s recovery jog between each rep.",
+  "@sessionDescIntervals": {
+    "description": "Target guidance for interval sessions",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "repDistance": { "type": "String" },
+      "recoverySeconds": { "type": "int" }
+    }
+  },
+
+  "sessionDescLongRun": "Your key long run this week. Builds the endurance needed for your Half Marathon race day.",
+  "@sessionDescLongRun": { "description": "Target guidance for long run sessions" },
+
+  "sessionDescRecoveryRun": "Active recovery run to flush fatigue. Keep the effort very easy — slower than you think.",
+  "@sessionDescRecoveryRun": { "description": "Target guidance for recovery run sessions" },
+
+  "sessionDescTempoRun": "Comfortably hard effort. You should be able to speak a few words but not hold a conversation.",
+  "@sessionDescTempoRun": { "description": "Target guidance for tempo run sessions" },
+
+  "workoutViewDetailsButton": "View Workout",
+  "@workoutViewDetailsButton": { "description": "Primary button in the workout hero card" },
+
+  "weekProgressRunsLabel": "Runs",
+  "@weekProgressRunsLabel": { "description": "Stat label for runs completed in the week progress card" },
+
+  "weekProgressVolumeLabel": "Volume",
+  "@weekProgressVolumeLabel": { "description": "Stat label for volume in the week progress card" },
+
+  "weekProgressFooter": "On track to hit {totalVolume} {unit} planned",
+  "@weekProgressFooter": {
+    "description": "Footer message in the week progress card",
+    "placeholders": {
+      "totalVolume": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "homeVolumeUnit": "km",
+  "@homeVolumeUnit": { "description": "Volume unit displayed on the home week progress card" },
+
+  "tabToday": "Today",
+  "@tabToday": { "description": "Bottom nav tab label for the Today/Home tab" },
+
+  "tabPlan": "Plan",
+  "@tabPlan": { "description": "Bottom nav tab label for the Plan tab" },
+
+  "tabProgress": "Progress",
+  "@tabProgress": { "description": "Bottom nav tab label for the Progress tab" },
+
+  "tabSettings": "Settings",
+  "@tabSettings": { "description": "Bottom nav tab label for the Settings tab" },
+
+  "weeklyPlanTitle": "Week {week} of {total}",
+  "@weeklyPlanTitle": {
+    "description": "Weekly plan screen title showing current week and total weeks",
+    "placeholders": {
+      "week": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "weeklyPlanDistanceLabel": "Distance",
+  "@weeklyPlanDistanceLabel": { "description": "Distance stat label in weekly plan summary card" },
+
+  "weeklyPlanTimeLabel": "Time",
+  "@weeklyPlanTimeLabel": { "description": "Time stat label in weekly plan summary card" },
+
+  "weeklyPlanRunsLabel": "Runs",
+  "@weeklyPlanRunsLabel": { "description": "Runs stat label in weekly plan summary card" },
+
+  "weeklyPlanScheduleLabel": "Schedule",
+  "@weeklyPlanScheduleLabel": { "description": "Schedule section label in weekly plan" },
+
+  "weeklyPlanRestTitle": "Rest",
+  "@weeklyPlanRestTitle": { "description": "Rest day session title" },
+
+  "weeklyPlanRestSubtitle": "Recovery day",
+  "@weeklyPlanRestSubtitle": { "description": "Rest day subtitle text" },
+
+  "weeklyPlanNowBadge": "Now",
+  "@weeklyPlanNowBadge": { "description": "Badge label on today's session row" },
+
+  "weeklyPlanViewFullPlan": "View Full Plan",
+  "@weeklyPlanViewFullPlan": { "description": "View full plan button label" },
+
+  "weeklyPlanSessionEasyRun": "Easy Run",
+  "@weeklyPlanSessionEasyRun": { "description": "Easy run session type name" },
+
+  "weeklyPlanSessionIntervals": "Intervals",
+  "@weeklyPlanSessionIntervals": { "description": "Intervals session type name" },
+
+  "weeklyPlanSessionLongRun": "Long Run",
+  "@weeklyPlanSessionLongRun": { "description": "Long run session type name" },
+
+  "weeklyPlanSessionRecoveryRun": "Recovery Run",
+  "@weeklyPlanSessionRecoveryRun": { "description": "Recovery run session type name" },
+
+  "sessionTypeProgressionRun": "Progression Run",
+  "@sessionTypeProgressionRun": { "description": "Progression run session type name" },
+
+  "sessionTypeHillRepeats": "Hill Repeats",
+  "@sessionTypeHillRepeats": { "description": "Hill repeats session type name" },
+
+  "sessionTypeFartlek": "Fartlek",
+  "@sessionTypeFartlek": { "description": "Fartlek session type name" },
+
+  "sessionTypeThresholdRun": "Threshold Run",
+  "@sessionTypeThresholdRun": { "description": "Threshold run session type name" },
+
+  "sessionTypeRacePaceRun": "Race Pace Run",
+  "@sessionTypeRacePaceRun": { "description": "Race pace run session type name" },
+
+  "sessionTypeCrossTraining": "Cross Training",
+  "@sessionTypeCrossTraining": { "description": "Cross training session type name" },
+
+  "sessionTypeRestDay": "Rest Day",
+  "@sessionTypeRestDay": { "description": "Rest day session type name" },
+
+  "sessionCategoryEndurance": "Endurance",
+  "sessionCategorySpeedWork": "Speed Work",
+  "sessionCategoryThreshold": "Threshold",
+  "sessionCategoryRaceSpecific": "Race Specific",
+  "sessionCategoryRecovery": "Recovery",
+  "sessionCategoryRest": "Rest",
+
+  "weeklyPlanDayMon": "Mon",
+  "@weeklyPlanDayMon": { "description": "Monday abbreviation in weekly plan" },
+
+  "weeklyPlanDayTue": "Tue",
+  "@weeklyPlanDayTue": { "description": "Tuesday abbreviation in weekly plan" },
+
+  "weeklyPlanDayWed": "Wed",
+  "@weeklyPlanDayWed": { "description": "Wednesday abbreviation in weekly plan" },
+
+  "weeklyPlanDayThu": "Thu",
+  "@weeklyPlanDayThu": { "description": "Thursday abbreviation in weekly plan" },
+
+  "weeklyPlanDayFri": "Fri",
+  "@weeklyPlanDayFri": { "description": "Friday abbreviation in weekly plan" },
+
+  "weeklyPlanDaySat": "Sat",
+  "@weeklyPlanDaySat": { "description": "Saturday abbreviation in weekly plan" },
+
+  "weeklyPlanDaySun": "Sun",
+  "@weeklyPlanDaySun": { "description": "Sunday abbreviation in weekly plan" },
+
+  "weeklyPlanDayToday": "Today",
+  "@weeklyPlanDayToday": { "description": "Label for today's date box in weekly plan" },
+
+  "progressTitle": "Progress",
+  "@progressTitle": { "description": "Progress screen title" },
+
+  "progressSubtitle": "You're building a solid habit. Keep it up.",
+  "@progressSubtitle": { "description": "Progress screen subtitle" },
+
+  "progressStreakBannerSubtitle": "You're staying consistently active.",
+  "@progressStreakBannerSubtitle": { "description": "Subtitle on the streak banner" },
+
+  "progressWeeklyVolumeTitle": "Weekly Volume",
+  "@progressWeeklyVolumeTitle": { "description": "Weekly volume chart section title" },
+
+  "progressTrendingUp": "Trending Up",
+  "@progressTrendingUp": { "description": "Trending up label in volume chart" },
+
+  "progressRunsThisWeek": "runs this week",
+  "@progressRunsThisWeek": { "description": "Label below runs counter in volume chart" },
+
+  "progressDistanceLabel": "Distance",
+  "@progressDistanceLabel": { "description": "Distance stat label" },
+
+  "progressTimeLabel": "Time",
+  "@progressTimeLabel": { "description": "Time stat label" },
+
+  "progressStreakLabel": "Streak",
+  "@progressStreakLabel": { "description": "Streak stat label" },
+
+  "progressRunsLabel": "Runs",
+  "@progressRunsLabel": { "description": "Runs stat label" },
+
+  "progressRunsCompleted": "Completed",
+  "@progressRunsCompleted": { "description": "Completed label under runs count" },
+
+  "progressStreakSubtitle": "{count} weeks in a row",
+  "@progressStreakSubtitle": {
+    "description": "Streak subtitle below streak count",
+    "placeholders": { "count": { "type": "String" } }
+  },
+
+  "progressTrendUp": "▲ {percent}% vs last mo",
+  "@progressTrendUp": {
+    "description": "Upward trend label on stat tiles",
+    "placeholders": { "percent": { "type": "String" } }
+  },
+
+  "progressTrendDown": "▼ {percent}% vs last mo",
+  "@progressTrendDown": {
+    "description": "Downward trend label on stat tiles",
+    "placeholders": { "percent": { "type": "String" } }
+  },
+
+  "progressWeeksUnit": "wks",
+  "@progressWeeksUnit": { "description": "Weeks unit abbreviation" },
+
+  "progressHourUnit": "h",
+  "@progressHourUnit": { "description": "Hour unit abbreviation" },
+
+  "progressMinuteUnit": "m",
+  "@progressMinuteUnit": { "description": "Minute unit abbreviation" },
+
+  "progressLongestRunTitle": "Longest Run",
+  "@progressLongestRunTitle": { "description": "Longest run card title" },
+
+  "progressLongestRunImproved": "+{distance} since start",
+  "@progressLongestRunImproved": {
+    "description": "Longest run improvement since plan start",
+    "placeholders": { "distance": { "type": "String" } }
+  },
+
+  "progressRecentSessionsTitle": "Recent Sessions",
+  "@progressRecentSessionsTitle": { "description": "Recent sessions section title" },
+
+  "progressViewAll": "View All ›",
+  "@progressViewAll": { "description": "View all sessions link" },
+
+  "completedSessionsTitle": "Completed Sessions",
+  "@completedSessionsTitle": { "description": "Title of the completed sessions screen" },
+
+  "completedSessionsSummary": "{count} sessions completed",
+  "@completedSessionsSummary": {
+    "description": "Summary text shown at the top of the completed sessions screen",
+    "placeholders": {
+      "count": { "type": "String" }
+    }
+  },
+
+  "completedSessionsEmpty": "No completed sessions yet",
+  "@completedSessionsEmpty": { "description": "Empty state message for the completed sessions screen" },
+
+  "progressSessionTempoRun": "Tempo Run",
+  "@progressSessionTempoRun": { "description": "Tempo run session type name" },
+
+  "sessionTypeTempoRun": "Tempo Run",
+  "@sessionTypeTempoRun": { "description": "Tempo run session type name" },
+
+  "progressYesterday": "Yesterday",
+  "@progressYesterday": { "description": "Yesterday relative date label" },
+
+  "progressTuesdayLabel": "Tuesday",
+  "@progressTuesdayLabel": { "description": "Tuesday label for recent session meta" },
+
+  "progressLastSunday": "Last Sunday",
+  "@progressLastSunday": { "description": "Last Sunday label for recent session meta" },
+
+  "progressWeekPrefix": "W",
+  "@progressWeekPrefix": { "description": "Week label prefix in volume chart (W1, W2...). S for Spanish (Semana)." },
+
+  "profileDefaultName": "User Name",
+  "@profileDefaultName": { "description": "Fallback profile name shown in settings when no name is stored" },
+
+  "profileWeekShort": "Week {week}",
+  "@profileWeekShort": {
+    "description": "Short week label used in the home header",
+    "placeholders": {
+      "week": { "type": "String" }
+    }
+  },
+
+  "profileWeekFull": "Week {week} of {total}",
+  "@profileWeekFull": {
+    "description": "Full week label used in the settings profile card",
+    "placeholders": {
+      "week": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "trainingPlanEffortEasy": "Easy",
+  "@trainingPlanEffortEasy": { "description": "Training plan effort label: easy" },
+
+  "trainingPlanEffortModerate": "Moderate",
+  "@trainingPlanEffortModerate": { "description": "Training plan effort label: moderate" },
+
+  "trainingPlanEffortHard": "Hard",
+  "@trainingPlanEffortHard": { "description": "Training plan effort label: hard" },
+
+  "trainingPlanEffortVeryEasy": "Very Easy",
+  "@trainingPlanEffortVeryEasy": { "description": "Training plan effort label: very easy" },
+
+  "sessionCompletedAt": "Completed · {time}",
+  "@sessionCompletedAt": {
+    "description": "Completed session subtitle with completion time",
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+
+  "weeklyCalendarSessionsDone": "{completed} of {total} sessions done",
+  "@weeklyCalendarSessionsDone": {
+    "description": "Progress summary on the weekly calendar card",
+    "placeholders": {
+      "completed": { "type": "String" },
+      "total": { "type": "String" }
+    }
+  },
+
+  "progressCurrentWeek": "CURRENT WEEK",
+  "@progressCurrentWeek": { "description": "Label for the current week stats card inside the volume chart" },
+
+  "progressElevationLabel": "Elevation",
+  "@progressElevationLabel": { "description": "Elevation stat label in the current week stats card" },
+
+  "progressSeeFullData": "See Full Data",
+  "@progressSeeFullData": { "description": "Footer link in the weekly volume chart card" },
+
+  "settingsTitle": "Settings",
+  "@settingsTitle": { "description": "Settings screen title" },
+
+  "settingsGeneralSection": "General",
+  "@settingsGeneralSection": { "description": "General section header on settings screen" },
+
+  "settingsAccount": "Account",
+  "@settingsAccount": { "description": "Account row label on settings screen" },
+
+  "settingsSubscription": "Subscription",
+  "@settingsSubscription": { "description": "Subscription row label on settings screen" },
+  "settingsSubscriptionActivePlan": "Active Plan",
+  "@settingsSubscriptionActivePlan": {
+    "description": "Label for the active paid plan on the subscription screen"
+  },
+  "settingsSubscriptionPlanName": "RunFlow Pro",
+  "@settingsSubscriptionPlanName": {
+    "description": "Visible plan name for the paid RunFlow subscription"
+  },
+  "settingsSubscriptionNextBillingDate": "Next Billing Date",
+  "@settingsSubscriptionNextBillingDate": {
+    "description": "Label for the next billing date on the subscription screen"
+  },
+  "settingsSubscriptionAutoRenewNotice": "Your subscription will automatically renew. If you don't want to continue your subscription, cancel it before the next billing date.",
+  "@settingsSubscriptionAutoRenewNotice": {
+    "description": "Helper copy explaining the subscription auto-renew behavior"
+  },
+  "settingsCancelSubscription": "Cancel Subscription",
+  "@settingsCancelSubscription": {
+    "description": "Button and page title for the subscription cancellation flow"
+  },
+  "settingsCancelSubscriptionPrompt": "Please tell us why you're cancelling RunFlow Pro",
+  "@settingsCancelSubscriptionPrompt": {
+    "description": "Prompt shown at the top of the cancel subscription reasons screen"
+  },
+  "settingsCancelSubscriptionReasonTooExpensive": "It's too expensive",
+  "@settingsCancelSubscriptionReasonTooExpensive": {
+    "description": "Cancellation reason: subscription cost is too high"
+  },
+  "settingsCancelSubscriptionReasonNotUsingEnough": "I'm not using it enough",
+  "@settingsCancelSubscriptionReasonNotUsingEnough": {
+    "description": "Cancellation reason: not getting enough use from the subscription"
+  },
+  "settingsCancelSubscriptionReasonNotHelpingGoals": "It's not helping me reach my goals",
+  "@settingsCancelSubscriptionReasonNotHelpingGoals": {
+    "description": "Cancellation reason: product is not helping enough"
+  },
+  "settingsCancelSubscriptionReasonMissingFeatures": "It's missing features I need",
+  "@settingsCancelSubscriptionReasonMissingFeatures": {
+    "description": "Cancellation reason: important features are missing"
+  },
+  "settingsCancelSubscriptionReasonSwitchingApps": "I'm switching to another app",
+  "@settingsCancelSubscriptionReasonSwitchingApps": {
+    "description": "Cancellation reason: moving to another app"
+  },
+  "settingsCancelSubscriptionReasonTakingBreak": "I'm taking a break from running",
+  "@settingsCancelSubscriptionReasonTakingBreak": {
+    "description": "Cancellation reason: user is taking a break from running"
+  },
+  "settingsCancelSubscriptionReasonOther": "Other",
+  "@settingsCancelSubscriptionReasonOther": {
+    "description": "Fallback cancellation reason option"
+  },
+  "settingsNotNow": "Not now",
+  "@settingsNotNow": {
+    "description": "Secondary action to leave a flow without continuing"
+  },
+  "settingsSubscriptionCancellationInfoTitle": "Manage your subscription in the store",
+  "@settingsSubscriptionCancellationInfoTitle": {
+    "description": "Title shown after the user submits cancellation reasons"
+  },
+  "settingsSubscriptionCancellationInfoBody": "Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.",
+  "@settingsSubscriptionCancellationInfoBody": {
+    "description": "Helper copy shown after the user submits cancellation reasons"
+  },
+  "settingsSubscriptionDialogButton": "OK",
+  "@settingsSubscriptionDialogButton": {
+    "description": "Confirmation button label on the cancellation info dialog"
+  },
+
+  "settingsIntegrations": "Integrations",
+  "@settingsIntegrations": { "description": "Integrations row label on settings screen" },
+
+  "settingsAvailableIntegrationsSection": "Available Integrations",
+  "@settingsAvailableIntegrationsSection": { "description": "Available integrations section header on integrations settings screen" },
+
+  "settingsAppleHealth": "Apple Health",
+  "@settingsAppleHealth": { "description": "Apple Health integration row label" },
+
+  "settingsHealthConnect": "Health Connect",
+  "@settingsHealthConnect": { "description": "Health Connect integration row label" },
+
+  "settingsAccountProfileSection": "Profile",
+  "@settingsAccountProfileSection": { "description": "Profile section header on account settings screen" },
+
+  "settingsAccountSecuritySection": "Security",
+  "@settingsAccountSecuritySection": { "description": "Security section header on account settings screen" },
+
+  "settingsAccountNameLabel": "Name",
+  "@settingsAccountNameLabel": { "description": "Name row label on account settings screen" },
+
+  "settingsAccountSexLabel": "Sex",
+  "@settingsAccountSexLabel": { "description": "Sex row label on account settings screen" },
+
+  "settingsAccountNotSet": "Not set",
+  "@settingsAccountNotSet": { "description": "Placeholder value when an account field has not been set" },
+
+  "settingsAccountSecurityUnavailableTitle": "Coming soon",
+  "@settingsAccountSecurityUnavailableTitle": { "description": "Title shown on placeholder account security screens" },
+
+  "settingsAccountEmailUnavailableSubtitle": "Email changes will be available when account authentication is connected.",
+  "@settingsAccountEmailUnavailableSubtitle": { "description": "Subtitle shown on the placeholder email screen inside account settings" },
+
+  "settingsAccountPasswordUnavailableSubtitle": "Password changes will be available when account authentication is connected.",
+  "@settingsAccountPasswordUnavailableSubtitle": { "description": "Subtitle shown on the placeholder password screen inside account settings" },
+
+  "settingsPlanGoalsSection": "Plan & Goals",
+  "@settingsPlanGoalsSection": { "description": "Plan & Goals section header" },
+
+  "settingsUpdatePlanInfo": "Update Plan Info",
+  "@settingsUpdatePlanInfo": { "description": "Row label to update training plan info" },
+
+  "settingsEditGoal": "Edit Goal",
+  "@settingsEditGoal": { "description": "Settings row label to edit the current goal" },
+
+  "settingsNewGoal": "New Goal",
+  "@settingsNewGoal": { "description": "Settings row label to create a new goal" },
+
+  "settingsChangeSchedule": "Change Schedule",
+  "@settingsChangeSchedule": { "description": "Settings row label to edit the training schedule" },
+
+  "settingsSummaryGoalSection": "Goal",
+  "@settingsSummaryGoalSection": { "description": "Goal section label on the settings review screen" },
+
+  "settingsSummaryTrainingSection": "Training Preferences",
+  "@settingsSummaryTrainingSection": { "description": "Training section label on the settings review screen" },
+
+  "settingsEditGoalIntroTitle": "Update the goal you are already training for",
+  "@settingsEditGoalIntroTitle": { "description": "Title on the intro screen before editing the current goal" },
+
+  "settingsEditGoalIntroSubtitle": "You can review your race, date, priority, and time targets before saving the changes.",
+  "@settingsEditGoalIntroSubtitle": { "description": "Subtitle on the intro screen before editing the current goal" },
+
+  "settingsEditGoalIntroPointRace": "Adjust your race or target distance.",
+  "@settingsEditGoalIntroPointRace": { "description": "First explainer item for edit goal intro screen" },
+
+  "settingsEditGoalIntroPointDate": "Update the race date if your timeline has changed.",
+  "@settingsEditGoalIntroPointDate": { "description": "Second explainer item for edit goal intro screen" },
+
+  "settingsEditGoalIntroPointPriority": "Review your priority and pacing targets before saving.",
+  "@settingsEditGoalIntroPointPriority": { "description": "Third explainer item for edit goal intro screen" },
+
+  "settingsEditGoalIntroPointTraining": "Review your training preferences before finishing the update.",
+  "@settingsEditGoalIntroPointTraining": { "description": "Training preferences explainer item for edit goal intro screen" },
+
+  "settingsNewGoalIntroTitle": "Set a brand-new goal for your training",
+  "@settingsNewGoalIntroTitle": { "description": "Title on the intro screen before creating a new goal" },
+
+  "settingsNewGoalIntroSubtitle": "This flow starts fresh so you can choose a different target and save a new goal for your plan.",
+  "@settingsNewGoalIntroSubtitle": { "description": "Subtitle on the intro screen before creating a new goal" },
+
+  "settingsNewGoalIntroPointRace": "Choose a new race or custom distance.",
+  "@settingsNewGoalIntroPointRace": { "description": "First explainer item for new goal intro screen" },
+
+  "settingsNewGoalIntroPointDate": "Set a new date and timeline for the goal.",
+  "@settingsNewGoalIntroPointDate": { "description": "Second explainer item for new goal intro screen" },
+
+  "settingsNewGoalIntroPointPlan": "Save a fresh goal without changing your schedule here.",
+  "@settingsNewGoalIntroPointPlan": { "description": "Third explainer item for new goal intro screen" },
+
+  "settingsNewGoalIntroPointTraining": "Set the training preferences you want to use with this goal.",
+  "@settingsNewGoalIntroPointTraining": { "description": "Training preferences explainer item for new goal intro screen" },
+
+  "settingsPreferencesSection": "Preferences",
+  "@settingsPreferencesSection": { "description": "Preferences section header" },
+
+  "settingsLanguage": "Language",
+  "@settingsLanguage": { "description": "Language preference row label" },
+
+  "settingsLanguageEnglish": "English",
+  "@settingsLanguageEnglish": { "description": "English language option in settings" },
+
+  "settingsLanguageSpanish": "Spanish",
+  "@settingsLanguageSpanish": { "description": "Spanish language option in settings" },
+
+  "settingsLanguageValue": "English",
+  "@settingsLanguageValue": { "description": "Current language value" },
+
+  "settingsUnits": "Units",
+  "@settingsUnits": { "description": "Units preference row label" },
+
+  "settingsUnitsMetric": "Metric (km)",
+  "@settingsUnitsMetric": { "description": "Metric unit option in settings" },
+
+  "settingsUnitsImperial": "Imperial (mi)",
+  "@settingsUnitsImperial": { "description": "Imperial unit option in settings" },
+
+  "settingsUnitsDistanceSection": "Distance",
+  "@settingsUnitsDistanceSection": { "description": "Distance units section title in settings" },
+
+  "settingsUnitsElevationSection": "Elevation",
+  "@settingsUnitsElevationSection": { "description": "Elevation units section title in settings" },
+
+  "settingsUnitsMeters": "Meters (m)",
+  "@settingsUnitsMeters": { "description": "Meters unit option in settings" },
+
+  "settingsUnitsFeet": "Feet (ft)",
+  "@settingsUnitsFeet": { "description": "Feet unit option in settings" },
+
+  "settingsUnitsValue": "Metric (km)",
+  "@settingsUnitsValue": { "description": "Current units value" },
+
+  "settingsNotifications": "Notifications",
+  "@settingsNotifications": { "description": "Notifications preference row label" },
+
+  "settingsNotificationsValue": "Enabled",
+  "@settingsNotificationsValue": { "description": "Current notifications value" },
+
+  "settingsConnectedDevicesSection": "Connected Devices",
+  "@settingsConnectedDevicesSection": { "description": "Connected Devices section header" },
+
+  "settingsGarminConnect": "Garmin Connect",
+  "@settingsGarminConnect": { "description": "Garmin Connect row label" },
+
+  "settingsConnected": "Connected",
+  "@settingsConnected": { "description": "Connected device badge label" },
+  "settingsNoConnectedDevices": "No connected devices yet",
+  "@settingsNoConnectedDevices": {
+    "description": "Empty state text shown when no wearable connections exist in settings integrations"
+  },
+
+  "settingsLogOut": "Log Out",
+  "@settingsLogOut": { "description": "Log out button label" },
+
+  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+  "@settingsVersion": { "description": "App version string shown at bottom of settings" },
+
+  "sessionDetailTitle": "Workout",
+  "@sessionDetailTitle": { "description": "Header title on the session detail screen" },
+
+  "sessionDetailSessionType": "Speed Work",
+  "@sessionDetailSessionType": { "description": "Session type badge label" },
+
+  "sessionDetailTotalDistanceLabel": "Total Distance",
+  "@sessionDetailTotalDistanceLabel": { "description": "Label for total distance stat tile" },
+
+  "sessionDetailEstDurationLabel": "Est. Duration",
+  "@sessionDetailEstDurationLabel": { "description": "Label for estimated duration stat tile" },
+
+  "sessionDetailWorkoutStructure": "Workout Structure",
+  "@sessionDetailWorkoutStructure": { "description": "Workout Structure section heading" },
+
+  "sessionDetailWarmUp": "Warm-up",
+  "@sessionDetailWarmUp": { "description": "Warm-up phase title" },
+
+  "sessionDetailWarmUpNote": "Easy pace, Zone 2",
+  "@sessionDetailWarmUpNote": { "description": "Warm-up phase zone note" },
+
+  "sessionDetailIntervals": "Intervals",
+  "@sessionDetailIntervals": { "description": "Intervals phase title" },
+
+  "sessionDetailIntervalsNote": "Hard effort, Zone 4",
+  "@sessionDetailIntervalsNote": { "description": "Intervals phase zone note" },
+
+  "sessionDetailCoolDown": "Cool-down",
+  "@sessionDetailCoolDown": { "description": "Cool-down phase title" },
+
+  "sessionDetailCoolDownDuration": "10 min",
+  "@sessionDetailCoolDownDuration": { "description": "Cool-down phase duration" },
+
+  "sessionDetailCoolDownNote": "Easy pace or walk",
+  "@sessionDetailCoolDownNote": { "description": "Cool-down phase zone note" },
+
+  "sessionDetailStartWorkout": "Start Workout",
+  "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" },
+
+  "sessionPhaseEasyRunWarmDuration": "{minutes} min",
+  "@sessionPhaseEasyRunWarmDuration": {
+    "description": "Easy run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseEasyRunWarmNote": "Brisk walk + light dynamic leg swings",
+  "@sessionPhaseEasyRunWarmNote": { "description": "Easy run warm-up note" },
+  "sessionPhaseEasyRunMainDuration": "{minutes} min",
+  "@sessionPhaseEasyRunMainDuration": {
+    "description": "Easy run main phase duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseEasyRunMainNote": "Conversational pace · Zone 2 · keep it relaxed",
+  "@sessionPhaseEasyRunMainNote": { "description": "Easy run main phase note" },
+  "sessionPhaseEasyRunCoolDuration": "{minutes} min",
+  "@sessionPhaseEasyRunCoolDuration": {
+    "description": "Easy run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseEasyRunCoolNote": "Walk it out · light static stretches",
+  "@sessionPhaseEasyRunCoolNote": { "description": "Easy run cool-down note" },
+
+  "sessionPhaseIntervalsWarmDuration": "{minutes} min",
+  "@sessionPhaseIntervalsWarmDuration": {
+    "description": "Intervals warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseIntervalsWarmNote": "Easy jog · strides at the end to prime the legs",
+  "@sessionPhaseIntervalsWarmNote": { "description": "Intervals warm-up note" },
+  "sessionPhaseIntervalsMainDuration": "{minutes} min",
+  "@sessionPhaseIntervalsMainDuration": {
+    "description": "Intervals main phase duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseIntervalsMainNote": "{reps} × {repDistance} at hard effort · RPE 8–9",
+  "@sessionPhaseIntervalsMainNote": {
+    "description": "Intervals main phase note",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "repDistance": { "type": "String" }
+    }
+  },
+  "sessionPhaseIntervalsMainRecovery": "{recoverySeconds} s easy jog recovery between each rep",
+  "@sessionPhaseIntervalsMainRecovery": {
+    "description": "Intervals main phase recovery note",
+    "placeholders": { "recoverySeconds": { "type": "int" } }
+  },
+  "sessionPhaseIntervalsCoolDuration": "{minutes} min",
+  "@sessionPhaseIntervalsCoolDuration": {
+    "description": "Intervals cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseIntervalsCoolNote": "Easy jog → walk · full-body stretch",
+  "@sessionPhaseIntervalsCoolNote": { "description": "Intervals cool-down note" },
+
+  "sessionPhaseLongRunWarmDuration": "{minutes} min",
+  "@sessionPhaseLongRunWarmDuration": {
+    "description": "Long run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseLongRunWarmNote": "Very easy jog · ease into the effort",
+  "@sessionPhaseLongRunWarmNote": { "description": "Long run warm-up note" },
+  "sessionPhaseLongRunMainDuration": "{minutes} min",
+  "@sessionPhaseLongRunMainDuration": {
+    "description": "Long run main phase duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseLongRunMainNote": "Steady easy effort · Zone 2 · stay comfortable throughout",
+  "@sessionPhaseLongRunMainNote": { "description": "Long run main phase note" },
+  "sessionPhaseLongRunCoolDuration": "{minutes} min",
+  "@sessionPhaseLongRunCoolDuration": {
+    "description": "Long run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseLongRunCoolNote": "Walk to finish · thorough stretch · refuel",
+  "@sessionPhaseLongRunCoolNote": { "description": "Long run cool-down note" },
+
+  "sessionPhaseRecoveryRunWarmDuration": "{minutes} min",
+  "@sessionPhaseRecoveryRunWarmDuration": {
+    "description": "Recovery run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseRecoveryRunWarmNote": "Gentle walk to get moving",
+  "@sessionPhaseRecoveryRunWarmNote": { "description": "Recovery run warm-up note" },
+  "sessionPhaseRecoveryRunMainDuration": "{minutes} min",
+  "@sessionPhaseRecoveryRunMainDuration": {
+    "description": "Recovery run main phase duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseRecoveryRunMainNote": "Very easy conversational pace · no watch pressure",
+  "@sessionPhaseRecoveryRunMainNote": { "description": "Recovery run main phase note" },
+  "sessionPhaseRecoveryRunCoolDuration": "{minutes} min",
+  "@sessionPhaseRecoveryRunCoolDuration": {
+    "description": "Recovery run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseRecoveryRunCoolNote": "Walk · foam roll if available",
+  "@sessionPhaseRecoveryRunCoolNote": { "description": "Recovery run cool-down note" },
+
+  "sessionPhaseTempoRunWarmDuration": "{minutes} min",
+  "@sessionPhaseTempoRunWarmDuration": {
+    "description": "Tempo run warm-up duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseTempoRunWarmNote": "Easy jog · build pace gradually",
+  "@sessionPhaseTempoRunWarmNote": { "description": "Tempo run warm-up note" },
+  "sessionPhaseTempoRunMainDuration": "{minutes} min",
+  "@sessionPhaseTempoRunMainDuration": {
+    "description": "Tempo run main phase duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseTempoRunMainNote": "Comfortably hard effort · Zone 3–4",
+  "@sessionPhaseTempoRunMainNote": { "description": "Tempo run main phase note" },
+  "sessionPhaseTempoRunCoolDuration": "{minutes} min",
+  "@sessionPhaseTempoRunCoolDuration": {
+    "description": "Tempo run cool-down duration",
+    "placeholders": { "minutes": { "type": "int" } }
+  },
+  "sessionPhaseTempoRunCoolNote": "Easy jog → walk · stretch thoroughly",
+  "@sessionPhaseTempoRunCoolNote": { "description": "Tempo run cool-down note" },
+
+  "logSessionTitle": "Log Session",
+  "@logSessionTitle": { "description": "Log session screen title" },
+
+  "logSessionPlannedSession": "Planned Session",
+  "@logSessionPlannedSession": { "description": "Label above planned session name on log session screen" },
+
+  "logSessionSessionName": "Morning Intervals",
+  "@logSessionSessionName": { "description": "Demo planned session name on log session screen" },
+
+  "logSessionDurationLabel": "DURATION",
+  "@logSessionDurationLabel": { "description": "Duration metric card label" },
+
+  "logSessionActiveTime": "Active time",
+  "@logSessionActiveTime": { "description": "Duration metric card subtitle" },
+
+  "logSessionDistanceLabel": "DISTANCE",
+  "@logSessionDistanceLabel": { "description": "Distance metric card label" },
+
+  "logSessionMinUnit": "min",
+  "@logSessionMinUnit": { "description": "Minutes unit label" },
+
+  "logSessionKmUnit": "km",
+  "@logSessionKmUnit": { "description": "Kilometers unit label" },
+
+  "logSessionPaceValue": "7:31 / km pace",
+  "@logSessionPaceValue": { "description": "Pace subtitle on distance metric card" },
+
+  "logSessionHowDidItFeel": "How did it feel?",
+  "@logSessionHowDidItFeel": { "description": "Section heading for perceived effort selection" },
+
+  "logSessionEasy": "Easy",
+  "@logSessionEasy": { "description": "Perceived effort option: easy" },
+
+  "logSessionModerate": "Moderate",
+  "@logSessionModerate": { "description": "Perceived effort option: moderate" },
+
+  "logSessionHard": "Hard",
+  "@logSessionHard": { "description": "Perceived effort option: hard" },
+
+  "logSessionVeryHard": "Very Hard",
+  "@logSessionVeryHard": { "description": "Perceived effort option: very hard" },
+
+  "logSessionNotes": "Notes",
+  "@logSessionNotes": { "description": "Notes section heading" },
+
+  "logSessionOptional": "(Optional)",
+  "@logSessionOptional": { "description": "Optional label next to Notes heading" },
+
+  "logSessionNotesHint": "How did the run go?",
+  "@logSessionNotesHint": { "description": "Placeholder text in the notes text area" },
+
+  "logSessionSaveButton": "Save Session",
+  "@logSessionSaveButton": { "description": "Save session CTA button label" },
+
+  "preRunTitle": "Pre-run Check",
+  "@preRunTitle": { "description": "Header title on the pre-run check screen" },
+
+  "preRunHeading": "How are you feeling?",
+  "@preRunHeading": { "description": "Large heading on the pre-run check screen" },
+
+  "preRunSubtitle": "Quick check to make sure today's interval session is still the right move.",
+  "@preRunSubtitle": { "description": "Subtitle below heading on the pre-run check screen" },
+
+  "preRunLegsQuestion": "How do your legs feel today?",
+  "@preRunLegsQuestion": { "description": "Question label for legs feeling section" },
+
+  "preRunFresh": "Fresh",
+  "@preRunFresh": { "description": "Legs feeling option: fresh" },
+
+  "preRunNormal": "Normal",
+  "@preRunNormal": { "description": "Legs feeling option: normal" },
+
+  "preRunHeavy": "Heavy",
+  "@preRunHeavy": { "description": "Legs feeling option: heavy" },
+
+  "preRunPainQuestion": "Any pain right now?",
+  "@preRunPainQuestion": { "description": "Question label for pain level section" },
+
+  "preRunNone": "None",
+  "@preRunNone": { "description": "Pain level option: none" },
+
+  "preRunMildDiscomfort": "Mild discomfort",
+  "@preRunMildDiscomfort": { "description": "Pain level option: mild discomfort" },
+
+  "preRunModeratePain": "Moderate pain",
+  "@preRunModeratePain": { "description": "Pain level option: moderate pain" },
+
+  "preRunSharpPain": "Sharp pain",
+  "@preRunSharpPain": { "description": "Pain level option: sharp pain" },
+
+  "preRunSleepQuestion": "How was your sleep?",
+  "@preRunSleepQuestion": { "description": "Question label for sleep quality section" },
+
+  "preRunGreat": "Great",
+  "@preRunGreat": { "description": "Sleep quality option: great" },
+
+  "preRunOkay": "Okay",
+  "@preRunOkay": { "description": "Sleep quality option: okay" },
+
+  "preRunPoor": "Poor",
+  "@preRunPoor": { "description": "Sleep quality option: poor" },
+
+  "preRunReadinessQuestion": "Are you ready for this session?",
+  "@preRunReadinessQuestion": { "description": "Question label for readiness section" },
+
+  "preRunLetsGo": "Let's go",
+  "@preRunLetsGo": { "description": "Readiness option: let's go" },
+
+  "preRunNotFullyReady": "Not fully ready",
+  "@preRunNotFullyReady": { "description": "Readiness option: not fully ready" },
+
+  "preRunContinue": "Continue",
+  "@preRunContinue": { "description": "Continue CTA button on pre-run check screen" },
+
+  "workoutOptionsTitle": "Workout Options",
+  "@workoutOptionsTitle": { "description": "Title of the workout options bottom sheet" },
+
+  "workoutOptionsSkipWorkout": "Skip Workout",
+  "@workoutOptionsSkipWorkout": { "description": "Skip workout option label" },
+
+  "workoutOptionsSkipWorkoutDescription": "Removes this session from this week schedule",
+  "@workoutOptionsSkipWorkoutDescription": { "description": "Skip workout option description" },
+
+  "workoutOptionsRestoreWorkout": "Restore Workout",
+  "@workoutOptionsRestoreWorkout": { "description": "Restore workout option label" },
+
+  "workoutOptionsRestoreWorkoutDescription": "Put this session back on the schedule",
+  "@workoutOptionsRestoreWorkoutDescription": { "description": "Restore workout option description" },
+
+  "fullPlanTitle": "Full Plan",
+  "@fullPlanTitle": { "description": "Title of the full plan screen" },
+
+  "trainingHistoryTitle": "Training History",
+  "@trainingHistoryTitle": { "description": "Title of the training history screen" },
+
+  "fullPlanNote": "This is your estimated full plan. It may change over time based on your progress and training adjustments.",
+  "@fullPlanNote": { "description": "Informational note at the top of the full plan screen" },
+
+  "fullPlanWeeksLabel": "WEEKS",
+  "@fullPlanWeeksLabel": { "description": "Label for the weeks stat column on the full plan screen" },
+
+  "fullPlanDistanceLabel": "DISTANCE",
+  "@fullPlanDistanceLabel": { "description": "Label for the total distance stat column on the full plan screen" },
+
+  "fullPlanRunsLabel": "RUNS",
+  "@fullPlanRunsLabel": { "description": "Label for the total runs stat column on the full plan screen" },
+
+  "fullPlanWeekLabel": "Week {number}",
+  "@fullPlanWeekLabel": {
+    "description": "Week card heading, e.g. 'Week 4'",
+    "placeholders": {
+      "number": { "type": "int" }
+    }
+  },
+
+  "fullPlanCurrentBadge": "CURRENT",
+  "@fullPlanCurrentBadge": { "description": "Status badge label for the current week on the full plan screen" },
+
+  "fullPlanCompletedBadge": "DONE",
+  "@fullPlanCompletedBadge": { "description": "Status badge label for completed weeks on the full plan screen" },
+
+  "fullPlanUpcomingBadge": "UPCOMING",
+  "@fullPlanUpcomingBadge": { "description": "Status badge label for upcoming weeks on the full plan screen" },
+
+  "fullPlanScheduleLabel": "SCHEDULE",
+  "@fullPlanScheduleLabel": { "description": "Section label above the week list on the full plan screen" }
 }

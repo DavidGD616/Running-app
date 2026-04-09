@@ -22,6 +22,7 @@ class AccountSetupScreen extends ConsumerStatefulWidget {
 
 class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
   int _unitIndex = 0; // 0 = km, 1 = mi
+  int _shortDistanceIndex = 0; // 0 = m, 1 = ft
   int _genderIndex = 0; // 0 = Male, 1 = Female, 2 = Other
   DateTime? _dateOfBirth;
 
@@ -36,12 +37,14 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
       if (!mounted) return;
       setState(() {
         _unitIndex = prefs.unitSystem == UnitSystem.miles ? 1 : 0;
-        final genderIdx = [
-          'Male',
-          'Female',
-          'Other',
-        ].indexOf(prefs.gender ?? '');
-        _genderIndex = genderIdx == -1 ? 0 : genderIdx;
+        _shortDistanceIndex = prefs.shortDistanceUnit == ShortDistanceUnit.feet
+            ? 1
+            : 0;
+        _genderIndex = switch (prefs.gender) {
+          ProfileGender.female => 1,
+          ProfileGender.other => 2,
+          _ => 0,
+        };
         _dateOfBirth = prefs.dateOfBirth;
       });
     });
@@ -49,8 +52,7 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
 
   String get _dateOfBirthDisplay {
     if (_dateOfBirth == null) return '';
-    final d = _dateOfBirth!;
-    return '${d.day.toString().padLeft(2, '0')} / ${d.month.toString().padLeft(2, '0')} / ${d.year}';
+    return MaterialLocalizations.of(context).formatShortDate(_dateOfBirth!);
   }
 
   Future<void> _pickDateOfBirth() async {
@@ -83,11 +85,16 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
     // Fire-and-forget: Riverpod state updates immediately (optimistic), the
     // disk write happens asynchronously in the background.
     notifier.setUnitSystem(_unitIndex == 0 ? UnitSystem.km : UnitSystem.miles);
+    notifier.setShortDistanceUnit(
+      _shortDistanceIndex == 0
+          ? ShortDistanceUnit.meters
+          : ShortDistanceUnit.feet,
+    );
     notifier.setGender(
       [
-        AppLocalizations.of(context)!.genderMale,
-        AppLocalizations.of(context)!.genderFemale,
-        AppLocalizations.of(context)!.genderOther,
+        ProfileGender.male,
+        ProfileGender.female,
+        ProfileGender.other,
       ][_genderIndex],
     );
     if (_dateOfBirth != null) notifier.setDateOfBirth(_dateOfBirth!);
@@ -131,7 +138,21 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
                     AppSegmentedControl(
                       options: [l10n.unitKm, l10n.unitMi],
                       selectedIndex: _unitIndex,
-                      onChanged: (i) => setState(() => _unitIndex = i),
+                      onChanged: (i) => setState(() {
+                        _unitIndex = i;
+                        _shortDistanceIndex = i == 0 ? 0 : 1;
+                      }),
+                    ),
+                    const SizedBox(height: AppSpacing.xxl),
+                    Text(
+                      l10n.accountSetupShortDistanceUnits,
+                      style: AppTypography.labelLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    AppSegmentedControl(
+                      options: [l10n.unitM, l10n.unitFt],
+                      selectedIndex: _shortDistanceIndex,
+                      onChanged: (i) => setState(() => _shortDistanceIndex = i),
                     ),
                     const SizedBox(height: AppSpacing.xxl),
                     // Gender
