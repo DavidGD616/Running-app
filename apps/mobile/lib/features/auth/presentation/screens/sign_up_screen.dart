@@ -1,25 +1,31 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
-import 'package:go_router/go_router.dart';
-import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../auth_notifier.dart';
 
-class SignUpScreen extends StatefulWidget {
+class SignUpScreen extends ConsumerStatefulWidget {
   const SignUpScreen({super.key});
 
   @override
-  State<SignUpScreen> createState() => _SignUpScreenState();
+  ConsumerState<SignUpScreen> createState() => _SignUpScreenState();
 }
 
-class _SignUpScreenState extends State<SignUpScreen> {
+class _SignUpScreenState extends ConsumerState<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
+  String? _emailErrorText;
+  String? _passwordErrorText;
+  String? _confirmPasswordErrorText;
 
   @override
   void dispose() {
@@ -29,18 +35,74 @@ class _SignUpScreenState extends State<SignUpScreen> {
     super.dispose();
   }
 
+  bool _validate(AppLocalizations l10n) {
+    final email = _emailController.text.trim();
+    final password = _passwordController.text;
+    final confirmPassword = _confirmPasswordController.text;
+
+    setState(() {
+      _emailErrorText = email.isEmpty
+          ? l10n.authValidationEmailRequired
+          : !_isValidEmail(email)
+          ? l10n.authErrorInvalidEmail
+          : null;
+      _passwordErrorText = password.isEmpty
+          ? l10n.authValidationPasswordRequired
+          : password.length < 6
+          ? l10n.authValidationPasswordTooShort
+          : null;
+      _confirmPasswordErrorText = confirmPassword.isEmpty
+          ? l10n.authValidationConfirmPasswordRequired
+          : confirmPassword != password
+          ? l10n.authValidationPasswordMismatch
+          : null;
+    });
+
+    return _emailErrorText == null &&
+        _passwordErrorText == null &&
+        _confirmPasswordErrorText == null;
+  }
+
+  Future<void> _submit(AppLocalizations l10n) async {
+    if (!_validate(l10n)) return;
+
+    FocusScope.of(context).unfocus();
+
+    final feedback = await ref
+        .read(authNotifierProvider.notifier)
+        .signUp(
+          email: _emailController.text.trim(),
+          password: _passwordController.text,
+          l10n: l10n,
+        );
+
+    if (!mounted || feedback == null) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(feedback.message),
+        backgroundColor: feedback.isError
+            ? AppColors.error
+            : AppColors.accentPrimary,
+      ),
+    );
+  }
+
+  bool _isValidEmail(String value) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isLoading = ref.watch(authNotifierProvider).isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Back button
-            _BackButton(),
-            // Scrollable content
+            _BackButton(isEnabled: !isLoading),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -50,10 +112,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: AppSpacing.lg),
-                    // Headline
                     Text(l10n.signUpTitle, style: AppTypography.headlineMedium),
                     const SizedBox(height: AppSpacing.sm),
-                    // Subtitle
                     Text(
                       l10n.signUpSubtitle,
                       style: AppTypography.bodyMedium.copyWith(
@@ -61,36 +121,61 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
-                    // Form fields
                     AppTextField(
                       label: l10n.emailLabel,
                       hint: l10n.emailHint,
+                      errorText: _emailErrorText,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.next,
+                      onChanged: (_) {
+                        if (_emailErrorText == null) return;
+                        setState(() => _emailErrorText = null);
+                      },
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     AppTextField(
                       label: l10n.passwordLabel,
                       hint: l10n.passwordHintSignUp,
+                      errorText: _passwordErrorText,
                       controller: _passwordController,
                       obscureText: true,
                       textInputAction: TextInputAction.next,
+                      onChanged: (_) {
+                        if (_passwordErrorText == null &&
+                            _confirmPasswordErrorText == null) {
+                          return;
+                        }
+                        setState(() {
+                          _passwordErrorText = null;
+                          if (_confirmPasswordController.text.isNotEmpty) {
+                            _confirmPasswordErrorText =
+                                _confirmPasswordController.text ==
+                                    _passwordController.text
+                                ? null
+                                : l10n.authValidationPasswordMismatch;
+                          }
+                        });
+                      },
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     AppTextField(
                       label: l10n.confirmPasswordLabel,
                       hint: l10n.confirmPasswordHint,
+                      errorText: _confirmPasswordErrorText,
                       controller: _confirmPasswordController,
                       obscureText: true,
                       textInputAction: TextInputAction.done,
+                      onChanged: (_) {
+                        if (_confirmPasswordErrorText == null) return;
+                        setState(() => _confirmPasswordErrorText = null);
+                      },
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                   ],
                 ),
               ),
             ),
-            // Bottom buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screen,
@@ -100,11 +185,19 @@ class _SignUpScreenState extends State<SignUpScreen> {
               ),
               child: Column(
                 children: [
-                  AppButton(label: l10n.createAccount, onPressed: () {}),
+                  AppButton(
+                    label: isLoading
+                        ? l10n.authLoadingSignUp
+                        : l10n.createAccount,
+                    onPressed: isLoading ? null : () => _submit(l10n),
+                    isLoading: isLoading,
+                  ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: l10n.alreadyHaveAccount,
-                    onPressed: () => context.go(RouteNames.logIn),
+                    onPressed: isLoading
+                        ? null
+                        : () => context.go(RouteNames.logIn),
                     variant: AppButtonVariant.text,
                   ),
                 ],
@@ -118,10 +211,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
 }
 
 class _BackButton extends StatelessWidget {
+  const _BackButton({required this.isEnabled});
+
+  final bool isEnabled;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.pop(),
+      onTap: isEnabled ? () => context.pop() : null,
       child: Container(
         width: 48,
         height: 48,

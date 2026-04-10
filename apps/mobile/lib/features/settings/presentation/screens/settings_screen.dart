@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/profile_card.dart';
@@ -10,6 +11,7 @@ import '../../../../core/widgets/settings_card.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/settings_row.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../auth/presentation/auth_notifier.dart';
 import '../../../localization/presentation/locale_provider.dart';
 import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
@@ -43,6 +45,7 @@ class SettingsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
+    final isSigningOut = ref.watch(authNotifierProvider).isLoading;
     final profile = ref.watch(userProfileDisplayProvider);
     final currentLocale =
         ref.watch(localeProvider).value ?? Localizations.localeOf(context);
@@ -166,6 +169,26 @@ class SettingsScreen extends ConsumerWidget {
 
               const SizedBox(height: AppSpacing.lg),
 
+              _SettingsSignOutCard(
+                label: isSigningOut
+                    ? l10n.authLoadingSignOut
+                    : l10n.settingsLogOut,
+                onTap: isSigningOut
+                    ? null
+                    : () async {
+                        final feedback = await ref
+                            .read(authNotifierProvider.notifier)
+                            .signOut(l10n: l10n);
+
+                        if (!context.mounted || feedback == null) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text(feedback.message)),
+                        );
+                      },
+              ),
+
+              const SizedBox(height: AppSpacing.lg),
+
               // ── Version ────────────────────────────────────────
               Center(
                 child: Text(
@@ -178,6 +201,55 @@ class SettingsScreen extends ConsumerWidget {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SettingsSignOutCard extends StatelessWidget {
+  const _SettingsSignOutCard({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.base,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.06),
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Center(
+                child: Icon(Icons.logout, color: AppColors.error, size: 18),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              label,
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
       ),
     );
