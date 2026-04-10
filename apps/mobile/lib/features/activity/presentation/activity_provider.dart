@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/activity_repository.dart';
@@ -9,36 +11,39 @@ final activitiesProvider =
     });
 
 class ActivitiesNotifier extends Notifier<List<ActivityRecord>> {
-  late final ActivityRepository _repository;
+  AsyncActivityRepository get _asyncRepository =>
+      ref.read(asyncActivityRepositoryProvider);
 
   @override
   List<ActivityRecord> build() {
-    _repository = ref.watch(activityRepositoryProvider);
-    return _repository.loadAllActivities();
+    final repository = ref.watch(activityRepositoryProvider);
+    ref.watch(asyncActivityRepositoryProvider);
+    unawaited(_hydrateFromRepository());
+    return repository.loadAllActivities();
   }
 
-  void reload() {
-    state = _repository.loadAllActivities();
+  Future<void> reload() async {
+    await _hydrateFromRepository();
   }
 
   Future<void> saveActivity(ActivityRecord activity) async {
     state = _upsertActivity(state, activity);
-    await _repository.saveActivity(activity);
+    await _asyncRepository.saveActivity(activity);
   }
 
   Future<void> saveActivities(List<ActivityRecord> activities) async {
     state = _sortActivities(activities);
-    await _repository.saveActivities(activities);
+    await _asyncRepository.saveActivities(activities);
   }
 
   Future<void> deleteActivity(String id) async {
     state = state.where((activity) => activity.id != id).toList();
-    await _repository.deleteActivity(id);
+    await _asyncRepository.deleteActivity(id);
   }
 
   Future<void> clearActivities() async {
     state = const [];
-    await _repository.clearActivities();
+    await _asyncRepository.clearActivities();
   }
 
   ActivityRecord? activityById(String id) {
@@ -46,6 +51,13 @@ class ActivitiesNotifier extends Notifier<List<ActivityRecord>> {
       if (activity.id == id) return activity;
     }
     return null;
+  }
+
+  Future<void> _hydrateFromRepository() async {
+    final activities = await _asyncRepository.loadAllActivities();
+    if (ref.mounted) {
+      state = activities;
+    }
   }
 }
 

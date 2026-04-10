@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -7,31 +9,41 @@ import '../domain/models/integration_account.dart';
 import '../data/device_connection_repository.dart';
 
 class DeviceConnectionsNotifier extends Notifier<List<DeviceConnection>> {
+  AsyncDeviceConnectionRepository get _asyncRepository =>
+      ref.read(asyncDeviceConnectionRepositoryProvider);
+
   @override
   List<DeviceConnection> build() {
-    return ref.watch(deviceConnectionRepositoryProvider).loadConnections();
+    final repository = ref.watch(deviceConnectionRepositoryProvider);
+    ref.watch(asyncDeviceConnectionRepositoryProvider);
+    unawaited(_hydrateFromRepository());
+    return repository.loadConnections();
   }
 
-  void reloadFromStorage() {
-    state = ref.read(deviceConnectionRepositoryProvider).loadConnections();
+  Future<void> reloadFromStorage() async {
+    await _hydrateFromRepository();
   }
 
   Future<void> upsertConnection(DeviceConnection connection) async {
-    final repo = ref.read(deviceConnectionRepositoryProvider);
-    await repo.saveConnection(connection);
-    state = repo.loadConnections();
+    final next = [
+      connection,
+      ...state.where((existing) => existing.id != connection.id),
+    ];
+    state = _sortDeviceConnections(next);
+    await _asyncRepository.saveConnection(connection);
   }
 
   Future<void> removeConnection(String id) async {
     if (id.isEmpty) return;
-    final repo = ref.read(deviceConnectionRepositoryProvider);
-    await repo.deleteConnection(id);
-    state = repo.loadConnections();
+    state = state
+        .where((connection) => connection.id != id)
+        .toList(growable: false);
+    await _asyncRepository.deleteConnection(id);
   }
 
   Future<void> clearConnections() async {
     state = const [];
-    await ref.read(deviceConnectionRepositoryProvider).clearConnections();
+    await _asyncRepository.clearConnections();
   }
 
   Future<void> setPlatformConnection({
@@ -101,10 +113,42 @@ class DeviceConnectionsNotifier extends Notifier<List<DeviceConnection>> {
   }
 
   Future<void> _save(List<DeviceConnection> next) async {
-    final repo = ref.read(deviceConnectionRepositoryProvider);
-    await repo.saveConnections(next);
-    state = repo.loadConnections();
+    state = _sortDeviceConnections(next);
+    await _asyncRepository.saveConnections(next);
   }
+
+  Future<void> _hydrateFromRepository() async {
+    final connections = await _asyncRepository.loadConnections();
+    if (ref.mounted) {
+      state = connections;
+    }
+  }
+}
+
+List<DeviceConnection> _sortDeviceConnections(
+  Iterable<DeviceConnection> connections,
+) {
+  final sorted = connections.toList(growable: false);
+  sorted.sort((a, b) {
+    final stateCmp = switch ((a.isConnected, b.isConnected)) {
+      (true, false) => -1,
+      (false, true) => 1,
+      _ => 0,
+    };
+    if (stateCmp != 0) return stateCmp;
+
+    final connectedAtCmp =
+        (b.connectedAt ?? DateTime.fromMillisecondsSinceEpoch(0)).compareTo(
+          a.connectedAt ?? DateTime.fromMillisecondsSinceEpoch(0),
+        );
+    if (connectedAtCmp != 0) return connectedAtCmp;
+
+    final kindCmp = a.kind.key.compareTo(b.kind.key);
+    if (kindCmp != 0) return kindCmp;
+
+    return a.vendor.key.compareTo(b.vendor.key);
+  });
+  return sorted;
 }
 
 Set<IntegrationCapability> _platformCapabilitiesFor(IntegrationVendor vendor) {

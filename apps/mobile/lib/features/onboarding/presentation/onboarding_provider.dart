@@ -12,9 +12,14 @@ import '../../user_preferences/presentation/user_preferences_provider.dart';
 class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
   static const _keyCompleted = 'onboarding_completed';
 
+  RunnerProfileRepository get _repository =>
+      ref.read(runnerProfileRepositoryProvider);
+
   @override
   RunnerProfileDraft build() {
     final repository = ref.watch(runnerProfileRepositoryProvider);
+    unawaited(_hydrateFromRepository());
+
     final persistedProfile = repository.loadProfile();
     if (persistedProfile != null) {
       return RunnerProfileDraft.fromRunnerProfile(persistedProfile);
@@ -30,10 +35,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
 
   void _setState(RunnerProfileDraft nextState) {
     state = nextState;
-    final repository = ref.read(runnerProfileRepositoryProvider);
-    if (!repository.hasPersistedProfile()) {
-      unawaited(repository.saveDraft(nextState));
-    }
+    unawaited(_saveDraftIfNeeded(nextState));
   }
 
   Future<bool> saveProfile({
@@ -226,6 +228,27 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
         ),
       ),
     );
+  }
+
+  Future<void> _hydrateFromRepository() async {
+    final persistedProfile = await _repository.loadProfileAsync();
+    if (persistedProfile != null) {
+      if (ref.mounted) {
+        state = RunnerProfileDraft.fromRunnerProfile(persistedProfile);
+      }
+      return;
+    }
+
+    final persistedDraft = await _repository.loadDraftAsync();
+    if (persistedDraft != null && ref.mounted) {
+      state = persistedDraft;
+    }
+  }
+
+  Future<void> _saveDraftIfNeeded(RunnerProfileDraft nextState) async {
+    if (!await _repository.hasPersistedProfileAsync()) {
+      await _repository.saveDraft(nextState);
+    }
   }
 }
 

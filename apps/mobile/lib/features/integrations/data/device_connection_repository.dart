@@ -3,8 +3,11 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../core/config/supabase_config.dart';
 import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../auth/presentation/auth_state_provider.dart';
 import '../domain/models/device_connection.dart';
+import 'supabase_device_connection_repository.dart';
 
 abstract interface class DeviceConnectionRepository {
   List<DeviceConnection> loadConnections();
@@ -14,6 +17,60 @@ abstract interface class DeviceConnectionRepository {
   Future<void> saveConnections(List<DeviceConnection> connections);
   Future<void> deleteConnection(String id);
   Future<void> clearConnections();
+}
+
+abstract interface class AsyncDeviceConnectionRepository {
+  Future<List<DeviceConnection>> loadConnections();
+  Future<DeviceConnection?> loadConnectionById(String id);
+  Future<DeviceConnection?> loadConnectionByVendor(IntegrationVendor vendor);
+  Future<void> saveConnection(DeviceConnection connection);
+  Future<void> saveConnections(List<DeviceConnection> connections);
+  Future<void> deleteConnection(String id);
+  Future<void> clearConnections();
+}
+
+class DeviceConnectionRepositoryAsyncAdapter
+    implements AsyncDeviceConnectionRepository {
+  DeviceConnectionRepositoryAsyncAdapter(this._repository);
+
+  final DeviceConnectionRepository _repository;
+
+  @override
+  Future<List<DeviceConnection>> loadConnections() async {
+    return _repository.loadConnections();
+  }
+
+  @override
+  Future<DeviceConnection?> loadConnectionById(String id) async {
+    return _repository.loadConnectionById(id);
+  }
+
+  @override
+  Future<DeviceConnection?> loadConnectionByVendor(
+    IntegrationVendor vendor,
+  ) async {
+    return _repository.loadConnectionByVendor(vendor);
+  }
+
+  @override
+  Future<void> saveConnection(DeviceConnection connection) {
+    return _repository.saveConnection(connection);
+  }
+
+  @override
+  Future<void> saveConnections(List<DeviceConnection> connections) {
+    return _repository.saveConnections(connections);
+  }
+
+  @override
+  Future<void> deleteConnection(String id) {
+    return _repository.deleteConnection(id);
+  }
+
+  @override
+  Future<void> clearConnections() {
+    return _repository.clearConnections();
+  }
 }
 
 class SharedPreferencesDeviceConnectionRepository
@@ -136,3 +193,19 @@ final deviceConnectionRepositoryProvider = Provider<DeviceConnectionRepository>(
     return SharedPreferencesDeviceConnectionRepository(prefs);
   },
 );
+
+final asyncDeviceConnectionRepositoryProvider =
+    Provider<AsyncDeviceConnectionRepository>((ref) {
+      final repository = ref.watch(deviceConnectionRepositoryProvider);
+
+      if (!SupabaseConfig.isConfigured) {
+        return DeviceConnectionRepositoryAsyncAdapter(repository);
+      }
+
+      final user = ref.watch(currentUserProvider);
+      if (user == null) {
+        return DeviceConnectionRepositoryAsyncAdapter(repository);
+      }
+
+      return ref.watch(supabaseDeviceConnectionRepositoryProvider);
+    });

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/adaptation_repository.dart';
@@ -6,9 +8,15 @@ import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
 
 class SessionFeedbackNotifier extends Notifier<List<SessionFeedback>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
   @override
   List<SessionFeedback> build() {
-    return ref.watch(adaptationRepositoryProvider).loadSessionFeedback();
+    final repository = ref.watch(adaptationRepositoryProvider);
+    ref.watch(asyncAdaptationRepositoryProvider);
+    unawaited(_hydrateFromRepository());
+    return repository.loadSessionFeedback();
   }
 
   Future<void> recordFeedback(SessionFeedback feedback) async {
@@ -17,14 +25,27 @@ class SessionFeedbackNotifier extends Notifier<List<SessionFeedback>> {
       ...state.where((item) => item.id != feedback.id),
     ]..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
     state = next;
-    await ref.read(adaptationRepositoryProvider).saveSessionFeedback(next);
+    await _asyncRepository.saveSessionFeedback(next);
+  }
+
+  Future<void> _hydrateFromRepository() async {
+    final feedback = await _asyncRepository.loadSessionFeedback();
+    if (ref.mounted) {
+      state = feedback;
+    }
   }
 }
 
 class PlanAdjustmentsNotifier extends Notifier<List<PlanAdjustment>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
   @override
   List<PlanAdjustment> build() {
-    return ref.watch(adaptationRepositoryProvider).loadPlanAdjustments();
+    final repository = ref.watch(adaptationRepositoryProvider);
+    ref.watch(asyncAdaptationRepositoryProvider);
+    unawaited(_hydrateFromRepository());
+    return repository.loadPlanAdjustments();
   }
 
   Future<void> recordAdjustment(PlanAdjustment adjustment) async {
@@ -33,14 +54,27 @@ class PlanAdjustmentsNotifier extends Notifier<List<PlanAdjustment>> {
       ...state.where((item) => item.id != adjustment.id),
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     state = next;
-    await ref.read(adaptationRepositoryProvider).savePlanAdjustments(next);
+    await _asyncRepository.savePlanAdjustments(next);
+  }
+
+  Future<void> _hydrateFromRepository() async {
+    final adjustments = await _asyncRepository.loadPlanAdjustments();
+    if (ref.mounted) {
+      state = adjustments;
+    }
   }
 }
 
 class PlanRevisionsNotifier extends Notifier<List<PlanRevision>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
   @override
   List<PlanRevision> build() {
-    return ref.watch(adaptationRepositoryProvider).loadPlanRevisions();
+    final repository = ref.watch(adaptationRepositoryProvider);
+    ref.watch(asyncAdaptationRepositoryProvider);
+    unawaited(_hydrateFromRepository());
+    return repository.loadPlanRevisions();
   }
 
   Future<void> recordRevision(PlanRevision revision) async {
@@ -49,7 +83,14 @@ class PlanRevisionsNotifier extends Notifier<List<PlanRevision>> {
       ...state.where((item) => item.id != revision.id),
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
     state = next;
-    await ref.read(adaptationRepositoryProvider).savePlanRevisions(next);
+    await _asyncRepository.savePlanRevisions(next);
+  }
+
+  Future<void> _hydrateFromRepository() async {
+    final revisions = await _asyncRepository.loadPlanRevisions();
+    if (ref.mounted) {
+      state = revisions;
+    }
   }
 }
 
