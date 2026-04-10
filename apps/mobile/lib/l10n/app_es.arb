@@ -40,6 +40,8 @@
   "authLoadingLogIn": "Iniciando sesión...",
   "authLoadingResetPassword": "Enviando enlace...",
   "authLoadingSignOut": "Cerrando sesión...",
+  "authLoadingGoogleSignIn": "Abriendo Google...",
+  "continueWithGoogle": "Continuar con Google",
   "authSuccessCheckEmailForConfirmation": "Revisa tu correo para confirmar tu cuenta.",
   "authSuccessPasswordResetSent": "Correo de restablecimiento enviado. Revisa tu bandeja de entrada.",
   "authErrorGeneric": "Algo salió mal. Inténtalo de nuevo.",

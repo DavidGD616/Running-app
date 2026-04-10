@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -16,6 +17,8 @@ class AuthActionFeedback {
 }
 
 class AuthNotifier extends AsyncNotifier<void> {
+  static const _googleRedirectTo = 'com.example.runningapp://login-callback';
+
   @override
   Future<void> build() async {}
 
@@ -64,6 +67,30 @@ class AuthNotifier extends AsyncNotifier<void> {
     state = const AsyncLoading();
     try {
       await _client.auth.signInWithPassword(email: email, password: password);
+      state = const AsyncData(null);
+      return null;
+    } on AuthException catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(localizeAuthException(l10n, error));
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(l10n.authErrorGeneric);
+    }
+  }
+
+  Future<AuthActionFeedback?> signInWithGoogle({
+    required AppLocalizations l10n,
+  }) async {
+    if (!SupabaseConfig.isConfigured) {
+      return AuthActionFeedback.error(l10n.authErrorNotConfigured);
+    }
+
+    state = const AsyncLoading();
+    try {
+      await _client.auth.signInWithOAuth(
+        OAuthProvider.google,
+        redirectTo: kIsWeb ? null : _googleRedirectTo,
+      );
       state = const AsyncData(null);
       return null;
     } on AuthException catch (error, stackTrace) {

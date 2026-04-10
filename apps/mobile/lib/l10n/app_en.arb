@@ -100,6 +100,12 @@
   "authLoadingSignOut": "Signing out...",
   "@authLoadingSignOut": { "description": "Loading label while signing out" },
 
+  "authLoadingGoogleSignIn": "Opening Google...",
+  "@authLoadingGoogleSignIn": { "description": "Loading label while starting Google OAuth sign-in" },
+
+  "continueWithGoogle": "Continue with Google",
+  "@continueWithGoogle": { "description": "OAuth button label on the welcome screen" },
+
   "authSuccessCheckEmailForConfirmation": "Check your email to confirm your account.",
   "@authSuccessCheckEmailForConfirmation": { "description": "Shown after sign up when email confirmation is required" },
 

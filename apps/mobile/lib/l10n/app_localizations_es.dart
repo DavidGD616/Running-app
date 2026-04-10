@@ -111,6 +111,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get authLoadingSignOut => 'Cerrando sesión...';
 
   @override
+  String get authLoadingGoogleSignIn => 'Abriendo Google...';
+
+  @override
+  String get continueWithGoogle => 'Continuar con Google';
+
+  @override
   String get authSuccessCheckEmailForConfirmation =>
       'Revisa tu correo para confirmar tu cuenta.';
 

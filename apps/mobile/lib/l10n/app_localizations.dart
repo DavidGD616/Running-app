@@ -296,6 +296,18 @@ abstract class AppLocalizations {
   /// **'Signing out...'**
   String get authLoadingSignOut;
 
+  /// Loading label while starting Google OAuth sign-in
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Google...'**
+  String get authLoadingGoogleSignIn;
+
+  /// OAuth button label on the welcome screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
   /// Shown after sign up when email confirmation is required
   ///
   /// In en, this message translates to:
