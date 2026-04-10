@@ -1,5 +1,5 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/supabase_config.dart';
@@ -17,8 +17,6 @@ class AuthActionFeedback {
 }
 
 class AuthNotifier extends AsyncNotifier<void> {
-  static const _googleRedirectTo = 'com.example.runningapp://login-callback';
-
   @override
   Future<void> build() async {}
 
@@ -87,9 +85,28 @@ class AuthNotifier extends AsyncNotifier<void> {
 
     state = const AsyncLoading();
     try {
-      await _client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb ? null : _googleRedirectTo,
+      final googleSignIn = GoogleSignIn(
+        clientId: SupabaseConfig.googleIosClientId.isEmpty
+            ? null
+            : SupabaseConfig.googleIosClientId,
+        serverClientId: SupabaseConfig.googleWebClientId,
+      );
+      final googleUser = await googleSignIn.signIn();
+      if (googleUser == null) {
+        state = const AsyncData(null);
+        return null;
+      }
+      final googleAuth = await googleUser.authentication;
+      final idToken = googleAuth.idToken;
+      final accessToken = googleAuth.accessToken;
+      if (idToken == null) {
+        state = const AsyncData(null);
+        return AuthActionFeedback.error(l10n.authErrorGeneric);
+      }
+      await _client.auth.signInWithIdToken(
+        provider: OAuthProvider.google,
+        idToken: idToken,
+        accessToken: accessToken,
       );
       state = const AsyncData(null);
       return null;
