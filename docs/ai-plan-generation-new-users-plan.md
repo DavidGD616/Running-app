@@ -8,7 +8,7 @@
 Build the full AI plan-generation pipeline scoped to **new users only**. When a new
 user completes onboarding and reaches `PlanGenerationScreen`, the app calls a Supabase
 Edge Function that reads the saved `RunnerProfile` from Supabase, calls OpenAI
-(`gpt-4o`) with a Zod-typed structured-output prompt, converts the response into
+(`gpt-5.4-mini`) with a Zod-typed structured-output prompt, converts the response into
 `WorkoutStep` objects deterministically, saves the result to a new `plan_versions`
 table, and returns the plan to Flutter. Flutter caches the active plan in
 `SharedPreferences` for fast offline startup and replaces the seed-data-backed
@@ -19,7 +19,7 @@ button and an explicit **"Use Starter Plan for now"** fallback so users never co
 a seed plan with a personalized one.
 
 **Architecture decisions locked in:**
-- OpenAI (`gpt-4o`) with `zodResponseFormat` Structured Outputs
+- OpenAI (`gpt-5.4-mini`) with `zodResponseFormat` Structured Outputs
 - Supabase Edge Function (TypeScript / Deno) — API key never touches the device
 - WorkoutStep graph built **deterministically in the Edge Function**, not by GPT
 - `plan_versions` table: Supabase source of truth; SP caches **active plan only**
@@ -203,7 +203,7 @@ with `curl` before Flutter touches it.
 
 - **Location**: `supabase/functions/generate-plan/openai.ts` *(new file)*
 - **Description**: Build the system + user prompt from the `RunnerProfile` JSON and call
-  `gpt-4o` using `zodResponseFormat` for guaranteed schema conformance.
+  `gpt-5.4-mini` using `zodResponseFormat` for guaranteed schema conformance.
 
   ```typescript
   import OpenAI from 'https://esm.sh/openai@4';
@@ -228,7 +228,7 @@ with `curl` before Flutter touches it.
   Generate a complete personalized training plan. Return only the JSON.`;
 
     const completion = await client.chat.completions.parse({
-      model: 'gpt-4o',
+      model: 'gpt-5.4-mini',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
@@ -1046,7 +1046,7 @@ and `flutter analyze` still pass.
 
 ## Potential Risks & Gotchas
 
-1. **`gpt-4o` latency** — structured output calls can take 10–25 seconds for a
+1. **`gpt-5.4-mini` latency** — structured output calls can take 10–25 seconds for a
    12-week plan. The `PlanGenerationScreen` animation must not navigate away before
    the call finishes. The `_animationDone` + `PlanGenerationSuccess` dual-gate in
    Task 4.2 prevents this. Set a 60s timeout on the Flutter invoke call.
