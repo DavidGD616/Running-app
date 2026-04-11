@@ -15,6 +15,7 @@ import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -51,7 +52,8 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
   @override
   void initState() {
     super.initState();
-    final draft = ref.read(onboardingProvider);
+    final draft =
+        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
     _experience = draft.fitness.experienceKey;
     _canRun10Min = draft.fitness.canRun10Min;
     _runningDays = draft.fitness.runningDaysKey;

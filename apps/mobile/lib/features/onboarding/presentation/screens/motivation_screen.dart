@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_slider.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class MotivationScreen extends ConsumerStatefulWidget {
@@ -32,7 +33,8 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
   @override
   void initState() {
     super.initState();
-    final draft = ref.read(onboardingProvider);
+    final draft =
+        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
     _motivations.addAll(draft.motivation.motivationKeys);
     _barriers.addAll(draft.motivation.barrierKeys);
     _confidence = draft.motivation.confidence ?? 5;

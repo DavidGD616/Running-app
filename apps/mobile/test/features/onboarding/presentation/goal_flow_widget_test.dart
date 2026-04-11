@@ -29,7 +29,7 @@ class _TestOnboardingNotifier extends OnboardingNotifier {
   final bool markCompletedResult;
 
   @override
-  RunnerProfileDraft build() => value;
+  Future<RunnerProfileDraft> build() async => value;
 
   @override
   Future<bool> saveProfile({

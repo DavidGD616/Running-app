@@ -11,10 +11,22 @@ import 'package:running_app/features/profile/data/runner_profile_repository.dart
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/profile/presentation/runner_profile_provider.dart';
+import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
 import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
 import 'package:running_app/features/user_preferences/presentation/user_preferences_provider.dart';
 
 import '../../../helpers/runner_profile_fixtures.dart';
+
+ProviderContainer _testContainer(SharedPreferences prefs) {
+  return ProviderContainer.test(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      userPreferencesRepositoryProvider.overrideWithValue(
+        SharedPreferencesUserPreferencesRepository(prefs),
+      ),
+    ],
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,10 +39,10 @@ void main() {
     'recreates persisted draft and final profile across provider containers',
     () async {
       final prefs = await SharedPreferences.getInstance();
-      final container = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final container = _testContainer(prefs);
       addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
 
       await container.read(userPreferencesProvider.future);
       await container
@@ -87,15 +99,20 @@ void main() {
         clock: DateTime(2026, 4, 7, 10, 15),
       );
       expect(saved, isTrue);
-      expect(container.read(runnerProfileProvider), isNotNull);
+      await container.read(runnerProfileProvider.future);
+      expect(container.read(runnerProfileProvider).value, isNotNull);
 
-      final recreatedContainer = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final recreatedContainer = _testContainer(prefs);
       addTearDown(recreatedContainer.dispose);
+      await recreatedContainer.read(onboardingProvider.future);
+      await recreatedContainer.read(runnerProfileProvider.future);
 
-      final restoredDraft = recreatedContainer.read(onboardingProvider);
-      final restoredProfile = recreatedContainer.read(runnerProfileProvider);
+      final restoredDraft =
+          recreatedContainer.read(onboardingProvider).value ??
+          const RunnerProfileDraft();
+      final restoredProfile = recreatedContainer
+          .read(runnerProfileProvider)
+          .value;
 
       expect(restoredDraft.goal.race, RunnerGoalRace.halfMarathon);
       expect(restoredDraft.schedule.trainingDays, 4);
@@ -135,21 +152,24 @@ void main() {
         jsonEncode(staleDraft.toJson()),
       );
 
-      final recreatedContainer = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final recreatedContainer = _testContainer(prefs);
       addTearDown(recreatedContainer.dispose);
+      await recreatedContainer.read(onboardingProvider.future);
+      await recreatedContainer.read(runnerProfileProvider.future);
 
-      final restoredDraft = recreatedContainer.read(onboardingProvider);
+      final restoredDraft =
+          recreatedContainer.read(onboardingProvider).value ??
+          const RunnerProfileDraft();
 
       expect(
         restoredDraft.trainingPreferences.planPreference,
         PlanPreferenceChoice.balanced,
       );
-      expect(recreatedContainer.read(runnerProfileProvider), isNotNull);
+      expect(recreatedContainer.read(runnerProfileProvider).value, isNotNull);
       expect(
         recreatedContainer
-            .read(runnerProfileProvider)!
+            .read(runnerProfileProvider)
+            .value!
             .trainingPreferences
             .planPreference,
         PlanPreferenceChoice.balanced,
@@ -161,10 +181,10 @@ void main() {
     'markCompleted seeds a watch connection once and does not clobber an existing wearable',
     () async {
       final prefs = await SharedPreferences.getInstance();
-      final container = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final container = _testContainer(prefs);
       addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
 
       await container.read(userPreferencesProvider.future);
       await container
@@ -250,7 +270,9 @@ void main() {
             ),
           );
 
-      final persistedConnections = container.read(deviceConnectionsProvider);
+      final persistedConnections = await container.read(
+        deviceConnectionsProvider.future,
+      );
       expect(
         persistedConnections
             .where(

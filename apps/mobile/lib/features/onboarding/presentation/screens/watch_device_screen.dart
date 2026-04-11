@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class WatchDeviceScreen extends ConsumerStatefulWidget {
@@ -30,7 +31,8 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
   @override
   void initState() {
     super.initState();
-    final draft = ref.read(onboardingProvider);
+    final draft =
+        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
     _hasWatch = draft.device.hasWatchKey;
     _device = draft.device.deviceKey;
   }

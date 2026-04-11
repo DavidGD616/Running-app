@@ -12,11 +12,12 @@ Goal? goalFromRunnerProfile(RunnerProfile? profile) =>
 Goal? goalFromDraft(RunnerProfileDraft draft) => goalFromDraftOrNull(draft);
 
 final activeGoalProvider = Provider<Goal?>((ref) {
-  final profile = ref.watch(runnerProfileProvider);
+  final profile = ref.watch(runnerProfileProvider).value;
   return goalFromRunnerProfile(profile);
 });
 
 final onboardingGoalProvider = Provider<Goal?>((ref) {
-  final draft = ref.watch(onboardingProvider);
+  final draft =
+      ref.watch(onboardingProvider).value ?? const RunnerProfileDraft();
   return goalFromDraft(draft);
 });

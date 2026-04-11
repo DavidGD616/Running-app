@@ -15,6 +15,7 @@ import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -43,7 +44,8 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   void initState() {
     super.initState();
     if (widget.mode != GoalFlowMode.newGoal) {
-      final draft = ref.read(onboardingProvider);
+      final draft =
+          ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
       _selectedRace = draft.goal.raceKey;
       _hasRaceDate = draft.goal.hasRaceDate;
       _raceDate = draft.goal.raceDate;

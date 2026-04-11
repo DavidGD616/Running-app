@@ -29,8 +29,8 @@ void main() {
     container.read(trainingPlanProvider.notifier).skipSession('w4-thu');
     await Future<void>.delayed(Duration.zero);
 
-    final adjustments = container.read(planAdjustmentsProvider);
-    final revisions = container.read(planRevisionsProvider);
+    final adjustments = await container.read(planAdjustmentsProvider.future);
+    final revisions = await container.read(planRevisionsProvider.future);
     expect(adjustments, hasLength(1));
     expect(adjustments.single.plannedSessionId, 'w4-thu');
     expect(adjustments.single.trigger, PlanAdjustmentTrigger.skippedSession);
@@ -54,8 +54,8 @@ void main() {
     );
     addTearDown(restarted.dispose);
 
-    expect(restarted.read(planAdjustmentsProvider), hasLength(1));
-    expect(restarted.read(planRevisionsProvider), hasLength(1));
+    expect(await restarted.read(planAdjustmentsProvider.future), hasLength(1));
+    expect(await restarted.read(planRevisionsProvider.future), hasLength(1));
   });
 
   test('support sessions survive training plan recomposition', () async {
@@ -79,54 +79,60 @@ void main() {
     );
   });
 
-  test('repeated skip events create distinct adjustment and revision records', () async {
-    final prefs = await SharedPreferences.getInstance();
-    final container = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-    );
-    addTearDown(container.dispose);
+  test(
+    'repeated skip events create distinct adjustment and revision records',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
 
-    final notifier = container.read(trainingPlanProvider.notifier);
-    notifier.skipSession('w4-thu');
-    notifier.restoreSession('w4-thu');
-    notifier.skipSession('w4-thu');
-    await Future<void>.delayed(Duration.zero);
+      final notifier = container.read(trainingPlanProvider.notifier);
+      notifier.skipSession('w4-thu');
+      notifier.restoreSession('w4-thu');
+      notifier.skipSession('w4-thu');
+      await Future<void>.delayed(Duration.zero);
 
-    final adjustments = container.read(planAdjustmentsProvider);
-    final revisions = container.read(planRevisionsProvider);
+      final adjustments = await container.read(planAdjustmentsProvider.future);
+      final revisions = await container.read(planRevisionsProvider.future);
 
-    expect(adjustments, hasLength(2));
-    expect(adjustments.map((item) => item.id).toSet(), hasLength(2));
-    expect(revisions, hasLength(2));
-    expect(revisions.map((item) => item.id).toSet(), hasLength(2));
-  });
+      expect(adjustments, hasLength(2));
+      expect(adjustments.map((item) => item.id).toSet(), hasLength(2));
+      expect(revisions, hasLength(2));
+      expect(revisions.map((item) => item.id).toSet(), hasLength(2));
+    },
+  );
 
-  test('restoreSession dismisses pending adjustment requests for that session', () async {
-    final prefs = await SharedPreferences.getInstance();
-    final container = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-    );
-    addTearDown(container.dispose);
+  test(
+    'restoreSession dismisses pending adjustment requests for that session',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
 
-    final notifier = container.read(trainingPlanProvider.notifier);
-    notifier.skipSession('w4-thu');
-    await Future<void>.delayed(Duration.zero);
+      final notifier = container.read(trainingPlanProvider.notifier);
+      notifier.skipSession('w4-thu');
+      await Future<void>.delayed(Duration.zero);
 
-    notifier.restoreSession('w4-thu');
-    await Future<void>.delayed(Duration.zero);
+      notifier.restoreSession('w4-thu');
+      await Future<void>.delayed(Duration.zero);
 
-    final adjustments = container.read(planAdjustmentsProvider);
-    expect(adjustments, hasLength(1));
-    expect(adjustments.single.plannedSessionId, 'w4-thu');
-    expect(adjustments.single.status, PlanAdjustmentStatus.dismissed);
+      final adjustments = await container.read(planAdjustmentsProvider.future);
+      expect(adjustments, hasLength(1));
+      expect(adjustments.single.plannedSessionId, 'w4-thu');
+      expect(adjustments.single.status, PlanAdjustmentStatus.dismissed);
 
-    final repository = SharedPreferencesAdaptationRepository(prefs);
-    expect(repository.loadPlanAdjustments(), hasLength(1));
-    expect(
-      repository.loadPlanAdjustments().single.status,
-      PlanAdjustmentStatus.dismissed,
-    );
-  });
+      final repository = SharedPreferencesAdaptationRepository(prefs);
+      expect(repository.loadPlanAdjustments(), hasLength(1));
+      expect(
+        repository.loadPlanAdjustments().single.status,
+        PlanAdjustmentStatus.dismissed,
+      );
+    },
+  );
 
   test('recordCompletedRunFeedback persists typed feedback', () async {
     final prefs = await SharedPreferences.getInstance();
@@ -171,7 +177,7 @@ void main() {
         );
     await Future<void>.delayed(Duration.zero);
 
-    final feedback = container.read(sessionFeedbackProvider);
+    final feedback = await container.read(sessionFeedbackProvider.future);
     expect(feedback, hasLength(1));
     expect(feedback.single.plannedSessionId, 'w4-tue');
     expect(feedback.single.activityId, 'activity_w4-tue');
@@ -190,7 +196,7 @@ void main() {
     );
     addTearDown(restarted.dispose);
 
-    expect(restarted.read(sessionFeedbackProvider), hasLength(1));
+    expect(await restarted.read(sessionFeedbackProvider.future), hasLength(1));
     expect(
       restarted.read(sessionFeedbacksForSessionProvider('w4-tue')),
       hasLength(1),
@@ -244,7 +250,7 @@ void main() {
     );
     await Future<void>.delayed(Duration.zero);
 
-    final feedback = container.read(sessionFeedbackProvider);
+    final feedback = await container.read(sessionFeedbackProvider.future);
     expect(feedback, hasLength(2));
     expect(feedback.map((item) => item.id).toSet(), hasLength(2));
     expect(feedback.first.notes, 'Second note');

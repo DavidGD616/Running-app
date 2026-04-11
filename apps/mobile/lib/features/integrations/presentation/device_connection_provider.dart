@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -8,41 +6,50 @@ import '../domain/models/device_connection.dart';
 import '../domain/models/integration_account.dart';
 import '../data/device_connection_repository.dart';
 
-class DeviceConnectionsNotifier extends Notifier<List<DeviceConnection>> {
+class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
   AsyncDeviceConnectionRepository get _asyncRepository =>
       ref.read(asyncDeviceConnectionRepositoryProvider);
 
   @override
-  List<DeviceConnection> build() {
-    final repository = ref.watch(deviceConnectionRepositoryProvider);
+  Future<List<DeviceConnection>> build() async {
     ref.watch(asyncDeviceConnectionRepositoryProvider);
-    unawaited(_hydrateFromRepository());
-    return repository.loadConnections();
+    final loaded = await _asyncRepository.loadConnections();
+    return state.maybeWhen(
+      data: (connections) => connections,
+      orElse: () => loaded,
+    );
   }
 
   Future<void> reloadFromStorage() async {
-    await _hydrateFromRepository();
+    final connections = await _asyncRepository.loadConnections();
+    if (ref.mounted) {
+      state = AsyncData(connections);
+    }
   }
 
   Future<void> upsertConnection(DeviceConnection connection) async {
+    final current = _currentConnections();
     final next = [
       connection,
-      ...state.where((existing) => existing.id != connection.id),
+      ...current.where((existing) => existing.id != connection.id),
     ];
-    state = _sortDeviceConnections(next);
+    state = AsyncData(_sortDeviceConnections(next));
     await _asyncRepository.saveConnection(connection);
   }
 
   Future<void> removeConnection(String id) async {
     if (id.isEmpty) return;
-    state = state
-        .where((connection) => connection.id != id)
-        .toList(growable: false);
+    final current = _currentConnections();
+    state = AsyncData(
+      current
+          .where((connection) => connection.id != id)
+          .toList(growable: false),
+    );
     await _asyncRepository.deleteConnection(id);
   }
 
   Future<void> clearConnections() async {
-    state = const [];
+    state = const AsyncData([]);
     await _asyncRepository.clearConnections();
   }
 
@@ -69,7 +76,8 @@ class DeviceConnectionsNotifier extends Notifier<List<DeviceConnection>> {
 
   Future<void> seedWatchFromDeviceProfileIfAbsent(DeviceProfile device) async {
     if (device.hasWatch != BinaryChoice.yes || device.device == null) return;
-    if (state.any(
+    final current = _currentConnections();
+    if (current.any(
       (connection) => connection.kind == DeviceConnectionKind.wearable,
     )) {
       return;
@@ -79,13 +87,14 @@ class DeviceConnectionsNotifier extends Notifier<List<DeviceConnection>> {
 
   Future<void> syncOnboardingDeviceProfile(DeviceProfile device) async {
     if (device.hasWatch != BinaryChoice.yes || device.device == null) {
-      final wearableIds = state
+      final current = _currentConnections();
+      final wearableIds = current
           .where(
             (connection) => connection.kind == DeviceConnectionKind.wearable,
           )
           .map((connection) => connection.id)
           .toList(growable: false);
-      final next = state
+      final next = current
           .where((connection) => !wearableIds.contains(connection.id))
           .toList(growable: false);
       await _save(next);
@@ -106,22 +115,24 @@ class DeviceConnectionsNotifier extends Notifier<List<DeviceConnection>> {
   }
 
   DeviceConnection? _connectionForVendor(IntegrationVendor vendor) {
-    for (final connection in state) {
+    final current = _currentConnections();
+    for (final connection in current) {
       if (connection.vendor == vendor) return connection;
     }
     return null;
   }
 
   Future<void> _save(List<DeviceConnection> next) async {
-    state = _sortDeviceConnections(next);
-    await _asyncRepository.saveConnections(next);
+    final sorted = _sortDeviceConnections(next);
+    state = AsyncData(sorted);
+    await _asyncRepository.saveConnections(sorted);
   }
 
-  Future<void> _hydrateFromRepository() async {
-    final connections = await _asyncRepository.loadConnections();
-    if (ref.mounted) {
-      state = connections;
-    }
+  List<DeviceConnection> _currentConnections() {
+    return state.maybeWhen(
+      data: (connections) => connections,
+      orElse: () => const [],
+    );
   }
 }
 
@@ -219,12 +230,12 @@ IntegrationVendor _vendorFromWatchDevice(WatchDeviceType device) {
 }
 
 final deviceConnectionsProvider =
-    NotifierProvider<DeviceConnectionsNotifier, List<DeviceConnection>>(
+    AsyncNotifierProvider<DeviceConnectionsNotifier, List<DeviceConnection>>(
       DeviceConnectionsNotifier.new,
     );
 
 final currentWearableConnectionProvider = Provider<DeviceConnection?>((ref) {
-  final connections = ref.watch(deviceConnectionsProvider);
+  final connections = _deviceConnections(ref);
   for (final connection in connections) {
     if (connection.kind == DeviceConnectionKind.wearable &&
         connection.isConnected) {
@@ -237,8 +248,8 @@ final currentWearableConnectionProvider = Provider<DeviceConnection?>((ref) {
 final connectedWearableConnectionsProvider = Provider<List<DeviceConnection>>((
   ref,
 ) {
-  return ref
-      .watch(deviceConnectionsProvider)
+  final connections = _deviceConnections(ref);
+  return connections
       .where(
         (connection) =>
             connection.kind == DeviceConnectionKind.wearable &&
@@ -249,11 +260,18 @@ final connectedWearableConnectionsProvider = Provider<List<DeviceConnection>>((
 
 final connectionForVendorProvider =
     Provider.family<DeviceConnection?, IntegrationVendor>((ref, vendor) {
-      for (final connection in ref.watch(deviceConnectionsProvider)) {
+      final connections = _deviceConnections(ref);
+      for (final connection in connections) {
         if (connection.vendor == vendor) return connection;
       }
       return null;
     });
+
+List<DeviceConnection> _deviceConnections(Ref ref) {
+  return ref
+      .watch(deviceConnectionsProvider)
+      .maybeWhen(data: (connections) => connections, orElse: () => const []);
+}
 
 final availablePlatformIntegrationsProvider =
     Provider<List<IntegrationAccount>>((ref) {

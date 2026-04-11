@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/features/activity/data/activity_repository.dart';
 import 'package:running_app/features/activity/domain/models/activity_record.dart';
+import 'package:running_app/features/activity/presentation/activity_provider.dart';
 import 'package:running_app/features/progress/presentation/progress_provider.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
@@ -71,6 +72,7 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      await container.read(activitiesProvider.future);
 
       final completedSessions = container.read(completedSessionsProvider);
       expect(completedSessions, hasLength(1));
@@ -106,10 +108,13 @@ void main() {
     final container = ProviderContainer.test(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        trainingPlanProvider.overrideWith(() => _TestTrainingPlanNotifier(plan)),
+        trainingPlanProvider.overrideWith(
+          () => _TestTrainingPlanNotifier(plan),
+        ),
       ],
     );
     addTearDown(container.dispose);
+    await container.read(activitiesProvider.future);
 
     expect(container.read(completedSessionsProvider), isEmpty);
     expect(container.read(userStatsProvider).totalRuns, 0);

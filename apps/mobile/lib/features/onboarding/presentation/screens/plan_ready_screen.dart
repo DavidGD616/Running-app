@@ -68,7 +68,8 @@ class PlanReadyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final answers = ref.watch(onboardingProvider);
+    final answers =
+        ref.watch(onboardingProvider).value ?? const RunnerProfileDraft();
     final goal = ref.watch(onboardingGoalProvider);
     final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
     final primaryLabel = switch (mode) {

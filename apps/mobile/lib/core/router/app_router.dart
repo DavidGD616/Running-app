@@ -80,16 +80,20 @@ const _profileSetupRoutes = <String>{
 };
 
 final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
-  final profile = ref.watch(runnerProfileProvider);
+  final profileState = ref.watch(runnerProfileProvider);
+  final profile = profileState.value;
 
   if (!SupabaseConfig.isConfigured) {
+    if (profileState.isLoading) {
+      return AppBootstrapState.loading;
+    }
     return profile == null
         ? AppBootstrapState.unauthenticated
         : AppBootstrapState.authenticatedReady;
   }
 
   final authState = ref.watch(authStateProvider);
-  if (authState.isLoading) {
+  if (authState.isLoading || profileState.isLoading) {
     return AppBootstrapState.loading;
   }
 
