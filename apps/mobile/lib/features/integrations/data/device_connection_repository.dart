@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../../core/config/supabase_config.dart';
 import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../auth/presentation/auth_state_provider.dart';
 import '../domain/models/device_connection.dart';
@@ -73,6 +72,12 @@ class DeviceConnectionRepositoryAsyncAdapter
   }
 }
 
+/// Local cache implementation backed by [SharedPreferences].
+///
+/// SharedPreferences is retained as the explicit local cache layer for the
+/// Supabase implementations. This provides offline read access and reduces
+/// cold-start latency. A future sprint may replace SP with SQLite/Drift for
+/// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesDeviceConnectionRepository
     implements DeviceConnectionRepository {
   SharedPreferencesDeviceConnectionRepository(this._prefs);
@@ -194,13 +199,13 @@ final deviceConnectionRepositoryProvider = Provider<DeviceConnectionRepository>(
   },
 );
 
+/// Switching provider: returns [SupabaseDeviceConnectionRepository] when a
+/// user is authenticated, otherwise falls back to the local
+/// [SharedPreferencesDeviceConnectionRepository] via
+/// [DeviceConnectionRepositoryAsyncAdapter].
 final asyncDeviceConnectionRepositoryProvider =
     Provider<AsyncDeviceConnectionRepository>((ref) {
       final repository = ref.watch(deviceConnectionRepositoryProvider);
-
-      if (!SupabaseConfig.isConfigured) {
-        return DeviceConnectionRepositoryAsyncAdapter(repository);
-      }
 
       final user = ref.watch(currentUserProvider);
       if (user == null) {

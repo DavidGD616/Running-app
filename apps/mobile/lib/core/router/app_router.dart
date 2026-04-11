@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'route_names.dart';
-import '../config/supabase_config.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/auth/presentation/auth_state_provider.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
@@ -81,19 +80,6 @@ const _profileSetupRoutes = <String>{
 };
 
 final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
-  if (!SupabaseConfig.isConfigured) {
-    final repository = ref.watch(runnerProfileRepositoryProvider);
-    final profile = repository.loadProfile();
-    if (profile != null) {
-      return AppBootstrapState.authenticatedReady;
-    }
-
-    final draft = repository.loadDraft();
-    return draft == null
-        ? AppBootstrapState.unauthenticated
-        : AppBootstrapState.authenticatedNeedsProfile;
-  }
-
   final authState = ref.watch(authStateProvider);
   if (authState.isLoading) {
     return AppBootstrapState.loading;
@@ -155,11 +141,9 @@ class _RouterRefreshNotifier extends ChangeNotifier {
 final appRouterProvider = Provider<GoRouter>((ref) {
   final refreshNotifier = _RouterRefreshNotifier();
 
-  if (SupabaseConfig.isConfigured) {
-    ref.listen<AsyncValue<dynamic>>(authStateProvider, (_, _) {
-      refreshNotifier.refresh();
-    });
-  }
+  ref.listen<AsyncValue<dynamic>>(authStateProvider, (_, _) {
+    refreshNotifier.refresh();
+  });
   ref.listen(runnerProfileProvider, (_, _) {
     refreshNotifier.refresh();
   });

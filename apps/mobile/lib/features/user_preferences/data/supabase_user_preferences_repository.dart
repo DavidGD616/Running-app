@@ -11,6 +11,12 @@ abstract interface class UserPreferencesRepository {
   Future<void> save(UserPreferences preferences);
 }
 
+/// Local cache implementation backed by [SharedPreferences].
+///
+/// SharedPreferences is retained as the explicit local cache layer for the
+/// Supabase implementations. This provides offline read access and reduces
+/// cold-start latency. A future sprint may replace SP with SQLite/Drift for
+/// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesUserPreferencesRepository
     implements UserPreferencesRepository {
   SharedPreferencesUserPreferencesRepository(this._prefs);

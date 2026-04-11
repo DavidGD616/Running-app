@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../../core/config/supabase_config.dart';
 import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../../auth/presentation/auth_state_provider.dart';
@@ -25,6 +24,12 @@ abstract interface class RunnerProfileRepository {
   Future<void> clearProfile();
 }
 
+/// Local cache implementation backed by [SharedPreferences].
+///
+/// SharedPreferences is retained as the explicit local cache layer for the
+/// Supabase implementations. This provides offline read access and reduces
+/// cold-start latency. A future sprint may replace SP with SQLite/Drift for
+/// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesRunnerProfileRepository
     implements RunnerProfileRepository {
   SharedPreferencesRunnerProfileRepository(this._prefs);
@@ -109,15 +114,14 @@ class SharedPreferencesRunnerProfileRepository
   }
 }
 
+/// Switching provider: returns [SupabaseRunnerProfileRepository] when a user
+/// is authenticated, otherwise falls back to the local
+/// [SharedPreferencesRunnerProfileRepository].
 final runnerProfileRepositoryProvider = Provider<RunnerProfileRepository>((
   ref,
 ) {
   final prefs = ref.watch(sharedPreferencesProvider);
   final localCache = SharedPreferencesRunnerProfileRepository(prefs);
-
-  if (!SupabaseConfig.isConfigured) {
-    return localCache;
-  }
 
   final user = ref.watch(currentUserProvider);
   if (user == null) {
