@@ -442,11 +442,14 @@ from serialization (presentation layer — rebuilt from structural fields after 
 
 - **Dependencies**: None (WorkoutStep/WorkoutTarget already have toJson/fromJson ✅)
 - **Acceptance Criteria**:
-  - `session.toJson()` produces valid JSON for all session types
-  - `TrainingSession.fromJson(session.toJson())` produces structurally identical session
-  - `phases` is always `const []` on a deserialized session
+  - `session.toJson()` produces valid JSON for all session types ✅
+  - `TrainingSession.fromJson(session.toJson())` produces structurally identical session ✅
+  - `phases` is always `const []` on a deserialized session ✅
 - **Validation**:
-  - Unit test: round-trip 3 different session types from seed data
+  - Unit test: round-trip 3 different session types from seed data ✅
+- **Status**: ✅ COMPLETED (2026-04-11) — commit bcc0501
+- **Log**: Added `toJson()`/`fromJson()` + private helpers `_sessionTypeFromName`, `_sessionStatusFromName`, `_effortFromName`, `_doubleOrNull`. Imported `model_json_utils.dart`. `phases` always empty on deserialization.
+- **Files**: `apps/mobile/lib/features/training_plan/domain/models/training_session.dart`
 
 ---
 
@@ -473,10 +476,13 @@ from serialization (presentation layer — rebuilt from structural fields after 
 
 - **Dependencies**: Task 2.1
 - **Acceptance Criteria**:
-  - `plan.toJson()` serializes both sessions and supportSessions
-  - `TrainingPlan.fromJson(plan.toJson())` reconstructs plan with correct session count
+  - `plan.toJson()` serializes both sessions and supportSessions ✅
+  - `TrainingPlan.fromJson(plan.toJson())` reconstructs plan with correct session count ✅
 - **Validation**:
-  - Unit test: serialize seed plan → deserialize → assert session count and first session id match
+  - Unit test: serialize seed plan → deserialize → assert session count and first session id match ✅
+- **Status**: ✅ COMPLETED (2026-04-11) — commit bcc0501
+- **Log**: Added `toJson()`/`fromJson()` + private `_raceTypeFromName` helper. Imported `model_json_utils.dart`.
+- **Files**: `apps/mobile/lib/features/training_plan/domain/models/training_plan.dart`
 
 ---
 
@@ -487,8 +493,11 @@ from serialization (presentation layer — rebuilt from structural fields after 
   Use seed data as input (already available in the test environment).
 - **Dependencies**: Tasks 2.1, 2.2
 - **Acceptance Criteria**:
-  - All tests pass with `flutter test`
-  - At least 3 session types covered (easyRun, intervals, tempoRun)
+  - All tests pass with `flutter test` ✅
+  - At least 3 session types covered (easyRun, intervals, tempoRun) ✅
+- **Status**: ✅ COMPLETED (2026-04-11) — commit bcc0501
+- **Log**: 6 tests — easyRun, intervals (nested repeat steps), tempoRun, phases-empty, seed-plan round-trip, all raceType enum values. 117/117 suite passing, no regressions. Gotcha: `TrainingSession` is not const-constructable; changed `const session =` to `final session =`.
+- **Files**: `apps/mobile/test/features/training_plan/domain/models/training_plan_serialization_test.dart` (created)
 
 ---
 
@@ -555,6 +564,10 @@ switching provider follows the existing `asyncAdaptationRepositoryProvider` patt
 - **Acceptance Criteria**:
   - `PlanVersion.fromJson(version.toJson())` round-trips correctly
 
+**Status**: ✅ Completed — commit `930a283`
+**Log**: Created `plan_version.dart` with full `toJson`/`fromJson`. Added 4-test suite in `plan_version_test.dart` — all GREEN. `copyWith`, null-guard on `fromJson`, and `schemaVersion` all verified.
+**Files**: `domain/models/plan_version.dart` (new), `test/.../plan_version_test.dart` (new)
+
 ---
 
 ### Task 3.2: Abstract `PlanVersionRepository`
@@ -582,6 +595,10 @@ switching provider follows the existing `asyncAdaptationRepositoryProvider` patt
 - **Dependencies**: Task 3.1
 - **Acceptance Criteria**:
   - Interface compiles
+
+**Status**: ✅ Completed — commit `43f797e`
+**Log**: Interface defined in `plan_version_repository.dart`. `flutter analyze` passes.
+**Files**: `data/plan_version_repository.dart` (new)
 
 ---
 
@@ -625,6 +642,10 @@ switching provider follows the existing `asyncAdaptationRepositoryProvider` patt
 - **Dependencies**: Task 3.2
 - **Acceptance Criteria**:
   - Save + sync load round-trips correctly after hot restart
+
+**Status**: ✅ Completed — commit `43f797e`
+**Log**: SP impl added to same file. Key `active_plan_version_v1`. `loadActivePlanSync` decodes via `PlanVersion.fromJson`. `sharedPreferencesPlanVersionRepositoryProvider` wired.
+**Files**: `data/plan_version_repository.dart` (modified)
 
 ---
 
@@ -686,6 +707,10 @@ switching provider follows the existing `asyncAdaptationRepositoryProvider` patt
   - `loadActivePlanAsync()` returns the plan inserted by the Edge Function smoke test
   - Falls back to SP cache on network error
 
+**Status**: ✅ Completed — commit `a447baf`
+**Log**: Created `supabase_plan_version_repository.dart`. Reads `plan_versions` table, caches via SP on success, falls back to SP on error. `userId` derived from `_client.auth.currentUser?.id` (no separate parameter needed — matches Supabase repo pattern). `flutter analyze` passes, 121 tests GREEN.
+**Files**: `data/supabase_plan_version_repository.dart` (new)
+
 ---
 
 ### Task 3.5: Wire `planVersionRepositoryProvider`
@@ -715,6 +740,10 @@ switching provider follows the existing `asyncAdaptationRepositoryProvider` patt
   - Provider resolves to Supabase impl when user is signed in
   - Provider resolves to SP impl when signed out (edge case safety)
   - `flutter analyze` passes
+
+**Status**: ✅ Completed — commit `a447baf`
+**Log**: `planVersionRepositoryProvider` and `supabasePlanVersionRepositoryProvider` defined in `supabase_plan_version_repository.dart` (same pattern as `asyncAdaptationRepositoryProvider`). Switching logic: null user → SP impl, signed-in user → Supabase impl. `flutter analyze` passes with no issues.
+**Files**: `data/supabase_plan_version_repository.dart` (modified)
 
 ---
 
