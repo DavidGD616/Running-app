@@ -96,7 +96,9 @@ class SupabaseUserPreferencesRepository implements UserPreferencesRepository {
       final preferences = UserPreferences(
         unitSystem: unitSystem,
         shortDistanceUnit: _parseShortDistanceUnit(
-          raw: row['short_distance_unit'] as String?,
+          raw:
+              row['elevation_unit'] as String? ??
+              row['short_distance_unit'] as String?,
           unitSystem: unitSystem,
         ),
         displayName: row['display_name'] as String?,
@@ -123,7 +125,7 @@ class SupabaseUserPreferencesRepository implements UserPreferencesRepository {
     await _client.from('user_preferences').upsert({
       'user_id': uid,
       'unit_system': preferences.unitSystem.name,
-      'short_distance_unit': preferences.shortDistanceUnit.name,
+      'elevation_unit': preferences.shortDistanceUnit.name,
       'display_name': preferences.displayName,
       'gender': preferences.gender?.name,
       'date_of_birth_ms': preferences.dateOfBirth?.millisecondsSinceEpoch,

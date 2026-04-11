@@ -23,7 +23,9 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
 
   Future<void> setShortDistanceUnit(ShortDistanceUnit unit) async {
     await _persist(
-      (state.value ?? const UserPreferences()).copyWith(shortDistanceUnit: unit),
+      (state.value ?? const UserPreferences()).copyWith(
+        shortDistanceUnit: unit,
+      ),
     );
   }
 
@@ -42,6 +44,28 @@ class UserPreferencesNotifier extends AsyncNotifier<UserPreferences> {
   Future<void> setDateOfBirth(DateTime dob) async {
     await _persist(
       (state.value ?? const UserPreferences()).copyWith(dateOfBirth: dob),
+    );
+  }
+
+  Future<void> saveAccountSetup({
+    required UnitSystem unitSystem,
+    required ShortDistanceUnit shortDistanceUnit,
+    required ProfileGender gender,
+    DateTime? dateOfBirth,
+    String? displayName,
+  }) async {
+    final current = state.value ?? const UserPreferences();
+    final trimmedDisplayName = displayName?.trim();
+    await _persist(
+      UserPreferences(
+        unitSystem: unitSystem,
+        shortDistanceUnit: shortDistanceUnit,
+        displayName: trimmedDisplayName == null || trimmedDisplayName.isEmpty
+            ? current.displayName
+            : trimmedDisplayName,
+        gender: gender,
+        dateOfBirth: dateOfBirth ?? current.dateOfBirth,
+      ),
     );
   }
 

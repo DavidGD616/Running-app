@@ -138,8 +138,8 @@ String? resolveAppRedirect({
       if (isSplashRoute) return RouteNames.welcome;
       return isAuthRoute ? null : RouteNames.welcome;
     case AppBootstrapState.authenticatedNeedsProfile:
-      if (isSplashRoute || isAuthRoute) return RouteNames.onboarding;
-      return isProfileSetupRoute ? null : RouteNames.onboarding;
+      if (isSplashRoute || isAuthRoute) return RouteNames.accountSetup;
+      return isProfileSetupRoute ? null : RouteNames.accountSetup;
     case AppBootstrapState.authenticatedReady:
       if (isSplashRoute || isAuthRoute || isProfileSetupRoute) {
         return RouteNames.today;

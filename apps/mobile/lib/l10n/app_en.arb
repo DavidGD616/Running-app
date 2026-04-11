@@ -167,9 +167,9 @@
   "preferredUnits": "Preferred Units",
   "@preferredUnits": { "description": "Section label on account setup screen" },
 
-  "accountSetupShortDistanceUnits": "Short Distance & Elevation",
+  "accountSetupShortDistanceUnits": "Elevation",
   "@accountSetupShortDistanceUnits": {
-    "description": "Section label for short distance and elevation units on account setup screen"
+    "description": "Section label for elevation units on account setup screen"
   },
 
   "unitKm": "km",

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../../../../core/config/supabase_config.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -10,6 +11,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../auth/presentation/auth_state_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
@@ -25,6 +27,7 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
   int _shortDistanceIndex = 0; // 0 = m, 1 = ft
   int _genderIndex = 0; // 0 = Male, 1 = Female, 2 = Other
   DateTime? _dateOfBirth;
+  bool _isSaving = false;
 
   @override
   void initState() {
@@ -80,25 +83,48 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
     }
   }
 
-  void _onContinue() {
-    final notifier = ref.read(userPreferencesProvider.notifier);
-    // Fire-and-forget: Riverpod state updates immediately (optimistic), the
-    // disk write happens asynchronously in the background.
-    notifier.setUnitSystem(_unitIndex == 0 ? UnitSystem.km : UnitSystem.miles);
-    notifier.setShortDistanceUnit(
-      _shortDistanceIndex == 0
-          ? ShortDistanceUnit.meters
-          : ShortDistanceUnit.feet,
-    );
-    notifier.setGender(
-      [
-        ProfileGender.male,
-        ProfileGender.female,
-        ProfileGender.other,
-      ][_genderIndex],
-    );
-    if (_dateOfBirth != null) notifier.setDateOfBirth(_dateOfBirth!);
-    context.go(RouteNames.onboarding);
+  Future<void> _onContinue(AppLocalizations l10n) async {
+    if (_isSaving) return;
+
+    setState(() => _isSaving = true);
+    try {
+      await ref
+          .read(userPreferencesProvider.notifier)
+          .saveAccountSetup(
+            unitSystem: _unitIndex == 0 ? UnitSystem.km : UnitSystem.miles,
+            shortDistanceUnit: _shortDistanceIndex == 0
+                ? ShortDistanceUnit.meters
+                : ShortDistanceUnit.feet,
+            gender: [
+              ProfileGender.male,
+              ProfileGender.female,
+              ProfileGender.other,
+            ][_genderIndex],
+            dateOfBirth: _dateOfBirth,
+            displayName: _authDisplayName,
+          );
+      if (mounted) context.go(RouteNames.onboarding);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(l10n.errorGeneric)));
+      }
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  String? get _authDisplayName {
+    if (!SupabaseConfig.isConfigured) return null;
+    final metadata = ref.read(currentUserProvider)?.userMetadata;
+    for (final key in const ['full_name', 'name', 'display_name']) {
+      final value = metadata?[key];
+      if (value is String && value.trim().isNotEmpty) {
+        return value.trim();
+      }
+    }
+    return null;
   }
 
   @override
@@ -195,7 +221,8 @@ class _AccountSetupScreenState extends ConsumerState<AccountSetupScreen> {
               ),
               child: AppButton(
                 label: l10n.continueButton,
-                onPressed: _onContinue,
+                isLoading: _isSaving,
+                onPressed: _isSaving ? null : () => _onContinue(l10n),
               ),
             ),
           ],

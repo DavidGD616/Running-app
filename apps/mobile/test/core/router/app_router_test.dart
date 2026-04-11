@@ -39,13 +39,13 @@ void main() {
     expect(redirect, RouteNames.welcome);
   });
 
-  test('profileless signed-in bootstrap lands on onboarding', () {
+  test('profileless signed-in bootstrap lands on account setup', () {
     final redirect = resolveAppRedirect(
       matchedLocation: RouteNames.splash,
       bootstrapState: AppBootstrapState.authenticatedNeedsProfile,
     );
 
-    expect(redirect, RouteNames.onboarding);
+    expect(redirect, RouteNames.accountSetup);
   });
 
   test('profile setup routes stay open while profile is missing', () {

@@ -422,10 +422,10 @@ abstract class AppLocalizations {
   /// **'Preferred Units'**
   String get preferredUnits;
 
-  /// Section label for short distance and elevation units on account setup screen
+  /// Section label for elevation units on account setup screen
   ///
   /// In en, this message translates to:
-  /// **'Short Distance & Elevation'**
+  /// **'Elevation'**
   String get accountSetupShortDistanceUnits;
 
   /// Kilometers unit option

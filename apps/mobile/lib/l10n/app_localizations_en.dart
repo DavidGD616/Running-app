@@ -182,7 +182,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get preferredUnits => 'Preferred Units';
 
   @override
-  String get accountSetupShortDistanceUnits => 'Short Distance & Elevation';
+  String get accountSetupShortDistanceUnits => 'Elevation';
 
   @override
   String get unitKm => 'km';
