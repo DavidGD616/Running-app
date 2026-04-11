@@ -45,19 +45,21 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
       return false;
     }
 
-    await ref.read(runnerProfileProvider.notifier).setProfile(profile);
-    if (ref.mounted) {
-      state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+    try {
+      await ref.read(runnerProfileProvider.notifier).setProfile(profile);
+      await ref
+          .read(deviceConnectionsProvider.notifier)
+          .seedWatchFromDeviceProfileIfAbsent(profile.device);
+      if (markOnboardingComplete) {
+        await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
+      }
+      if (ref.mounted) {
+        state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+      }
+      return true;
+    } catch (_) {
+      return false;
     }
-    await ref
-        .read(deviceConnectionsProvider.notifier)
-        .seedWatchFromDeviceProfileIfAbsent(profile.device);
-
-    if (markOnboardingComplete) {
-      await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
-    }
-
-    return true;
   }
 
   Future<bool> markCompleted({DateTime? clock}) {
@@ -227,8 +229,14 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   }
 
   Future<void> _saveDraft(RunnerProfileDraft nextState) async {
-    if (await _repository.hasPersistedProfileAsync()) return;
-    await _repository.saveDraft(nextState);
+    try {
+      if (await _repository.hasPersistedProfileAsync()) return;
+      await _repository.saveDraft(nextState);
+    } catch (error, stackTrace) {
+      if (ref.mounted) {
+        state = AsyncError(error, stackTrace);
+      }
+    }
   }
 }
 

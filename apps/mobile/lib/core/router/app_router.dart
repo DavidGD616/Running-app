@@ -47,6 +47,7 @@ import '../../features/log_run/presentation/screens/log_run_screen.dart';
 import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
 import '../../features/progress/presentation/screens/completed_sessions_screen.dart';
+import '../../features/profile/data/runner_profile_repository.dart';
 import '../../features/profile/presentation/runner_profile_provider.dart';
 
 enum AppBootstrapState {
@@ -80,34 +81,43 @@ const _profileSetupRoutes = <String>{
 };
 
 final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
-  final profileState = ref.watch(runnerProfileProvider);
-  final profile = profileState.value;
-
   if (!SupabaseConfig.isConfigured) {
-    if (profileState.isLoading) {
-      return AppBootstrapState.loading;
+    final repository = ref.watch(runnerProfileRepositoryProvider);
+    final profile = repository.loadProfile();
+    if (profile != null) {
+      return AppBootstrapState.authenticatedReady;
     }
-    if (profileState.hasError) {
-      return AppBootstrapState.unauthenticated;
-    }
-    return profile == null
+
+    final draft = repository.loadDraft();
+    return draft == null
         ? AppBootstrapState.unauthenticated
-        : AppBootstrapState.authenticatedReady;
+        : AppBootstrapState.authenticatedNeedsProfile;
   }
 
   final authState = ref.watch(authStateProvider);
-  if (authState.isLoading || profileState.isLoading) {
+  if (authState.isLoading) {
     return AppBootstrapState.loading;
   }
-  if (profileState.hasError) {
-    return AppBootstrapState.unauthenticated;
-  }
 
-  final user = authState.asData?.value;
+  final user = ref.watch(currentUserProvider);
   if (user == null) {
     return AppBootstrapState.unauthenticated;
   }
 
+  final profileState = ref.watch(runnerProfileProvider);
+  if (profileState.isLoading) {
+    return AppBootstrapState.loading;
+  }
+
+  if (profileState.hasError) {
+    final repository = ref.watch(runnerProfileRepositoryProvider);
+    final profile = repository.loadProfile();
+    return profile == null
+        ? AppBootstrapState.authenticatedNeedsProfile
+        : AppBootstrapState.authenticatedReady;
+  }
+
+  final profile = profileState.value;
   return profile == null
       ? AppBootstrapState.authenticatedNeedsProfile
       : AppBootstrapState.authenticatedReady;
@@ -128,8 +138,8 @@ String? resolveAppRedirect({
       if (isSplashRoute) return RouteNames.welcome;
       return isAuthRoute ? null : RouteNames.welcome;
     case AppBootstrapState.authenticatedNeedsProfile:
-      if (isSplashRoute || isAuthRoute) return RouteNames.accountSetup;
-      return isProfileSetupRoute ? null : RouteNames.accountSetup;
+      if (isSplashRoute || isAuthRoute) return RouteNames.onboarding;
+      return isProfileSetupRoute ? null : RouteNames.onboarding;
     case AppBootstrapState.authenticatedReady:
       if (isSplashRoute || isAuthRoute || isProfileSetupRoute) {
         return RouteNames.today;

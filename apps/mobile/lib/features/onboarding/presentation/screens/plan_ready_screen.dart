@@ -222,7 +222,15 @@ class PlanReadyScreen extends ConsumerWidget {
                       final saved = await ref
                           .read(onboardingProvider.notifier)
                           .saveProfile(markOnboardingComplete: !isSettingsFlow);
-                      if (!saved || !context.mounted) return;
+                      if (!saved) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.errorGeneric)),
+                          );
+                        }
+                        return;
+                      }
+                      if (!context.mounted) return;
                       context.go(
                         isSettingsFlow ? RouteNames.plan : RouteNames.today,
                       );
@@ -237,7 +245,15 @@ class PlanReadyScreen extends ConsumerWidget {
                         final saved = await ref
                             .read(onboardingProvider.notifier)
                             .markCompleted();
-                        if (!saved || !context.mounted) return;
+                        if (!saved) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.errorGeneric)),
+                            );
+                          }
+                          return;
+                        }
+                        if (!context.mounted) return;
                         context.go(RouteNames.plan);
                       },
                     ),

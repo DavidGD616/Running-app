@@ -21,9 +21,54 @@ void main() {
     expect(redirect, RouteNames.welcome);
   });
 
+  test('unauthenticated bootstrap keeps public auth routes open', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.logIn,
+      bootstrapState: AppBootstrapState.unauthenticated,
+    );
+
+    expect(redirect, isNull);
+  });
+
+  test('unauthenticated bootstrap sends profile routes back to welcome', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.accountSetup,
+      bootstrapState: AppBootstrapState.unauthenticated,
+    );
+
+    expect(redirect, RouteNames.welcome);
+  });
+
+  test('profileless signed-in bootstrap lands on onboarding', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.authenticatedNeedsProfile,
+    );
+
+    expect(redirect, RouteNames.onboarding);
+  });
+
+  test('profile setup routes stay open while profile is missing', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.onboarding,
+      bootstrapState: AppBootstrapState.authenticatedNeedsProfile,
+    );
+
+    expect(redirect, isNull);
+  });
+
   test('authenticated ready bootstrap sends splash traffic to today', () {
     final redirect = resolveAppRedirect(
       matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.authenticatedReady,
+    );
+
+    expect(redirect, RouteNames.today);
+  });
+
+  test('authenticated ready bootstrap replaces auth and setup routes', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.accountSetup,
       bootstrapState: AppBootstrapState.authenticatedReady,
     );
 

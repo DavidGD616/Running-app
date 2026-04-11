@@ -28,12 +28,142 @@ ProviderContainer _testContainer(SharedPreferences prefs) {
   );
 }
 
+class _FailingRunnerProfileNotifier extends RunnerProfileNotifier {
+  _FailingRunnerProfileNotifier(this.error);
+
+  final Object error;
+
+  @override
+  Future<RunnerProfile?> build() async => null;
+
+  @override
+  Future<void> setProfile(RunnerProfile profile) async {
+    throw error;
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
+
+  test(
+    'setGoal persists the onboarding draft while progress is in flight',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      container
+          .read(onboardingProvider.notifier)
+          .setGoal(
+            race: RunnerGoalRace.halfMarathon.key,
+            hasRaceDate: true,
+            raceDate: DateTime(2026, 10, 18),
+            priority: GoalPriority.improveTime.key,
+            currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
+            targetTime: const Duration(hours: 1, minutes: 55),
+          );
+
+      await Future<void>.delayed(Duration.zero);
+
+      final rawDraft = prefs.getString(
+        SharedPreferencesRunnerProfileRepository.draftStorageKey,
+      );
+      expect(rawDraft, isNotNull);
+      expect(
+        container.read(onboardingProvider).value?.goal.race,
+        RunnerGoalRace.halfMarathon,
+      );
+    },
+  );
+
+  test(
+    'markCompleted returns false and leaves onboarding incomplete when profile save fails',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer.test(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          runnerProfileProvider.overrideWith(
+            () => _FailingRunnerProfileNotifier(StateError('save failed')),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
+
+      await container.read(userPreferencesProvider.future);
+      await container
+          .read(userPreferencesProvider.notifier)
+          .setGender(ProfileGender.female);
+      await container
+          .read(userPreferencesProvider.notifier)
+          .setDateOfBirth(DateTime(1994, 6, 20));
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setGoal(
+        race: RunnerGoalRace.halfMarathon.key,
+        hasRaceDate: true,
+        raceDate: DateTime(2026, 10, 18),
+        priority: GoalPriority.improveTime.key,
+        currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
+        targetTime: const Duration(hours: 1, minutes: 55),
+      );
+      notifier.setFitness(
+        experience: RunnerExperience.intermediate.key,
+        runningDays: '4',
+        weeklyVolume: WeeklyVolumeRange.volume3.key,
+        longestRun: LongestRunRange.run3.key,
+        canCompleteGoalDist: TernaryChoice.yes.key,
+        raceDistanceBefore: RaceDistanceExperience.once.key,
+        benchmark: BenchmarkType.fiveK.key,
+        benchmarkTime: const Duration(minutes: 26, seconds: 12),
+      );
+      notifier.setSchedule(
+        trainingDays: '4',
+        longRunDay: WeekdayChoice.sunday.key,
+        weekdayTime: TimeSlot.min45.key,
+        weekendTime: TimeSlot.min90.key,
+        hardDays: [WeekdayChoice.tuesday.key, WeekdayChoice.thursday.key],
+        preferredTimeOfDay: PreferredTimeOfDay.morning.key,
+      );
+      notifier.setHealth(
+        painLevel: PainLevelChoice.none.key,
+        injuryHistory: InjuryHistoryChoice.once.key,
+        healthConditions: BinaryChoice.no.key,
+      );
+      notifier.setTraining(planPreference: PlanPreferenceChoice.balanced.key);
+      notifier.setDevice(
+        hasWatch: BinaryChoice.yes.key,
+        device: WatchDeviceType.garmin.key,
+        dataUsage: DataUsagePreference.all.key,
+        watchMetrics: WatchMetricsPreference.ifSupported.key,
+        metrics: [WatchMetric.heartRate.key, WatchMetric.pace.key],
+        hrZones: BinaryChoice.yes.key,
+        paceRecs: BinaryChoice.yes.key,
+        autoAdjust: AutoAdjustPreference.askFirst.key,
+      );
+
+      final saved = await notifier.markCompleted(
+        clock: DateTime(2026, 4, 7, 10, 15),
+      );
+
+      expect(saved, isFalse);
+      expect(prefs.getBool('onboarding_completed'), isNull);
+      expect(
+        container.read(onboardingProvider).value?.goal.race,
+        RunnerGoalRace.halfMarathon,
+      );
+    },
+  );
 
   test(
     'recreates persisted draft and final profile across provider containers',

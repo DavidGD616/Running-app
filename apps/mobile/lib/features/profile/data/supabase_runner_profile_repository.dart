@@ -73,40 +73,30 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
   @override
   Future<void> saveDraft(RunnerProfileDraft draft) async {
     await _localCache.saveDraft(draft);
-
-    try {
-      await _client.from(_draftsTable).upsert({
-        'user_id': _userId,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-        'data': draft.toJson(),
-      }, onConflict: 'user_id');
-    } catch (_) {
-      // Keep the SharedPreferences draft as a temporary fallback/cache path.
-    }
+    await _client.from(_draftsTable).upsert({
+      'user_id': _userId,
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+      'data': draft.toJson(),
+    }, onConflict: 'user_id');
   }
 
   @override
   Future<void> saveProfile(RunnerProfile profile) async {
+    final completedOnboardingAt =
+        await _loadCompletedOnboardingAt() ?? profile.updatedAt;
+
+    await _client.from(_profilesTable).upsert({
+      'user_id': _userId,
+      'schema_version': profile.schemaVersion,
+      'updated_at': profile.updatedAt.toUtc().toIso8601String(),
+      'completed_onboarding_at': completedOnboardingAt
+          .toUtc()
+          .toIso8601String(),
+      'data': _profileData(profile),
+    }, onConflict: 'user_id');
+
+    await _client.from(_draftsTable).delete().eq('user_id', _userId);
     await _localCache.saveProfile(profile);
-
-    try {
-      final completedOnboardingAt =
-          await _loadCompletedOnboardingAt() ?? profile.updatedAt;
-
-      await _client.from(_profilesTable).upsert({
-        'user_id': _userId,
-        'schema_version': profile.schemaVersion,
-        'updated_at': profile.updatedAt.toUtc().toIso8601String(),
-        'completed_onboarding_at': completedOnboardingAt
-            .toUtc()
-            .toIso8601String(),
-        'data': _profileData(profile),
-      }, onConflict: 'user_id');
-
-      await _client.from(_draftsTable).delete().eq('user_id', _userId);
-    } catch (_) {
-      // Keep the SharedPreferences profile as a temporary fallback/cache path.
-    }
   }
 
   @override

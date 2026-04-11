@@ -14,10 +14,13 @@ class RunnerProfileNotifier extends AsyncNotifier<RunnerProfile?> {
 
   Future<void> setProfile(RunnerProfile profile) async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(() async {
+    try {
       await _repository.saveProfile(profile);
-      return profile;
-    });
+      state = AsyncData(profile);
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      rethrow;
+    }
   }
 
   Future<void> clearProfile() async {

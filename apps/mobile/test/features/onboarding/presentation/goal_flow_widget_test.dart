@@ -215,6 +215,28 @@ void main() {
   });
 
   testWidgets(
+    'plan ready primary button shows an error when profile save fails',
+    (tester) async {
+      final draft = buildRunnerProfileDraft();
+      final goal = buildHalfMarathonTimeGoal();
+
+      await tester.pumpWidget(
+        wrapWithRouter(draft: draft, goal: goal, saveProfileResult: false),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Start Plan'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Your plan is ready'), findsOneWidget);
+      expect(
+        find.text('Something went wrong. Please try again.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'plan ready secondary button routes to weekly plan when completion succeeds',
     (tester) async {
       final draft = buildRunnerProfileDraft();
