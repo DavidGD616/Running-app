@@ -14,22 +14,26 @@ import '../domain/models/training_session.dart';
 import '../domain/models/week_progress.dart';
 import 'adaptation_provider.dart';
 
-final sessionFeedbacksProvider = sessionFeedbackProvider;
+final sessionFeedbacksProvider = Provider<List<SessionFeedback>>((ref) {
+  return ref.watch(sessionFeedbackProvider).value ?? const [];
+});
 
 final sessionFeedbacksForSessionProvider =
     Provider.family<List<SessionFeedback>, String>((ref, sessionId) {
       return ref
-          .watch(sessionFeedbackProvider)
+          .watch(sessionFeedbacksProvider)
           .where((feedback) => feedback.plannedSessionId == sessionId)
           .toList(growable: false);
     });
 
-final sessionAdjustmentRequestsProvider = planAdjustmentsProvider;
+final sessionAdjustmentRequestsProvider = Provider<List<PlanAdjustment>>((ref) {
+  return ref.watch(planAdjustmentsProvider).value ?? const [];
+});
 
 final sessionAdjustmentRequestsForSessionProvider =
     Provider.family<List<PlanAdjustment>, String>((ref, sessionId) {
       return ref
-          .watch(planAdjustmentsProvider)
+          .watch(sessionAdjustmentRequestsProvider)
           .where((adjustment) => adjustment.plannedSessionId == sessionId)
           .toList(growable: false);
     });
@@ -84,19 +88,21 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
 
   void restoreSession(String sessionId) {
     _manualStatusOverrides.remove(sessionId);
-    final pendingAdjustments = ref
-        .read(planAdjustmentsProvider)
-        .where(
-          (adjustment) =>
-              adjustment.plannedSessionId == sessionId &&
-              adjustment.status == PlanAdjustmentStatus.pending,
-        )
-        .toList(growable: false);
+    final pendingAdjustments =
+        (ref.read(planAdjustmentsProvider).value ?? const <PlanAdjustment>[])
+            .where(
+              (adjustment) =>
+                  adjustment.plannedSessionId == sessionId &&
+                  adjustment.status == PlanAdjustmentStatus.pending,
+            )
+            .toList(growable: false);
     for (final adjustment in pendingAdjustments) {
       unawaited(
-        ref.read(planAdjustmentsProvider.notifier).recordAdjustment(
-          adjustment.copyWith(status: PlanAdjustmentStatus.dismissed),
-        ),
+        ref
+            .read(planAdjustmentsProvider.notifier)
+            .recordAdjustment(
+              adjustment.copyWith(status: PlanAdjustmentStatus.dismissed),
+            ),
       );
     }
     state = _composePlan(ref.read(completedActivitiesProvider));
@@ -120,7 +126,9 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
       recoveryStatus: _recoveryStatusFromCheckIn(checkIn),
       notes: notes,
     );
-    unawaited(ref.read(sessionFeedbackProvider.notifier).recordFeedback(feedback));
+    unawaited(
+      ref.read(sessionFeedbackProvider.notifier).recordFeedback(feedback),
+    );
   }
 
   TrainingPlan _composePlan(Iterable<ActivityRecord> activities) {
@@ -167,8 +175,8 @@ SessionFeedbackDifficulty? _difficultyFromEffort(
 ) {
   return switch (effort) {
     ActivityPerceivedEffort.veryEasy => SessionFeedbackDifficulty.veryEasy,
-    ActivityPerceivedEffort.easy || ActivityPerceivedEffort.moderate =>
-      SessionFeedbackDifficulty.manageable,
+    ActivityPerceivedEffort.easy ||
+    ActivityPerceivedEffort.moderate => SessionFeedbackDifficulty.manageable,
     ActivityPerceivedEffort.hard => SessionFeedbackDifficulty.hard,
     ActivityPerceivedEffort.veryHard => SessionFeedbackDifficulty.veryHard,
     null => null,

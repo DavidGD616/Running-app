@@ -1,7 +1,10 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import 'route_names.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
+import '../../features/auth/presentation/auth_state_provider.dart';
 import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/presentation/screens/log_in_screen.dart';
@@ -44,23 +47,114 @@ import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
 import '../../features/progress/presentation/screens/completed_sessions_screen.dart';
 import '../../features/profile/data/runner_profile_repository.dart';
+import '../../features/profile/presentation/runner_profile_provider.dart';
 
-String? resolveSplashRedirect({
+enum AppBootstrapState {
+  loading,
+  unauthenticated,
+  authenticatedNeedsProfile,
+  authenticatedReady,
+}
+
+const _authRoutes = <String>{
+  RouteNames.welcome,
+  RouteNames.signUp,
+  RouteNames.logIn,
+  RouteNames.forgotPassword,
+};
+
+const _profileSetupRoutes = <String>{
+  RouteNames.accountSetup,
+  RouteNames.onboarding,
+  RouteNames.goal,
+  RouteNames.fitness,
+  RouteNames.schedule,
+  RouteNames.health,
+  RouteNames.training,
+  RouteNames.device,
+  RouteNames.recovery,
+  RouteNames.motivation,
+  RouteNames.summary,
+  RouteNames.planGeneration,
+  RouteNames.planReady,
+};
+
+final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
+  final authState = ref.watch(authStateProvider);
+  if (authState.isLoading) {
+    return AppBootstrapState.loading;
+  }
+
+  final user = ref.watch(currentUserProvider);
+  if (user == null) {
+    return AppBootstrapState.unauthenticated;
+  }
+
+  final profileState = ref.watch(runnerProfileProvider);
+  if (profileState.isLoading) {
+    return AppBootstrapState.loading;
+  }
+
+  if (profileState.hasError) {
+    final repository = ref.watch(runnerProfileRepositoryProvider);
+    final profile = repository.loadProfile();
+    return profile == null
+        ? AppBootstrapState.authenticatedNeedsProfile
+        : AppBootstrapState.authenticatedReady;
+  }
+
+  final profile = profileState.value;
+  return profile == null
+      ? AppBootstrapState.authenticatedNeedsProfile
+      : AppBootstrapState.authenticatedReady;
+});
+
+String? resolveAppRedirect({
   required String matchedLocation,
-  required RunnerProfileRepository repository,
+  required AppBootstrapState bootstrapState,
 }) {
-  if (matchedLocation != RouteNames.splash) return null;
-  return repository.hasPersistedProfile() ? RouteNames.today : null;
+  final isSplashRoute = matchedLocation == RouteNames.splash;
+  final isAuthRoute = _authRoutes.contains(matchedLocation);
+  final isProfileSetupRoute = _profileSetupRoutes.contains(matchedLocation);
+
+  switch (bootstrapState) {
+    case AppBootstrapState.loading:
+      return isSplashRoute ? null : RouteNames.splash;
+    case AppBootstrapState.unauthenticated:
+      if (isSplashRoute) return RouteNames.welcome;
+      return isAuthRoute ? null : RouteNames.welcome;
+    case AppBootstrapState.authenticatedNeedsProfile:
+      if (isSplashRoute || isAuthRoute) return RouteNames.accountSetup;
+      return isProfileSetupRoute ? null : RouteNames.accountSetup;
+    case AppBootstrapState.authenticatedReady:
+      if (isSplashRoute || isAuthRoute || isProfileSetupRoute) {
+        return RouteNames.today;
+      }
+      return null;
+  }
+}
+
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void refresh() => notifyListeners();
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  final repository = ref.watch(runnerProfileRepositoryProvider);
+  final refreshNotifier = _RouterRefreshNotifier();
+
+  ref.listen<AsyncValue<dynamic>>(authStateProvider, (_, _) {
+    refreshNotifier.refresh();
+  });
+  ref.listen(runnerProfileProvider, (_, _) {
+    refreshNotifier.refresh();
+  });
+  ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
     initialLocation: RouteNames.splash,
-    redirect: (context, state) => resolveSplashRedirect(
+    refreshListenable: refreshNotifier,
+    redirect: (context, state) => resolveAppRedirect(
       matchedLocation: state.matchedLocation,
-      repository: repository,
+      bootstrapState: ref.read(appBootstrapStateProvider),
     ),
     routes: [
       GoRoute(

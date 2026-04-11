@@ -88,6 +88,76 @@
   "backToLogIn": "Back to Log In",
   "@backToLogIn": { "description": "Back link on forgot password screen" },
 
+  "authLoadingSignUp": "Creating account...",
+  "@authLoadingSignUp": { "description": "Loading label while creating an account" },
+
+  "authLoadingLogIn": "Logging in...",
+  "@authLoadingLogIn": { "description": "Loading label while logging in" },
+
+  "authLoadingResetPassword": "Sending reset link...",
+  "@authLoadingResetPassword": { "description": "Loading label while sending a password reset email" },
+
+  "authLoadingSignOut": "Signing out...",
+  "@authLoadingSignOut": { "description": "Loading label while signing out" },
+
+  "authLoadingGoogleSignIn": "Opening Google...",
+  "@authLoadingGoogleSignIn": { "description": "Loading label while starting Google OAuth sign-in" },
+
+  "continueWithGoogle": "Continue with Google",
+  "@continueWithGoogle": { "description": "OAuth button label on the welcome screen" },
+
+  "authSuccessCheckEmailForConfirmation": "Check your email to confirm your account.",
+  "@authSuccessCheckEmailForConfirmation": { "description": "Shown after sign up when email confirmation is required" },
+
+  "authSuccessPasswordResetSent": "Password reset email sent. Check your inbox.",
+  "@authSuccessPasswordResetSent": { "description": "Shown after requesting a password reset email" },
+
+  "authErrorGeneric": "Something went wrong. Please try again.",
+  "@authErrorGeneric": { "description": "Generic auth error message" },
+
+  "authErrorInvalidCredentials": "Incorrect email or password.",
+  "@authErrorInvalidCredentials": { "description": "Shown when Supabase rejects sign-in credentials" },
+
+  "authErrorEmailAlreadyRegistered": "An account with this email already exists.",
+  "@authErrorEmailAlreadyRegistered": { "description": "Shown when sign-up is attempted with an existing email" },
+
+  "authErrorWeakPassword": "Password is too weak. Use at least 6 characters.",
+  "@authErrorWeakPassword": { "description": "Shown when Supabase rejects a weak password" },
+
+  "authErrorInvalidEmail": "Enter a valid email address.",
+  "@authErrorInvalidEmail": { "description": "Shown when an email address is invalid" },
+
+  "authErrorEmailNotConfirmed": "Confirm your email before logging in.",
+  "@authErrorEmailNotConfirmed": { "description": "Shown when sign-in is blocked until email confirmation" },
+
+  "authErrorTooManyRequests": "Too many attempts. Please wait and try again.",
+  "@authErrorTooManyRequests": { "description": "Shown when auth requests are temporarily rate limited" },
+
+  "authErrorNetwork": "Network error. Check your connection and try again.",
+  "@authErrorNetwork": { "description": "Shown when the request appears to fail due to connectivity" },
+
+  "authErrorNotConfigured": "Authentication is not configured for this build.",
+  "@authErrorNotConfigured": {
+    "description": "Shown when auth actions are attempted without Supabase credentials"
+  },
+
+  "authValidationEmailRequired": "Enter your email.",
+  "@authValidationEmailRequired": { "description": "Validation message when the email field is empty" },
+
+  "authValidationPasswordRequired": "Enter your password.",
+  "@authValidationPasswordRequired": { "description": "Validation message when the password field is empty" },
+
+  "authValidationPasswordTooShort": "Use at least 6 characters.",
+  "@authValidationPasswordTooShort": {
+    "description": "Validation message when the password is shorter than the minimum length"
+  },
+
+  "authValidationConfirmPasswordRequired": "Confirm your password.",
+  "@authValidationConfirmPasswordRequired": { "description": "Validation message when the confirm password field is empty" },
+
+  "authValidationPasswordMismatch": "Passwords do not match.",
+  "@authValidationPasswordMismatch": { "description": "Validation message when the password confirmation does not match" },
+
   "accountSetupTitle": "Account Setup",
   "@accountSetupTitle": { "description": "Heading on the account setup screen" },
 
@@ -97,9 +167,9 @@
   "preferredUnits": "Preferred Units",
   "@preferredUnits": { "description": "Section label on account setup screen" },
 
-  "accountSetupShortDistanceUnits": "Short Distance & Elevation",
+  "accountSetupShortDistanceUnits": "Elevation",
   "@accountSetupShortDistanceUnits": {
-    "description": "Section label for short distance and elevation units on account setup screen"
+    "description": "Section label for elevation units on account setup screen"
   },
 
   "unitKm": "km",

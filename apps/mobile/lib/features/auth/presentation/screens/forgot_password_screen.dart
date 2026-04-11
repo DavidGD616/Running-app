@@ -1,22 +1,28 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../auth_notifier.dart';
 
-class ForgotPasswordScreen extends StatefulWidget {
+class ForgotPasswordScreen extends ConsumerStatefulWidget {
   const ForgotPasswordScreen({super.key});
 
   @override
-  State<ForgotPasswordScreen> createState() => _ForgotPasswordScreenState();
+  ConsumerState<ForgotPasswordScreen> createState() =>
+      _ForgotPasswordScreenState();
 }
 
-class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
+class _ForgotPasswordScreenState extends ConsumerState<ForgotPasswordScreen> {
   final _emailController = TextEditingController();
+
+  String? _emailErrorText;
 
   @override
   void dispose() {
@@ -24,18 +30,61 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
+  bool _validate(AppLocalizations l10n) {
+    final email = _emailController.text.trim();
+
+    setState(() {
+      _emailErrorText = email.isEmpty
+          ? l10n.authValidationEmailRequired
+          : !_isValidEmail(email)
+          ? l10n.authErrorInvalidEmail
+          : null;
+    });
+
+    return _emailErrorText == null;
+  }
+
+  Future<void> _submit(AppLocalizations l10n) async {
+    if (!_validate(l10n)) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    final feedback = await ref
+        .read(authNotifierProvider.notifier)
+        .resetPasswordForEmail(email: _emailController.text.trim(), l10n: l10n);
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(feedback.message),
+        backgroundColor: feedback.isError
+            ? AppColors.error
+            : AppColors.accentPrimary,
+      ),
+    );
+  }
+
+  bool _isValidEmail(String value) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final isLoading = ref.watch(authNotifierProvider).isLoading;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Back button
-            _BackButton(),
-            // Scrollable content
+            _BackButton(isEnabled: !isLoading),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(
@@ -60,16 +109,22 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                     AppTextField(
                       label: l10n.emailLabel,
                       hint: l10n.emailHint,
+                      errorText: _emailErrorText,
                       controller: _emailController,
                       keyboardType: TextInputType.emailAddress,
                       textInputAction: TextInputAction.done,
+                      onChanged: (_) {
+                        if (_emailErrorText == null) {
+                          return;
+                        }
+                        setState(() => _emailErrorText = null);
+                      },
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                   ],
                 ),
               ),
             ),
-            // Bottom buttons
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.screen,
@@ -79,11 +134,17 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               ),
               child: Column(
                 children: [
-                  AppButton(label: l10n.sendResetLink, onPressed: () {}),
+                  AppButton(
+                    label: isLoading
+                        ? l10n.authLoadingResetPassword
+                        : l10n.sendResetLink,
+                    onPressed: isLoading ? null : () => _submit(l10n),
+                    isLoading: isLoading,
+                  ),
                   const SizedBox(height: AppSpacing.base),
                   AppButton(
                     label: l10n.backToLogIn,
-                    onPressed: () => context.pop(),
+                    onPressed: isLoading ? null : () => context.pop(),
                     variant: AppButtonVariant.text,
                   ),
                 ],
@@ -97,10 +158,14 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 }
 
 class _BackButton extends StatelessWidget {
+  const _BackButton({required this.isEnabled});
+
+  final bool isEnabled;
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => context.pop(),
+      onTap: isEnabled ? () => context.pop() : null,
       child: Container(
         width: 48,
         height: 48,

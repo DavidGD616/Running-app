@@ -4,9 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../auth/presentation/auth_state_provider.dart';
 import '../domain/models/plan_adjustment.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
+import 'supabase_adaptation_repository.dart';
 
 abstract interface class AdaptationRepository {
   List<SessionFeedback> loadSessionFeedback();
@@ -17,6 +19,57 @@ abstract interface class AdaptationRepository {
   Future<void> savePlanRevisions(List<PlanRevision> revisions);
 }
 
+abstract interface class AsyncAdaptationRepository {
+  Future<List<SessionFeedback>> loadSessionFeedback();
+  Future<List<PlanAdjustment>> loadPlanAdjustments();
+  Future<List<PlanRevision>> loadPlanRevisions();
+  Future<void> saveSessionFeedback(List<SessionFeedback> feedback);
+  Future<void> savePlanAdjustments(List<PlanAdjustment> adjustments);
+  Future<void> savePlanRevisions(List<PlanRevision> revisions);
+}
+
+class AdaptationRepositoryAsyncAdapter implements AsyncAdaptationRepository {
+  AdaptationRepositoryAsyncAdapter(this._repository);
+
+  final AdaptationRepository _repository;
+
+  @override
+  Future<List<SessionFeedback>> loadSessionFeedback() async {
+    return _repository.loadSessionFeedback();
+  }
+
+  @override
+  Future<List<PlanAdjustment>> loadPlanAdjustments() async {
+    return _repository.loadPlanAdjustments();
+  }
+
+  @override
+  Future<List<PlanRevision>> loadPlanRevisions() async {
+    return _repository.loadPlanRevisions();
+  }
+
+  @override
+  Future<void> saveSessionFeedback(List<SessionFeedback> feedback) {
+    return _repository.saveSessionFeedback(feedback);
+  }
+
+  @override
+  Future<void> savePlanAdjustments(List<PlanAdjustment> adjustments) {
+    return _repository.savePlanAdjustments(adjustments);
+  }
+
+  @override
+  Future<void> savePlanRevisions(List<PlanRevision> revisions) {
+    return _repository.savePlanRevisions(revisions);
+  }
+}
+
+/// Local cache implementation backed by [SharedPreferences].
+///
+/// SharedPreferences is retained as the explicit local cache layer for the
+/// Supabase implementations. This provides offline read access and reduces
+/// cold-start latency. A future sprint may replace SP with SQLite/Drift for
+/// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesAdaptationRepository implements AdaptationRepository {
   SharedPreferencesAdaptationRepository(this._prefs);
 
@@ -27,28 +80,25 @@ class SharedPreferencesAdaptationRepository implements AdaptationRepository {
   final SharedPreferences _prefs;
 
   @override
-  List<SessionFeedback> loadSessionFeedback() =>
-      _decodeList(
-        key: sessionFeedbackKey,
-        fromJson: SessionFeedback.fromJson,
-        sortBy: (a, b) => b.recordedAt.compareTo(a.recordedAt),
-      );
+  List<SessionFeedback> loadSessionFeedback() => _decodeList(
+    key: sessionFeedbackKey,
+    fromJson: SessionFeedback.fromJson,
+    sortBy: (a, b) => b.recordedAt.compareTo(a.recordedAt),
+  );
 
   @override
-  List<PlanAdjustment> loadPlanAdjustments() =>
-      _decodeList(
-        key: planAdjustmentsKey,
-        fromJson: PlanAdjustment.fromJson,
-        sortBy: (a, b) => b.createdAt.compareTo(a.createdAt),
-      );
+  List<PlanAdjustment> loadPlanAdjustments() => _decodeList(
+    key: planAdjustmentsKey,
+    fromJson: PlanAdjustment.fromJson,
+    sortBy: (a, b) => b.createdAt.compareTo(a.createdAt),
+  );
 
   @override
-  List<PlanRevision> loadPlanRevisions() =>
-      _decodeList(
-        key: planRevisionsKey,
-        fromJson: PlanRevision.fromJson,
-        sortBy: (a, b) => b.createdAt.compareTo(a.createdAt),
-      );
+  List<PlanRevision> loadPlanRevisions() => _decodeList(
+    key: planRevisionsKey,
+    fromJson: PlanRevision.fromJson,
+    sortBy: (a, b) => b.createdAt.compareTo(a.createdAt),
+  );
 
   @override
   Future<void> saveSessionFeedback(List<SessionFeedback> feedback) async {
@@ -72,7 +122,9 @@ class SharedPreferencesAdaptationRepository implements AdaptationRepository {
   Future<void> savePlanRevisions(List<PlanRevision> revisions) async {
     await _prefs.setString(
       planRevisionsKey,
-      jsonEncode(revisions.map((item) => item.toJson()).toList(growable: false)),
+      jsonEncode(
+        revisions.map((item) => item.toJson()).toList(growable: false),
+      ),
     );
   }
 
@@ -110,4 +162,21 @@ class SharedPreferencesAdaptationRepository implements AdaptationRepository {
 final adaptationRepositoryProvider = Provider<AdaptationRepository>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return SharedPreferencesAdaptationRepository(prefs);
+});
+
+/// Switching provider: returns [SupabaseAdaptationRepository] when a user is
+/// authenticated, otherwise falls back to the local
+/// [SharedPreferencesAdaptationRepository] via
+/// [AdaptationRepositoryAsyncAdapter].
+final asyncAdaptationRepositoryProvider = Provider<AsyncAdaptationRepository>((
+  ref,
+) {
+  final repository = ref.watch(adaptationRepositoryProvider);
+
+  final user = ref.watch(currentUserProvider);
+  if (user == null) {
+    return AdaptationRepositoryAsyncAdapter(repository);
+  }
+
+  return ref.watch(supabaseAdaptationRepositoryProvider);
 });

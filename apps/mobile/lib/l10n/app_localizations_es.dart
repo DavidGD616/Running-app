@@ -99,6 +99,80 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backToLogIn => 'Volver a iniciar sesión';
 
   @override
+  String get authLoadingSignUp => 'Creando cuenta...';
+
+  @override
+  String get authLoadingLogIn => 'Iniciando sesión...';
+
+  @override
+  String get authLoadingResetPassword => 'Enviando enlace...';
+
+  @override
+  String get authLoadingSignOut => 'Cerrando sesión...';
+
+  @override
+  String get authLoadingGoogleSignIn => 'Abriendo Google...';
+
+  @override
+  String get continueWithGoogle => 'Continuar con Google';
+
+  @override
+  String get authSuccessCheckEmailForConfirmation =>
+      'Revisa tu correo para confirmar tu cuenta.';
+
+  @override
+  String get authSuccessPasswordResetSent =>
+      'Correo de restablecimiento enviado. Revisa tu bandeja de entrada.';
+
+  @override
+  String get authErrorGeneric => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get authErrorInvalidCredentials => 'Correo o contraseña incorrectos.';
+
+  @override
+  String get authErrorEmailAlreadyRegistered =>
+      'Ya existe una cuenta con este correo.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'La contraseña es demasiado débil. Usa al menos 6 caracteres.';
+
+  @override
+  String get authErrorInvalidEmail => 'Ingresa un correo válido.';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'Confirma tu correo antes de iniciar sesión.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Demasiados intentos. Espera un momento y vuelve a intentarlo.';
+
+  @override
+  String get authErrorNetwork =>
+      'Error de red. Revisa tu conexión e inténtalo de nuevo.';
+
+  @override
+  String get authErrorNotConfigured =>
+      'La autenticación no está configurada en esta compilación.';
+
+  @override
+  String get authValidationEmailRequired => 'Ingresa tu correo.';
+
+  @override
+  String get authValidationPasswordRequired => 'Ingresa tu contraseña.';
+
+  @override
+  String get authValidationPasswordTooShort => 'Usa al menos 6 caracteres.';
+
+  @override
+  String get authValidationConfirmPasswordRequired => 'Confirma tu contraseña.';
+
+  @override
+  String get authValidationPasswordMismatch => 'Las contraseñas no coinciden.';
+
+  @override
   String get accountSetupTitle => 'Configuración de cuenta';
 
   @override
@@ -108,7 +182,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get preferredUnits => 'Unidades preferidas';
 
   @override
-  String get accountSetupShortDistanceUnits => 'Distancia corta y elevación';
+  String get accountSetupShortDistanceUnits => 'Elevación';
 
   @override
   String get unitKm => 'km';

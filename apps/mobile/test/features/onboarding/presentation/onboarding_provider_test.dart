@@ -11,10 +11,36 @@ import 'package:running_app/features/profile/data/runner_profile_repository.dart
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/profile/presentation/runner_profile_provider.dart';
+import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
 import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
 import 'package:running_app/features/user_preferences/presentation/user_preferences_provider.dart';
 
 import '../../../helpers/runner_profile_fixtures.dart';
+
+ProviderContainer _testContainer(SharedPreferences prefs) {
+  return ProviderContainer.test(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      userPreferencesRepositoryProvider.overrideWithValue(
+        SharedPreferencesUserPreferencesRepository(prefs),
+      ),
+    ],
+  );
+}
+
+class _FailingRunnerProfileNotifier extends RunnerProfileNotifier {
+  _FailingRunnerProfileNotifier(this.error);
+
+  final Object error;
+
+  @override
+  Future<RunnerProfile?> build() async => null;
+
+  @override
+  Future<void> setProfile(RunnerProfile profile) async {
+    throw error;
+  }
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,13 +50,129 @@ void main() {
   });
 
   test(
-    'recreates persisted draft and final profile across provider containers',
+    'setGoal persists the onboarding draft while progress is in flight',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      container
+          .read(onboardingProvider.notifier)
+          .setGoal(
+            race: RunnerGoalRace.halfMarathon.key,
+            hasRaceDate: true,
+            raceDate: DateTime(2026, 10, 18),
+            priority: GoalPriority.improveTime.key,
+            currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
+            targetTime: const Duration(hours: 1, minutes: 55),
+          );
+
+      await Future<void>.delayed(Duration.zero);
+
+      final rawDraft = prefs.getString(
+        SharedPreferencesRunnerProfileRepository.draftStorageKey,
+      );
+      expect(rawDraft, isNotNull);
+      expect(
+        container.read(onboardingProvider).value?.goal.race,
+        RunnerGoalRace.halfMarathon,
+      );
+    },
+  );
+
+  test(
+    'markCompleted returns false and leaves onboarding incomplete when profile save fails',
     () async {
       final prefs = await SharedPreferences.getInstance();
       final container = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          runnerProfileProvider.overrideWith(
+            () => _FailingRunnerProfileNotifier(StateError('save failed')),
+          ),
+        ],
       );
       addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
+
+      await container.read(userPreferencesProvider.future);
+      await container
+          .read(userPreferencesProvider.notifier)
+          .setGender(ProfileGender.female);
+      await container
+          .read(userPreferencesProvider.notifier)
+          .setDateOfBirth(DateTime(1994, 6, 20));
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setGoal(
+        race: RunnerGoalRace.halfMarathon.key,
+        hasRaceDate: true,
+        raceDate: DateTime(2026, 10, 18),
+        priority: GoalPriority.improveTime.key,
+        currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
+        targetTime: const Duration(hours: 1, minutes: 55),
+      );
+      notifier.setFitness(
+        experience: RunnerExperience.intermediate.key,
+        runningDays: '4',
+        weeklyVolume: WeeklyVolumeRange.volume3.key,
+        longestRun: LongestRunRange.run3.key,
+        canCompleteGoalDist: TernaryChoice.yes.key,
+        raceDistanceBefore: RaceDistanceExperience.once.key,
+        benchmark: BenchmarkType.fiveK.key,
+        benchmarkTime: const Duration(minutes: 26, seconds: 12),
+      );
+      notifier.setSchedule(
+        trainingDays: '4',
+        longRunDay: WeekdayChoice.sunday.key,
+        weekdayTime: TimeSlot.min45.key,
+        weekendTime: TimeSlot.min90.key,
+        hardDays: [WeekdayChoice.tuesday.key, WeekdayChoice.thursday.key],
+        preferredTimeOfDay: PreferredTimeOfDay.morning.key,
+      );
+      notifier.setHealth(
+        painLevel: PainLevelChoice.none.key,
+        injuryHistory: InjuryHistoryChoice.once.key,
+        healthConditions: BinaryChoice.no.key,
+      );
+      notifier.setTraining(planPreference: PlanPreferenceChoice.balanced.key);
+      notifier.setDevice(
+        hasWatch: BinaryChoice.yes.key,
+        device: WatchDeviceType.garmin.key,
+        dataUsage: DataUsagePreference.all.key,
+        watchMetrics: WatchMetricsPreference.ifSupported.key,
+        metrics: [WatchMetric.heartRate.key, WatchMetric.pace.key],
+        hrZones: BinaryChoice.yes.key,
+        paceRecs: BinaryChoice.yes.key,
+        autoAdjust: AutoAdjustPreference.askFirst.key,
+      );
+
+      final saved = await notifier.markCompleted(
+        clock: DateTime(2026, 4, 7, 10, 15),
+      );
+
+      expect(saved, isFalse);
+      expect(prefs.getBool('onboarding_completed'), isNull);
+      expect(
+        container.read(onboardingProvider).value?.goal.race,
+        RunnerGoalRace.halfMarathon,
+      );
+    },
+  );
+
+  test(
+    'recreates persisted draft and final profile across provider containers',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
 
       await container.read(userPreferencesProvider.future);
       await container
@@ -87,15 +229,20 @@ void main() {
         clock: DateTime(2026, 4, 7, 10, 15),
       );
       expect(saved, isTrue);
-      expect(container.read(runnerProfileProvider), isNotNull);
+      await container.read(runnerProfileProvider.future);
+      expect(container.read(runnerProfileProvider).value, isNotNull);
 
-      final recreatedContainer = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final recreatedContainer = _testContainer(prefs);
       addTearDown(recreatedContainer.dispose);
+      await recreatedContainer.read(onboardingProvider.future);
+      await recreatedContainer.read(runnerProfileProvider.future);
 
-      final restoredDraft = recreatedContainer.read(onboardingProvider);
-      final restoredProfile = recreatedContainer.read(runnerProfileProvider);
+      final restoredDraft =
+          recreatedContainer.read(onboardingProvider).value ??
+          const RunnerProfileDraft();
+      final restoredProfile = recreatedContainer
+          .read(runnerProfileProvider)
+          .value;
 
       expect(restoredDraft.goal.race, RunnerGoalRace.halfMarathon);
       expect(restoredDraft.schedule.trainingDays, 4);
@@ -135,21 +282,24 @@ void main() {
         jsonEncode(staleDraft.toJson()),
       );
 
-      final recreatedContainer = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final recreatedContainer = _testContainer(prefs);
       addTearDown(recreatedContainer.dispose);
+      await recreatedContainer.read(onboardingProvider.future);
+      await recreatedContainer.read(runnerProfileProvider.future);
 
-      final restoredDraft = recreatedContainer.read(onboardingProvider);
+      final restoredDraft =
+          recreatedContainer.read(onboardingProvider).value ??
+          const RunnerProfileDraft();
 
       expect(
         restoredDraft.trainingPreferences.planPreference,
         PlanPreferenceChoice.balanced,
       );
-      expect(recreatedContainer.read(runnerProfileProvider), isNotNull);
+      expect(recreatedContainer.read(runnerProfileProvider).value, isNotNull);
       expect(
         recreatedContainer
-            .read(runnerProfileProvider)!
+            .read(runnerProfileProvider)
+            .value!
             .trainingPreferences
             .planPreference,
         PlanPreferenceChoice.balanced,
@@ -161,10 +311,10 @@ void main() {
     'markCompleted seeds a watch connection once and does not clobber an existing wearable',
     () async {
       final prefs = await SharedPreferences.getInstance();
-      final container = ProviderContainer.test(
-        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
-      );
+      final container = _testContainer(prefs);
       addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
 
       await container.read(userPreferencesProvider.future);
       await container
@@ -250,7 +400,9 @@ void main() {
             ),
           );
 
-      final persistedConnections = container.read(deviceConnectionsProvider);
+      final persistedConnections = await container.read(
+        deviceConnectionsProvider.future,
+      );
       expect(
         persistedConnections
             .where(

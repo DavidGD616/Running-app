@@ -68,7 +68,27 @@ class PlanReadyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final answers = ref.watch(onboardingProvider);
+    final onboardingAsync = ref.watch(onboardingProvider);
+    if (onboardingAsync.isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (onboardingAsync.hasError) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(
+          child: Text(
+            l10n.errorGeneric,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+    final answers = onboardingAsync.value ?? const RunnerProfileDraft();
     final goal = ref.watch(onboardingGoalProvider);
     final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
     final primaryLabel = switch (mode) {
@@ -202,7 +222,15 @@ class PlanReadyScreen extends ConsumerWidget {
                       final saved = await ref
                           .read(onboardingProvider.notifier)
                           .saveProfile(markOnboardingComplete: !isSettingsFlow);
-                      if (!saved || !context.mounted) return;
+                      if (!saved) {
+                        if (context.mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text(l10n.errorGeneric)),
+                          );
+                        }
+                        return;
+                      }
+                      if (!context.mounted) return;
                       context.go(
                         isSettingsFlow ? RouteNames.plan : RouteNames.today,
                       );
@@ -217,7 +245,15 @@ class PlanReadyScreen extends ConsumerWidget {
                         final saved = await ref
                             .read(onboardingProvider.notifier)
                             .markCompleted();
-                        if (!saved || !context.mounted) return;
+                        if (!saved) {
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(l10n.errorGeneric)),
+                            );
+                          }
+                          return;
+                        }
+                        if (!context.mounted) return;
                         context.go(RouteNames.plan);
                       },
                     ),

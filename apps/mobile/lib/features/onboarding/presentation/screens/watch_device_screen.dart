@@ -12,6 +12,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../../l10n/app_localizations.dart';
 
 class WatchDeviceScreen extends ConsumerStatefulWidget {
@@ -22,6 +23,7 @@ class WatchDeviceScreen extends ConsumerStatefulWidget {
 }
 
 class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
+  bool _initialized = false;
   String? _hasWatch;
   String? _device;
 
@@ -30,9 +32,12 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
   @override
   void initState() {
     super.initState();
-    final draft = ref.read(onboardingProvider);
-    _hasWatch = draft.device.hasWatchKey;
-    _device = draft.device.deviceKey;
+    final draft = ref.read(onboardingProvider).value;
+    if (draft != null) {
+      _hasWatch = draft.device.hasWatchKey;
+      _device = draft.device.deviceKey;
+      _initialized = true;
+    }
   }
 
   bool get _isComplete {
@@ -67,6 +72,22 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          _hasWatch = next.value!.device.hasWatchKey;
+          _device = next.value!.device.deviceKey;
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final deviceOptions = [

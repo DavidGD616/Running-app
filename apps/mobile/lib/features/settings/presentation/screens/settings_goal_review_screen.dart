@@ -13,6 +13,7 @@ import '../../../../core/widgets/settings_card.dart';
 import '../../../goals/presentation/goal_presenter.dart';
 import '../../../goals/presentation/goal_provider.dart';
 import '../../../onboarding/presentation/onboarding_provider.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../onboarding/presentation/onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
 
@@ -29,7 +30,27 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final answers = ref.watch(onboardingProvider);
+    final onboardingAsync = ref.watch(onboardingProvider);
+    if (onboardingAsync.isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (onboardingAsync.hasError) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(
+          child: Text(
+            l10n.errorGeneric,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+    final answers = onboardingAsync.value ?? const RunnerProfileDraft();
     final goal = ref.watch(onboardingGoalProvider);
     final goalTitle = switch (mode) {
       SettingsGoalReviewMode.editGoal => l10n.settingsEditGoal,

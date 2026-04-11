@@ -15,7 +15,7 @@ class _TestOnboardingNotifier extends OnboardingNotifier {
   final RunnerProfileDraft value;
 
   @override
-  RunnerProfileDraft build() => value;
+  Future<RunnerProfileDraft> build() async => value;
 }
 
 class _TestRunnerProfileNotifier extends RunnerProfileNotifier {
@@ -24,7 +24,7 @@ class _TestRunnerProfileNotifier extends RunnerProfileNotifier {
   final RunnerProfile? value;
 
   @override
-  RunnerProfile? build() => value;
+  Future<RunnerProfile?> build() async => value;
 }
 
 void main() {
@@ -70,7 +70,7 @@ void main() {
     },
   );
 
-  test('goal providers map draft and profile sources independently', () {
+  test('goal providers map draft and profile sources independently', () async {
     final draft = buildRunnerProfileDraft().copyWith(
       goal: GoalProfileDraft(
         race: RunnerGoalRace.fiveK,
@@ -105,6 +105,8 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    await container.read(onboardingProvider.future);
+    await container.read(runnerProfileProvider.future);
 
     expect(container.read(onboardingGoalProvider), isA<RaceGoal>());
     expect(

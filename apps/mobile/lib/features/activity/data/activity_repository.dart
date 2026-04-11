@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../auth/presentation/auth_state_provider.dart';
 import '../domain/models/activity_record.dart';
+import 'supabase_activity_repository.dart';
 
 abstract interface class ActivityRepository {
   List<ActivityRecord> loadAllActivities();
@@ -17,6 +19,73 @@ abstract interface class ActivityRepository {
   Future<void> clearActivities();
 }
 
+abstract interface class AsyncActivityRepository {
+  Future<List<ActivityRecord>> loadAllActivities();
+  Future<List<ActivityRecord>> loadRecentActivities({int limit = 3});
+  Future<List<ActivityRecord>> loadActivitiesByLinkedSessionId(
+    String sessionId,
+  );
+  Future<ActivityRecord?> loadActivityById(String id);
+  Future<void> saveActivity(ActivityRecord activity);
+  Future<void> saveActivities(List<ActivityRecord> activities);
+  Future<void> deleteActivity(String id);
+  Future<void> clearActivities();
+}
+
+class ActivityRepositoryAsyncAdapter implements AsyncActivityRepository {
+  ActivityRepositoryAsyncAdapter(this._repository);
+
+  final ActivityRepository _repository;
+
+  @override
+  Future<List<ActivityRecord>> loadAllActivities() async {
+    return _repository.loadAllActivities();
+  }
+
+  @override
+  Future<List<ActivityRecord>> loadRecentActivities({int limit = 3}) async {
+    return _repository.loadRecentActivities(limit: limit);
+  }
+
+  @override
+  Future<List<ActivityRecord>> loadActivitiesByLinkedSessionId(
+    String sessionId,
+  ) async {
+    return _repository.loadActivitiesByLinkedSessionId(sessionId);
+  }
+
+  @override
+  Future<ActivityRecord?> loadActivityById(String id) async {
+    return _repository.loadActivityById(id);
+  }
+
+  @override
+  Future<void> saveActivity(ActivityRecord activity) {
+    return _repository.saveActivity(activity);
+  }
+
+  @override
+  Future<void> saveActivities(List<ActivityRecord> activities) {
+    return _repository.saveActivities(activities);
+  }
+
+  @override
+  Future<void> deleteActivity(String id) {
+    return _repository.deleteActivity(id);
+  }
+
+  @override
+  Future<void> clearActivities() {
+    return _repository.clearActivities();
+  }
+}
+
+/// Local cache implementation backed by [SharedPreferences].
+///
+/// SharedPreferences is retained as the explicit local cache layer for the
+/// Supabase implementations. This provides offline read access and reduces
+/// cold-start latency. A future sprint may replace SP with SQLite/Drift for
+/// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesActivityRepository implements ActivityRepository {
   SharedPreferencesActivityRepository(this._prefs);
 
@@ -127,4 +196,20 @@ List<ActivityRecord> _sortActivities(Iterable<ActivityRecord> activities) {
 final activityRepositoryProvider = Provider<ActivityRepository>((ref) {
   final prefs = ref.watch(sharedPreferencesProvider);
   return SharedPreferencesActivityRepository(prefs);
+});
+
+/// Switching provider: returns [SupabaseActivityRepository] when a user is
+/// authenticated, otherwise falls back to the local
+/// [SharedPreferencesActivityRepository] via [ActivityRepositoryAsyncAdapter].
+final asyncActivityRepositoryProvider = Provider<AsyncActivityRepository>((
+  ref,
+) {
+  final repository = ref.watch(activityRepositoryProvider);
+
+  final user = ref.watch(currentUserProvider);
+  if (user == null) {
+    return ActivityRepositoryAsyncAdapter(repository);
+  }
+
+  return ref.watch(supabaseActivityRepositoryProvider);
 });

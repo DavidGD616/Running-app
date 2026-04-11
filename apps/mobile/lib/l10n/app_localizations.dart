@@ -272,6 +272,138 @@ abstract class AppLocalizations {
   /// **'Back to Log In'**
   String get backToLogIn;
 
+  /// Loading label while creating an account
+  ///
+  /// In en, this message translates to:
+  /// **'Creating account...'**
+  String get authLoadingSignUp;
+
+  /// Loading label while logging in
+  ///
+  /// In en, this message translates to:
+  /// **'Logging in...'**
+  String get authLoadingLogIn;
+
+  /// Loading label while sending a password reset email
+  ///
+  /// In en, this message translates to:
+  /// **'Sending reset link...'**
+  String get authLoadingResetPassword;
+
+  /// Loading label while signing out
+  ///
+  /// In en, this message translates to:
+  /// **'Signing out...'**
+  String get authLoadingSignOut;
+
+  /// Loading label while starting Google OAuth sign-in
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Google...'**
+  String get authLoadingGoogleSignIn;
+
+  /// OAuth button label on the welcome screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Google'**
+  String get continueWithGoogle;
+
+  /// Shown after sign up when email confirmation is required
+  ///
+  /// In en, this message translates to:
+  /// **'Check your email to confirm your account.'**
+  String get authSuccessCheckEmailForConfirmation;
+
+  /// Shown after requesting a password reset email
+  ///
+  /// In en, this message translates to:
+  /// **'Password reset email sent. Check your inbox.'**
+  String get authSuccessPasswordResetSent;
+
+  /// Generic auth error message
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get authErrorGeneric;
+
+  /// Shown when Supabase rejects sign-in credentials
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password.'**
+  String get authErrorInvalidCredentials;
+
+  /// Shown when sign-up is attempted with an existing email
+  ///
+  /// In en, this message translates to:
+  /// **'An account with this email already exists.'**
+  String get authErrorEmailAlreadyRegistered;
+
+  /// Shown when Supabase rejects a weak password
+  ///
+  /// In en, this message translates to:
+  /// **'Password is too weak. Use at least 6 characters.'**
+  String get authErrorWeakPassword;
+
+  /// Shown when an email address is invalid
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid email address.'**
+  String get authErrorInvalidEmail;
+
+  /// Shown when sign-in is blocked until email confirmation
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your email before logging in.'**
+  String get authErrorEmailNotConfirmed;
+
+  /// Shown when auth requests are temporarily rate limited
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Please wait and try again.'**
+  String get authErrorTooManyRequests;
+
+  /// Shown when the request appears to fail due to connectivity
+  ///
+  /// In en, this message translates to:
+  /// **'Network error. Check your connection and try again.'**
+  String get authErrorNetwork;
+
+  /// Shown when auth actions are attempted without Supabase credentials
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication is not configured for this build.'**
+  String get authErrorNotConfigured;
+
+  /// Validation message when the email field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your email.'**
+  String get authValidationEmailRequired;
+
+  /// Validation message when the password field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Enter your password.'**
+  String get authValidationPasswordRequired;
+
+  /// Validation message when the password is shorter than the minimum length
+  ///
+  /// In en, this message translates to:
+  /// **'Use at least 6 characters.'**
+  String get authValidationPasswordTooShort;
+
+  /// Validation message when the confirm password field is empty
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your password.'**
+  String get authValidationConfirmPasswordRequired;
+
+  /// Validation message when the password confirmation does not match
+  ///
+  /// In en, this message translates to:
+  /// **'Passwords do not match.'**
+  String get authValidationPasswordMismatch;
+
   /// Heading on the account setup screen
   ///
   /// In en, this message translates to:
@@ -290,10 +422,10 @@ abstract class AppLocalizations {
   /// **'Preferred Units'**
   String get preferredUnits;
 
-  /// Section label for short distance and elevation units on account setup screen
+  /// Section label for elevation units on account setup screen
   ///
   /// In en, this message translates to:
-  /// **'Short Distance & Elevation'**
+  /// **'Elevation'**
   String get accountSetupShortDistanceUnits;
 
   /// Kilometers unit option

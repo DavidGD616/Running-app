@@ -15,6 +15,7 @@ import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -31,6 +32,7 @@ class GoalScreen extends ConsumerStatefulWidget {
 }
 
 class _GoalScreenState extends ConsumerState<GoalScreen> {
+  bool _initialized = false;
   String? _selectedRace;
   bool? _hasRaceDate;
   DateTime? _raceDate;
@@ -42,15 +44,24 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.mode != GoalFlowMode.newGoal) {
-      final draft = ref.read(onboardingProvider);
-      _selectedRace = draft.goal.raceKey;
-      _hasRaceDate = draft.goal.hasRaceDate;
-      _raceDate = draft.goal.raceDate;
-      _priority = draft.goal.priorityKey;
-      _currentTime = draft.goal.currentTime;
-      _targetTime = draft.goal.targetTime;
+    if (widget.mode == GoalFlowMode.newGoal) {
+      _initialized = true;
+    } else {
+      final draft = ref.read(onboardingProvider).value;
+      if (draft != null) {
+        _initFromDraft(draft);
+        _initialized = true;
+      }
     }
+  }
+
+  void _initFromDraft(RunnerProfileDraft draft) {
+    _selectedRace = draft.goal.raceKey;
+    _hasRaceDate = draft.goal.hasRaceDate;
+    _raceDate = draft.goal.raceDate;
+    _priority = draft.goal.priorityKey;
+    _currentTime = draft.goal.currentTime;
+    _targetTime = draft.goal.targetTime;
   }
 
   void _scrollToBottom() {
@@ -168,6 +179,21 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          if (widget.mode != GoalFlowMode.newGoal) _initFromDraft(next.value!);
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
     final isSettingsFlow = widget.mode != GoalFlowMode.onboarding;
     final screenTitle = switch (widget.mode) {

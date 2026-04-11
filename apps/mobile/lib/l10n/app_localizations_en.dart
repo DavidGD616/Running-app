@@ -99,6 +99,80 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backToLogIn => 'Back to Log In';
 
   @override
+  String get authLoadingSignUp => 'Creating account...';
+
+  @override
+  String get authLoadingLogIn => 'Logging in...';
+
+  @override
+  String get authLoadingResetPassword => 'Sending reset link...';
+
+  @override
+  String get authLoadingSignOut => 'Signing out...';
+
+  @override
+  String get authLoadingGoogleSignIn => 'Opening Google...';
+
+  @override
+  String get continueWithGoogle => 'Continue with Google';
+
+  @override
+  String get authSuccessCheckEmailForConfirmation =>
+      'Check your email to confirm your account.';
+
+  @override
+  String get authSuccessPasswordResetSent =>
+      'Password reset email sent. Check your inbox.';
+
+  @override
+  String get authErrorGeneric => 'Something went wrong. Please try again.';
+
+  @override
+  String get authErrorInvalidCredentials => 'Incorrect email or password.';
+
+  @override
+  String get authErrorEmailAlreadyRegistered =>
+      'An account with this email already exists.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'Password is too weak. Use at least 6 characters.';
+
+  @override
+  String get authErrorInvalidEmail => 'Enter a valid email address.';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'Confirm your email before logging in.';
+
+  @override
+  String get authErrorTooManyRequests =>
+      'Too many attempts. Please wait and try again.';
+
+  @override
+  String get authErrorNetwork =>
+      'Network error. Check your connection and try again.';
+
+  @override
+  String get authErrorNotConfigured =>
+      'Authentication is not configured for this build.';
+
+  @override
+  String get authValidationEmailRequired => 'Enter your email.';
+
+  @override
+  String get authValidationPasswordRequired => 'Enter your password.';
+
+  @override
+  String get authValidationPasswordTooShort => 'Use at least 6 characters.';
+
+  @override
+  String get authValidationConfirmPasswordRequired => 'Confirm your password.';
+
+  @override
+  String get authValidationPasswordMismatch => 'Passwords do not match.';
+
+  @override
   String get accountSetupTitle => 'Account Setup';
 
   @override
@@ -108,7 +182,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get preferredUnits => 'Preferred Units';
 
   @override
-  String get accountSetupShortDistanceUnits => 'Short Distance & Elevation';
+  String get accountSetupShortDistanceUnits => 'Elevation';
 
   @override
   String get unitKm => 'km';

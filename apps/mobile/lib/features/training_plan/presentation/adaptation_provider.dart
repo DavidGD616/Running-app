@@ -5,65 +5,118 @@ import '../domain/models/plan_adjustment.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
 
-class SessionFeedbackNotifier extends Notifier<List<SessionFeedback>> {
+class SessionFeedbackNotifier extends AsyncNotifier<List<SessionFeedback>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
+  int _mutationEpoch = 0;
+
   @override
-  List<SessionFeedback> build() {
-    return ref.watch(adaptationRepositoryProvider).loadSessionFeedback();
+  Future<List<SessionFeedback>> build() async {
+    ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
+    final loaded = await _asyncRepository.loadSessionFeedback();
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> recordFeedback(SessionFeedback feedback) async {
-    final next = [
-      feedback,
-      ...state.where((item) => item.id != feedback.id),
-    ]..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
-    state = next;
-    await ref.read(adaptationRepositoryProvider).saveSessionFeedback(next);
+    _mutationEpoch++;
+    final current = _currentFeedback();
+    final next = [feedback, ...current.where((item) => item.id != feedback.id)]
+      ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
+    state = AsyncData(next);
+    await _asyncRepository.saveSessionFeedback(next);
+  }
+
+  List<SessionFeedback> _currentFeedback() {
+    return state.maybeWhen(
+      data: (feedback) => feedback,
+      orElse: () => const [],
+    );
   }
 }
 
-class PlanAdjustmentsNotifier extends Notifier<List<PlanAdjustment>> {
+class PlanAdjustmentsNotifier extends AsyncNotifier<List<PlanAdjustment>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
+  int _mutationEpoch = 0;
+
   @override
-  List<PlanAdjustment> build() {
-    return ref.watch(adaptationRepositoryProvider).loadPlanAdjustments();
+  Future<List<PlanAdjustment>> build() async {
+    ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
+    final loaded = await _asyncRepository.loadPlanAdjustments();
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> recordAdjustment(PlanAdjustment adjustment) async {
+    _mutationEpoch++;
+    final current = _currentAdjustments();
     final next = [
       adjustment,
-      ...state.where((item) => item.id != adjustment.id),
+      ...current.where((item) => item.id != adjustment.id),
     ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    state = next;
-    await ref.read(adaptationRepositoryProvider).savePlanAdjustments(next);
+    state = AsyncData(next);
+    await _asyncRepository.savePlanAdjustments(next);
+  }
+
+  List<PlanAdjustment> _currentAdjustments() {
+    return state.maybeWhen(
+      data: (adjustments) => adjustments,
+      orElse: () => const [],
+    );
   }
 }
 
-class PlanRevisionsNotifier extends Notifier<List<PlanRevision>> {
+class PlanRevisionsNotifier extends AsyncNotifier<List<PlanRevision>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
+  int _mutationEpoch = 0;
+
   @override
-  List<PlanRevision> build() {
-    return ref.watch(adaptationRepositoryProvider).loadPlanRevisions();
+  Future<List<PlanRevision>> build() async {
+    ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
+    final loaded = await _asyncRepository.loadPlanRevisions();
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> recordRevision(PlanRevision revision) async {
-    final next = [
-      revision,
-      ...state.where((item) => item.id != revision.id),
-    ]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    state = next;
-    await ref.read(adaptationRepositoryProvider).savePlanRevisions(next);
+    _mutationEpoch++;
+    final current = _currentRevisions();
+    final next = [revision, ...current.where((item) => item.id != revision.id)]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    state = AsyncData(next);
+    await _asyncRepository.savePlanRevisions(next);
+  }
+
+  List<PlanRevision> _currentRevisions() {
+    return state.maybeWhen(
+      data: (revisions) => revisions,
+      orElse: () => const [],
+    );
   }
 }
 
 final sessionFeedbackProvider =
-    NotifierProvider<SessionFeedbackNotifier, List<SessionFeedback>>(
+    AsyncNotifierProvider<SessionFeedbackNotifier, List<SessionFeedback>>(
       SessionFeedbackNotifier.new,
     );
 
 final planAdjustmentsProvider =
-    NotifierProvider<PlanAdjustmentsNotifier, List<PlanAdjustment>>(
+    AsyncNotifierProvider<PlanAdjustmentsNotifier, List<PlanAdjustment>>(
       PlanAdjustmentsNotifier.new,
     );
 
 final planRevisionsProvider =
-    NotifierProvider<PlanRevisionsNotifier, List<PlanRevision>>(
+    AsyncNotifierProvider<PlanRevisionsNotifier, List<PlanRevision>>(
       PlanRevisionsNotifier.new,
     );

@@ -1,73 +1,77 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/core/router/app_router.dart';
 import 'package:running_app/core/router/route_names.dart';
-import 'package:running_app/features/profile/data/runner_profile_repository.dart';
-
-import '../../helpers/runner_profile_fixtures.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  test('loading bootstrap keeps the splash route active', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.loading,
+    );
 
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    expect(redirect, isNull);
   });
 
-  Future<SharedPreferencesRunnerProfileRepository> createRepository(
-    Map<String, Object> values,
-  ) async {
-    SharedPreferences.setMockInitialValues(values);
-    final prefs = await SharedPreferences.getInstance();
-    return SharedPreferencesRunnerProfileRepository(prefs);
-  }
+  test('unauthenticated bootstrap sends splash traffic to welcome', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.unauthenticated,
+    );
 
-  test(
-    'splash redirect stays on default flow when no persisted profile exists',
-    () async {
-      final repository = await createRepository({});
+    expect(redirect, RouteNames.welcome);
+  });
 
-      final redirect = resolveSplashRedirect(
-        matchedLocation: RouteNames.splash,
-        repository: repository,
-      );
+  test('unauthenticated bootstrap keeps public auth routes open', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.logIn,
+      bootstrapState: AppBootstrapState.unauthenticated,
+    );
 
-      expect(redirect, isNull);
-    },
-  );
+    expect(redirect, isNull);
+  });
 
-  test(
-    'splash redirect ignores completion flags and partial draft-only state',
-    () async {
-      final repository = await createRepository({
-        'onboarding_completed': true,
-        SharedPreferencesRunnerProfileRepository.draftStorageKey:
-            '{"goal":{"race":"race_half_marathon"}}',
-      });
+  test('unauthenticated bootstrap sends profile routes back to welcome', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.accountSetup,
+      bootstrapState: AppBootstrapState.unauthenticated,
+    );
 
-      final redirect = resolveSplashRedirect(
-        matchedLocation: RouteNames.splash,
-        repository: repository,
-      );
+    expect(redirect, RouteNames.welcome);
+  });
 
-      expect(redirect, isNull);
-    },
-  );
+  test('profileless signed-in bootstrap lands on account setup', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.authenticatedNeedsProfile,
+    );
 
-  test(
-    'splash redirect routes to today when a valid persisted profile exists',
-    () async {
-      final repository = await createRepository({
-        SharedPreferencesRunnerProfileRepository.profileStorageKey:
-            '{"invalid":true}',
-      });
-      await repository.saveProfile(buildRunnerProfile());
+    expect(redirect, RouteNames.accountSetup);
+  });
 
-      final redirect = resolveSplashRedirect(
-        matchedLocation: RouteNames.splash,
-        repository: repository,
-      );
+  test('profile setup routes stay open while profile is missing', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.onboarding,
+      bootstrapState: AppBootstrapState.authenticatedNeedsProfile,
+    );
 
-      expect(redirect, RouteNames.today);
-    },
-  );
+    expect(redirect, isNull);
+  });
+
+  test('authenticated ready bootstrap sends splash traffic to today', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.authenticatedReady,
+    );
+
+    expect(redirect, RouteNames.today);
+  });
+
+  test('authenticated ready bootstrap replaces auth and setup routes', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.accountSetup,
+      bootstrapState: AppBootstrapState.authenticatedReady,
+    );
+
+    expect(redirect, RouteNames.today);
+  });
 }

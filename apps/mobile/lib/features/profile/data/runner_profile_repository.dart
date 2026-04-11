@@ -2,20 +2,34 @@ import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../../core/supabase/supabase_client_provider.dart';
+import '../../auth/presentation/auth_state_provider.dart';
 import '../domain/models/runner_profile.dart';
+
+part 'supabase_runner_profile_repository.dart';
 
 abstract interface class RunnerProfileRepository {
   RunnerProfileDraft? loadDraft();
   RunnerProfile? loadProfile();
   bool hasPersistedProfile();
+  Future<RunnerProfileDraft?> loadDraftAsync({bool refresh = true});
+  Future<RunnerProfile?> loadProfileAsync({bool refresh = true});
+  Future<bool> hasPersistedProfileAsync({bool refresh = true});
   Future<void> saveDraft(RunnerProfileDraft draft);
   Future<void> saveProfile(RunnerProfile profile);
   Future<void> clearDraft();
   Future<void> clearProfile();
 }
 
+/// Local cache implementation backed by [SharedPreferences].
+///
+/// SharedPreferences is retained as the explicit local cache layer for the
+/// Supabase implementations. This provides offline read access and reduces
+/// cold-start latency. A future sprint may replace SP with SQLite/Drift for
+/// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesRunnerProfileRepository
     implements RunnerProfileRepository {
   SharedPreferencesRunnerProfileRepository(this._prefs);
@@ -47,6 +61,21 @@ class SharedPreferencesRunnerProfileRepository
   bool hasPersistedProfile() => loadProfile() != null;
 
   @override
+  Future<RunnerProfileDraft?> loadDraftAsync({bool refresh = true}) async {
+    return loadDraft();
+  }
+
+  @override
+  Future<RunnerProfile?> loadProfileAsync({bool refresh = true}) async {
+    return loadProfile();
+  }
+
+  @override
+  Future<bool> hasPersistedProfileAsync({bool refresh = true}) async {
+    return hasPersistedProfile();
+  }
+
+  @override
   Future<void> saveDraft(RunnerProfileDraft draft) async {
     await _prefs.setString(draftStorageKey, jsonEncode(draft.toJson()));
   }
@@ -68,6 +97,10 @@ class SharedPreferencesRunnerProfileRepository
     await _prefs.remove(draftStorageKey);
   }
 
+  Future<void> clearCachedProfileOnly() async {
+    await _prefs.remove(profileStorageKey);
+  }
+
   Map<String, dynamic>? _decode(String raw) {
     try {
       final decoded = jsonDecode(raw);
@@ -81,9 +114,24 @@ class SharedPreferencesRunnerProfileRepository
   }
 }
 
+/// Switching provider: returns [SupabaseRunnerProfileRepository] when a user
+/// is authenticated, otherwise falls back to the local
+/// [SharedPreferencesRunnerProfileRepository].
 final runnerProfileRepositoryProvider = Provider<RunnerProfileRepository>((
   ref,
 ) {
   final prefs = ref.watch(sharedPreferencesProvider);
-  return SharedPreferencesRunnerProfileRepository(prefs);
+  final localCache = SharedPreferencesRunnerProfileRepository(prefs);
+
+  final user = ref.watch(currentUserProvider);
+  if (user == null) {
+    return localCache;
+  }
+
+  final client = ref.watch(supabaseClientProvider);
+  return SupabaseRunnerProfileRepository(
+    client: client,
+    userId: user.id,
+    localCache: localCache,
+  );
 });

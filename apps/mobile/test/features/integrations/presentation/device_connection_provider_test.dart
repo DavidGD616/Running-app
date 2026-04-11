@@ -37,7 +37,16 @@ void main() {
             enabled: true,
           );
 
-      expect(container.read(deviceConnectionsProvider), hasLength(1));
+      await container.read(deviceConnectionsProvider.future);
+      expect(
+        container
+            .read(deviceConnectionsProvider)
+            .maybeWhen(
+              data: (connections) => connections,
+              orElse: () => const [],
+            ),
+        hasLength(1),
+      );
       expect(
         container.read(
           connectionForVendorProvider(IntegrationVendor.appleHealth),
@@ -50,7 +59,7 @@ void main() {
       );
       addTearDown(recreated.dispose);
 
-      final reloaded = recreated.read(deviceConnectionsProvider);
+      final reloaded = await recreated.read(deviceConnectionsProvider.future);
       expect(reloaded, hasLength(1));
       expect(
         recreated.read(

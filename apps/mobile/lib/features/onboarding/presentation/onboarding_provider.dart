@@ -9,31 +9,25 @@ import '../../profile/domain/models/runner_profile.dart';
 import '../../profile/presentation/runner_profile_provider.dart';
 import '../../user_preferences/presentation/user_preferences_provider.dart';
 
-class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
+class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   static const _keyCompleted = 'onboarding_completed';
 
+  RunnerProfileRepository get _repository =>
+      ref.read(runnerProfileRepositoryProvider);
+
   @override
-  RunnerProfileDraft build() {
-    final repository = ref.watch(runnerProfileRepositoryProvider);
-    final persistedProfile = repository.loadProfile();
+  Future<RunnerProfileDraft> build() async {
+    final persistedProfile = await _repository.loadProfileAsync();
     if (persistedProfile != null) {
       return RunnerProfileDraft.fromRunnerProfile(persistedProfile);
     }
 
-    final persistedDraft = repository.loadDraft();
-    if (persistedDraft != null) {
-      return persistedDraft;
-    }
-
-    return const RunnerProfileDraft();
+    return await _repository.loadDraftAsync() ?? const RunnerProfileDraft();
   }
 
   void _setState(RunnerProfileDraft nextState) {
-    state = nextState;
-    final repository = ref.read(runnerProfileRepositoryProvider);
-    if (!repository.hasPersistedProfile()) {
-      unawaited(repository.saveDraft(nextState));
-    }
+    state = AsyncData(nextState);
+    unawaited(_saveDraft(nextState));
   }
 
   Future<bool> saveProfile({
@@ -41,7 +35,8 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     DateTime? clock,
   }) async {
     final preferences = await ref.read(userPreferencesProvider.future);
-    final profile = state.toRunnerProfile(
+    final draft = state.value ?? const RunnerProfileDraft();
+    final profile = draft.toRunnerProfile(
       gender: preferences.gender,
       dateOfBirth: preferences.dateOfBirth,
       clock: clock,
@@ -50,16 +45,21 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
       return false;
     }
 
-    await ref.read(runnerProfileProvider.notifier).setProfile(profile);
-    await ref
-        .read(deviceConnectionsProvider.notifier)
-        .seedWatchFromDeviceProfileIfAbsent(profile.device);
-
-    if (markOnboardingComplete) {
-      await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
+    try {
+      await ref.read(runnerProfileProvider.notifier).setProfile(profile);
+      await ref
+          .read(deviceConnectionsProvider.notifier)
+          .seedWatchFromDeviceProfileIfAbsent(profile.device);
+      if (markOnboardingComplete) {
+        await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
+      }
+      if (ref.mounted) {
+        state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+      }
+      return true;
+    } catch (_) {
+      return false;
     }
-
-    return true;
   }
 
   Future<bool> markCompleted({DateTime? clock}) {
@@ -75,7 +75,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     Duration? targetTime,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         goal: GoalProfileDraft(
           race: RunnerGoalRace.fromKey(race),
           hasRaceDate: hasRaceDate,
@@ -100,7 +100,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     Duration? benchmarkTime,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         fitness: RunnerProfileDraft.fitnessFromInput(
           experience: experience,
           canRun10Min: canRun10Min,
@@ -125,7 +125,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     String? preferredTimeOfDay,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         schedule: RunnerProfileDraft.scheduleFromInput(
           trainingDays: trainingDays,
           longRunDay: longRunDay,
@@ -144,7 +144,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required String healthConditions,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         health: RunnerProfileDraft.healthFromInput(
           painLevel: painLevel,
           injuryHistory: injuryHistory,
@@ -156,7 +156,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
 
   void setTraining({required String planPreference}) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         trainingPreferences: RunnerProfileDraft.trainingFromInput(
           planPreference: planPreference,
         ),
@@ -176,7 +176,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     String? noWatchGuidance,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         device: RunnerProfileDraft.deviceFromInput(
           hasWatch: hasWatch,
           device: device,
@@ -199,7 +199,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required String dayFeeling,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         recovery: RunnerProfileDraft.recoveryFromInput(
           sleep: sleep,
           workLevel: workLevel,
@@ -217,7 +217,7 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
     required String coachingTone,
   }) {
     _setState(
-      state.copyWith(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
         motivation: RunnerProfileDraft.motivationFromInput(
           motivations: motivations,
           barriers: barriers,
@@ -227,9 +227,20 @@ class OnboardingNotifier extends Notifier<RunnerProfileDraft> {
       ),
     );
   }
+
+  Future<void> _saveDraft(RunnerProfileDraft nextState) async {
+    try {
+      if (await _repository.hasPersistedProfileAsync()) return;
+      await _repository.saveDraft(nextState);
+    } catch (error, stackTrace) {
+      if (ref.mounted) {
+        state = AsyncError(error, stackTrace);
+      }
+    }
+  }
 }
 
 final onboardingProvider =
-    NotifierProvider<OnboardingNotifier, RunnerProfileDraft>(
+    AsyncNotifierProvider<OnboardingNotifier, RunnerProfileDraft>(
       OnboardingNotifier.new,
     );

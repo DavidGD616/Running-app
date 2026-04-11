@@ -4,45 +4,65 @@ import '../data/activity_repository.dart';
 import '../domain/models/activity_record.dart';
 
 final activitiesProvider =
-    NotifierProvider<ActivitiesNotifier, List<ActivityRecord>>(() {
-      return ActivitiesNotifier();
-    });
+    AsyncNotifierProvider<ActivitiesNotifier, List<ActivityRecord>>(
+      ActivitiesNotifier.new,
+    );
 
-class ActivitiesNotifier extends Notifier<List<ActivityRecord>> {
-  late final ActivityRepository _repository;
+class ActivitiesNotifier extends AsyncNotifier<List<ActivityRecord>> {
+  AsyncActivityRepository get _asyncRepository =>
+      ref.read(asyncActivityRepositoryProvider);
+
+  int _mutationEpoch = 0;
 
   @override
-  List<ActivityRecord> build() {
-    _repository = ref.watch(activityRepositoryProvider);
-    return _repository.loadAllActivities();
+  Future<List<ActivityRecord>> build() async {
+    final buildEpoch = _mutationEpoch;
+    final activities = await _asyncRepository.loadAllActivities();
+
+    if (!ref.mounted) return activities;
+    if (_mutationEpoch != buildEpoch) {
+      return state.value ?? activities;
+    }
+
+    return activities;
   }
 
-  void reload() {
-    state = _repository.loadAllActivities();
+  Future<void> reload() async {
+    ref.invalidateSelf();
+    await future;
   }
 
   Future<void> saveActivity(ActivityRecord activity) async {
-    state = _upsertActivity(state, activity);
-    await _repository.saveActivity(activity);
+    _mutationEpoch++;
+    final current = state.value ?? const <ActivityRecord>[];
+    state = AsyncData(_upsertActivity(current, activity));
+    await _asyncRepository.saveActivity(activity);
   }
 
   Future<void> saveActivities(List<ActivityRecord> activities) async {
-    state = _sortActivities(activities);
-    await _repository.saveActivities(activities);
+    _mutationEpoch++;
+    final sorted = _sortActivities(activities);
+    state = AsyncData(sorted);
+    await _asyncRepository.saveActivities(sorted);
   }
 
   Future<void> deleteActivity(String id) async {
-    state = state.where((activity) => activity.id != id).toList();
-    await _repository.deleteActivity(id);
+    _mutationEpoch++;
+    final current = state.value ?? const <ActivityRecord>[];
+    state = AsyncData(
+      current.where((activity) => activity.id != id).toList(growable: false),
+    );
+    await _asyncRepository.deleteActivity(id);
   }
 
   Future<void> clearActivities() async {
-    state = const [];
-    await _repository.clearActivities();
+    _mutationEpoch++;
+    state = const AsyncData(<ActivityRecord>[]);
+    await _asyncRepository.clearActivities();
   }
 
   ActivityRecord? activityById(String id) {
-    for (final activity in state) {
+    for (final activity in state.value ?? const <ActivityRecord>[]) {
       if (activity.id == id) return activity;
     }
     return null;
@@ -50,12 +70,15 @@ class ActivitiesNotifier extends Notifier<List<ActivityRecord>> {
 }
 
 final recentActivitiesProvider = Provider<List<ActivityRecord>>((ref) {
-  return ref.watch(activitiesProvider).take(3).toList(growable: false);
+  final activities =
+      ref.watch(activitiesProvider).value ?? const <ActivityRecord>[];
+  return activities.take(3).toList(growable: false);
 });
 
 final completedActivitiesProvider = Provider<List<ActivityRecord>>((ref) {
-  return ref
-      .watch(activitiesProvider)
+  final activities =
+      ref.watch(activitiesProvider).value ?? const <ActivityRecord>[];
+  return activities
       .where((activity) => activity.isCompleted)
       .toList(growable: false);
 });
@@ -63,8 +86,9 @@ final completedActivitiesProvider = Provider<List<ActivityRecord>>((ref) {
 final activitiesByLinkedSessionIdProvider =
     Provider.family<List<ActivityRecord>, String>((ref, sessionId) {
       if (sessionId.isEmpty) return const [];
-      return ref
-          .watch(activitiesProvider)
+      final activities =
+          ref.watch(activitiesProvider).value ?? const <ActivityRecord>[];
+      return activities
           .where((activity) => activity.linkedSessionId == sessionId)
           .toList(growable: false);
     });
