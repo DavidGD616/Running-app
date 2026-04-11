@@ -389,6 +389,13 @@
   "planGenerationMsg4": "Personalizando objetivos de sesión...",
   "planGenerationMsg5": "¡Tu plan está casi listo!",
 
+  "planGenerationErrorTitle": "No pudimos generar tu plan",
+  "planGenerationErrorSubtitle": "Algo salió mal. Tus respuestas están guardadas.",
+  "planGenerationRetry": "Intentar de nuevo",
+  "planGenerationUseStarter": "Usar plan de inicio por ahora",
+  "planReadyStarterBanner": "Este es un plan de inicio general, no personalizado a tu perfil.",
+  "planReadyPersonalizeAction": "Generar mi plan personalizado",
+
   "monthJanuary": "Enero",
   "monthFebruary": "Febrero",
   "monthMarch": "Marzo",

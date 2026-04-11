@@ -1126,6 +1126,24 @@
   "planGenerationMsg5": "Your plan is almost ready!",
   "@planGenerationMsg5": { "description": "Loading message 5 on plan generation screen" },
 
+  "planGenerationErrorTitle": "Couldn't generate your plan",
+  "@planGenerationErrorTitle": { "description": "Heading shown when plan generation fails" },
+
+  "planGenerationErrorSubtitle": "Something went wrong. Your answers are saved.",
+  "@planGenerationErrorSubtitle": { "description": "Subtitle shown when plan generation fails" },
+
+  "planGenerationRetry": "Try Again",
+  "@planGenerationRetry": { "description": "Retry button label on plan generation error state" },
+
+  "planGenerationUseStarter": "Use Starter Plan for now",
+  "@planGenerationUseStarter": { "description": "Fallback button label on plan generation error state" },
+
+  "planReadyStarterBanner": "This is a general starter plan, not personalized to your profile.",
+  "@planReadyStarterBanner": { "description": "Banner shown on plan-ready screen when a starter plan is used instead of a generated one" },
+
+  "planReadyPersonalizeAction": "Generate my personalized plan",
+  "@planReadyPersonalizeAction": { "description": "Action label to trigger personalized plan generation from the starter plan banner" },
+
   "monthJanuary": "January",
   "@monthJanuary": { "description": "Month name" },
 

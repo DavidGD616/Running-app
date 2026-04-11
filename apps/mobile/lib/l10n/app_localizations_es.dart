@@ -1156,6 +1156,26 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planGenerationMsg5 => '¡Tu plan está casi listo!';
 
   @override
+  String get planGenerationErrorTitle => 'No pudimos generar tu plan';
+
+  @override
+  String get planGenerationErrorSubtitle =>
+      'Algo salió mal. Tus respuestas están guardadas.';
+
+  @override
+  String get planGenerationRetry => 'Intentar de nuevo';
+
+  @override
+  String get planGenerationUseStarter => 'Usar plan de inicio por ahora';
+
+  @override
+  String get planReadyStarterBanner =>
+      'Este es un plan de inicio general, no personalizado a tu perfil.';
+
+  @override
+  String get planReadyPersonalizeAction => 'Generar mi plan personalizado';
+
+  @override
   String get monthJanuary => 'Enero';
 
   @override
