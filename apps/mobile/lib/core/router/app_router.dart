@@ -87,6 +87,9 @@ final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
     if (profileState.isLoading) {
       return AppBootstrapState.loading;
     }
+    if (profileState.hasError) {
+      return AppBootstrapState.unauthenticated;
+    }
     return profile == null
         ? AppBootstrapState.unauthenticated
         : AppBootstrapState.authenticatedReady;
@@ -95,6 +98,9 @@ final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
   final authState = ref.watch(authStateProvider);
   if (authState.isLoading || profileState.isLoading) {
     return AppBootstrapState.loading;
+  }
+  if (profileState.hasError) {
+    return AppBootstrapState.unauthenticated;
   }
 
   final user = authState.asData?.value;

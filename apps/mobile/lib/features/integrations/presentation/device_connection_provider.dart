@@ -10,14 +10,16 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
   AsyncDeviceConnectionRepository get _asyncRepository =>
       ref.read(asyncDeviceConnectionRepositoryProvider);
 
+  int _mutationEpoch = 0;
+
   @override
   Future<List<DeviceConnection>> build() async {
     ref.watch(asyncDeviceConnectionRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
     final loaded = await _asyncRepository.loadConnections();
-    return state.maybeWhen(
-      data: (connections) => connections,
-      orElse: () => loaded,
-    );
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> reloadFromStorage() async {
@@ -28,6 +30,7 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
   }
 
   Future<void> upsertConnection(DeviceConnection connection) async {
+    _mutationEpoch++;
     final current = _currentConnections();
     final next = [
       connection,
@@ -39,6 +42,7 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
 
   Future<void> removeConnection(String id) async {
     if (id.isEmpty) return;
+    _mutationEpoch++;
     final current = _currentConnections();
     state = AsyncData(
       current
@@ -49,6 +53,7 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
   }
 
   Future<void> clearConnections() async {
+    _mutationEpoch++;
     state = const AsyncData([]);
     await _asyncRepository.clearConnections();
   }
@@ -123,6 +128,7 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
   }
 
   Future<void> _save(List<DeviceConnection> next) async {
+    _mutationEpoch++;
     final sorted = _sortDeviceConnections(next);
     state = AsyncData(sorted);
     await _asyncRepository.saveConnections(sorted);

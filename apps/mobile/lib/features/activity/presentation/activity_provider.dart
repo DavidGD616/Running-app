@@ -28,12 +28,8 @@ class ActivitiesNotifier extends AsyncNotifier<List<ActivityRecord>> {
   }
 
   Future<void> reload() async {
-    final buildEpoch = _mutationEpoch;
-    final activities = await _asyncRepository.loadAllActivities();
-
-    if (ref.mounted && _mutationEpoch == buildEpoch) {
-      state = AsyncData(activities);
-    }
+    ref.invalidateSelf();
+    await future;
   }
 
   Future<void> saveActivity(ActivityRecord activity) async {

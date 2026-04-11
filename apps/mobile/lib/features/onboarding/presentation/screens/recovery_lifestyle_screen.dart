@@ -24,6 +24,7 @@ class RecoveryLifestyleScreen extends ConsumerStatefulWidget {
 
 class _RecoveryLifestyleScreenState
     extends ConsumerState<RecoveryLifestyleScreen> {
+  bool _initialized = false;
   String? _sleep;
   String? _workLevel;
   String? _stressLevel;
@@ -34,8 +35,14 @@ class _RecoveryLifestyleScreenState
   @override
   void initState() {
     super.initState();
-    final draft =
-        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
+    final draft = ref.read(onboardingProvider).value;
+    if (draft != null) {
+      _initFromDraft(draft);
+      _initialized = true;
+    }
+  }
+
+  void _initFromDraft(RunnerProfileDraft draft) {
     _sleep = draft.recovery.sleepKey;
     _workLevel = draft.recovery.workLevelKey;
     _stressLevel = draft.recovery.stressLevelKey;
@@ -66,6 +73,21 @@ class _RecoveryLifestyleScreenState
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          _initFromDraft(next.value!);
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final sleepOptions = [

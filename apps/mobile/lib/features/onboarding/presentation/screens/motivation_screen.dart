@@ -23,6 +23,7 @@ class MotivationScreen extends ConsumerStatefulWidget {
 }
 
 class _MotivationScreenState extends ConsumerState<MotivationScreen> {
+  bool _initialized = false;
   final Set<String> _motivations = {};
   final Set<String> _barriers = {};
   int _confidence = 5;
@@ -33,10 +34,20 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
   @override
   void initState() {
     super.initState();
-    final draft =
-        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
-    _motivations.addAll(draft.motivation.motivationKeys);
-    _barriers.addAll(draft.motivation.barrierKeys);
+    final draft = ref.read(onboardingProvider).value;
+    if (draft != null) {
+      _initFromDraft(draft);
+      _initialized = true;
+    }
+  }
+
+  void _initFromDraft(RunnerProfileDraft draft) {
+    _motivations
+      ..clear()
+      ..addAll(draft.motivation.motivationKeys);
+    _barriers
+      ..clear()
+      ..addAll(draft.motivation.barrierKeys);
     _confidence = draft.motivation.confidence ?? 5;
     _coachingTone = draft.motivation.coachingToneKey;
   }
@@ -92,6 +103,21 @@ class _MotivationScreenState extends ConsumerState<MotivationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          _initFromDraft(next.value!);
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final motivationOptions = [

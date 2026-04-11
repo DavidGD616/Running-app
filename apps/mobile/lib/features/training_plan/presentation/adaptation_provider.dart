@@ -9,14 +9,20 @@ class SessionFeedbackNotifier extends AsyncNotifier<List<SessionFeedback>> {
   AsyncAdaptationRepository get _asyncRepository =>
       ref.read(asyncAdaptationRepositoryProvider);
 
+  int _mutationEpoch = 0;
+
   @override
   Future<List<SessionFeedback>> build() async {
     ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
     final loaded = await _asyncRepository.loadSessionFeedback();
-    return state.maybeWhen(data: (feedback) => feedback, orElse: () => loaded);
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> recordFeedback(SessionFeedback feedback) async {
+    _mutationEpoch++;
     final current = _currentFeedback();
     final next = [feedback, ...current.where((item) => item.id != feedback.id)]
       ..sort((a, b) => b.recordedAt.compareTo(a.recordedAt));
@@ -36,17 +42,20 @@ class PlanAdjustmentsNotifier extends AsyncNotifier<List<PlanAdjustment>> {
   AsyncAdaptationRepository get _asyncRepository =>
       ref.read(asyncAdaptationRepositoryProvider);
 
+  int _mutationEpoch = 0;
+
   @override
   Future<List<PlanAdjustment>> build() async {
     ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
     final loaded = await _asyncRepository.loadPlanAdjustments();
-    return state.maybeWhen(
-      data: (adjustments) => adjustments,
-      orElse: () => loaded,
-    );
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> recordAdjustment(PlanAdjustment adjustment) async {
+    _mutationEpoch++;
     final current = _currentAdjustments();
     final next = [
       adjustment,
@@ -68,17 +77,20 @@ class PlanRevisionsNotifier extends AsyncNotifier<List<PlanRevision>> {
   AsyncAdaptationRepository get _asyncRepository =>
       ref.read(asyncAdaptationRepositoryProvider);
 
+  int _mutationEpoch = 0;
+
   @override
   Future<List<PlanRevision>> build() async {
     ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
     final loaded = await _asyncRepository.loadPlanRevisions();
-    return state.maybeWhen(
-      data: (revisions) => revisions,
-      orElse: () => loaded,
-    );
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
   }
 
   Future<void> recordRevision(PlanRevision revision) async {
+    _mutationEpoch++;
     final current = _currentRevisions();
     final next = [revision, ...current.where((item) => item.id != revision.id)]
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));

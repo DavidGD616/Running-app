@@ -27,6 +27,7 @@ class ScheduleScreen extends ConsumerStatefulWidget {
 }
 
 class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
+  bool _initialized = false;
   String? _trainingDays;
   String? _longRunDay;
   String? _weekdayTime;
@@ -38,13 +39,21 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   @override
   void initState() {
     super.initState();
-    final draft =
-        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
+    final draft = ref.read(onboardingProvider).value;
+    if (draft != null) {
+      _initFromDraft(draft);
+      _initialized = true;
+    }
+  }
+
+  void _initFromDraft(RunnerProfileDraft draft) {
     _trainingDays = draft.schedule.trainingDaysKey;
     _longRunDay = draft.schedule.longRunDayKey;
     _weekdayTime = draft.schedule.weekdayTimeKey;
     _weekendTime = draft.schedule.weekendTimeKey;
-    _hardDays.addAll(draft.schedule.hardDayKeys);
+    _hardDays
+      ..clear()
+      ..addAll(draft.schedule.hardDayKeys);
   }
 
   bool get _isComplete =>
@@ -71,6 +80,21 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          _initFromDraft(next.value!);
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
     final isSettingsFlow = widget.mode != ScheduleFlowMode.onboarding;
     final isChangeSchedule = widget.mode == ScheduleFlowMode.changeSchedule;

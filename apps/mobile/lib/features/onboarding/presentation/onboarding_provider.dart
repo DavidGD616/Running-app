@@ -227,6 +227,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   }
 
   Future<void> _saveDraft(RunnerProfileDraft nextState) async {
+    if (await _repository.hasPersistedProfileAsync()) return;
     await _repository.saveDraft(nextState);
   }
 }

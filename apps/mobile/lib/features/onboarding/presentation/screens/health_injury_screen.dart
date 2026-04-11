@@ -22,6 +22,7 @@ class HealthInjuryScreen extends ConsumerStatefulWidget {
 }
 
 class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
+  bool _initialized = false;
   String? _painLevel;
   String? _injuryHistory;
   String? _healthConditions;
@@ -31,8 +32,14 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
   @override
   void initState() {
     super.initState();
-    final draft =
-        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
+    final draft = ref.read(onboardingProvider).value;
+    if (draft != null) {
+      _initFromDraft(draft);
+      _initialized = true;
+    }
+  }
+
+  void _initFromDraft(RunnerProfileDraft draft) {
     _painLevel = draft.health.painLevelKey;
     _injuryHistory = draft.health.injuryHistoryKey;
     _healthConditions = draft.health.healthConditionsKey;
@@ -59,6 +66,21 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          _initFromDraft(next.value!);
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
 
     final painOptions = [

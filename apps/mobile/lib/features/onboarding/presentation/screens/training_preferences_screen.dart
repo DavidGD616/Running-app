@@ -32,20 +32,39 @@ class TrainingPreferencesScreen extends ConsumerStatefulWidget {
 
 class _TrainingPreferencesScreenState
     extends ConsumerState<TrainingPreferencesScreen> {
+  bool _initialized = false;
   String? _planPreference;
 
   @override
   void initState() {
     super.initState();
-    final draft =
-        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
-    _planPreference = draft.trainingPreferences.planPreferenceKey;
+    final draft = ref.read(onboardingProvider).value;
+    if (draft != null) {
+      _planPreference = draft.trainingPreferences.planPreferenceKey;
+      _initialized = true;
+    }
   }
 
   bool get _isComplete => _planPreference != null;
 
   @override
   Widget build(BuildContext context) {
+    ref.listen<AsyncValue<RunnerProfileDraft>>(onboardingProvider, (_, next) {
+      if (!_initialized && next.hasValue) {
+        setState(() {
+          _planPreference =
+              next.value!.trainingPreferences.planPreferenceKey;
+          _initialized = true;
+        });
+      }
+    });
+    if (!_initialized) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     final l10n = AppLocalizations.of(context)!;
     final isSettingsFlow =
         widget.mode != TrainingPreferencesFlowMode.onboarding;

@@ -68,8 +68,27 @@ class PlanReadyScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final answers =
-        ref.watch(onboardingProvider).value ?? const RunnerProfileDraft();
+    final onboardingAsync = ref.watch(onboardingProvider);
+    if (onboardingAsync.isLoading) {
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (onboardingAsync.hasError) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: Center(
+          child: Text(
+            l10n.errorGeneric,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ),
+      );
+    }
+    final answers = onboardingAsync.value ?? const RunnerProfileDraft();
     final goal = ref.watch(onboardingGoalProvider);
     final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
     final primaryLabel = switch (mode) {
