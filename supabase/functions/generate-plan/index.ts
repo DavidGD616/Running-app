@@ -11,20 +11,31 @@ Deno.serve(async (req) => {
     });
   }
 
-  // User-scoped client — respects RLS
-  const supabase = createClient(
+  // Use SB_PUBLISHABLE_KEY + getClaims() for asymmetric ES256 JWT verification.
+  // verify_jwt = false in config.toml disables the platform-level check so we
+  // handle auth here instead.
+  const supabasePublic = createClient(
     Deno.env.get('SUPABASE_URL')!,
-    Deno.env.get('SUPABASE_ANON_KEY')!,
-    { global: { headers: { Authorization: authHeader } } },
+    Deno.env.get('SB_PUBLISHABLE_KEY')!,
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) {
+  const jwt = authHeader.replace('Bearer ', '');
+  const { data: claimsData, error: claimsError } = await supabasePublic.auth.getClaims(jwt);
+  const userId = claimsData?.claims?.sub;
+  if (!userId || claimsError) {
+    console.error('getClaims failed:', claimsError);
     return new Response(JSON.stringify({ error: 'Unauthorized' }), {
       status: 401,
       headers: { 'Content-Type': 'application/json' },
     });
   }
+
+  // User-scoped client for RLS-respecting reads (runner_profiles)
+  const supabase = createClient(
+    Deno.env.get('SUPABASE_URL')!,
+    Deno.env.get('SUPABASE_ANON_KEY')!,
+    { global: { headers: { Authorization: authHeader } } },
+  );
 
   const body = await req.json().catch(() => ({}));
   const requestedBy: string = body.requestedBy ?? 'onboarding';
@@ -33,7 +44,7 @@ Deno.serve(async (req) => {
   const { data: profileRow, error: profileError } = await supabase
     .from('runner_profiles')
     .select('data')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .maybeSingle();
 
   if (profileError || !profileRow) {
@@ -82,14 +93,14 @@ Deno.serve(async (req) => {
   await adminClient
     .from('plan_versions')
     .update({ is_active: false })
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .eq('is_active', true);
 
   // 7. Insert new active plan version
   const versionId = crypto.randomUUID();
   const { error: insertError } = await adminClient.from('plan_versions').insert({
     id: versionId,
-    user_id: user.id,
+    user_id: userId,
     generated_at: new Date().toISOString(),
     requested_by: requestedBy,
     is_active: true,
