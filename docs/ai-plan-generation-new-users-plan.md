@@ -846,6 +846,10 @@ navigates away when both the animation is done AND the generation call has compl
 - **Validation**:
   - Unit test state transitions with mock Supabase client
 
+**Status**: ✅ Completed — commit `55da8d7`
+**Log**: Created `plan_generation_provider.dart`. Sealed state: `Idle → Loading → Success(versionId) / Failure(reason)`. Calls `client.functions.invoke('generate-plan')`, parses plan JSON, saves via `planVersionRepositoryProvider`. 60s timeout via `.timeout()`. `reason_not_testable`: no mock infrastructure for `SupabaseClient.functions` — verified via `flutter analyze`.
+**Files**: `presentation/plan_generation_provider.dart` (new)
+
 ---
 
 ### Task 4.2: Update `PlanGenerationScreen` to drive the notifier
@@ -884,6 +888,10 @@ navigates away when both the animation is done AND the generation call has compl
   - If animation finishes before call, screen holds at 100% with spinner
   - `flutter analyze` passes
 
+**Status**: ✅ Completed — commit `ce122b2`
+**Log**: Replaced timer-only navigation with `_animationDone` flag + `ref.listen`. `generate()` fired in `initState` via `addPostFrameCallback`. Animation completes → sets `_animationDone = true` → checks if already succeeded; listener fires → checks if animation already done. Holds at 100% with spinner when waiting. `GoRouter.of(context)` captured before async gaps to satisfy `use_build_context_synchronously`. `flutter analyze` clean.
+**Files**: `screens/plan_generation_screen.dart` (modified)
+
 ---
 
 ### Task 4.3: Error state UI in `PlanGenerationScreen`
@@ -911,6 +919,10 @@ navigates away when both the animation is done AND the generation call has compl
   - "Use Starter Plan" routes to `planReady` with visible starter-plan label
   - New ARB keys added to `app_en.arb` and `app_es.arb`, `flutter gen-l10n` run
 
+**Status**: ✅ Completed — commit `ce122b2`
+**Log**: `_showError` flag drives `_buildErrorState()` vs `_buildLoadingState()`. Error state: error icon (red border circle), `planGenerationErrorTitle`, `planGenerationErrorSubtitle`, Retry button (resets state + restarts animation), "Use Starter Plan" button (navigates with `?starter=true` query param). Retry resets `_showError`, `_animationDone`, `_messageIndex`, `_progress` and re-calls `generate()`.
+**Files**: `screens/plan_generation_screen.dart` (modified)
+
 ---
 
 ### Task 4.4: Localization for plan generation error states
@@ -931,6 +943,10 @@ navigates away when both the animation is done AND the generation call has compl
 - **Acceptance Criteria**:
   - `flutter gen-l10n` succeeds without errors
   - Both English and Spanish strings present and non-empty
+
+**Status**: ✅ Completed — commit `ce122b2`
+**Log**: Added 6 keys to `app_en.arb` and `app_es.arb`: `planGenerationErrorTitle`, `planGenerationErrorSubtitle`, `planGenerationRetry`, `planGenerationUseStarter`, `planReadyStarterBanner`, `planReadyPersonalizeAction`. `flutter gen-l10n` ran cleanly.
+**Files**: `l10n/app_en.arb`, `l10n/app_es.arb`, generated l10n dart files
 
 ---
 
