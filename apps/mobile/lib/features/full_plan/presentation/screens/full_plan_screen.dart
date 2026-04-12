@@ -32,9 +32,20 @@ class FullPlanScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final plan = ref.watch(trainingPlanProvider);
+    final plan = ref.watch(trainingPlanProvider).value;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+
+    if (plan == null) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        appBar: AppDetailHeaderBar(
+          title: l10n.fullPlanTitle,
+          onBack: () => Navigator.of(context).maybePop(),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,

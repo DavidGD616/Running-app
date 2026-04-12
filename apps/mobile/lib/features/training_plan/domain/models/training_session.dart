@@ -1,3 +1,4 @@
+import 'model_json_utils.dart';
 import 'session_type.dart';
 import 'workout_step.dart';
 import 'workout_target.dart';
@@ -67,6 +68,82 @@ class TrainingSession {
   final int? warmUpMinutes;
   final int? coolDownMinutes;
 
+  static const int schemaVersion = 1;
+
+  Map<String, dynamic> toJson() => {
+        'schemaVersion': schemaVersion,
+        'id': id,
+        'date': dateTimeToJson(date),
+        'type': type.name,
+        'status': status.name,
+        'weekNumber': weekNumber,
+        'distanceKm': distanceKm,
+        'durationMinutes': durationMinutes,
+        'description': description,
+        'effort': effort?.name,
+        'workoutTarget': workoutTarget?.toJson(),
+        'workoutSteps': workoutSteps.map((s) => s.toJson()).toList(),
+        'supplementalType': supplementalType?.key,
+        'elevationGainMeters': elevationGainMeters,
+        'intervalReps': intervalReps,
+        'intervalRepDistanceMeters': intervalRepDistanceMeters,
+        'intervalRecoverySeconds': intervalRecoverySeconds,
+        'warmUpMinutes': warmUpMinutes,
+        'coolDownMinutes': coolDownMinutes,
+        // phases intentionally excluded — rebuilt from structural fields
+      };
+
+  static TrainingSession? fromJson(Map<String, dynamic> json) {
+    final id = stringOrNull(json['id']);
+    final date = dateTimeFromJson(json['date']);
+    final type = _sessionTypeFromName(stringOrNull(json['type']));
+    final status = _sessionStatusFromName(stringOrNull(json['status'])) ??
+        _deriveStatus(date);
+    if (id == null || id.isEmpty || date == null || type == null) {
+      return null;
+    }
+
+    final rawSteps = json['workoutSteps'];
+    final workoutSteps = <WorkoutStep>[];
+    if (rawSteps is List) {
+      for (final item in rawSteps) {
+        if (item is Map<String, dynamic>) {
+          final step = WorkoutStep.fromJson(item);
+          if (step != null) workoutSteps.add(step);
+        }
+      }
+    }
+
+    WorkoutTarget? workoutTarget;
+    final rawTarget = json['workoutTarget'];
+    if (rawTarget is Map<String, dynamic>) {
+      workoutTarget = WorkoutTarget.fromJson(rawTarget);
+    }
+
+    return TrainingSession(
+      id: id,
+      date: date,
+      type: type,
+      status: status,
+      weekNumber: intOrNull(json['weekNumber']) ?? 1,
+      distanceKm: _doubleOrNull(json['distanceKm']),
+      durationMinutes: intOrNull(json['durationMinutes']),
+      description: stringOrNull(json['description']),
+      effort: _effortFromName(stringOrNull(json['effort'])),
+      workoutTarget: workoutTarget,
+      workoutSteps: workoutSteps,
+      supplementalType: supplementalSessionTypeFromKey(
+          stringOrNull(json['supplementalType'])),
+      elevationGainMeters: intOrNull(json['elevationGainMeters']),
+      intervalReps: intOrNull(json['intervalReps']),
+      intervalRepDistanceMeters: intOrNull(json['intervalRepDistanceMeters']),
+      intervalRecoverySeconds: intOrNull(json['intervalRecoverySeconds']),
+      warmUpMinutes: intOrNull(json['warmUpMinutes']),
+      coolDownMinutes: intOrNull(json['coolDownMinutes']),
+      // phases always empty on deserialization — rebuilt from structural fields
+    );
+  }
+
   bool get hasStructuredWorkout =>
       workoutTarget != null || workoutSteps.isNotEmpty;
 
@@ -124,4 +201,44 @@ class TrainingSession {
       coolDownMinutes: coolDownMinutes ?? this.coolDownMinutes,
     );
   }
+}
+
+SessionType? _sessionTypeFromName(String? name) {
+  if (name == null || name.isEmpty) return null;
+  for (final v in SessionType.values) {
+    if (v.name == name) return v;
+  }
+  return null;
+}
+
+SessionStatus? _sessionStatusFromName(String? name) {
+  if (name == null || name.isEmpty) return null;
+  for (final v in SessionStatus.values) {
+    if (v.name == name) return v;
+  }
+  return null;
+}
+
+SessionStatus _deriveStatus(DateTime? date) {
+  if (date == null) return SessionStatus.upcoming;
+  final today = DateTime.now();
+  final sessionDay = DateTime(date.year, date.month, date.day);
+  final todayDay = DateTime(today.year, today.month, today.day);
+  if (sessionDay == todayDay) return SessionStatus.today;
+  return SessionStatus.upcoming;
+}
+
+TrainingSessionEffort? _effortFromName(String? name) {
+  if (name == null || name.isEmpty) return null;
+  for (final v in TrainingSessionEffort.values) {
+    if (v.name == name) return v;
+  }
+  return null;
+}
+
+double? _doubleOrNull(Object? value) {
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
 }

@@ -104,10 +104,10 @@ class UserProfileDisplay {
 }
 
 final userProfileDisplayProvider = Provider<UserProfileDisplay>((ref) {
-  final plan = ref.watch(trainingPlanProvider);
+  final plan = ref.watch(trainingPlanProvider).value;
   return UserProfileDisplay(
-    raceType: plan.raceType,
-    currentWeekNumber: plan.currentWeekNumber,
-    totalWeeks: plan.totalWeeks,
+    raceType: plan?.raceType ?? TrainingPlanRaceType.halfMarathon,
+    currentWeekNumber: plan?.currentWeekNumber ?? 1,
+    totalWeeks: plan?.totalWeeks ?? 12,
   );
 });

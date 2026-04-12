@@ -13,12 +13,12 @@ import '../../../helpers/activity_fixtures.dart';
 import '../../../helpers/workout_fixtures.dart';
 
 class _TestTrainingPlanNotifier extends TrainingPlanNotifier {
-  _TestTrainingPlanNotifier(this.value);
+  _TestTrainingPlanNotifier(this.fixedPlan);
 
-  final TrainingPlan value;
+  final TrainingPlan fixedPlan;
 
   @override
-  TrainingPlan build() => value;
+  Future<TrainingPlan> build() async => fixedPlan;
 }
 
 void main() {

@@ -7,7 +7,10 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../onboarding_provider.dart';
+import '../plan_generation_provider.dart';
 
 enum PlanGenerationFlowMode { onboarding, editGoal, newGoal }
 
@@ -29,6 +32,9 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
   int _messageIndex = 0;
   double _progress = 0.0;
   Timer? _timer;
+  bool _animationDone = false;
+  bool _showError = false;
+
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -39,6 +45,20 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     l10n.planGenerationMsg4,
     l10n.planGenerationMsg5,
   ];
+
+  String get _requestedBy => switch (widget.mode) {
+    PlanGenerationFlowMode.onboarding => 'onboarding',
+    PlanGenerationFlowMode.editGoal => 'settings_update',
+    PlanGenerationFlowMode.newGoal => 'settings_update',
+  };
+
+  String get _nextRoute => switch (widget.mode) {
+    PlanGenerationFlowMode.onboarding => RouteNames.planReady,
+    PlanGenerationFlowMode.editGoal =>
+      RouteNames.settingsUpdatePlanEditGoalReady,
+    PlanGenerationFlowMode.newGoal =>
+      RouteNames.settingsUpdatePlanNewGoalReady,
+  };
 
   @override
   void initState() {
@@ -53,7 +73,22 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Step through messages every 2 seconds
+    // Save profile to runner_profiles first, then fire generation
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await ref
+          .read(onboardingProvider.notifier)
+          .saveProfile(markOnboardingComplete: false);
+      if (!mounted) return;
+      ref
+          .read(planGenerationProvider.notifier)
+          .generate(requestedBy: _requestedBy);
+      _startAnimation();
+    });
+  }
+
+  void _startAnimation() {
+    _timer?.cancel();
     _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
@@ -66,24 +101,38 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         });
       } else {
         timer.cancel();
-        Future.delayed(const Duration(milliseconds: 600), () async {
-          if (!mounted) return;
-          final nextRoute = switch (widget.mode) {
-            PlanGenerationFlowMode.onboarding => RouteNames.planReady,
-            PlanGenerationFlowMode.editGoal =>
-              RouteNames.settingsUpdatePlanEditGoalReady,
-            PlanGenerationFlowMode.newGoal =>
-              RouteNames.settingsUpdatePlanNewGoalReady,
-          };
-          if (mounted) context.go(nextRoute);
-        });
+        setState(() => _animationDone = true);
+
+        // If generation already succeeded, navigate immediately
+        final genState = ref.read(planGenerationProvider);
+        if (genState is PlanGenerationSuccess) {
+          final route = _nextRoute;
+          final router = GoRouter.of(context);
+          Future.delayed(const Duration(milliseconds: 600), () {
+            if (mounted) router.go(route);
+          });
+        }
+        // Otherwise, hold at 100% and wait for the listener below
       }
     });
+  }
 
-    // Animate progress to first step immediately
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) setState(() => _progress = 0.0);
+  void _useStarterPlan() {
+    if (!mounted) return;
+    context.go('$_nextRoute?starter=true');
+  }
+
+  void _retry() {
+    setState(() {
+      _showError = false;
+      _animationDone = false;
+      _messageIndex = 0;
+      _progress = 0.0;
     });
+    ref
+        .read(planGenerationProvider.notifier)
+        .generate(requestedBy: _requestedBy);
+    _startAnimation();
   }
 
   @override
@@ -96,118 +145,209 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final messages = _getMessages(l10n);
+
+    // Listen for generation state changes
+    final router = GoRouter.of(context);
+    ref.listen<PlanGenerationState>(planGenerationProvider, (_, next) {
+      if (next is PlanGenerationSuccess && _animationDone) {
+        final route = _nextRoute;
+        Future.delayed(const Duration(milliseconds: 600), () {
+          if (mounted) router.go(route);
+        });
+      }
+      if (next is PlanGenerationFailure) {
+        if (mounted) setState(() => _showError = true);
+      }
+    });
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       body: Center(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxxl),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Pulsing icon circle
-              AnimatedBuilder(
-                animation: _pulseAnimation,
-                builder: (context, child) {
-                  return Transform.scale(
-                    scale: _pulseAnimation.value,
-                    child: child,
-                  );
-                },
-                child: Container(
-                  width: 96,
-                  height: 96,
-                  decoration: BoxDecoration(
-                    color: AppColors.backgroundPrimary,
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: AppColors.accentPrimary,
-                      width: 2.5,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accentPrimary.withValues(alpha: 0.25),
-                        blurRadius: 20,
-                        spreadRadius: 4,
-                      ),
-                    ],
-                  ),
-                  child: Center(
-                    child: SvgPicture.asset(
-                      'assets/icons/zap.svg',
-                      width: 36,
-                      height: 36,
-                      colorFilter: const ColorFilter.mode(
-                        AppColors.accentPrimary,
-                        BlendMode.srcIn,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xxl),
-
-              // Title
-              Text(
-                l10n.planGenerationTitle,
-                style: AppTypography.headlineMedium,
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-
-              // Cycling subtitle
-              AnimatedSwitcher(
-                duration: const Duration(milliseconds: 400),
-                child: Text(
-                  messages[_messageIndex],
-                  key: ValueKey(_messageIndex),
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.xl),
-
-              // Progress bar
-              ClipRRect(
-                borderRadius: BorderRadius.circular(100),
-                child: TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0.0, end: _progress),
-                  duration: const Duration(milliseconds: 600),
-                  curve: Curves.easeInOut,
-                  builder: (context, value, _) {
-                    return LinearProgressIndicator(
-                      value: value,
-                      minHeight: 6,
-                      backgroundColor: AppColors.backgroundCard,
-                      valueColor: const AlwaysStoppedAnimation(
-                        AppColors.accentPrimary,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: AppSpacing.sm),
-
-              // Percentage
-              TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0.0, end: _progress),
-                duration: const Duration(milliseconds: 600),
-                builder: (context, value, _) {
-                  return Text(
-                    '${(value * 100).round()}%',
-                    style: AppTypography.labelMedium.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-                  );
-                },
-              ),
-            ],
-          ),
+          child: _showError ? _buildErrorState(l10n) : _buildLoadingState(l10n),
         ),
       ),
+    );
+  }
+
+  // ── Loading state ───────────────────────────────────────────────────────
+
+  Widget _buildLoadingState(AppLocalizations l10n) {
+    final messages = _getMessages(l10n);
+    final genState = ref.watch(planGenerationProvider);
+    // Show spinner overlay at 100% while waiting for the API
+    final holdingForApi = _animationDone && genState is PlanGenerationLoading;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Pulsing icon circle
+        AnimatedBuilder(
+          animation: _pulseAnimation,
+          builder: (context, child) {
+            return Transform.scale(
+              scale: _pulseAnimation.value,
+              child: child,
+            );
+          },
+          child: Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              color: AppColors.backgroundPrimary,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.accentPrimary,
+                width: 2.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.accentPrimary.withValues(alpha: 0.25),
+                  blurRadius: 20,
+                  spreadRadius: 4,
+                ),
+              ],
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                'assets/icons/zap.svg',
+                width: 36,
+                height: 36,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.accentPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+
+        Text(
+          l10n.planGenerationTitle,
+          style: AppTypography.headlineMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          child: Text(
+            messages[_messageIndex],
+            key: ValueKey(_messageIndex),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xl),
+
+        ClipRRect(
+          borderRadius: BorderRadius.circular(100),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.0, end: _progress),
+            duration: const Duration(milliseconds: 600),
+            curve: Curves.easeInOut,
+            builder: (context, value, _) {
+              return LinearProgressIndicator(
+                value: value,
+                minHeight: 6,
+                backgroundColor: AppColors.backgroundCard,
+                valueColor: const AlwaysStoppedAnimation(
+                  AppColors.accentPrimary,
+                ),
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+
+        TweenAnimationBuilder<double>(
+          tween: Tween(begin: 0.0, end: _progress),
+          duration: const Duration(milliseconds: 600),
+          builder: (context, value, _) {
+            return Text(
+              '${(value * 100).round()}%',
+              style: AppTypography.labelMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            );
+          },
+        ),
+
+        // Spinner shown when animation is done but API hasn't responded yet
+        if (holdingForApi) ...[
+          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(
+            width: 24,
+            height: 24,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation(AppColors.accentPrimary),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  // ── Error state ─────────────────────────────────────────────────────────
+
+  Widget _buildErrorState(AppLocalizations l10n) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            color: AppColors.backgroundPrimary,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: AppColors.error,
+              width: 2.5,
+            ),
+          ),
+          child: const Center(
+            child: Icon(
+              Icons.error_outline_rounded,
+              size: 40,
+              color: AppColors.error,
+            ),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+
+        Text(
+          l10n.planGenerationErrorTitle,
+          style: AppTypography.headlineMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.sm),
+
+        Text(
+          l10n.planGenerationErrorSubtitle,
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: AppSpacing.xxl),
+
+        AppButton(
+          label: l10n.planGenerationRetry,
+          onPressed: _retry,
+        ),
+        const SizedBox(height: AppSpacing.md),
+
+        AppButton(
+          label: l10n.planGenerationUseStarter,
+          onPressed: _useStarterPlan,
+          variant: AppButtonVariant.secondary,
+        ),
+      ],
     );
   }
 }

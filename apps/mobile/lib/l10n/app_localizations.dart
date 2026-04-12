@@ -2264,6 +2264,42 @@ abstract class AppLocalizations {
   /// **'Your plan is almost ready!'**
   String get planGenerationMsg5;
 
+  /// Heading shown when plan generation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t generate your plan'**
+  String get planGenerationErrorTitle;
+
+  /// Subtitle shown when plan generation fails
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Your answers are saved.'**
+  String get planGenerationErrorSubtitle;
+
+  /// Retry button label on plan generation error state
+  ///
+  /// In en, this message translates to:
+  /// **'Try Again'**
+  String get planGenerationRetry;
+
+  /// Fallback button label on plan generation error state
+  ///
+  /// In en, this message translates to:
+  /// **'Use Starter Plan for now'**
+  String get planGenerationUseStarter;
+
+  /// Banner shown on plan-ready screen when a starter plan is used instead of a generated one
+  ///
+  /// In en, this message translates to:
+  /// **'This is a general starter plan, not personalized to your profile.'**
+  String get planReadyStarterBanner;
+
+  /// Action label to trigger personalized plan generation from the starter plan banner
+  ///
+  /// In en, this message translates to:
+  /// **'Generate my personalized plan'**
+  String get planReadyPersonalizeAction;
+
   /// Month name
   ///
   /// In en, this message translates to:
@@ -4031,6 +4067,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SCHEDULE'**
   String get fullPlanScheduleLabel;
+
+  /// Shown on the today screen when no training plan has been generated yet
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is being prepared'**
+  String get planNotReadyMessage;
+
+  /// Retry button label on the plan-not-ready empty state
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get planNotReadyRetry;
 }
 
 class _AppLocalizationsDelegate

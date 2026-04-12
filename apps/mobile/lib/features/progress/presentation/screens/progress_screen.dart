@@ -698,6 +698,7 @@ class _ChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (data.length <= 1 || maxVal == 0) return;
     double yFor(double v) => size.height * (1.0 - v / maxVal);
     double xFor(int i) => size.width * i / (data.length - 1);
 

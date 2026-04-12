@@ -6,6 +6,11 @@
       "sourceType": "github",
       "computedHash": "d6043b42474f54b855b0a0394032eb7443945adaa33893eac6d3968f94822d31"
     },
+    "parallel-task": {
+      "source": "am-will/codex-skills",
+      "sourceType": "github",
+      "computedHash": "b88aec02a24a1c8f13d15d53b497c227cd76a3dafc500710192f243addff41f3"
+    },
     "planner": {
       "source": "am-will/codex-skills",
       "sourceType": "github",

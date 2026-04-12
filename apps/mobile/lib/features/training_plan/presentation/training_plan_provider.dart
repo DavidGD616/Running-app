@@ -4,13 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../activity/activity.dart';
 import '../../pre_run/presentation/run_flow_context.dart';
-import '../data/training_plan_seed_data.dart';
+import '../data/supabase_plan_version_repository.dart';
 import '../domain/models/plan_adjustment.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
 import '../domain/models/session_type.dart';
 import '../domain/models/training_plan.dart';
-import '../domain/models/training_session.dart';
 import '../domain/models/week_progress.dart';
 import 'adaptation_provider.dart';
 
@@ -38,52 +37,82 @@ final sessionAdjustmentRequestsForSessionProvider =
           .toList(growable: false);
     });
 
-/// Provides the active training plan.
-/// Swap the body to load from an API or local DB in a future sprint.
-final trainingPlanProvider =
-    NotifierProvider<TrainingPlanNotifier, TrainingPlan>(() {
-      return TrainingPlanNotifier();
-    });
+/// Thrown when no active plan is found in cache or remote.
+class NoPlanFoundException implements Exception {
+  const NoPlanFoundException();
+}
 
-class TrainingPlanNotifier extends Notifier<TrainingPlan> {
+/// Provides the active training plan loaded from [planVersionRepositoryProvider].
+///
+/// On first frame: returns cached plan from SharedPreferences (zero latency).
+/// In background: refreshes from Supabase and updates state if a newer plan arrives.
+/// No cache + no remote plan: throws [NoPlanFoundException].
+final trainingPlanProvider =
+    AsyncNotifierProvider<TrainingPlanNotifier, TrainingPlan>(
+      TrainingPlanNotifier.new,
+    );
+
+class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   final Map<String, SessionStatus> _manualStatusOverrides = {};
 
   @override
-  TrainingPlan build() {
-    final completedActivities = ref.watch(completedActivitiesProvider);
-    return _composePlan(completedActivities);
+  Future<TrainingPlan> build() async {
+    final repo = ref.watch(planVersionRepositoryProvider);
+
+    // Fast sync read from cache (SP) for zero-latency first frame.
+    final cached = repo.loadActivePlanSync();
+    if (cached != null) {
+      // Trigger async refresh in background without blocking first frame.
+      Future.microtask(() async {
+        final refreshed = await repo.loadActivePlanAsync();
+        if (refreshed != null && ref.mounted) {
+          state = AsyncData(_applyActivityStatus(refreshed));
+        }
+      });
+      return _applyActivityStatus(cached);
+    }
+
+    // No cache — full async load (first install after sign-in).
+    final plan = await repo.loadActivePlanAsync();
+    if (plan != null) return _applyActivityStatus(plan);
+
+    throw const NoPlanFoundException();
   }
 
   void skipSession(String sessionId) {
-    final session = _sessionById(sessionId);
-    if (session != null) {
-      final now = DateTime.now();
-      final eventIdSuffix = now.microsecondsSinceEpoch.toString();
-      final adjustment = PlanAdjustment(
-        id: 'adjustment_${sessionId}_$eventIdSuffix',
-        plannedSessionId: session.id,
-        createdAt: now,
-        trigger: PlanAdjustmentTrigger.skippedSession,
-        reason: PlanAdjustmentReason.skippedByRunner,
-      );
-      final revision = PlanRevision(
-        id: 'revision_${sessionId}_$eventIdSuffix',
-        createdAt: now,
-        reason: PlanRevisionReason.skippedSession,
-        summaryKey: 'revision_skipped_session',
-        plannedSessionId: session.id,
-        adjustmentIds: [adjustment.id],
-      );
-      unawaited(
-        ref.read(planAdjustmentsProvider.notifier).recordAdjustment(adjustment),
-      );
-      unawaited(
-        ref.read(planRevisionsProvider.notifier).recordRevision(revision),
-      );
-    }
+    // Always record the adjustment and revision regardless of whether the plan
+    // is loaded yet — the sessionId is all we need for the persistence record.
+    final now = DateTime.now();
+    final eventIdSuffix = now.microsecondsSinceEpoch.toString();
+    final adjustment = PlanAdjustment(
+      id: 'adjustment_${sessionId}_$eventIdSuffix',
+      plannedSessionId: sessionId,
+      createdAt: now,
+      trigger: PlanAdjustmentTrigger.skippedSession,
+      reason: PlanAdjustmentReason.skippedByRunner,
+    );
+    final revision = PlanRevision(
+      id: 'revision_${sessionId}_$eventIdSuffix',
+      createdAt: now,
+      reason: PlanRevisionReason.skippedSession,
+      summaryKey: 'revision_skipped_session',
+      plannedSessionId: sessionId,
+      adjustmentIds: [adjustment.id],
+    );
+    unawaited(
+      ref.read(planAdjustmentsProvider.notifier).recordAdjustment(adjustment),
+    );
+    unawaited(
+      ref.read(planRevisionsProvider.notifier).recordRevision(revision),
+    );
 
     _manualStatusOverrides[sessionId] = SessionStatus.skipped;
-    state = _composePlan(ref.read(completedActivitiesProvider));
+    // Only update plan state if a plan is already loaded; overrides will be
+    // applied automatically when the plan resolves via _applyActivityStatus.
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(_applyOverrides(current));
+    }
   }
 
   void restoreSession(String sessionId) {
@@ -105,7 +134,11 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
             ),
       );
     }
-    state = _composePlan(ref.read(completedActivitiesProvider));
+    // Only update plan state if a plan is already loaded.
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(_applyOverrides(current));
+    }
   }
 
   void recordCompletedRunFeedback({
@@ -131,43 +164,90 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
     );
   }
 
-  TrainingPlan _composePlan(Iterable<ActivityRecord> activities) {
-    final seed = buildSeedTrainingPlan();
-    final linkedSessionIds = activities
+  /// Applies completed-activity status, manual overrides, and date-derived
+  /// status to a loaded plan. Called every time the plan is (re)loaded so
+  /// statuses are always computed relative to the current date.
+  TrainingPlan _applyActivityStatus(TrainingPlan plan) {
+    final completedActivities = ref.read(completedActivitiesProvider);
+    final linkedSessionIds = completedActivities
         .where((activity) => activity.hasLinkedSession)
         .map((activity) => activity.linkedSessionId!)
         .toSet();
-    final updatedSessions = seed.sessions
+
+    final today = DateTime.now();
+    final todayDay = DateTime(today.year, today.month, today.day);
+
+    final updatedSessions = plan.sessions
         .map((session) {
           final manualStatus = _manualStatusOverrides[session.id];
           if (manualStatus != null) {
             return session.copyWith(status: manualStatus);
           }
-
           if (linkedSessionIds.contains(session.id)) {
             return session.copyWith(status: SessionStatus.completed);
           }
-
-          return session;
+          // Derive status from date so it stays accurate across app restarts.
+          final sessionDay = DateTime(
+            session.date.year, session.date.month, session.date.day,
+          );
+          final derived = sessionDay == todayDay
+              ? SessionStatus.today
+              : SessionStatus.upcoming;
+          return session.copyWith(status: derived);
         })
         .toList(growable: false);
 
     return TrainingPlan(
-      id: seed.id,
-      raceType: seed.raceType,
-      totalWeeks: seed.totalWeeks,
-      currentWeekNumber: seed.currentWeekNumber,
+      id: plan.id,
+      raceType: plan.raceType,
+      totalWeeks: plan.totalWeeks,
+      currentWeekNumber: plan.currentWeekNumber,
       sessions: updatedSessions,
-      supportSessions: seed.supportSessions,
+      supportSessions: plan.supportSessions,
     );
   }
 
-  TrainingSession? _sessionById(String sessionId) {
-    for (final session in state.sessions) {
-      if (session.id == sessionId) return session;
-    }
-    return null;
+  /// Re-applies manual overrides and date-derived status to the current plan
+  /// (used by [skipSession] and [restoreSession]).
+  TrainingPlan _applyOverrides(TrainingPlan plan) {
+    final completedActivities = ref.read(completedActivitiesProvider);
+    final linkedSessionIds = completedActivities
+        .where((activity) => activity.hasLinkedSession)
+        .map((activity) => activity.linkedSessionId!)
+        .toSet();
+
+    final today = DateTime.now();
+    final todayDay = DateTime(today.year, today.month, today.day);
+
+    final updatedSessions = plan.sessions
+        .map((session) {
+          final manualStatus = _manualStatusOverrides[session.id];
+          if (manualStatus != null) {
+            return session.copyWith(status: manualStatus);
+          }
+          if (linkedSessionIds.contains(session.id)) {
+            return session.copyWith(status: SessionStatus.completed);
+          }
+          final sessionDay = DateTime(
+            session.date.year, session.date.month, session.date.day,
+          );
+          final derived = sessionDay == todayDay
+              ? SessionStatus.today
+              : SessionStatus.upcoming;
+          return session.copyWith(status: derived);
+        })
+        .toList(growable: false);
+
+    return TrainingPlan(
+      id: plan.id,
+      raceType: plan.raceType,
+      totalWeeks: plan.totalWeeks,
+      currentWeekNumber: plan.currentWeekNumber,
+      sessions: updatedSessions,
+      supportSessions: plan.supportSessions,
+    );
   }
+
 }
 
 SessionFeedbackDifficulty? _difficultyFromEffort(
@@ -194,6 +274,7 @@ SessionRecoveryStatus? _recoveryStatusFromCheckIn(PreRunCheckIn? checkIn) {
 
 /// Derived provider — computes week progress from the current week's sessions.
 final weekProgressProvider = Provider<WeekProgress>((ref) {
-  final plan = ref.watch(trainingPlanProvider);
+  final plan = ref.watch(trainingPlanProvider).value;
+  if (plan == null) return WeekProgress.fromSessions(const []);
   return WeekProgress.fromSessions(plan.currentWeekSessions);
 });

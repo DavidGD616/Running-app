@@ -27,10 +27,10 @@ final userStatsProvider = Provider<UserStats>((ref) {
 });
 
 final completedSessionsProvider = Provider<List<TrainingSession>>((ref) {
-  final trainingPlan = ref.watch(trainingPlanProvider);
+  final trainingPlan = ref.watch(trainingPlanProvider).value;
   final activities = ref.watch(completedActivitiesProvider);
   return buildEffectiveCompletedRunSessions(
-    plannedSessions: trainingPlan.sessions,
+    plannedSessions: trainingPlan?.sessions ?? const [],
     activities: activities,
   );
 });

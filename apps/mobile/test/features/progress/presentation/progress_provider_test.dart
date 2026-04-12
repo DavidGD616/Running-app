@@ -16,12 +16,12 @@ import 'package:running_app/features/training_plan/presentation/training_plan_pr
 import '../../../helpers/activity_fixtures.dart';
 
 class _TestTrainingPlanNotifier extends TrainingPlanNotifier {
-  _TestTrainingPlanNotifier(this.value);
+  _TestTrainingPlanNotifier(this.fixedPlan);
 
-  final TrainingPlan value;
+  final TrainingPlan fixedPlan;
 
   @override
-  TrainingPlan build() => value;
+  Future<TrainingPlan> build() async => fixedPlan;
 }
 
 void main() {
@@ -72,6 +72,7 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      await container.read(trainingPlanProvider.future);
       await container.read(activitiesProvider.future);
 
       final completedSessions = container.read(completedSessionsProvider);
@@ -114,6 +115,7 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    await container.read(trainingPlanProvider.future);
     await container.read(activitiesProvider.future);
 
     expect(container.read(completedSessionsProvider), isEmpty);

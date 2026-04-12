@@ -136,13 +136,20 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final plan = ref.watch(trainingPlanProvider);
+    final planAsync = ref.watch(trainingPlanProvider);
+
+    // Show a non-blocking empty state when no plan has been generated yet.
+    if (planAsync is AsyncError && planAsync.error is NoPlanFoundException) {
+      return _PlanNotReadyEmptyState(l10n: l10n);
+    }
+
+    final plan = planAsync.value;
     final progress = ref.watch(weekProgressProvider);
     final profile = ref.watch(userProfileDisplayProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final todaySession = plan.todaySession;
-    final nextSession = plan.nextUpcomingSession;
+    final todaySession = plan?.todaySession;
+    final nextSession = plan?.nextUpcomingSession;
     final planName = localizedTrainingPlanName(
       raceType: profile.raceType,
       totalWeeks: profile.totalWeeks,
@@ -298,3 +305,45 @@ class HomeScreen extends ConsumerWidget {
 }
 
 // ── Private widgets ─────────────────────────────────────────────────────────────
+
+class _PlanNotReadyEmptyState extends ConsumerWidget {
+  const _PlanNotReadyEmptyState({required this.l10n});
+
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  l10n.planNotReadyMessage,
+                  style: AppTypography.titleLarge.copyWith(
+                    color: AppColors.textPrimary,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                TextButton(
+                  onPressed: () => ref.invalidate(trainingPlanProvider),
+                  child: Text(
+                    l10n.planNotReadyRetry,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.accentPrimary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
