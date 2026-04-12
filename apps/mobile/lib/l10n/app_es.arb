@@ -748,5 +748,8 @@
   "fullPlanCurrentBadge": "ACTUAL",
   "fullPlanCompletedBadge": "HECHO",
   "fullPlanUpcomingBadge": "PRÓXIMA",
-  "fullPlanScheduleLabel": "HORARIO"
+  "fullPlanScheduleLabel": "HORARIO",
+
+  "planNotReadyMessage": "Tu plan está siendo preparado",
+  "planNotReadyRetry": "Reintentar"
 }

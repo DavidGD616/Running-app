@@ -2176,4 +2176,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get fullPlanScheduleLabel => 'HORARIO';
+
+  @override
+  String get planNotReadyMessage => 'Tu plan está siendo preparado';
+
+  @override
+  String get planNotReadyRetry => 'Reintentar';
 }

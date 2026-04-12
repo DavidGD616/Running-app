@@ -72,6 +72,7 @@ void main() {
         ],
       );
       addTearDown(container.dispose);
+      await container.read(trainingPlanProvider.future);
       await container.read(activitiesProvider.future);
 
       final completedSessions = container.read(completedSessionsProvider);
@@ -114,6 +115,7 @@ void main() {
       ],
     );
     addTearDown(container.dispose);
+    await container.read(trainingPlanProvider.future);
     await container.read(activitiesProvider.future);
 
     expect(container.read(completedSessionsProvider), isEmpty);

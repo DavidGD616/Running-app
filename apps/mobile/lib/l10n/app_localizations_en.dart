@@ -2164,4 +2164,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fullPlanScheduleLabel => 'SCHEDULE';
+
+  @override
+  String get planNotReadyMessage => 'Your plan is being prepared';
+
+  @override
+  String get planNotReadyRetry => 'Retry';
 }

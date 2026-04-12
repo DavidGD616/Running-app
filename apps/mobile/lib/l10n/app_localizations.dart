@@ -4067,6 +4067,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SCHEDULE'**
   String get fullPlanScheduleLabel;
+
+  /// Shown on the today screen when no training plan has been generated yet
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is being prepared'**
+  String get planNotReadyMessage;
+
+  /// Retry button label on the plan-not-ready empty state
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get planNotReadyRetry;
 }
 
 class _AppLocalizationsDelegate

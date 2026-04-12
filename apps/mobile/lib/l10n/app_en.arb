@@ -2137,5 +2137,11 @@
   "@fullPlanUpcomingBadge": { "description": "Status badge label for upcoming weeks on the full plan screen" },
 
   "fullPlanScheduleLabel": "SCHEDULE",
-  "@fullPlanScheduleLabel": { "description": "Section label above the week list on the full plan screen" }
+  "@fullPlanScheduleLabel": { "description": "Section label above the week list on the full plan screen" },
+
+  "planNotReadyMessage": "Your plan is being prepared",
+  "@planNotReadyMessage": { "description": "Shown on the today screen when no training plan has been generated yet" },
+
+  "planNotReadyRetry": "Retry",
+  "@planNotReadyRetry": { "description": "Retry button label on the plan-not-ready empty state" }
 }

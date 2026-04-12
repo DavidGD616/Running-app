@@ -10,7 +10,6 @@ import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
 import '../domain/models/session_type.dart';
 import '../domain/models/training_plan.dart';
-import '../domain/models/training_session.dart';
 import '../domain/models/week_progress.dart';
 import 'adaptation_provider.dart';
 
@@ -81,36 +80,39 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   }
 
   void skipSession(String sessionId) {
-    final session = _sessionById(sessionId);
-    if (session != null) {
-      final now = DateTime.now();
-      final eventIdSuffix = now.microsecondsSinceEpoch.toString();
-      final adjustment = PlanAdjustment(
-        id: 'adjustment_${sessionId}_$eventIdSuffix',
-        plannedSessionId: session.id,
-        createdAt: now,
-        trigger: PlanAdjustmentTrigger.skippedSession,
-        reason: PlanAdjustmentReason.skippedByRunner,
-      );
-      final revision = PlanRevision(
-        id: 'revision_${sessionId}_$eventIdSuffix',
-        createdAt: now,
-        reason: PlanRevisionReason.skippedSession,
-        summaryKey: 'revision_skipped_session',
-        plannedSessionId: session.id,
-        adjustmentIds: [adjustment.id],
-      );
-      unawaited(
-        ref.read(planAdjustmentsProvider.notifier).recordAdjustment(adjustment),
-      );
-      unawaited(
-        ref.read(planRevisionsProvider.notifier).recordRevision(revision),
-      );
-    }
+    // Always record the adjustment and revision regardless of whether the plan
+    // is loaded yet — the sessionId is all we need for the persistence record.
+    final now = DateTime.now();
+    final eventIdSuffix = now.microsecondsSinceEpoch.toString();
+    final adjustment = PlanAdjustment(
+      id: 'adjustment_${sessionId}_$eventIdSuffix',
+      plannedSessionId: sessionId,
+      createdAt: now,
+      trigger: PlanAdjustmentTrigger.skippedSession,
+      reason: PlanAdjustmentReason.skippedByRunner,
+    );
+    final revision = PlanRevision(
+      id: 'revision_${sessionId}_$eventIdSuffix',
+      createdAt: now,
+      reason: PlanRevisionReason.skippedSession,
+      summaryKey: 'revision_skipped_session',
+      plannedSessionId: sessionId,
+      adjustmentIds: [adjustment.id],
+    );
+    unawaited(
+      ref.read(planAdjustmentsProvider.notifier).recordAdjustment(adjustment),
+    );
+    unawaited(
+      ref.read(planRevisionsProvider.notifier).recordRevision(revision),
+    );
 
     _manualStatusOverrides[sessionId] = SessionStatus.skipped;
-    final current = state.requireValue;
-    state = AsyncData(_applyOverrides(current));
+    // Only update plan state if a plan is already loaded; overrides will be
+    // applied automatically when the plan resolves via _applyActivityStatus.
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(_applyOverrides(current));
+    }
   }
 
   void restoreSession(String sessionId) {
@@ -132,8 +134,11 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
             ),
       );
     }
-    final current = state.requireValue;
-    state = AsyncData(_applyOverrides(current));
+    // Only update plan state if a plan is already loaded.
+    final current = state.value;
+    if (current != null) {
+      state = AsyncData(_applyOverrides(current));
+    }
   }
 
   void recordCompletedRunFeedback({
@@ -222,14 +227,6 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
     );
   }
 
-  TrainingSession? _sessionById(String sessionId) {
-    final plan = state.value;
-    if (plan == null) return null;
-    for (final session in plan.sessions) {
-      if (session.id == sessionId) return session;
-    }
-    return null;
-  }
 }
 
 SessionFeedbackDifficulty? _difficultyFromEffort(
