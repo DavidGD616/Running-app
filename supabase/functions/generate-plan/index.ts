@@ -78,11 +78,6 @@ Deno.serve(async (req) => {
     workoutSteps: buildWorkoutSteps(session, guidanceType),
   }));
 
-  const planJson = {
-    ...generatedPlan,
-    sessions: sessionsWithSteps,
-  };
-
   // 5-6. Service-role client — bypasses RLS for writes
   const adminClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
@@ -98,6 +93,13 @@ Deno.serve(async (req) => {
 
   // 7. Insert new active plan version
   const versionId = crypto.randomUUID();
+
+  const planJson = {
+    ...generatedPlan,
+    id: versionId,
+    currentWeekNumber: 1,
+    sessions: sessionsWithSteps,
+  };
   const { error: insertError } = await adminClient.from('plan_versions').insert({
     id: versionId,
     user_id: userId,

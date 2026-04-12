@@ -9,6 +9,7 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../onboarding_provider.dart';
 import '../plan_generation_provider.dart';
 
 enum PlanGenerationFlowMode { onboarding, editGoal, newGoal }
@@ -72,8 +73,12 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    // Fire generation immediately
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    // Save profile to runner_profiles first, then fire generation
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!mounted) return;
+      await ref
+          .read(onboardingProvider.notifier)
+          .saveProfile(markOnboardingComplete: false);
       if (!mounted) return;
       ref
           .read(planGenerationProvider.notifier)
