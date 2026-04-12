@@ -97,9 +97,9 @@ class TrainingSession {
     final id = stringOrNull(json['id']);
     final date = dateTimeFromJson(json['date']);
     final type = _sessionTypeFromName(stringOrNull(json['type']));
-    final status = _sessionStatusFromName(stringOrNull(json['status']));
-    if (id == null || id.isEmpty || date == null || type == null ||
-        status == null) {
+    final status = _sessionStatusFromName(stringOrNull(json['status'])) ??
+        _deriveStatus(date);
+    if (id == null || id.isEmpty || date == null || type == null) {
       return null;
     }
 
@@ -217,6 +217,15 @@ SessionStatus? _sessionStatusFromName(String? name) {
     if (v.name == name) return v;
   }
   return null;
+}
+
+SessionStatus _deriveStatus(DateTime? date) {
+  if (date == null) return SessionStatus.upcoming;
+  final today = DateTime.now();
+  final sessionDay = DateTime(date.year, date.month, date.day);
+  final todayDay = DateTime(today.year, today.month, today.day);
+  if (sessionDay == todayDay) return SessionStatus.today;
+  return SessionStatus.upcoming;
 }
 
 TrainingSessionEffort? _effortFromName(String? name) {

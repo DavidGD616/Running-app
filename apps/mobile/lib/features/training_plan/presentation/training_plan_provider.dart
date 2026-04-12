@@ -164,13 +164,18 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
     );
   }
 
-  /// Applies completed-activity status and manual overrides to a loaded plan.
+  /// Applies completed-activity status, manual overrides, and date-derived
+  /// status to a loaded plan. Called every time the plan is (re)loaded so
+  /// statuses are always computed relative to the current date.
   TrainingPlan _applyActivityStatus(TrainingPlan plan) {
     final completedActivities = ref.read(completedActivitiesProvider);
     final linkedSessionIds = completedActivities
         .where((activity) => activity.hasLinkedSession)
         .map((activity) => activity.linkedSessionId!)
         .toSet();
+
+    final today = DateTime.now();
+    final todayDay = DateTime(today.year, today.month, today.day);
 
     final updatedSessions = plan.sessions
         .map((session) {
@@ -181,7 +186,14 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
           if (linkedSessionIds.contains(session.id)) {
             return session.copyWith(status: SessionStatus.completed);
           }
-          return session;
+          // Derive status from date so it stays accurate across app restarts.
+          final sessionDay = DateTime(
+            session.date.year, session.date.month, session.date.day,
+          );
+          final derived = sessionDay == todayDay
+              ? SessionStatus.today
+              : SessionStatus.upcoming;
+          return session.copyWith(status: derived);
         })
         .toList(growable: false);
 
@@ -195,14 +207,17 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
     );
   }
 
-  /// Re-applies only manual overrides to the current plan (used by
-  /// [skipSession] and [restoreSession] where the base plan is already loaded).
+  /// Re-applies manual overrides and date-derived status to the current plan
+  /// (used by [skipSession] and [restoreSession]).
   TrainingPlan _applyOverrides(TrainingPlan plan) {
     final completedActivities = ref.read(completedActivitiesProvider);
     final linkedSessionIds = completedActivities
         .where((activity) => activity.hasLinkedSession)
         .map((activity) => activity.linkedSessionId!)
         .toSet();
+
+    final today = DateTime.now();
+    final todayDay = DateTime(today.year, today.month, today.day);
 
     final updatedSessions = plan.sessions
         .map((session) {
@@ -213,7 +228,13 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
           if (linkedSessionIds.contains(session.id)) {
             return session.copyWith(status: SessionStatus.completed);
           }
-          return session;
+          final sessionDay = DateTime(
+            session.date.year, session.date.month, session.date.day,
+          );
+          final derived = sessionDay == todayDay
+              ? SessionStatus.today
+              : SessionStatus.upcoming;
+          return session.copyWith(status: derived);
         })
         .toList(growable: false);
 
