@@ -136,13 +136,13 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final plan = ref.watch(trainingPlanProvider);
+    final plan = ref.watch(trainingPlanProvider).value;
     final progress = ref.watch(weekProgressProvider);
     final profile = ref.watch(userProfileDisplayProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final todaySession = plan.todaySession;
-    final nextSession = plan.nextUpcomingSession;
+    final todaySession = plan?.todaySession;
+    final nextSession = plan?.nextUpcomingSession;
     final planName = localizedTrainingPlanName(
       raceType: profile.raceType,
       totalWeeks: profile.totalWeeks,

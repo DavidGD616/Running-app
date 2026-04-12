@@ -4,7 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../activity/activity.dart';
 import '../../pre_run/presentation/run_flow_context.dart';
-import '../data/training_plan_seed_data.dart';
+import '../data/supabase_plan_version_repository.dart';
 import '../domain/models/plan_adjustment.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
@@ -38,20 +38,46 @@ final sessionAdjustmentRequestsForSessionProvider =
           .toList(growable: false);
     });
 
-/// Provides the active training plan.
-/// Swap the body to load from an API or local DB in a future sprint.
-final trainingPlanProvider =
-    NotifierProvider<TrainingPlanNotifier, TrainingPlan>(() {
-      return TrainingPlanNotifier();
-    });
+/// Thrown when no active plan is found in cache or remote.
+class NoPlanFoundException implements Exception {
+  const NoPlanFoundException();
+}
 
-class TrainingPlanNotifier extends Notifier<TrainingPlan> {
+/// Provides the active training plan loaded from [planVersionRepositoryProvider].
+///
+/// On first frame: returns cached plan from SharedPreferences (zero latency).
+/// In background: refreshes from Supabase and updates state if a newer plan arrives.
+/// No cache + no remote plan: throws [NoPlanFoundException].
+final trainingPlanProvider =
+    AsyncNotifierProvider<TrainingPlanNotifier, TrainingPlan>(
+      TrainingPlanNotifier.new,
+    );
+
+class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   final Map<String, SessionStatus> _manualStatusOverrides = {};
 
   @override
-  TrainingPlan build() {
-    final completedActivities = ref.watch(completedActivitiesProvider);
-    return _composePlan(completedActivities);
+  Future<TrainingPlan> build() async {
+    final repo = ref.watch(planVersionRepositoryProvider);
+
+    // Fast sync read from cache (SP) for zero-latency first frame.
+    final cached = repo.loadActivePlanSync();
+    if (cached != null) {
+      // Trigger async refresh in background without blocking first frame.
+      Future.microtask(() async {
+        final refreshed = await repo.loadActivePlanAsync();
+        if (refreshed != null && ref.mounted) {
+          state = AsyncData(_applyActivityStatus(refreshed));
+        }
+      });
+      return _applyActivityStatus(cached);
+    }
+
+    // No cache — full async load (first install after sign-in).
+    final plan = await repo.loadActivePlanAsync();
+    if (plan != null) return _applyActivityStatus(plan);
+
+    throw const NoPlanFoundException();
   }
 
   void skipSession(String sessionId) {
@@ -83,7 +109,8 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
     }
 
     _manualStatusOverrides[sessionId] = SessionStatus.skipped;
-    state = _composePlan(ref.read(completedActivitiesProvider));
+    final current = state.requireValue;
+    state = AsyncData(_applyOverrides(current));
   }
 
   void restoreSession(String sessionId) {
@@ -105,7 +132,8 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
             ),
       );
     }
-    state = _composePlan(ref.read(completedActivitiesProvider));
+    final current = state.requireValue;
+    state = AsyncData(_applyOverrides(current));
   }
 
   void recordCompletedRunFeedback({
@@ -131,39 +159,73 @@ class TrainingPlanNotifier extends Notifier<TrainingPlan> {
     );
   }
 
-  TrainingPlan _composePlan(Iterable<ActivityRecord> activities) {
-    final seed = buildSeedTrainingPlan();
-    final linkedSessionIds = activities
+  /// Applies completed-activity status and manual overrides to a loaded plan.
+  TrainingPlan _applyActivityStatus(TrainingPlan plan) {
+    final completedActivities = ref.read(completedActivitiesProvider);
+    final linkedSessionIds = completedActivities
         .where((activity) => activity.hasLinkedSession)
         .map((activity) => activity.linkedSessionId!)
         .toSet();
-    final updatedSessions = seed.sessions
+
+    final updatedSessions = plan.sessions
         .map((session) {
           final manualStatus = _manualStatusOverrides[session.id];
           if (manualStatus != null) {
             return session.copyWith(status: manualStatus);
           }
-
           if (linkedSessionIds.contains(session.id)) {
             return session.copyWith(status: SessionStatus.completed);
           }
-
           return session;
         })
         .toList(growable: false);
 
     return TrainingPlan(
-      id: seed.id,
-      raceType: seed.raceType,
-      totalWeeks: seed.totalWeeks,
-      currentWeekNumber: seed.currentWeekNumber,
+      id: plan.id,
+      raceType: plan.raceType,
+      totalWeeks: plan.totalWeeks,
+      currentWeekNumber: plan.currentWeekNumber,
       sessions: updatedSessions,
-      supportSessions: seed.supportSessions,
+      supportSessions: plan.supportSessions,
+    );
+  }
+
+  /// Re-applies only manual overrides to the current plan (used by
+  /// [skipSession] and [restoreSession] where the base plan is already loaded).
+  TrainingPlan _applyOverrides(TrainingPlan plan) {
+    final completedActivities = ref.read(completedActivitiesProvider);
+    final linkedSessionIds = completedActivities
+        .where((activity) => activity.hasLinkedSession)
+        .map((activity) => activity.linkedSessionId!)
+        .toSet();
+
+    final updatedSessions = plan.sessions
+        .map((session) {
+          final manualStatus = _manualStatusOverrides[session.id];
+          if (manualStatus != null) {
+            return session.copyWith(status: manualStatus);
+          }
+          if (linkedSessionIds.contains(session.id)) {
+            return session.copyWith(status: SessionStatus.completed);
+          }
+          return session;
+        })
+        .toList(growable: false);
+
+    return TrainingPlan(
+      id: plan.id,
+      raceType: plan.raceType,
+      totalWeeks: plan.totalWeeks,
+      currentWeekNumber: plan.currentWeekNumber,
+      sessions: updatedSessions,
+      supportSessions: plan.supportSessions,
     );
   }
 
   TrainingSession? _sessionById(String sessionId) {
-    for (final session in state.sessions) {
+    final plan = state.value;
+    if (plan == null) return null;
+    for (final session in plan.sessions) {
       if (session.id == sessionId) return session;
     }
     return null;
@@ -194,6 +256,7 @@ SessionRecoveryStatus? _recoveryStatusFromCheckIn(PreRunCheckIn? checkIn) {
 
 /// Derived provider — computes week progress from the current week's sessions.
 final weekProgressProvider = Provider<WeekProgress>((ref) {
-  final plan = ref.watch(trainingPlanProvider);
+  final plan = ref.watch(trainingPlanProvider).value;
+  if (plan == null) return WeekProgress.fromSessions(const []);
   return WeekProgress.fromSessions(plan.currentWeekSessions);
 });

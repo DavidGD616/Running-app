@@ -93,11 +93,11 @@ class WeeklyPlanScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final plan = ref.watch(trainingPlanProvider);
+    final plan = ref.watch(trainingPlanProvider).value;
     final progress = ref.watch(weekProgressProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final sessions = plan.currentWeekSessions;
+    final sessions = plan?.currentWeekSessions ?? const [];
     final weekStart = sessions.isNotEmpty
         ? sessions.first.date.day.toString()
         : '';
@@ -118,7 +118,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
               // ── Title ─────────────────────────────────────────────
               Text(
                 l10n.weeklyPlanTitle(
-                  plan.currentWeekNumber.toString(),
+                  (plan?.currentWeekNumber ?? 1).toString(),
                   weekStart,
                 ),
                 style: AppTypography.titleLarge,

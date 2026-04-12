@@ -680,8 +680,12 @@ class SessionDetailScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final plan = ref.watch(trainingPlanProvider);
-    final freshSession = plan.sessions.firstWhere((s) => s.id == session.id);
+    final plan = ref.watch(trainingPlanProvider).value;
+    final freshSession = plan?.sessions.firstWhere(
+          (s) => s.id == session.id,
+          orElse: () => session,
+        ) ??
+        session;
     final status = freshSession.status;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
