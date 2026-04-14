@@ -48,6 +48,7 @@ import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
 import '../../features/progress/presentation/screens/completed_sessions_screen.dart';
 import '../../features/profile/data/runner_profile_repository.dart';
+import '../../features/profile/domain/models/runner_profile.dart';
 import '../../features/profile/presentation/runner_profile_provider.dart';
 import '../persistence/shared_preferences_provider.dart';
 
@@ -101,23 +102,23 @@ final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
     final repository = ref.watch(runnerProfileRepositoryProvider);
     final profile = repository.loadProfile();
     if (profile == null) return AppBootstrapState.authenticatedNeedsProfile;
-    final onboardingDone =
-        ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
-        false;
-    return onboardingDone
+    return _isOnboardingComplete(ref, profile)
         ? AppBootstrapState.authenticatedReady
         : AppBootstrapState.authenticatedNeedsProfile;
   }
 
   final profile = profileState.value;
   if (profile == null) return AppBootstrapState.authenticatedNeedsProfile;
-  final onboardingDone =
-      ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
-      false;
-  return onboardingDone
+  return _isOnboardingComplete(ref, profile)
       ? AppBootstrapState.authenticatedReady
       : AppBootstrapState.authenticatedNeedsProfile;
 });
+
+bool _isOnboardingComplete(Ref ref, RunnerProfile profile) {
+  if (profile.isOnboardingComplete) return true;
+  return ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
+      false;
+}
 
 String? resolveAppRedirect({
   required String matchedLocation,

@@ -36,7 +36,7 @@ void main() {
       gender: ProfileGender.other,
       dateOfBirth: DateTime(1991, 11, 4),
       clock: DateTime(2026, 4, 7, 7, 45),
-    );
+    ).copyWith(completedOnboardingAt: DateTime(2026, 4, 7, 8));
 
     final restored = RunnerProfile.fromJson(profile.toJson());
 
@@ -45,6 +45,8 @@ void main() {
     expect(restored.device.device, WatchDeviceType.garmin);
     expect(restored.gender, ProfileGender.other);
     expect(restored.dateOfBirth, DateTime(1991, 11, 4));
+    expect(restored.completedOnboardingAt, DateTime(2026, 4, 7, 8));
+    expect(restored.isOnboardingComplete, isTrue);
     expect(restored.schemaVersion, 1);
     expect(restored.updatedAt, DateTime(2026, 4, 7, 7, 45));
   });
