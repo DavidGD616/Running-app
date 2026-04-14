@@ -42,6 +42,7 @@ import '../../features/settings/presentation/screens/settings_integrations_scree
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
 import '../../features/pre_run/presentation/run_flow_context.dart';
 import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
+import '../../features/active_run/presentation/screens/active_run_screen.dart';
 import '../../features/log_run/presentation/screens/log_run_screen.dart';
 import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
@@ -100,9 +101,8 @@ final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
     final repository = ref.watch(runnerProfileRepositoryProvider);
     final profile = repository.loadProfile();
     if (profile == null) return AppBootstrapState.authenticatedNeedsProfile;
-    final onboardingDone = ref
-        .watch(sharedPreferencesProvider)
-        .getBool('onboarding_completed') ??
+    final onboardingDone =
+        ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
         false;
     return onboardingDone
         ? AppBootstrapState.authenticatedReady
@@ -111,9 +111,8 @@ final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
 
   final profile = profileState.value;
   if (profile == null) return AppBootstrapState.authenticatedNeedsProfile;
-  final onboardingDone = ref
-      .watch(sharedPreferencesProvider)
-      .getBool('onboarding_completed') ??
+  final onboardingDone =
+      ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
       false;
   return onboardingDone
       ? AppBootstrapState.authenticatedReady
@@ -394,6 +393,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final args = state.extra as PreRunArgs?;
           return PreRunScreen(args: args);
+        },
+      ),
+      GoRoute(
+        path: RouteNames.activeRun,
+        builder: (context, state) {
+          final args = state.extra as ActiveRunArgs?;
+          return ActiveRunScreen(args: args);
         },
       ),
       GoRoute(

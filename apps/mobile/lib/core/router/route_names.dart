@@ -62,6 +62,7 @@ abstract class RouteNames {
   static const settingsUnits = '/settings/units';
   static const sessionDetail = '/session-detail';
   static const preRun = '/pre-run';
+  static const activeRun = '/active-run';
   static const logRun = '/log-run';
   static const fullPlan = '/full-plan';
   static const trainingHistory = '/training-history';

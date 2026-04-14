@@ -3852,6 +3852,429 @@ abstract class AppLocalizations {
   /// **'Save Session'**
   String get logSessionSaveButton;
 
+  /// Header title on the active run tracking screen
+  ///
+  /// In en, this message translates to:
+  /// **'Active Run'**
+  String get activeRunTitle;
+
+  /// Status pill indicating the active run screen is using mock tracking data
+  ///
+  /// In en, this message translates to:
+  /// **'Demo tracking'**
+  String get activeRunDemoTracking;
+
+  /// Current pace metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT PACE'**
+  String get activeRunCurrentPace;
+
+  /// Elapsed time metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'ELAPSED'**
+  String get activeRunElapsed;
+
+  /// Unit label for elapsed time metric
+  ///
+  /// In en, this message translates to:
+  /// **'time'**
+  String get activeRunTimeUnit;
+
+  /// Distance metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'DISTANCE'**
+  String get activeRunDistance;
+
+  /// Average pace metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'AVG PACE'**
+  String get activeRunAveragePace;
+
+  /// Target metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'TARGET'**
+  String get activeRunTarget;
+
+  /// Pause CTA on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get activeRunPause;
+
+  /// Resume CTA on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get activeRunResume;
+
+  /// Finish CTA on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get activeRunFinish;
+
+  /// Planned active run summary with duration and distance
+  ///
+  /// In en, this message translates to:
+  /// **'{plannedDuration} · {plannedDistance}'**
+  String activeRunPlannedSummary(
+    String plannedDuration,
+    String plannedDistance,
+  );
+
+  /// Planned active run summary with duration only
+  ///
+  /// In en, this message translates to:
+  /// **'{plannedDuration}'**
+  String activeRunPlannedDuration(String plannedDuration);
+
+  /// Planned active run summary with distance only
+  ///
+  /// In en, this message translates to:
+  /// **'{plannedDistance}'**
+  String activeRunPlannedDistance(String plannedDistance);
+
+  /// Fallback planned active run summary when no planned values exist
+  ///
+  /// In en, this message translates to:
+  /// **'Guided run'**
+  String get activeRunPlannedFallback;
+
+  /// Active run guidance for easy runs
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it conversational and relaxed.'**
+  String get activeRunGuidanceEasy;
+
+  /// Active run guidance for long runs
+  ///
+  /// In en, this message translates to:
+  /// **'Settle into a steady rhythm and protect the finish.'**
+  String get activeRunGuidanceLong;
+
+  /// Active run guidance for progression runs
+  ///
+  /// In en, this message translates to:
+  /// **'Start controlled, then build effort one phase at a time.'**
+  String get activeRunGuidanceProgression;
+
+  /// Active run guidance for interval runs
+  ///
+  /// In en, this message translates to:
+  /// **'Run the fast blocks with intent, then recover fully.'**
+  String get activeRunGuidanceIntervals;
+
+  /// Active run guidance for hill repeat runs
+  ///
+  /// In en, this message translates to:
+  /// **'Drive the climb, recover on the way back down.'**
+  String get activeRunGuidanceHills;
+
+  /// Active run guidance for fartlek runs
+  ///
+  /// In en, this message translates to:
+  /// **'Use surges when ready, then return to easy running.'**
+  String get activeRunGuidanceFartlek;
+
+  /// Active run guidance for tempo runs
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a strong pace you can control.'**
+  String get activeRunGuidanceTempo;
+
+  /// Active run guidance for threshold runs
+  ///
+  /// In en, this message translates to:
+  /// **'Stay firm but smooth. Do not sprint.'**
+  String get activeRunGuidanceThreshold;
+
+  /// Active run guidance for race pace runs
+  ///
+  /// In en, this message translates to:
+  /// **'Lock into goal pace and keep the effort even.'**
+  String get activeRunGuidanceRacePace;
+
+  /// Active run guidance for recovery runs
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this easy enough to feel better afterward.'**
+  String get activeRunGuidanceRecovery;
+
+  /// Active run status when user is going too fast
+  ///
+  /// In en, this message translates to:
+  /// **'Ease off'**
+  String get activeRunEaseOff;
+
+  /// Active run status when user is going too slow
+  ///
+  /// In en, this message translates to:
+  /// **'Pick it up'**
+  String get activeRunPickUp;
+
+  /// Active run status when user is on target
+  ///
+  /// In en, this message translates to:
+  /// **'On target'**
+  String get activeRunOnTarget;
+
+  /// Active run status for work blocks
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get activeRunPush;
+
+  /// Active run status for recovery blocks
+  ///
+  /// In en, this message translates to:
+  /// **'Recover'**
+  String get activeRunRecover;
+
+  /// Active run status or block label for a fartlek surge
+  ///
+  /// In en, this message translates to:
+  /// **'Surge'**
+  String get activeRunSurge;
+
+  /// Easy block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get activeRunEasyBlock;
+
+  /// Fast target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get activeRunTargetFast;
+
+  /// Climb target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Climb'**
+  String get activeRunTargetClimb;
+
+  /// Tempo target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get activeRunTargetTempo;
+
+  /// Threshold target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get activeRunTargetThreshold;
+
+  /// Race pace target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace'**
+  String get activeRunTargetRace;
+
+  /// Easy target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get activeRunTargetEasy;
+
+  /// Steady target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get activeRunTargetSteady;
+
+  /// Build target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get activeRunTargetBuild;
+
+  /// Surges target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Surges'**
+  String get activeRunTargetSurges;
+
+  /// Unit label for pace-based active run target
+  ///
+  /// In en, this message translates to:
+  /// **'pace'**
+  String get activeRunTargetPaceUnit;
+
+  /// Unit label for effort-based active run target
+  ///
+  /// In en, this message translates to:
+  /// **'effort'**
+  String get activeRunTargetEffortUnit;
+
+  /// Focus panel title for hill repeat active run
+  ///
+  /// In en, this message translates to:
+  /// **'Hill repeat focus'**
+  String get activeRunHillFocusTitle;
+
+  /// Focus panel title for interval active run
+  ///
+  /// In en, this message translates to:
+  /// **'Interval focus'**
+  String get activeRunIntervalFocusTitle;
+
+  /// Current block label on active run focus panel
+  ///
+  /// In en, this message translates to:
+  /// **'Current block'**
+  String get activeRunCurrentBlock;
+
+  /// Climb block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Climb'**
+  String get activeRunClimb;
+
+  /// Fast repetition block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Fast rep'**
+  String get activeRunFastRep;
+
+  /// Recovery block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get activeRunRecovery;
+
+  /// Repetition counter label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Rep'**
+  String get activeRunRep;
+
+  /// Remaining time in the current active run block
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} remaining'**
+  String activeRunBlockRemaining(String remaining);
+
+  /// Focus panel title for progression active run
+  ///
+  /// In en, this message translates to:
+  /// **'Progression phases'**
+  String get activeRunProgressionFocusTitle;
+
+  /// Steady phase label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get activeRunSteadyBlock;
+
+  /// Strong phase label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get activeRunStrongBlock;
+
+  /// Focus panel title for pace-controlled active runs
+  ///
+  /// In en, this message translates to:
+  /// **'Pace control'**
+  String get activeRunPaceFocusTitle;
+
+  /// Control label on active run focus panel
+  ///
+  /// In en, this message translates to:
+  /// **'Control'**
+  String get activeRunControl;
+
+  /// Footer guidance for pace-controlled active runs
+  ///
+  /// In en, this message translates to:
+  /// **'Stay smooth inside the target band.'**
+  String get activeRunPaceFocusFooter;
+
+  /// Focus panel title for long run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Long run focus'**
+  String get activeRunLongFocusTitle;
+
+  /// Focus label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get activeRunFocus;
+
+  /// Reminder label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get activeRunReminder;
+
+  /// Fuel reminder value on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get activeRunFuel;
+
+  /// Footer guidance for long run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Sip water and check effort before the next mile.'**
+  String get activeRunLongFocusFooter;
+
+  /// Focus panel title for recovery run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery focus'**
+  String get activeRunRecoveryFocusTitle;
+
+  /// Focus panel title for easy run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy run focus'**
+  String get activeRunEasyFocusTitle;
+
+  /// Relaxed control value on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed'**
+  String get activeRunRelaxed;
+
+  /// Footer guidance for recovery run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'The goal is fresh legs, not a faster split.'**
+  String get activeRunRecoveryFocusFooter;
+
+  /// Footer guidance for easy run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'You should be able to speak in full sentences.'**
+  String get activeRunEasyFocusFooter;
+
+  /// Focus panel title for fartlek active run
+  ///
+  /// In en, this message translates to:
+  /// **'Fartlek control'**
+  String get activeRunFartlekFocusTitle;
+
+  /// CTA to end a fartlek surge
+  ///
+  /// In en, this message translates to:
+  /// **'End surge'**
+  String get activeRunEndSurge;
+
+  /// CTA to start a fartlek surge
+  ///
+  /// In en, this message translates to:
+  /// **'Start surge'**
+  String get activeRunStartSurge;
+
   /// Header title on the pre-run check screen
   ///
   /// In en, this message translates to:

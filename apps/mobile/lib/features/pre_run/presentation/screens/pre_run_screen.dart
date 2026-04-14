@@ -238,8 +238,8 @@ class _PreRunScreenState extends State<PreRunScreen> {
             _ContinueButton(
               label: l10n.preRunContinue,
               onTap: () => context.push(
-                RouteNames.logRun,
-                extra: LogRunArgs(
+                RouteNames.activeRun,
+                extra: ActiveRunArgs(
                   session: widget.args?.session,
                   checkIn: PreRunCheckIn(
                     legs: _legs,

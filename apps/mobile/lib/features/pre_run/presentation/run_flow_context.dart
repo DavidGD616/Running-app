@@ -132,11 +132,25 @@ class PreRunArgs {
   final RunFlowSessionContext session;
 }
 
-class LogRunArgs {
-  const LogRunArgs({required this.session, this.checkIn});
+class ActiveRunArgs {
+  const ActiveRunArgs({required this.session, this.checkIn});
 
   final RunFlowSessionContext? session;
   final PreRunCheckIn? checkIn;
+}
+
+class LogRunArgs {
+  const LogRunArgs({
+    required this.session,
+    this.checkIn,
+    this.actualDuration,
+    this.actualDistanceKm,
+  });
+
+  final RunFlowSessionContext? session;
+  final PreRunCheckIn? checkIn;
+  final Duration? actualDuration;
+  final double? actualDistanceKm;
 }
 
 T? _enumFromKey<T extends Enum>(List<T> values, Object? raw) {

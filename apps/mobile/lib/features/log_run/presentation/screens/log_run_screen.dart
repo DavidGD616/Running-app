@@ -45,9 +45,11 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     }
 
     final now = DateTime.now();
-    final actualDuration = session.durationMinutes != null
-        ? Duration(minutes: session.durationMinutes!)
-        : null;
+    final actualDuration =
+        widget.args?.actualDuration ??
+        (session.durationMinutes != null
+            ? Duration(minutes: session.durationMinutes!)
+            : null);
     final record = RunActivity(
       id: session.sessionId,
       linkedSessionId: session.sessionId,
@@ -57,7 +59,7 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
       startedAt: actualDuration != null ? now.subtract(actualDuration) : now,
       endedAt: now,
       actualDuration: actualDuration,
-      actualDistanceKm: session.distanceKm,
+      actualDistanceKm: widget.args?.actualDistanceKm ?? session.distanceKm,
       actualElevationGainMeters: session.elevationGainMeters,
       perceivedEffort: _selectedFeeling,
       notes: _notesController.text.trim().isEmpty
@@ -66,14 +68,16 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     );
 
     await ref.read(activitiesProvider.notifier).saveActivity(record);
-    ref.read(trainingPlanProvider.notifier).recordCompletedRunFeedback(
-      session: session,
-      activityId: record.id,
-      perceivedEffort: _selectedFeeling,
-      checkIn: widget.args?.checkIn,
-      notes: record.notes,
-      recordedAt: now,
-    );
+    ref
+        .read(trainingPlanProvider.notifier)
+        .recordCompletedRunFeedback(
+          session: session,
+          activityId: record.id,
+          perceivedEffort: _selectedFeeling,
+          checkIn: widget.args?.checkIn,
+          notes: record.notes,
+          recordedAt: now,
+        );
     if (!mounted) return;
     context.go(RouteNames.today);
   }
@@ -125,8 +129,10 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     final session = widget.args?.session;
     final plannedDistanceKm = session?.distanceKm;
     final plannedDurationMinutes = session?.durationMinutes;
-    final displayDistanceKm = plannedDistanceKm ?? 6.02;
-    final displayDurationMinutes = plannedDurationMinutes ?? 45;
+    final displayDistanceKm =
+        widget.args?.actualDistanceKm ?? plannedDistanceKm ?? 6.02;
+    final displayDurationMinutes =
+        widget.args?.actualDuration?.inMinutes ?? plannedDurationMinutes ?? 45;
     final plannedTitle = session != null
         ? _sessionTitle(session.sessionType, l10n)
         : l10n.logSessionSessionName;

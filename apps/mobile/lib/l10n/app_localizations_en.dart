@@ -2052,6 +2052,238 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSessionSaveButton => 'Save Session';
 
   @override
+  String get activeRunTitle => 'Active Run';
+
+  @override
+  String get activeRunDemoTracking => 'Demo tracking';
+
+  @override
+  String get activeRunCurrentPace => 'CURRENT PACE';
+
+  @override
+  String get activeRunElapsed => 'ELAPSED';
+
+  @override
+  String get activeRunTimeUnit => 'time';
+
+  @override
+  String get activeRunDistance => 'DISTANCE';
+
+  @override
+  String get activeRunAveragePace => 'AVG PACE';
+
+  @override
+  String get activeRunTarget => 'TARGET';
+
+  @override
+  String get activeRunPause => 'Pause';
+
+  @override
+  String get activeRunResume => 'Resume';
+
+  @override
+  String get activeRunFinish => 'Finish';
+
+  @override
+  String activeRunPlannedSummary(
+    String plannedDuration,
+    String plannedDistance,
+  ) {
+    return '$plannedDuration · $plannedDistance';
+  }
+
+  @override
+  String activeRunPlannedDuration(String plannedDuration) {
+    return '$plannedDuration';
+  }
+
+  @override
+  String activeRunPlannedDistance(String plannedDistance) {
+    return '$plannedDistance';
+  }
+
+  @override
+  String get activeRunPlannedFallback => 'Guided run';
+
+  @override
+  String get activeRunGuidanceEasy => 'Keep it conversational and relaxed.';
+
+  @override
+  String get activeRunGuidanceLong =>
+      'Settle into a steady rhythm and protect the finish.';
+
+  @override
+  String get activeRunGuidanceProgression =>
+      'Start controlled, then build effort one phase at a time.';
+
+  @override
+  String get activeRunGuidanceIntervals =>
+      'Run the fast blocks with intent, then recover fully.';
+
+  @override
+  String get activeRunGuidanceHills =>
+      'Drive the climb, recover on the way back down.';
+
+  @override
+  String get activeRunGuidanceFartlek =>
+      'Use surges when ready, then return to easy running.';
+
+  @override
+  String get activeRunGuidanceTempo => 'Hold a strong pace you can control.';
+
+  @override
+  String get activeRunGuidanceThreshold =>
+      'Stay firm but smooth. Do not sprint.';
+
+  @override
+  String get activeRunGuidanceRacePace =>
+      'Lock into goal pace and keep the effort even.';
+
+  @override
+  String get activeRunGuidanceRecovery =>
+      'Keep this easy enough to feel better afterward.';
+
+  @override
+  String get activeRunEaseOff => 'Ease off';
+
+  @override
+  String get activeRunPickUp => 'Pick it up';
+
+  @override
+  String get activeRunOnTarget => 'On target';
+
+  @override
+  String get activeRunPush => 'Push';
+
+  @override
+  String get activeRunRecover => 'Recover';
+
+  @override
+  String get activeRunSurge => 'Surge';
+
+  @override
+  String get activeRunEasyBlock => 'Easy';
+
+  @override
+  String get activeRunTargetFast => 'Fast';
+
+  @override
+  String get activeRunTargetClimb => 'Climb';
+
+  @override
+  String get activeRunTargetTempo => 'Tempo';
+
+  @override
+  String get activeRunTargetThreshold => 'Threshold';
+
+  @override
+  String get activeRunTargetRace => 'Race pace';
+
+  @override
+  String get activeRunTargetEasy => 'Easy';
+
+  @override
+  String get activeRunTargetSteady => 'Steady';
+
+  @override
+  String get activeRunTargetBuild => 'Build';
+
+  @override
+  String get activeRunTargetSurges => 'Surges';
+
+  @override
+  String get activeRunTargetPaceUnit => 'pace';
+
+  @override
+  String get activeRunTargetEffortUnit => 'effort';
+
+  @override
+  String get activeRunHillFocusTitle => 'Hill repeat focus';
+
+  @override
+  String get activeRunIntervalFocusTitle => 'Interval focus';
+
+  @override
+  String get activeRunCurrentBlock => 'Current block';
+
+  @override
+  String get activeRunClimb => 'Climb';
+
+  @override
+  String get activeRunFastRep => 'Fast rep';
+
+  @override
+  String get activeRunRecovery => 'Recovery';
+
+  @override
+  String get activeRunRep => 'Rep';
+
+  @override
+  String activeRunBlockRemaining(String remaining) {
+    return '$remaining remaining';
+  }
+
+  @override
+  String get activeRunProgressionFocusTitle => 'Progression phases';
+
+  @override
+  String get activeRunSteadyBlock => 'Steady';
+
+  @override
+  String get activeRunStrongBlock => 'Strong';
+
+  @override
+  String get activeRunPaceFocusTitle => 'Pace control';
+
+  @override
+  String get activeRunControl => 'Control';
+
+  @override
+  String get activeRunPaceFocusFooter => 'Stay smooth inside the target band.';
+
+  @override
+  String get activeRunLongFocusTitle => 'Long run focus';
+
+  @override
+  String get activeRunFocus => 'Focus';
+
+  @override
+  String get activeRunReminder => 'Reminder';
+
+  @override
+  String get activeRunFuel => 'Fuel';
+
+  @override
+  String get activeRunLongFocusFooter =>
+      'Sip water and check effort before the next mile.';
+
+  @override
+  String get activeRunRecoveryFocusTitle => 'Recovery focus';
+
+  @override
+  String get activeRunEasyFocusTitle => 'Easy run focus';
+
+  @override
+  String get activeRunRelaxed => 'Relaxed';
+
+  @override
+  String get activeRunRecoveryFocusFooter =>
+      'The goal is fresh legs, not a faster split.';
+
+  @override
+  String get activeRunEasyFocusFooter =>
+      'You should be able to speak in full sentences.';
+
+  @override
+  String get activeRunFartlekFocusTitle => 'Fartlek control';
+
+  @override
+  String get activeRunEndSurge => 'End surge';
+
+  @override
+  String get activeRunStartSurge => 'Start surge';
+
+  @override
   String get preRunTitle => 'Pre-run Check';
 
   @override

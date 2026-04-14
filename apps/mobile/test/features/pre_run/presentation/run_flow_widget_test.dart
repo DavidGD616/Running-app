@@ -9,6 +9,7 @@ import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/core/router/route_names.dart';
 import 'package:running_app/features/activity/data/activity_repository.dart';
 import 'package:running_app/features/activity/domain/models/activity_record.dart';
+import 'package:running_app/features/active_run/presentation/screens/active_run_screen.dart';
 import 'package:running_app/features/log_run/presentation/screens/log_run_screen.dart';
 import 'package:running_app/features/pre_run/presentation/run_flow_context.dart';
 import 'package:running_app/features/pre_run/presentation/screens/pre_run_screen.dart';
@@ -49,7 +50,9 @@ void main() {
     return ProviderScope(
       overrides: [
         sharedPreferencesProvider.overrideWithValue(prefs),
-        trainingPlanProvider.overrideWith(() => _TestTrainingPlanNotifier(plan)),
+        trainingPlanProvider.overrideWith(
+          () => _TestTrainingPlanNotifier(plan),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -62,7 +65,7 @@ void main() {
         ],
         supportedLocales: const [Locale('en'), Locale('es')],
       ),
-      );
+    );
   }
 
   Future<void> pumpRouteChange(WidgetTester tester) async {
@@ -106,15 +109,18 @@ void main() {
           ),
           GoRoute(
             path: RouteNames.preRun,
-            builder: (context, state) => PreRunScreen(
-              args: state.extra as PreRunArgs?,
-            ),
+            builder: (context, state) =>
+                PreRunScreen(args: state.extra as PreRunArgs?),
+          ),
+          GoRoute(
+            path: RouteNames.activeRun,
+            builder: (context, state) =>
+                ActiveRunScreen(args: state.extra as ActiveRunArgs?),
           ),
           GoRoute(
             path: RouteNames.logRun,
-            builder: (context, state) => LogRunScreen(
-              args: state.extra as LogRunArgs?,
-            ),
+            builder: (context, state) =>
+                LogRunScreen(args: state.extra as LogRunArgs?),
           ),
         ],
       );
@@ -130,7 +136,9 @@ void main() {
       );
       await pumpRouteChange(tester);
 
-      final sessionDetailContext = tester.element(find.byType(SessionDetailScreen));
+      final sessionDetailContext = tester.element(
+        find.byType(SessionDetailScreen),
+      );
       final sessionDetailL10n = AppLocalizations.of(sessionDetailContext)!;
       await tester.tap(find.text(sessionDetailL10n.sessionDetailStartWorkout));
       await pumpRouteChange(tester);
@@ -139,6 +147,13 @@ void main() {
       final preRunL10n = AppLocalizations.of(preRunContext)!;
       expect(find.byType(PreRunScreen), findsOneWidget);
       await tester.tap(find.text(preRunL10n.preRunContinue));
+      await pumpRouteChange(tester);
+
+      final activeRunContext = tester.element(find.byType(ActiveRunScreen));
+      final activeRunL10n = AppLocalizations.of(activeRunContext)!;
+      expect(find.byType(ActiveRunScreen), findsOneWidget);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.tap(find.text(activeRunL10n.activeRunFinish));
       await pumpRouteChange(tester);
 
       final logRunContext = tester.element(find.byType(LogRunScreen));
@@ -158,8 +173,8 @@ void main() {
       expect(saved.linkedSessionId, session.id);
       expect(saved.source, ActivitySource.plannedSession);
       expect(saved.completionStatus, ActivityCompletionStatus.completed);
-      expect(saved.actualDistanceKm, session.distanceKm);
-      expect(saved.derivedDuration, const Duration(minutes: 42));
+      expect(saved.actualDistanceKm, greaterThan(0));
+      expect(saved.derivedDuration, const Duration(seconds: 2));
       expect(saved.notes, isNull);
 
       final adaptationRepository = SharedPreferencesAdaptationRepository(prefs);
