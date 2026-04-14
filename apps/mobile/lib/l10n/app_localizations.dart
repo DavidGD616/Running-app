@@ -4161,6 +4161,12 @@ abstract class AppLocalizations {
   /// **'{remaining} remaining'**
   String activeRunBlockRemaining(String remaining);
 
+  /// Next active run block preview
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {block}'**
+  String activeRunNextBlock(String block);
+
   /// Focus panel title for progression active run
   ///
   /// In en, this message translates to:

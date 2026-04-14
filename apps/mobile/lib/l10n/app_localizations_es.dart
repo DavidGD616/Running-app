@@ -2237,6 +2237,11 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String activeRunNextBlock(String block) {
+    return 'Siguiente: $block';
+  }
+
+  @override
   String get activeRunProgressionFocusTitle => 'Fases progresivas';
 
   @override

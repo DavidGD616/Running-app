@@ -771,6 +771,10 @@
   "@activeRunBlockRemaining": {
     "placeholders": { "remaining": { "type": "String" } }
   },
+  "activeRunNextBlock": "Siguiente: {block}",
+  "@activeRunNextBlock": {
+    "placeholders": { "block": { "type": "String" } }
+  },
   "activeRunProgressionFocusTitle": "Fases progresivas",
   "activeRunSteadyBlock": "Estable",
   "activeRunStrongBlock": "Fuerte",

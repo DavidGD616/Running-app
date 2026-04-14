@@ -14,8 +14,10 @@ import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../active_run_timeline.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/workout_target.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
@@ -30,14 +32,19 @@ class ActiveRunScreen extends ConsumerStatefulWidget {
 
 class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   Timer? _timer;
+  late final ActiveRunTimeline _timeline;
   Duration _elapsed = Duration.zero;
+  Duration _blockElapsed = Duration.zero;
   double _distanceKm = 0;
+  double _blockDistanceKm = 0;
+  int _timelineIndex = 0;
   bool _isPaused = false;
   bool _isSurging = false;
 
   @override
   void initState() {
     super.initState();
+    _timeline = ActiveRunTimeline.fromSession(widget.args?.session);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
@@ -50,9 +57,42 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   void _tick() {
     if (_isPaused) return;
     setState(() {
+      final distanceDeltaKm = _kmPerSecond * _paceMultiplier;
       _elapsed += const Duration(seconds: 1);
-      _distanceKm += _kmPerSecond * _paceMultiplier;
+      _blockElapsed += const Duration(seconds: 1);
+      _distanceKm += distanceDeltaKm;
+      _blockDistanceKm += distanceDeltaKm;
+      _advanceTimeline();
     });
+  }
+
+  void _advanceTimeline() {
+    final block = _currentBlock;
+    if (block == null || _timelineIndex >= _timeline.blocks.length - 1) return;
+
+    final isDurationComplete =
+        block.duration != null && _blockElapsed >= block.duration!;
+    final isDistanceComplete =
+        block.distanceMeters != null &&
+        _blockDistanceKm * 1000 >= block.distanceMeters!;
+    if (!isDurationComplete && !isDistanceComplete) return;
+
+    _timelineIndex += 1;
+    _blockElapsed = Duration.zero;
+    _blockDistanceKm = 0;
+  }
+
+  ActiveRunTimelineBlock? get _currentBlock {
+    if (_timeline.isEmpty) return null;
+    return _timeline.blocks[_timelineIndex.clamp(
+      0,
+      _timeline.blocks.length - 1,
+    )];
+  }
+
+  ActiveRunTimelineBlock? get _nextBlock {
+    if (_timelineIndex >= _timeline.blocks.length - 1) return null;
+    return _timeline.blocks[_timelineIndex + 1];
   }
 
   double get _kmPerSecond {
@@ -72,6 +112,23 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
         ? 0.96
         : 1.0;
 
+    final block = _currentBlock;
+    if (block != null) {
+      return switch (block.kind) {
+        ActiveRunBlockKind.work => switch (type) {
+          SessionType.intervals => 1.22,
+          SessionType.hillRepeats => 1.16,
+          SessionType.tempoRun ||
+          SessionType.thresholdRun ||
+          SessionType.racePaceRun => 1.08,
+          _ => 1.0,
+        },
+        ActiveRunBlockKind.recovery => 0.72,
+        ActiveRunBlockKind.coolDown => 0.78,
+        ActiveRunBlockKind.warmUp => 0.86,
+      };
+    }
+
     if (type == SessionType.intervals || type == SessionType.hillRepeats) {
       return _isWorkBlock ? 1.22 : 0.72;
     }
@@ -82,17 +139,28 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   }
 
   bool get _isWorkBlock {
-    final block = _elapsed.inSeconds ~/ 90;
-    return block.isEven;
+    final currentBlock = _currentBlock;
+    if (currentBlock != null) {
+      return currentBlock.kind == ActiveRunBlockKind.work;
+    }
+    final blockIndex = _elapsed.inSeconds ~/ 90;
+    return blockIndex.isEven;
   }
 
   int get _currentRep {
+    final block = _currentBlock;
+    if (block?.repIndex != null) return block!.repIndex!;
     final reps = widget.args?.session?.intervalReps ?? 6;
     final rep = (_elapsed.inSeconds ~/ 180) + 1;
     return rep > reps ? reps : rep;
   }
 
   Duration get _blockRemaining {
+    final block = _currentBlock;
+    if (block?.duration != null) {
+      final remaining = block!.duration! - _blockElapsed;
+      return remaining.isNegative ? Duration.zero : remaining;
+    }
     final blockLength = _isWorkBlock ? 90 : 90;
     final seconds = blockLength - (_elapsed.inSeconds % blockLength);
     return Duration(seconds: seconds);
@@ -139,6 +207,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     final title = _sessionTitle(type, l10n);
     final plannedSummary = _plannedSummary(session, unitSystem, l10n);
     final status = _targetStatus(type, l10n);
+    final currentBlock = _currentBlock;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -240,7 +309,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
                           child: _MetricTile(
                             iconAsset: 'assets/icons/target.svg',
                             label: l10n.activeRunTarget,
-                            value: _targetValue(type, l10n),
+                            value: _targetValueFor(type, currentBlock, l10n),
                             unit: _targetUnit(type, l10n),
                           ),
                         ),
@@ -250,8 +319,15 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
                     _WorkoutFocusPanel(
                       type: type,
                       currentRep: _currentRep,
-                      totalReps: session?.intervalReps ?? 6,
-                      blockRemaining: _blockRemaining,
+                      totalReps:
+                          currentBlock?.totalReps ?? session?.intervalReps ?? 6,
+                      blockRemainingLabel: _blockRemainingLabel(
+                        currentBlock,
+                        unitSystem,
+                        l10n,
+                      ),
+                      currentBlock: currentBlock,
+                      nextBlockLabel: _nextBlockLabel(type, l10n),
                       isWorkBlock: _isWorkBlock,
                       isSurging: _isSurging,
                       onToggleSurge: () =>
@@ -383,6 +459,19 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   }
 
   String _targetStatus(SessionType type, AppLocalizations l10n) {
+    final block = _currentBlock;
+    if (block != null) {
+      return switch (block.kind) {
+        ActiveRunBlockKind.work =>
+          type == SessionType.fartlek
+              ? l10n.activeRunSurge
+              : l10n.activeRunPush,
+        ActiveRunBlockKind.recovery => l10n.activeRunRecover,
+        ActiveRunBlockKind.coolDown => l10n.activeRunRecover,
+        ActiveRunBlockKind.warmUp => l10n.activeRunEasyBlock,
+      };
+    }
+
     if (type == SessionType.recoveryRun && _paceMultiplier > 1.0) {
       return l10n.activeRunEaseOff;
     }
@@ -395,6 +484,38 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     if (_paceMultiplier > 1.12) return l10n.activeRunEaseOff;
     if (_paceMultiplier < 0.9) return l10n.activeRunPickUp;
     return l10n.activeRunOnTarget;
+  }
+
+  String _targetValueFor(
+    SessionType type,
+    ActiveRunTimelineBlock? block,
+    AppLocalizations l10n,
+  ) {
+    if (block == null) return _targetValue(type, l10n);
+
+    final target = block.target;
+    if (target?.zone != null) {
+      return switch (target!.zone) {
+        TargetZone.recovery => l10n.activeRunTargetEasy,
+        TargetZone.easy => l10n.activeRunTargetEasy,
+        TargetZone.steady => l10n.activeRunTargetSteady,
+        TargetZone.tempo => l10n.activeRunTargetTempo,
+        TargetZone.threshold => l10n.activeRunTargetThreshold,
+        TargetZone.interval =>
+          type == SessionType.hillRepeats
+              ? l10n.activeRunTargetClimb
+              : l10n.activeRunTargetFast,
+        TargetZone.racePace => l10n.activeRunTargetRace,
+        TargetZone.longRun => l10n.activeRunTargetSteady,
+      };
+    }
+
+    return switch (block.kind) {
+      ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
+      ActiveRunBlockKind.work => _targetValue(type, l10n),
+      ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
+      ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
+    };
   }
 
   String _targetValue(SessionType type, AppLocalizations l10n) {
@@ -422,6 +543,47 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
       SessionType.thresholdRun ||
       SessionType.racePaceRun => l10n.activeRunTargetPaceUnit,
       _ => l10n.activeRunTargetEffortUnit,
+    };
+  }
+
+  String _blockRemainingLabel(
+    ActiveRunTimelineBlock? block,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (block?.distanceMeters != null) {
+      final remainingMeters =
+          block!.distanceMeters! - (_blockDistanceKm * 1000).round();
+      final value = UnitFormatter.formatWorkoutRepDistance(
+        remainingMeters.clamp(0, block.distanceMeters!),
+        unitSystem,
+        l10n,
+      );
+      return l10n.activeRunBlockRemaining(value);
+    }
+
+    return l10n.activeRunBlockRemaining(_formatDuration(_blockRemaining));
+  }
+
+  String? _nextBlockLabel(SessionType type, AppLocalizations l10n) {
+    final block = _nextBlock;
+    if (block == null) return null;
+    return _blockLabel(block, type, l10n);
+  }
+
+  String _blockLabel(
+    ActiveRunTimelineBlock block,
+    SessionType type,
+    AppLocalizations l10n,
+  ) {
+    return switch (block.kind) {
+      ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
+      ActiveRunBlockKind.work =>
+        type == SessionType.hillRepeats
+            ? l10n.activeRunClimb
+            : l10n.activeRunFastRep,
+      ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
+      ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
     };
   }
 
@@ -605,7 +767,9 @@ class _WorkoutFocusPanel extends StatelessWidget {
     required this.type,
     required this.currentRep,
     required this.totalReps,
-    required this.blockRemaining,
+    required this.blockRemainingLabel,
+    required this.currentBlock,
+    required this.nextBlockLabel,
     required this.isWorkBlock,
     required this.isSurging,
     required this.onToggleSurge,
@@ -614,7 +778,9 @@ class _WorkoutFocusPanel extends StatelessWidget {
   final SessionType type;
   final int currentRep;
   final int totalReps;
-  final Duration blockRemaining;
+  final String blockRemainingLabel;
+  final ActiveRunTimelineBlock? currentBlock;
+  final String? nextBlockLabel;
   final bool isWorkBlock;
   final bool isSurging;
   final VoidCallback onToggleSurge;
@@ -622,6 +788,31 @@ class _WorkoutFocusPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
+    if (currentBlock != null &&
+        (type == SessionType.intervals || type == SessionType.hillRepeats)) {
+      final blockName = _blockLabel(currentBlock!, type, l10n);
+      final next = nextBlockLabel;
+      return _FocusCard(
+        iconAsset: type == SessionType.hillRepeats
+            ? 'assets/icons/mountain.svg'
+            : 'assets/icons/zap.svg',
+        title: type == SessionType.hillRepeats
+            ? l10n.activeRunHillFocusTitle
+            : l10n.activeRunIntervalFocusTitle,
+        primaryLabel: l10n.activeRunCurrentBlock,
+        primaryValue: blockName,
+        secondaryLabel: currentBlock!.isRepBlock
+            ? l10n.activeRunRep
+            : l10n.activeRunTarget,
+        secondaryValue: currentBlock!.isRepBlock
+            ? '$currentRep / $totalReps'
+            : _targetLabel(currentBlock!, type, l10n),
+        footer: next == null
+            ? blockRemainingLabel
+            : '$blockRemainingLabel · ${l10n.activeRunNextBlock(next)}',
+      );
+    }
 
     if (type == SessionType.intervals || type == SessionType.hillRepeats) {
       return _FocusCard(
@@ -639,14 +830,14 @@ class _WorkoutFocusPanel extends StatelessWidget {
             : l10n.activeRunRecovery,
         secondaryLabel: l10n.activeRunRep,
         secondaryValue: '$currentRep / $totalReps',
-        footer: l10n.activeRunBlockRemaining(_formatCountdown(blockRemaining)),
+        footer: blockRemainingLabel,
       );
     }
 
     if (type == SessionType.progressionRun) {
       return _PhaseCard(
         title: l10n.activeRunProgressionFocusTitle,
-        activeIndex: _progressionIndex(blockRemaining),
+        activeIndex: _progressionIndex(currentBlock),
         phases: [
           l10n.activeRunEasyBlock,
           l10n.activeRunSteadyBlock,
@@ -706,17 +897,59 @@ class _WorkoutFocusPanel extends StatelessWidget {
     );
   }
 
-  int _progressionIndex(Duration remaining) {
+  int _progressionIndex(ActiveRunTimelineBlock? block) {
+    if (block != null) {
+      return switch (block.kind) {
+        ActiveRunBlockKind.warmUp => 0,
+        ActiveRunBlockKind.work => 1,
+        ActiveRunBlockKind.recovery => 1,
+        ActiveRunBlockKind.coolDown => 2,
+      };
+    }
     final cycle = DateTime.now().second % 45;
     if (cycle < 15) return 0;
     if (cycle < 30) return 1;
     return 2;
   }
 
-  String _formatCountdown(Duration duration) {
-    final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$minutes:$seconds';
+  String _blockLabel(
+    ActiveRunTimelineBlock block,
+    SessionType type,
+    AppLocalizations l10n,
+  ) {
+    return switch (block.kind) {
+      ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
+      ActiveRunBlockKind.work =>
+        type == SessionType.hillRepeats
+            ? l10n.activeRunClimb
+            : l10n.activeRunFastRep,
+      ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
+      ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
+    };
+  }
+
+  String _targetLabel(
+    ActiveRunTimelineBlock block,
+    SessionType type,
+    AppLocalizations l10n,
+  ) {
+    final target = block.target;
+    if (target?.zone != null) {
+      return switch (target!.zone) {
+        TargetZone.recovery => l10n.activeRunTargetEasy,
+        TargetZone.easy => l10n.activeRunTargetEasy,
+        TargetZone.steady => l10n.activeRunTargetSteady,
+        TargetZone.tempo => l10n.activeRunTargetTempo,
+        TargetZone.threshold => l10n.activeRunTargetThreshold,
+        TargetZone.interval =>
+          type == SessionType.hillRepeats
+              ? l10n.activeRunTargetClimb
+              : l10n.activeRunTargetFast,
+        TargetZone.racePace => l10n.activeRunTargetRace,
+        TargetZone.longRun => l10n.activeRunTargetSteady,
+      };
+    }
+    return _blockLabel(block, type, l10n);
   }
 }
 

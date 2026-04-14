@@ -2143,6 +2143,11 @@
     "description": "Remaining time in the current active run block",
     "placeholders": { "remaining": { "type": "String" } }
   },
+  "activeRunNextBlock": "Next: {block}",
+  "@activeRunNextBlock": {
+    "description": "Next active run block preview",
+    "placeholders": { "block": { "type": "String" } }
+  },
   "activeRunProgressionFocusTitle": "Progression phases",
   "@activeRunProgressionFocusTitle": { "description": "Focus panel title for progression active run" },
   "activeRunSteadyBlock": "Steady",
