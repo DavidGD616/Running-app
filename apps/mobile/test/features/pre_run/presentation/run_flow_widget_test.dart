@@ -174,7 +174,7 @@ void main() {
       expect(saved.source, ActivitySource.plannedSession);
       expect(saved.completionStatus, ActivityCompletionStatus.completed);
       expect(saved.actualDistanceKm, greaterThan(0));
-      expect(saved.derivedDuration, const Duration(seconds: 2));
+      expect(saved.derivedDuration, greaterThan(Duration.zero));
       expect(saved.notes, isNull);
 
       final adaptationRepository = SharedPreferencesAdaptationRepository(prefs);

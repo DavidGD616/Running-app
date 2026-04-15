@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,10 +12,13 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
+import '../../../../core/utils/time_source.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../active_run_timeline.dart';
+import '../../domain/run_live_activity_data.dart';
+import '../run_live_activity_bridge.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/workout_target.dart';
@@ -33,13 +37,29 @@ class ActiveRunScreen extends ConsumerStatefulWidget {
 class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   Timer? _timer;
   late final ActiveRunTimeline _timeline;
-  Duration _elapsed = Duration.zero;
-  Duration _blockElapsed = Duration.zero;
+
+  DateTime? _segmentStartedAt;
+  int _accumulatedActiveMs = 0;
+  bool _activityStarted = false;
+  int _lastSentTimelineIndex = 0;
+  double _lastSentDistanceMilestone = 0;
+
   double _distanceKm = 0;
   double _blockDistanceKm = 0;
+  Duration _blockElapsed = Duration.zero;
   int _timelineIndex = 0;
   bool _isPaused = false;
   bool _isSurging = false;
+
+  final _bridge = RunLiveActivityBridge.instance;
+
+  DateTime get _now => ref.read(timeSourceProvider).now();
+
+  Duration get _currentElapsed {
+    final seg = _segmentStartedAt;
+    if (seg == null) return Duration(milliseconds: _accumulatedActiveMs);
+    return Duration(milliseconds: _accumulatedActiveMs) + _now.difference(seg);
+  }
 
   @override
   void initState() {
@@ -51,18 +71,23 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _bridge.endActivity();
     super.dispose();
   }
 
   void _tick() {
     if (_isPaused) return;
+
+    final wasFirstTick = _segmentStartedAt == null && _accumulatedActiveMs == 0;
+    _segmentStartedAt ??= _now;
+
     setState(() {
       final distanceDeltaKm = _kmPerSecond * _paceMultiplier;
-      _elapsed += const Duration(seconds: 1);
-      _blockElapsed += const Duration(seconds: 1);
       _distanceKm += distanceDeltaKm;
       _blockDistanceKm += distanceDeltaKm;
+      _blockElapsed += const Duration(seconds: 1);
       _advanceTimeline();
+      _maybeSendActivityUpdate(wasFirstTick: wasFirstTick);
     });
   }
 
@@ -105,7 +130,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
 
   double get _paceMultiplier {
     final type = widget.args?.session?.sessionType ?? SessionType.easyRun;
-    final cycle = _elapsed.inSeconds % 12;
+    final elapsed = _currentElapsed;
+    final cycle = elapsed.inSeconds % 12;
     final drift = cycle < 4
         ? 1.04
         : cycle < 8
@@ -143,7 +169,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     if (currentBlock != null) {
       return currentBlock.kind == ActiveRunBlockKind.work;
     }
-    final blockIndex = _elapsed.inSeconds ~/ 90;
+    final elapsed = _currentElapsed;
+    final blockIndex = elapsed.inSeconds ~/ 90;
     return blockIndex.isEven;
   }
 
@@ -151,7 +178,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     final block = _currentBlock;
     if (block?.repIndex != null) return block!.repIndex!;
     final reps = widget.args?.session?.intervalReps ?? 6;
-    final rep = (_elapsed.inSeconds ~/ 180) + 1;
+    final rep = (_currentElapsed.inSeconds ~/ 180) + 1;
     return rep > reps ? reps : rep;
   }
 
@@ -162,13 +189,13 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
       return remaining.isNegative ? Duration.zero : remaining;
     }
     final blockLength = _isWorkBlock ? 90 : 90;
-    final seconds = blockLength - (_elapsed.inSeconds % blockLength);
+    final seconds = blockLength - (_currentElapsed.inSeconds % blockLength);
     return Duration(seconds: seconds);
   }
 
   double get _averagePaceSecondsPerKm {
     if (_distanceKm <= 0.01) return _plannedPaceSecondsPerKm;
-    return _elapsed.inSeconds / _distanceKm;
+    return _currentElapsed.inSeconds / _distanceKm;
   }
 
   double get _currentPaceSecondsPerKm {
@@ -186,15 +213,107 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
 
   void _finishRun() {
     _timer?.cancel();
+    _bridge.endActivity();
     context.push(
       RouteNames.logRun,
       extra: LogRunArgs(
         session: widget.args?.session,
         checkIn: widget.args?.checkIn,
-        actualDuration: _elapsed,
+        actualDuration: _currentElapsed,
         actualDistanceKm: _distanceKm,
       ),
     );
+  }
+
+  void _togglePause() {
+    setState(() {
+      _isPaused = !_isPaused;
+      if (_isPaused) {
+        _accumulatedActiveMs += _now.difference(_segmentStartedAt!).inMilliseconds;
+        _segmentStartedAt = null;
+      } else {
+        _segmentStartedAt = _now;
+      }
+    });
+    _maybeSendActivityUpdate(wasFirstTick: false, isPauseToggle: true);
+  }
+
+  void _maybeSendActivityUpdate({required bool wasFirstTick, bool isPauseToggle = false}) {
+    if (!Platform.isIOS && !Platform.isAndroid) return;
+
+    final shouldStart = !_activityStarted;
+    final timelineChanged = _timelineIndex != _lastSentTimelineIndex;
+    final currentMilestone = (_distanceKm * 10).floor() * 0.1;
+    final milestoneCrossed = currentMilestone > _lastSentDistanceMilestone;
+
+    if (!shouldStart && !timelineChanged && !milestoneCrossed && !isPauseToggle) return;
+
+    if (timelineChanged) {
+      _lastSentTimelineIndex = _timelineIndex;
+    }
+    if (milestoneCrossed) {
+      _lastSentDistanceMilestone = currentMilestone;
+    }
+
+    final data = _buildLiveActivityData();
+    if (shouldStart) {
+      _activityStarted = true;
+      _bridge.startActivity(data);
+    } else {
+      _bridge.updateActivity(data);
+    }
+  }
+
+  RunLiveActivityData _buildLiveActivityData() {
+    final l10n = AppLocalizations.of(context)!;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final session = widget.args?.session;
+    final type = session?.sessionType ?? SessionType.easyRun;
+    final elapsed = _currentElapsed;
+    final currentBlock = _currentBlock;
+    final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
+    final repLabel =
+        (type == SessionType.intervals || type == SessionType.hillRepeats)
+        ? '$_currentRep / $totalReps'
+        : null;
+
+    return RunLiveActivityData(
+      workoutName: _sessionTitle(type, l10n),
+      statusLabel: _targetStatus(type, l10n),
+      elapsedSeconds: elapsed.inSeconds,
+      elapsedLabel: _formatDuration(elapsed),
+      distanceLabel: UnitFormatter.formatDistanceWithUnit(
+        _distanceKm,
+        unitSystem,
+        l10n,
+      ),
+      currentPaceLabel:
+          '${_formatPace(_currentPaceSecondsPerKm, unitSystem)}${UnitFormatter.paceLabel(unitSystem, l10n)}',
+      avgPaceLabel:
+          '${_formatPace(_averagePaceSecondsPerKm, unitSystem)}${UnitFormatter.paceLabel(unitSystem, l10n)}',
+      currentBlockLabel: _currentBlockLabel(currentBlock, type, l10n),
+      nextBlockLabel: _nextBlockLabel(type, l10n),
+      repLabel: repLabel,
+      isPaused: _isPaused,
+    );
+  }
+
+  String _currentBlockLabel(
+    ActiveRunTimelineBlock? block,
+    SessionType type,
+    AppLocalizations l10n,
+  ) {
+    if (block == null) return _targetValue(type, l10n);
+    return switch (block.kind) {
+      ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
+      ActiveRunBlockKind.work =>
+        type == SessionType.hillRepeats
+            ? l10n.activeRunClimb
+            : l10n.activeRunFastRep,
+      ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
+      ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
+    };
   }
 
   @override
@@ -208,6 +327,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     final plannedSummary = _plannedSummary(session, unitSystem, l10n);
     final status = _targetStatus(type, l10n);
     final currentBlock = _currentBlock;
+    final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -272,7 +392,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
                           child: _MetricTile(
                             iconAsset: 'assets/icons/clock.svg',
                             label: l10n.activeRunElapsed,
-                            value: _formatDuration(_elapsed),
+                            value: _formatDuration(_currentElapsed),
                             unit: l10n.activeRunTimeUnit,
                           ),
                         ),
@@ -319,8 +439,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
                     _WorkoutFocusPanel(
                       type: type,
                       currentRep: _currentRep,
-                      totalReps:
-                          currentBlock?.totalReps ?? session?.intervalReps ?? 6,
+                      totalReps: totalReps,
                       blockRemainingLabel: _blockRemainingLabel(
                         currentBlock,
                         unitSystem,
@@ -356,7 +475,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
                           ? l10n.activeRunResume
                           : l10n.activeRunPause,
                       variant: AppButtonVariant.secondary,
-                      onPressed: () => setState(() => _isPaused = !_isPaused),
+                      onPressed: _togglePause,
                     ),
                   ),
                   const SizedBox(width: AppSpacing.md),
@@ -494,8 +613,9 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     if (block == null) return _targetValue(type, l10n);
 
     final target = block.target;
-    if (target?.zone != null) {
-      return switch (target!.zone) {
+    final zone = target?.zone;
+    if (zone != null) {
+      return switch (zone) {
         TargetZone.recovery => l10n.activeRunTargetEasy,
         TargetZone.easy => l10n.activeRunTargetEasy,
         TargetZone.steady => l10n.activeRunTargetSteady,
@@ -568,23 +688,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   String? _nextBlockLabel(SessionType type, AppLocalizations l10n) {
     final block = _nextBlock;
     if (block == null) return null;
-    return _blockLabel(block, type, l10n);
-  }
-
-  String _blockLabel(
-    ActiveRunTimelineBlock block,
-    SessionType type,
-    AppLocalizations l10n,
-  ) {
-    return switch (block.kind) {
-      ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
-      ActiveRunBlockKind.work =>
-        type == SessionType.hillRepeats
-            ? l10n.activeRunClimb
-            : l10n.activeRunFastRep,
-      ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
-      ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
-    };
+    return _currentBlockLabel(block, type, l10n);
   }
 
   String _formatDuration(Duration duration) {
@@ -933,9 +1037,10 @@ class _WorkoutFocusPanel extends StatelessWidget {
     SessionType type,
     AppLocalizations l10n,
   ) {
-    final target = block.target;
-    if (target?.zone != null) {
-      return switch (target!.zone) {
+    final blockTarget = block.target;
+    final zone = blockTarget?.zone;
+    if (zone != null) {
+      return switch (zone) {
         TargetZone.recovery => l10n.activeRunTargetEasy,
         TargetZone.easy => l10n.activeRunTargetEasy,
         TargetZone.steady => l10n.activeRunTargetSteady,
