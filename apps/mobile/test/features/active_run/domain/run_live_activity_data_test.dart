@@ -9,7 +9,9 @@ void main() {
       elapsedSeconds: 512,
       elapsedLabel: '08:32',
       distanceLabel: '1.42 km',
+      currentPaceTitleLabel: 'Current pace',
       currentPaceLabel: '5:06/km',
+      avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '5:57/km',
       currentBlockLabel: 'Fast rep',
       nextBlockLabel: 'Recover',
@@ -24,7 +26,9 @@ void main() {
     expect(map['elapsedSeconds'], 512);
     expect(map['elapsedLabel'], '08:32');
     expect(map['distanceLabel'], '1.42 km');
+    expect(map['currentPaceTitleLabel'], 'Current pace');
     expect(map['currentPaceLabel'], '5:06/km');
+    expect(map['avgPaceTitleLabel'], 'Avg pace');
     expect(map['avgPaceLabel'], '5:57/km');
     expect(map['currentBlockLabel'], 'Fast rep');
     expect(map['nextBlockLabel'], 'Recover');
@@ -39,7 +43,9 @@ void main() {
       elapsedSeconds: 1800,
       elapsedLabel: '30:00',
       distanceLabel: '5.0 km',
+      currentPaceTitleLabel: 'Current pace',
       currentPaceLabel: '6:00/km',
+      avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '6:00/km',
       currentBlockLabel: 'Easy',
       nextBlockLabel: null,
@@ -60,7 +66,9 @@ void main() {
       elapsedSeconds: 300,
       elapsedLabel: '05:00',
       distanceLabel: '0.5 km',
+      currentPaceTitleLabel: 'Current pace',
       currentPaceLabel: '5:00/km',
+      avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '6:00/km',
       currentBlockLabel: 'Fast rep',
       nextBlockLabel: null,
@@ -92,7 +100,9 @@ void main() {
       elapsedSeconds: 300,
       elapsedLabel: '05:00',
       distanceLabel: '0.5 km',
+      currentPaceTitleLabel: 'Current pace',
       currentPaceLabel: '5:00/km',
+      avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '6:00/km',
       currentBlockLabel: 'Fast rep',
       nextBlockLabel: 'Recover',
@@ -114,7 +124,9 @@ void main() {
       elapsedSeconds: 2700,
       elapsedLabel: '45:00',
       distanceLabel: '7.5 km',
+      currentPaceTitleLabel: 'Current pace',
       currentPaceLabel: '6:00/km',
+      avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '6:00/km',
       currentBlockLabel: 'Tempo',
       nextBlockLabel: 'Cool-down',
@@ -129,7 +141,9 @@ void main() {
       elapsedSeconds: map['elapsedSeconds'] as int,
       elapsedLabel: map['elapsedLabel'] as String,
       distanceLabel: map['distanceLabel'] as String,
+      currentPaceTitleLabel: map['currentPaceTitleLabel'] as String,
       currentPaceLabel: map['currentPaceLabel'] as String,
+      avgPaceTitleLabel: map['avgPaceTitleLabel'] as String,
       avgPaceLabel: map['avgPaceLabel'] as String,
       currentBlockLabel: map['currentBlockLabel'] as String,
       nextBlockLabel: map['nextBlockLabel'] as String?,
@@ -142,7 +156,9 @@ void main() {
     expect(reconstructed.elapsedSeconds, original.elapsedSeconds);
     expect(reconstructed.elapsedLabel, original.elapsedLabel);
     expect(reconstructed.distanceLabel, original.distanceLabel);
+    expect(reconstructed.currentPaceTitleLabel, original.currentPaceTitleLabel);
     expect(reconstructed.currentPaceLabel, original.currentPaceLabel);
+    expect(reconstructed.avgPaceTitleLabel, original.avgPaceTitleLabel);
     expect(reconstructed.avgPaceLabel, original.avgPaceLabel);
     expect(reconstructed.currentBlockLabel, original.currentBlockLabel);
     expect(reconstructed.nextBlockLabel, original.nextBlockLabel);

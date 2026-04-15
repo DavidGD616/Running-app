@@ -1,0 +1,3 @@
+<resources>
+    <string name="run_notification_channel_name">Active Run</string>
+</resources>

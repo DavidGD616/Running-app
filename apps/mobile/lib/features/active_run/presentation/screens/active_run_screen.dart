@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -42,6 +43,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   DateTime? _segmentStartedAt;
   int _accumulatedActiveMs = 0;
   bool _activityStarted = false;
+  // Set to false if POST_NOTIFICATIONS is denied; not reset mid-session.
+  // User must restart the app after granting permission in Settings.
+  bool _liveActivityNotificationsAllowed = true;
+  Future<bool>? _notificationPermissionFuture;
   int _lastSentTimelineIndex = 0;
   double _lastSentDistanceMilestone = 0;
 
@@ -90,8 +95,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
       _blockDistanceKm += distanceDeltaKm;
       _blockElapsed += const Duration(seconds: 1);
       _advanceTimeline();
-      _maybeSendActivityUpdate(wasFirstTick: wasFirstTick);
     });
+    _maybeSendActivityUpdate(wasFirstTick: wasFirstTick);
   }
 
   void _advanceTimeline() {
@@ -248,11 +253,12 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     _maybeSendActivityUpdate(wasFirstTick: false, isPauseToggle: true);
   }
 
-  void _maybeSendActivityUpdate({
+  Future<void> _maybeSendActivityUpdate({
     required bool wasFirstTick,
     bool isPauseToggle = false,
-  }) {
+  }) async {
     if (!Platform.isIOS && !Platform.isAndroid) return;
+    if (!_liveActivityNotificationsAllowed) return;
 
     final shouldStart = !_activityStarted;
     final timelineChanged = _timelineIndex != _lastSentTimelineIndex;
@@ -263,6 +269,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
         !timelineChanged &&
         !milestoneCrossed &&
         !isPauseToggle) {
+      return;
+    }
+
+    if (shouldStart && !await _ensureLiveActivityNotificationsAllowed()) {
+      _liveActivityNotificationsAllowed = false;
       return;
     }
 
@@ -292,6 +303,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     final type = session?.sessionType ?? SessionType.easyRun;
     final elapsed = _currentElapsed;
     final currentBlock = _currentBlock;
+    final nextBlock = _nextBlockLabel(type, l10n);
     final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
     final repLabel =
         (type == SessionType.intervals || type == SessionType.hillRepeats)
@@ -310,13 +322,30 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
       ),
       currentPaceLabel:
           '${_formatPace(_currentPaceSecondsPerKm, unitSystem)}${UnitFormatter.paceLabel(unitSystem, l10n)}',
+      currentPaceTitleLabel: l10n.activeRunCurrentPace,
       avgPaceLabel:
           '${_formatPace(_averagePaceSecondsPerKm, unitSystem)}${UnitFormatter.paceLabel(unitSystem, l10n)}',
+      avgPaceTitleLabel: l10n.activeRunAveragePace,
       currentBlockLabel: _currentBlockLabel(currentBlock, type, l10n),
-      nextBlockLabel: _nextBlockLabel(type, l10n),
+      nextBlockLabel: nextBlock == null
+          ? null
+          : l10n.activeRunNextBlock(nextBlock),
       repLabel: repLabel,
       isPaused: _isPaused,
     );
+  }
+
+  Future<bool> _ensureLiveActivityNotificationsAllowed() {
+    if (!Platform.isAndroid) return Future.value(true);
+    final existingFuture = _notificationPermissionFuture;
+    if (existingFuture != null) return existingFuture;
+
+    return _notificationPermissionFuture = () async {
+      final sdkInt = await _bridge.androidSdkInt();
+      if (sdkInt != null && sdkInt < 33) return true;
+      final status = await Permission.notification.request();
+      return status.isGranted || status.isLimited || status.isProvisional;
+    }();
   }
 
   String _currentBlockLabel(

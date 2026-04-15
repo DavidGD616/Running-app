@@ -2,7 +2,6 @@ import 'dart:io';
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
 
 import '../domain/run_live_activity_data.dart';
@@ -11,6 +10,11 @@ import 'run_live_activity_bridge.dart';
 const _updateRunEvent = 'updateRun';
 const _endRunEvent = 'endRun';
 const _stopServiceEvent = 'stopService';
+
+// Events forwarded from background isolate → main isolate.
+const _forwardUpdateEvent = 'forwardToNativeUpdate';
+const _forwardEndEvent = 'forwardToNativeEnd';
+
 const _notificationId = 61001;
 
 class RunLiveActivityBackgroundService {
@@ -34,7 +38,7 @@ class RunLiveActivityBackgroundService {
           autoStartOnBoot: false,
           isForegroundMode: false,
           foregroundServiceNotificationId: _notificationId,
-          foregroundServiceTypes: const [AndroidForegroundType.health],
+          foregroundServiceTypes: const [AndroidForegroundType.dataSync],
         ),
         iosConfiguration: IosConfiguration(
           autoStart: false,
@@ -43,6 +47,26 @@ class RunLiveActivityBackgroundService {
         ),
       );
       _configured = true;
+
+      // On Android: listen for events forwarded from the background isolate
+      // and call the bridge on the main engine (where the channel IS registered).
+      if (Platform.isAndroid) {
+        _service.on(_forwardUpdateEvent).listen((data) async {
+          if (data == null) return;
+          try {
+            final activityData = RunLiveActivityData.fromMap(data);
+            await RunLiveActivityBridge.instance.updateActivity(activityData);
+          } catch (error) {
+            debugPrint(
+              '[RunLiveActivityBackgroundService] forward update failed: $error',
+            );
+          }
+        });
+
+        _service.on(_forwardEndEvent).listen((_) async {
+          await RunLiveActivityBridge.instance.endActivity();
+        });
+      }
     } catch (error) {
       debugPrint('[RunLiveActivityBackgroundService] configure failed: $error');
     }
@@ -92,28 +116,20 @@ Future<bool> runLiveActivityIosBackground(ServiceInstance service) async {
 void runLiveActivityServiceStart(ServiceInstance service) {
   DartPluginRegistrant.ensureInitialized();
 
-  service.on(_updateRunEvent).listen((event) async {
-    await _invokeLiveActivityMethod('updateActivity', event);
+  // Background isolate cannot call MethodChannel directly (no handler
+  // registered on the second engine). Forward events to the main isolate
+  // via service.invoke; the main isolate listener in configure() picks them
+  // up and calls the bridge on the engine that DOES have the handler.
+  service.on(_updateRunEvent).listen((event) {
+    if (event == null) return;
+    service.invoke(_forwardUpdateEvent, event);
   });
 
-  service.on(_endRunEvent).listen((_) async {
-    await _invokeLiveActivityMethod('endActivity');
+  service.on(_endRunEvent).listen((_) {
+    service.invoke(_forwardEndEvent, null);
   });
 
   service.on(_stopServiceEvent).listen((_) {
     service.stopSelf();
   });
-}
-
-Future<void> _invokeLiveActivityMethod(
-  String method, [
-  Map<String, dynamic>? payload,
-]) async {
-  try {
-    await const MethodChannel(
-      RunLiveActivityBridge.channelName,
-    ).invokeMethod<void>(method, payload);
-  } catch (error) {
-    debugPrint('[RunLiveActivityBackgroundService] $method failed: $error');
-  }
 }

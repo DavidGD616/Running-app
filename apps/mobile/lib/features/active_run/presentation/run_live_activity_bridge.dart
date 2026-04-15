@@ -37,4 +37,14 @@ class RunLiveActivityBridge {
       debugPrint('[RunLiveActivityBridge] endActivity failed: $e');
     }
   }
+
+  Future<int?> androidSdkInt() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      return await _channel.invokeMethod<int>('androidSdkInt');
+    } catch (e) {
+      debugPrint('[RunLiveActivityBridge] androidSdkInt failed: $e');
+      return null;
+    }
+  }
 }
