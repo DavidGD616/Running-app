@@ -85,6 +85,28 @@ void main() {
     expect(updated.workoutName, 'INTERVALS');
   });
 
+  test('copyWith can clear nullable labels', () {
+    const original = RunLiveActivityData(
+      workoutName: 'INTERVALS',
+      statusLabel: 'PUSH',
+      elapsedSeconds: 300,
+      elapsedLabel: '05:00',
+      distanceLabel: '0.5 km',
+      currentPaceLabel: '5:00/km',
+      avgPaceLabel: '6:00/km',
+      currentBlockLabel: 'Fast rep',
+      nextBlockLabel: 'Recover',
+      repLabel: 'Rep 2 / 6',
+      isPaused: false,
+    );
+
+    final cleared = original.copyWith(nextBlockLabel: null, repLabel: null);
+
+    expect(cleared.nextBlockLabel, null);
+    expect(cleared.repLabel, null);
+    expect(cleared.workoutName, 'INTERVALS');
+  });
+
   test('round-trip: toMap output can be reconstructed', () {
     const original = RunLiveActivityData(
       workoutName: 'TEMPO RUN',

@@ -8,7 +8,8 @@ class RunLiveActivityBridge {
 
   static final RunLiveActivityBridge instance = RunLiveActivityBridge._();
 
-  static const _channel = MethodChannel('com.example.runningApp/live_activity');
+  static const channelName = 'com.example.runningApp/live_activity';
+  static const _channel = MethodChannel(channelName);
 
   Future<void> startActivity(RunLiveActivityData data) async {
     if (!Platform.isIOS && !Platform.isAndroid) return;

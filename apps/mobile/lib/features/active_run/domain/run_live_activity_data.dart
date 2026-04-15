@@ -1,3 +1,5 @@
+const Object _copyWithSentinel = Object();
+
 class RunLiveActivityData {
   const RunLiveActivityData({
     required this.workoutName,
@@ -50,8 +52,8 @@ class RunLiveActivityData {
     String? currentPaceLabel,
     String? avgPaceLabel,
     String? currentBlockLabel,
-    String? nextBlockLabel,
-    String? repLabel,
+    Object? nextBlockLabel = _copyWithSentinel,
+    Object? repLabel = _copyWithSentinel,
     bool? isPaused,
   }) {
     return RunLiveActivityData(
@@ -63,8 +65,12 @@ class RunLiveActivityData {
       currentPaceLabel: currentPaceLabel ?? this.currentPaceLabel,
       avgPaceLabel: avgPaceLabel ?? this.avgPaceLabel,
       currentBlockLabel: currentBlockLabel ?? this.currentBlockLabel,
-      nextBlockLabel: nextBlockLabel ?? this.nextBlockLabel,
-      repLabel: repLabel ?? this.repLabel,
+      nextBlockLabel: identical(nextBlockLabel, _copyWithSentinel)
+          ? this.nextBlockLabel
+          : nextBlockLabel as String?,
+      repLabel: identical(repLabel, _copyWithSentinel)
+          ? this.repLabel
+          : repLabel as String?,
       isPaused: isPaused ?? this.isPaused,
     );
   }

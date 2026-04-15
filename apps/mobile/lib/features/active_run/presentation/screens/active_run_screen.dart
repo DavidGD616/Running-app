@@ -18,6 +18,7 @@ import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../active_run_timeline.dart';
 import '../../domain/run_live_activity_data.dart';
+import '../run_live_activity_background_service.dart';
 import '../run_live_activity_bridge.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
@@ -52,6 +53,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   bool _isSurging = false;
 
   final _bridge = RunLiveActivityBridge.instance;
+  final _backgroundService = RunLiveActivityBackgroundService.instance;
 
   DateTime get _now => ref.read(timeSourceProvider).now();
 
@@ -71,6 +73,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   @override
   void dispose() {
     _timer?.cancel();
+    _backgroundService.stop();
     _bridge.endActivity();
     super.dispose();
   }
@@ -213,6 +216,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
 
   void _finishRun() {
     _timer?.cancel();
+    _backgroundService.stop();
     _bridge.endActivity();
     context.push(
       RouteNames.logRun,
@@ -227,18 +231,27 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
 
   void _togglePause() {
     setState(() {
+      final now = _now;
       _isPaused = !_isPaused;
       if (_isPaused) {
-        _accumulatedActiveMs += _now.difference(_segmentStartedAt!).inMilliseconds;
+        final segmentStartedAt = _segmentStartedAt;
+        if (segmentStartedAt != null) {
+          _accumulatedActiveMs += now
+              .difference(segmentStartedAt)
+              .inMilliseconds;
+        }
         _segmentStartedAt = null;
       } else {
-        _segmentStartedAt = _now;
+        _segmentStartedAt = now;
       }
     });
     _maybeSendActivityUpdate(wasFirstTick: false, isPauseToggle: true);
   }
 
-  void _maybeSendActivityUpdate({required bool wasFirstTick, bool isPauseToggle = false}) {
+  void _maybeSendActivityUpdate({
+    required bool wasFirstTick,
+    bool isPauseToggle = false,
+  }) {
     if (!Platform.isIOS && !Platform.isAndroid) return;
 
     final shouldStart = !_activityStarted;
@@ -246,7 +259,12 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     final currentMilestone = (_distanceKm * 10).floor() * 0.1;
     final milestoneCrossed = currentMilestone > _lastSentDistanceMilestone;
 
-    if (!shouldStart && !timelineChanged && !milestoneCrossed && !isPauseToggle) return;
+    if (!shouldStart &&
+        !timelineChanged &&
+        !milestoneCrossed &&
+        !isPauseToggle) {
+      return;
+    }
 
     if (timelineChanged) {
       _lastSentTimelineIndex = _timelineIndex;
@@ -259,8 +277,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     if (shouldStart) {
       _activityStarted = true;
       _bridge.startActivity(data);
+      _backgroundService.start(data);
     } else {
       _bridge.updateActivity(data);
+      _backgroundService.update(data);
     }
   }
 
@@ -275,7 +295,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
     final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
     final repLabel =
         (type == SessionType.intervals || type == SessionType.hillRepeats)
-        ? '$_currentRep / $totalReps'
+        ? '${l10n.activeRunRep} $_currentRep / $totalReps'
         : null;
 
     return RunLiveActivityData(

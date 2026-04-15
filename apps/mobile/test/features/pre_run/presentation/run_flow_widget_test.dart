@@ -152,6 +152,11 @@ void main() {
       final activeRunContext = tester.element(find.byType(ActiveRunScreen));
       final activeRunL10n = AppLocalizations.of(activeRunContext)!;
       expect(find.byType(ActiveRunScreen), findsOneWidget);
+      await tester.tap(find.text(activeRunL10n.activeRunPause));
+      await tester.pump();
+      expect(tester.takeException(), isNull);
+      await tester.tap(find.text(activeRunL10n.activeRunResume));
+      await tester.pump();
       await tester.pump(const Duration(seconds: 2));
       await tester.tap(find.text(activeRunL10n.activeRunFinish));
       await pumpRouteChange(tester);

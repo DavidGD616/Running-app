@@ -10,11 +10,13 @@ import 'core/config/supabase_config.dart';
 import 'core/persistence/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/active_run/presentation/run_live_activity_background_service.dart';
 import 'features/localization/presentation/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
+  await RunLiveActivityBackgroundService.instance.configure();
   await _initializeSupabaseIfConfigured();
   final prefs = await SharedPreferences.getInstance();
   runApp(
