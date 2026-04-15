@@ -58,6 +58,8 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   @override
   Future<TrainingPlan> build() async {
     final repo = ref.watch(planVersionRepositoryProvider);
+    // Watch activities so plan status recomputes when a run is completed.
+    ref.watch(completedActivitiesProvider);
 
     // Fast sync read from cache (SP) for zero-latency first frame.
     final cached = repo.loadActivePlanSync();
@@ -169,10 +171,14 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   /// statuses are always computed relative to the current date.
   TrainingPlan _applyActivityStatus(TrainingPlan plan) {
     final completedActivities = ref.read(completedActivitiesProvider);
-    final linkedSessionIds = completedActivities
-        .where((activity) => activity.hasLinkedSession)
-        .map((activity) => activity.linkedSessionId!)
-        .toSet();
+    final linkedActivities = completedActivities
+        .where((activity) => activity.hasLinkedSession);
+    final linkedSessionIds =
+        linkedActivities.map((a) => a.linkedSessionId!).toSet();
+    final actualDistanceBySessionId = {
+      for (final a in linkedActivities)
+        a.linkedSessionId!: a.actualDistanceKm,
+    };
 
     final today = DateTime.now();
     final todayDay = DateTime(today.year, today.month, today.day);
@@ -184,15 +190,24 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
             return session.copyWith(status: manualStatus);
           }
           if (linkedSessionIds.contains(session.id)) {
-            return session.copyWith(status: SessionStatus.completed);
+            final actualKm = actualDistanceBySessionId[session.id];
+            return session.copyWith(
+              status: SessionStatus.completed,
+              distanceKm: actualKm ?? session.distanceKm,
+            );
           }
           // Derive status from date so it stays accurate across app restarts.
           final sessionDay = DateTime(
             session.date.year, session.date.month, session.date.day,
           );
-          final derived = sessionDay == todayDay
-              ? SessionStatus.today
-              : SessionStatus.upcoming;
+          final SessionStatus derived;
+          if (sessionDay == todayDay) {
+            derived = SessionStatus.today;
+          } else if (sessionDay.isBefore(todayDay)) {
+            derived = SessionStatus.skipped;
+          } else {
+            derived = SessionStatus.upcoming;
+          }
           return session.copyWith(status: derived);
         })
         .toList(growable: false);
@@ -211,10 +226,14 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   /// (used by [skipSession] and [restoreSession]).
   TrainingPlan _applyOverrides(TrainingPlan plan) {
     final completedActivities = ref.read(completedActivitiesProvider);
-    final linkedSessionIds = completedActivities
-        .where((activity) => activity.hasLinkedSession)
-        .map((activity) => activity.linkedSessionId!)
-        .toSet();
+    final linkedActivities = completedActivities
+        .where((activity) => activity.hasLinkedSession);
+    final linkedSessionIds =
+        linkedActivities.map((a) => a.linkedSessionId!).toSet();
+    final actualDistanceBySessionId = {
+      for (final a in linkedActivities)
+        a.linkedSessionId!: a.actualDistanceKm,
+    };
 
     final today = DateTime.now();
     final todayDay = DateTime(today.year, today.month, today.day);
@@ -226,14 +245,23 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
             return session.copyWith(status: manualStatus);
           }
           if (linkedSessionIds.contains(session.id)) {
-            return session.copyWith(status: SessionStatus.completed);
+            final actualKm = actualDistanceBySessionId[session.id];
+            return session.copyWith(
+              status: SessionStatus.completed,
+              distanceKm: actualKm ?? session.distanceKm,
+            );
           }
           final sessionDay = DateTime(
             session.date.year, session.date.month, session.date.day,
           );
-          final derived = sessionDay == todayDay
-              ? SessionStatus.today
-              : SessionStatus.upcoming;
+          final SessionStatus derived;
+          if (sessionDay == todayDay) {
+            derived = SessionStatus.today;
+          } else if (sessionDay.isBefore(todayDay)) {
+            derived = SessionStatus.skipped;
+          } else {
+            derived = SessionStatus.upcoming;
+          }
           return session.copyWith(status: derived);
         })
         .toList(growable: false);
