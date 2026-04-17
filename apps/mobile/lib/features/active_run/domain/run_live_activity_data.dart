@@ -15,6 +15,11 @@ class RunLiveActivityData {
     this.nextBlockLabel,
     this.repLabel,
     required this.isPaused,
+    required this.distanceKm,
+    required this.paceSecondsPerKm,
+    required this.unitFactor,
+    required this.distanceUnit,
+    required this.paceUnit,
   });
 
   final String workoutName;
@@ -31,6 +36,22 @@ class RunLiveActivityData {
   final String? repLabel;
   final bool isPaused;
 
+  /// Live distance in km. Android service uses this as seed and ticks it.
+  final double distanceKm;
+
+  /// Current pace in seconds-per-kilometre. Service uses this to compute
+  /// per-tick distance increments while Flutter is backgrounded.
+  final int paceSecondsPerKm;
+
+  /// Multiplier to convert km → user-preferred unit (1.0 km, 0.621371 mi).
+  final double unitFactor;
+
+  /// Display suffix for distance, e.g. "km" or "mi".
+  final String distanceUnit;
+
+  /// Display suffix for pace, e.g. "min/km" or "min/mi".
+  final String paceUnit;
+
   factory RunLiveActivityData.fromMap(Map<Object?, Object?> map) {
     String str(String key, [String fallback = '']) =>
         (map[key] as String?) ?? fallback;
@@ -40,6 +61,13 @@ class RunLiveActivityData {
       if (v is int) return v;
       if (v is String) return int.tryParse(v) ?? 0;
       return 0;
+    }
+    double doubleVal(String key, double fallback) {
+      final v = map[key];
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      if (v is String) return double.tryParse(v) ?? fallback;
+      return fallback;
     }
 
     return RunLiveActivityData(
@@ -56,6 +84,11 @@ class RunLiveActivityData {
       nextBlockLabel: optStr('nextBlockLabel'),
       repLabel: optStr('repLabel'),
       isPaused: (map['isPaused'] as bool?) ?? false,
+      distanceKm: doubleVal('distanceKm', 0),
+      paceSecondsPerKm: intVal('paceSecondsPerKm'),
+      unitFactor: doubleVal('unitFactor', 1.0),
+      distanceUnit: str('distanceUnit', 'km'),
+      paceUnit: str('paceUnit', 'min/km'),
     );
   }
 
@@ -74,6 +107,11 @@ class RunLiveActivityData {
       'nextBlockLabel': nextBlockLabel,
       'repLabel': repLabel,
       'isPaused': isPaused,
+      'distanceKm': distanceKm,
+      'paceSecondsPerKm': paceSecondsPerKm,
+      'unitFactor': unitFactor,
+      'distanceUnit': distanceUnit,
+      'paceUnit': paceUnit,
     };
   }
 
@@ -91,6 +129,11 @@ class RunLiveActivityData {
     Object? nextBlockLabel = _copyWithSentinel,
     Object? repLabel = _copyWithSentinel,
     bool? isPaused,
+    double? distanceKm,
+    int? paceSecondsPerKm,
+    double? unitFactor,
+    String? distanceUnit,
+    String? paceUnit,
   }) {
     return RunLiveActivityData(
       workoutName: workoutName ?? this.workoutName,
@@ -111,6 +154,11 @@ class RunLiveActivityData {
           ? this.repLabel
           : repLabel as String?,
       isPaused: isPaused ?? this.isPaused,
+      distanceKm: distanceKm ?? this.distanceKm,
+      paceSecondsPerKm: paceSecondsPerKm ?? this.paceSecondsPerKm,
+      unitFactor: unitFactor ?? this.unitFactor,
+      distanceUnit: distanceUnit ?? this.distanceUnit,
+      paceUnit: paceUnit ?? this.paceUnit,
     );
   }
 }

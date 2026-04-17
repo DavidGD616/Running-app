@@ -356,6 +356,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
           : l10n.activeRunNextBlock(nextBlock),
       repLabel: repLabel,
       isPaused: _isPaused,
+      distanceKm: _distanceKm,
+      paceSecondsPerKm: _currentPaceSecondsPerKm.round(),
+      unitFactor: unitSystem == UnitSystem.km ? 1.0 : 0.621371,
+      distanceUnit: UnitFormatter.unitLabel(unitSystem, l10n),
+      paceUnit: UnitFormatter.paceLabel(unitSystem, l10n),
     );
   }
 

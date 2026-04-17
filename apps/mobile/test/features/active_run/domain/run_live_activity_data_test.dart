@@ -17,6 +17,11 @@ void main() {
       nextBlockLabel: 'Recover',
       repLabel: '3 / 6',
       isPaused: false,
+      distanceKm: 1.42,
+      paceSecondsPerKm: 306,
+      unitFactor: 1.0,
+      distanceUnit: 'km',
+      paceUnit: 'min/km',
     );
 
     final map = data.toMap();
@@ -51,6 +56,11 @@ void main() {
       nextBlockLabel: null,
       repLabel: null,
       isPaused: true,
+      distanceKm: 5.0,
+      paceSecondsPerKm: 360,
+      unitFactor: 1.0,
+      distanceUnit: 'km',
+      paceUnit: 'min/km',
     );
 
     final map = data.toMap();
@@ -74,6 +84,11 @@ void main() {
       nextBlockLabel: null,
       repLabel: null,
       isPaused: false,
+      distanceKm: 0.5,
+      paceSecondsPerKm: 300,
+      unitFactor: 1.0,
+      distanceUnit: 'km',
+      paceUnit: 'min/km',
     );
 
     final paused = original.copyWith(isPaused: true, statusLabel: 'PAUSED');
@@ -108,6 +123,11 @@ void main() {
       nextBlockLabel: 'Recover',
       repLabel: 'Rep 2 / 6',
       isPaused: false,
+      distanceKm: 0.5,
+      paceSecondsPerKm: 300,
+      unitFactor: 1.0,
+      distanceUnit: 'km',
+      paceUnit: 'min/km',
     );
 
     final cleared = original.copyWith(nextBlockLabel: null, repLabel: null);
@@ -132,6 +152,11 @@ void main() {
       nextBlockLabel: 'Cool-down',
       repLabel: null,
       isPaused: false,
+      distanceKm: 7.5,
+      paceSecondsPerKm: 360,
+      unitFactor: 1.0,
+      distanceUnit: 'km',
+      paceUnit: 'min/km',
     );
 
     final map = original.toMap();
@@ -149,6 +174,11 @@ void main() {
       nextBlockLabel: map['nextBlockLabel'] as String?,
       repLabel: map['repLabel'] as String?,
       isPaused: map['isPaused'] as bool,
+      distanceKm: map['distanceKm'] as double,
+      paceSecondsPerKm: map['paceSecondsPerKm'] as int,
+      unitFactor: map['unitFactor'] as double,
+      distanceUnit: map['distanceUnit'] as String,
+      paceUnit: map['paceUnit'] as String,
     );
 
     expect(reconstructed.workoutName, original.workoutName);

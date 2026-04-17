@@ -10,10 +10,13 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
+import java.util.Locale
 
 class RunForegroundService : Service() {
     private val notificationManager: NotificationManager
@@ -21,12 +24,28 @@ class RunForegroundService : Service() {
 
     private var latestData = RunNotificationData.empty()
 
+    // Service-owned, ticked natively. Survives app backgrounding.
+    private var serviceDistanceKm: Double = 0.0
+    private var serviceElapsedMs: Long = 0L
+    private var lastTickRealtime: Long = 0L
+    private var seeded: Boolean = false
+
+    private val tickHandler = Handler(Looper.getMainLooper())
+    private val tickRunnable = object : Runnable {
+        override fun run() {
+            tick()
+            tickHandler.postDelayed(this, TICK_INTERVAL_MS)
+        }
+    }
+    private var tickRunning = false
+
     override fun onCreate() {
         super.onCreate()
         current = this
     }
 
     override fun onDestroy() {
+        stopTickLoop()
         if (current === this) current = null
         super.onDestroy()
     }
@@ -41,11 +60,11 @@ class RunForegroundService : Service() {
             }
             ACTION_UPDATE -> {
                 val data = RunNotificationData.fromBundle(intent.extras)
-                startOrUpdate(data)
+                applyData(data, isInitial = false)
             }
             else -> {
                 val data = RunNotificationData.fromBundle(intent?.extras)
-                startOrUpdate(data)
+                applyData(data, isInitial = !seeded)
             }
         }
 
@@ -53,10 +72,11 @@ class RunForegroundService : Service() {
     }
 
     fun updateRun(data: Map<*, *>) {
-        startOrUpdate(RunNotificationData.fromMap(data))
+        applyData(RunNotificationData.fromMap(data), isInitial = !seeded)
     }
 
     fun endRun() {
+        stopTickLoop()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -74,8 +94,50 @@ class RunForegroundService : Service() {
 
     private var foregroundStarted = false
 
-    private fun startOrUpdate(data: RunNotificationData) {
+    private fun applyData(data: RunNotificationData, isInitial: Boolean) {
+        if (isInitial) {
+            // Seed service state from Flutter on first start. Subsequent
+            // updates only mutate labels + pace; distance/elapsed stay
+            // service-owned to avoid stomping on values accumulated while
+            // Flutter was backgrounded.
+            serviceDistanceKm = data.distanceKm
+            serviceElapsedMs = data.elapsedSeconds * 1000L
+            lastTickRealtime = SystemClock.elapsedRealtime()
+            seeded = true
+        }
         latestData = data
+        pushNotification()
+        if (data.isPaused) stopTickLoop() else startTickLoop()
+    }
+
+    private fun startTickLoop() {
+        if (tickRunning) return
+        lastTickRealtime = SystemClock.elapsedRealtime()
+        tickHandler.postDelayed(tickRunnable, TICK_INTERVAL_MS)
+        tickRunning = true
+    }
+
+    private fun stopTickLoop() {
+        if (!tickRunning) return
+        tickHandler.removeCallbacks(tickRunnable)
+        tickRunning = false
+    }
+
+    private fun tick() {
+        val now = SystemClock.elapsedRealtime()
+        val deltaMs = (now - lastTickRealtime).coerceAtLeast(0L)
+        lastTickRealtime = now
+        if (latestData.isPaused) return
+
+        serviceElapsedMs += deltaMs
+        val pace = latestData.paceSecondsPerKm
+        if (pace > 0) {
+            serviceDistanceKm += (deltaMs / 1000.0) / pace
+        }
+        pushNotification()
+    }
+
+    private fun pushNotification() {
         createChannel()
         val notification = buildNotification(latestData)
         try {
@@ -88,6 +150,36 @@ class RunForegroundService : Service() {
         } catch (_: RuntimeException) {
             stopSelf()
         }
+    }
+
+    private fun computedDistanceLabel(): String {
+        val unit = latestData.distanceUnit.ifBlank { "km" }
+        val value = serviceDistanceKm * latestData.unitFactor
+        return String.format(Locale.US, "%.1f %s", value, unit)
+    }
+
+    private fun computedCurrentPaceLabel(): String {
+        val basePace = latestData.paceSecondsPerKm
+        if (basePace <= 0) return latestData.currentPaceLabel
+        val factor = latestData.unitFactor
+        val secondsInUnit = if (factor > 0) (basePace / factor).toInt() else basePace
+        return formatPace(secondsInUnit, latestData.paceUnit)
+    }
+
+    private fun computedAvgPaceLabel(): String {
+        if (serviceDistanceKm < 0.005) return latestData.avgPaceLabel
+        val avgSecPerKm = (serviceElapsedMs / 1000.0) / serviceDistanceKm
+        val factor = latestData.unitFactor
+        val secondsInUnit = if (factor > 0) (avgSecPerKm / factor).toInt() else avgSecPerKm.toInt()
+        return formatPace(secondsInUnit, latestData.paceUnit)
+    }
+
+    private fun formatPace(seconds: Int, unitSuffix: String): String {
+        val safe = seconds.coerceAtLeast(0)
+        val minutes = safe / 60
+        val rem = safe % 60
+        val unit = unitSuffix.ifBlank { "min/km" }
+        return String.format(Locale.US, "%d:%02d%s", minutes, rem, unit)
     }
 
     private fun buildNotification(data: RunNotificationData): Notification {
@@ -119,25 +211,30 @@ class RunForegroundService : Service() {
     }
 
     private fun collapsedViews(data: RunNotificationData): RemoteViews {
+        val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
+        val currentPace = if (seeded) computedCurrentPaceLabel() else data.currentPaceLabel
         return RemoteViews(packageName, R.layout.notification_run_collapsed).apply {
             setTextViewText(R.id.run_workout_name, data.workoutName)
             setTextViewText(R.id.run_status_label, data.statusLabel)
-            setTextViewText(R.id.run_distance_label, data.distanceLabel)
-            setTextViewText(R.id.run_current_pace_label, data.currentPaceLabel)
+            setTextViewText(R.id.run_distance_label, distance)
+            setTextViewText(R.id.run_current_pace_label, currentPace)
             bindElapsed(this, data)
         }
     }
 
     private fun expandedViews(data: RunNotificationData): RemoteViews {
+        val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
+        val currentPace = if (seeded) computedCurrentPaceLabel() else data.currentPaceLabel
+        val avgPace = if (seeded) computedAvgPaceLabel() else data.avgPaceLabel
         return RemoteViews(packageName, R.layout.notification_run_expanded).apply {
             setTextViewText(R.id.run_workout_name, data.workoutName)
             setTextViewText(R.id.run_status_label, data.statusLabel)
-            setTextViewText(R.id.run_distance_label, data.distanceLabel)
+            setTextViewText(R.id.run_distance_label, distance)
             setTextViewText(R.id.run_current_block_label, data.currentBlockLabel)
             setTextViewText(R.id.run_current_pace_title, data.currentPaceTitleLabel)
-            setTextViewText(R.id.run_current_pace_label, data.currentPaceLabel)
+            setTextViewText(R.id.run_current_pace_label, currentPace)
             setTextViewText(R.id.run_avg_pace_title, data.avgPaceTitleLabel)
-            setTextViewText(R.id.run_avg_pace_label, data.avgPaceLabel)
+            setTextViewText(R.id.run_avg_pace_label, avgPace)
             setOptionalText(R.id.run_next_block_label, data.nextBlockLabel)
             setOptionalText(R.id.run_rep_label, data.repLabel)
             bindElapsed(this, data)
@@ -145,7 +242,8 @@ class RunForegroundService : Service() {
     }
 
     private fun bindElapsed(views: RemoteViews, data: RunNotificationData) {
-        val base = SystemClock.elapsedRealtime() - data.elapsedSeconds * 1000L
+        val elapsedSec = if (seeded) serviceElapsedMs / 1000L else data.elapsedSeconds
+        val base = SystemClock.elapsedRealtime() - elapsedSec * 1000L
         views.setChronometer(R.id.run_elapsed_chrono, base, null, !data.isPaused)
         views.setTextViewText(R.id.run_elapsed_static, data.elapsedLabel)
         views.setViewVisibility(
@@ -186,6 +284,7 @@ class RunForegroundService : Service() {
         const val ACTIVE_RUN_DEEP_LINK = "striviq://active-run"
         const val NOTIFICATION_ID = 61002
         private const val CHANNEL_ID = "active_run"
+        private const val TICK_INTERVAL_MS = 1000L
 
         var current: RunForegroundService? = null
             private set
@@ -213,6 +312,11 @@ private data class RunNotificationData(
     val nextBlockLabel: String?,
     val repLabel: String?,
     val isPaused: Boolean,
+    val distanceKm: Double,
+    val paceSecondsPerKm: Int,
+    val unitFactor: Double,
+    val distanceUnit: String,
+    val paceUnit: String,
 ) {
     fun toBundle(): Bundle = Bundle().apply {
         putString("workoutName", workoutName)
@@ -228,6 +332,11 @@ private data class RunNotificationData(
         putString("nextBlockLabel", nextBlockLabel)
         putString("repLabel", repLabel)
         putBoolean("isPaused", isPaused)
+        putDouble("distanceKm", distanceKm)
+        putInt("paceSecondsPerKm", paceSecondsPerKm)
+        putDouble("unitFactor", unitFactor)
+        putString("distanceUnit", distanceUnit)
+        putString("paceUnit", paceUnit)
     }
 
     companion object {
@@ -245,6 +354,11 @@ private data class RunNotificationData(
             nextBlockLabel = null,
             repLabel = null,
             isPaused = false,
+            distanceKm = 0.0,
+            paceSecondsPerKm = 0,
+            unitFactor = 1.0,
+            distanceUnit = "km",
+            paceUnit = "min/km",
         )
 
         fun fromBundle(bundle: Bundle?): RunNotificationData {
@@ -264,6 +378,11 @@ private data class RunNotificationData(
                 nextBlockLabel = bundle.getString("nextBlockLabel"),
                 repLabel = bundle.getString("repLabel"),
                 isPaused = bundle.getBoolean("isPaused"),
+                distanceKm = bundle.getDouble("distanceKm"),
+                paceSecondsPerKm = bundle.getInt("paceSecondsPerKm"),
+                unitFactor = bundle.getDouble("unitFactor", 1.0),
+                distanceUnit = bundle.getString("distanceUnit") ?: "km",
+                paceUnit = bundle.getString("paceUnit") ?: "min/km",
             )
         }
 
@@ -283,6 +402,11 @@ private data class RunNotificationData(
                 nextBlockLabel = map.optionalStringValue("nextBlockLabel"),
                 repLabel = map.optionalStringValue("repLabel"),
                 isPaused = map.booleanValue("isPaused"),
+                distanceKm = map.doubleValue("distanceKm", 0.0),
+                paceSecondsPerKm = map.intValue("paceSecondsPerKm"),
+                unitFactor = map.doubleValue("unitFactor", 1.0),
+                distanceUnit = map.stringValue("distanceUnit", "km"),
+                paceUnit = map.stringValue("paceUnit", "min/km"),
             )
         }
     }
@@ -306,4 +430,20 @@ private fun Map<*, *>.longValue(key: String): Long {
 
 private fun Map<*, *>.booleanValue(key: String): Boolean {
     return this[key] as? Boolean ?: false
+}
+
+private fun Map<*, *>.intValue(key: String): Int {
+    return when (val value = this[key]) {
+        is Number -> value.toInt()
+        is String -> value.toIntOrNull() ?: 0
+        else -> 0
+    }
+}
+
+private fun Map<*, *>.doubleValue(key: String, fallback: Double): Double {
+    return when (val value = this[key]) {
+        is Number -> value.toDouble()
+        is String -> value.toDoubleOrNull() ?: fallback
+        else -> fallback
+    }
 }
