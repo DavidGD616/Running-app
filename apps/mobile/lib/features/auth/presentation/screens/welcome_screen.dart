@@ -135,21 +135,11 @@ class _AppLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 72,
-      height: 72,
-      decoration: BoxDecoration(
-        color: AppColors.accentPrimary,
-        borderRadius: AppRadius.borderLg,
-      ),
-      padding: const EdgeInsets.all(16),
-      child: SvgPicture.asset(
-        'assets/icons/zap.svg',
-        colorFilter: const ColorFilter.mode(
-          AppColors.backgroundPrimary,
-          BlendMode.srcIn,
-        ),
-      ),
+    return SvgPicture.asset(
+      'assets/logos/striviq_logo.svg',
+      width: 210,
+      height: 52,
+      fit: BoxFit.contain,
     );
   }
 }

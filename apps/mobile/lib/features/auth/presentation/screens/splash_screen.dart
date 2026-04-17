@@ -5,7 +5,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
-import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -43,22 +42,12 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // App icon
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: AppColors.accentPrimary,
-                borderRadius: AppRadius.borderLg,
-              ),
-              padding: const EdgeInsets.all(AppSpacing.base),
-              child: SvgPicture.asset(
-                'assets/icons/zap.svg',
-                colorFilter: const ColorFilter.mode(
-                  AppColors.backgroundPrimary,
-                  BlendMode.srcIn,
-                ),
-              ),
+            // App logo
+            SvgPicture.asset(
+              'assets/logos/striviq_logo.svg',
+              width: 210,
+              height: 52,
+              fit: BoxFit.contain,
             ),
             const SizedBox(height: AppSpacing.lg),
             // App name

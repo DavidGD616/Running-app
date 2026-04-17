@@ -35,24 +35,11 @@ class OnboardingIntroScreen extends StatelessWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // Logo
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppColors.accentMuted,
-                          borderRadius: AppRadius.borderXl,
-                        ),
-                        child: Center(
-                          child: SvgPicture.asset(
-                            'assets/icons/zap.svg',
-                            width: 40,
-                            height: 40,
-                            colorFilter: const ColorFilter.mode(
-                              AppColors.accentPrimary,
-                              BlendMode.srcIn,
-                            ),
-                          ),
-                        ),
+                      SvgPicture.asset(
+                        'assets/logos/striviq_logo.svg',
+                        width: 210,
+                        height: 52,
+                        fit: BoxFit.contain,
                       ),
                       const SizedBox(height: AppSpacing.xxxl),
                       // Title
