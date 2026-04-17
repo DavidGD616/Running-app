@@ -11,7 +11,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
-    private val channelName = "com.example.runningApp/live_activity"
+    private val channelName = "com.davidgd616.striviq/live_activity"
 
     override fun getInitialRoute(): String? {
         return if (isActiveRunIntent(intent)) "/active-run" else super.getInitialRoute()
@@ -106,6 +106,6 @@ class MainActivity : FlutterActivity() {
 
     private fun isActiveRunIntent(intent: Intent?): Boolean {
         val uri: Uri = intent?.data ?: return false
-        return uri.scheme == "com.example.runningapp" && uri.host == "active-run"
+        return uri.scheme == "striviq" && uri.host == "active-run"
     }
 }

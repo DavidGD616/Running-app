@@ -1,0 +1,23 @@
+import ActivityKit
+import Foundation
+
+// SYNC: must match RunLiveActivityExtension/RunActivityAttributes.swift
+@available(iOS 16.1, *)
+struct RunActivityAttributes: ActivityAttributes {
+  let workoutName: String
+
+  struct ContentState: Codable, Hashable {
+    var statusLabel: String
+    var timerStartedAt: Date?
+    var elapsedLabel: String
+    var isPaused: Bool
+    var distanceLabel: String
+    var currentPaceTitleLabel: String
+    var currentPaceLabel: String
+    var avgPaceTitleLabel: String
+    var avgPaceLabel: String
+    var currentBlockLabel: String
+    var nextBlockLabel: String?
+    var repLabel: String?
+  }
+}

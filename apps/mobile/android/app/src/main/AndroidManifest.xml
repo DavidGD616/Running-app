@@ -34,7 +34,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:host="login-callback"
-                    android:scheme="com.example.runningapp" />
+                    android:scheme="striviq" />
             </intent-filter>
             <intent-filter>
                 <action android:name="android.intent.action.VIEW" />
@@ -42,7 +42,7 @@
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data
                     android:host="active-run"
-                    android:scheme="com.example.runningapp" />
+                    android:scheme="striviq" />
             </intent-filter>
         </activity>
         <service

@@ -174,10 +174,10 @@ class RunForegroundService : Service() {
     }
 
     companion object {
-        const val ACTION_START = "com.example.running_app.action.START_RUN"
-        const val ACTION_UPDATE = "com.example.running_app.action.UPDATE_RUN"
-        const val ACTION_END = "com.example.running_app.action.END_RUN"
-        const val ACTIVE_RUN_DEEP_LINK = "com.example.runningapp://active-run"
+        const val ACTION_START = "com.davidgd616.striviq.action.START_RUN"
+        const val ACTION_UPDATE = "com.davidgd616.striviq.action.UPDATE_RUN"
+        const val ACTION_END = "com.davidgd616.striviq.action.END_RUN"
+        const val ACTIVE_RUN_DEEP_LINK = "striviq://active-run"
         const val NOTIFICATION_ID = 61002
         private const val CHANNEL_ID = "active_run"
 
