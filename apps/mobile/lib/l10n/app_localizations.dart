@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// App name
   ///
   /// In en, this message translates to:
-  /// **'RunFlow'**
+  /// **'StrivIQ'**
   String get appTitle;
 
   /// Short English language code shown on the toggle
@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// Main heading on the welcome screen
   ///
   /// In en, this message translates to:
-  /// **'Welcome to RunFlow'**
+  /// **'Welcome to StrivIQ'**
   String get welcomeTitle;
 
   /// Subtitle on the welcome screen
@@ -3072,10 +3072,10 @@ abstract class AppLocalizations {
   /// **'Active Plan'**
   String get settingsSubscriptionActivePlan;
 
-  /// Visible plan name for the paid RunFlow subscription
+  /// Visible plan name for the paid StrivIQ subscription
   ///
   /// In en, this message translates to:
-  /// **'RunFlow Pro'**
+  /// **'StrivIQ Pro'**
   String get settingsSubscriptionPlanName;
 
   /// Label for the next billing date on the subscription screen
@@ -3099,7 +3099,7 @@ abstract class AppLocalizations {
   /// Prompt shown at the top of the cancel subscription reasons screen
   ///
   /// In en, this message translates to:
-  /// **'Please tell us why you\'re cancelling RunFlow Pro'**
+  /// **'Please tell us why you\'re cancelling StrivIQ Pro'**
   String get settingsCancelSubscriptionPrompt;
 
   /// Cancellation reason: subscription cost is too high
@@ -3159,7 +3159,7 @@ abstract class AppLocalizations {
   /// Helper copy shown after the user submits cancellation reasons
   ///
   /// In en, this message translates to:
-  /// **'Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.'**
+  /// **'Thanks for sharing your feedback. To finish cancelling StrivIQ Pro, manage your subscription in the store where you purchased it.'**
   String get settingsSubscriptionCancellationInfoBody;
 
   /// Confirmation button label on the cancellation info dialog
@@ -3477,7 +3477,7 @@ abstract class AppLocalizations {
   /// App version string shown at bottom of settings
   ///
   /// In en, this message translates to:
-  /// **'RunFlow v1.0.0 (Build 42)'**
+  /// **'StrivIQ v1.0.0 (Build 42)'**
   String get settingsVersion;
 
   /// Header title on the session detail screen

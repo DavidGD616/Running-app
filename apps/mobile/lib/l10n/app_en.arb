@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "RunFlow",
+  "appTitle": "StrivIQ",
   "@appTitle": { "description": "App name" },
 
   "languageCodeEN": "EN",
@@ -13,7 +13,7 @@
   "splashTagline": "Train smarter. Run stronger.",
   "@splashTagline": { "description": "Tagline shown on the splash screen" },
 
-  "welcomeTitle": "Welcome to RunFlow",
+  "welcomeTitle": "Welcome to StrivIQ",
   "@welcomeTitle": { "description": "Main heading on the welcome screen" },
 
   "welcomeSubtitle": "Your personal running coach. Build a plan tailored to your goals, fitness level, and schedule.",
@@ -1590,9 +1590,9 @@
   "@settingsSubscriptionActivePlan": {
     "description": "Label for the active paid plan on the subscription screen"
   },
-  "settingsSubscriptionPlanName": "RunFlow Pro",
+  "settingsSubscriptionPlanName": "StrivIQ Pro",
   "@settingsSubscriptionPlanName": {
-    "description": "Visible plan name for the paid RunFlow subscription"
+    "description": "Visible plan name for the paid StrivIQ subscription"
   },
   "settingsSubscriptionNextBillingDate": "Next Billing Date",
   "@settingsSubscriptionNextBillingDate": {
@@ -1606,7 +1606,7 @@
   "@settingsCancelSubscription": {
     "description": "Button and page title for the subscription cancellation flow"
   },
-  "settingsCancelSubscriptionPrompt": "Please tell us why you're cancelling RunFlow Pro",
+  "settingsCancelSubscriptionPrompt": "Please tell us why you're cancelling StrivIQ Pro",
   "@settingsCancelSubscriptionPrompt": {
     "description": "Prompt shown at the top of the cancel subscription reasons screen"
   },
@@ -1646,7 +1646,7 @@
   "@settingsSubscriptionCancellationInfoTitle": {
     "description": "Title shown after the user submits cancellation reasons"
   },
-  "settingsSubscriptionCancellationInfoBody": "Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.",
+  "settingsSubscriptionCancellationInfoBody": "Thanks for sharing your feedback. To finish cancelling StrivIQ Pro, manage your subscription in the store where you purchased it.",
   "@settingsSubscriptionCancellationInfoBody": {
     "description": "Helper copy shown after the user submits cancellation reasons"
   },
@@ -1809,7 +1809,7 @@
   "settingsLogOut": "Log Out",
   "@settingsLogOut": { "description": "Log out button label" },
 
-  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+  "settingsVersion": "StrivIQ v1.0.0 (Build 42)",
   "@settingsVersion": { "description": "App version string shown at bottom of settings" },
 
   "sessionDetailTitle": "Workout",

@@ -1,13 +1,13 @@
 {
   "@@locale": "es",
 
-  "appTitle": "RunFlow",
+  "appTitle": "StrivIQ",
   "languageCodeEN": "EN",
   "languageCodeES": "ES",
 
   "splashTagline": "Entrena más inteligente. Corre más fuerte.",
 
-  "welcomeTitle": "Bienvenido a RunFlow",
+  "welcomeTitle": "Bienvenido a StrivIQ",
   "welcomeSubtitle": "Tu entrenador personal de running. Crea un plan adaptado a tus objetivos, nivel de forma física y horario.",
   "welcomeFeature1": "Planes de entrenamiento personalizados",
   "welcomeFeature2": "Progresión potenciada por IA",
@@ -567,11 +567,11 @@
   "settingsAccount": "Cuenta",
   "settingsSubscription": "Suscripción",
   "settingsSubscriptionActivePlan": "Plan activo",
-  "settingsSubscriptionPlanName": "RunFlow Pro",
+  "settingsSubscriptionPlanName": "StrivIQ Pro",
   "settingsSubscriptionNextBillingDate": "Próxima fecha de cobro",
   "settingsSubscriptionAutoRenewNotice": "Tu suscripción se renovará automáticamente. Si no quieres continuar con tu suscripción, cancélala antes de la próxima fecha de cobro.",
   "settingsCancelSubscription": "Cancelar suscripción",
-  "settingsCancelSubscriptionPrompt": "Cuéntanos por qué estás cancelando RunFlow Pro",
+  "settingsCancelSubscriptionPrompt": "Cuéntanos por qué estás cancelando StrivIQ Pro",
   "settingsCancelSubscriptionReasonTooExpensive": "Es demasiado caro",
   "settingsCancelSubscriptionReasonNotUsingEnough": "No lo estoy usando lo suficiente",
   "settingsCancelSubscriptionReasonNotHelpingGoals": "No me está ayudando a alcanzar mis objetivos",
@@ -581,7 +581,7 @@
   "settingsCancelSubscriptionReasonOther": "Otro",
   "settingsNotNow": "Ahora no",
   "settingsSubscriptionCancellationInfoTitle": "Administra tu suscripción en la tienda",
-  "settingsSubscriptionCancellationInfoBody": "Gracias por compartir tus comentarios. Para completar la cancelación de RunFlow Pro, administra tu suscripción en la tienda donde la compraste.",
+  "settingsSubscriptionCancellationInfoBody": "Gracias por compartir tus comentarios. Para completar la cancelación de StrivIQ Pro, administra tu suscripción en la tienda donde la compraste.",
   "settingsSubscriptionDialogButton": "OK",
   "settingsIntegrations": "Integraciones",
   "settingsAvailableIntegrationsSection": "Integraciones disponibles",
@@ -634,7 +634,7 @@
   "settingsConnected": "Conectado",
   "settingsNoConnectedDevices": "Aun no hay dispositivos conectados",
   "settingsLogOut": "Cerrar sesión",
-  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+  "settingsVersion": "StrivIQ v1.0.0 (Build 42)",
 
   "sessionDetailTitle": "Entrenamiento",
   "sessionDetailSessionType": "Velocidad",

@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appTitle => 'RunFlow';
+  String get appTitle => 'StrivIQ';
 
   @override
   String get languageCodeEN => 'EN';
@@ -21,7 +21,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splashTagline => 'Train smarter. Run stronger.';
 
   @override
-  String get welcomeTitle => 'Welcome to RunFlow';
+  String get welcomeTitle => 'Welcome to StrivIQ';
 
   @override
   String get welcomeSubtitle =>
@@ -1593,7 +1593,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSubscriptionActivePlan => 'Active Plan';
 
   @override
-  String get settingsSubscriptionPlanName => 'RunFlow Pro';
+  String get settingsSubscriptionPlanName => 'StrivIQ Pro';
 
   @override
   String get settingsSubscriptionNextBillingDate => 'Next Billing Date';
@@ -1607,7 +1607,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsCancelSubscriptionPrompt =>
-      'Please tell us why you\'re cancelling RunFlow Pro';
+      'Please tell us why you\'re cancelling StrivIQ Pro';
 
   @override
   String get settingsCancelSubscriptionReasonTooExpensive =>
@@ -1645,7 +1645,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsSubscriptionCancellationInfoBody =>
-      'Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.';
+      'Thanks for sharing your feedback. To finish cancelling StrivIQ Pro, manage your subscription in the store where you purchased it.';
 
   @override
   String get settingsSubscriptionDialogButton => 'OK';
@@ -1818,7 +1818,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLogOut => 'Log Out';
 
   @override
-  String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
+  String get settingsVersion => 'StrivIQ v1.0.0 (Build 42)';
 
   @override
   String get sessionDetailTitle => 'Workout';

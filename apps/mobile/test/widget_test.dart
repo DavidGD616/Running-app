@@ -24,6 +24,6 @@ void main() {
     expect(materialAppFinder, findsOneWidget);
 
     final app = tester.widget<MaterialApp>(materialAppFinder);
-    expect(app.title, 'RunFlow');
+    expect(app.title, 'StrivIQ');
   });
 }

@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'RunFlow';
+  String get appTitle => 'StrivIQ';
 
   @override
   String get languageCodeEN => 'EN';
@@ -21,7 +21,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get splashTagline => 'Entrena más inteligente. Corre más fuerte.';
 
   @override
-  String get welcomeTitle => 'Bienvenido a RunFlow';
+  String get welcomeTitle => 'Bienvenido a StrivIQ';
 
   @override
   String get welcomeSubtitle =>
@@ -1601,7 +1601,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSubscriptionActivePlan => 'Plan activo';
 
   @override
-  String get settingsSubscriptionPlanName => 'RunFlow Pro';
+  String get settingsSubscriptionPlanName => 'StrivIQ Pro';
 
   @override
   String get settingsSubscriptionNextBillingDate => 'Próxima fecha de cobro';
@@ -1615,7 +1615,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsCancelSubscriptionPrompt =>
-      'Cuéntanos por qué estás cancelando RunFlow Pro';
+      'Cuéntanos por qué estás cancelando StrivIQ Pro';
 
   @override
   String get settingsCancelSubscriptionReasonTooExpensive =>
@@ -1653,7 +1653,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsSubscriptionCancellationInfoBody =>
-      'Gracias por compartir tus comentarios. Para completar la cancelación de RunFlow Pro, administra tu suscripción en la tienda donde la compraste.';
+      'Gracias por compartir tus comentarios. Para completar la cancelación de StrivIQ Pro, administra tu suscripción en la tienda donde la compraste.';
 
   @override
   String get settingsSubscriptionDialogButton => 'OK';
@@ -1827,7 +1827,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsLogOut => 'Cerrar sesión';
 
   @override
-  String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
+  String get settingsVersion => 'StrivIQ v1.0.0 (Build 42)';
 
   @override
   String get sessionDetailTitle => 'Entrenamiento';

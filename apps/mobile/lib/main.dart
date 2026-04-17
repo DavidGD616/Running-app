@@ -55,7 +55,7 @@ class RunningApp extends ConsumerWidget {
     final locale = localeAsync.value ?? const Locale('en');
 
     return MaterialApp.router(
-      title: 'RunFlow',
+      title: 'StrivIQ',
       theme: AppTheme.dark,
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(appRouterProvider),
