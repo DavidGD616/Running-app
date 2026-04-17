@@ -40,6 +40,7 @@ class MainActivity : FlutterActivity() {
                         result.success(true)
                     }
                     "androidSdkInt" -> result.success(Build.VERSION.SDK_INT)
+                    "getRunState" -> result.success(RunForegroundService.current?.snapshotState())
                     else -> result.notImplemented()
                 }
             }

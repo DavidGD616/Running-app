@@ -47,4 +47,55 @@ class RunLiveActivityBridge {
       return null;
     }
   }
+
+  /// Returns the foreground service's authoritative run state (Android only).
+  /// Null if no service running or not Android.
+  Future<RunServiceState?> getRunState() async {
+    if (!Platform.isAndroid) return null;
+    try {
+      final raw = await _channel.invokeMethod<Map<Object?, Object?>>(
+        'getRunState',
+      );
+      if (raw == null) return null;
+      return RunServiceState.fromMap(raw);
+    } catch (e) {
+      debugPrint('[RunLiveActivityBridge] getRunState failed: $e');
+      return null;
+    }
+  }
+}
+
+class RunServiceState {
+  const RunServiceState({
+    required this.distanceKm,
+    required this.elapsedMs,
+    required this.isPaused,
+    required this.seeded,
+  });
+
+  final double distanceKm;
+  final int elapsedMs;
+  final bool isPaused;
+  final bool seeded;
+
+  factory RunServiceState.fromMap(Map<Object?, Object?> map) {
+    double dbl(String k) {
+      final v = map[k];
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      return 0;
+    }
+    int intVal(String k) {
+      final v = map[k];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return 0;
+    }
+    return RunServiceState(
+      distanceKm: dbl('distanceKm'),
+      elapsedMs: intVal('elapsedMs'),
+      isPaused: (map['isPaused'] as bool?) ?? false,
+      seeded: (map['seeded'] as bool?) ?? false,
+    );
+  }
 }

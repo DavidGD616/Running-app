@@ -88,11 +88,33 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_isPaused) {
-      // Catch up wall-clock time missed while backgrounded.
-      _tick();
+  void didChangeAppLifecycleState(AppLifecycleState state) async {
+    if (state != AppLifecycleState.resumed || _isPaused) return;
+    final snapshot = await _bridge.getRunState();
+    if (!mounted) return;
+    if (snapshot != null && snapshot.seeded && !snapshot.isPaused) {
+      final currentElapsedMs = _currentElapsed.inMilliseconds;
+      final deltaMs = snapshot.elapsedMs - currentElapsedMs;
+      final deltaKm = snapshot.distanceKm - _distanceKm;
+      if (deltaMs > 0 || deltaKm > 0) {
+        setState(() {
+          if (deltaMs > 0) {
+            _accumulatedActiveMs += deltaMs;
+            _blockElapsed += Duration(milliseconds: deltaMs);
+          }
+          _segmentStartedAt = _now;
+          _lastTickAt = _now;
+          if (deltaKm > 0) {
+            _distanceKm = snapshot.distanceKm;
+            _blockDistanceKm += deltaKm;
+          }
+          _advanceTimeline();
+        });
+        _maybeSendActivityUpdate(wasFirstTick: false);
+        return;
+      }
     }
+    _tick();
   }
 
   void _tick() {
@@ -122,19 +144,22 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   void _advanceTimeline() {
-    final block = _currentBlock;
-    if (block == null || _timelineIndex >= _timeline.blocks.length - 1) return;
+    while (true) {
+      final block = _currentBlock;
+      if (block == null || _timelineIndex >= _timeline.blocks.length - 1) {
+        return;
+      }
+      final isDurationComplete =
+          block.duration != null && _blockElapsed >= block.duration!;
+      final isDistanceComplete =
+          block.distanceMeters != null &&
+          _blockDistanceKm * 1000 >= block.distanceMeters!;
+      if (!isDurationComplete && !isDistanceComplete) return;
 
-    final isDurationComplete =
-        block.duration != null && _blockElapsed >= block.duration!;
-    final isDistanceComplete =
-        block.distanceMeters != null &&
-        _blockDistanceKm * 1000 >= block.distanceMeters!;
-    if (!isDurationComplete && !isDistanceComplete) return;
-
-    _timelineIndex += 1;
-    _blockElapsed = Duration.zero;
-    _blockDistanceKm = 0;
+      _timelineIndex += 1;
+      _blockElapsed = Duration.zero;
+      _blockDistanceKm = 0;
+    }
   }
 
   ActiveRunTimelineBlock? get _currentBlock {

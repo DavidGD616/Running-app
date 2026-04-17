@@ -75,6 +75,13 @@ class RunForegroundService : Service() {
         applyData(RunNotificationData.fromMap(data), isInitial = !seeded)
     }
 
+    fun snapshotState(): Map<String, Any> = mapOf(
+        "distanceKm" to serviceDistanceKm,
+        "elapsedMs" to serviceElapsedMs,
+        "isPaused" to latestData.isPaused,
+        "seeded" to seeded,
+    )
+
     fun endRun() {
         stopTickLoop()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
