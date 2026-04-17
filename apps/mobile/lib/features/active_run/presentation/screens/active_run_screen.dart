@@ -36,11 +36,13 @@ class ActiveRunScreen extends ConsumerStatefulWidget {
   ConsumerState<ActiveRunScreen> createState() => _ActiveRunScreenState();
 }
 
-class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
+class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
+    with WidgetsBindingObserver {
   Timer? _timer;
   late final ActiveRunTimeline _timeline;
 
   DateTime? _segmentStartedAt;
+  DateTime? _lastTickAt;
   int _accumulatedActiveMs = 0;
   bool _activityStarted = false;
   // Set to false if POST_NOTIFICATIONS is denied; not reset mid-session.
@@ -71,29 +73,49 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _timeline = ActiveRunTimeline.fromSession(widget.args?.session);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
     _backgroundService.stop();
     _bridge.endActivity();
     super.dispose();
   }
 
-  void _tick() {
-    if (_isPaused) return;
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_isPaused) {
+      // Catch up wall-clock time missed while backgrounded.
+      _tick();
+    }
+  }
 
+  void _tick() {
+    if (_isPaused) {
+      _lastTickAt = null;
+      return;
+    }
+
+    final now = _now;
     final wasFirstTick = _segmentStartedAt == null && _accumulatedActiveMs == 0;
-    _segmentStartedAt ??= _now;
+    _segmentStartedAt ??= now;
+
+    final lastTick = _lastTickAt;
+    final deltaSeconds = lastTick == null
+        ? 1.0
+        : (now.difference(lastTick).inMilliseconds / 1000.0).clamp(0.0, 3600.0);
+    _lastTickAt = now;
 
     setState(() {
-      final distanceDeltaKm = _kmPerSecond * _paceMultiplier;
+      final distanceDeltaKm = _kmPerSecond * _paceMultiplier * deltaSeconds;
       _distanceKm += distanceDeltaKm;
       _blockDistanceKm += distanceDeltaKm;
-      _blockElapsed += const Duration(seconds: 1);
+      _blockElapsed += Duration(milliseconds: (deltaSeconds * 1000).round());
       _advanceTimeline();
     });
     _maybeSendActivityUpdate(wasFirstTick: wasFirstTick);
@@ -246,8 +268,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen> {
               .inMilliseconds;
         }
         _segmentStartedAt = null;
+        _lastTickAt = null;
       } else {
         _segmentStartedAt = now;
+        _lastTickAt = now;
       }
     });
     _maybeSendActivityUpdate(wasFirstTick: false, isPauseToggle: true);

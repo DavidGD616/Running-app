@@ -66,6 +66,12 @@ class RunForegroundService : Service() {
         stopSelf()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // App swiped from recents: tear down activity instead of leaving stale notification.
+        endRun()
+    }
+
     private var foregroundStarted = false
 
     private fun startOrUpdate(data: RunNotificationData) {
