@@ -71,12 +71,18 @@ class RunServiceState {
     required this.elapsedMs,
     required this.isPaused,
     required this.seeded,
+    required this.blockIndex,
+    required this.blockElapsedMs,
+    required this.blockDistanceKm,
   });
 
   final double distanceKm;
   final int elapsedMs;
   final bool isPaused;
   final bool seeded;
+  final int blockIndex;
+  final int blockElapsedMs;
+  final double blockDistanceKm;
 
   factory RunServiceState.fromMap(Map<Object?, Object?> map) {
     double dbl(String k) {
@@ -96,6 +102,9 @@ class RunServiceState {
       elapsedMs: intVal('elapsedMs'),
       isPaused: (map['isPaused'] as bool?) ?? false,
       seeded: (map['seeded'] as bool?) ?? false,
+      blockIndex: intVal('blockIndex'),
+      blockElapsedMs: intVal('blockElapsedMs'),
+      blockDistanceKm: dbl('blockDistanceKm'),
     );
   }
 }

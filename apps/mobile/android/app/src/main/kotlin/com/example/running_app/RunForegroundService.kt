@@ -17,6 +17,8 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 import java.util.Locale
+import org.json.JSONArray
+import org.json.JSONObject
 
 class RunForegroundService : Service() {
     private val notificationManager: NotificationManager
@@ -29,6 +31,14 @@ class RunForegroundService : Service() {
     private var serviceElapsedMs: Long = 0L
     private var lastTickRealtime: Long = 0L
     private var seeded: Boolean = false
+
+    // Timeline (block) tracking — service advances blocks natively while
+    // Flutter is backgrounded so the notification reflects the correct
+    // block/rep/status even across multi-block transitions.
+    private var timeline: List<TimelineBlock> = emptyList()
+    private var blockIndex: Int = 0
+    private var blockElapsedMs: Long = 0L
+    private var blockDistanceKm: Double = 0.0
 
     private val tickHandler = Handler(Looper.getMainLooper())
     private val tickRunnable = object : Runnable {
@@ -80,6 +90,9 @@ class RunForegroundService : Service() {
         "elapsedMs" to serviceElapsedMs,
         "isPaused" to latestData.isPaused,
         "seeded" to seeded,
+        "blockIndex" to blockIndex,
+        "blockElapsedMs" to blockElapsedMs,
+        "blockDistanceKm" to blockDistanceKm,
     )
 
     fun endRun() {
@@ -111,10 +124,31 @@ class RunForegroundService : Service() {
             serviceElapsedMs = data.elapsedSeconds * 1000L
             lastTickRealtime = SystemClock.elapsedRealtime()
             seeded = true
+            blockIndex = 0
+            blockElapsedMs = 0L
+            blockDistanceKm = 0.0
+        }
+        if (data.timeline.isNotEmpty()) {
+            // Timeline only seeded once (length/contents stable for a session).
+            if (timeline.isEmpty()) timeline = data.timeline
         }
         latestData = data
         pushNotification()
         if (data.isPaused) stopTickLoop() else startTickLoop()
+    }
+
+    private fun advanceTimelineIfNeeded() {
+        if (timeline.isEmpty()) return
+        while (blockIndex < timeline.size - 1) {
+            val block = timeline[blockIndex]
+            val durComplete = block.durationMs != null && blockElapsedMs >= block.durationMs
+            val distComplete =
+                block.distanceMeters != null && blockDistanceKm * 1000 >= block.distanceMeters
+            if (!durComplete && !distComplete) return
+            blockIndex += 1
+            blockElapsedMs = 0L
+            blockDistanceKm = 0.0
+        }
     }
 
     private fun startTickLoop() {
@@ -137,10 +171,14 @@ class RunForegroundService : Service() {
         if (latestData.isPaused) return
 
         serviceElapsedMs += deltaMs
+        blockElapsedMs += deltaMs
         val pace = latestData.paceSecondsPerKm
         if (pace > 0) {
-            serviceDistanceKm += (deltaMs / 1000.0) / pace
+            val distDelta = (deltaMs / 1000.0) / pace
+            serviceDistanceKm += distDelta
+            blockDistanceKm += distDelta
         }
+        advanceTimelineIfNeeded()
         pushNotification()
     }
 
@@ -217,6 +255,18 @@ class RunForegroundService : Service() {
             .build()
     }
 
+    private fun currentTimelineBlock(): TimelineBlock? =
+        timeline.getOrNull(blockIndex)
+
+    private fun resolvedCurrentBlockLabel(data: RunNotificationData): String =
+        currentTimelineBlock()?.blockLabel ?: data.currentBlockLabel
+
+    private fun resolvedNextBlockLabel(data: RunNotificationData): String? =
+        currentTimelineBlock()?.nextLabel ?: data.nextBlockLabel
+
+    private fun resolvedRepLabel(data: RunNotificationData): String? =
+        currentTimelineBlock()?.repLabel ?: data.repLabel
+
     private fun collapsedViews(data: RunNotificationData): RemoteViews {
         val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
         val currentPace = if (seeded) computedCurrentPaceLabel() else data.currentPaceLabel
@@ -237,13 +287,13 @@ class RunForegroundService : Service() {
             setTextViewText(R.id.run_workout_name, data.workoutName)
             setTextViewText(R.id.run_status_label, data.statusLabel)
             setTextViewText(R.id.run_distance_label, distance)
-            setTextViewText(R.id.run_current_block_label, data.currentBlockLabel)
+            setTextViewText(R.id.run_current_block_label, resolvedCurrentBlockLabel(data))
             setTextViewText(R.id.run_current_pace_title, data.currentPaceTitleLabel)
             setTextViewText(R.id.run_current_pace_label, currentPace)
             setTextViewText(R.id.run_avg_pace_title, data.avgPaceTitleLabel)
             setTextViewText(R.id.run_avg_pace_label, avgPace)
-            setOptionalText(R.id.run_next_block_label, data.nextBlockLabel)
-            setOptionalText(R.id.run_rep_label, data.repLabel)
+            setOptionalText(R.id.run_next_block_label, resolvedNextBlockLabel(data))
+            setOptionalText(R.id.run_rep_label, resolvedRepLabel(data))
             bindElapsed(this, data)
         }
     }
@@ -305,6 +355,65 @@ class RunForegroundService : Service() {
     }
 }
 
+internal data class TimelineBlock(
+    val durationMs: Long?,
+    val distanceMeters: Int?,
+    val blockLabel: String,
+    val nextLabel: String?,
+    val repLabel: String?,
+) {
+    fun toJson(): JSONObject = JSONObject().apply {
+        put("durationMs", durationMs ?: JSONObject.NULL)
+        put("distanceMeters", distanceMeters ?: JSONObject.NULL)
+        put("blockLabel", blockLabel)
+        put("nextLabel", nextLabel ?: JSONObject.NULL)
+        put("repLabel", repLabel ?: JSONObject.NULL)
+    }
+
+    companion object {
+        fun fromJson(obj: JSONObject): TimelineBlock = TimelineBlock(
+            durationMs = if (obj.isNull("durationMs")) null else obj.optLong("durationMs"),
+            distanceMeters = if (obj.isNull("distanceMeters")) null else obj.optInt("distanceMeters"),
+            blockLabel = obj.optString("blockLabel", ""),
+            nextLabel = if (obj.isNull("nextLabel")) null else obj.optString("nextLabel"),
+            repLabel = if (obj.isNull("repLabel")) null else obj.optString("repLabel"),
+        )
+
+        fun fromMap(map: Map<*, *>): TimelineBlock {
+            fun longOrNull(key: String): Long? = when (val v = map[key]) {
+                is Number -> v.toLong()
+                is String -> v.toLongOrNull()
+                else -> null
+            }
+            fun intOrNull(key: String): Int? = when (val v = map[key]) {
+                is Number -> v.toInt()
+                is String -> v.toIntOrNull()
+                else -> null
+            }
+            return TimelineBlock(
+                durationMs = longOrNull("durationMs"),
+                distanceMeters = intOrNull("distanceMeters"),
+                blockLabel = map["blockLabel"] as? String ?: "",
+                nextLabel = map["nextLabel"] as? String,
+                repLabel = map["repLabel"] as? String,
+            )
+        }
+    }
+}
+
+private fun List<TimelineBlock>.toJsonString(): String =
+    JSONArray().apply { this@toJsonString.forEach { put(it.toJson()) } }.toString()
+
+private fun timelineFromJsonString(json: String?): List<TimelineBlock> {
+    if (json.isNullOrEmpty()) return emptyList()
+    return try {
+        val arr = JSONArray(json)
+        (0 until arr.length()).map { TimelineBlock.fromJson(arr.getJSONObject(it)) }
+    } catch (_: Exception) {
+        emptyList()
+    }
+}
+
 private data class RunNotificationData(
     val workoutName: String,
     val statusLabel: String,
@@ -324,6 +433,7 @@ private data class RunNotificationData(
     val unitFactor: Double,
     val distanceUnit: String,
     val paceUnit: String,
+    val timeline: List<TimelineBlock>,
 ) {
     fun toBundle(): Bundle = Bundle().apply {
         putString("workoutName", workoutName)
@@ -344,6 +454,7 @@ private data class RunNotificationData(
         putDouble("unitFactor", unitFactor)
         putString("distanceUnit", distanceUnit)
         putString("paceUnit", paceUnit)
+        if (timeline.isNotEmpty()) putString("timelineJson", timeline.toJsonString())
     }
 
     companion object {
@@ -366,6 +477,7 @@ private data class RunNotificationData(
             unitFactor = 1.0,
             distanceUnit = "km",
             paceUnit = "min/km",
+            timeline = emptyList(),
         )
 
         fun fromBundle(bundle: Bundle?): RunNotificationData {
@@ -390,6 +502,7 @@ private data class RunNotificationData(
                 unitFactor = bundle.getDouble("unitFactor", 1.0),
                 distanceUnit = bundle.getString("distanceUnit") ?: "km",
                 paceUnit = bundle.getString("paceUnit") ?: "min/km",
+                timeline = timelineFromJsonString(bundle.getString("timelineJson")),
             )
         }
 
@@ -414,6 +527,10 @@ private data class RunNotificationData(
                 unitFactor = map.doubleValue("unitFactor", 1.0),
                 distanceUnit = map.stringValue("distanceUnit", "km"),
                 paceUnit = map.stringValue("paceUnit", "min/km"),
+                timeline = (map["timeline"] as? List<*>)
+                    ?.mapNotNull { it as? Map<*, *> }
+                    ?.map { TimelineBlock.fromMap(it) }
+                    ?: emptyList(),
             )
         }
     }

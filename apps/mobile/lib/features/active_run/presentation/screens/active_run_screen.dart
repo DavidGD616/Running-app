@@ -100,14 +100,20 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         setState(() {
           if (deltaMs > 0) {
             _accumulatedActiveMs += deltaMs;
-            _blockElapsed += Duration(milliseconds: deltaMs);
           }
           _segmentStartedAt = _now;
           _lastTickAt = _now;
           if (deltaKm > 0) {
             _distanceKm = snapshot.distanceKm;
-            _blockDistanceKm += deltaKm;
           }
+          // Adopt service's authoritative block tracking so labels stay aligned
+          // even after multi-block transitions during background.
+          if (snapshot.blockIndex >= 0 &&
+              snapshot.blockIndex < _timeline.blocks.length) {
+            _timelineIndex = snapshot.blockIndex;
+          }
+          _blockElapsed = Duration(milliseconds: snapshot.blockElapsedMs);
+          _blockDistanceKm = snapshot.blockDistanceKm;
           _advanceTimeline();
         });
         _maybeSendActivityUpdate(wasFirstTick: false);
@@ -386,7 +392,37 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       unitFactor: unitSystem == UnitSystem.km ? 1.0 : 0.621371,
       distanceUnit: UnitFormatter.unitLabel(unitSystem, l10n),
       paceUnit: UnitFormatter.paceLabel(unitSystem, l10n),
+      timeline: _buildLiveActivityTimeline(type, l10n),
     );
+  }
+
+  List<RunLiveActivityTimelineBlock>? _buildLiveActivityTimeline(
+    SessionType type,
+    AppLocalizations l10n,
+  ) {
+    if (_timeline.isEmpty) return null;
+    final blocks = _timeline.blocks;
+    return List.generate(blocks.length, (i) {
+      final block = blocks[i];
+      final next = i + 1 < blocks.length ? blocks[i + 1] : null;
+      final blockLabel = _currentBlockLabel(block, type, l10n);
+      final nextLabel = next == null
+          ? null
+          : l10n.activeRunNextBlock(_currentBlockLabel(next, type, l10n));
+      final repLabel =
+          (type == SessionType.intervals || type == SessionType.hillRepeats) &&
+                  block.repIndex != null &&
+                  block.totalReps != null
+              ? '${l10n.activeRunRep} ${block.repIndex} / ${block.totalReps}'
+              : null;
+      return RunLiveActivityTimelineBlock(
+        durationMs: block.duration?.inMilliseconds,
+        distanceMeters: block.distanceMeters,
+        blockLabel: blockLabel,
+        nextLabel: nextLabel,
+        repLabel: repLabel,
+      );
+    });
   }
 
   Future<bool> _ensureLiveActivityNotificationsAllowed() {
