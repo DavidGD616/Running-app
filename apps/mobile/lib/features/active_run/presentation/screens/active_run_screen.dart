@@ -61,6 +61,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
   final _bridge = RunLiveActivityBridge.instance;
   final _backgroundService = RunLiveActivityBackgroundService.instance;
+  StreamSubscription<RunServiceEvent>? _eventsSub;
+  bool _finished = false;
 
   DateTime get _now => ref.read(timeSourceProvider).now();
 
@@ -76,11 +78,25 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     WidgetsBinding.instance.addObserver(this);
     _timeline = ActiveRunTimeline.fromSession(widget.args?.session);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    _eventsSub = _bridge.events().listen(_onServiceEvent);
+  }
+
+  void _onServiceEvent(RunServiceEvent event) {
+    if (_finished || !mounted) return;
+    if (event.isFinished) {
+      // Service ended (e.g. user dismissed notification action).
+      // Mirror final state so log-run reflects authoritative numbers.
+      _distanceKm = event.distanceKm;
+      _accumulatedActiveMs = event.elapsedMs;
+      _segmentStartedAt = null;
+      _finishRun();
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _eventsSub?.cancel();
     _timer?.cancel();
     _backgroundService.stop();
     _bridge.endActivity();
@@ -273,6 +289,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   void _finishRun() {
+    if (_finished) return;
+    _finished = true;
     _timer?.cancel();
     _backgroundService.stop();
     _bridge.endActivity();
@@ -588,8 +606,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                       nextBlockLabel: _nextBlockLabel(type, l10n),
                       isWorkBlock: _isWorkBlock,
                       isSurging: _isSurging,
-                      onToggleSurge: () =>
-                          setState(() => _isSurging = !_isSurging),
+                      onToggleSurge: () {
+                        setState(() => _isSurging = !_isSurging);
+                        _maybeSendActivityUpdate(wasFirstTick: false);
+                      },
                     ),
                   ],
                 ),

@@ -9,7 +9,19 @@ class RunLiveActivityBridge {
   static final RunLiveActivityBridge instance = RunLiveActivityBridge._();
 
   static const channelName = 'com.davidgd616.striviq/live_activity';
+  static const eventsChannelName = 'com.davidgd616.striviq/live_activity_events';
   static const _channel = MethodChannel(channelName);
+  static const _eventsChannel = EventChannel(eventsChannelName);
+
+  Stream<RunServiceEvent> events() {
+    if (!Platform.isAndroid) return const Stream.empty();
+    return _eventsChannel.receiveBroadcastStream().map((raw) {
+      if (raw is Map) {
+        return RunServiceEvent.fromMap(raw.cast<Object?, Object?>());
+      }
+      return const RunServiceEvent.unknown();
+    });
+  }
 
   Future<void> startActivity(RunLiveActivityData data) async {
     if (!Platform.isIOS && !Platform.isAndroid) return;
@@ -105,6 +117,49 @@ class RunServiceState {
       blockIndex: intVal('blockIndex'),
       blockElapsedMs: intVal('blockElapsedMs'),
       blockDistanceKm: dbl('blockDistanceKm'),
+    );
+  }
+}
+
+class RunServiceEvent {
+  const RunServiceEvent({
+    required this.type,
+    this.distanceKm = 0,
+    this.elapsedMs = 0,
+    this.blockIndex = 0,
+  });
+
+  const RunServiceEvent.unknown()
+      : type = 'unknown',
+        distanceKm = 0,
+        elapsedMs = 0,
+        blockIndex = 0;
+
+  final String type;
+  final double distanceKm;
+  final int elapsedMs;
+  final int blockIndex;
+
+  bool get isFinished => type == 'finished';
+
+  factory RunServiceEvent.fromMap(Map<Object?, Object?> map) {
+    double dbl(String k) {
+      final v = map[k];
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      return 0;
+    }
+    int intVal(String k) {
+      final v = map[k];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      return 0;
+    }
+    return RunServiceEvent(
+      type: (map['type'] as String?) ?? 'unknown',
+      distanceKm: dbl('distanceKm'),
+      elapsedMs: intVal('elapsedMs'),
+      blockIndex: intVal('blockIndex'),
     );
   }
 }

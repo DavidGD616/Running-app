@@ -8,10 +8,12 @@ import android.os.Build
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val channelName = "com.davidgd616.striviq/live_activity"
+    private val eventsChannelName = "com.davidgd616.striviq/live_activity_events"
 
     override fun getInitialRoute(): String? {
         return if (isActiveRunIntent(intent)) "/active-run" else super.getInitialRoute()
@@ -44,6 +46,16 @@ class MainActivity : FlutterActivity() {
                     else -> result.notImplemented()
                 }
             }
+
+        EventChannel(flutterEngine.dartExecutor.binaryMessenger, eventsChannelName)
+            .setStreamHandler(object : EventChannel.StreamHandler {
+                override fun onListen(args: Any?, sink: EventChannel.EventSink) {
+                    RunForegroundService.eventsSink = sink
+                }
+                override fun onCancel(args: Any?) {
+                    RunForegroundService.eventsSink = null
+                }
+            })
     }
 
     override fun onNewIntent(intent: Intent) {

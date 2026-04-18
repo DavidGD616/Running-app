@@ -16,6 +16,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
+import io.flutter.plugin.common.EventChannel
 import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
@@ -97,6 +98,7 @@ class RunForegroundService : Service() {
 
     fun endRun() {
         stopTickLoop()
+        emitFinishedEvent()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
@@ -104,6 +106,20 @@ class RunForegroundService : Service() {
             stopForeground(true)
         }
         stopSelf()
+    }
+
+    private fun emitFinishedEvent() {
+        if (!seeded) return
+        val sink = eventsSink ?: return
+        val payload = mapOf(
+            "type" to "finished",
+            "distanceKm" to serviceDistanceKm,
+            "elapsedMs" to serviceElapsedMs,
+            "blockIndex" to blockIndex,
+        )
+        Handler(Looper.getMainLooper()).post {
+            try { sink.success(payload) } catch (_: Exception) {}
+        }
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -345,6 +361,9 @@ class RunForegroundService : Service() {
 
         var current: RunForegroundService? = null
             private set
+
+        // Set by MainActivity when Dart subscribes via the event channel.
+        var eventsSink: EventChannel.EventSink? = null
 
         fun intent(context: Context, action: String, data: Map<*, *>? = null): Intent {
             return Intent(context, RunForegroundService::class.java).apply {
