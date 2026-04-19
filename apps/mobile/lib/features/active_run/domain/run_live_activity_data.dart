@@ -16,12 +16,12 @@ class RunLiveActivityTimelineBlock {
   final String? repLabel;
 
   Map<String, dynamic> toMap() => {
-        'durationMs': durationMs,
-        'distanceMeters': distanceMeters,
-        'blockLabel': blockLabel,
-        'nextLabel': nextLabel,
-        'repLabel': repLabel,
-      };
+    'durationMs': durationMs,
+    'distanceMeters': distanceMeters,
+    'blockLabel': blockLabel,
+    'nextLabel': nextLabel,
+    'repLabel': repLabel,
+  };
 
   factory RunLiveActivityTimelineBlock.fromMap(Map<Object?, Object?> map) {
     int? optInt(String key) {
@@ -45,10 +45,13 @@ class RunLiveActivityTimelineBlock {
 class RunLiveActivityData {
   const RunLiveActivityData({
     required this.workoutName,
+    this.statusTitleLabel = '',
     required this.statusLabel,
     required this.elapsedSeconds,
     required this.elapsedLabel,
+    this.distanceTitleLabel = '',
     required this.distanceLabel,
+    this.currentPaceShortTitleLabel = '',
     required this.currentPaceTitleLabel,
     required this.currentPaceLabel,
     required this.avgPaceTitleLabel,
@@ -62,14 +65,19 @@ class RunLiveActivityData {
     required this.unitFactor,
     required this.distanceUnit,
     required this.paceUnit,
+    this.plannedDistanceKm,
+    this.plannedDurationMs,
     this.timeline,
   });
 
   final String workoutName;
+  final String statusTitleLabel;
   final String statusLabel;
   final int elapsedSeconds;
   final String elapsedLabel;
+  final String distanceTitleLabel;
   final String distanceLabel;
+  final String currentPaceShortTitleLabel;
   final String currentPaceTitleLabel;
   final String currentPaceLabel;
   final String avgPaceTitleLabel;
@@ -94,6 +102,8 @@ class RunLiveActivityData {
 
   /// Display suffix for pace, e.g. "min/km" or "min/mi".
   final String paceUnit;
+  final double? plannedDistanceKm;
+  final int? plannedDurationMs;
 
   /// Full block timeline (precomputed labels). Service advances blocks
   /// natively using durationMs / distanceMeters completion rules so the
@@ -110,6 +120,15 @@ class RunLiveActivityData {
       if (v is String) return int.tryParse(v) ?? 0;
       return 0;
     }
+
+    int? intOrNull(String key) {
+      final v = map[key];
+      if (v is int) return v;
+      if (v is num) return v.toInt();
+      if (v is String) return int.tryParse(v);
+      return null;
+    }
+
     double doubleVal(String key, double fallback) {
       final v = map[key];
       if (v is double) return v;
@@ -118,23 +137,37 @@ class RunLiveActivityData {
       return fallback;
     }
 
+    double? doubleOrNull(String key) {
+      final v = map[key];
+      if (v is double) return v;
+      if (v is int) return v.toDouble();
+      if (v is num) return v.toDouble();
+      if (v is String) return double.tryParse(v);
+      return null;
+    }
+
     List<RunLiveActivityTimelineBlock>? timeline;
     final raw = map['timeline'];
     if (raw is List) {
       timeline = raw
           .whereType<Map>()
-          .map((e) => RunLiveActivityTimelineBlock.fromMap(
-                e.cast<Object?, Object?>(),
-              ))
+          .map(
+            (e) => RunLiveActivityTimelineBlock.fromMap(
+              e.cast<Object?, Object?>(),
+            ),
+          )
           .toList();
     }
 
     return RunLiveActivityData(
       workoutName: str('workoutName'),
+      statusTitleLabel: str('statusTitleLabel'),
       statusLabel: str('statusLabel'),
       elapsedSeconds: intVal('elapsedSeconds'),
       elapsedLabel: str('elapsedLabel', '00:00'),
+      distanceTitleLabel: str('distanceTitleLabel'),
       distanceLabel: str('distanceLabel'),
+      currentPaceShortTitleLabel: str('currentPaceShortTitleLabel'),
       currentPaceTitleLabel: str('currentPaceTitleLabel'),
       currentPaceLabel: str('currentPaceLabel'),
       avgPaceTitleLabel: str('avgPaceTitleLabel'),
@@ -148,6 +181,8 @@ class RunLiveActivityData {
       unitFactor: doubleVal('unitFactor', 1.0),
       distanceUnit: str('distanceUnit', 'km'),
       paceUnit: str('paceUnit', 'min/km'),
+      plannedDistanceKm: doubleOrNull('plannedDistanceKm'),
+      plannedDurationMs: intOrNull('plannedDurationMs'),
       timeline: timeline,
     );
   }
@@ -155,10 +190,13 @@ class RunLiveActivityData {
   Map<String, dynamic> toMap() {
     return {
       'workoutName': workoutName,
+      'statusTitleLabel': statusTitleLabel,
       'statusLabel': statusLabel,
       'elapsedSeconds': elapsedSeconds,
       'elapsedLabel': elapsedLabel,
+      'distanceTitleLabel': distanceTitleLabel,
       'distanceLabel': distanceLabel,
+      'currentPaceShortTitleLabel': currentPaceShortTitleLabel,
       'currentPaceTitleLabel': currentPaceTitleLabel,
       'currentPaceLabel': currentPaceLabel,
       'avgPaceTitleLabel': avgPaceTitleLabel,
@@ -172,6 +210,8 @@ class RunLiveActivityData {
       'unitFactor': unitFactor,
       'distanceUnit': distanceUnit,
       'paceUnit': paceUnit,
+      'plannedDistanceKm': plannedDistanceKm,
+      'plannedDurationMs': plannedDurationMs,
       if (timeline != null)
         'timeline': timeline!.map((b) => b.toMap()).toList(),
     };
@@ -179,10 +219,13 @@ class RunLiveActivityData {
 
   RunLiveActivityData copyWith({
     String? workoutName,
+    String? statusTitleLabel,
     String? statusLabel,
     int? elapsedSeconds,
     String? elapsedLabel,
+    String? distanceTitleLabel,
     String? distanceLabel,
+    String? currentPaceShortTitleLabel,
     String? currentPaceTitleLabel,
     String? currentPaceLabel,
     String? avgPaceTitleLabel,
@@ -196,14 +239,20 @@ class RunLiveActivityData {
     double? unitFactor,
     String? distanceUnit,
     String? paceUnit,
+    Object? plannedDistanceKm = _copyWithSentinel,
+    Object? plannedDurationMs = _copyWithSentinel,
     Object? timeline = _copyWithSentinel,
   }) {
     return RunLiveActivityData(
       workoutName: workoutName ?? this.workoutName,
+      statusTitleLabel: statusTitleLabel ?? this.statusTitleLabel,
       statusLabel: statusLabel ?? this.statusLabel,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       elapsedLabel: elapsedLabel ?? this.elapsedLabel,
+      distanceTitleLabel: distanceTitleLabel ?? this.distanceTitleLabel,
       distanceLabel: distanceLabel ?? this.distanceLabel,
+      currentPaceShortTitleLabel:
+          currentPaceShortTitleLabel ?? this.currentPaceShortTitleLabel,
       currentPaceTitleLabel:
           currentPaceTitleLabel ?? this.currentPaceTitleLabel,
       currentPaceLabel: currentPaceLabel ?? this.currentPaceLabel,
@@ -222,6 +271,12 @@ class RunLiveActivityData {
       unitFactor: unitFactor ?? this.unitFactor,
       distanceUnit: distanceUnit ?? this.distanceUnit,
       paceUnit: paceUnit ?? this.paceUnit,
+      plannedDistanceKm: identical(plannedDistanceKm, _copyWithSentinel)
+          ? this.plannedDistanceKm
+          : plannedDistanceKm as double?,
+      plannedDurationMs: identical(plannedDurationMs, _copyWithSentinel)
+          ? this.plannedDurationMs
+          : plannedDurationMs as int?,
       timeline: identical(timeline, _copyWithSentinel)
           ? this.timeline
           : timeline as List<RunLiveActivityTimelineBlock>?,

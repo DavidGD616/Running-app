@@ -6,19 +6,18 @@
     android:background="@drawable/run_notification_background"
     android:orientation="vertical"
     android:paddingStart="14dp"
-    android:paddingTop="8dp"
+    android:paddingTop="2dp"
     android:paddingEnd="14dp"
-    android:paddingBottom="8dp">
+    android:paddingBottom="10dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="24dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/run_workout_name"
+            android:id="@+id/run_distance_label"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -27,7 +26,7 @@
             android:maxLines="1"
             android:textColor="#FFFFFFFF"
             android:textSize="14sp"
-            tools:text="INTERVALS" />
+            tools:text="0.09 mi" />
 
         <Chronometer
             android:id="@+id/run_elapsed_chrono"
@@ -49,42 +48,15 @@
             tools:text="08:32" />
     </LinearLayout>
 
-    <LinearLayout
+    <ProgressBar
+        android:id="@+id/run_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/run_status_label"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
-            android:maxLines="1"
-            android:textColor="#FF5EEAD4"
-            android:textSize="13sp"
-            tools:text="PUSH" />
-
-        <TextView
-            android:id="@+id/run_distance_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="sans-serif-medium"
-            android:textColor="#FFFFFFFF"
-            android:textSize="13sp"
-            tools:text="1.42 km" />
-
-        <TextView
-            android:id="@+id/run_current_pace_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:fontFamily="sans-serif-medium"
-            android:textColor="#FFFFFFFF"
-            android:textSize="13sp"
-            tools:text="5:06/km" />
-    </LinearLayout>
+        android:layout_height="6dp"
+        android:layout_marginTop="4dp"
+        android:indeterminate="false"
+        android:max="1000"
+        android:progress="360"
+        android:progressDrawable="@drawable/run_notification_progress"
+        tools:progress="360" />
 </LinearLayout>

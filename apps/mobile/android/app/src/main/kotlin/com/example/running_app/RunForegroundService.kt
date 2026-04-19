@@ -217,7 +217,8 @@ class RunForegroundService : Service() {
     private fun computedDistanceLabel(): String {
         val unit = latestData.distanceUnit.ifBlank { "km" }
         val value = serviceDistanceKm * latestData.unitFactor
-        return String.format(Locale.US, "%.1f %s", value, unit)
+        val format = if (value < 1.0) "%.2f %s" else "%.1f %s"
+        return String.format(Locale.US, format, value, unit)
     }
 
     private fun computedCurrentPaceLabel(): String {
@@ -241,7 +242,24 @@ class RunForegroundService : Service() {
         val minutes = safe / 60
         val rem = safe % 60
         val unit = unitSuffix.ifBlank { "min/km" }
-        return String.format(Locale.US, "%d:%02d%s", minutes, rem, unit)
+        return String.format(Locale.US, "%d:%02d %s", minutes, rem, unit)
+    }
+
+    private fun computedProgressPermille(data: RunNotificationData): Int {
+        val distanceTarget = data.plannedDistanceKm
+        if (distanceTarget != null && distanceTarget > 0.0) {
+            return visibleProgress((serviceDistanceKm / distanceTarget).coerceIn(0.0, 1.0))
+        }
+        val durationTarget = data.plannedDurationMs
+        if (durationTarget != null && durationTarget > 0L) {
+            return visibleProgress((serviceElapsedMs.toDouble() / durationTarget).coerceIn(0.0, 1.0))
+        }
+        return 0
+    }
+
+    private fun visibleProgress(progress: Double): Int {
+        if (progress <= 0.0) return 0
+        return (progress * 1000).toInt().coerceAtLeast(24)
     }
 
     private fun buildNotification(data: RunNotificationData): Notification {
@@ -288,12 +306,9 @@ class RunForegroundService : Service() {
 
     private fun collapsedViews(data: RunNotificationData): RemoteViews {
         val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
-        val currentPace = if (seeded) computedCurrentPaceLabel() else data.currentPaceLabel
         return RemoteViews(packageName, R.layout.notification_run_collapsed).apply {
-            setTextViewText(R.id.run_workout_name, data.workoutName)
-            setTextViewText(R.id.run_status_label, data.statusLabel)
             setTextViewText(R.id.run_distance_label, distance)
-            setTextViewText(R.id.run_current_pace_label, currentPace)
+            setProgressBar(R.id.run_progress_bar, 1000, computedProgressPermille(data), false)
             bindElapsed(this, data)
         }
     }
@@ -439,10 +454,13 @@ private fun timelineFromJsonString(json: String?): List<TimelineBlock> {
 
 private data class RunNotificationData(
     val workoutName: String,
+    val statusTitleLabel: String,
     val statusLabel: String,
     val elapsedSeconds: Long,
     val elapsedLabel: String,
+    val distanceTitleLabel: String,
     val distanceLabel: String,
+    val currentPaceShortTitleLabel: String,
     val currentPaceTitleLabel: String,
     val currentPaceLabel: String,
     val avgPaceTitleLabel: String,
@@ -456,14 +474,19 @@ private data class RunNotificationData(
     val unitFactor: Double,
     val distanceUnit: String,
     val paceUnit: String,
+    val plannedDistanceKm: Double?,
+    val plannedDurationMs: Long?,
     val timeline: List<TimelineBlock>,
 ) {
     fun toBundle(): Bundle = Bundle().apply {
         putString("workoutName", workoutName)
+        putString("statusTitleLabel", statusTitleLabel)
         putString("statusLabel", statusLabel)
         putLong("elapsedSeconds", elapsedSeconds)
         putString("elapsedLabel", elapsedLabel)
+        putString("distanceTitleLabel", distanceTitleLabel)
         putString("distanceLabel", distanceLabel)
+        putString("currentPaceShortTitleLabel", currentPaceShortTitleLabel)
         putString("currentPaceTitleLabel", currentPaceTitleLabel)
         putString("currentPaceLabel", currentPaceLabel)
         putString("avgPaceTitleLabel", avgPaceTitleLabel)
@@ -477,16 +500,21 @@ private data class RunNotificationData(
         putDouble("unitFactor", unitFactor)
         putString("distanceUnit", distanceUnit)
         putString("paceUnit", paceUnit)
+        plannedDistanceKm?.let { putDouble("plannedDistanceKm", it) }
+        plannedDurationMs?.let { putLong("plannedDurationMs", it) }
         if (timeline.isNotEmpty()) putString("timelineJson", timeline.toJsonString())
     }
 
     companion object {
         fun empty(): RunNotificationData = RunNotificationData(
             workoutName = "",
+            statusTitleLabel = "",
             statusLabel = "",
             elapsedSeconds = 0,
             elapsedLabel = "00:00",
+            distanceTitleLabel = "",
             distanceLabel = "",
+            currentPaceShortTitleLabel = "",
             currentPaceTitleLabel = "",
             currentPaceLabel = "",
             avgPaceTitleLabel = "",
@@ -500,6 +528,8 @@ private data class RunNotificationData(
             unitFactor = 1.0,
             distanceUnit = "km",
             paceUnit = "min/km",
+            plannedDistanceKm = null,
+            plannedDurationMs = null,
             timeline = emptyList(),
         )
 
@@ -507,10 +537,14 @@ private data class RunNotificationData(
             if (bundle == null) return empty()
             return RunNotificationData(
                 workoutName = bundle.getString("workoutName").orEmpty(),
+                statusTitleLabel = bundle.getString("statusTitleLabel").orEmpty(),
                 statusLabel = bundle.getString("statusLabel").orEmpty(),
                 elapsedSeconds = bundle.getLong("elapsedSeconds"),
                 elapsedLabel = bundle.getString("elapsedLabel") ?: "00:00",
+                distanceTitleLabel = bundle.getString("distanceTitleLabel").orEmpty(),
                 distanceLabel = bundle.getString("distanceLabel").orEmpty(),
+                currentPaceShortTitleLabel =
+                    bundle.getString("currentPaceShortTitleLabel").orEmpty(),
                 currentPaceTitleLabel =
                     bundle.getString("currentPaceTitleLabel").orEmpty(),
                 currentPaceLabel = bundle.getString("currentPaceLabel").orEmpty(),
@@ -525,6 +559,10 @@ private data class RunNotificationData(
                 unitFactor = bundle.getDouble("unitFactor", 1.0),
                 distanceUnit = bundle.getString("distanceUnit") ?: "km",
                 paceUnit = bundle.getString("paceUnit") ?: "min/km",
+                plannedDistanceKm =
+                    if (bundle.containsKey("plannedDistanceKm")) bundle.getDouble("plannedDistanceKm") else null,
+                plannedDurationMs =
+                    if (bundle.containsKey("plannedDurationMs")) bundle.getLong("plannedDurationMs") else null,
                 timeline = timelineFromJsonString(bundle.getString("timelineJson")),
             )
         }
@@ -533,10 +571,13 @@ private data class RunNotificationData(
             if (map == null) return empty()
             return RunNotificationData(
                 workoutName = map.stringValue("workoutName"),
+                statusTitleLabel = map.stringValue("statusTitleLabel"),
                 statusLabel = map.stringValue("statusLabel"),
                 elapsedSeconds = map.longValue("elapsedSeconds"),
                 elapsedLabel = map.stringValue("elapsedLabel", "00:00"),
+                distanceTitleLabel = map.stringValue("distanceTitleLabel"),
                 distanceLabel = map.stringValue("distanceLabel"),
+                currentPaceShortTitleLabel = map.stringValue("currentPaceShortTitleLabel"),
                 currentPaceTitleLabel = map.stringValue("currentPaceTitleLabel"),
                 currentPaceLabel = map.stringValue("currentPaceLabel"),
                 avgPaceTitleLabel = map.stringValue("avgPaceTitleLabel"),
@@ -550,6 +591,8 @@ private data class RunNotificationData(
                 unitFactor = map.doubleValue("unitFactor", 1.0),
                 distanceUnit = map.stringValue("distanceUnit", "km"),
                 paceUnit = map.stringValue("paceUnit", "min/km"),
+                plannedDistanceKm = map.optionalDoubleValue("plannedDistanceKm"),
+                plannedDurationMs = map.optionalLongValue("plannedDurationMs"),
                 timeline = (map["timeline"] as? List<*>)
                     ?.mapNotNull { it as? Map<*, *> }
                     ?.map { TimelineBlock.fromMap(it) }
@@ -575,6 +618,14 @@ private fun Map<*, *>.longValue(key: String): Long {
     }
 }
 
+private fun Map<*, *>.optionalLongValue(key: String): Long? {
+    return when (val value = this[key]) {
+        is Number -> value.toLong()
+        is String -> value.toLongOrNull()
+        else -> null
+    }
+}
+
 private fun Map<*, *>.booleanValue(key: String): Boolean {
     return this[key] as? Boolean ?: false
 }
@@ -592,5 +643,13 @@ private fun Map<*, *>.doubleValue(key: String, fallback: Double): Double {
         is Number -> value.toDouble()
         is String -> value.toDoubleOrNull() ?: fallback
         else -> fallback
+    }
+}
+
+private fun Map<*, *>.optionalDoubleValue(key: String): Double? {
+    return when (val value = this[key]) {
+        is Number -> value.toDouble()
+        is String -> value.toDoubleOrNull()
+        else -> null
     }
 }

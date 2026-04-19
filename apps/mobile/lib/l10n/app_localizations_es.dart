@@ -2073,6 +2073,15 @@ class AppLocalizationsEs extends AppLocalizations {
   String get activeRunCurrentPace => 'RITMO ACTUAL';
 
   @override
+  String get activeRunNotificationTargetShort => 'Obj.';
+
+  @override
+  String get activeRunNotificationDistanceShort => 'Dist.';
+
+  @override
+  String get activeRunNotificationPaceShort => 'Ritmo';
+
+  @override
   String get activeRunElapsed => 'TIEMPO';
 
   @override

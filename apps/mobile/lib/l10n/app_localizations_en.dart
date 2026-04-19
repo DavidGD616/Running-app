@@ -2061,6 +2061,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeRunCurrentPace => 'CURRENT PACE';
 
   @override
+  String get activeRunNotificationTargetShort => 'Target';
+
+  @override
+  String get activeRunNotificationDistanceShort => 'Dist';
+
+  @override
+  String get activeRunNotificationPaceShort => 'Pace';
+
+  @override
   String get activeRunElapsed => 'ELAPSED';
 
   @override

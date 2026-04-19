@@ -3870,6 +3870,24 @@ abstract class AppLocalizations {
   /// **'CURRENT PACE'**
   String get activeRunCurrentPace;
 
+  /// Compact target label in the collapsed active run Android notification
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get activeRunNotificationTargetShort;
+
+  /// Compact distance label in the collapsed active run Android notification
+  ///
+  /// In en, this message translates to:
+  /// **'Dist'**
+  String get activeRunNotificationDistanceShort;
+
+  /// Compact pace label in the collapsed active run Android notification
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get activeRunNotificationPaceShort;
+
   /// Elapsed time metric label on the active run screen
   ///
   /// In en, this message translates to:

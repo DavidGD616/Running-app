@@ -385,19 +385,18 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
     return RunLiveActivityData(
       workoutName: _sessionTitle(type, l10n),
+      statusTitleLabel: l10n.activeRunNotificationTargetShort,
       statusLabel: _targetStatus(type, l10n),
       elapsedSeconds: elapsed.inSeconds,
       elapsedLabel: _formatDuration(elapsed),
-      distanceLabel: UnitFormatter.formatDistanceWithUnit(
-        _distanceKm,
-        unitSystem,
-        l10n,
-      ),
+      distanceTitleLabel: l10n.activeRunNotificationDistanceShort,
+      distanceLabel: _formatLiveActivityDistance(unitSystem, l10n),
+      currentPaceShortTitleLabel: l10n.activeRunNotificationPaceShort,
       currentPaceLabel:
-          '${_formatPace(_currentPaceSecondsPerKm, unitSystem)}${UnitFormatter.paceLabel(unitSystem, l10n)}',
+          '${_formatPace(_currentPaceSecondsPerKm, unitSystem)} ${UnitFormatter.paceLabel(unitSystem, l10n)}',
       currentPaceTitleLabel: l10n.activeRunCurrentPace,
       avgPaceLabel:
-          '${_formatPace(_averagePaceSecondsPerKm, unitSystem)}${UnitFormatter.paceLabel(unitSystem, l10n)}',
+          '${_formatPace(_averagePaceSecondsPerKm, unitSystem)} ${UnitFormatter.paceLabel(unitSystem, l10n)}',
       avgPaceTitleLabel: l10n.activeRunAveragePace,
       currentBlockLabel: _currentBlockLabel(currentBlock, type, l10n),
       nextBlockLabel: nextBlock == null
@@ -410,6 +409,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       unitFactor: unitSystem == UnitSystem.km ? 1.0 : 0.621371,
       distanceUnit: UnitFormatter.unitLabel(unitSystem, l10n),
       paceUnit: UnitFormatter.paceLabel(unitSystem, l10n),
+      plannedDistanceKm: session?.distanceKm,
+      plannedDurationMs: session?.durationMinutes == null
+          ? null
+          : session!.durationMinutes! * 60 * 1000,
       timeline: _buildLiveActivityTimeline(type, l10n),
     );
   }
@@ -429,10 +432,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
           : l10n.activeRunNextBlock(_currentBlockLabel(next, type, l10n));
       final repLabel =
           (type == SessionType.intervals || type == SessionType.hillRepeats) &&
-                  block.repIndex != null &&
-                  block.totalReps != null
-              ? '${l10n.activeRunRep} ${block.repIndex} / ${block.totalReps}'
-              : null;
+              block.repIndex != null &&
+              block.totalReps != null
+          ? '${l10n.activeRunRep} ${block.repIndex} / ${block.totalReps}'
+          : null;
       return RunLiveActivityTimelineBlock(
         durationMs: block.duration?.inMilliseconds,
         distanceMeters: block.distanceMeters,
@@ -865,6 +868,17 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final minutes = seconds ~/ 60;
     final remainder = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$remainder';
+  }
+
+  String _formatLiveActivityDistance(
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final value = UnitFormatter.distanceValue(_distanceKm, unitSystem);
+    final formatted = value < 1
+        ? value.toStringAsFixed(2)
+        : value.toStringAsFixed(1);
+    return '$formatted ${UnitFormatter.unitLabel(unitSystem, l10n)}';
   }
 }
 
