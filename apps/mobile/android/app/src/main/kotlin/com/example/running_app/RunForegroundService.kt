@@ -7,6 +7,7 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -256,6 +257,8 @@ class RunForegroundService : Service() {
 
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_run_notification)
+            .setColor(NOTIFICATION_BACKGROUND_COLOR)
+            .setColorized(true)
             .setContentTitle(data.workoutName)
             .setContentText("${data.distanceLabel} ${data.currentPaceLabel}")
             .setCategory(Notification.CATEGORY_STATUS)
@@ -358,6 +361,7 @@ class RunForegroundService : Service() {
         const val NOTIFICATION_ID = 61002
         private const val CHANNEL_ID = "active_run"
         private const val TICK_INTERVAL_MS = 1000L
+        private val NOTIFICATION_BACKGROUND_COLOR: Int = Color.rgb(21, 21, 21)
 
         var current: RunForegroundService? = null
             private set
