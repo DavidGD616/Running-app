@@ -49,6 +49,7 @@ class RunLiveActivityData {
     required this.statusLabel,
     required this.elapsedSeconds,
     required this.elapsedLabel,
+    this.elapsedUnitLabel = '',
     this.distanceTitleLabel = '',
     required this.distanceLabel,
     this.currentPaceShortTitleLabel = '',
@@ -75,6 +76,7 @@ class RunLiveActivityData {
   final String statusLabel;
   final int elapsedSeconds;
   final String elapsedLabel;
+  final String elapsedUnitLabel;
   final String distanceTitleLabel;
   final String distanceLabel;
   final String currentPaceShortTitleLabel;
@@ -165,6 +167,7 @@ class RunLiveActivityData {
       statusLabel: str('statusLabel'),
       elapsedSeconds: intVal('elapsedSeconds'),
       elapsedLabel: str('elapsedLabel', '00:00'),
+      elapsedUnitLabel: str('elapsedUnitLabel'),
       distanceTitleLabel: str('distanceTitleLabel'),
       distanceLabel: str('distanceLabel'),
       currentPaceShortTitleLabel: str('currentPaceShortTitleLabel'),
@@ -194,6 +197,7 @@ class RunLiveActivityData {
       'statusLabel': statusLabel,
       'elapsedSeconds': elapsedSeconds,
       'elapsedLabel': elapsedLabel,
+      'elapsedUnitLabel': elapsedUnitLabel,
       'distanceTitleLabel': distanceTitleLabel,
       'distanceLabel': distanceLabel,
       'currentPaceShortTitleLabel': currentPaceShortTitleLabel,
@@ -223,6 +227,7 @@ class RunLiveActivityData {
     String? statusLabel,
     int? elapsedSeconds,
     String? elapsedLabel,
+    String? elapsedUnitLabel,
     String? distanceTitleLabel,
     String? distanceLabel,
     String? currentPaceShortTitleLabel,
@@ -249,6 +254,7 @@ class RunLiveActivityData {
       statusLabel: statusLabel ?? this.statusLabel,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       elapsedLabel: elapsedLabel ?? this.elapsedLabel,
+      elapsedUnitLabel: elapsedUnitLabel ?? this.elapsedUnitLabel,
       distanceTitleLabel: distanceTitleLabel ?? this.distanceTitleLabel,
       distanceLabel: distanceLabel ?? this.distanceLabel,
       currentPaceShortTitleLabel:

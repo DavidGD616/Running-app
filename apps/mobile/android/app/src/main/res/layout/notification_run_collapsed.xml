@@ -16,36 +16,74 @@
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/run_distance_label"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
-            android:maxLines="1"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp"
-            tools:text="0.09 mi" />
+            android:baselineAligned="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <Chronometer
-            android:id="@+id/run_elapsed_chrono"
+            <TextView
+                android:id="@+id/run_distance_value_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-black"
+                android:maxLines="1"
+                android:textColor="#FFFFFFFF"
+                android:textSize="18sp"
+                tools:text="0.47" />
+
+            <TextView
+                android:id="@+id/run_distance_unit_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="#FF9CA3AF"
+                android:textSize="9sp"
+                tools:text="mi" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp"
-            tools:text="08:32" />
+            android:baselineAligned="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/run_elapsed_static"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textColor="#FFFFFFFF"
-            android:textSize="14sp"
-            android:visibility="gone"
-            tools:text="08:32" />
+            <Chronometer
+                android:id="@+id/run_elapsed_chrono"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="#FFFFFFFF"
+                android:textSize="18sp"
+                tools:text="08:32" />
+
+            <TextView
+                android:id="@+id/run_elapsed_static"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="#FFFFFFFF"
+                android:textSize="18sp"
+                android:visibility="gone"
+                tools:text="08:32" />
+
+            <TextView
+                android:id="@+id/run_elapsed_unit_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="#FF9CA3AF"
+                android:textSize="9sp"
+                tools:text="time" />
+        </LinearLayout>
     </LinearLayout>
 
     <ProgressBar

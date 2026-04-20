@@ -221,6 +221,15 @@ class RunForegroundService : Service() {
         return String.format(Locale.US, format, value, unit)
     }
 
+    private fun distanceParts(label: String, data: RunNotificationData): Pair<String, String> {
+        val trimmed = label.trim()
+        val splitAt = trimmed.lastIndexOf(' ')
+        if (splitAt > 0 && splitAt < trimmed.length - 1) {
+            return Pair(trimmed.substring(0, splitAt), trimmed.substring(splitAt + 1))
+        }
+        return Pair(trimmed, data.distanceUnit)
+    }
+
     private fun computedCurrentPaceLabel(): String {
         val basePace = latestData.paceSecondsPerKm
         if (basePace <= 0) return latestData.currentPaceLabel
@@ -306,8 +315,11 @@ class RunForegroundService : Service() {
 
     private fun collapsedViews(data: RunNotificationData): RemoteViews {
         val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
+        val (distanceValue, distanceUnit) = distanceParts(distance, data)
         return RemoteViews(packageName, R.layout.notification_run_collapsed).apply {
-            setTextViewText(R.id.run_distance_label, distance)
+            setTextViewText(R.id.run_distance_value_label, distanceValue)
+            setTextViewText(R.id.run_distance_unit_label, distanceUnit)
+            setTextViewText(R.id.run_elapsed_unit_label, data.elapsedUnitLabel)
             setProgressBar(R.id.run_progress_bar, 1000, computedProgressPermille(data), false)
             bindElapsed(this, data)
         }
@@ -458,6 +470,7 @@ private data class RunNotificationData(
     val statusLabel: String,
     val elapsedSeconds: Long,
     val elapsedLabel: String,
+    val elapsedUnitLabel: String,
     val distanceTitleLabel: String,
     val distanceLabel: String,
     val currentPaceShortTitleLabel: String,
@@ -484,6 +497,7 @@ private data class RunNotificationData(
         putString("statusLabel", statusLabel)
         putLong("elapsedSeconds", elapsedSeconds)
         putString("elapsedLabel", elapsedLabel)
+        putString("elapsedUnitLabel", elapsedUnitLabel)
         putString("distanceTitleLabel", distanceTitleLabel)
         putString("distanceLabel", distanceLabel)
         putString("currentPaceShortTitleLabel", currentPaceShortTitleLabel)
@@ -512,6 +526,7 @@ private data class RunNotificationData(
             statusLabel = "",
             elapsedSeconds = 0,
             elapsedLabel = "00:00",
+            elapsedUnitLabel = "",
             distanceTitleLabel = "",
             distanceLabel = "",
             currentPaceShortTitleLabel = "",
@@ -541,6 +556,7 @@ private data class RunNotificationData(
                 statusLabel = bundle.getString("statusLabel").orEmpty(),
                 elapsedSeconds = bundle.getLong("elapsedSeconds"),
                 elapsedLabel = bundle.getString("elapsedLabel") ?: "00:00",
+                elapsedUnitLabel = bundle.getString("elapsedUnitLabel").orEmpty(),
                 distanceTitleLabel = bundle.getString("distanceTitleLabel").orEmpty(),
                 distanceLabel = bundle.getString("distanceLabel").orEmpty(),
                 currentPaceShortTitleLabel =
@@ -575,6 +591,7 @@ private data class RunNotificationData(
                 statusLabel = map.stringValue("statusLabel"),
                 elapsedSeconds = map.longValue("elapsedSeconds"),
                 elapsedLabel = map.stringValue("elapsedLabel", "00:00"),
+                elapsedUnitLabel = map.stringValue("elapsedUnitLabel"),
                 distanceTitleLabel = map.stringValue("distanceTitleLabel"),
                 distanceLabel = map.stringValue("distanceLabel"),
                 currentPaceShortTitleLabel = map.stringValue("currentPaceShortTitleLabel"),

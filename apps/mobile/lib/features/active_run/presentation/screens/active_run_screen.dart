@@ -389,6 +389,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       statusLabel: _targetStatus(type, l10n),
       elapsedSeconds: elapsed.inSeconds,
       elapsedLabel: _formatDuration(elapsed),
+      elapsedUnitLabel: l10n.activeRunTimeUnit,
       distanceTitleLabel: l10n.activeRunNotificationDistanceShort,
       distanceLabel: _formatLiveActivityDistance(unitSystem, l10n),
       currentPaceShortTitleLabel: l10n.activeRunNotificationPaceShort,
