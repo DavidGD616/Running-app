@@ -327,12 +327,15 @@ class RunForegroundService : Service() {
 
     private fun expandedViews(data: RunNotificationData): RemoteViews {
         val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
+        val (distanceValue, distanceUnit) = distanceParts(distance, data)
         val currentPace = if (seeded) computedCurrentPaceLabel() else data.currentPaceLabel
         val avgPace = if (seeded) computedAvgPaceLabel() else data.avgPaceLabel
         return RemoteViews(packageName, R.layout.notification_run_expanded).apply {
             setTextViewText(R.id.run_workout_name, data.workoutName)
             setTextViewText(R.id.run_status_label, data.statusLabel)
-            setTextViewText(R.id.run_distance_label, distance)
+            setTextViewText(R.id.run_distance_value_label, distanceValue)
+            setTextViewText(R.id.run_distance_unit_label, distanceUnit)
+            setTextViewText(R.id.run_elapsed_unit_label, data.elapsedUnitLabel)
             setTextViewText(R.id.run_current_block_label, resolvedCurrentBlockLabel(data))
             setTextViewText(R.id.run_current_pace_title, data.currentPaceTitleLabel)
             setTextViewText(R.id.run_current_pace_label, currentPace)
@@ -340,6 +343,7 @@ class RunForegroundService : Service() {
             setTextViewText(R.id.run_avg_pace_label, avgPace)
             setOptionalText(R.id.run_next_block_label, resolvedNextBlockLabel(data))
             setOptionalText(R.id.run_rep_label, resolvedRepLabel(data))
+            setProgressBar(R.id.run_progress_bar, 1000, computedProgressPermille(data), false)
             bindElapsed(this, data)
         }
     }

@@ -6,99 +6,114 @@
     android:background="@drawable/run_notification_background"
     android:orientation="vertical"
     android:paddingStart="16dp"
-    android:paddingTop="14dp"
+    android:paddingTop="12dp"
     android:paddingEnd="16dp"
     android:paddingBottom="14dp">
 
+    <TextView
+        android:id="@+id/run_workout_name"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:textColor="#FFE5E7EB"
+        android:textSize="13sp"
+        tools:text="Long Run" />
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/run_workout_name"
+        <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:ellipsize="end"
-            android:fontFamily="sans-serif-medium"
-            android:maxLines="1"
-            android:textColor="#FFFFFFFF"
-            android:textSize="15sp"
-            tools:text="INTERVALS" />
+            android:baselineAligned="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <Chronometer
-            android:id="@+id/run_elapsed_chrono"
+            <TextView
+                android:id="@+id/run_distance_value_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-black"
+                android:maxLines="1"
+                android:textColor="#FFFFFFFF"
+                android:textSize="24sp"
+                tools:text="5.16" />
+
+            <TextView
+                android:id="@+id/run_distance_unit_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="#FF9CA3AF"
+                android:textSize="10sp"
+                tools:text="mi" />
+        </LinearLayout>
+
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textColor="#FFFFFFFF"
-            android:textSize="15sp"
-            tools:text="08:32" />
+            android:baselineAligned="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-        <TextView
-            android:id="@+id/run_elapsed_static"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:fontFamily="monospace"
-            android:textColor="#FFFFFFFF"
-            android:textSize="15sp"
-            android:visibility="gone"
-            tools:text="08:32" />
+            <Chronometer
+                android:id="@+id/run_elapsed_chrono"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="#FFFFFFFF"
+                android:textSize="24sp"
+                tools:text="35:31" />
+
+            <TextView
+                android:id="@+id/run_elapsed_static"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="sans-serif-black"
+                android:textColor="#FFFFFFFF"
+                android:textSize="24sp"
+                android:visibility="gone"
+                tools:text="35:31" />
+
+            <TextView
+                android:id="@+id/run_elapsed_unit_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="#FF9CA3AF"
+                android:textSize="10sp"
+                tools:text="time" />
+        </LinearLayout>
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/run_status_label"
+    <ProgressBar
+        android:id="@+id/run_progress_bar"
+        style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:ellipsize="end"
-        android:fontFamily="sans-serif-medium"
-        android:maxLines="1"
-        android:textColor="#FF5EEAD4"
-        android:textSize="13sp"
-        tools:text="PUSH" />
-
-    <TextView
-        android:id="@+id/run_distance_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:ellipsize="end"
-        android:fontFamily="sans-serif-medium"
-        android:maxLines="1"
-        android:textColor="#FFFFFFFF"
-        android:textSize="24sp"
-        tools:text="1.42 km" />
-
-    <TextView
-        android:id="@+id/run_current_block_label"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#FFE5E7EB"
-        android:textSize="14sp"
-        tools:text="Fast rep" />
-
-    <TextView
-        android:id="@+id/run_next_block_label"
-        android:visibility="gone"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:ellipsize="end"
-        android:maxLines="1"
-        android:textColor="#FF9CA3AF"
-        android:textSize="13sp"
-        tools:text="Next: Recover" />
+        android:layout_height="6dp"
+        android:layout_marginTop="8dp"
+        android:indeterminate="false"
+        android:max="1000"
+        android:progress="360"
+        android:progressDrawable="@drawable/run_notification_progress"
+        tools:progress="360" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="12dp"
         android:orientation="horizontal">
 
         <LinearLayout
@@ -108,25 +123,26 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/run_current_pace_title"
+                android:id="@+id/run_current_pace_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="sans-serif-black"
                 android:maxLines="1"
-                android:textColor="#FF9CA3AF"
-                android:textSize="11sp"
-                tools:text="Current pace" />
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                tools:text="11:04 min/mi" />
 
             <TextView
-                android:id="@+id/run_current_pace_label"
+                android:id="@+id/run_current_pace_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
-                android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
-                tools:text="5:06/km" />
+                android:textColor="#FF9CA3AF"
+                android:textSize="9sp"
+                tools:text="CURRENT PACE" />
         </LinearLayout>
 
         <LinearLayout
@@ -137,38 +153,75 @@
             android:orientation="vertical">
 
             <TextView
-                android:id="@+id/run_avg_pace_title"
+                android:id="@+id/run_avg_pace_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="sans-serif-black"
                 android:maxLines="1"
-                android:textColor="#FF9CA3AF"
-                android:textSize="11sp"
-                tools:text="Average pace" />
+                android:textColor="#FFFFFFFF"
+                android:textSize="16sp"
+                tools:text="11:18 min/mi" />
 
             <TextView
-                android:id="@+id/run_avg_pace_label"
+                android:id="@+id/run_avg_pace_title"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:fontFamily="sans-serif-medium"
                 android:maxLines="1"
-                android:textColor="#FFFFFFFF"
-                android:textSize="16sp"
-                tools:text="5:57/km" />
+                android:textColor="#FF9CA3AF"
+                android:textSize="9sp"
+                tools:text="AVG PACE" />
         </LinearLayout>
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/run_status_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:textColor="#FF5EEAD4"
+        android:textSize="12sp"
+        tools:text="PUSH" />
+
+    <TextView
+        android:id="@+id/run_current_block_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:fontFamily="sans-serif-medium"
+        android:maxLines="1"
+        android:textColor="#FFFFFFFF"
+        android:textSize="14sp"
+        tools:text="Fast rep" />
+
+    <TextView
+        android:id="@+id/run_next_block_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textColor="#FF9CA3AF"
+        android:textSize="12sp"
+        android:visibility="gone"
+        tools:text="Next: Recover" />
 
     <TextView
         android:id="@+id/run_rep_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:visibility="gone"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="8dp"
         android:ellipsize="end"
         android:fontFamily="sans-serif-medium"
         android:maxLines="1"
-        android:textColor="#FFFFFFFF"
-        android:textSize="13sp"
+        android:textColor="#FFE5E7EB"
+        android:textSize="12sp"
+        android:visibility="gone"
         tools:text="Rep 3 / 6" />
 </LinearLayout>

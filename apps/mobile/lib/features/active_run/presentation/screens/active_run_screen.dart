@@ -394,10 +394,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       distanceLabel: _formatLiveActivityDistance(unitSystem, l10n),
       currentPaceShortTitleLabel: l10n.activeRunNotificationPaceShort,
       currentPaceLabel:
-          '${_formatPace(_currentPaceSecondsPerKm, unitSystem)} ${UnitFormatter.paceLabel(unitSystem, l10n)}',
+          '${_formatPace(_currentPaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}',
       currentPaceTitleLabel: l10n.activeRunCurrentPace,
       avgPaceLabel:
-          '${_formatPace(_averagePaceSecondsPerKm, unitSystem)} ${UnitFormatter.paceLabel(unitSystem, l10n)}',
+          '${_formatPace(_averagePaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}',
       avgPaceTitleLabel: l10n.activeRunAveragePace,
       currentBlockLabel: _currentBlockLabel(currentBlock, type, l10n),
       nextBlockLabel: nextBlock == null
@@ -415,6 +415,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
           ? null
           : session!.durationMinutes! * 60 * 1000,
       timeline: _buildLiveActivityTimeline(type, l10n),
+      blockProgressFraction: _computeBlockProgressFraction(currentBlock),
+      plannedPaceLabel: _plannedPaceSecondsPerKm > 0
+          ? '${_formatPace(_plannedPaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}'
+          : '',
+      blockRemainingLabel: _computeBlockRemainingLabel(currentBlock, unitSystem, l10n),
     );
   }
 
@@ -445,6 +450,43 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         repLabel: repLabel,
       );
     });
+  }
+
+  double _computeBlockProgressFraction(ActiveRunTimelineBlock? block) {
+    if (block == null) return 0.0;
+    if (block.duration != null && block.duration! > Duration.zero) {
+      return (_blockElapsed.inMilliseconds / block.duration!.inMilliseconds)
+          .clamp(0.0, 1.0);
+    }
+    if (block.distanceMeters != null && block.distanceMeters! > 0) {
+      return ((_blockDistanceKm * 1000) / block.distanceMeters!)
+          .clamp(0.0, 1.0);
+    }
+    return 0.0;
+  }
+
+  String? _computeBlockRemainingLabel(
+    ActiveRunTimelineBlock? block,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (block == null) return null;
+    if (block.duration != null && block.duration! > Duration.zero) {
+      final remaining = block.duration! - _blockElapsed;
+      if (remaining.inSeconds <= 0) return null;
+      return '${_formatDuration(remaining)} left';
+    }
+    if (block.distanceMeters != null && block.distanceMeters! > 0) {
+      final remainingKm = (block.distanceMeters! / 1000.0) - _blockDistanceKm;
+      if (remainingKm <= 0.005) return null;
+      final dist = UnitFormatter.formatDistanceWithUnit(
+        remainingKm,
+        unitSystem,
+        l10n,
+      );
+      return '$dist left';
+    }
+    return null;
   }
 
   Future<bool> _ensureLiveActivityNotificationsAllowed() {

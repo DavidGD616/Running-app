@@ -85,54 +85,79 @@ private struct RunLockScreenView: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
-      HStack(alignment: .firstTextBaseline) {
-        Text(context.attributes.workoutName)
-          .font(.headline.weight(.semibold))
-          .lineLimit(1)
-        Spacer()
-        TimerText(state: context.state)
-          .font(.headline.monospacedDigit())
-      }
+      Text(context.attributes.workoutName)
+        .font(.system(size: 14, weight: .semibold, design: .default))
+        .tracking(0.5)
+        .foregroundStyle(.secondary)
+        .lineLimit(1)
 
-      Text(context.state.statusLabel)
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.teal)
-
-      VStack(alignment: .leading, spacing: 3) {
-        Text(context.state.distanceLabel)
-          .font(.system(size: 30, weight: .bold, design: .rounded))
-          .lineLimit(1)
-        Text(context.state.currentBlockLabel)
-          .font(.subheadline)
-          .foregroundStyle(.secondary)
-        if let nextBlockLabel = context.state.nextBlockLabel {
-          Text(nextBlockLabel)
-            .font(.caption)
+      HStack(spacing: 0) {
+        VStack(alignment: .leading, spacing: 4) {
+          Text(context.state.distanceLabel)
+            .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
+          Text("DISTANCE")
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.3)
             .foregroundStyle(.secondary)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .center, spacing: 4) {
+          TimerText(state: context.state)
+            .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
+            .multilineTextAlignment(.center)
+          Text("TIME")
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.3)
+            .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .center)
+        VStack(alignment: .trailing, spacing: 4) {
+          Text(context.state.avgPaceLabel)
+            .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
+          Text("AVG. PACE")
+            .font(.system(size: 10, weight: .semibold))
+            .tracking(0.3)
+            .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .trailing)
       }
 
-      VStack(spacing: 8) {
-        MetricRow(
-          title: context.state.currentPaceTitleLabel,
-          value: context.state.currentPaceLabel
-        )
-        MetricRow(
-          title: context.state.avgPaceTitleLabel,
-          value: context.state.avgPaceLabel
-        )
-      }
+      ProgressView(value: context.state.blockProgressFraction)
+        .tint(.green)
+        .frame(height: 6)
 
-      if let repLabel = context.state.repLabel {
-        Text(repLabel)
-          .font(.subheadline.weight(.semibold))
-          .lineLimit(1)
+      if !context.state.currentBlockLabel.isEmpty {
+        HStack(spacing: 16) {
+          VStack(alignment: .leading, spacing: 4) {
+            Text(context.state.currentPaceLabel)
+              .font(.system(size: 18, weight: .semibold, design: .rounded).monospacedDigit())
+            Text("CURRENT")
+              .font(.system(size: 10, weight: .semibold))
+              .tracking(0.3)
+              .foregroundStyle(.secondary)
+          }
+          Spacer()
+          VStack(alignment: .trailing, spacing: 4) {
+            let blockInfoText = context.state.repLabel.map { "\($0) · \(context.state.currentBlockLabel)" }
+              ?? context.state.currentBlockLabel
+            Text(blockInfoText)
+              .font(.system(size: 18, weight: .semibold, design: .default))
+              .lineLimit(1)
+            if context.state.nextBlockLabel != nil {
+              Text("UP NEXT")
+                .font(.system(size: 10, weight: .semibold))
+                .tracking(0.3)
+                .foregroundStyle(.secondary)
+            }
+          }
+        }
       }
     }
     .padding()
     .foregroundStyle(.white)
   }
 }
+
 
 @available(iOS 16.1, *)
 private struct TimerText: View {

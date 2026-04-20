@@ -19,5 +19,8 @@ struct RunActivityAttributes: ActivityAttributes {
     var currentBlockLabel: String
     var nextBlockLabel: String?
     var repLabel: String?
+    var blockProgressFraction: Double
+    var plannedPaceLabel: String
+    var blockRemainingLabel: String?
   }
 }

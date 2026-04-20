@@ -69,6 +69,9 @@ class RunLiveActivityData {
     this.plannedDistanceKm,
     this.plannedDurationMs,
     this.timeline,
+    this.blockProgressFraction = 0.0,
+    this.plannedPaceLabel = '',
+    this.blockRemainingLabel,
   });
 
   final String workoutName;
@@ -111,6 +114,15 @@ class RunLiveActivityData {
   /// natively using durationMs / distanceMeters completion rules so the
   /// notification stays accurate during long backgrounded runs.
   final List<RunLiveActivityTimelineBlock>? timeline;
+
+  /// Progress 0.0..1.0 for green bar fill (block completion %).
+  final double blockProgressFraction;
+
+  /// Formatted planned pace, e.g. "9:45 /mi".
+  final String plannedPaceLabel;
+
+  /// Block distance/time remaining, e.g. "0.2 mi left" or "1:30 left".
+  final String? blockRemainingLabel;
 
   factory RunLiveActivityData.fromMap(Map<Object?, Object?> map) {
     String str(String key, [String fallback = '']) =>
@@ -187,6 +199,9 @@ class RunLiveActivityData {
       plannedDistanceKm: doubleOrNull('plannedDistanceKm'),
       plannedDurationMs: intOrNull('plannedDurationMs'),
       timeline: timeline,
+      blockProgressFraction: doubleVal('blockProgressFraction', 0.0),
+      plannedPaceLabel: str('plannedPaceLabel'),
+      blockRemainingLabel: optStr('blockRemainingLabel'),
     );
   }
 
@@ -218,6 +233,9 @@ class RunLiveActivityData {
       'plannedDurationMs': plannedDurationMs,
       if (timeline != null)
         'timeline': timeline!.map((b) => b.toMap()).toList(),
+      'blockProgressFraction': blockProgressFraction,
+      'plannedPaceLabel': plannedPaceLabel,
+      'blockRemainingLabel': blockRemainingLabel,
     };
   }
 
@@ -247,6 +265,9 @@ class RunLiveActivityData {
     Object? plannedDistanceKm = _copyWithSentinel,
     Object? plannedDurationMs = _copyWithSentinel,
     Object? timeline = _copyWithSentinel,
+    double? blockProgressFraction,
+    String? plannedPaceLabel,
+    Object? blockRemainingLabel = _copyWithSentinel,
   }) {
     return RunLiveActivityData(
       workoutName: workoutName ?? this.workoutName,
@@ -286,6 +307,11 @@ class RunLiveActivityData {
       timeline: identical(timeline, _copyWithSentinel)
           ? this.timeline
           : timeline as List<RunLiveActivityTimelineBlock>?,
+      blockProgressFraction: blockProgressFraction ?? this.blockProgressFraction,
+      plannedPaceLabel: plannedPaceLabel ?? this.plannedPaceLabel,
+      blockRemainingLabel: identical(blockRemainingLabel, _copyWithSentinel)
+          ? this.blockRemainingLabel
+          : blockRemainingLabel as String?,
     );
   }
 }

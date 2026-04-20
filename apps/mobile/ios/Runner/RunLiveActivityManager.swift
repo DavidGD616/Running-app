@@ -123,7 +123,10 @@ private final class RunLiveActivityManagerImpl {
       avgPaceLabel: stringValue("avgPaceLabel", in: data),
       currentBlockLabel: stringValue("currentBlockLabel", in: data),
       nextBlockLabel: optionalStringValue("nextBlockLabel", in: data),
-      repLabel: optionalStringValue("repLabel", in: data)
+      repLabel: optionalStringValue("repLabel", in: data),
+      blockProgressFraction: doubleValue("blockProgressFraction", in: data),
+      plannedPaceLabel: stringValue("plannedPaceLabel", in: data),
+      blockRemainingLabel: optionalStringValue("blockRemainingLabel", in: data)
     )
   }
 
@@ -158,5 +161,13 @@ private final class RunLiveActivityManagerImpl {
     if let value = data[key] as? Bool { return value }
     if let value = data[key] as? NSNumber { return value.boolValue }
     return false
+  }
+
+  private func doubleValue(_ key: String, in data: [String: Any]) -> Double {
+    if let value = data[key] as? Double { return value }
+    if let value = data[key] as? NSNumber { return value.doubleValue }
+    if let value = data[key] as? Int { return Double(value) }
+    if let value = data[key] as? String { return Double(value) ?? 0.0 }
+    return 0.0
   }
 }
