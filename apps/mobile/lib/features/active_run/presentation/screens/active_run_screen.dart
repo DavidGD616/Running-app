@@ -396,8 +396,6 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
     return RunLiveActivityData(
       workoutName: _sessionTitle(type, l10n),
-      statusTitleLabel: l10n.activeRunNotificationTargetShort,
-      statusLabel: _targetStatus(type, l10n),
       elapsedSeconds: elapsed.inSeconds,
       elapsedLabel: _formatDuration(elapsed),
       elapsedUnitLabel: l10n.activeRunTimeUnit,
@@ -539,7 +537,6 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final type = session?.sessionType ?? SessionType.easyRun;
     final title = _sessionTitle(type, l10n);
     final plannedSummary = _plannedSummary(session, unitSystem, l10n);
-    final status = _targetStatus(type, l10n);
     final currentBlock = _currentBlock;
     final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
 
@@ -587,7 +584,6 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                           ),
                         ),
                         const SizedBox(width: AppSpacing.md),
-                        _StatusPill(label: l10n.activeRunDemoTracking),
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xl),
@@ -595,7 +591,6 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                       label: l10n.activeRunCurrentPace,
                       value: _formatPace(_currentPaceSecondsPerKm, unitSystem),
                       unit: UnitFormatter.paceLabel(unitSystem, l10n),
-                      status: status,
                       guidance: _guidanceFor(type, l10n),
                       color: _accentFor(type),
                     ),
@@ -732,9 +727,9 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       return l10n.activeRunPlannedDistance(
         UnitFormatter.formatDistanceWithUnit(distance, unitSystem, l10n),
       );
-    }
-    return l10n.activeRunPlannedFallback;
   }
+  return '';
+}
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
@@ -791,34 +786,6 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       SessionCategory.recovery => AppColors.accentLight,
       SessionCategory.rest => AppColors.textSecondary,
     };
-  }
-
-  String _targetStatus(SessionType type, AppLocalizations l10n) {
-    final block = _currentBlock;
-    if (block != null) {
-      return switch (block.kind) {
-        ActiveRunBlockKind.work =>
-          type == SessionType.fartlek
-              ? l10n.activeRunSurge
-              : l10n.activeRunPush,
-        ActiveRunBlockKind.recovery => l10n.activeRunRecover,
-        ActiveRunBlockKind.coolDown => l10n.activeRunRecover,
-        ActiveRunBlockKind.warmUp => l10n.activeRunEasyBlock,
-      };
-    }
-
-    if (type == SessionType.recoveryRun && _paceMultiplier > 1.0) {
-      return l10n.activeRunEaseOff;
-    }
-    if (type == SessionType.intervals || type == SessionType.hillRepeats) {
-      return _isWorkBlock ? l10n.activeRunPush : l10n.activeRunRecover;
-    }
-    if (type == SessionType.fartlek) {
-      return _isSurging ? l10n.activeRunSurge : l10n.activeRunEasyBlock;
-    }
-    if (_paceMultiplier > 1.12) return l10n.activeRunEaseOff;
-    if (_paceMultiplier < 0.9) return l10n.activeRunPickUp;
-    return l10n.activeRunOnTarget;
   }
 
   String _targetValueFor(
@@ -941,7 +908,6 @@ class _HeroPaceCard extends StatelessWidget {
     required this.label,
     required this.value,
     required this.unit,
-    required this.status,
     required this.guidance,
     required this.color,
   });
@@ -949,7 +915,6 @@ class _HeroPaceCard extends StatelessWidget {
   final String label;
   final String value;
   final String unit;
-  final String status;
   final String guidance;
   final Color color;
 
@@ -975,7 +940,6 @@ class _HeroPaceCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              _StatusPill(label: status, color: color),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -1530,37 +1494,6 @@ class _FartlekCard extends StatelessWidget {
             onPressed: onToggle,
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _StatusPill extends StatelessWidget {
-  const _StatusPill({
-    required this.label,
-    this.color = AppColors.accentPrimary,
-  });
-
-  final String label;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.sm,
-      ),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: AppRadius.borderFull,
-        border: Border.all(color: color.withValues(alpha: 0.34)),
-      ),
-      child: Text(
-        label,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-        style: AppTypography.caption.copyWith(color: color),
       ),
     );
   }

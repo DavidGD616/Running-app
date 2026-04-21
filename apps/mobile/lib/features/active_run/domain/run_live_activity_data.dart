@@ -45,8 +45,6 @@ class RunLiveActivityTimelineBlock {
 class RunLiveActivityData {
   const RunLiveActivityData({
     required this.workoutName,
-    this.statusTitleLabel = '',
-    required this.statusLabel,
     required this.elapsedSeconds,
     required this.elapsedLabel,
     this.elapsedUnitLabel = '',
@@ -75,8 +73,6 @@ class RunLiveActivityData {
   });
 
   final String workoutName;
-  final String statusTitleLabel;
-  final String statusLabel;
   final int elapsedSeconds;
   final String elapsedLabel;
   final String elapsedUnitLabel;
@@ -175,8 +171,6 @@ class RunLiveActivityData {
 
     return RunLiveActivityData(
       workoutName: str('workoutName'),
-      statusTitleLabel: str('statusTitleLabel'),
-      statusLabel: str('statusLabel'),
       elapsedSeconds: intVal('elapsedSeconds'),
       elapsedLabel: str('elapsedLabel', '00:00'),
       elapsedUnitLabel: str('elapsedUnitLabel'),
@@ -208,8 +202,6 @@ class RunLiveActivityData {
   Map<String, dynamic> toMap() {
     return {
       'workoutName': workoutName,
-      'statusTitleLabel': statusTitleLabel,
-      'statusLabel': statusLabel,
       'elapsedSeconds': elapsedSeconds,
       'elapsedLabel': elapsedLabel,
       'elapsedUnitLabel': elapsedUnitLabel,
@@ -241,8 +233,6 @@ class RunLiveActivityData {
 
   RunLiveActivityData copyWith({
     String? workoutName,
-    String? statusTitleLabel,
-    String? statusLabel,
     int? elapsedSeconds,
     String? elapsedLabel,
     String? elapsedUnitLabel,
@@ -271,8 +261,6 @@ class RunLiveActivityData {
   }) {
     return RunLiveActivityData(
       workoutName: workoutName ?? this.workoutName,
-      statusTitleLabel: statusTitleLabel ?? this.statusTitleLabel,
-      statusLabel: statusLabel ?? this.statusLabel,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       elapsedLabel: elapsedLabel ?? this.elapsedLabel,
       elapsedUnitLabel: elapsedUnitLabel ?? this.elapsedUnitLabel,

@@ -5,7 +5,6 @@ void main() {
   test('toMap serialises all fields including null optionals', () {
     const data = RunLiveActivityData(
       workoutName: 'INTERVALS',
-      statusLabel: 'PUSH',
       elapsedSeconds: 512,
       elapsedLabel: '08:32',
       distanceLabel: '1.42 km',
@@ -27,7 +26,6 @@ void main() {
     final map = data.toMap();
 
     expect(map['workoutName'], 'INTERVALS');
-    expect(map['statusLabel'], 'PUSH');
     expect(map['elapsedSeconds'], 512);
     expect(map['elapsedLabel'], '08:32');
     expect(map['distanceLabel'], '1.42 km');
@@ -44,7 +42,6 @@ void main() {
   test('toMap serialises null optionals as null', () {
     const data = RunLiveActivityData(
       workoutName: 'EASY RUN',
-      statusLabel: 'ON TARGET',
       elapsedSeconds: 1800,
       elapsedLabel: '30:00',
       distanceLabel: '5.0 km',
@@ -72,7 +69,6 @@ void main() {
   test('copyWith produces correct partial updates', () {
     const original = RunLiveActivityData(
       workoutName: 'INTERVALS',
-      statusLabel: 'PUSH',
       elapsedSeconds: 300,
       elapsedLabel: '05:00',
       distanceLabel: '0.5 km',
@@ -91,9 +87,8 @@ void main() {
       paceUnit: 'min/km',
     );
 
-    final paused = original.copyWith(isPaused: true, statusLabel: 'PAUSED');
+    final paused = original.copyWith(isPaused: true);
     expect(paused.isPaused, true);
-    expect(paused.statusLabel, 'PAUSED');
     expect(paused.elapsedSeconds, 300);
     expect(paused.workoutName, 'INTERVALS');
 
@@ -111,7 +106,6 @@ void main() {
   test('copyWith can clear nullable labels', () {
     const original = RunLiveActivityData(
       workoutName: 'INTERVALS',
-      statusLabel: 'PUSH',
       elapsedSeconds: 300,
       elapsedLabel: '05:00',
       distanceLabel: '0.5 km',
@@ -140,7 +134,6 @@ void main() {
   test('round-trip: toMap output can be reconstructed', () {
     const original = RunLiveActivityData(
       workoutName: 'TEMPO RUN',
-      statusLabel: 'STEADY',
       elapsedSeconds: 2700,
       elapsedLabel: '45:00',
       distanceLabel: '7.5 km',
@@ -162,7 +155,6 @@ void main() {
     final map = original.toMap();
     final reconstructed = RunLiveActivityData(
       workoutName: map['workoutName'] as String,
-      statusLabel: map['statusLabel'] as String,
       elapsedSeconds: map['elapsedSeconds'] as int,
       elapsedLabel: map['elapsedLabel'] as String,
       distanceLabel: map['distanceLabel'] as String,
@@ -182,7 +174,6 @@ void main() {
     );
 
     expect(reconstructed.workoutName, original.workoutName);
-    expect(reconstructed.statusLabel, original.statusLabel);
     expect(reconstructed.elapsedSeconds, original.elapsedSeconds);
     expect(reconstructed.elapsedLabel, original.elapsedLabel);
     expect(reconstructed.distanceLabel, original.distanceLabel);
