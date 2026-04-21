@@ -51,6 +51,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   Future<bool>? _notificationPermissionFuture;
   int _lastSentTimelineIndex = 0;
   double _lastSentDistanceMilestone = 0;
+  DateTime _lastSentLiveActivityAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   double _distanceKm = 0;
   double _blockDistanceKm = 0;
@@ -337,11 +338,14 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final timelineChanged = _timelineIndex != _lastSentTimelineIndex;
     final currentMilestone = (_distanceKm * 10).floor() * 0.1;
     final milestoneCrossed = currentMilestone > _lastSentDistanceMilestone;
+    final timeSinceLastUpdate = _now.difference(_lastSentLiveActivityAt);
+    final periodicUpdate = timeSinceLastUpdate.inSeconds >= 1;
 
     if (!shouldStart &&
         !timelineChanged &&
         !milestoneCrossed &&
-        !isPauseToggle) {
+        !isPauseToggle &&
+        !periodicUpdate) {
       return;
     }
 
@@ -366,6 +370,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       _bridge.updateActivity(data);
       _backgroundService.update(data);
     }
+    _lastSentLiveActivityAt = _now;
   }
 
   RunLiveActivityData _buildLiveActivityData() {
