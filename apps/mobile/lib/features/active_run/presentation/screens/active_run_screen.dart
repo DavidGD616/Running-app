@@ -22,6 +22,7 @@ import '../../domain/run_live_activity_data.dart';
 import '../run_live_activity_background_service.dart';
 import '../run_live_activity_bridge.dart';
 import '../active_run_session_provider.dart';
+import '../active_run_progress_provider.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/workout_target.dart';
@@ -60,6 +61,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   int _timelineIndex = 0;
   bool _isPaused = false;
   bool _isSurging = false;
+  DateTime _lastSavedProgressAt = DateTime.fromMillisecondsSinceEpoch(0);
 
   late final _session = widget.args?.session ?? ref.read(activeRunSessionProvider);
   late final _checkIn = widget.args?.checkIn ?? ref.read(activeRunSessionProvider.notifier).checkIn;
@@ -85,6 +87,25 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     _timeline = ActiveRunTimeline.fromSession(_session);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
     _eventsSub = _bridge.events().listen(_onServiceEvent);
+
+    final progress = ref.read(activeRunProgressProvider);
+    if (progress != null) {
+      _distanceKm = progress.distanceKm;
+      _accumulatedActiveMs = progress.accumulatedActiveMs;
+      _timelineIndex = progress.timelineIndex;
+      _blockElapsed = Duration(milliseconds: progress.blockElapsedMs);
+      _blockDistanceKm = progress.blockDistanceKm;
+      _isPaused = progress.isPaused;
+      _isSurging = progress.isSurging;
+      // Activity was already started before the cold-start; mark it so we
+      // don't call startActivity/start again and get duplicate services.
+      _activityStarted = true;
+      // Do NOT restore _lastTickAt — a stale timestamp would cause a phantom
+      // distance jump on the first tick after restore. Let it default to 1s.
+      if (progress.isPaused && progress.segmentStartedAtMs != null) {
+        _segmentStartedAt = null;
+      }
+    }
   }
 
   void _onServiceEvent(RunServiceEvent event) {
@@ -104,8 +125,14 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     WidgetsBinding.instance.removeObserver(this);
     _eventsSub?.cancel();
     _timer?.cancel();
-    _backgroundService.stop();
-    _bridge.endActivity();
+    // Only tear down the live activity and background service when the run was
+    // intentionally finished. If the widget is disposed for any other reason
+    // (navigation away, OS reclaim) the service must keep running so the user
+    // can return and resume.
+    if (_finished) {
+      _backgroundService.stop();
+      _bridge.endActivity();
+    }
     super.dispose();
   }
 
@@ -168,6 +195,13 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       _blockElapsed += Duration(milliseconds: (deltaSeconds * 1000).round());
       _advanceTimeline();
     });
+
+    final timeSinceLastSave = _now.difference(_lastSavedProgressAt);
+    if (timeSinceLastSave.inSeconds >= 5) {
+      _saveProgress();
+      _lastSavedProgressAt = _now;
+    }
+
     _maybeSendActivityUpdate(wasFirstTick: wasFirstTick);
   }
 
@@ -294,6 +328,22 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     return plannedSeconds / plannedKm;
   }
 
+  void _saveProgress() {
+    final progress = ActiveRunProgress(
+      distanceKm: _distanceKm,
+      accumulatedActiveMs: _accumulatedActiveMs,
+      timelineIndex: _timelineIndex,
+      blockElapsedMs: _blockElapsed.inMilliseconds,
+      blockDistanceKm: _blockDistanceKm,
+      currentRep: _currentRep,
+      isPaused: _isPaused,
+      isSurging: _isSurging,
+      segmentStartedAtMs: _segmentStartedAt?.millisecondsSinceEpoch,
+      lastTickAtMs: _lastTickAt?.millisecondsSinceEpoch,
+    );
+    ref.read(activeRunProgressProvider.notifier).save(progress);
+  }
+
   void _finishRun() {
     if (_finished) return;
     _finished = true;
@@ -301,6 +351,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     _backgroundService.stop();
     _bridge.endActivity();
     ref.read(activeRunSessionProvider.notifier).clear();
+    ref.read(activeRunProgressProvider.notifier).clear();
     context.push(
       RouteNames.logRun,
       extra: LogRunArgs(

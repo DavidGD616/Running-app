@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,8 +11,10 @@ import 'l10n/app_localizations.dart';
 import 'core/config/supabase_config.dart';
 import 'core/persistence/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
+import 'core/router/route_names.dart';
 import 'core/theme/app_theme.dart';
 import 'features/active_run/presentation/run_live_activity_background_service.dart';
+import 'features/active_run/presentation/run_live_activity_bridge.dart';
 import 'features/localization/presentation/locale_provider.dart';
 
 void main() async {
@@ -42,11 +46,39 @@ Future<void> _initializeSupabaseIfConfigured() async {
   await Supabase.initialize(url: url, anonKey: anonKey);
 }
 
-class RunningApp extends ConsumerWidget {
+class RunningApp extends ConsumerStatefulWidget {
   const RunningApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RunningApp> createState() => _RunningAppState();
+}
+
+class _RunningAppState extends ConsumerState<RunningApp> {
+  StreamSubscription<void>? _focusSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final bridge = RunLiveActivityBridge.instance;
+    bridge.initNativeCallHandler();
+    _focusSub = bridge.focusActiveRunEvents.listen((_) {
+      final router = ref.read(appRouterProvider);
+      final currentPath =
+          router.routerDelegate.currentConfiguration.uri.path;
+      if (currentPath != RouteNames.activeRun) {
+        router.go(RouteNames.activeRun);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _focusSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Watch the locale — rebuilds MaterialApp when the locale changes
     final localeAsync = ref.watch(localeProvider);
 

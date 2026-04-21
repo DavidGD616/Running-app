@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -12,6 +13,23 @@ class RunLiveActivityBridge {
   static const eventsChannelName = 'com.davidgd616.striviq/live_activity_events';
   static const _channel = MethodChannel(channelName);
   static const _eventsChannel = EventChannel(eventsChannelName);
+
+  final _focusController = StreamController<void>.broadcast();
+
+  /// Emits whenever the native side asks to bring the active-run screen into
+  /// focus (e.g. the user taps the Live Activity notification banner).
+  Stream<void> get focusActiveRunEvents => _focusController.stream;
+
+  /// Must be called once after [WidgetsFlutterBinding.ensureInitialized] to
+  /// register the Dart-side method call handler for native→Dart messages.
+  void initNativeCallHandler() {
+    if (!Platform.isIOS) return;
+    _channel.setMethodCallHandler((call) async {
+      if (call.method == 'focusActiveRun') {
+        _focusController.add(null);
+      }
+    });
+  }
 
   Stream<RunServiceEvent> events() {
     if (!Platform.isAndroid) return const Stream.empty();

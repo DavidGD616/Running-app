@@ -65,8 +65,9 @@ Always use Context7 MCP when I need library/API documentation, code generation, 
   - `docs/remaining-screens.md` and the HTML screen docs for UI references
 - Verification baseline:
   - Run commands from `apps/mobile/`
-  - `flutter test` currently passes
-  - `flutter analyze` currently passes
+  - `flutter analyze`      # static analysis, type errors
+  - `flutter test`         # unit + widget tests
+  - `flutter gen-l10n`     # regenerate if you touched .arb files
 
 ## Localization (ARB files)
 

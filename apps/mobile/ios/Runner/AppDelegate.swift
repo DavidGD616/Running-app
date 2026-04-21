@@ -5,6 +5,7 @@ import UIKit
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
   private let liveActivityManager = RunLiveActivityManager()
   private let liveActivityChannelName = "com.davidgd616.striviq/live_activity"
+  private var liveActivityChannel: FlutterMethodChannel?
 
   override func application(
     _ app: UIApplication,
@@ -29,6 +30,7 @@ import UIKit
       name: liveActivityChannelName,
       binaryMessenger: binaryMessenger
     )
+    liveActivityChannel = channel
     channel.setMethodCallHandler { [weak self] call, result in
       guard let self else {
         result(nil)
@@ -55,27 +57,18 @@ import UIKit
     }
   }
 
+  /// Asks the Dart side to bring the active-run screen into focus without
+  /// restarting it. Safe to call from SceneDelegate via UIApplication.shared.delegate.
+  func focusActiveRun() {
+    liveActivityChannel?.invokeMethod("focusActiveRun", arguments: nil)
+  }
+
   private func openActiveRunURL(_ url: URL) -> Bool {
     guard url.scheme == "striviq",
           url.host == "active-run" else {
       return false
     }
-    pushActiveRunRoute()
+    focusActiveRun()
     return true
-  }
-
-  private func pushActiveRunRoute() {
-    if let controller = window?.rootViewController as? FlutterViewController {
-      controller.pushRoute("/active-run")
-      return
-    }
-
-    let activeWindow = UIApplication.shared.connectedScenes
-      .compactMap { $0 as? UIWindowScene }
-      .flatMap(\.windows)
-      .first { $0.isKeyWindow }
-    if let controller = activeWindow?.rootViewController as? FlutterViewController {
-      controller.pushRoute("/active-run")
-    }
   }
 }

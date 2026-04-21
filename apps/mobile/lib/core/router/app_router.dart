@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -50,6 +50,7 @@ import '../../features/progress/presentation/screens/completed_sessions_screen.d
 import '../../features/profile/data/runner_profile_repository.dart';
 import '../../features/profile/domain/models/runner_profile.dart';
 import '../../features/profile/presentation/runner_profile_provider.dart';
+import '../../features/active_run/presentation/active_run_progress_provider.dart';
 import '../persistence/shared_preferences_provider.dart';
 
 enum AppBootstrapState {
@@ -123,6 +124,7 @@ bool _isOnboardingComplete(Ref ref, RunnerProfile profile) {
 String? resolveAppRedirect({
   required String matchedLocation,
   required AppBootstrapState bootstrapState,
+  bool hasActiveRun = false,
 }) {
   final isSplashRoute = matchedLocation == RouteNames.splash;
   final isAuthRoute = _authRoutes.contains(matchedLocation);
@@ -139,7 +141,7 @@ String? resolveAppRedirect({
       return isProfileSetupRoute ? null : RouteNames.accountSetup;
     case AppBootstrapState.authenticatedReady:
       if (isSplashRoute || isAuthRoute || isProfileSetupRoute) {
-        return RouteNames.today;
+        return hasActiveRun ? RouteNames.activeRun : RouteNames.today;
       }
       return null;
   }
@@ -166,6 +168,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) => resolveAppRedirect(
       matchedLocation: state.matchedLocation,
       bootstrapState: ref.read(appBootstrapStateProvider),
+      hasActiveRun: ref.read(activeRunProgressProvider) != null,
     ),
     routes: [
       GoRoute(

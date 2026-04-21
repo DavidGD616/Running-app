@@ -248,6 +248,10 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
                   readiness: _readiness,
                 );
                 final router = GoRouter.of(context);
+                if (router.routerDelegate.currentConfiguration.uri.path ==
+                    RouteNames.activeRun) {
+                  return;
+                }
                 if (session != null) {
                   await ref.read(activeRunSessionProvider.notifier).save(session, checkIn);
                 }

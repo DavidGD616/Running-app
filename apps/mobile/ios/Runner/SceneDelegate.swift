@@ -17,9 +17,7 @@ class SceneDelegate: FlutterSceneDelegate {
           url.host == "active-run" else {
       return false
     }
-    if let controller = window?.rootViewController as? FlutterViewController {
-      controller.pushRoute("/active-run")
-    }
+    (UIApplication.shared.delegate as? AppDelegate)?.focusActiveRun()
     return true
   }
 }
