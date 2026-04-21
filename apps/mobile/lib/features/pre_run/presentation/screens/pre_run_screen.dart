@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -8,18 +9,19 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../active_run/presentation/active_run_session_provider.dart';
 import '../run_flow_context.dart';
 
-class PreRunScreen extends StatefulWidget {
+class PreRunScreen extends ConsumerStatefulWidget {
   const PreRunScreen({super.key, this.args});
 
   final PreRunArgs? args;
 
   @override
-  State<PreRunScreen> createState() => _PreRunScreenState();
+  ConsumerState<PreRunScreen> createState() => _PreRunScreenState();
 }
 
-class _PreRunScreenState extends State<PreRunScreen> {
+class _PreRunScreenState extends ConsumerState<PreRunScreen> {
   PreRunLegCondition? _legs;
   PreRunPainLevel? _pain;
   PreRunSleepLevel? _sleep;
@@ -237,18 +239,24 @@ class _PreRunScreenState extends State<PreRunScreen> {
 
             _ContinueButton(
               label: l10n.preRunContinue,
-              onTap: () => context.push(
-                RouteNames.activeRun,
-                extra: ActiveRunArgs(
-                  session: widget.args?.session,
-                  checkIn: PreRunCheckIn(
-                    legs: _legs,
-                    pain: _pain,
-                    sleep: _sleep,
-                    readiness: _readiness,
+              onTap: () {
+                final session = widget.args?.session;
+                if (session != null) {
+                  ref.read(activeRunSessionProvider.notifier).save(session);
+                }
+                context.push(
+                  RouteNames.activeRun,
+                  extra: ActiveRunArgs(
+                    session: session,
+                    checkIn: PreRunCheckIn(
+                      legs: _legs,
+                      pain: _pain,
+                      sleep: _sleep,
+                      readiness: _readiness,
+                    ),
                   ),
-                ),
-              ),
+                );
+              },
             ),
           ],
         ),

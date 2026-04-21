@@ -68,6 +68,65 @@ class RunFlowSessionContext {
     );
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'sessionId': sessionId,
+      'sessionDate': sessionDate.toIso8601String(),
+      'sessionType': sessionType.name,
+      'weekNumber': weekNumber,
+      'workoutTarget': workoutTarget?.toJson(),
+      'workoutSteps': workoutSteps.map((s) => s.toJson()).toList(),
+      'supplementalType': supplementalType?.key,
+      'isRunSession': isRunSession,
+      'distanceKm': distanceKm,
+      'durationMinutes': durationMinutes,
+      'elevationGainMeters': elevationGainMeters,
+      'intervalReps': intervalReps,
+      'intervalRepDistanceMeters': intervalRepDistanceMeters,
+      'intervalRecoverySeconds': intervalRecoverySeconds,
+      'warmUpMinutes': warmUpMinutes,
+      'coolDownMinutes': coolDownMinutes,
+    };
+  }
+
+  factory RunFlowSessionContext.fromJson(Map<String, dynamic> json) {
+    final sessionTypeRaw = json['sessionType'] as String?;
+    final sessionType = sessionTypeRaw != null
+        ? SessionType.values.cast<SessionType?>().firstWhere(
+              (e) => e?.name == sessionTypeRaw,
+              orElse: () => null,
+            )
+        : null;
+    if (sessionType == null) {
+      throw FormatException('Invalid or missing sessionType in JSON: $sessionTypeRaw');
+    }
+    return RunFlowSessionContext(
+      sessionId: json['sessionId'] as String,
+      sessionDate: DateTime.parse(json['sessionDate'] as String),
+      sessionType: sessionType,
+      weekNumber: json['weekNumber'] as int? ?? 1,
+      workoutTarget: json['workoutTarget'] != null
+          ? WorkoutTarget.fromJson(json['workoutTarget'] as Map<String, dynamic>)
+          : null,
+      workoutSteps: (json['workoutSteps'] as List?)
+              ?.map((s) => WorkoutStep.fromJson(s as Map<String, dynamic>))
+              .whereType<WorkoutStep>()
+              .toList() ??
+          [],
+      supplementalType: supplementalSessionTypeFromKey(
+          json['supplementalType'] as String?),
+      isRunSession: json['isRunSession'] as bool? ?? true,
+      distanceKm: _doubleOrNull(json['distanceKm']),
+      durationMinutes: json['durationMinutes'] as int?,
+      elevationGainMeters: json['elevationGainMeters'] as int?,
+      intervalReps: json['intervalReps'] as int?,
+      intervalRepDistanceMeters: json['intervalRepDistanceMeters'] as int?,
+      intervalRecoverySeconds: json['intervalRecoverySeconds'] as int?,
+      warmUpMinutes: json['warmUpMinutes'] as int?,
+      coolDownMinutes: json['coolDownMinutes'] as int?,
+    );
+  }
+
   final String sessionId;
   final DateTime sessionDate;
   final SessionType sessionType;
@@ -159,5 +218,12 @@ T? _enumFromKey<T extends Enum>(List<T> values, Object? raw) {
   for (final value in values) {
     if (value.name == key) return value;
   }
+  return null;
+}
+
+double? _doubleOrNull(Object? value) {
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value);
   return null;
 }

@@ -21,6 +21,7 @@ import '../active_run_timeline.dart';
 import '../../domain/run_live_activity_data.dart';
 import '../run_live_activity_background_service.dart';
 import '../run_live_activity_bridge.dart';
+import '../active_run_session_provider.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/workout_target.dart';
@@ -60,6 +61,9 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   bool _isPaused = false;
   bool _isSurging = false;
 
+  late final _session = widget.args?.session ?? ref.read(activeRunSessionProvider);
+  late final _checkIn = widget.args?.checkIn;
+
   final _bridge = RunLiveActivityBridge.instance;
   final _backgroundService = RunLiveActivityBackgroundService.instance;
   StreamSubscription<RunServiceEvent>? _eventsSub;
@@ -77,7 +81,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _timeline = ActiveRunTimeline.fromSession(widget.args?.session);
+
+    _timeline = ActiveRunTimeline.fromSession(_session);
     _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
     _eventsSub = _bridge.events().listen(_onServiceEvent);
   }
@@ -199,7 +204,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   double get _kmPerSecond {
-    final session = widget.args?.session;
+    final session = _session;
     final plannedKm = session?.distanceKm ?? 6.0;
     final plannedSeconds = (session?.durationMinutes ?? 45) * 60;
     if (plannedSeconds <= 0) return 0.0022;
@@ -207,7 +212,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   double get _paceMultiplier {
-    final type = widget.args?.session?.sessionType ?? SessionType.easyRun;
+    final type = _session?.sessionType ?? SessionType.easyRun;
     final elapsed = _currentElapsed;
     final cycle = elapsed.inSeconds % 12;
     final drift = cycle < 4
@@ -255,7 +260,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   int get _currentRep {
     final block = _currentBlock;
     if (block?.repIndex != null) return block!.repIndex!;
-    final reps = widget.args?.session?.intervalReps ?? 6;
+    final reps = _session?.intervalReps ?? 6;
     final rep = (_currentElapsed.inSeconds ~/ 180) + 1;
     return rep > reps ? reps : rep;
   }
@@ -282,7 +287,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   double get _plannedPaceSecondsPerKm {
-    final session = widget.args?.session;
+    final session = _session;
     final plannedKm = session?.distanceKm ?? 6.0;
     final plannedSeconds = (session?.durationMinutes ?? 45) * 60;
     if (plannedKm <= 0 || plannedSeconds <= 0) return 450;
@@ -295,11 +300,12 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     _timer?.cancel();
     _backgroundService.stop();
     _bridge.endActivity();
+    ref.read(activeRunSessionProvider.notifier).clear();
     context.push(
       RouteNames.logRun,
       extra: LogRunArgs(
-        session: widget.args?.session,
-        checkIn: widget.args?.checkIn,
+        session: _session,
+        checkIn: _checkIn,
         actualDuration: _currentElapsed,
         actualDistanceKm: _distanceKm,
       ),
@@ -377,7 +383,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final l10n = AppLocalizations.of(context)!;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final session = widget.args?.session;
+    final session = _session;
     final type = session?.sessionType ?? SessionType.easyRun;
     final elapsed = _currentElapsed;
     final currentBlock = _currentBlock;
@@ -529,7 +535,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final l10n = AppLocalizations.of(context)!;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final session = widget.args?.session;
+    final session = _session;
     final type = session?.sessionType ?? SessionType.easyRun;
     final title = _sessionTitle(type, l10n);
     final plannedSummary = _plannedSummary(session, unitSystem, l10n);
