@@ -239,21 +239,23 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
 
             _ContinueButton(
               label: l10n.preRunContinue,
-              onTap: () {
+              onTap: () async {
                 final session = widget.args?.session;
+                final checkIn = PreRunCheckIn(
+                  legs: _legs,
+                  pain: _pain,
+                  sleep: _sleep,
+                  readiness: _readiness,
+                );
+                final router = GoRouter.of(context);
                 if (session != null) {
-                  ref.read(activeRunSessionProvider.notifier).save(session);
+                  await ref.read(activeRunSessionProvider.notifier).save(session, checkIn);
                 }
-                context.push(
+                router.push(
                   RouteNames.activeRun,
                   extra: ActiveRunArgs(
                     session: session,
-                    checkIn: PreRunCheckIn(
-                      legs: _legs,
-                      pain: _pain,
-                      sleep: _sleep,
-                      readiness: _readiness,
-                    ),
+                    checkIn: checkIn,
                   ),
                 );
               },

@@ -62,7 +62,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   bool _isSurging = false;
 
   late final _session = widget.args?.session ?? ref.read(activeRunSessionProvider);
-  late final _checkIn = widget.args?.checkIn;
+  late final _checkIn = widget.args?.checkIn ?? ref.read(activeRunSessionProvider.notifier).checkIn;
 
   final _bridge = RunLiveActivityBridge.instance;
   final _backgroundService = RunLiveActivityBackgroundService.instance;
