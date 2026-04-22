@@ -70,10 +70,14 @@ Deno.serve(async (req) => {
     );
   }
 
-  // 3. Build phone-first workout steps deterministically for each session
-  const sessionsWithSteps = generatedPlan.sessions.map((
-    session: GeneratedSession,
-  ) => ({
+  // 3. Build phone-first workout steps deterministically for each session.
+  // Strides are a plan rule, not only a model suggestion: if OpenAI omits them
+  // for capable runners, add a conservative weekly stride block to easy runs.
+  const sessionsWithSteps = addStrideDefaults(
+    generatedPlan.sessions,
+    profileData,
+    generatedPlan.totalWeeks,
+  ).map((session) => ({
     ...session,
     description: session.coachNote,
     status: "upcoming",
@@ -129,3 +133,90 @@ Deno.serve(async (req) => {
     headers: { "Content-Type": "application/json" },
   });
 });
+
+function addStrideDefaults(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+): GeneratedSession[] {
+  const config = strideConfigFor(profileData);
+  if (config == null) return sessions;
+
+  const weeksWithStrides = new Set<number>();
+  for (const session of sessions) {
+    if (hasStrides(session)) weeksWithStrides.add(session.weekNumber);
+  }
+
+  return sessions.map((session) => {
+    if (!isStrideEligible(session, config, totalWeeks, weeksWithStrides)) {
+      return session;
+    }
+
+    weeksWithStrides.add(session.weekNumber);
+    return {
+      ...session,
+      strideReps: config.reps,
+      strideSeconds: config.seconds,
+      strideRecoverySeconds: config.recoverySeconds,
+      coachNote: appendStrideCue(session.coachNote),
+    };
+  });
+}
+
+type StrideConfig = {
+  startWeek: number;
+  reps: number;
+  seconds: number;
+  recoverySeconds: number;
+};
+
+function strideConfigFor(
+  profileData: Record<string, unknown>,
+): StrideConfig | null {
+  const fitness = objectOrNull(profileData.fitness);
+  const experience = typeof fitness?.experience === "string"
+    ? fitness.experience
+    : null;
+
+  switch (experience) {
+    case "experience_experienced":
+      return { startWeek: 1, reps: 6, seconds: 20, recoverySeconds: 80 };
+    case "experience_intermediate":
+      return { startWeek: 1, reps: 4, seconds: 20, recoverySeconds: 90 };
+    default:
+      return null;
+  }
+}
+
+function isStrideEligible(
+  session: GeneratedSession,
+  config: StrideConfig,
+  totalWeeks: number,
+  weeksWithStrides: Set<number>,
+): boolean {
+  if (weeksWithStrides.has(session.weekNumber)) return false;
+  if (session.weekNumber < config.startWeek) return false;
+  if (session.weekNumber > Math.max(1, totalWeeks - 2)) return false;
+  if (session.type !== "easyRun") return false;
+  if (hasStrides(session)) return false;
+  if ((session.durationMinutes ?? 0) < 25) return false;
+  return true;
+}
+
+function hasStrides(session: GeneratedSession): boolean {
+  return (session.strideReps ?? 0) > 0 && (session.strideSeconds ?? 0) > 0;
+}
+
+function appendStrideCue(coachNote: string | null): string {
+  const strideCue =
+    "Finish with relaxed strides: fast but smooth, not a sprint.";
+  if (!coachNote) return strideCue;
+  if (coachNote.toLowerCase().includes("stride")) return coachNote;
+  return `${coachNote} ${strideCue}`;
+}
+
+function objectOrNull(value: unknown): Record<string, unknown> | null {
+  return value != null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
