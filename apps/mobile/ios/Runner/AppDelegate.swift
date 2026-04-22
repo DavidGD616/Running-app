@@ -6,6 +6,8 @@ import UIKit
   private let liveActivityManager = RunLiveActivityManager()
   private let liveActivityChannelName = "com.davidgd616.striviq/live_activity"
   private var liveActivityChannel: FlutterMethodChannel?
+  private var isDartReadyForActiveRunFocus = false
+  private var pendingActiveRunFocus = false
 
   override func application(
     _ app: UIApplication,
@@ -26,6 +28,7 @@ import UIKit
   }
 
   private func registerLiveActivityChannel(binaryMessenger: FlutterBinaryMessenger) {
+    isDartReadyForActiveRunFocus = false
     let channel = FlutterMethodChannel(
       name: liveActivityChannelName,
       binaryMessenger: binaryMessenger
@@ -51,6 +54,10 @@ import UIKit
       case "endActivity":
         liveActivityManager.endActivity()
         result(nil)
+      case "dartReadyForFocus":
+        isDartReadyForActiveRunFocus = true
+        flushPendingActiveRunFocus()
+        result(nil)
       default:
         result(FlutterMethodNotImplemented)
       }
@@ -60,7 +67,21 @@ import UIKit
   /// Asks the Dart side to bring the active-run screen into focus without
   /// restarting it. Safe to call from SceneDelegate via UIApplication.shared.delegate.
   func focusActiveRun() {
-    liveActivityChannel?.invokeMethod("focusActiveRun", arguments: nil)
+    guard isDartReadyForActiveRunFocus,
+          let liveActivityChannel else {
+      pendingActiveRunFocus = true
+      return
+    }
+    liveActivityChannel.invokeMethod("focusActiveRun", arguments: nil)
+  }
+
+  private func flushPendingActiveRunFocus() {
+    guard pendingActiveRunFocus,
+          let liveActivityChannel else {
+      return
+    }
+    pendingActiveRunFocus = false
+    liveActivityChannel.invokeMethod("focusActiveRun", arguments: nil)
   }
 
   private func openActiveRunURL(_ url: URL) -> Bool {

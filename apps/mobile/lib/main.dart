@@ -22,6 +22,10 @@ void main() async {
   await initializeDateFormatting();
   await RunLiveActivityBackgroundService.instance.configure();
   await _initializeSupabaseIfConfigured();
+  // Register the native→Dart handler before runApp so the MethodChannel
+  // message is never dropped on warm launch (iOS delivers openURLContexts
+  // almost immediately after foregrounding, before the first widget frame).
+  RunLiveActivityBridge.instance.initNativeCallHandler();
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(
@@ -60,15 +64,21 @@ class _RunningAppState extends ConsumerState<RunningApp> {
   void initState() {
     super.initState();
     final bridge = RunLiveActivityBridge.instance;
-    bridge.initNativeCallHandler();
-    _focusSub = bridge.focusActiveRunEvents.listen((_) {
-      final router = ref.read(appRouterProvider);
-      final currentPath =
-          router.routerDelegate.currentConfiguration.uri.path;
-      if (currentPath != RouteNames.activeRun) {
-        router.go(RouteNames.activeRun);
-      }
-    });
+    // initNativeCallHandler() was already called in main() before runApp();
+    // we only set up the Dart-side stream listener here.
+    _focusSub = bridge.focusActiveRunEvents.listen((_) => _focusActiveRun());
+    // Note: no _pendingFocusRequest drain here. On cold launch, the router
+    // redirect (hasActiveRun) owns navigation to /active-run. Draining the
+    // pending flag while currentPath is still /splash would fire
+    // router.go(/active-run) with args=null and destroy the restored session.
+  }
+
+  void _focusActiveRun() {
+    final router = ref.read(appRouterProvider);
+    final currentPath = router.routerDelegate.currentConfiguration.uri.path;
+    if (currentPath != RouteNames.activeRun) {
+      router.go(RouteNames.activeRun);
+    }
   }
 
   @override

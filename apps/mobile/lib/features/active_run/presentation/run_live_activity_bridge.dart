@@ -10,7 +10,8 @@ class RunLiveActivityBridge {
   static final RunLiveActivityBridge instance = RunLiveActivityBridge._();
 
   static const channelName = 'com.davidgd616.striviq/live_activity';
-  static const eventsChannelName = 'com.davidgd616.striviq/live_activity_events';
+  static const eventsChannelName =
+      'com.davidgd616.striviq/live_activity_events';
   static const _channel = MethodChannel(channelName);
   static const _eventsChannel = EventChannel(eventsChannelName);
 
@@ -22,6 +23,8 @@ class RunLiveActivityBridge {
 
   /// Must be called once after [WidgetsFlutterBinding.ensureInitialized] to
   /// register the Dart-side method call handler for native→Dart messages.
+  /// Call this in `main()` before `runApp()` so the handler is ready before
+  /// the first Flutter frame, avoiding dropped messages on warm launch.
   void initNativeCallHandler() {
     if (!Platform.isIOS) return;
     _channel.setMethodCallHandler((call) async {
@@ -29,6 +32,11 @@ class RunLiveActivityBridge {
         _focusController.add(null);
       }
     });
+    unawaited(
+      _channel.invokeMethod<void>('dartReadyForFocus').catchError((error) {
+        debugPrint('[RunLiveActivityBridge] dartReadyForFocus failed: $error');
+      }),
+    );
   }
 
   Stream<RunServiceEvent> events() {
@@ -121,12 +129,14 @@ class RunServiceState {
       if (v is int) return v.toDouble();
       return 0;
     }
+
     int intVal(String k) {
       final v = map[k];
       if (v is int) return v;
       if (v is num) return v.toInt();
       return 0;
     }
+
     return RunServiceState(
       distanceKm: dbl('distanceKm'),
       elapsedMs: intVal('elapsedMs'),
@@ -148,10 +158,10 @@ class RunServiceEvent {
   });
 
   const RunServiceEvent.unknown()
-      : type = 'unknown',
-        distanceKm = 0,
-        elapsedMs = 0,
-        blockIndex = 0;
+    : type = 'unknown',
+      distanceKm = 0,
+      elapsedMs = 0,
+      blockIndex = 0;
 
   final String type;
   final double distanceKm;
@@ -167,12 +177,14 @@ class RunServiceEvent {
       if (v is int) return v.toDouble();
       return 0;
     }
+
     int intVal(String k) {
       final v = map[k];
       if (v is int) return v;
       if (v is num) return v.toInt();
       return 0;
     }
+
     return RunServiceEvent(
       type: (map['type'] as String?) ?? 'unknown',
       distanceKm: dbl('distanceKm'),

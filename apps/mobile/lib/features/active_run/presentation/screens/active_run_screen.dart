@@ -63,8 +63,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   bool _isSurging = false;
   DateTime _lastSavedProgressAt = DateTime.fromMillisecondsSinceEpoch(0);
 
-  late final _session = widget.args?.session ?? ref.read(activeRunSessionProvider);
-  late final _checkIn = widget.args?.checkIn ?? ref.read(activeRunSessionProvider.notifier).checkIn;
+  late final _session =
+      widget.args?.session ?? ref.read(activeRunSessionProvider);
+  late final _checkIn =
+      widget.args?.checkIn ??
+      ref.read(activeRunSessionProvider.notifier).checkIn;
 
   final _bridge = RunLiveActivityBridge.instance;
   final _backgroundService = RunLiveActivityBackgroundService.instance;
@@ -90,6 +93,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
     final progress = ref.read(activeRunProgressProvider);
     if (progress != null) {
+      final now = _now;
       _distanceKm = progress.distanceKm;
       _accumulatedActiveMs = progress.accumulatedActiveMs;
       _timelineIndex = progress.timelineIndex;
@@ -102,9 +106,14 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       _activityStarted = true;
       // Do NOT restore _lastTickAt — a stale timestamp would cause a phantom
       // distance jump on the first tick after restore. Let it default to 1s.
-      if (progress.isPaused && progress.segmentStartedAtMs != null) {
+      if (progress.isPaused) {
         _segmentStartedAt = null;
+        _lastTickAt = null;
+      } else {
+        _segmentStartedAt = now;
+        _lastTickAt = now;
       }
+      _lastSavedProgressAt = now;
     }
   }
 
@@ -138,6 +147,16 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) async {
+    // Save immediately when the app is backgrounded so iOS has the latest
+    // progress if it suspends the Dart engine before the next 5s tick.
+    if (!_finished &&
+        (state == AppLifecycleState.paused ||
+            state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.detached)) {
+      await _saveProgress();
+      _lastSavedProgressAt = _now;
+      return;
+    }
     if (state != AppLifecycleState.resumed || _isPaused) return;
     final snapshot = await _bridge.getRunState();
     if (!mounted) return;
@@ -198,7 +217,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
     final timeSinceLastSave = _now.difference(_lastSavedProgressAt);
     if (timeSinceLastSave.inSeconds >= 5) {
-      _saveProgress();
+      unawaited(_saveProgress());
       _lastSavedProgressAt = _now;
     }
 
@@ -328,10 +347,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     return plannedSeconds / plannedKm;
   }
 
-  void _saveProgress() {
+  Future<void> _saveProgress() {
+    final elapsed = _currentElapsed;
     final progress = ActiveRunProgress(
       distanceKm: _distanceKm,
-      accumulatedActiveMs: _accumulatedActiveMs,
+      accumulatedActiveMs: elapsed.inMilliseconds,
       timelineIndex: _timelineIndex,
       blockElapsedMs: _blockElapsed.inMilliseconds,
       blockDistanceKm: _blockDistanceKm,
@@ -341,7 +361,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       segmentStartedAtMs: _segmentStartedAt?.millisecondsSinceEpoch,
       lastTickAtMs: _lastTickAt?.millisecondsSinceEpoch,
     );
-    ref.read(activeRunProgressProvider.notifier).save(progress);
+    return ref.read(activeRunProgressProvider.notifier).save(progress);
   }
 
   void _finishRun() {
@@ -479,7 +499,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       plannedPaceLabel: _plannedPaceSecondsPerKm > 0
           ? '${_formatPace(_plannedPaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}'
           : '',
-      blockRemainingLabel: _computeBlockRemainingLabel(currentBlock, unitSystem, l10n),
+      blockRemainingLabel: _computeBlockRemainingLabel(
+        currentBlock,
+        unitSystem,
+        l10n,
+      ),
     );
   }
 
@@ -519,8 +543,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
           .clamp(0.0, 1.0);
     }
     if (block.distanceMeters != null && block.distanceMeters! > 0) {
-      return ((_blockDistanceKm * 1000) / block.distanceMeters!)
-          .clamp(0.0, 1.0);
+      return ((_blockDistanceKm * 1000) / block.distanceMeters!).clamp(
+        0.0,
+        1.0,
+      );
     }
     return 0.0;
   }
@@ -778,9 +804,9 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       return l10n.activeRunPlannedDistance(
         UnitFormatter.formatDistanceWithUnit(distance, unitSystem, l10n),
       );
+    }
+    return '';
   }
-  return '';
-}
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
     switch (type) {
