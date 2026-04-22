@@ -1,4 +1,4 @@
-import OpenAI from 'openai';
+import OpenAI from 'npm:openai@4.96.2';
 import { GeneratedPlanSchema, type GeneratedPlan } from './schema.ts';
 
 export async function generatePlanFromProfile(
