@@ -1,5 +1,9 @@
 import { strict as assert } from "node:assert";
-import { addStrideDefaults, avoidHardDayTraining } from "./plan-rules.ts";
+import {
+  addStrideDefaults,
+  avoidHardDayTraining,
+  normalizeTrainingDayCount,
+} from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
 
 Deno.test("addStrideDefaults adds week 1 strides for intermediate runners", () => {
@@ -118,20 +122,96 @@ Deno.test("avoidHardDayTraining does not move a fixed goal race date", () => {
   assert.equal(sessions[1].date, "2026-04-29");
 });
 
+Deno.test("normalizeTrainingDayCount converts lowest priority sessions to rest days", () => {
+  const sessions = normalizeTrainingDayCount(
+    [
+      session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
+      session({
+        id: "w1-tue-quality",
+        date: "2026-04-28",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-wed-recovery",
+        date: "2026-04-29",
+        type: "recoveryRun",
+      }),
+      session({
+        id: "w1-thu-cross",
+        date: "2026-04-30",
+        type: "crossTraining",
+      }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ trainingDays: 3 }),
+  );
+
+  assert.equal(trainingDayCount(sessions), 3);
+  assert.equal(findSession(sessions, "w1-thu-cross").type, "restDay");
+  assert.equal(findSession(sessions, "w1-wed-recovery").type, "restDay");
+  assert.equal(findSession(sessions, "w1-tue-quality").type, "intervals");
+  assert.equal(findSession(sessions, "w1-sat-long").type, "longRun");
+});
+
+Deno.test("normalizeTrainingDayCount converts rest days into easy training days", () => {
+  const sessions = normalizeTrainingDayCount(
+    [
+      session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-tue-rest", date: "2026-04-28", type: "restDay" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ trainingDays: 3 }),
+  );
+
+  assert.equal(trainingDayCount(sessions), 3);
+  assert.equal(findSession(sessions, "w1-tue-rest").type, "easyRun");
+  assert.equal(findSession(sessions, "w1-tue-rest").durationMinutes, 35);
+});
+
+Deno.test("normalizeTrainingDayCount adds missing easy days when week has no rest days", () => {
+  const sessions = normalizeTrainingDayCount(
+    [
+      session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ trainingDays: 4, hardDays: ["day_tue"] }),
+  );
+
+  assert.equal(trainingDayCount(sessions), 4);
+  assert.equal(new Set(sessions.map((item) => item.date)).size, 4);
+  assert.ok(sessions.some((item) => item.id.includes("2026-04-29-added")));
+  assert.ok(sessions.some((item) => item.id.includes("2026-04-30-added")));
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
   raceDate = null,
+  trainingDays = null,
 }: {
   experience?: string;
   hardDays?: string[];
   raceDate?: string | null;
+  trainingDays?: number | null;
 } = {}): Record<string, unknown> {
   return {
     goal: { raceDate },
     fitness: { experience },
-    schedule: { hardDays },
+    schedule: { hardDays, trainingDays },
   };
+}
+
+function findSession(
+  sessions: GeneratedSession[],
+  id: string,
+): GeneratedSession {
+  const found = sessions.find((item) => item.id === id);
+  assert.ok(found, `Expected session ${id} to exist`);
+  return found;
+}
+
+function trainingDayCount(sessions: GeneratedSession[]): number {
+  return sessions.filter((item) => item.type !== "restDay").length;
 }
 
 function session(

@@ -19,6 +19,8 @@ long runs, intervals, hills, tempo, threshold, race-pace, fartlek, progression,
 or other high-stress sessions on those days. If the schedule is constrained, use
 hardDays only for rest, recovery, short easy running, or optional cross-training.
 Do not move a fixed goal race date just because it falls on a hardDay.
+Honor schedule.trainingDays as the target number of training days per week.
+Use restDay sessions for the remaining days when returning full calendar weeks.
 
 Assign realistic distances and durations. For easy and long runs use targetZone
 easy or longRun. For intervals provide intervalReps, intervalRepDistanceMeters,

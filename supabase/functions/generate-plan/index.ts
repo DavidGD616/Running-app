@@ -1,6 +1,10 @@
 import { createClient } from "@supabase/supabase-js";
 import { generatePlanFromProfile } from "./openai.ts";
-import { addStrideDefaults, avoidHardDayTraining } from "./plan-rules.ts";
+import {
+  addStrideDefaults,
+  avoidHardDayTraining,
+  normalizeTrainingDayCount,
+} from "./plan-rules.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
 
 Deno.serve(async (req) => {
@@ -73,8 +77,12 @@ Deno.serve(async (req) => {
   // 3. Build phone-first workout steps deterministically for each session.
   // Schedule constraints and strides are plan rules, not only model suggestions:
   // if OpenAI ignores hard days or omits strides, enforce conservative defaults.
-  const scheduleAdjustedSessions = avoidHardDayTraining(
+  const scheduleNormalizedSessions = normalizeTrainingDayCount(
     generatedPlan.sessions,
+    profileData,
+  );
+  const scheduleAdjustedSessions = avoidHardDayTraining(
+    scheduleNormalizedSessions,
     profileData,
   );
   const sessionsWithSteps = addStrideDefaults(
