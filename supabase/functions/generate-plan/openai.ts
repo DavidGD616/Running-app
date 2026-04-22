@@ -14,6 +14,12 @@ watch-only metrics. Adapt workout difficulty, volume, workout type, and
 progression to the runner's experience level, fitness history, health
 constraints, schedule, and goal.
 
+Treat schedule.hardDays as days the runner prefers not to train. Avoid placing
+long runs, intervals, hills, tempo, threshold, race-pace, fartlek, progression,
+or other high-stress sessions on those days. If the schedule is constrained, use
+hardDays only for rest, recovery, short easy running, or optional cross-training.
+Do not move a fixed goal race date just because it falls on a hardDay.
+
 Assign realistic distances and durations. For easy and long runs use targetZone
 easy or longRun. For intervals provide intervalReps, intervalRepDistanceMeters,
 and intervalRecoverySeconds. For tempo runs use targetZone tempo with
