@@ -645,6 +645,7 @@
   "sessionDetailWarmUpNote": "Ritmo fácil, Zona 2",
   "sessionDetailIntervals": "Intervalos",
   "sessionDetailIntervalsNote": "Esfuerzo intenso, Zona 4",
+  "sessionDetailStrides": "Strides",
   "sessionDetailCoolDown": "Enfriamiento",
   "sessionDetailCoolDownDuration": "10 min",
   "sessionDetailCoolDownNote": "Ritmo fácil o caminata",
@@ -662,6 +663,18 @@
   "sessionPhaseIntervalsMainDuration": "{minutes} min",
   "sessionPhaseIntervalsMainNote": "{reps} × {repDistance} a esfuerzo intenso · RPE 8–9",
   "sessionPhaseIntervalsMainRecovery": "{recoverySeconds} s de trote suave de recuperación entre cada repetición",
+  "sessionPhaseStridesDuration": "{reps} × {seconds} s",
+  "@sessionPhaseStridesDuration": {
+    "placeholders": {
+      "reps": { "type": "int" },
+      "seconds": { "type": "int" }
+    }
+  },
+  "sessionPhaseStridesNote": "Rápido pero relajado · técnica suave, no es un sprint",
+  "sessionPhaseStridesRecovery": "{recoverySeconds} s de caminata o trote suave entre strides",
+  "@sessionPhaseStridesRecovery": {
+    "placeholders": { "recoverySeconds": { "type": "int" } }
+  },
   "sessionPhaseIntervalsCoolDuration": "{minutes} min",
   "sessionPhaseIntervalsCoolNote": "Trote suave → caminata · estiramientos completos",
 
@@ -768,6 +781,7 @@
   "activeRunCurrentBlock": "Bloque actual",
   "activeRunClimb": "Subida",
   "activeRunFastRep": "Rep rápida",
+  "activeRunStride": "Stride",
   "activeRunRecovery": "Recuperación",
   "activeRunRep": "Rep",
   "activeRunBlockRemaining": "quedan {remaining}",

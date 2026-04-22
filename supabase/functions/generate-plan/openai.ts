@@ -8,11 +8,23 @@ export async function generatePlanFromProfile(
 
   const systemPrompt = `You are an expert running coach. Generate a personalized
 training plan based on the runner profile provided. Be specific and progressive.
-Assign realistic distances and durations. For easy and long runs use targetZone easy
-or longRun. For intervals provide intervalReps, intervalRepDistanceMeters, and
-intervalRecoverySeconds. For tempo runs use targetZone tempo with warmUpMinutes and
-coolDownMinutes. Always anchor week 1 sessions starting from the nearest upcoming
-Monday. Ensure a proper taper in the final 2 weeks before the race.`;
+This app is phone-first. Use effort-based guidance, duration, distance, and
+plain coaching cues; do not rely on heart-rate zones, power, cadence, or
+watch-only metrics. Adapt workout difficulty, volume, workout type, and
+progression to the runner's experience level, fitness history, health
+constraints, schedule, and goal.
+
+Assign realistic distances and durations. For easy and long runs use targetZone
+easy or longRun. For intervals provide intervalReps, intervalRepDistanceMeters,
+and intervalRecoverySeconds. For tempo runs use targetZone tempo with
+warmUpMinutes and coolDownMinutes. Use strides when appropriate for the runner's
+level and goal. Strides are short fast-but-relaxed efforts, not sprints. Place
+them inside easy runs, usually after the easy portion and before the cooldown.
+For newer runners, use fewer/shorter strides or omit them. For experienced
+runners, use 4-8 x 15-30 seconds with full easy walk/jog recovery.
+
+Always anchor week 1 sessions starting from the nearest upcoming Monday. Ensure
+a proper taper in the final 2 weeks before the race.`;
 
   const userPrompt = `Runner profile:\n${JSON.stringify(profileData, null, 2)}
 
@@ -52,8 +64,11 @@ Generate a complete personalized training plan. Return only the JSON matching th
                   intervalReps: { type: ['integer', 'null'] },
                   intervalRepDistanceMeters: { type: ['integer', 'null'] },
                   intervalRecoverySeconds: { type: ['integer', 'null'] },
+                  strideReps: { type: ['integer', 'null'] },
+                  strideSeconds: { type: ['integer', 'null'] },
+                  strideRecoverySeconds: { type: ['integer', 'null'] },
                 },
-                required: ['id','date','weekNumber','type','distanceKm','durationMinutes','coachNote','targetZone','warmUpMinutes','coolDownMinutes','intervalReps','intervalRepDistanceMeters','intervalRecoverySeconds'],
+                required: ['id','date','weekNumber','type','distanceKm','durationMinutes','coachNote','targetZone','warmUpMinutes','coolDownMinutes','intervalReps','intervalRepDistanceMeters','intervalRecoverySeconds','strideReps','strideSeconds','strideRecoverySeconds'],
                 additionalProperties: false,
               },
             },

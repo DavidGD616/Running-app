@@ -1857,6 +1857,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDetailIntervalsNote => 'Esfuerzo intenso, Zona 4';
 
   @override
+  String get sessionDetailStrides => 'Strides';
+
+  @override
   String get sessionDetailCoolDown => 'Enfriamiento';
 
   @override
@@ -1917,6 +1920,20 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String sessionPhaseIntervalsMainRecovery(int recoverySeconds) {
     return '$recoverySeconds s de trote suave de recuperación entre cada repetición';
+  }
+
+  @override
+  String sessionPhaseStridesDuration(int reps, int seconds) {
+    return '$reps × $seconds s';
+  }
+
+  @override
+  String get sessionPhaseStridesNote =>
+      'Rápido pero relajado · técnica suave, no es un sprint';
+
+  @override
+  String sessionPhaseStridesRecovery(int recoverySeconds) {
+    return '$recoverySeconds s de caminata o trote suave entre strides';
   }
 
   @override
@@ -2233,6 +2250,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activeRunFastRep => 'Rep rápida';
+
+  @override
+  String get activeRunStride => 'Stride';
 
   @override
   String get activeRunRecovery => 'Recuperación';

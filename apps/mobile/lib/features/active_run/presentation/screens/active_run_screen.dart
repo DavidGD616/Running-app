@@ -288,6 +288,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         ActiveRunBlockKind.recovery => 0.72,
         ActiveRunBlockKind.coolDown => 0.78,
         ActiveRunBlockKind.warmUp => 0.86,
+        ActiveRunBlockKind.stride => 1.18,
       };
     }
 
@@ -303,7 +304,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   bool get _isWorkBlock {
     final currentBlock = _currentBlock;
     if (currentBlock != null) {
-      return currentBlock.kind == ActiveRunBlockKind.work;
+      return currentBlock.kind == ActiveRunBlockKind.work ||
+          currentBlock.kind == ActiveRunBlockKind.stride;
     }
     final elapsed = _currentElapsed;
     final blockIndex = elapsed.inSeconds ~/ 90;
@@ -600,6 +602,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         type == SessionType.hillRepeats
             ? l10n.activeRunClimb
             : l10n.activeRunFastRep,
+      ActiveRunBlockKind.stride => l10n.activeRunStride,
       ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
       ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
     };
@@ -893,6 +896,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     return switch (block.kind) {
       ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
       ActiveRunBlockKind.work => _targetValue(type, l10n),
+      ActiveRunBlockKind.stride => l10n.activeRunStride,
       ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
       ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
     };
@@ -1275,6 +1279,7 @@ class _WorkoutFocusPanel extends StatelessWidget {
         ActiveRunBlockKind.warmUp => 0,
         ActiveRunBlockKind.work => 1,
         ActiveRunBlockKind.recovery => 1,
+        ActiveRunBlockKind.stride => 1,
         ActiveRunBlockKind.coolDown => 2,
       };
     }
@@ -1295,6 +1300,7 @@ class _WorkoutFocusPanel extends StatelessWidget {
         type == SessionType.hillRepeats
             ? l10n.activeRunClimb
             : l10n.activeRunFastRep,
+      ActiveRunBlockKind.stride => l10n.activeRunStride,
       ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
       ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
     };

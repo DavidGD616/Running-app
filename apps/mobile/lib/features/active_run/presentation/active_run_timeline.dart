@@ -2,7 +2,7 @@ import '../../pre_run/presentation/run_flow_context.dart';
 import '../../training_plan/domain/models/workout_step.dart';
 import '../../training_plan/domain/models/workout_target.dart';
 
-enum ActiveRunBlockKind { warmUp, work, recovery, coolDown }
+enum ActiveRunBlockKind { warmUp, work, recovery, coolDown, stride }
 
 class ActiveRunTimelineBlock {
   const ActiveRunTimelineBlock({
@@ -70,6 +70,7 @@ class ActiveRunTimeline {
         WorkoutStepKind.work => ActiveRunBlockKind.work,
         WorkoutStepKind.recovery => ActiveRunBlockKind.recovery,
         WorkoutStepKind.coolDown => ActiveRunBlockKind.coolDown,
+        WorkoutStepKind.stride => ActiveRunBlockKind.stride,
         WorkoutStepKind.repeat => null,
       };
       if (kind == null) continue;

@@ -22,6 +22,9 @@ export const GeneratedSessionSchema = z.object({
   intervalReps: z.number().int().nullable(),
   intervalRepDistanceMeters: z.number().int().nullable(),
   intervalRecoverySeconds: z.number().int().nullable(),
+  strideReps: z.number().int().nullable(),
+  strideSeconds: z.number().int().nullable(),
+  strideRecoverySeconds: z.number().int().nullable(),
 });
 
 export const GeneratedPlanSchema = z.object({

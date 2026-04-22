@@ -1,6 +1,6 @@
 import 'workout_target.dart';
 
-enum WorkoutStepKind { warmUp, work, recovery, coolDown, repeat }
+enum WorkoutStepKind { warmUp, work, recovery, coolDown, repeat, stride }
 
 class WorkoutStep {
   const WorkoutStep({
@@ -65,6 +65,14 @@ class WorkoutStep {
     this.duration,
     this.distanceMeters,
   }) : kind = WorkoutStepKind.repeat;
+
+  const WorkoutStep.stride({
+    this.target,
+    this.duration,
+    this.distanceMeters,
+    this.repetitions,
+    this.steps = const [],
+  }) : kind = WorkoutStepKind.stride;
 
   WorkoutStep copyWith({
     WorkoutStepKind? kind,

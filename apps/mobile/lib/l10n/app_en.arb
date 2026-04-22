@@ -1839,6 +1839,9 @@
   "sessionDetailIntervalsNote": "Hard effort, Zone 4",
   "@sessionDetailIntervalsNote": { "description": "Intervals phase zone note" },
 
+  "sessionDetailStrides": "Strides",
+  "@sessionDetailStrides": { "description": "Strides phase title" },
+
   "sessionDetailCoolDown": "Cool-down",
   "@sessionDetailCoolDown": { "description": "Cool-down phase title" },
 
@@ -1896,6 +1899,21 @@
   "sessionPhaseIntervalsMainRecovery": "{recoverySeconds} s easy jog recovery between each rep",
   "@sessionPhaseIntervalsMainRecovery": {
     "description": "Intervals main phase recovery note",
+    "placeholders": { "recoverySeconds": { "type": "int" } }
+  },
+  "sessionPhaseStridesDuration": "{reps} × {seconds} s",
+  "@sessionPhaseStridesDuration": {
+    "description": "Strides phase duration",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "seconds": { "type": "int" }
+    }
+  },
+  "sessionPhaseStridesNote": "Fast but relaxed · smooth form, not a sprint",
+  "@sessionPhaseStridesNote": { "description": "Strides phase note" },
+  "sessionPhaseStridesRecovery": "{recoverySeconds} s easy walk or jog between strides",
+  "@sessionPhaseStridesRecovery": {
+    "description": "Strides phase recovery note",
     "placeholders": { "recoverySeconds": { "type": "int" } }
   },
   "sessionPhaseIntervalsCoolDuration": "{minutes} min",
@@ -2140,6 +2158,8 @@
   "@activeRunClimb": { "description": "Climb block label on active run screen" },
   "activeRunFastRep": "Fast rep",
   "@activeRunFastRep": { "description": "Fast repetition block label on active run screen" },
+  "activeRunStride": "Stride",
+  "@activeRunStride": { "description": "Stride block label on active run screen" },
   "activeRunRecovery": "Recovery",
   "@activeRunRecovery": { "description": "Recovery block label on active run screen" },
   "activeRunRep": "Rep",

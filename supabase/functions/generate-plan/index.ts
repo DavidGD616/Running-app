@@ -56,11 +56,7 @@ Deno.serve(async (req) => {
 
   const profileData = profileRow.data as Record<string, unknown>;
 
-  // 2. Read guidance preference from profile
-  const guidanceType = (profileData.guidancePreference as string ?? 'effort') as
-    'effort' | 'pace' | 'heartRate';
-
-  // 3. Call OpenAI with structured output
+  // 2. Call OpenAI with structured output
   let generatedPlan;
   try {
     generatedPlan = await generatePlanFromProfile(profileData);
@@ -72,13 +68,15 @@ Deno.serve(async (req) => {
     );
   }
 
-  // 4. Build workout steps deterministically for each session
+  // 3. Build phone-first workout steps deterministically for each session
   const sessionsWithSteps = generatedPlan.sessions.map((session) => ({
     ...session,
-    workoutSteps: buildWorkoutSteps(session, guidanceType),
+    description: session.coachNote,
+    status: 'upcoming',
+    workoutSteps: buildWorkoutSteps(session),
   }));
 
-  // 5-6. Service-role client — bypasses RLS for writes
+  // 4-5. Service-role client — bypasses RLS for writes
   const adminClient = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,

@@ -153,10 +153,17 @@ class SessionDetailScreen extends ConsumerWidget {
     UnitSystem unitSystem,
   ) {
     if (session.workoutSteps.isNotEmpty) {
-      final warmUpStep = _topLevelStep(session.workoutSteps, WorkoutStepKind.warmUp);
+      final warmUpStep = _topLevelStep(
+        session.workoutSteps,
+        WorkoutStepKind.warmUp,
+      );
+      final strideStep = _topLevelRepeatWithChild(
+        session.workoutSteps,
+        WorkoutStepKind.stride,
+      );
       final mainStep =
-          _topLevelStep(session.workoutSteps, WorkoutStepKind.repeat) ??
-          _topLevelStep(session.workoutSteps, WorkoutStepKind.work);
+          _topLevelStep(session.workoutSteps, WorkoutStepKind.work) ??
+          _topLevelRepeatWithChild(session.workoutSteps, WorkoutStepKind.work);
       final coolDownStep = _topLevelStep(
         session.workoutSteps,
         WorkoutStepKind.coolDown,
@@ -185,6 +192,17 @@ class SessionDetailScreen extends ConsumerWidget {
           ),
         );
       }
+      if (strideStep != null) {
+        phases.add(
+          _structuredPhaseData(
+            session: session,
+            step: strideStep,
+            type: _PT.strides,
+            l10n: l10n,
+            unitSystem: unitSystem,
+          ),
+        );
+      }
       if (coolDownStep != null) {
         phases.add(
           _structuredPhaseData(
@@ -203,46 +221,61 @@ class SessionDetailScreen extends ConsumerWidget {
     final warm = l10n.sessionDetailWarmUp;
     final cool = l10n.sessionDetailCoolDown;
 
-    return session.phases.map((phase) {
-      final iconAsset = phase.iconAsset;
-      switch (phase.type) {
-        case WorkoutPhaseType.warmUp:
-          return _PhaseData(
-            _PT.warmUp,
-            iconAsset,
-            warm,
-            _phaseDurationFor(session, phase.type, l10n, unitSystem),
-            _phaseNoteFor(session, phase.type, l10n, unitSystem),
-          );
-        case WorkoutPhaseType.main:
-          return _PhaseData(
-            _PT.main,
-            iconAsset,
-            mainTitle,
-            _phaseDurationFor(session, phase.type, l10n, unitSystem),
-            _phaseNoteFor(session, phase.type, l10n, unitSystem),
-            recoveryNote: _phaseRecoveryNoteFor(
-              session,
-              phase.type,
-              l10n,
-              unitSystem,
-            ),
-          );
-        case WorkoutPhaseType.coolDown:
-          return _PhaseData(
-            _PT.cool,
-            iconAsset,
-            cool,
-            _phaseDurationFor(session, phase.type, l10n, unitSystem),
-            _phaseNoteFor(session, phase.type, l10n, unitSystem),
-          );
-      }
-    }).toList(growable: false);
+    return session.phases
+        .map((phase) {
+          final iconAsset = phase.iconAsset;
+          switch (phase.type) {
+            case WorkoutPhaseType.warmUp:
+              return _PhaseData(
+                _PT.warmUp,
+                iconAsset,
+                warm,
+                _phaseDurationFor(session, phase.type, l10n, unitSystem),
+                _phaseNoteFor(session, phase.type, l10n, unitSystem),
+              );
+            case WorkoutPhaseType.main:
+              return _PhaseData(
+                _PT.main,
+                iconAsset,
+                mainTitle,
+                _phaseDurationFor(session, phase.type, l10n, unitSystem),
+                _phaseNoteFor(session, phase.type, l10n, unitSystem),
+                recoveryNote: _phaseRecoveryNoteFor(
+                  session,
+                  phase.type,
+                  l10n,
+                  unitSystem,
+                ),
+              );
+            case WorkoutPhaseType.coolDown:
+              return _PhaseData(
+                _PT.cool,
+                iconAsset,
+                cool,
+                _phaseDurationFor(session, phase.type, l10n, unitSystem),
+                _phaseNoteFor(session, phase.type, l10n, unitSystem),
+              );
+          }
+        })
+        .toList(growable: false);
   }
 
   WorkoutStep? _topLevelStep(List<WorkoutStep> steps, WorkoutStepKind kind) {
     for (final step in steps) {
       if (step.kind == kind) return step;
+    }
+    return null;
+  }
+
+  WorkoutStep? _topLevelRepeatWithChild(
+    List<WorkoutStep> steps,
+    WorkoutStepKind childKind,
+  ) {
+    for (final step in steps) {
+      if (step.kind == WorkoutStepKind.repeat &&
+          _childStep(step, childKind) != null) {
+        return step;
+      }
     }
     return null;
   }
@@ -261,9 +294,21 @@ class SessionDetailScreen extends ConsumerWidget {
     required AppLocalizations l10n,
     required UnitSystem unitSystem,
   }) {
+    if (type == _PT.strides) {
+      return _PhaseData(
+        type,
+        _structuredIconAsset(session, type),
+        l10n.sessionDetailStrides,
+        _strideDurationFor(step, l10n),
+        _strideNoteFor(l10n),
+        recoveryNote: _strideRecoveryNoteFor(step, l10n),
+      );
+    }
+
     final phaseType = switch (type) {
       _PT.warmUp => WorkoutPhaseType.warmUp,
       _PT.main => WorkoutPhaseType.main,
+      _PT.strides => WorkoutPhaseType.main,
       _PT.cool => WorkoutPhaseType.coolDown,
     };
 
@@ -273,6 +318,7 @@ class SessionDetailScreen extends ConsumerWidget {
       switch (type) {
         _PT.warmUp => l10n.sessionDetailWarmUp,
         _PT.main => _sessionTitle(session.type, l10n),
+        _PT.strides => l10n.sessionDetailStrides,
         _PT.cool => l10n.sessionDetailCoolDown,
       },
       _phaseDurationFor(session, phaseType, l10n, unitSystem),
@@ -286,6 +332,7 @@ class SessionDetailScreen extends ConsumerWidget {
   String _structuredIconAsset(TrainingSession session, _PT type) {
     return switch (type) {
       _PT.warmUp => 'assets/icons/flame.svg',
+      _PT.strides => 'assets/icons/zap.svg',
       _PT.main => switch (session.type) {
         SessionType.longRun => 'assets/icons/target.svg',
         SessionType.recoveryRun => 'assets/icons/stopwatch.svg',
@@ -311,7 +358,8 @@ class SessionDetailScreen extends ConsumerWidget {
     AppLocalizations l10n,
     UnitSystem unitSystem,
   ) {
-    if (phaseType != WorkoutPhaseType.main || session.type != SessionType.intervals) {
+    if (phaseType != WorkoutPhaseType.main ||
+        session.type != SessionType.intervals) {
       return _phaseNoteFor(session, phaseType, l10n, unitSystem);
     }
 
@@ -349,6 +397,28 @@ class SessionDetailScreen extends ConsumerWidget {
     return l10n.sessionPhaseIntervalsMainRecovery(recoverySeconds);
   }
 
+  String _strideDurationFor(WorkoutStep step, AppLocalizations l10n) {
+    final strideStep = _childStep(step, WorkoutStepKind.stride) ?? step;
+    final reps = step.kind == WorkoutStepKind.repeat
+        ? step.repetitions ?? 1
+        : 1;
+    final seconds = strideStep.duration?.inSeconds ?? 20;
+    return l10n.sessionPhaseStridesDuration(reps, seconds);
+  }
+
+  String _strideNoteFor(AppLocalizations l10n) {
+    return l10n.sessionPhaseStridesNote;
+  }
+
+  String? _strideRecoveryNoteFor(WorkoutStep step, AppLocalizations l10n) {
+    final recoveryStep = step.kind == WorkoutStepKind.repeat
+        ? _childStep(step, WorkoutStepKind.recovery)
+        : null;
+    final recoverySeconds = recoveryStep?.duration?.inSeconds;
+    if (recoverySeconds == null) return null;
+    return l10n.sessionPhaseStridesRecovery(recoverySeconds);
+  }
+
   String _phaseDurationFor(
     TrainingSession session,
     WorkoutPhaseType phaseType,
@@ -358,49 +428,51 @@ class SessionDetailScreen extends ConsumerWidget {
     switch (session.type) {
       case SessionType.easyRun:
         return switch (phaseType) {
-          WorkoutPhaseType.warmUp =>
-            l10n.sessionPhaseEasyRunWarmDuration(session.warmUpMinutes ?? 0),
-          WorkoutPhaseType.main =>
-            l10n.sessionPhaseEasyRunMainDuration(session.durationMinutes ?? 0),
-          WorkoutPhaseType.coolDown =>
-            l10n.sessionPhaseEasyRunCoolDuration(session.coolDownMinutes ?? 0),
+          WorkoutPhaseType.warmUp => l10n.sessionPhaseEasyRunWarmDuration(
+            session.warmUpMinutes ?? 0,
+          ),
+          WorkoutPhaseType.main => l10n.sessionPhaseEasyRunMainDuration(
+            session.durationMinutes ?? 0,
+          ),
+          WorkoutPhaseType.coolDown => l10n.sessionPhaseEasyRunCoolDuration(
+            session.coolDownMinutes ?? 0,
+          ),
         };
       case SessionType.longRun:
         return switch (phaseType) {
-          WorkoutPhaseType.warmUp =>
-            l10n.sessionPhaseLongRunWarmDuration(session.warmUpMinutes ?? 0),
-          WorkoutPhaseType.main =>
-            l10n.sessionPhaseLongRunMainDuration(session.durationMinutes ?? 0),
-          WorkoutPhaseType.coolDown =>
-            l10n.sessionPhaseLongRunCoolDuration(session.coolDownMinutes ?? 0),
+          WorkoutPhaseType.warmUp => l10n.sessionPhaseLongRunWarmDuration(
+            session.warmUpMinutes ?? 0,
+          ),
+          WorkoutPhaseType.main => l10n.sessionPhaseLongRunMainDuration(
+            session.durationMinutes ?? 0,
+          ),
+          WorkoutPhaseType.coolDown => l10n.sessionPhaseLongRunCoolDuration(
+            session.coolDownMinutes ?? 0,
+          ),
         };
       case SessionType.intervals:
         return switch (phaseType) {
-          WorkoutPhaseType.warmUp =>
-            l10n.sessionPhaseIntervalsWarmDuration(session.warmUpMinutes ?? 0),
-          WorkoutPhaseType.main =>
-            l10n.sessionPhaseIntervalsMainDuration(
-              session.durationMinutes ?? 0,
-            ),
-          WorkoutPhaseType.coolDown =>
-            l10n.sessionPhaseIntervalsCoolDuration(
-              session.coolDownMinutes ?? 0,
-            ),
+          WorkoutPhaseType.warmUp => l10n.sessionPhaseIntervalsWarmDuration(
+            session.warmUpMinutes ?? 0,
+          ),
+          WorkoutPhaseType.main => l10n.sessionPhaseIntervalsMainDuration(
+            session.durationMinutes ?? 0,
+          ),
+          WorkoutPhaseType.coolDown => l10n.sessionPhaseIntervalsCoolDuration(
+            session.coolDownMinutes ?? 0,
+          ),
         };
       case SessionType.recoveryRun:
         return switch (phaseType) {
-          WorkoutPhaseType.warmUp =>
-            l10n.sessionPhaseRecoveryRunWarmDuration(
-              session.warmUpMinutes ?? 0,
-            ),
-          WorkoutPhaseType.main =>
-            l10n.sessionPhaseRecoveryRunMainDuration(
-              session.durationMinutes ?? 0,
-            ),
-          WorkoutPhaseType.coolDown =>
-            l10n.sessionPhaseRecoveryRunCoolDuration(
-              session.coolDownMinutes ?? 0,
-            ),
+          WorkoutPhaseType.warmUp => l10n.sessionPhaseRecoveryRunWarmDuration(
+            session.warmUpMinutes ?? 0,
+          ),
+          WorkoutPhaseType.main => l10n.sessionPhaseRecoveryRunMainDuration(
+            session.durationMinutes ?? 0,
+          ),
+          WorkoutPhaseType.coolDown => l10n.sessionPhaseRecoveryRunCoolDuration(
+            session.coolDownMinutes ?? 0,
+          ),
         };
       case SessionType.tempoRun:
       case SessionType.thresholdRun:
@@ -671,6 +743,8 @@ class SessionDetailScreen extends ConsumerWidget {
         return _isHardSession(session)
             ? AppColors.error
             : AppColors.accentPrimary;
+      case _PT.strides:
+        return AppColors.warning;
       case _PT.cool:
         return AppColors.info;
     }
@@ -681,7 +755,8 @@ class SessionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = ref.watch(trainingPlanProvider).value;
-    final freshSession = plan?.sessions.firstWhere(
+    final freshSession =
+        plan?.sessions.firstWhere(
           (s) => s.id == session.id,
           orElse: () => session,
         ) ??
@@ -860,7 +935,7 @@ class SessionDetailScreen extends ConsumerWidget {
 
 // ── Private types ─────────────────────────────────────────────────────────────
 
-enum _PT { warmUp, main, cool }
+enum _PT { warmUp, main, strides, cool }
 
 class _PhaseData {
   const _PhaseData(

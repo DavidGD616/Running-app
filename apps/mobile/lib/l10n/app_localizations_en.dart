@@ -1848,6 +1848,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailIntervalsNote => 'Hard effort, Zone 4';
 
   @override
+  String get sessionDetailStrides => 'Strides';
+
+  @override
   String get sessionDetailCoolDown => 'Cool-down';
 
   @override
@@ -1908,6 +1911,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String sessionPhaseIntervalsMainRecovery(int recoverySeconds) {
     return '$recoverySeconds s easy jog recovery between each rep';
+  }
+
+  @override
+  String sessionPhaseStridesDuration(int reps, int seconds) {
+    return '$reps × $seconds s';
+  }
+
+  @override
+  String get sessionPhaseStridesNote =>
+      'Fast but relaxed · smooth form, not a sprint';
+
+  @override
+  String sessionPhaseStridesRecovery(int recoverySeconds) {
+    return '$recoverySeconds s easy walk or jog between strides';
   }
 
   @override
@@ -2220,6 +2237,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunFastRep => 'Fast rep';
+
+  @override
+  String get activeRunStride => 'Stride';
 
   @override
   String get activeRunRecovery => 'Recovery';

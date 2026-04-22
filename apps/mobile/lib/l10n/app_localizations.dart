@@ -3534,6 +3534,12 @@ abstract class AppLocalizations {
   /// **'Hard effort, Zone 4'**
   String get sessionDetailIntervalsNote;
 
+  /// Strides phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Strides'**
+  String get sessionDetailStrides;
+
   /// Cool-down phase title
   ///
   /// In en, this message translates to:
@@ -3623,6 +3629,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{recoverySeconds} s easy jog recovery between each rep'**
   String sessionPhaseIntervalsMainRecovery(int recoverySeconds);
+
+  /// Strides phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {seconds} s'**
+  String sessionPhaseStridesDuration(int reps, int seconds);
+
+  /// Strides phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Fast but relaxed · smooth form, not a sprint'**
+  String get sessionPhaseStridesNote;
+
+  /// Strides phase recovery note
+  ///
+  /// In en, this message translates to:
+  /// **'{recoverySeconds} s easy walk or jog between strides'**
+  String sessionPhaseStridesRecovery(int recoverySeconds);
 
   /// Intervals cool-down duration
   ///
@@ -4160,6 +4184,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fast rep'**
   String get activeRunFastRep;
+
+  /// Stride block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Stride'**
+  String get activeRunStride;
 
   /// Recovery block label on active run screen
   ///
