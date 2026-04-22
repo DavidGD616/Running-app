@@ -85,6 +85,30 @@ export function avoidHardDayTraining(
   return adjusted;
 }
 
+export function spaceStressfulSessions(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const hardDays = hardDaySetFor(profileData);
+  const sessionsByWeek = new Map<number, GeneratedSession[]>();
+  for (const session of sessions) {
+    const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
+    weekSessions.push({ ...session });
+    sessionsByWeek.set(session.weekNumber, weekSessions);
+  }
+
+  return Array.from(sessionsByWeek.keys())
+    .sort((a, b) => a - b)
+    .flatMap((weekNumber) => {
+      const weekSessions = (sessionsByWeek.get(weekNumber) ?? []).sort(
+        compareSessionsByDate,
+      );
+      const limited = limitWeeklyStressDays(weekSessions, profileData);
+      return separateAdjacentStressDays(limited, hardDays, profileData);
+    })
+    .sort(compareSessionsByDate);
+}
+
 function normalizeWeekTrainingDays(
   sessions: GeneratedSession[],
   targetTrainingDays: number,
@@ -117,6 +141,72 @@ function normalizeWeekTrainingDays(
   return adjusted;
 }
 
+function limitWeeklyStressDays(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const adjusted = sessions.map((session) => ({ ...session }));
+  const maxStressDays = maxStressDaysFor(profileData);
+
+  while (stressDayCount(adjusted) > maxStressDays) {
+    const index = findStressSessionToDowngrade(adjusted, profileData);
+    if (index == null) break;
+    adjusted[index] = toEasyStressFallback(adjusted[index]);
+  }
+
+  return adjusted;
+}
+
+function separateAdjacentStressDays(
+  sessions: GeneratedSession[],
+  hardDays: Set<string>,
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const adjusted = sessions.map((session) => ({ ...session })).sort(
+    compareSessionsByDate,
+  );
+
+  let changed = true;
+  let passes = 0;
+  while (changed && passes < 7) {
+    changed = false;
+    passes += 1;
+
+    for (let i = 1; i < adjusted.length; i += 1) {
+      const previous = adjusted[i - 1];
+      const current = adjusted[i];
+      if (!isAdjacentStressPair(previous, current)) continue;
+
+      const stressIndex = stressIndexToMove(adjusted, i - 1, i, profileData);
+      if (stressIndex == null) continue;
+
+      const swapIndex = findSpacingSwapIndex(adjusted, stressIndex, hardDays);
+      if (swapIndex != null) {
+        const stressSession = adjusted[stressIndex];
+        const swapSession = adjusted[swapIndex];
+        adjusted[stressIndex] = {
+          ...stressSession,
+          date: swapSession.date,
+          coachNote: appendTrainingDayCue(
+            stressSession.coachNote,
+            "Moved to keep hard training days spaced safely.",
+          ),
+        };
+        adjusted[swapIndex] = { ...swapSession, date: stressSession.date };
+        adjusted.sort(compareSessionsByDate);
+        changed = true;
+        break;
+      }
+
+      adjusted[stressIndex] = toEasyStressFallback(adjusted[stressIndex]);
+      changed = true;
+      break;
+    }
+  }
+
+  return adjusted;
+}
+
 function targetTrainingDaysFor(
   profileData: Record<string, unknown>,
 ): number | null {
@@ -138,6 +228,26 @@ function trainingDayCount(sessions: GeneratedSession[]): number {
 
 function isTrainingDay(session: GeneratedSession): boolean {
   return session.type !== "restDay";
+}
+
+function stressDayCount(sessions: GeneratedSession[]): number {
+  return sessions.filter((session) => isStressfulSession(session)).length;
+}
+
+function maxStressDaysFor(profileData: Record<string, unknown>): number {
+  const fitness = objectOrNull(profileData.fitness);
+  const experience = typeof fitness?.experience === "string"
+    ? fitness.experience
+    : null;
+
+  switch (experience) {
+    case "experience_experienced":
+      return 3;
+    case "experience_intermediate":
+      return 3;
+    default:
+      return 2;
+  }
 }
 
 function findSessionToRest(
@@ -184,6 +294,168 @@ function restConversionScore(session: GeneratedSession): number {
     default:
       return 20;
   }
+}
+
+function findStressSessionToDowngrade(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): number | null {
+  let bestIndex: number | null = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < sessions.length; i += 1) {
+    const session = sessions[i];
+    if (!isStressfulSession(session)) continue;
+    if (isGoalRaceSession(session, profileData)) continue;
+
+    const score = stressDowngradeScore(session);
+    if (score < bestScore) {
+      bestIndex = i;
+      bestScore = score;
+    }
+  }
+
+  return bestIndex;
+}
+
+function stressDowngradeScore(session: GeneratedSession): number {
+  switch (session.type) {
+    case "fartlek":
+    case "progressionRun":
+      return 0;
+    case "racePaceRun":
+      return 1;
+    case "tempoRun":
+    case "thresholdRun":
+      return 2;
+    case "intervals":
+    case "hillRepeats":
+      return 3;
+    case "longRun":
+      return 10;
+    default:
+      return 20;
+  }
+}
+
+function isAdjacentStressPair(
+  previous: GeneratedSession,
+  current: GeneratedSession,
+): boolean {
+  if (!isStressfulSession(previous) || !isStressfulSession(current)) {
+    return false;
+  }
+
+  const previousDate = parseDateOnly(previous.date);
+  const currentDate = parseDateOnly(current.date);
+  if (previousDate == null || currentDate == null) return false;
+
+  const dayDifference = Math.round(
+    (currentDate.getTime() - previousDate.getTime()) / 86_400_000,
+  );
+  return dayDifference === 1;
+}
+
+function stressIndexToMove(
+  sessions: GeneratedSession[],
+  firstIndex: number,
+  secondIndex: number,
+  profileData: Record<string, unknown>,
+): number | null {
+  const first = sessions[firstIndex];
+  const second = sessions[secondIndex];
+
+  const firstLocked = isGoalRaceSession(first, profileData);
+  const secondLocked = isGoalRaceSession(second, profileData);
+  if (firstLocked && secondLocked) return null;
+  if (firstLocked) return secondIndex;
+  if (secondLocked) return firstIndex;
+
+  return stressMoveScore(first) <= stressMoveScore(second)
+    ? firstIndex
+    : secondIndex;
+}
+
+function stressMoveScore(session: GeneratedSession): number {
+  switch (session.type) {
+    case "fartlek":
+    case "progressionRun":
+      return 0;
+    case "racePaceRun":
+      return 1;
+    case "tempoRun":
+    case "thresholdRun":
+      return 2;
+    case "intervals":
+    case "hillRepeats":
+      return 3;
+    case "longRun":
+      return 10;
+    default:
+      return 20;
+  }
+}
+
+function findSpacingSwapIndex(
+  sessions: GeneratedSession[],
+  stressIndex: number,
+  hardDays: Set<string>,
+): number | null {
+  const stressSession = sessions[stressIndex];
+  let bestIndex: number | null = null;
+  let bestScore = Number.POSITIVE_INFINITY;
+
+  for (let i = 0; i < sessions.length; i += 1) {
+    if (i === stressIndex) continue;
+
+    const candidate = sessions[i];
+    if (!isLowStressSession(candidate)) continue;
+    if (hardDays.has(dayKeyForDate(candidate.date))) continue;
+    if (wouldCreateAdjacentStress(sessions, stressIndex, candidate.date)) {
+      continue;
+    }
+
+    const score = spacingSwapScore(stressSession, candidate);
+    if (score < bestScore) {
+      bestIndex = i;
+      bestScore = score;
+    }
+  }
+
+  return bestIndex;
+}
+
+function wouldCreateAdjacentStress(
+  sessions: GeneratedSession[],
+  stressIndex: number,
+  candidateDate: string,
+): boolean {
+  const stressSession = sessions[stressIndex];
+  const movedSession = { ...stressSession, date: candidateDate };
+
+  return sessions.some((session, index) => {
+    if (index === stressIndex) return false;
+    if (!isStressfulSession(session)) return false;
+    return areDatesAdjacent(movedSession.date, session.date);
+  });
+}
+
+function areDatesAdjacent(firstDate: string, secondDate: string): boolean {
+  const first = parseDateOnly(firstDate);
+  const second = parseDateOnly(secondDate);
+  if (first == null || second == null) return false;
+
+  return Math.abs(first.getTime() - second.getTime()) === 86_400_000;
+}
+
+function spacingSwapScore(
+  stressSession: GeneratedSession,
+  candidate: GeneratedSession,
+): number {
+  return Math.abs(
+    dayOffsetInWeek(stressSession.date) - dayOffsetInWeek(candidate.date),
+  ) +
+    sessionSwapScore(candidate);
 }
 
 function findRestDayToTrain(
@@ -241,6 +513,31 @@ function toEasyTrainingDay(
         : "Easy run added to match your selected training days.",
     ),
     targetZone: isHardDay ? "recovery" : "easy",
+    warmUpMinutes: null,
+    coolDownMinutes: null,
+    intervalReps: null,
+    intervalRepDistanceMeters: null,
+    intervalRecoverySeconds: null,
+    strideReps: null,
+    strideSeconds: null,
+    strideRecoverySeconds: null,
+  };
+}
+
+function toEasyStressFallback(session: GeneratedSession): GeneratedSession {
+  const isLongRun = session.type === "longRun";
+  return {
+    ...session,
+    type: isLongRun ? "easyRun" : "recoveryRun",
+    distanceKm: null,
+    durationMinutes: isLongRun
+      ? Math.max(35, session.durationMinutes ?? 45)
+      : Math.min(35, Math.max(25, session.durationMinutes ?? 30)),
+    coachNote: appendTrainingDayCue(
+      session.coachNote,
+      "Adjusted to keep hard training days spaced safely.",
+    ),
+    targetZone: isLongRun ? "easy" : "recovery",
     warmUpMinutes: null,
     coolDownMinutes: null,
     intervalReps: null,
@@ -310,6 +607,13 @@ function weekStartDateFor(sessions: GeneratedSession[]): Date | null {
   const weekStart = new Date(firstDate);
   weekStart.setUTCDate(firstDate.getUTCDate() + mondayOffset);
   return weekStart;
+}
+
+function dayOffsetInWeek(date: string): number {
+  const parsedDate = parseDateOnly(date);
+  if (parsedDate == null) return 0;
+  const dayIndex = parsedDate.getUTCDay();
+  return dayIndex === 0 ? 6 : dayIndex - 1;
 }
 
 type StrideConfig = {

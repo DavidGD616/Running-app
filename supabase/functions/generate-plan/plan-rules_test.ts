@@ -3,6 +3,7 @@ import {
   addStrideDefaults,
   avoidHardDayTraining,
   normalizeTrainingDayCount,
+  spaceStressfulSessions,
 } from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
 
@@ -183,6 +184,113 @@ Deno.test("normalizeTrainingDayCount adds missing easy days when week has no res
   assert.ok(sessions.some((item) => item.id.includes("2026-04-30-added")));
 });
 
+Deno.test("spaceStressfulSessions swaps adjacent hard sessions apart", () => {
+  const sessions = spaceStressfulSessions(
+    [
+      session({
+        id: "w1-mon-intervals",
+        date: "2026-04-27",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-tue-tempo",
+        date: "2026-04-28",
+        type: "tempoRun",
+      }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ experience: "experience_intermediate" }),
+  );
+
+  assert.equal(findSession(sessions, "w1-mon-intervals").date, "2026-04-27");
+  assert.equal(findSession(sessions, "w1-tue-tempo").date, "2026-04-29");
+  assert.equal(findSession(sessions, "w1-wed-easy").date, "2026-04-28");
+  assert.match(
+    findSession(sessions, "w1-tue-tempo").coachNote ?? "",
+    /spaced safely/i,
+  );
+});
+
+Deno.test("spaceStressfulSessions downgrades extra weekly stress", () => {
+  const sessions = spaceStressfulSessions(
+    [
+      session({
+        id: "w1-mon-fartlek",
+        date: "2026-04-27",
+        type: "fartlek",
+      }),
+      session({
+        id: "w1-tue-intervals",
+        date: "2026-04-28",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-thu-tempo",
+        date: "2026-04-30",
+        type: "tempoRun",
+      }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ experience: "experience_intermediate" }),
+  );
+
+  assert.equal(stressDayCount(sessions), 3);
+  assert.equal(findSession(sessions, "w1-mon-fartlek").type, "recoveryRun");
+  assert.equal(findSession(sessions, "w1-sat-long").type, "longRun");
+});
+
+Deno.test("spaceStressfulSessions preserves fixed goal race date", () => {
+  const sessions = spaceStressfulSessions(
+    [
+      session({
+        id: "w1-mon-tempo",
+        date: "2026-04-27",
+        type: "tempoRun",
+      }),
+      session({
+        id: "race",
+        date: "2026-04-28",
+        type: "racePaceRun",
+      }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+    ],
+    profile({
+      experience: "experience_intermediate",
+      raceDate: "2026-04-28T00:00:00.000",
+    }),
+  );
+
+  assert.equal(findSession(sessions, "race").date, "2026-04-28");
+  assert.notEqual(findSession(sessions, "w1-mon-tempo").type, "tempoRun");
+});
+
+Deno.test("spaceStressfulSessions does not swap hard sessions onto hard days", () => {
+  const sessions = spaceStressfulSessions(
+    [
+      session({
+        id: "w1-mon-intervals",
+        date: "2026-04-27",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-tue-tempo",
+        date: "2026-04-28",
+        type: "tempoRun",
+      }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+      session({ id: "w1-thu-easy", date: "2026-04-30", type: "easyRun" }),
+    ],
+    profile({
+      experience: "experience_intermediate",
+      hardDays: ["day_wed"],
+    }),
+  );
+
+  assert.equal(findSession(sessions, "w1-tue-tempo").date, "2026-04-30");
+  assert.equal(findSession(sessions, "w1-wed-easy").date, "2026-04-29");
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
@@ -212,6 +320,20 @@ function findSession(
 
 function trainingDayCount(sessions: GeneratedSession[]): number {
   return sessions.filter((item) => item.type !== "restDay").length;
+}
+
+function stressDayCount(sessions: GeneratedSession[]): number {
+  const stressfulTypes = new Set([
+    "longRun",
+    "progressionRun",
+    "intervals",
+    "hillRepeats",
+    "fartlek",
+    "tempoRun",
+    "thresholdRun",
+    "racePaceRun",
+  ]);
+  return sessions.filter((item) => stressfulTypes.has(item.type)).length;
 }
 
 function session(
