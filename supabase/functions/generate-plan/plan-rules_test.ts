@@ -8,7 +8,7 @@ import {
 } from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
 
-Deno.test("addStrideDefaults adds week 1 strides for intermediate runners", () => {
+Deno.test("addStrideDefaults adds intermediate stride defaults", () => {
   const sessions = addStrideDefaults(
     [
       session({
@@ -28,7 +28,7 @@ Deno.test("addStrideDefaults adds week 1 strides for intermediate runners", () =
   assert.match(sessions[0].coachNote ?? "", /fast but smooth/i);
 });
 
-Deno.test("addStrideDefaults adds larger week 1 strides for experienced runners", () => {
+Deno.test("addStrideDefaults adds larger experienced stride defaults", () => {
   const sessions = addStrideDefaults(
     [
       session({
@@ -45,6 +45,36 @@ Deno.test("addStrideDefaults adds larger week 1 strides for experienced runners"
   assert.equal(sessions[0].strideReps, 6);
   assert.equal(sessions[0].strideSeconds, 20);
   assert.equal(sessions[0].strideRecoverySeconds, 80);
+});
+
+Deno.test("addStrideDefaults can add two weekly stride sessions when safe", () => {
+  const sessions = addStrideDefaults(
+    [
+      session({ id: "w1-mon", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-wed", date: "2026-04-29", type: "recoveryRun" }),
+      session({ id: "w1-sat", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ experience: "experience_intermediate" }),
+    6,
+  );
+
+  assert.equal(strideCount(sessions), 2);
+  assert.equal(findSession(sessions, "w1-mon").strideReps, 4);
+  assert.equal(findSession(sessions, "w1-wed").strideReps, 4);
+  assert.equal(findSession(sessions, "w1-sat").strideReps, null);
+});
+
+Deno.test("addStrideDefaults does not auto-add beginner strides", () => {
+  const sessions = addStrideDefaults(
+    [
+      session({ id: "w1-mon", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-wed", date: "2026-04-29", type: "easyRun" }),
+    ],
+    profile({ experience: "experience_beginner" }),
+    6,
+  );
+
+  assert.equal(strideCount(sessions), 0);
 });
 
 Deno.test("addStrideDefaults skips hard days and uses another easy day in the week", () => {
@@ -72,6 +102,100 @@ Deno.test("addStrideDefaults skips hard days and uses another easy day in the we
 
   assert.equal(sessions[0].strideReps, null);
   assert.equal(sessions[1].strideReps, 4);
+});
+
+Deno.test("addStrideDefaults removes all strides in race week", () => {
+  const sessions = addStrideDefaults(
+    [
+      session({
+        id: "w8-mon",
+        date: "2026-06-15",
+        weekNumber: 8,
+        type: "easyRun",
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 90,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        weekNumber: 8,
+        type: "racePaceRun",
+      }),
+    ],
+    profile({
+      experience: "experience_intermediate",
+      raceDate: "2026-06-21T00:00:00.000",
+    }),
+    8,
+  );
+
+  assert.equal(strideCount(sessions), 0);
+});
+
+Deno.test("addStrideDefaults clamps OpenAI stride values to safe ranges", () => {
+  const sessions = addStrideDefaults(
+    [
+      session({
+        id: "w1-mon",
+        date: "2026-04-27",
+        type: "easyRun",
+        strideReps: 12,
+        strideSeconds: 45,
+        strideRecoverySeconds: 30,
+      }),
+    ],
+    profile({ experience: "experience_intermediate" }),
+    6,
+  );
+
+  assert.equal(sessions[0].strideReps, 8);
+  assert.equal(sessions[0].strideSeconds, 30);
+  assert.equal(sessions[0].strideRecoverySeconds, 60);
+});
+
+Deno.test("addStrideDefaults removes extra or badly placed stride sessions", () => {
+  const sessions = addStrideDefaults(
+    [
+      session({
+        id: "w1-mon-easy",
+        date: "2026-04-27",
+        type: "easyRun",
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 90,
+      }),
+      session({
+        id: "w1-tue-tempo",
+        date: "2026-04-28",
+        type: "tempoRun",
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 90,
+      }),
+      session({
+        id: "w1-wed-recovery",
+        date: "2026-04-29",
+        type: "recoveryRun",
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 90,
+      }),
+      session({
+        id: "w1-thu-easy",
+        date: "2026-04-30",
+        type: "easyRun",
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 90,
+      }),
+    ],
+    profile({ experience: "experience_intermediate" }),
+    6,
+  );
+
+  assert.equal(strideCount(sessions), 2);
+  assert.equal(findSession(sessions, "w1-tue-tempo").strideReps, null);
 });
 
 Deno.test("avoidHardDayTraining swaps stressful sessions off hard days", () => {
@@ -400,6 +524,12 @@ function stressDayCount(sessions: GeneratedSession[]): number {
     "racePaceRun",
   ]);
   return sessions.filter((item) => stressfulTypes.has(item.type)).length;
+}
+
+function strideCount(sessions: GeneratedSession[]): number {
+  return sessions.filter((item) =>
+    (item.strideReps ?? 0) > 0 && (item.strideSeconds ?? 0) > 0
+  ).length;
 }
 
 function session(

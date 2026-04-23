@@ -27,12 +27,15 @@ easy or longRun. For intervals provide intervalReps, intervalRepDistanceMeters,
 and intervalRecoverySeconds. For tempo runs use targetZone tempo with
 warmUpMinutes and coolDownMinutes. Use strides when appropriate for the runner's
 level and goal. Strides are short fast-but-relaxed efforts, not sprints. Place
-them inside easy runs, usually after the easy portion and before the cooldown.
-For intermediate runners, include strides about once per week from week 1
-using 4 x 20 seconds with 90 seconds easy walk/jog recovery. For experienced
-runners, include strides about once per week from week 1 using 4-8 x 15-30
-seconds with full easy walk/jog recovery. For brand-new or beginner runners,
-use fewer/shorter strides or omit them.
+them inside easy or recovery runs, usually after the easy portion and before the
+cooldown. Never place strides on long runs, hard workout days, hardDays, or race
+week. Prefer non-consecutive stride days and early/mid-week easy days. Use
+4-8 reps of 15-30 seconds at 85-95% effort with 60-90 seconds full easy
+walk/jog recovery. For intermediate runners, use 4 x 20 seconds with 90 seconds
+recovery, 1-2 sessions per week when the schedule has safe easy days. For
+experienced runners, use 6 x 20 seconds with 80-90 seconds recovery, 2 sessions
+per week when safe. For brand-new or beginner runners, use 0-1 sessions per
+week, if used, with 4 x 15 seconds and 90 seconds recovery.
 
 Always anchor week 1 sessions starting from the nearest upcoming Monday. Ensure
 a proper taper in the final 2 weeks before the race.`;

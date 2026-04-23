@@ -33,31 +33,27 @@ export function addStrideDefaults(
   profileData: Record<string, unknown>,
   totalWeeks: number,
 ): GeneratedSession[] {
-  const config = strideConfigFor(profileData);
-  if (config == null) return sessions;
+  const config = strideConfigFor(profileData) ?? beginnerStrideConfig();
   const hardDays = hardDaySetFor(profileData);
-
-  const weeksWithStrides = new Set<number>();
+  const raceWeeks = raceWeekNumbersFor(sessions, profileData, totalWeeks);
+  const sessionsByWeek = new Map<number, GeneratedSession[]>();
   for (const session of sessions) {
-    if (hasStrides(session)) weeksWithStrides.add(session.weekNumber);
+    const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
+    weekSessions.push({ ...session });
+    sessionsByWeek.set(session.weekNumber, weekSessions);
   }
 
-  return sessions.map((session) => {
-    if (
-      !isStrideEligible(session, config, totalWeeks, weeksWithStrides, hardDays)
-    ) {
-      return session;
-    }
-
-    weeksWithStrides.add(session.weekNumber);
-    return {
-      ...session,
-      strideReps: config.reps,
-      strideSeconds: config.seconds,
-      strideRecoverySeconds: config.recoverySeconds,
-      coachNote: appendStrideCue(session.coachNote),
-    };
-  });
+  return Array.from(sessionsByWeek.keys())
+    .sort((a, b) => a - b)
+    .flatMap((weekNumber) =>
+      enforceWeekStrides(
+        sessionsByWeek.get(weekNumber) ?? [],
+        config,
+        hardDays,
+        raceWeeks.has(weekNumber),
+      )
+    )
+    .sort(compareSessionsByDate);
 }
 
 export function avoidHardDayTraining(
@@ -520,11 +516,15 @@ function wouldCreateAdjacentStress(
 }
 
 function areDatesAdjacent(firstDate: string, secondDate: string): boolean {
+  return Math.abs(dateDifferenceDays(firstDate, secondDate)) === 1;
+}
+
+function dateDifferenceDays(firstDate: string, secondDate: string): number {
   const first = parseDateOnly(firstDate);
   const second = parseDateOnly(secondDate);
-  if (first == null || second == null) return false;
+  if (first == null || second == null) return Number.NaN;
 
-  return Math.abs(first.getTime() - second.getTime()) === 86_400_000;
+  return Math.round((second.getTime() - first.getTime()) / 86_400_000);
 }
 
 function spacingSwapScore(
@@ -696,7 +696,8 @@ function dayOffsetInWeek(date: string): number {
 }
 
 type StrideConfig = {
-  startWeek: number;
+  addDefaults: boolean;
+  maxPerWeek: number;
   reps: number;
   seconds: number;
   recoverySeconds: number;
@@ -712,33 +713,234 @@ function strideConfigFor(
 
   switch (experience) {
     case "experience_experienced":
-      return { startWeek: 1, reps: 6, seconds: 20, recoverySeconds: 80 };
+      return {
+        addDefaults: true,
+        maxPerWeek: 2,
+        reps: 6,
+        seconds: 20,
+        recoverySeconds: 80,
+      };
     case "experience_intermediate":
-      return { startWeek: 1, reps: 4, seconds: 20, recoverySeconds: 90 };
+      return {
+        addDefaults: true,
+        maxPerWeek: 2,
+        reps: 4,
+        seconds: 20,
+        recoverySeconds: 90,
+      };
     default:
-      return null;
+      return beginnerStrideConfig();
   }
 }
 
-function isStrideEligible(
-  session: GeneratedSession,
+function beginnerStrideConfig(): StrideConfig {
+  return {
+    addDefaults: false,
+    maxPerWeek: 1,
+    reps: 4,
+    seconds: 15,
+    recoverySeconds: 90,
+  };
+}
+
+function enforceWeekStrides(
+  sessions: GeneratedSession[],
   config: StrideConfig,
-  totalWeeks: number,
-  weeksWithStrides: Set<number>,
+  hardDays: Set<string>,
+  isRaceWeek: boolean,
+): GeneratedSession[] {
+  const adjusted = sessions.map((session) => {
+    const sanitized = sanitizeStrideValues(session);
+    if (isRaceWeek || !isStridePlacementEligible(sanitized, hardDays)) {
+      return withoutStrides(sanitized);
+    }
+    return sanitized;
+  }).sort(compareSessionsByDate);
+
+  if (isRaceWeek) return adjusted;
+
+  trimExtraStrideSessions(adjusted, config, hardDays);
+  if (config.addDefaults) {
+    addMissingStrideSessions(adjusted, config, hardDays);
+  }
+
+  return adjusted;
+}
+
+function sanitizeStrideValues(session: GeneratedSession): GeneratedSession {
+  if (!hasStrides(session)) return session;
+
+  return {
+    ...session,
+    strideReps: clampInt(session.strideReps, 4, 8),
+    strideSeconds: clampInt(session.strideSeconds, 15, 30),
+    strideRecoverySeconds: clampInt(session.strideRecoverySeconds, 60, 90),
+  };
+}
+
+function trimExtraStrideSessions(
+  sessions: GeneratedSession[],
+  config: StrideConfig,
+  hardDays: Set<string>,
+): void {
+  const existing = sessions.filter((session) => hasStrides(session));
+  if (existing.length <= config.maxPerWeek) return;
+
+  const kept = selectBestStrideSessions(
+    existing,
+    sessions,
+    config.maxPerWeek,
+    hardDays,
+  );
+
+  for (let i = 0; i < sessions.length; i += 1) {
+    if (hasStrides(sessions[i]) && !kept.has(sessions[i].id)) {
+      sessions[i] = withoutStrides(sessions[i]);
+    }
+  }
+}
+
+function addMissingStrideSessions(
+  sessions: GeneratedSession[],
+  config: StrideConfig,
+  hardDays: Set<string>,
+): void {
+  while (
+    sessions.filter((session) => hasStrides(session)).length <
+      config.maxPerWeek
+  ) {
+    const existing = sessions.filter((session) => hasStrides(session));
+    const candidate = sessions
+      .filter((session) =>
+        !hasStrides(session) && isStridePlacementEligible(session, hardDays)
+      )
+      .sort((a, b) =>
+        stridePlacementScore(a, sessions, existing, hardDays) -
+        stridePlacementScore(b, sessions, existing, hardDays)
+      )[0];
+
+    if (candidate == null) return;
+
+    const index = sessions.findIndex((session) => session.id === candidate.id);
+    sessions[index] = {
+      ...candidate,
+      strideReps: config.reps,
+      strideSeconds: config.seconds,
+      strideRecoverySeconds: config.recoverySeconds,
+      coachNote: appendStrideCue(candidate.coachNote),
+    };
+  }
+}
+
+function selectBestStrideSessions(
+  candidates: GeneratedSession[],
+  weekSessions: GeneratedSession[],
+  maxCount: number,
+  hardDays: Set<string>,
+): Set<string> {
+  const remaining = [...candidates];
+  const selected: GeneratedSession[] = [];
+
+  while (selected.length < maxCount && remaining.length > 0) {
+    remaining.sort((a, b) =>
+      stridePlacementScore(a, weekSessions, selected, hardDays) -
+      stridePlacementScore(b, weekSessions, selected, hardDays)
+    );
+    selected.push(remaining.shift()!);
+  }
+
+  return new Set(selected.map((session) => session.id));
+}
+
+function isStridePlacementEligible(
+  session: GeneratedSession,
   hardDays: Set<string>,
 ): boolean {
-  if (weeksWithStrides.has(session.weekNumber)) return false;
-  if (session.weekNumber < config.startWeek) return false;
-  if (session.weekNumber > Math.max(1, totalWeeks - 2)) return false;
-  if (session.type !== "easyRun") return false;
+  if (!["easyRun", "recoveryRun"].includes(session.type)) return false;
   if (hardDays.has(dayKeyForDate(session.date))) return false;
-  if (hasStrides(session)) return false;
-  if ((session.durationMinutes ?? 0) < 25) return false;
+  if (isStressfulSession(session)) return false;
   return true;
 }
 
 function hasStrides(session: GeneratedSession): boolean {
   return (session.strideReps ?? 0) > 0 && (session.strideSeconds ?? 0) > 0;
+}
+
+function withoutStrides(session: GeneratedSession): GeneratedSession {
+  return {
+    ...session,
+    strideReps: null,
+    strideSeconds: null,
+    strideRecoverySeconds: null,
+  };
+}
+
+function clampInt(
+  value: number | null,
+  min: number,
+  max: number,
+): number {
+  const numericValue = typeof value === "number" && Number.isFinite(value)
+    ? Math.floor(value)
+    : min;
+  return Math.min(max, Math.max(min, numericValue));
+}
+
+function stridePlacementScore(
+  session: GeneratedSession,
+  weekSessions: GeneratedSession[],
+  selectedStrideSessions: GeneratedSession[],
+  hardDays: Set<string>,
+): number {
+  let score = session.type === "easyRun" ? 0 : 4;
+
+  const dayOffset = dayOffsetInWeek(session.date);
+  score += dayOffset <= 3 ? dayOffset : 10 + dayOffset;
+
+  if (isDayBeforeLongRun(session, weekSessions)) score += 20;
+  if (
+    selectedStrideSessions.some((selected) =>
+      areDatesAdjacent(selected.date, session.date)
+    )
+  ) {
+    score += 15;
+  }
+  if (hardDays.has(dayKeyForDate(session.date))) score += 100;
+
+  return score;
+}
+
+function isDayBeforeLongRun(
+  session: GeneratedSession,
+  weekSessions: GeneratedSession[],
+): boolean {
+  return weekSessions.some((candidate) =>
+    candidate.type === "longRun" &&
+    dateDifferenceDays(session.date, candidate.date) === 1
+  );
+}
+
+function raceWeekNumbersFor(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+): Set<number> {
+  const goal = objectOrNull(profileData.goal);
+  const raceDate = typeof goal?.raceDate === "string"
+    ? goal.raceDate.slice(0, 10)
+    : null;
+  const raceWeeks = new Set<number>();
+
+  if (raceDate != null) {
+    for (const session of sessions) {
+      if (session.date.slice(0, 10) === raceDate) {
+        raceWeeks.add(session.weekNumber);
+      }
+    }
+  }
+
+  if (raceWeeks.size === 0 && totalWeeks > 0) raceWeeks.add(totalWeeks);
+  return raceWeeks;
 }
 
 function appendStrideCue(coachNote: string | null): string {
