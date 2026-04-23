@@ -3,6 +3,8 @@ import { generatePlanFromProfile } from "./openai.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  ensureFullCalendarWeeks,
+  ensureGoalRaceSession,
   normalizeTrainingDayCount,
   placeLongRunsOnPreferredDay,
   spaceStressfulSessions,
@@ -47,6 +49,7 @@ Deno.serve(async (req) => {
 
   const body = await req.json().catch(() => ({}));
   const requestedBy: string = body.requestedBy ?? "onboarding";
+  const locale = normalizeLocale(body.locale);
 
   // 1. Fetch runner profile for the authenticated user
   const { data: profileRow, error: profileError } = await supabase
@@ -67,7 +70,7 @@ Deno.serve(async (req) => {
   // 2. Call OpenAI with structured output
   let generatedPlan;
   try {
-    generatedPlan = await generatePlanFromProfile(profileData);
+    generatedPlan = await generatePlanFromProfile(profileData, locale);
   } catch (err) {
     console.error("OpenAI generation failed:", err);
     return new Response(
@@ -82,23 +85,37 @@ Deno.serve(async (req) => {
   const scheduleNormalizedSessions = normalizeTrainingDayCount(
     generatedPlan.sessions,
     profileData,
+    locale,
   );
   const longRunPlacedSessions = placeLongRunsOnPreferredDay(
     scheduleNormalizedSessions,
     profileData,
+    locale,
   );
   const stressSpacedSessions = spaceStressfulSessions(
     longRunPlacedSessions,
     profileData,
+    locale,
   );
   const scheduleAdjustedSessions = avoidHardDayTraining(
     stressSpacedSessions,
     profileData,
+    locale,
+  );
+  const fullCalendarSessions = ensureFullCalendarWeeks(
+    scheduleAdjustedSessions,
+    locale,
+  );
+  const raceFinalizedSessions = ensureGoalRaceSession(
+    fullCalendarSessions,
+    profileData,
+    locale,
   );
   const sessionsWithSteps = addStrideDefaults(
-    scheduleAdjustedSessions,
+    raceFinalizedSessions,
     profileData,
     generatedPlan.totalWeeks,
+    locale,
   ).map((session) => ({
     ...session,
     description: session.coachNote,
@@ -155,3 +172,7 @@ Deno.serve(async (req) => {
     headers: { "Content-Type": "application/json" },
   });
 });
+
+function normalizeLocale(value: unknown): "en" | "es" {
+  return value === "es" ? "es" : "en";
+}

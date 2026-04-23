@@ -3,8 +3,18 @@ import { type GeneratedPlan, GeneratedPlanSchema } from "./schema.ts";
 
 export async function generatePlanFromProfile(
   profileData: Record<string, unknown>,
+  locale: "en" | "es" = "en",
 ): Promise<GeneratedPlan> {
   const client = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
+  const coachNoteLanguage = locale === "es" ? "Spanish" : "English";
+  const goal = typeof profileData.goal === "object" && profileData.goal != null
+    ? profileData.goal as Record<string, unknown>
+    : {};
+  const hasRaceDate = typeof goal.raceDate === "string" &&
+    goal.raceDate.length > 0;
+  const raceInstruction = hasRaceDate
+    ? "Ensure a proper taper in the final 2 weeks before the fixed race date."
+    : "The runner has no fixed race date. Build toward a final goal-distance race/test in the last week; do not create a short fake race.";
 
   const systemPrompt = `You are an expert running coach. Generate a personalized
 training plan based on the runner profile provided. Be specific and progressive.
@@ -13,6 +23,10 @@ plain coaching cues; do not rely on heart-rate zones, power, cadence, or
 watch-only metrics. Adapt workout difficulty, volume, workout type, and
 progression to the runner's experience level, fitness history, health
 constraints, schedule, and goal.
+
+Write every coachNote in ${coachNoteLanguage}. Keep JSON field names, enum
+values, targetZone values, and all structured data keys exactly as defined in
+the schema. coachNote is display text only; never rely on it for app logic.
 
 Treat schedule.hardDays as days the runner prefers not to train. Avoid placing
 long runs, intervals, hills, tempo, threshold, race-pace, fartlek, progression,
@@ -37,8 +51,8 @@ experienced runners, use 6 x 20 seconds with 80-90 seconds recovery, 2 sessions
 per week when safe. For brand-new or beginner runners, use 0-1 sessions per
 week, if used, with 4 x 15 seconds and 90 seconds recovery.
 
-Always anchor week 1 sessions starting from the nearest upcoming Monday. Ensure
-a proper taper in the final 2 weeks before the race.`;
+Always anchor week 1 sessions starting from the nearest upcoming Monday.
+${raceInstruction}`;
 
   const userPrompt = `Runner profile:\n${JSON.stringify(profileData, null, 2)}
 

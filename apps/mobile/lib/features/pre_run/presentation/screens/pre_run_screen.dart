@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -10,6 +11,7 @@ import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../active_run/presentation/active_run_session_provider.dart';
+import '../../../training_plan/domain/models/workout_step.dart';
 import '../run_flow_context.dart';
 
 class PreRunScreen extends ConsumerStatefulWidget {
@@ -64,6 +66,15 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
+
+                    if (widget.args?.session.workoutSteps.isNotEmpty ??
+                        false) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _WorkoutPreview(
+                        steps: widget.args!.session.workoutSteps,
+                        l10n: l10n,
+                      ),
+                    ],
 
                     const SizedBox(height: AppSpacing.xxl),
 
@@ -253,14 +264,13 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
                   return;
                 }
                 if (session != null) {
-                  await ref.read(activeRunSessionProvider.notifier).save(session, checkIn);
+                  await ref
+                      .read(activeRunSessionProvider.notifier)
+                      .save(session, checkIn);
                 }
                 router.push(
                   RouteNames.activeRun,
-                  extra: ActiveRunArgs(
-                    session: session,
-                    checkIn: checkIn,
-                  ),
+                  extra: ActiveRunArgs(session: session, checkIn: checkIn),
                 );
               },
             ),
@@ -390,6 +400,179 @@ class _ContinueButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WorkoutPreview extends StatelessWidget {
+  const _WorkoutPreview({required this.steps, required this.l10n});
+
+  final List<WorkoutStep> steps;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.base),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.preRunWorkoutPreviewTitle.toUpperCase(),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textDisabled,
+              fontSize: 10,
+              letterSpacing: 1,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ..._buildPreviewItems(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPreviewItems() {
+    final items = <Widget>[];
+
+    for (final step in steps) {
+      if (step.kind == WorkoutStepKind.warmUp) {
+        items.add(
+          _PreviewItem(
+            iconAsset: 'assets/icons/flame.svg',
+            label: l10n.preRunWorkoutPreviewWarmUp(_formatStepMeasure(step)),
+          ),
+        );
+      } else if (step.kind == WorkoutStepKind.coolDown) {
+        items.add(
+          _PreviewItem(
+            iconAsset: 'assets/icons/heart_rate.svg',
+            label: l10n.preRunWorkoutPreviewCoolDown(_formatStepMeasure(step)),
+          ),
+        );
+      } else if (step.kind == WorkoutStepKind.work) {
+        items.add(
+          _PreviewItem(
+            iconAsset: 'assets/icons/activity.svg',
+            label: l10n.preRunWorkoutPreviewMain(_formatStepMeasure(step)),
+          ),
+        );
+      } else if (step.kind == WorkoutStepKind.repeat) {
+        final strideStep = _childStep(step, WorkoutStepKind.stride);
+        final recoveryStep = _childStep(step, WorkoutStepKind.recovery);
+        if (strideStep != null) {
+          final reps = step.repetitions ?? 1;
+          final seconds = strideStep.duration?.inSeconds ?? 20;
+          final recoverySeconds = recoveryStep?.duration?.inSeconds ?? 60;
+          items.add(
+            _PreviewItem(
+              iconAsset: 'assets/icons/zap.svg',
+              label: l10n.preRunWorkoutPreviewStrides(
+                reps,
+                seconds,
+                recoverySeconds,
+              ),
+            ),
+          );
+          continue;
+        }
+
+        final workStep = _childStep(step, WorkoutStepKind.work);
+        if (workStep != null) {
+          final reps = step.repetitions ?? 1;
+          items.add(
+            _PreviewItem(
+              iconAsset: 'assets/icons/activity.svg',
+              label: l10n.preRunWorkoutPreviewRepeat(
+                reps,
+                _formatStepMeasure(workStep),
+                recoveryStep != null
+                    ? _formatStepMeasure(recoveryStep)
+                    : l10n.preRunWorkoutPreviewOpenDuration,
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    return items;
+  }
+
+  WorkoutStep? _childStep(WorkoutStep parent, WorkoutStepKind kind) {
+    for (final child in parent.steps) {
+      if (child.kind == kind) return child;
+    }
+    return null;
+  }
+
+  String _formatStepMeasure(WorkoutStep step) {
+    if (step.distanceMeters != null && step.distanceMeters! > 0) {
+      return l10n.preRunWorkoutPreviewDistanceMeters(step.distanceMeters!);
+    }
+    return _formatDuration(step.duration);
+  }
+
+  String _formatDuration(Duration? duration) {
+    if (duration == null) return l10n.preRunWorkoutPreviewOpenDuration;
+    final seconds = duration.inSeconds;
+    if (seconds < 120) {
+      return l10n.preRunWorkoutPreviewDurationSeconds(seconds);
+    }
+    final minutes = duration.inMinutes;
+    if (minutes > 0) return l10n.preRunWorkoutPreviewDurationMinutes(minutes);
+    return l10n.preRunWorkoutPreviewDurationSeconds(seconds);
+  }
+}
+
+class _PreviewItem extends StatelessWidget {
+  const _PreviewItem({required this.iconAsset, required this.label});
+
+  final String iconAsset;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.accentMuted,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                iconAsset,
+                width: 14,
+                height: 14,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.accentPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

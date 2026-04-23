@@ -2,6 +2,8 @@ import { strict as assert } from "node:assert";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  ensureFullCalendarWeeks,
+  ensureGoalRaceSession,
   normalizeTrainingDayCount,
   placeLongRunsOnPreferredDay,
   spaceStressfulSessions,
@@ -283,15 +285,27 @@ Deno.test("normalizeTrainingDayCount converts rest days into easy training days"
   const sessions = normalizeTrainingDayCount(
     [
       session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
-      session({ id: "w1-tue-rest", date: "2026-04-28", type: "restDay" }),
+      session({
+        id: "w1-tue-rest",
+        date: "2026-04-28",
+        type: "restDay",
+        coachNote: "Día libre. Mantén las piernas frescas.",
+      }),
       session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
     ],
     profile({ trainingDays: 3 }),
+    "es",
   );
 
   assert.equal(trainingDayCount(sessions), 3);
-  assert.equal(findSession(sessions, "w1-tue-rest").type, "easyRun");
-  assert.equal(findSession(sessions, "w1-tue-rest").durationMinutes, 35);
+  const converted = findSession(sessions, "w1-tue-rest");
+  assert.equal(converted.type, "easyRun");
+  assert.equal(converted.durationMinutes, 35);
+  assert.equal(
+    converted.coachNote,
+    "Carrera suave añadida para respetar tus días de entrenamiento seleccionados.",
+  );
+  assert.doesNotMatch(converted.coachNote ?? "", /día libre|descanso/i);
 });
 
 Deno.test("normalizeTrainingDayCount adds missing easy days when week has no rest days", () => {
@@ -307,6 +321,102 @@ Deno.test("normalizeTrainingDayCount adds missing easy days when week has no res
   assert.equal(new Set(sessions.map((item) => item.date)).size, 4);
   assert.ok(sessions.some((item) => item.id.includes("2026-04-29-added")));
   assert.ok(sessions.some((item) => item.id.includes("2026-04-30-added")));
+});
+
+Deno.test("ensureFullCalendarWeeks fills missing dates with rest days", () => {
+  const sessions = ensureFullCalendarWeeks(
+    [
+      session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+      session({ id: "w1-fri-long", date: "2026-05-01", type: "longRun" }),
+      session({ id: "w1-sat-rest", date: "2026-05-02", type: "restDay" }),
+      session({ id: "w1-sun-rest", date: "2026-05-03", type: "restDay" }),
+    ],
+    "es",
+  );
+
+  assert.equal(sessions.length, 7);
+  assert.equal(new Set(sessions.map((item) => item.date)).size, 7);
+  assert.equal(findSession(sessions, "w1-mon-easy").type, "easyRun");
+
+  const tuesday = findSession(sessions, "w1-2026-04-28-rest");
+  const thursday = findSession(sessions, "w1-2026-04-30-rest");
+  assert.equal(tuesday.type, "restDay");
+  assert.equal(thursday.type, "restDay");
+  assert.match(tuesday.coachNote ?? "", /Día de descanso/i);
+});
+
+Deno.test("ensureGoalRaceSession makes no-date 5K plan finish with full 5K race", () => {
+  const sessions = ensureGoalRaceSession(
+    [
+      session({
+        id: "w8-mon",
+        date: "2026-06-15",
+        weekNumber: 8,
+        type: "easyRun",
+      }),
+      session({
+        id: "w8-fri",
+        date: "2026-06-19",
+        weekNumber: 8,
+        type: "racePaceRun",
+        distanceKm: 3,
+        durationMinutes: 20,
+        warmUpMinutes: 8,
+        coolDownMinutes: 6,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-20",
+        weekNumber: 8,
+        type: "restDay",
+      }),
+    ],
+    profile({
+      race: "race_5k",
+      raceDate: null,
+      longRunDay: "day_sat",
+    }),
+    "en",
+  );
+
+  const race = findSession(sessions, "w8-sat");
+  assert.equal(race.type, "racePaceRun");
+  assert.equal(race.distanceKm, 5);
+  assert.equal(race.durationMinutes, null);
+  assert.equal(race.targetZone, "racePace");
+  assert.equal(race.warmUpMinutes, 10);
+  assert.equal(race.coolDownMinutes, 5);
+  assert.match(race.coachNote ?? "", /Goal race day/i);
+});
+
+Deno.test("ensureGoalRaceSession preserves fixed race date and sets goal distance", () => {
+  const sessions = ensureGoalRaceSession(
+    [
+      session({
+        id: "w9-fri",
+        date: "2026-06-19",
+        weekNumber: 9,
+        type: "easyRun",
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        weekNumber: 9,
+        type: "racePaceRun",
+        distanceKm: 6,
+      }),
+    ],
+    profile({
+      race: "race_10k",
+      raceDate: "2026-06-21T00:00:00.000",
+    }),
+  );
+
+  const race = findSession(sessions, "race");
+  assert.equal(race.date, "2026-06-21");
+  assert.equal(race.distanceKm, 10);
+  assert.equal(race.type, "racePaceRun");
 });
 
 Deno.test("spaceStressfulSessions swaps adjacent hard sessions apart", () => {
@@ -344,6 +454,7 @@ Deno.test("spaceStressfulSessions downgrades extra weekly stress", () => {
         id: "w1-mon-fartlek",
         date: "2026-04-27",
         type: "fartlek",
+        coachNote: "Push hard today.",
       }),
       session({
         id: "w1-tue-intervals",
@@ -361,7 +472,13 @@ Deno.test("spaceStressfulSessions downgrades extra weekly stress", () => {
   );
 
   assert.equal(stressDayCount(sessions), 3);
-  assert.equal(findSession(sessions, "w1-mon-fartlek").type, "recoveryRun");
+  const downgraded = findSession(sessions, "w1-mon-fartlek");
+  assert.equal(downgraded.type, "recoveryRun");
+  assert.equal(
+    downgraded.coachNote,
+    "Adjusted to keep hard training days spaced safely.",
+  );
+  assert.doesNotMatch(downgraded.coachNote ?? "", /push hard/i);
   assert.equal(findSession(sessions, "w1-sat-long").type, "longRun");
 });
 
@@ -483,17 +600,19 @@ function profile({
   experience = "experience_beginner",
   hardDays = [],
   longRunDay = null,
+  race = "race_5k",
   raceDate = null,
   trainingDays = null,
 }: {
   experience?: string;
   hardDays?: string[];
   longRunDay?: string | null;
+  race?: string;
   raceDate?: string | null;
   trainingDays?: number | null;
 } = {}): Record<string, unknown> {
   return {
-    goal: { raceDate },
+    goal: { race, raceDate },
     fitness: { experience },
     schedule: { hardDays, longRunDay, trainingDays },
   };

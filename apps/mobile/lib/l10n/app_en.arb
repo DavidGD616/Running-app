@@ -2273,6 +2273,80 @@
   "preRunContinue": "Continue",
   "@preRunContinue": { "description": "Continue CTA button on pre-run check screen" },
 
+  "preRunWorkoutPreviewTitle": "Today's Workout",
+  "@preRunWorkoutPreviewTitle": { "description": "Section title for workout preview on pre-run screen" },
+
+  "preRunWorkoutPreviewWarmUp": "Warm-up {duration}",
+  "@preRunWorkoutPreviewWarmUp": {
+    "description": "Warm-up block in pre-run workout preview",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewStrides": "{reps} × {seconds}s strides · {recoverySeconds}s recovery",
+  "@preRunWorkoutPreviewStrides": {
+    "description": "Strides block in pre-run workout preview",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "seconds": { "type": "int" },
+      "recoverySeconds": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewMain": "Main {duration}",
+  "@preRunWorkoutPreviewMain": {
+    "description": "Main work block in pre-run workout preview",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewCoolDown": "Cool-down {duration}",
+  "@preRunWorkoutPreviewCoolDown": {
+    "description": "Cool-down block in pre-run workout preview",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewRepeat": "{reps} × {work} work · {recovery} recovery",
+  "@preRunWorkoutPreviewRepeat": {
+    "description": "Repeated work and recovery block in pre-run workout preview",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "work": { "type": "String" },
+      "recovery": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewDurationMinutes": "{minutes} min",
+  "@preRunWorkoutPreviewDurationMinutes": {
+    "description": "Duration in minutes in pre-run workout preview",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewDurationSeconds": "{seconds} s",
+  "@preRunWorkoutPreviewDurationSeconds": {
+    "description": "Duration in seconds in pre-run workout preview",
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewDistanceMeters": "{meters} m",
+  "@preRunWorkoutPreviewDistanceMeters": {
+    "description": "Distance in meters in pre-run workout preview",
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewOpenDuration": "open",
+  "@preRunWorkoutPreviewOpenDuration": { "description": "Fallback label when a workout preview block has no duration or distance target" },
+
   "workoutOptionsTitle": "Workout Options",
   "@workoutOptionsTitle": { "description": "Title of the workout options bottom sheet" },
 

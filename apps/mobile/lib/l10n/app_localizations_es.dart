@@ -2393,6 +2393,56 @@ class AppLocalizationsEs extends AppLocalizations {
   String get preRunContinue => 'Continuar';
 
   @override
+  String get preRunWorkoutPreviewTitle => 'Entrenamiento de Hoy';
+
+  @override
+  String preRunWorkoutPreviewWarmUp(String duration) {
+    return 'Calentamiento $duration';
+  }
+
+  @override
+  String preRunWorkoutPreviewStrides(
+    int reps,
+    int seconds,
+    int recoverySeconds,
+  ) {
+    return '$reps × ${seconds}s zancadas · ${recoverySeconds}s recuperación';
+  }
+
+  @override
+  String preRunWorkoutPreviewMain(String duration) {
+    return 'Principal $duration';
+  }
+
+  @override
+  String preRunWorkoutPreviewCoolDown(String duration) {
+    return 'Enfriamiento $duration';
+  }
+
+  @override
+  String preRunWorkoutPreviewRepeat(int reps, String work, String recovery) {
+    return '$reps × $work trabajo · $recovery recuperación';
+  }
+
+  @override
+  String preRunWorkoutPreviewDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String preRunWorkoutPreviewDurationSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String preRunWorkoutPreviewDistanceMeters(int meters) {
+    return '$meters m';
+  }
+
+  @override
+  String get preRunWorkoutPreviewOpenDuration => 'libre';
+
+  @override
   String get workoutOptionsTitle => 'Opciones de Entrenamiento';
 
   @override

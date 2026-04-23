@@ -4449,6 +4449,70 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get preRunContinue;
 
+  /// Section title for workout preview on pre-run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Workout'**
+  String get preRunWorkoutPreviewTitle;
+
+  /// Warm-up block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up {duration}'**
+  String preRunWorkoutPreviewWarmUp(String duration);
+
+  /// Strides block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {seconds}s strides · {recoverySeconds}s recovery'**
+  String preRunWorkoutPreviewStrides(
+    int reps,
+    int seconds,
+    int recoverySeconds,
+  );
+
+  /// Main work block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'Main {duration}'**
+  String preRunWorkoutPreviewMain(String duration);
+
+  /// Cool-down block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'Cool-down {duration}'**
+  String preRunWorkoutPreviewCoolDown(String duration);
+
+  /// Repeated work and recovery block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {work} work · {recovery} recovery'**
+  String preRunWorkoutPreviewRepeat(int reps, String work, String recovery);
+
+  /// Duration in minutes in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String preRunWorkoutPreviewDurationMinutes(int minutes);
+
+  /// Duration in seconds in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String preRunWorkoutPreviewDurationSeconds(int seconds);
+
+  /// Distance in meters in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{meters} m'**
+  String preRunWorkoutPreviewDistanceMeters(int meters);
+
+  /// Fallback label when a workout preview block has no duration or distance target
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get preRunWorkoutPreviewOpenDuration;
+
   /// Title of the workout options bottom sheet
   ///
   /// In en, this message translates to:

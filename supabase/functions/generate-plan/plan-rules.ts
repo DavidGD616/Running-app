@@ -1,8 +1,11 @@
 import type { GeneratedSession } from "./schema.ts";
 
+type CoachNoteLocale = "en" | "es";
+
 export function normalizeTrainingDayCount(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const targetTrainingDays = targetTrainingDaysFor(profileData);
   if (targetTrainingDays == null) return sessions;
@@ -23,15 +26,85 @@ export function normalizeTrainingDayCount(
         targetTrainingDays,
         hardDays,
         profileData,
+        locale,
       )
     )
     .sort(compareSessionsByDate);
+}
+
+export function ensureFullCalendarWeeks(
+  sessions: GeneratedSession[],
+  locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const sessionsByWeek = new Map<number, GeneratedSession[]>();
+  for (const session of sessions) {
+    const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
+    weekSessions.push({ ...session });
+    sessionsByWeek.set(session.weekNumber, weekSessions);
+  }
+
+  return Array.from(sessionsByWeek.keys())
+    .sort((a, b) => a - b)
+    .flatMap((weekNumber) =>
+      fillWeekRestDays(sessionsByWeek.get(weekNumber) ?? [], locale)
+    )
+    .sort(compareSessionsByDate);
+}
+
+export function ensureGoalRaceSession(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const distanceKm = goalRaceDistanceKm(profileData);
+  if (distanceKm == null) return sessions;
+
+  const adjusted = sessions.map((session) => ({ ...session })).sort(
+    compareSessionsByDate,
+  );
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate != null) {
+    const raceIndex = adjusted.findIndex((session) =>
+      session.date.slice(0, 10) === raceDate
+    );
+    if (raceIndex < 0) return adjusted;
+    adjusted[raceIndex] = toGoalRaceSession(
+      adjusted[raceIndex],
+      distanceKm,
+      locale,
+    );
+    return adjusted.sort(compareSessionsByDate);
+  }
+
+  const finalWeek = Math.max(...adjusted.map((session) => session.weekNumber));
+  if (!Number.isFinite(finalWeek)) return adjusted;
+
+  const finalWeekSessions = adjusted.filter((session) =>
+    session.weekNumber === finalWeek
+  );
+  if (finalWeekSessions.length === 0) return adjusted;
+
+  const targetDate = preferredGoalRaceDate(finalWeekSessions, profileData);
+  const targetIndex = adjusted.findIndex((session) =>
+    session.weekNumber === finalWeek &&
+    session.date.slice(0, 10) === targetDate
+  );
+  if (targetIndex < 0) return adjusted;
+
+  adjusted[targetIndex] = toGoalRaceSession(
+    adjusted[targetIndex],
+    distanceKm,
+    locale,
+  );
+
+  return adjusted.sort(compareSessionsByDate);
 }
 
 export function addStrideDefaults(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
+  locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const config = strideConfigFor(profileData) ?? beginnerStrideConfig();
   const hardDays = hardDaySetFor(profileData);
@@ -51,14 +124,46 @@ export function addStrideDefaults(
         config,
         hardDays,
         raceWeeks.has(weekNumber),
+        locale,
       )
     )
     .sort(compareSessionsByDate);
 }
 
+function fillWeekRestDays(
+  sessions: GeneratedSession[],
+  locale: CoachNoteLocale,
+): GeneratedSession[] {
+  if (sessions.length === 0) return sessions;
+
+  const adjusted = sessions.map((session) => ({ ...session })).sort(
+    compareSessionsByDate,
+  );
+  const weekStart = weekStartDateFor(adjusted);
+  if (weekStart == null) return adjusted;
+
+  const existingDates = new Set(
+    adjusted.map((session) => session.date.slice(0, 10)),
+  );
+  const template = adjusted[0];
+
+  for (let dayOffset = 0; dayOffset < 7; dayOffset += 1) {
+    const date = new Date(weekStart);
+    date.setUTCDate(weekStart.getUTCDate() + dayOffset);
+    const dateKey = date.toISOString().slice(0, 10);
+    if (existingDates.has(dateKey)) continue;
+
+    adjusted.push(createRestDay(template, dateKey, locale));
+    existingDates.add(dateKey);
+  }
+
+  return adjusted.sort(compareSessionsByDate);
+}
+
 export function avoidHardDayTraining(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const hardDays = hardDaySetFor(profileData);
   if (hardDays.size === 0) return sessions;
@@ -74,7 +179,10 @@ export function avoidHardDayTraining(
     if (swapIndex == null) continue;
 
     const swapSession = adjusted[swapIndex];
-    adjusted[i] = withScheduleNote({ ...session, date: swapSession.date });
+    adjusted[i] = withScheduleNote(
+      { ...session, date: swapSession.date },
+      locale,
+    );
     adjusted[swapIndex] = { ...swapSession, date: session.date };
   }
 
@@ -84,6 +192,7 @@ export function avoidHardDayTraining(
 export function spaceStressfulSessions(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const hardDays = hardDaySetFor(profileData);
   const sessionsByWeek = new Map<number, GeneratedSession[]>();
@@ -99,8 +208,8 @@ export function spaceStressfulSessions(
       const weekSessions = (sessionsByWeek.get(weekNumber) ?? []).sort(
         compareSessionsByDate,
       );
-      const limited = limitWeeklyStressDays(weekSessions, profileData);
-      return separateAdjacentStressDays(limited, hardDays, profileData);
+      const limited = limitWeeklyStressDays(weekSessions, profileData, locale);
+      return separateAdjacentStressDays(limited, hardDays, profileData, locale);
     })
     .sort(compareSessionsByDate);
 }
@@ -108,6 +217,7 @@ export function spaceStressfulSessions(
 export function placeLongRunsOnPreferredDay(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const preferredDay = preferredLongRunDayFor(profileData);
   if (preferredDay == null) return sessions;
@@ -130,6 +240,7 @@ export function placeLongRunsOnPreferredDay(
         preferredDay,
         hardDays,
         profileData,
+        locale,
       )
     )
     .sort(compareSessionsByDate);
@@ -140,6 +251,7 @@ function normalizeWeekTrainingDays(
   targetTrainingDays: number,
   hardDays: Set<string>,
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => ({ ...session })).sort(
     compareSessionsByDate,
@@ -148,19 +260,23 @@ function normalizeWeekTrainingDays(
   while (trainingDayCount(adjusted) > targetTrainingDays) {
     const index = findSessionToRest(adjusted, profileData);
     if (index == null) break;
-    adjusted[index] = toRestDay(adjusted[index]);
+    adjusted[index] = toRestDay(adjusted[index], locale);
   }
 
   while (trainingDayCount(adjusted) < targetTrainingDays) {
     const restIndex = findRestDayToTrain(adjusted, hardDays);
     if (restIndex != null) {
-      adjusted[restIndex] = toEasyTrainingDay(adjusted[restIndex], hardDays);
+      adjusted[restIndex] = toEasyTrainingDay(
+        adjusted[restIndex],
+        hardDays,
+        locale,
+      );
       continue;
     }
 
     const date = findMissingWeekDate(adjusted, hardDays);
     if (date == null) break;
-    adjusted.push(createEasyTrainingDay(adjusted[0], date, hardDays));
+    adjusted.push(createEasyTrainingDay(adjusted[0], date, hardDays, locale));
     adjusted.sort(compareSessionsByDate);
   }
 
@@ -172,6 +288,7 @@ function placeWeekLongRun(
   preferredDay: string,
   hardDays: Set<string>,
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => ({ ...session })).sort(
     compareSessionsByDate,
@@ -199,7 +316,7 @@ function placeWeekLongRun(
     date: swapSession.date,
     coachNote: appendTrainingDayCue(
       longRun.coachNote,
-      "Moved to your preferred long run day.",
+      trainingDayCue("preferredLongRunDay", locale),
     ),
   };
   adjusted[swapIndex] = { ...swapSession, date: longRun.date };
@@ -209,6 +326,7 @@ function placeWeekLongRun(
 function limitWeeklyStressDays(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => ({ ...session }));
   const maxStressDays = maxStressDaysFor(profileData);
@@ -216,7 +334,7 @@ function limitWeeklyStressDays(
   while (stressDayCount(adjusted) > maxStressDays) {
     const index = findStressSessionToDowngrade(adjusted, profileData);
     if (index == null) break;
-    adjusted[index] = toEasyStressFallback(adjusted[index]);
+    adjusted[index] = toEasyStressFallback(adjusted[index], locale);
   }
 
   return adjusted;
@@ -226,6 +344,7 @@ function separateAdjacentStressDays(
   sessions: GeneratedSession[],
   hardDays: Set<string>,
   profileData: Record<string, unknown>,
+  locale: CoachNoteLocale,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => ({ ...session })).sort(
     compareSessionsByDate,
@@ -254,7 +373,7 @@ function separateAdjacentStressDays(
           date: swapSession.date,
           coachNote: appendTrainingDayCue(
             stressSession.coachNote,
-            "Moved to keep hard training days spaced safely.",
+            trainingDayCue("movedForSpacing", locale),
           ),
         };
         adjusted[swapIndex] = { ...swapSession, date: stressSession.date };
@@ -263,7 +382,10 @@ function separateAdjacentStressDays(
         break;
       }
 
-      adjusted[stressIndex] = toEasyStressFallback(adjusted[stressIndex]);
+      adjusted[stressIndex] = toEasyStressFallback(
+        adjusted[stressIndex],
+        locale,
+      );
       changed = true;
       break;
     }
@@ -295,6 +417,68 @@ function preferredLongRunDayFor(
   return typeof longRunDay === "string" && longRunDay.startsWith("day_")
     ? longRunDay
     : null;
+}
+
+function goalRaceDate(profileData: Record<string, unknown>): string | null {
+  const goal = objectOrNull(profileData.goal);
+  const raceDate = typeof goal?.raceDate === "string" ? goal.raceDate : null;
+  return raceDate == null ? null : raceDate.slice(0, 10);
+}
+
+function goalRaceDistanceKm(
+  profileData: Record<string, unknown>,
+): number | null {
+  const goal = objectOrNull(profileData.goal);
+  const race = typeof goal?.race === "string" ? goal.race : null;
+
+  switch (race) {
+    case "race_5k":
+      return 5;
+    case "race_10k":
+      return 10;
+    case "race_half_marathon":
+      return 21.1;
+    case "race_marathon":
+      return 42.2;
+    default:
+      return null;
+  }
+}
+
+function preferredGoalRaceDate(
+  finalWeekSessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): string {
+  const preferredDay = preferredLongRunDayFor(profileData);
+  const hardDays = hardDaySetFor(profileData);
+  const sorted = [...finalWeekSessions].sort(compareSessionsByDate);
+
+  if (preferredDay != null && !hardDays.has(preferredDay)) {
+    const preferredSession = sorted.find((session) =>
+      dayKeyForDate(session.date) === preferredDay
+    );
+    if (preferredSession != null) return preferredSession.date.slice(0, 10);
+  }
+
+  const racePaceSession = sorted.findLast((session) =>
+    session.type === "racePaceRun" && !hardDays.has(dayKeyForDate(session.date))
+  );
+  if (racePaceSession != null) return racePaceSession.date.slice(0, 10);
+
+  const longRunSession = sorted.findLast((session) =>
+    session.type === "longRun" && !hardDays.has(dayKeyForDate(session.date))
+  );
+  if (longRunSession != null) return longRunSession.date.slice(0, 10);
+
+  const trainingSession = sorted.findLast((session) =>
+    isTrainingDay(session) && !hardDays.has(dayKeyForDate(session.date))
+  );
+  if (trainingSession != null) return trainingSession.date.slice(0, 10);
+
+  const nonHardDay = sorted.findLast((session) =>
+    !hardDays.has(dayKeyForDate(session.date))
+  );
+  return (nonHardDay ?? sorted[sorted.length - 1]).date.slice(0, 10);
 }
 
 function trainingDayCount(sessions: GeneratedSession[]): number {
@@ -553,16 +737,16 @@ function findRestDayToTrain(
   return hardDayFallback;
 }
 
-function toRestDay(session: GeneratedSession): GeneratedSession {
+function toRestDay(
+  session: GeneratedSession,
+  locale: CoachNoteLocale,
+): GeneratedSession {
   return {
     ...session,
     type: "restDay",
     distanceKm: null,
     durationMinutes: null,
-    coachNote: appendTrainingDayCue(
-      session.coachNote,
-      "Rest day added to match your selected training days.",
-    ),
+    coachNote: trainingDayCue("restDayAdded", locale),
     targetZone: null,
     warmUpMinutes: null,
     coolDownMinutes: null,
@@ -578,6 +762,7 @@ function toRestDay(session: GeneratedSession): GeneratedSession {
 function toEasyTrainingDay(
   session: GeneratedSession,
   hardDays: Set<string>,
+  locale: CoachNoteLocale,
 ): GeneratedSession {
   const isHardDay = hardDays.has(dayKeyForDate(session.date));
   return {
@@ -585,12 +770,9 @@ function toEasyTrainingDay(
     type: isHardDay ? "recoveryRun" : "easyRun",
     distanceKm: null,
     durationMinutes: isHardDay ? 25 : 35,
-    coachNote: appendTrainingDayCue(
-      session.coachNote,
-      isHardDay
-        ? "Short recovery run added because your selected schedule is tight."
-        : "Easy run added to match your selected training days.",
-    ),
+    coachNote: isHardDay
+      ? trainingDayCue("shortRecoveryAdded", locale)
+      : trainingDayCue("easyRunAdded", locale),
     targetZone: isHardDay ? "recovery" : "easy",
     warmUpMinutes: null,
     coolDownMinutes: null,
@@ -603,7 +785,10 @@ function toEasyTrainingDay(
   };
 }
 
-function toEasyStressFallback(session: GeneratedSession): GeneratedSession {
+function toEasyStressFallback(
+  session: GeneratedSession,
+  locale: CoachNoteLocale,
+): GeneratedSession {
   const isLongRun = session.type === "longRun";
   return {
     ...session,
@@ -612,10 +797,7 @@ function toEasyStressFallback(session: GeneratedSession): GeneratedSession {
     durationMinutes: isLongRun
       ? Math.max(35, session.durationMinutes ?? 45)
       : Math.min(35, Math.max(25, session.durationMinutes ?? 30)),
-    coachNote: appendTrainingDayCue(
-      session.coachNote,
-      "Adjusted to keep hard training days spaced safely.",
-    ),
+    coachNote: trainingDayCue("adjustedForSpacing", locale),
     targetZone: isLongRun ? "easy" : "recovery",
     warmUpMinutes: null,
     coolDownMinutes: null,
@@ -632,15 +814,45 @@ function createEasyTrainingDay(
   template: GeneratedSession,
   date: string,
   hardDays: Set<string>,
+  locale: CoachNoteLocale,
 ): GeneratedSession {
-  return toEasyTrainingDay({
-    id: `w${template.weekNumber}-${date}-added`,
+  return toEasyTrainingDay(
+    {
+      id: `w${template.weekNumber}-${date}-added`,
+      date,
+      weekNumber: template.weekNumber,
+      type: "restDay",
+      distanceKm: null,
+      durationMinutes: null,
+      coachNote: null,
+      targetZone: null,
+      warmUpMinutes: null,
+      coolDownMinutes: null,
+      intervalReps: null,
+      intervalRepDistanceMeters: null,
+      intervalRecoverySeconds: null,
+      strideReps: null,
+      strideSeconds: null,
+      strideRecoverySeconds: null,
+    },
+    hardDays,
+    locale,
+  );
+}
+
+function createRestDay(
+  template: GeneratedSession,
+  date: string,
+  locale: CoachNoteLocale,
+): GeneratedSession {
+  return {
+    id: `w${template.weekNumber}-${date}-rest`,
     date,
     weekNumber: template.weekNumber,
     type: "restDay",
     distanceKm: null,
     durationMinutes: null,
-    coachNote: null,
+    coachNote: trainingDayCue("restDay", locale),
     targetZone: null,
     warmUpMinutes: null,
     coolDownMinutes: null,
@@ -650,7 +862,40 @@ function createEasyTrainingDay(
     strideReps: null,
     strideSeconds: null,
     strideRecoverySeconds: null,
-  }, hardDays);
+  };
+}
+
+function toGoalRaceSession(
+  session: GeneratedSession,
+  distanceKm: number,
+  locale: CoachNoteLocale,
+): GeneratedSession {
+  return {
+    ...session,
+    type: "racePaceRun",
+    distanceKm,
+    durationMinutes: null,
+    coachNote: trainingDayCue("goalRace", locale),
+    targetZone: "racePace",
+    warmUpMinutes: goalRaceWarmUpMinutes(distanceKm),
+    coolDownMinutes: goalRaceCoolDownMinutes(distanceKm),
+    intervalReps: null,
+    intervalRepDistanceMeters: null,
+    intervalRecoverySeconds: null,
+    strideReps: null,
+    strideSeconds: null,
+    strideRecoverySeconds: null,
+  };
+}
+
+function goalRaceWarmUpMinutes(distanceKm: number): number | null {
+  if (distanceKm <= 10) return 10;
+  return null;
+}
+
+function goalRaceCoolDownMinutes(distanceKm: number): number | null {
+  if (distanceKm <= 10) return 5;
+  return null;
 }
 
 function findMissingWeekDate(
@@ -748,6 +993,7 @@ function enforceWeekStrides(
   config: StrideConfig,
   hardDays: Set<string>,
   isRaceWeek: boolean,
+  locale: CoachNoteLocale,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => {
     const sanitized = sanitizeStrideValues(session);
@@ -761,7 +1007,7 @@ function enforceWeekStrides(
 
   trimExtraStrideSessions(adjusted, config, hardDays);
   if (config.addDefaults) {
-    addMissingStrideSessions(adjusted, config, hardDays);
+    addMissingStrideSessions(adjusted, config, hardDays, locale);
   }
 
   return adjusted;
@@ -804,6 +1050,7 @@ function addMissingStrideSessions(
   sessions: GeneratedSession[],
   config: StrideConfig,
   hardDays: Set<string>,
+  locale: CoachNoteLocale,
 ): void {
   while (
     sessions.filter((session) => hasStrides(session)).length <
@@ -827,7 +1074,7 @@ function addMissingStrideSessions(
       strideReps: config.reps,
       strideSeconds: config.seconds,
       strideRecoverySeconds: config.recoverySeconds,
-      coachNote: appendStrideCue(candidate.coachNote),
+      coachNote: appendStrideCue(candidate.coachNote, locale),
     };
   }
 }
@@ -943,11 +1190,16 @@ function raceWeekNumbersFor(
   return raceWeeks;
 }
 
-function appendStrideCue(coachNote: string | null): string {
-  const strideCue =
-    "Finish with relaxed strides: fast but smooth, not a sprint.";
+function appendStrideCue(
+  coachNote: string | null,
+  locale: CoachNoteLocale,
+): string {
+  const strideCue = trainingDayCue("strideAdded", locale);
   if (!coachNote) return strideCue;
-  if (coachNote.toLowerCase().includes("stride")) return coachNote;
+  const lowerNote = coachNote.toLowerCase();
+  if (lowerNote.includes("stride") || lowerNote.includes("progresivo")) {
+    return coachNote;
+  }
   return `${coachNote} ${strideCue}`;
 }
 
@@ -1064,12 +1316,85 @@ function sessionSwapScore(session: GeneratedSession): number {
   }
 }
 
-function withScheduleNote(session: GeneratedSession): GeneratedSession {
-  const scheduleCue = "Moved away from a day you marked hard to train.";
+function withScheduleNote(
+  session: GeneratedSession,
+  locale: CoachNoteLocale,
+): GeneratedSession {
+  const scheduleCue = trainingDayCue("movedAwayFromHardDay", locale);
   const coachNote = session.coachNote;
   if (!coachNote) return { ...session, coachNote: scheduleCue };
-  if (coachNote.toLowerCase().includes("hard to train")) return session;
+  if (coachNote.toLowerCase().includes(scheduleCue.toLowerCase())) {
+    return session;
+  }
   return { ...session, coachNote: `${coachNote} ${scheduleCue}` };
+}
+
+type TrainingDayCueKey =
+  | "restDay"
+  | "goalRace"
+  | "preferredLongRunDay"
+  | "movedForSpacing"
+  | "restDayAdded"
+  | "shortRecoveryAdded"
+  | "easyRunAdded"
+  | "adjustedForSpacing"
+  | "strideAdded"
+  | "movedAwayFromHardDay";
+
+function trainingDayCue(
+  key: TrainingDayCueKey,
+  locale: CoachNoteLocale,
+): string {
+  const cues: Record<TrainingDayCueKey, Record<CoachNoteLocale, string>> = {
+    restDay: {
+      en: "Rest day. Keep it easy and let your body absorb the training.",
+      es:
+        "Día de descanso. Mantén el día suave y deja que tu cuerpo asimile el entrenamiento.",
+    },
+    goalRace: {
+      en:
+        "Goal race day. Run the full target distance by effort: controlled early, steady through the middle, strong at the finish.",
+      es:
+        "Día de carrera objetivo. Corre la distancia completa por esfuerzo: controlado al inicio, constante en la parte media y fuerte al final.",
+    },
+    preferredLongRunDay: {
+      en: "Moved to your preferred long run day.",
+      es: "Movido a tu día preferido para la tirada larga.",
+    },
+    movedForSpacing: {
+      en: "Moved to keep hard training days spaced safely.",
+      es: "Movido para separar mejor los días duros de entrenamiento.",
+    },
+    restDayAdded: {
+      en: "Rest day added to match your selected training days.",
+      es:
+        "Día de descanso añadido para respetar tus días de entrenamiento seleccionados.",
+    },
+    shortRecoveryAdded: {
+      en: "Short recovery run added because your selected schedule is tight.",
+      es:
+        "Carrera corta de recuperación añadida porque tu horario seleccionado es ajustado.",
+    },
+    easyRunAdded: {
+      en: "Easy run added to match your selected training days.",
+      es:
+        "Carrera suave añadida para respetar tus días de entrenamiento seleccionados.",
+    },
+    adjustedForSpacing: {
+      en: "Adjusted to keep hard training days spaced safely.",
+      es: "Ajustado para separar mejor los días duros de entrenamiento.",
+    },
+    strideAdded: {
+      en: "Finish with relaxed strides: fast but smooth, not a sprint.",
+      es:
+        "Termina con progresivos relajados: rápidos pero controlados, no un sprint.",
+    },
+    movedAwayFromHardDay: {
+      en: "Moved away from a day you marked hard to train.",
+      es: "Movido fuera de un día que marcaste como difícil para entrenar.",
+    },
+  };
+  return cues[key][locale];
 }
 
 function appendTrainingDayCue(

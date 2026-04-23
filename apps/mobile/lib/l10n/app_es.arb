@@ -833,6 +833,17 @@
   "preRunNotFullyReady": "No del todo listo",
   "preRunContinue": "Continuar",
 
+  "preRunWorkoutPreviewTitle": "Entrenamiento de Hoy",
+  "preRunWorkoutPreviewWarmUp": "Calentamiento {duration}",
+  "preRunWorkoutPreviewStrides": "{reps} × {seconds}s zancadas · {recoverySeconds}s recuperación",
+  "preRunWorkoutPreviewMain": "Principal {duration}",
+  "preRunWorkoutPreviewCoolDown": "Enfriamiento {duration}",
+  "preRunWorkoutPreviewRepeat": "{reps} × {work} trabajo · {recovery} recuperación",
+  "preRunWorkoutPreviewDurationMinutes": "{minutes} min",
+  "preRunWorkoutPreviewDurationSeconds": "{seconds} s",
+  "preRunWorkoutPreviewDistanceMeters": "{meters} m",
+  "preRunWorkoutPreviewOpenDuration": "libre",
+
   "workoutOptionsTitle": "Opciones de Entrenamiento",
   "workoutOptionsSkipWorkout": "Omitir Entrenamiento",
   "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana",
