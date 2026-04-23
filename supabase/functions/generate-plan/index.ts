@@ -4,6 +4,7 @@ import {
   addStrideDefaults,
   avoidHardDayTraining,
   normalizeTrainingDayCount,
+  placeLongRunsOnPreferredDay,
   spaceStressfulSessions,
 } from "./plan-rules.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
@@ -82,8 +83,12 @@ Deno.serve(async (req) => {
     generatedPlan.sessions,
     profileData,
   );
-  const stressSpacedSessions = spaceStressfulSessions(
+  const longRunPlacedSessions = placeLongRunsOnPreferredDay(
     scheduleNormalizedSessions,
+    profileData,
+  );
+  const stressSpacedSessions = spaceStressfulSessions(
+    longRunPlacedSessions,
     profileData,
   );
   const scheduleAdjustedSessions = avoidHardDayTraining(

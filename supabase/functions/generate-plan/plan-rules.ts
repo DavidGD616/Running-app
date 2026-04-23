@@ -109,6 +109,36 @@ export function spaceStressfulSessions(
     .sort(compareSessionsByDate);
 }
 
+export function placeLongRunsOnPreferredDay(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const preferredDay = preferredLongRunDayFor(profileData);
+  if (preferredDay == null) return sessions;
+
+  const hardDays = hardDaySetFor(profileData);
+  if (hardDays.has(preferredDay)) return sessions;
+
+  const sessionsByWeek = new Map<number, GeneratedSession[]>();
+  for (const session of sessions) {
+    const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
+    weekSessions.push({ ...session });
+    sessionsByWeek.set(session.weekNumber, weekSessions);
+  }
+
+  return Array.from(sessionsByWeek.keys())
+    .sort((a, b) => a - b)
+    .flatMap((weekNumber) =>
+      placeWeekLongRun(
+        sessionsByWeek.get(weekNumber) ?? [],
+        preferredDay,
+        hardDays,
+        profileData,
+      )
+    )
+    .sort(compareSessionsByDate);
+}
+
 function normalizeWeekTrainingDays(
   sessions: GeneratedSession[],
   targetTrainingDays: number,
@@ -139,6 +169,45 @@ function normalizeWeekTrainingDays(
   }
 
   return adjusted;
+}
+
+function placeWeekLongRun(
+  sessions: GeneratedSession[],
+  preferredDay: string,
+  hardDays: Set<string>,
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const adjusted = sessions.map((session) => ({ ...session })).sort(
+    compareSessionsByDate,
+  );
+  const longRunIndex = adjusted.findIndex((session) =>
+    session.type === "longRun" && !isGoalRaceSession(session, profileData)
+  );
+  if (longRunIndex < 0) return adjusted;
+
+  const longRun = adjusted[longRunIndex];
+  if (dayKeyForDate(longRun.date) === preferredDay) return adjusted;
+
+  const swapIndex = adjusted.findIndex((session, index) =>
+    index !== longRunIndex &&
+    dayKeyForDate(session.date) === preferredDay &&
+    isLowStressSession(session) &&
+    !hardDays.has(dayKeyForDate(session.date)) &&
+    !wouldCreateAdjacentStress(adjusted, longRunIndex, session.date)
+  );
+  if (swapIndex < 0) return adjusted;
+
+  const swapSession = adjusted[swapIndex];
+  adjusted[longRunIndex] = {
+    ...longRun,
+    date: swapSession.date,
+    coachNote: appendTrainingDayCue(
+      longRun.coachNote,
+      "Moved to your preferred long run day.",
+    ),
+  };
+  adjusted[swapIndex] = { ...swapSession, date: longRun.date };
+  return adjusted.sort(compareSessionsByDate);
 }
 
 function limitWeeklyStressDays(
@@ -220,6 +289,16 @@ function targetTrainingDaysFor(
 
   if (trainingDays == null || !Number.isFinite(trainingDays)) return null;
   return Math.min(7, Math.max(1, Math.floor(trainingDays)));
+}
+
+function preferredLongRunDayFor(
+  profileData: Record<string, unknown>,
+): string | null {
+  const schedule = objectOrNull(profileData.schedule);
+  const longRunDay = schedule?.longRunDay;
+  return typeof longRunDay === "string" && longRunDay.startsWith("day_")
+    ? longRunDay
+    : null;
 }
 
 function trainingDayCount(sessions: GeneratedSession[]): number {

@@ -3,6 +3,7 @@ import {
   addStrideDefaults,
   avoidHardDayTraining,
   normalizeTrainingDayCount,
+  placeLongRunsOnPreferredDay,
   spaceStressfulSessions,
 } from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
@@ -291,21 +292,86 @@ Deno.test("spaceStressfulSessions does not swap hard sessions onto hard days", (
   assert.equal(findSession(sessions, "w1-wed-easy").date, "2026-04-29");
 });
 
+Deno.test("placeLongRunsOnPreferredDay swaps long run onto preferred day", () => {
+  const sessions = placeLongRunsOnPreferredDay(
+    [
+      session({ id: "w1-fri-easy", date: "2026-05-01", type: "easyRun" }),
+      session({ id: "w1-sun-long", date: "2026-05-03", type: "longRun" }),
+    ],
+    profile({ longRunDay: "day_fri" }),
+  );
+
+  assert.equal(findSession(sessions, "w1-sun-long").date, "2026-05-01");
+  assert.equal(findSession(sessions, "w1-fri-easy").date, "2026-05-03");
+  assert.match(
+    findSession(sessions, "w1-sun-long").coachNote ?? "",
+    /preferred long run day/i,
+  );
+});
+
+Deno.test("placeLongRunsOnPreferredDay skips preferred day when it is hard", () => {
+  const sessions = placeLongRunsOnPreferredDay(
+    [
+      session({ id: "w1-fri-easy", date: "2026-05-01", type: "easyRun" }),
+      session({ id: "w1-sun-long", date: "2026-05-03", type: "longRun" }),
+    ],
+    profile({ hardDays: ["day_fri"], longRunDay: "day_fri" }),
+  );
+
+  assert.equal(findSession(sessions, "w1-sun-long").date, "2026-05-03");
+  assert.equal(findSession(sessions, "w1-fri-easy").date, "2026-05-01");
+});
+
+Deno.test("placeLongRunsOnPreferredDay does not swap with hard workout", () => {
+  const sessions = placeLongRunsOnPreferredDay(
+    [
+      session({
+        id: "w1-fri-tempo",
+        date: "2026-05-01",
+        type: "tempoRun",
+      }),
+      session({ id: "w1-sun-long", date: "2026-05-03", type: "longRun" }),
+    ],
+    profile({ longRunDay: "day_fri" }),
+  );
+
+  assert.equal(findSession(sessions, "w1-sun-long").date, "2026-05-03");
+  assert.equal(findSession(sessions, "w1-fri-tempo").date, "2026-05-01");
+});
+
+Deno.test("placeLongRunsOnPreferredDay preserves fixed race date", () => {
+  const sessions = placeLongRunsOnPreferredDay(
+    [
+      session({ id: "w1-fri-easy", date: "2026-05-01", type: "easyRun" }),
+      session({ id: "race", date: "2026-05-03", type: "racePaceRun" }),
+    ],
+    profile({
+      longRunDay: "day_fri",
+      raceDate: "2026-05-03T00:00:00.000",
+    }),
+  );
+
+  assert.equal(findSession(sessions, "race").date, "2026-05-03");
+  assert.equal(findSession(sessions, "w1-fri-easy").date, "2026-05-01");
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
+  longRunDay = null,
   raceDate = null,
   trainingDays = null,
 }: {
   experience?: string;
   hardDays?: string[];
+  longRunDay?: string | null;
   raceDate?: string | null;
   trainingDays?: number | null;
 } = {}): Record<string, unknown> {
   return {
     goal: { raceDate },
     fitness: { experience },
-    schedule: { hardDays, trainingDays },
+    schedule: { hardDays, longRunDay, trainingDays },
   };
 }
 
