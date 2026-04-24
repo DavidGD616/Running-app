@@ -265,9 +265,9 @@ Deno.test("normalizeTrainingDayCount converts lowest priority sessions to rest d
         type: "recoveryRun",
       }),
       session({
-        id: "w1-thu-cross",
+        id: "w1-thu-fartlek",
         date: "2026-04-30",
-        type: "crossTraining",
+        type: "fartlek",
       }),
       session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
     ],
@@ -275,9 +275,10 @@ Deno.test("normalizeTrainingDayCount converts lowest priority sessions to rest d
   );
 
   assert.equal(trainingDayCount(sessions), 3);
-  assert.equal(findSession(sessions, "w1-thu-cross").type, "restDay");
+  assert.equal(findSession(sessions, "w1-mon-easy").type, "restDay");
   assert.equal(findSession(sessions, "w1-wed-recovery").type, "restDay");
   assert.equal(findSession(sessions, "w1-tue-quality").type, "intervals");
+  assert.equal(findSession(sessions, "w1-thu-fartlek").type, "fartlek");
   assert.equal(findSession(sessions, "w1-sat-long").type, "longRun");
 });
 

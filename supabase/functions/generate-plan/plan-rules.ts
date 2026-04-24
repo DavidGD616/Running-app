@@ -533,8 +533,6 @@ function findSessionToRest(
 
 function restConversionScore(session: GeneratedSession): number {
   switch (session.type) {
-    case "crossTraining":
-      return 0;
     case "recoveryRun":
       return 1;
     case "easyRun":
@@ -1296,9 +1294,7 @@ function isGoalRaceSession(
 }
 
 function isLowStressSession(session: GeneratedSession): boolean {
-  return ["restDay", "recoveryRun", "easyRun", "crossTraining"].includes(
-    session.type,
-  );
+  return ["restDay", "recoveryRun", "easyRun"].includes(session.type);
 }
 
 function sessionSwapScore(session: GeneratedSession): number {
@@ -1309,8 +1305,6 @@ function sessionSwapScore(session: GeneratedSession): number {
       return 1;
     case "easyRun":
       return 2;
-    case "crossTraining":
-      return 3;
     default:
       return 4;
   }

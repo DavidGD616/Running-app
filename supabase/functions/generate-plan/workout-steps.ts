@@ -20,7 +20,7 @@ interface WorkoutStepJson {
 export function buildWorkoutSteps(
   session: GeneratedSession,
 ): WorkoutStepJson[] {
-  if (session.type === "restDay" || session.type === "crossTraining") return [];
+  if (session.type === "restDay") return [];
 
   const zone = session.targetZone;
   const target = zone ? { type: "effort", zone } : null;

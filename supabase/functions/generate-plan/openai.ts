@@ -98,7 +98,6 @@ Generate a complete personalized training plan. Return only the JSON matching th
                       "thresholdRun",
                       "racePaceRun",
                       "recoveryRun",
-                      "crossTraining",
                       "restDay",
                     ],
                   },
