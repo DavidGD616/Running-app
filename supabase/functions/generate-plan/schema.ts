@@ -17,6 +17,9 @@ export const GeneratedSessionSchema = z.object({
     "recoveryRun",
     "restDay",
   ]),
+  phase: z
+    .enum(["base", "build", "specific", "peak", "taperRace"])
+    .optional(),
   distanceKm: z.number().nullable(),
   durationMinutes: z.number().int().nullable(),
   coachNote: z.string().nullable(),
