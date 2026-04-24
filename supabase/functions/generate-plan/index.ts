@@ -9,6 +9,7 @@ import {
   normalizeTaper,
   normalizeWorkoutTypesByPhase,
   normalizePeakLongRun,
+  phaseForWeek,
   placeLongRunsOnPreferredDay,
   smoothLongRunProgression,
   spaceStressfulSessions,
@@ -134,8 +135,12 @@ Deno.serve(async (req) => {
     generatedPlan.totalWeeks,
     locale,
   );
+  const phaseStampedSessions = phaseNormalizedSessions.map((session) => ({
+    ...session,
+    phase: phaseForWeek(session.weekNumber, generatedPlan.totalWeeks, profileData),
+  }));
   const raceFinalizedSessions = ensureGoalRaceSession(
-    phaseNormalizedSessions,
+    phaseStampedSessions,
     profileData,
     locale,
   );
