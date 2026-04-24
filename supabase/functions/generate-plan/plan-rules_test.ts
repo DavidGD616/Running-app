@@ -5,10 +5,96 @@ import {
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
   normalizeTrainingDayCount,
+  phaseForWeek,
+  phasePlanFor,
   placeLongRunsOnPreferredDay,
   spaceStressfulSessions,
 } from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
+
+Deno.test("phaseForWeek 12-week plan week 1 is base", () => {
+  assert.equal(phaseForWeek(1, 12, {}), "base");
+});
+
+Deno.test("phaseForWeek 12-week plan week 4 is build", () => {
+  assert.equal(phaseForWeek(4, 12, {}), "build");
+});
+
+Deno.test("phaseForWeek 12-week plan week 7 is specific", () => {
+  assert.equal(phaseForWeek(7, 12, {}), "specific");
+});
+
+Deno.test("phaseForWeek 12-week plan week 10 is peak", () => {
+  assert.equal(phaseForWeek(10, 12, {}), "peak");
+});
+
+Deno.test("phaseForWeek 12-week plan week 12 is taperRace", () => {
+  assert.equal(phaseForWeek(12, 12, {}), "taperRace");
+});
+
+Deno.test("phaseForWeek 8-week plan final week is taperRace", () => {
+  assert.equal(phaseForWeek(8, 8, {}), "taperRace");
+});
+
+Deno.test("phaseForWeek 16-week plan week 13 is peak", () => {
+  assert.equal(phaseForWeek(13, 16, {}), "peak");
+});
+
+Deno.test("phaseForWeek 16-week plan final week is taperRace", () => {
+  assert.equal(phaseForWeek(16, 16, {}), "taperRace");
+});
+
+Deno.test("phaseForWeek 20-week plan week 18 is peak", () => {
+  assert.equal(phaseForWeek(18, 20, {}), "peak");
+});
+
+Deno.test("phaseForWeek 20-week plan final week is taperRace", () => {
+  assert.equal(phaseForWeek(20, 20, {}), "taperRace");
+});
+
+Deno.test("phasePlanFor 12 weeks returns correct phases", () => {
+  const phases = phasePlanFor(12, {});
+  assert.equal(phases.length, 12);
+  assert.equal(phases.filter((p) => p === "base").length, 3);
+  assert.equal(phases.filter((p) => p === "build").length, 3);
+  assert.equal(phases.filter((p) => p === "specific").length, 3);
+  assert.equal(phases.filter((p) => p === "peak").length, 1);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 2);
+  assert.equal(phases[11], "taperRace");
+});
+
+Deno.test("phasePlanFor 8 weeks returns correct phases", () => {
+  const phases = phasePlanFor(8, {});
+  assert.equal(phases.length, 8);
+  assert.equal(phases.filter((p) => p === "base").length, 2);
+  assert.equal(phases.filter((p) => p === "build").length, 2);
+  assert.equal(phases.filter((p) => p === "specific").length, 2);
+  assert.equal(phases.filter((p) => p === "peak").length, 1);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[7], "taperRace");
+});
+
+Deno.test("phasePlanFor 16 weeks returns correct phases", () => {
+  const phases = phasePlanFor(16, {});
+  assert.equal(phases.length, 16);
+  assert.equal(phases.filter((p) => p === "base").length, 4);
+  assert.equal(phases.filter((p) => p === "build").length, 4);
+  assert.equal(phases.filter((p) => p === "specific").length, 4);
+  assert.equal(phases.filter((p) => p === "peak").length, 2);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 2);
+  assert.equal(phases[15], "taperRace");
+});
+
+Deno.test("phasePlanFor 20 weeks returns correct phases", () => {
+  const phases = phasePlanFor(20, {});
+  assert.equal(phases.length, 20);
+  assert.equal(phases.filter((p) => p === "base").length, 5);
+  assert.equal(phases.filter((p) => p === "build").length, 5);
+  assert.equal(phases.filter((p) => p === "specific").length, 5);
+  assert.equal(phases.filter((p) => p === "peak").length, 3);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 2);
+  assert.equal(phases[19], "taperRace");
+});
 
 Deno.test("addStrideDefaults adds intermediate stride defaults", () => {
   const sessions = addStrideDefaults(

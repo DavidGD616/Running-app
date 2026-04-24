@@ -1,5 +1,79 @@
 import type { GeneratedSession } from "./schema.ts";
 
+type RacePrepPhase = "base" | "build" | "specific" | "peak" | "taperRace";
+
+export function phaseForWeek(
+  weekNumber: number,
+  totalWeeks: number,
+  _profileData: Record<string, unknown>,
+): RacePrepPhase {
+  if (weekNumber < 1 || !Number.isFinite(weekNumber)) return "base";
+  if (!Number.isFinite(totalWeeks) || totalWeeks < 1) return "base";
+
+  const allocation = phaseAllocationFor(totalWeeks);
+  const phasesInOrder: RacePrepPhase[] = [
+    "base",
+    "build",
+    "specific",
+    "peak",
+    "taperRace",
+  ];
+
+  let cumulativeWeeks = 0;
+  for (let i = 0; i < phasesInOrder.length; i += 1) {
+    const phase = phasesInOrder[i];
+    const phaseWeeks = allocation[phase] ?? 0;
+    if (weekNumber <= cumulativeWeeks + phaseWeeks) {
+      return phase;
+    }
+    cumulativeWeeks += phaseWeeks;
+  }
+
+  return "taperRace";
+}
+
+export function phasePlanFor(
+  totalWeeks: number,
+  profileData: Record<string, unknown>,
+): RacePrepPhase[] {
+  return Array.from({ length: totalWeeks }, (_, i) =>
+    phaseForWeek(i + 1, totalWeeks, profileData)
+  );
+}
+
+type PhaseAllocation = Record<RacePrepPhase, number>;
+
+function phaseAllocationFor(totalWeeks: number): PhaseAllocation {
+  switch (totalWeeks) {
+    case 8:
+      return { base: 2, build: 2, specific: 2, peak: 1, taperRace: 1 };
+    case 12:
+      return { base: 3, build: 3, specific: 3, peak: 1, taperRace: 2 };
+    case 16:
+      return { base: 4, build: 4, specific: 4, peak: 2, taperRace: 2 };
+    case 20:
+      return { base: 5, build: 5, specific: 5, peak: 3, taperRace: 2 };
+    default:
+      return proportionalPhaseAllocation(totalWeeks);
+  }
+}
+
+function proportionalPhaseAllocation(totalWeeks: number): PhaseAllocation {
+  const baseWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
+  const buildWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
+  const specificWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
+  const peakWeeks = Math.max(1, Math.round(totalWeeks * 0.10));
+  const taperRaceWeeks = Math.max(1, totalWeeks - baseWeeks - buildWeeks - specificWeeks - peakWeeks);
+
+  return {
+    base: baseWeeks,
+    build: buildWeeks,
+    specific: specificWeeks,
+    peak: peakWeeks,
+    taperRace: taperRaceWeeks,
+  };
+}
+
 type CoachNoteLocale = "en" | "es";
 
 export function normalizeTrainingDayCount(
