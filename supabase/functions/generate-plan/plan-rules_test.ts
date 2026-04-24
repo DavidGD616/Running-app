@@ -5,11 +5,13 @@ import {
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
   normalizePeakLongRun,
+  normalizeTaper,
   normalizeTrainingDayCount,
   peakLongRunRangeKm,
   phaseForWeek,
   phasePlanFor,
   placeLongRunsOnPreferredDay,
+  smoothLongRunProgression,
   spaceStressfulSessions,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
@@ -1167,6 +1169,66 @@ Deno.test("normalizePeakLongRun caps experienced half marathon 25km peak at ~21k
   assert.ok(peakLongRun!.distanceKm != null, "peak longRun should have a distance");
   assert.ok(peakLongRun!.distanceKm! >= 16, `peak should be at least 16km, got ${peakLongRun!.distanceKm}`);
   assert.ok(peakLongRun!.distanceKm! <= 23, `peak should be capped at 23km, got ${peakLongRun!.distanceKm}`);
+});
+
+Deno.test("normalizePeakLongRun updates duration when raising distance", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 10, durationMinutes: 60, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 15, durationMinutes: 90, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 20, durationMinutes: 100, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 42.2, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_beginner" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.equal(peakLongRun!.distanceKm, 27, "distance should be raised to target");
+  assert.ok(peakLongRun!.durationMinutes != null, "duration should be updated");
+  assert.ok(peakLongRun!.durationMinutes! > 100, "duration should reflect larger distance");
+  assert.ok(peakLongRun!.durationMinutes! < 200, "duration should be realistic");
+});
+
+Deno.test("normalizePeakLongRun updates duration when capping distance", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 12, durationMinutes: 72, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 20, durationMinutes: 120, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 25, durationMinutes: 150, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 21.1, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_half_marathon", experience: "experience_experienced" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(peakLongRun!.distanceKm! <= 23, "distance should be capped at max");
+  assert.ok(peakLongRun!.durationMinutes != null, "duration should be updated");
+  assert.ok(peakLongRun!.durationMinutes! < 150, "duration should reflect smaller distance");
+});
+
+Deno.test("normalizePeakLongRun does not update duration when distance unchanged", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 10, durationMinutes: 60, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 15, durationMinutes: 90, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 27, durationMinutes: 135, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 42.2, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_beginner" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.equal(peakLongRun!.distanceKm, 27, "distance should stay at 27");
+  assert.equal(peakLongRun!.durationMinutes, 135, "duration should not change when distance unchanged");
 });
 
 function profile({
