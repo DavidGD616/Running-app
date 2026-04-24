@@ -205,6 +205,12 @@ TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
 - **Validation**:
   - Tests for excessive jumps.
   - Tests that planned cutback weeks still exist.
+- **Status**: ✅ COMPLETE
+- **Work Log**: 2026-04-23 - Added `smoothLongRunProgression()` that iterates through consecutive longRun sessions sorted by week number, capping any jump that exceeds the max allowed for the race type (2km for 5K/10K, 3km for half marathon, 4km for marathon). Down weeks (where current distance ≤ previous distance) are skipped and never flattened. Goal race session is excluded from smoothing. Added 3 unit tests: 5K 4km jump reduced to 2km max, marathon 5km jump reduced to 3-4km max, down week preserved at lower distance. All 83 tests pass.
+- **Files Modified**:
+  - `supabase/functions/generate-plan/plan-rules.ts` (added smoothLongRunProgression function)
+  - `supabase/functions/generate-plan/plan-rules_test.ts` (added 3 unit tests)
+- **Verification**: `deno test plan-rules_test.ts` — 83 tests passed, 0 failed.
 
 ### Task 3.2: Enforce Taper Shape
 - **Location**: `supabase/functions/generate-plan/plan-rules.ts`
