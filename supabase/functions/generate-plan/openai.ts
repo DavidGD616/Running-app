@@ -51,6 +51,15 @@ experienced runners, use 6 x 20 seconds with 80-90 seconds recovery, 2 sessions
 per week when safe. For brand-new or beginner runners, use 0-1 sessions per
 week, if used, with 4 x 15 seconds and 90 seconds recovery.
 
+Structure the plan using race-prep phases:
+base, build, specific, peak, taperRace.
+
+Base: easy aerobic running, routine, and gradual long-run habit.
+Build: increase weekly load and introduce controlled quality.
+Specific: use race-relevant workouts and long-run development.
+Peak: highest useful workload, including the peak long run.
+TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
+
 Always anchor week 1 sessions starting from the nearest upcoming Monday.
 ${raceInstruction}`;
 
