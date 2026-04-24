@@ -170,6 +170,83 @@ export function workoutPolicyForPhase(
   }
 }
 
+export function normalizeWorkoutTypesByPhase(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+  locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const race = raceFromProfile(profileData);
+  const experience = experienceFromProfile(profileData);
+  const raceDate = goalRaceDate(profileData);
+
+  return sessions.map((session) => {
+    if (session.type === "restDay") return session;
+    if (isGoalRaceSession(session, profileData)) return session;
+
+    const phase = phaseForWeek(session.weekNumber, totalWeeks, profileData);
+    const policy = workoutPolicyForPhase(phase, race, experience);
+
+    if (policy.allowedTypes.includes(session.type)) return session;
+
+    const replacement = nearestAllowedType(session.type, policy.allowedTypes);
+    return withDowngradedType(session, replacement, locale);
+  });
+}
+
+function nearestAllowedType(
+  currentType: string,
+  allowedTypes: string[],
+): string {
+  const downgradeMap: Record<string, string[]> = {
+    thresholdRun: ["tempoRun", "fartlek", "progressionRun", "easyRun"],
+    intervals: ["fartlek", "progressionRun", "easyRun"],
+    hillRepeats: ["fartlek", "progressionRun", "easyRun"],
+    tempoRun: ["fartlek", "progressionRun", "easyRun"],
+    racePaceRun: ["fartlek", "progressionRun", "easyRun"],
+    progressionRun: ["fartlek", "easyRun"],
+    fartlek: ["easyRun"],
+  };
+
+  const candidates = downgradeMap[currentType] ?? [];
+  for (const candidate of candidates) {
+    if (allowedTypes.includes(candidate)) return candidate;
+  }
+
+  return "easyRun";
+}
+
+function withDowngradedType(
+  session: GeneratedSession,
+  newType: string,
+  locale: CoachNoteLocale,
+): GeneratedSession {
+  const isLongRun = session.type === "longRun";
+  return {
+    ...session,
+    type: newType as GeneratedSession["type"],
+    distanceKm: newType === "easyRun" || newType === "recoveryRun"
+      ? null
+      : session.distanceKm,
+    durationMinutes: newType === "easyRun" || newType === "recoveryRun"
+      ? (isLongRun
+        ? Math.max(35, session.durationMinutes ?? 45)
+        : Math.min(35, Math.max(25, session.durationMinutes ?? 30)))
+      : session.durationMinutes,
+    coachNote: trainingDayCue("adjustedForPhase", locale),
+    targetZone: newType === "easyRun"
+      ? "easy"
+      : newType === "recoveryRun"
+      ? "recovery"
+      : session.targetZone,
+    warmUpMinutes: null,
+    coolDownMinutes: null,
+    intervalReps: null,
+    intervalRepDistanceMeters: null,
+    intervalRecoverySeconds: null,
+  };
+}
+
 function basePhasePolicy(experience: string): WorkoutPolicy {
   const base: WorkoutPolicy = {
     allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
@@ -1641,6 +1718,8 @@ type TrainingDayCueKey =
   | "shortRecoveryAdded"
   | "easyRunAdded"
   | "adjustedForSpacing"
+  | "adjustedForPhase"
+  | "peakLongRunNormalized"
   | "strideAdded"
   | "movedAwayFromHardDay";
 
@@ -1687,6 +1766,14 @@ function trainingDayCue(
       en: "Adjusted to keep hard training days spaced safely.",
       es: "Ajustado para separar mejor los días duros de entrenamiento.",
     },
+    adjustedForPhase: {
+      en: "Adjusted to match phase-appropriate training.",
+      es: "Ajustado para coincidir con el entrenamiento apropiado de la fase.",
+    },
+    peakLongRunNormalized: {
+      en: "Adjusted to match peak long run target.",
+      es: "Ajustado para coincidir con el objetivo de tirada larga máxima.",
+    },
     strideAdded: {
       en: "Finish with relaxed strides: fast but smooth, not a sprint.",
       es:
@@ -1713,4 +1800,56 @@ function objectOrNull(value: unknown): Record<string, unknown> | null {
   return value != null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : null;
+}
+
+export function normalizePeakLongRun(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+  locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const range = peakLongRunRangeKm(profileData);
+  const peakWeeks = new Set(
+    Array.from({ length: totalWeeks }, (_, i) => i + 1)
+      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+  );
+
+  const adjusted = sessions.map((session) => ({ ...session }));
+  let bestPeakLongRun: { index: number; distanceKm: number } | null = null;
+
+  for (let i = 0; i < adjusted.length; i += 1) {
+    const session = adjusted[i];
+    if (session.type !== "longRun") continue;
+    if (!peakWeeks.has(session.weekNumber)) continue;
+    if (isGoalRaceSession(session, profileData)) continue;
+
+    const currentDistance = session.distanceKm ?? 0;
+    if (bestPeakLongRun == null || currentDistance > bestPeakLongRun.distanceKm) {
+      bestPeakLongRun = { index: i, distanceKm: currentDistance };
+    }
+  }
+
+  if (bestPeakLongRun == null) return sessions;
+
+  const targetDistance = range.targetKm;
+  const currentDistance = bestPeakLongRun.distanceKm;
+  const finalDistance = Math.max(range.minKm, Math.min(range.maxKm, targetDistance));
+
+  const wasRaised = currentDistance < targetDistance;
+  const cue = wasRaised
+    ? locale === "en"
+      ? "Peak long run raised to target."
+      : "Tirada larga máxima aumentada al objetivo."
+    : "Peak long run capped to safe maximum.";
+
+  adjusted[bestPeakLongRun.index] = {
+    ...adjusted[bestPeakLongRun.index],
+    distanceKm: finalDistance,
+    coachNote: appendTrainingDayCue(
+      adjusted[bestPeakLongRun.index].coachNote,
+      cue,
+    ),
+  };
+
+  return adjusted;
 }

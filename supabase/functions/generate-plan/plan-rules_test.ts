@@ -4,6 +4,7 @@ import {
   avoidHardDayTraining,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
+  normalizePeakLongRun,
   normalizeTrainingDayCount,
   peakLongRunRangeKm,
   phaseForWeek,
@@ -1105,6 +1106,67 @@ Deno.test("workoutPolicyForPhase taperRace phase sets maxStressDays to minimum",
     policy.maxStressDays <= 1,
     "taperRace should have minimal maxStressDays",
   );
+});
+
+Deno.test("normalizePeakLongRun raises beginner marathon 20km peak to ~28km", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 10, weekNumber: 1 }),
+    session({ id: "w5-sat", date: "2026-05-23", type: "longRun", distanceKm: 15, weekNumber: 5 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 20, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 20, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 42.2, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_beginner" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(peakLongRun!.distanceKm != null, "peak longRun should have a distance");
+  assert.ok(peakLongRun!.distanceKm! >= 24, `peak should be at least 24km, got ${peakLongRun!.distanceKm}`);
+  assert.ok(peakLongRun!.distanceKm! <= 30, `peak should be capped at 30km, got ${peakLongRun!.distanceKm}`);
+});
+
+Deno.test("normalizePeakLongRun raises intermediate 10K 8km peak to ~13km", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 5, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 8, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 8, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 10, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_10k", experience: "experience_intermediate" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(peakLongRun!.distanceKm != null, "peak longRun should have a distance");
+  assert.ok(peakLongRun!.distanceKm! >= 10, `peak should be at least 10km, got ${peakLongRun!.distanceKm}`);
+  assert.ok(peakLongRun!.distanceKm! <= 15, `peak should be capped at 15km, got ${peakLongRun!.distanceKm}`);
+});
+
+Deno.test("normalizePeakLongRun caps experienced half marathon 25km peak at ~21km", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 12, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 20, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 25, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 21.1, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_half_marathon", experience: "experience_experienced" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(peakLongRun!.distanceKm != null, "peak longRun should have a distance");
+  assert.ok(peakLongRun!.distanceKm! >= 16, `peak should be at least 16km, got ${peakLongRun!.distanceKm}`);
+  assert.ok(peakLongRun!.distanceKm! <= 23, `peak should be capped at 23km, got ${peakLongRun!.distanceKm}`);
 });
 
 function profile({

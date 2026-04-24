@@ -6,6 +6,7 @@ import {
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
   normalizeTrainingDayCount,
+  normalizeWorkoutTypesByPhase,
   placeLongRunsOnPreferredDay,
   spaceStressfulSessions,
 } from "./plan-rules.ts";
@@ -106,8 +107,14 @@ Deno.serve(async (req) => {
     scheduleAdjustedSessions,
     locale,
   );
-  const raceFinalizedSessions = ensureGoalRaceSession(
+  const peakNormalizedSessions = normalizePeakLongRun(
     fullCalendarSessions,
+    profileData,
+    generatedPlan.totalWeeks,
+    locale,
+  );
+  const raceFinalizedSessions = ensureGoalRaceSession(
+    peakNormalizedSessions,
     profileData,
     locale,
   );
