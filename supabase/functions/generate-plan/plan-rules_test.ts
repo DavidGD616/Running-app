@@ -760,8 +760,8 @@ Deno.test("peakLongRunRangeKm 5K intermediate returns correct range", () => {
     profile({ race: "race_5k", experience: "experience_intermediate" }),
   );
   assert.equal(range.minKm, 6);
-  assert.equal(range.targetKm, 9);
-  assert.equal(range.maxKm, 12);
+  assert.equal(range.targetKm, 8);
+  assert.equal(range.maxKm, 10);
 });
 
 Deno.test("peakLongRunRangeKm 5K experienced returns correct range", () => {
@@ -769,8 +769,8 @@ Deno.test("peakLongRunRangeKm 5K experienced returns correct range", () => {
     profile({ race: "race_5k", experience: "experience_experienced" }),
   );
   assert.equal(range.minKm, 8);
-  assert.equal(range.targetKm, 11);
-  assert.equal(range.maxKm, 14);
+  assert.equal(range.targetKm, 10);
+  assert.equal(range.maxKm, 12);
 });
 
 Deno.test("peakLongRunRangeKm 10K beginner returns correct range", () => {
@@ -778,8 +778,8 @@ Deno.test("peakLongRunRangeKm 10K beginner returns correct range", () => {
     profile({ race: "race_10k", experience: "experience_beginner" }),
   );
   assert.equal(range.minKm, 6);
-  assert.equal(range.targetKm, 9);
-  assert.equal(range.maxKm, 12);
+  assert.equal(range.targetKm, 8);
+  assert.equal(range.maxKm, 10);
 });
 
 Deno.test("peakLongRunRangeKm 10K intermediate returns correct range", () => {
@@ -787,8 +787,8 @@ Deno.test("peakLongRunRangeKm 10K intermediate returns correct range", () => {
     profile({ race: "race_10k", experience: "experience_intermediate" }),
   );
   assert.equal(range.minKm, 10);
-  assert.equal(range.targetKm, 12.5);
-  assert.equal(range.maxKm, 15);
+  assert.equal(range.targetKm, 12);
+  assert.equal(range.maxKm, 13);
 });
 
 Deno.test("peakLongRunRangeKm 10K experienced returns correct range", () => {
@@ -796,8 +796,8 @@ Deno.test("peakLongRunRangeKm 10K experienced returns correct range", () => {
     profile({ race: "race_10k", experience: "experience_experienced" }),
   );
   assert.equal(range.minKm, 11);
-  assert.equal(range.targetKm, 14.5);
-  assert.equal(range.maxKm, 18);
+  assert.equal(range.targetKm, 13);
+  assert.equal(range.maxKm, 16);
 });
 
 Deno.test("peakLongRunRangeKm half marathon beginner returns correct range", () => {
@@ -805,8 +805,8 @@ Deno.test("peakLongRunRangeKm half marathon beginner returns correct range", () 
     profile({ race: "race_half_marathon", experience: "experience_beginner" }),
   );
   assert.equal(range.minKm, 11);
-  assert.equal(range.targetKm, 14.5);
-  assert.equal(range.maxKm, 18);
+  assert.equal(range.targetKm, 13);
+  assert.equal(range.maxKm, 16);
 });
 
 Deno.test("peakLongRunRangeKm half marathon intermediate returns correct range", () => {
@@ -817,8 +817,8 @@ Deno.test("peakLongRunRangeKm half marathon intermediate returns correct range",
     }),
   );
   assert.equal(range.minKm, 14);
-  assert.equal(range.targetKm, 17);
-  assert.equal(range.maxKm, 20);
+  assert.equal(range.targetKm, 16);
+  assert.equal(range.maxKm, 18);
 });
 
 Deno.test("peakLongRunRangeKm half marathon experienced returns correct range", () => {
@@ -829,8 +829,8 @@ Deno.test("peakLongRunRangeKm half marathon experienced returns correct range", 
     }),
   );
   assert.equal(range.minKm, 16);
-  assert.equal(range.targetKm, 19.5);
-  assert.equal(range.maxKm, 23);
+  assert.equal(range.targetKm, 18);
+  assert.equal(range.maxKm, 21);
 });
 
 Deno.test("peakLongRunRangeKm marathon beginner returns correct range", () => {
@@ -838,7 +838,7 @@ Deno.test("peakLongRunRangeKm marathon beginner returns correct range", () => {
     profile({ race: "race_marathon", experience: "experience_beginner" }),
   );
   assert.equal(range.minKm, 24);
-  assert.equal(range.targetKm, 27);
+  assert.equal(range.targetKm, 26);
   assert.equal(range.maxKm, 30);
 });
 
@@ -847,8 +847,8 @@ Deno.test("peakLongRunRangeKm marathon intermediate returns correct range", () =
     profile({ race: "race_marathon", experience: "experience_intermediate" }),
   );
   assert.equal(range.minKm, 28);
-  assert.equal(range.targetKm, 31);
-  assert.equal(range.maxKm, 34);
+  assert.equal(range.targetKm, 30);
+  assert.equal(range.maxKm, 32);
 });
 
 Deno.test("peakLongRunRangeKm marathon experienced returns correct range", () => {
@@ -856,8 +856,8 @@ Deno.test("peakLongRunRangeKm marathon experienced returns correct range", () =>
     profile({ race: "race_marathon", experience: "experience_experienced" }),
   );
   assert.equal(range.minKm, 30);
-  assert.equal(range.targetKm, 33);
-  assert.equal(range.maxKm, 36);
+  assert.equal(range.targetKm, 32);
+  assert.equal(range.maxKm, 34);
 });
 
 Deno.test("workoutPolicyForPhase base phase allows easy, recovery, long run", () => {
@@ -1186,10 +1186,29 @@ Deno.test("normalizePeakLongRun updates duration when raising distance", () => {
   );
   const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
   assert.ok(peakLongRun, "peak phase longRun should exist");
-  assert.equal(peakLongRun!.distanceKm, 27, "distance should be raised to target");
+  assert.equal(peakLongRun!.distanceKm, 26, "distance should be raised to target");
   assert.ok(peakLongRun!.durationMinutes != null, "duration should be updated");
   assert.ok(peakLongRun!.durationMinutes! > 100, "duration should reflect larger distance");
   assert.ok(peakLongRun!.durationMinutes! < 200, "duration should be realistic");
+});
+
+Deno.test("normalizePeakLongRun does not update duration when distance unchanged", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 10, durationMinutes: 60, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 15, durationMinutes: 90, weekNumber: 8 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 26, durationMinutes: 130, weekNumber: 10 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 42.2, weekNumber: 12 }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_beginner" }),
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.equal(peakLongRun!.distanceKm, 26, "distance should stay at 26");
+  assert.equal(peakLongRun!.durationMinutes, 130, "duration should not change when distance unchanged");
 });
 
 Deno.test("normalizePeakLongRun updates duration when capping distance", () => {
@@ -1216,7 +1235,7 @@ Deno.test("normalizePeakLongRun does not update duration when distance unchanged
   const sessions = [
     session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 10, durationMinutes: 60, weekNumber: 1 }),
     session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 15, durationMinutes: 90, weekNumber: 8 }),
-    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 27, durationMinutes: 135, weekNumber: 10 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 26, durationMinutes: 130, weekNumber: 10 }),
     session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 42.2, weekNumber: 12 }),
   ];
   const result = normalizePeakLongRun(
@@ -1227,8 +1246,8 @@ Deno.test("normalizePeakLongRun does not update duration when distance unchanged
   );
   const peakLongRun = result.find((s) => s.weekNumber === 10 && s.type === "longRun");
   assert.ok(peakLongRun, "peak phase longRun should exist");
-  assert.equal(peakLongRun!.distanceKm, 27, "distance should stay at 27");
-  assert.equal(peakLongRun!.durationMinutes, 135, "duration should not change when distance unchanged");
+  assert.equal(peakLongRun!.distanceKm, 26, "distance should stay at 26");
+  assert.equal(peakLongRun!.durationMinutes, 130, "duration should not change when distance unchanged");
 });
 
 Deno.test("smoothLongRunProgression reduces 5K 4km jump to 2km max", () => {

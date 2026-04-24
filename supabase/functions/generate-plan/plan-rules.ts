@@ -20,39 +20,39 @@ export function peakLongRunRangeKm(
         case "experience_beginner":
           return { minKm: 3, targetKm: 5, maxKm: 7 };
         case "experience_intermediate":
-          return { minKm: 6, targetKm: 9, maxKm: 12 };
+          return { minKm: 6, targetKm: 8, maxKm: 10 };
         case "experience_experienced":
-          return { minKm: 8, targetKm: 11, maxKm: 14 };
+          return { minKm: 8, targetKm: 10, maxKm: 12 };
       }
       break;
     case "race_10k":
       switch (experience) {
         case "experience_beginner":
-          return { minKm: 6, targetKm: 9, maxKm: 12 };
+          return { minKm: 6, targetKm: 8, maxKm: 10 };
         case "experience_intermediate":
-          return { minKm: 10, targetKm: 12.5, maxKm: 15 };
+          return { minKm: 10, targetKm: 12, maxKm: 13 };
         case "experience_experienced":
-          return { minKm: 11, targetKm: 14.5, maxKm: 18 };
+          return { minKm: 11, targetKm: 13, maxKm: 16 };
       }
       break;
     case "race_half_marathon":
       switch (experience) {
         case "experience_beginner":
-          return { minKm: 11, targetKm: 14.5, maxKm: 18 };
+          return { minKm: 11, targetKm: 13, maxKm: 16 };
         case "experience_intermediate":
-          return { minKm: 14, targetKm: 17, maxKm: 20 };
+          return { minKm: 14, targetKm: 16, maxKm: 18 };
         case "experience_experienced":
-          return { minKm: 16, targetKm: 19.5, maxKm: 23 };
+          return { minKm: 16, targetKm: 18, maxKm: 21 };
       }
       break;
     case "race_marathon":
       switch (experience) {
         case "experience_beginner":
-          return { minKm: 24, targetKm: 27, maxKm: 30 };
+          return { minKm: 24, targetKm: 26, maxKm: 30 };
         case "experience_intermediate":
-          return { minKm: 28, targetKm: 31, maxKm: 34 };
+          return { minKm: 28, targetKm: 30, maxKm: 32 };
         case "experience_experienced":
-          return { minKm: 30, targetKm: 33, maxKm: 36 };
+          return { minKm: 30, targetKm: 32, maxKm: 34 };
       }
       break;
   }
@@ -178,7 +178,7 @@ export function normalizeWorkoutTypesByPhase(
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const experience = experienceFromProfile(profileData);
-  const raceDate = goalRaceDate(profileData);
+  const _raceDate = goalRaceDate(profileData);
 
   return sessions.map((session) => {
     if (session.type === "restDay") return session;
@@ -307,7 +307,7 @@ function buildPhasePolicy(experience: string): WorkoutPolicy {
 
 function specificPhasePolicy(
   experience: string,
-  raceType: string,
+  _raceType: string,
 ): WorkoutPolicy {
   const allowed: string[] = [
     "easyRun",
@@ -1913,8 +1913,8 @@ function fallbackEasyPaceMinPerKm(experience: string): number {
 export function smoothLongRunProgression(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
-  totalWeeks: number,
-  locale: CoachNoteLocale = "en",
+  _totalWeeks: number,
+  _locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const maxJump = maxLongRunJumpKm(race);
@@ -1973,7 +1973,7 @@ export function normalizeTaper(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
-  locale: CoachNoteLocale = "en",
+  _locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const taperRaceWeeks = new Set(
