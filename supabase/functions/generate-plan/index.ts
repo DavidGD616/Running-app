@@ -107,6 +107,21 @@ Deno.serve(async (req) => {
     scheduleAdjustedSessions,
     locale,
   );
+  const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
+    fullCalendarSessions,
+    profileData,
+    generatedPlan.totalWeeks,
+    locale,
+  );
+  const raceFinalizedSessions = ensureGoalRaceSession(
+    phaseNormalizedSessions,
+    profileData,
+    locale,
+  );
+  const fullCalendarSessions = ensureFullCalendarWeeks(
+    scheduleAdjustedSessions,
+    locale,
+  );
   const peakNormalizedSessions = normalizePeakLongRun(
     fullCalendarSessions,
     profileData,
