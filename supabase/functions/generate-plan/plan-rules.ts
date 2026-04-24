@@ -130,20 +130,18 @@ function phaseAllocationFor(totalWeeks: number): PhaseAllocation {
 }
 
 function proportionalPhaseAllocation(totalWeeks: number): PhaseAllocation {
-  const baseWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
-  const buildWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
-  const specificWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
-  const peakWeeks = Math.max(1, Math.round(totalWeeks * 0.10));
-  const taperRaceWeeks = Math.max(
-    1,
-    totalWeeks - baseWeeks - buildWeeks - specificWeeks - peakWeeks,
-  );
+  const baseWeeks = Math.floor(totalWeeks * 0.25);
+  const buildWeeks = Math.floor(totalWeeks * 0.25);
+  const specificWeeks = Math.floor(totalWeeks * 0.25);
+  const peakWeeks = Math.floor(totalWeeks * 0.10);
+  const allocatedSoFar = baseWeeks + buildWeeks + specificWeeks + peakWeeks;
+  const taperRaceWeeks = Math.max(1, totalWeeks - allocatedSoFar);
 
   return {
-    base: baseWeeks,
-    build: buildWeeks,
-    specific: specificWeeks,
-    peak: peakWeeks,
+    base: Math.max(1, baseWeeks),
+    build: Math.max(1, buildWeeks),
+    specific: Math.max(1, specificWeeks),
+    peak: Math.max(1, peakWeeks),
     taperRace: taperRaceWeeks,
   };
 }

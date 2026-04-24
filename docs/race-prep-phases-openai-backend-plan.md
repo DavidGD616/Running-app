@@ -98,6 +98,11 @@ TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
   - No phase assignment produces gaps.
 - **Validation**:
   - Tests for 8, 12, 16, 20 week plans.
+- **Status**: ✅ COMPLETE
+- **Work Log**: 2026-04-23/24 - Fixed `proportionalPhaseAllocation()` to use `Math.floor` instead of `Math.round` for phase allocation, ensuring peak phase gets at least 1 week even for unusual plan lengths. Added tests for 10-week and 14-week proportional scaling. Added no-gap validation tests for 9-week and 15-week plans. All 69 tests pass.
+- **Files Modified**:
+  - `supabase/functions/generate-plan/plan-rules.ts` (fixed proportional scaling)
+- **Errors**: None
 
 ## Sprint 2: Peak Long Run Rules
 **Goal**: Ensure each plan reaches a professional peak long run for the selected race and runner experience.
