@@ -106,8 +106,9 @@ export function phasePlanFor(
   totalWeeks: number,
   profileData: Record<string, unknown>,
 ): RacePrepPhase[] {
-  return Array.from({ length: totalWeeks }, (_, i) =>
-    phaseForWeek(i + 1, totalWeeks, profileData)
+  return Array.from(
+    { length: totalWeeks },
+    (_, i) => phaseForWeek(i + 1, totalWeeks, profileData),
   );
 }
 
@@ -133,7 +134,10 @@ function proportionalPhaseAllocation(totalWeeks: number): PhaseAllocation {
   const buildWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
   const specificWeeks = Math.max(1, Math.round(totalWeeks * 0.25));
   const peakWeeks = Math.max(1, Math.round(totalWeeks * 0.10));
-  const taperRaceWeeks = Math.max(1, totalWeeks - baseWeeks - buildWeeks - specificWeeks - peakWeeks);
+  const taperRaceWeeks = Math.max(
+    1,
+    totalWeeks - baseWeeks - buildWeeks - specificWeeks - peakWeeks,
+  );
 
   return {
     base: baseWeeks,
@@ -174,7 +178,10 @@ function basePhasePolicy(experience: string): WorkoutPolicy {
     maxStressDays: 2,
   };
 
-  if (experience === "experience_intermediate" || experience === "experience_experienced") {
+  if (
+    experience === "experience_intermediate" ||
+    experience === "experience_experienced"
+  ) {
     base.allowedTypes.push("fartlek", "progressionRun");
     base.maxStressDays = 2;
   }
@@ -223,7 +230,10 @@ function buildPhasePolicy(experience: string): WorkoutPolicy {
   };
 }
 
-function specificPhasePolicy(experience: string, raceType: string): WorkoutPolicy {
+function specificPhasePolicy(
+  experience: string,
+  raceType: string,
+): WorkoutPolicy {
   const allowed: string[] = [
     "easyRun",
     "recoveryRun",
@@ -234,7 +244,10 @@ function specificPhasePolicy(experience: string, raceType: string): WorkoutPolic
     "progressionRun",
   ];
 
-  if (experience === "experience_intermediate" || experience === "experience_experienced") {
+  if (
+    experience === "experience_intermediate" ||
+    experience === "experience_experienced"
+  ) {
     allowed.push("intervals", "hillRepeats", "racePaceRun");
   }
 
@@ -280,7 +293,10 @@ function taperRacePhasePolicy(experience: string): WorkoutPolicy {
     "fartlek",
   ];
 
-  if (experience === "experience_intermediate" || experience === "experience_experienced") {
+  if (
+    experience === "experience_intermediate" ||
+    experience === "experience_experienced"
+  ) {
     allowed.push("longRun");
     allowed.push("racePaceRun");
   }

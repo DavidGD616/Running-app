@@ -106,8 +106,14 @@ Deno.test("phasePlanFor 10 weeks scales proportionally with no gaps", () => {
   const specificCount = phases.filter((p) => p === "specific").length;
   const peakCount = phases.filter((p) => p === "peak").length;
   const taperCount = phases.filter((p) => p === "taperRace").length;
-  assert.equal(baseCount + buildCount + specificCount + peakCount + taperCount, 10);
-  assert.ok(baseCount >= 1 && buildCount >= 1 && specificCount >= 1 && peakCount >= 1 && taperCount >= 1);
+  assert.equal(
+    baseCount + buildCount + specificCount + peakCount + taperCount,
+    10,
+  );
+  assert.ok(
+    baseCount >= 1 && buildCount >= 1 && specificCount >= 1 && peakCount >= 1 &&
+      taperCount >= 1,
+  );
   assert.equal(phases[9], "taperRace");
 });
 
@@ -119,8 +125,14 @@ Deno.test("phasePlanFor 14 weeks scales proportionally with no gaps", () => {
   const specificCount = phases.filter((p) => p === "specific").length;
   const peakCount = phases.filter((p) => p === "peak").length;
   const taperCount = phases.filter((p) => p === "taperRace").length;
-  assert.equal(baseCount + buildCount + specificCount + peakCount + taperCount, 14);
-  assert.ok(baseCount >= 1 && buildCount >= 1 && specificCount >= 1 && peakCount >= 1 && taperCount >= 1);
+  assert.equal(
+    baseCount + buildCount + specificCount + peakCount + taperCount,
+    14,
+  );
+  assert.ok(
+    baseCount >= 1 && buildCount >= 1 && specificCount >= 1 && peakCount >= 1 &&
+      taperCount >= 1,
+  );
   assert.equal(phases[13], "taperRace");
 });
 
@@ -128,7 +140,9 @@ Deno.test("phasePlanFor 9 weeks produces no gaps", () => {
   const phases = phasePlanFor(9, {});
   assert.equal(phases.length, 9);
   for (let i = 0; i < 9; i++) {
-    assert.ok(["base", "build", "specific", "peak", "taperRace"].includes(phases[i]));
+    assert.ok(
+      ["base", "build", "specific", "peak", "taperRace"].includes(phases[i]),
+    );
   }
 });
 
@@ -136,7 +150,9 @@ Deno.test("phasePlanFor 15 weeks produces no gaps", () => {
   const phases = phasePlanFor(15, {});
   assert.equal(phases.length, 15);
   for (let i = 0; i < 15; i++) {
-    assert.ok(["base", "build", "specific", "peak", "taperRace"].includes(phases[i]));
+    assert.ok(
+      ["base", "build", "specific", "peak", "taperRace"].includes(phases[i]),
+    );
   }
 });
 
@@ -728,84 +744,114 @@ Deno.test("placeLongRunsOnPreferredDay preserves fixed race date", () => {
 });
 
 Deno.test("peakLongRunRangeKm 5K beginner returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_5k", experience: "experience_beginner" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_5k", experience: "experience_beginner" }),
+  );
   assert.equal(range.minKm, 3);
   assert.equal(range.targetKm, 5);
   assert.equal(range.maxKm, 7);
 });
 
 Deno.test("peakLongRunRangeKm 5K intermediate returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_5k", experience: "experience_intermediate" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_5k", experience: "experience_intermediate" }),
+  );
   assert.equal(range.minKm, 6);
   assert.equal(range.targetKm, 9);
   assert.equal(range.maxKm, 12);
 });
 
 Deno.test("peakLongRunRangeKm 5K experienced returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_5k", experience: "experience_experienced" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_5k", experience: "experience_experienced" }),
+  );
   assert.equal(range.minKm, 8);
   assert.equal(range.targetKm, 11);
   assert.equal(range.maxKm, 14);
 });
 
 Deno.test("peakLongRunRangeKm 10K beginner returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_10k", experience: "experience_beginner" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_10k", experience: "experience_beginner" }),
+  );
   assert.equal(range.minKm, 6);
   assert.equal(range.targetKm, 9);
   assert.equal(range.maxKm, 12);
 });
 
 Deno.test("peakLongRunRangeKm 10K intermediate returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_10k", experience: "experience_intermediate" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_10k", experience: "experience_intermediate" }),
+  );
   assert.equal(range.minKm, 10);
   assert.equal(range.targetKm, 12.5);
   assert.equal(range.maxKm, 15);
 });
 
 Deno.test("peakLongRunRangeKm 10K experienced returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_10k", experience: "experience_experienced" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_10k", experience: "experience_experienced" }),
+  );
   assert.equal(range.minKm, 11);
   assert.equal(range.targetKm, 14.5);
   assert.equal(range.maxKm, 18);
 });
 
 Deno.test("peakLongRunRangeKm half marathon beginner returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_half_marathon", experience: "experience_beginner" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_half_marathon", experience: "experience_beginner" }),
+  );
   assert.equal(range.minKm, 11);
   assert.equal(range.targetKm, 14.5);
   assert.equal(range.maxKm, 18);
 });
 
 Deno.test("peakLongRunRangeKm half marathon intermediate returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_half_marathon", experience: "experience_intermediate" }));
+  const range = peakLongRunRangeKm(
+    profile({
+      race: "race_half_marathon",
+      experience: "experience_intermediate",
+    }),
+  );
   assert.equal(range.minKm, 14);
   assert.equal(range.targetKm, 17);
   assert.equal(range.maxKm, 20);
 });
 
 Deno.test("peakLongRunRangeKm half marathon experienced returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_half_marathon", experience: "experience_experienced" }));
+  const range = peakLongRunRangeKm(
+    profile({
+      race: "race_half_marathon",
+      experience: "experience_experienced",
+    }),
+  );
   assert.equal(range.minKm, 16);
   assert.equal(range.targetKm, 19.5);
   assert.equal(range.maxKm, 23);
 });
 
 Deno.test("peakLongRunRangeKm marathon beginner returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_marathon", experience: "experience_beginner" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_marathon", experience: "experience_beginner" }),
+  );
   assert.equal(range.minKm, 24);
   assert.equal(range.targetKm, 27);
   assert.equal(range.maxKm, 30);
 });
 
 Deno.test("peakLongRunRangeKm marathon intermediate returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_marathon", experience: "experience_intermediate" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_marathon", experience: "experience_intermediate" }),
+  );
   assert.equal(range.minKm, 28);
   assert.equal(range.targetKm, 31);
   assert.equal(range.maxKm, 34);
 });
 
 Deno.test("peakLongRunRangeKm marathon experienced returns correct range", () => {
-  const range = peakLongRunRangeKm(profile({ race: "race_marathon", experience: "experience_experienced" }));
+  const range = peakLongRunRangeKm(
+    profile({ race: "race_marathon", experience: "experience_experienced" }),
+  );
   assert.equal(range.minKm, 30);
   assert.equal(range.targetKm, 33);
   assert.equal(range.maxKm, 36);
@@ -813,103 +859,252 @@ Deno.test("peakLongRunRangeKm marathon experienced returns correct range", () =>
 
 Deno.test("workoutPolicyForPhase base phase allows easy, recovery, long run", () => {
   const policy = workoutPolicyForPhase("base", "fiveK", "experience_beginner");
-  assert.ok(policy.allowedTypes.includes("easyRun"), "base should allow easyRun");
-  assert.ok(policy.allowedTypes.includes("recoveryRun"), "base should allow recoveryRun");
-  assert.ok(policy.allowedTypes.includes("longRun"), "base should allow longRun");
+  assert.ok(
+    policy.allowedTypes.includes("easyRun"),
+    "base should allow easyRun",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("recoveryRun"),
+    "base should allow recoveryRun",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("longRun"),
+    "base should allow longRun",
+  );
 });
 
 Deno.test("workoutPolicyForPhase base phase does not allow advanced workouts for beginner", () => {
   const policy = workoutPolicyForPhase("base", "fiveK", "experience_beginner");
-  assert.ok(!policy.allowedTypes.includes("intervals"), "base should not allow intervals for beginner");
-  assert.ok(!policy.allowedTypes.includes("tempoRun"), "base should not allow tempoRun for beginner");
-  assert.ok(!policy.allowedTypes.includes("thresholdRun"), "base should not allow thresholdRun for beginner");
+  assert.ok(
+    !policy.allowedTypes.includes("intervals"),
+    "base should not allow intervals for beginner",
+  );
+  assert.ok(
+    !policy.allowedTypes.includes("tempoRun"),
+    "base should not allow tempoRun for beginner",
+  );
+  assert.ok(
+    !policy.allowedTypes.includes("thresholdRun"),
+    "base should not allow thresholdRun for beginner",
+  );
 });
 
 Deno.test("workoutPolicyForPhase build phase adds tempo, hills, fartlek for intermediate", () => {
-  const policy = workoutPolicyForPhase("build", "fiveK", "experience_intermediate");
-  assert.ok(policy.allowedTypes.includes("tempoRun"), "build should allow tempoRun for intermediate");
-  assert.ok(policy.allowedTypes.includes("hillRepeats"), "build should allow hillRepeats for intermediate");
-  assert.ok(policy.allowedTypes.includes("fartlek"), "build should allow fartlek for intermediate");
+  const policy = workoutPolicyForPhase(
+    "build",
+    "fiveK",
+    "experience_intermediate",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("tempoRun"),
+    "build should allow tempoRun for intermediate",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("hillRepeats"),
+    "build should allow hillRepeats for intermediate",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("fartlek"),
+    "build should allow fartlek for intermediate",
+  );
 });
 
 Deno.test("workoutPolicyForPhase build phase allows progressionRun for experienced", () => {
-  const policy = workoutPolicyForPhase("build", "tenK", "experience_experienced");
-  assert.ok(policy.allowedTypes.includes("progressionRun"), "build should allow progressionRun for experienced");
-  assert.ok(policy.allowedTypes.includes("tempoRun"), "build should allow tempoRun for experienced");
-  assert.ok(policy.allowedTypes.includes("hillRepeats"), "build should allow hillRepeats for experienced");
+  const policy = workoutPolicyForPhase(
+    "build",
+    "tenK",
+    "experience_experienced",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("progressionRun"),
+    "build should allow progressionRun for experienced",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("tempoRun"),
+    "build should allow tempoRun for experienced",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("hillRepeats"),
+    "build should allow hillRepeats for experienced",
+  );
 });
 
 Deno.test("workoutPolicyForPhase specific phase adds race-relevant workouts", () => {
-  const policy = workoutPolicyForPhase("specific", "fiveK", "experience_intermediate");
-  assert.ok(policy.allowedTypes.includes("intervals"), "specific should allow intervals");
-  assert.ok(policy.allowedTypes.includes("racePaceRun"), "specific should allow racePaceRun");
+  const policy = workoutPolicyForPhase(
+    "specific",
+    "fiveK",
+    "experience_intermediate",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("intervals"),
+    "specific should allow intervals",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("racePaceRun"),
+    "specific should allow racePaceRun",
+  );
 });
 
 Deno.test("workoutPolicyForPhase peak phase includes strongest workouts", () => {
-  const policy = workoutPolicyForPhase("peak", "marathon", "experience_experienced");
-  assert.ok(policy.allowedTypes.includes("intervals"), "peak should allow intervals");
-  assert.ok(policy.allowedTypes.includes("thresholdRun"), "peak should allow thresholdRun");
-  assert.ok(policy.allowedTypes.includes("longRun"), "peak should allow longRun");
+  const policy = workoutPolicyForPhase(
+    "peak",
+    "marathon",
+    "experience_experienced",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("intervals"),
+    "peak should allow intervals",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("thresholdRun"),
+    "peak should allow thresholdRun",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("longRun"),
+    "peak should allow longRun",
+  );
 });
 
 Deno.test("workoutPolicyForPhase peak phase does not exceed weekly stress limits", () => {
-  const policy = workoutPolicyForPhase("peak", "fiveK", "experience_intermediate");
-  const hardTypes = policy.allowedTypes.filter(t =>
-    ["intervals", "tempoRun", "thresholdRun", "hillRepeats"].includes(t)
-  ).length;
+  const policy = workoutPolicyForPhase(
+    "peak",
+    "fiveK",
+    "experience_intermediate",
+  );
+  const hardTypes =
+    policy.allowedTypes.filter((t) =>
+      ["intervals", "tempoRun", "thresholdRun", "hillRepeats"].includes(t)
+    ).length;
   assert.ok(hardTypes <= 4, "peak should limit hard workout types");
   assert.equal(policy.maxStressDays, 3, "peak maxStressDays should be 3");
 });
 
 Deno.test("workoutPolicyForPhase taperRace phase is reduced volume with light sharpness", () => {
-  const policy = workoutPolicyForPhase("taperRace", "halfMarathon", "experience_intermediate");
-  assert.ok(policy.allowedTypes.includes("easyRun"), "taperRace should allow easyRun");
-  assert.ok(policy.allowedTypes.includes("recoveryRun"), "taperRace should allow recoveryRun");
-  assert.ok(!policy.allowedTypes.includes("intervals"), "taperRace should not allow intervals");
-  assert.ok(!policy.allowedTypes.includes("thresholdRun"), "taperRace should not allow thresholdRun");
-  assert.ok(!policy.allowedTypes.includes("hillRepeats"), "taperRace should not allow hillRepeats");
+  const policy = workoutPolicyForPhase(
+    "taperRace",
+    "halfMarathon",
+    "experience_intermediate",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("easyRun"),
+    "taperRace should allow easyRun",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("recoveryRun"),
+    "taperRace should allow recoveryRun",
+  );
+  assert.ok(
+    !policy.allowedTypes.includes("intervals"),
+    "taperRace should not allow intervals",
+  );
+  assert.ok(
+    !policy.allowedTypes.includes("thresholdRun"),
+    "taperRace should not allow thresholdRun",
+  );
+  assert.ok(
+    !policy.allowedTypes.includes("hillRepeats"),
+    "taperRace should not allow hillRepeats",
+  );
 });
 
 Deno.test("workoutPolicyForPhase taperRace allows racePaceRun for race day", () => {
-  const policy = workoutPolicyForPhase("taperRace", "marathon", "experience_experienced");
-  assert.ok(policy.allowedTypes.includes("racePaceRun"), "taperRace should allow racePaceRun");
+  const policy = workoutPolicyForPhase(
+    "taperRace",
+    "marathon",
+    "experience_experienced",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("racePaceRun"),
+    "taperRace should allow racePaceRun",
+  );
 });
 
 Deno.test("workoutPolicyForPhase build phase for marathon adds marathon-specific workouts", () => {
-  const policy = workoutPolicyForPhase("build", "marathon", "experience_intermediate");
-  assert.ok(policy.allowedTypes.includes("longRun"), "marathon build should allow longRun");
-  assert.ok(policy.allowedTypes.includes("tempoRun"), "marathon build should allow tempoRun");
+  const policy = workoutPolicyForPhase(
+    "build",
+    "marathon",
+    "experience_intermediate",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("longRun"),
+    "marathon build should allow longRun",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("tempoRun"),
+    "marathon build should allow tempoRun",
+  );
 });
 
 Deno.test("workoutPolicyForPhase beginner never gets thresholdRun", () => {
-  for (const phase of ["base", "build", "specific", "peak", "taperRace"] as const) {
+  for (
+    const phase of ["base", "build", "specific", "peak", "taperRace"] as const
+  ) {
     const policy = workoutPolicyForPhase(phase, "fiveK", "experience_beginner");
-    assert.ok(!policy.allowedTypes.includes("thresholdRun"), `beginner ${phase} should not allow thresholdRun`);
+    assert.ok(
+      !policy.allowedTypes.includes("thresholdRun"),
+      `beginner ${phase} should not allow thresholdRun`,
+    );
   }
 });
 
 Deno.test("workoutPolicyForPhase experienced gets full range", () => {
-  const policy = workoutPolicyForPhase("specific", "fiveK", "experience_experienced");
-  assert.ok(policy.allowedTypes.includes("intervals"), "experienced specific should allow intervals");
-  assert.ok(policy.allowedTypes.includes("thresholdRun"), "experienced specific should allow thresholdRun");
-  assert.ok(policy.allowedTypes.includes("racePaceRun"), "experienced specific should allow racePaceRun");
+  const policy = workoutPolicyForPhase(
+    "specific",
+    "fiveK",
+    "experience_experienced",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("intervals"),
+    "experienced specific should allow intervals",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("thresholdRun"),
+    "experienced specific should allow thresholdRun",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("racePaceRun"),
+    "experienced specific should allow racePaceRun",
+  );
 });
 
 Deno.test("workoutPolicyForPhase longRun appears in all phases", () => {
-  for (const phase of ["base", "build", "specific", "peak", "taperRace"] as const) {
-    const policy = workoutPolicyForPhase(phase, "fiveK", "experience_intermediate");
-    assert.ok(policy.allowedTypes.includes("longRun"), `${phase} should allow longRun`);
+  for (
+    const phase of ["base", "build", "specific", "peak", "taperRace"] as const
+  ) {
+    const policy = workoutPolicyForPhase(
+      phase,
+      "fiveK",
+      "experience_intermediate",
+    );
+    assert.ok(
+      policy.allowedTypes.includes("longRun"),
+      `${phase} should allow longRun`,
+    );
   }
 });
 
 Deno.test("workoutPolicyForPhase base phase sets maxStressDays low", () => {
-  const policy = workoutPolicyForPhase("base", "fiveK", "experience_intermediate");
-  assert.ok(policy.maxStressDays <= 2, "base phase should have low maxStressDays");
+  const policy = workoutPolicyForPhase(
+    "base",
+    "fiveK",
+    "experience_intermediate",
+  );
+  assert.ok(
+    policy.maxStressDays <= 2,
+    "base phase should have low maxStressDays",
+  );
 });
 
 Deno.test("workoutPolicyForPhase taperRace phase sets maxStressDays to minimum", () => {
-  const policy = workoutPolicyForPhase("taperRace", "fiveK", "experience_intermediate");
-  assert.ok(policy.maxStressDays <= 1, "taperRace should have minimal maxStressDays");
+  const policy = workoutPolicyForPhase(
+    "taperRace",
+    "fiveK",
+    "experience_intermediate",
+  );
+  assert.ok(
+    policy.maxStressDays <= 1,
+    "taperRace should have minimal maxStressDays",
+  );
 });
 
 function profile({
