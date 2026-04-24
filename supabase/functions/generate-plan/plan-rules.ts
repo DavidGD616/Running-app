@@ -1824,7 +1824,9 @@ export function normalizePeakLongRun(
     if (isGoalRaceSession(session, profileData)) continue;
 
     const currentDistance = session.distanceKm ?? 0;
-    if (bestPeakLongRun == null || currentDistance > bestPeakLongRun.distanceKm) {
+    if (
+      bestPeakLongRun == null || currentDistance > bestPeakLongRun.distanceKm
+    ) {
       bestPeakLongRun = { index: i, distanceKm: currentDistance };
     }
   }
@@ -1833,7 +1835,10 @@ export function normalizePeakLongRun(
 
   const targetDistance = range.targetKm;
   const currentDistance = bestPeakLongRun.distanceKm;
-  const finalDistance = Math.max(range.minKm, Math.min(range.maxKm, targetDistance));
+  const finalDistance = Math.max(
+    range.minKm,
+    Math.min(range.maxKm, targetDistance),
+  );
 
   if (Math.abs(finalDistance - currentDistance) > 0.01) {
     const newDuration = recalculateDurationForDistance(
@@ -1873,7 +1878,11 @@ function recalculateDurationForDistance(
   const targetSession = sessions[targetIndex];
   const targetWeek = targetSession.weekNumber;
 
-  const nearbyLongRunData: { index: number; distanceKm: number; durationMinutes: number }[] = [];
+  const nearbyLongRunData: {
+    index: number;
+    distanceKm: number;
+    durationMinutes: number;
+  }[] = [];
 
   for (let i = 0; i < sessions.length; i += 1) {
     const s = sessions[i];
@@ -1882,7 +1891,11 @@ function recalculateDurationForDistance(
     if (s.distanceKm == null || s.durationMinutes == null) continue;
     const weekDiff = Math.abs(s.weekNumber - targetWeek);
     if (weekDiff >= 1 && weekDiff <= 2) {
-      nearbyLongRunData.push({ index: i, distanceKm: s.distanceKm, durationMinutes: s.durationMinutes });
+      nearbyLongRunData.push({
+        index: i,
+        distanceKm: s.distanceKm,
+        durationMinutes: s.durationMinutes,
+      });
     }
   }
 
@@ -1913,28 +1926,39 @@ function fallbackEasyPaceMinPerKm(experience: string): number {
 export function smoothLongRunProgression(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
-  _totalWeeks: number,
+  totalWeeks: number,
   _locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const maxJump = maxLongRunJumpKm(race);
 
   const adjusted = sessions.map((s) => ({ ...s }));
+  const protectedPeakIndex = protectedPeakLongRunIndex(
+    adjusted,
+    profileData,
+    totalWeeks,
+  );
 
   const longRunIndices: number[] = [];
   for (let i = 0; i < adjusted.length; i += 1) {
-    if (adjusted[i].type === "longRun" && !isGoalRaceSession(adjusted[i], profileData)) {
+    if (
+      adjusted[i].type === "longRun" &&
+      !isGoalRaceSession(adjusted[i], profileData)
+    ) {
       longRunIndices.push(i);
     }
   }
 
   if (longRunIndices.length < 2) return sessions;
 
-  longRunIndices.sort((a, b) => adjusted[a].weekNumber - adjusted[b].weekNumber);
+  longRunIndices.sort((a, b) =>
+    adjusted[a].weekNumber - adjusted[b].weekNumber
+  );
 
   for (let i = 1; i < longRunIndices.length; i += 1) {
     const prevIdx = longRunIndices[i - 1];
     const currIdx = longRunIndices[i];
+    if (currIdx === protectedPeakIndex) continue;
 
     const prevDist = adjusted[prevIdx].distanceKm ?? 0;
     const currDist = adjusted[currIdx].distanceKm ?? 0;
@@ -1945,13 +1969,49 @@ export function smoothLongRunProgression(
     if (jump <= maxJump) continue;
 
     const maxAllowed = prevDist + maxJump;
+    const newDuration = recalculateDurationForDistance(
+      adjusted,
+      currIdx,
+      maxAllowed,
+      profileData,
+    );
     adjusted[currIdx] = {
       ...adjusted[currIdx],
       distanceKm: maxAllowed,
+      durationMinutes: newDuration,
     };
   }
 
   return adjusted;
+}
+
+function protectedPeakLongRunIndex(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+): number | null {
+  const peakWeeks = new Set(
+    Array.from({ length: totalWeeks }, (_, i) => i + 1)
+      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+  );
+
+  let bestPeakLongRun: { index: number; distanceKm: number } | null = null;
+
+  for (let i = 0; i < sessions.length; i += 1) {
+    const session = sessions[i];
+    if (session.type !== "longRun") continue;
+    if (!peakWeeks.has(session.weekNumber)) continue;
+    if (isGoalRaceSession(session, profileData)) continue;
+
+    const currentDistance = session.distanceKm ?? 0;
+    if (
+      bestPeakLongRun == null || currentDistance > bestPeakLongRun.distanceKm
+    ) {
+      bestPeakLongRun = { index: i, distanceKm: currentDistance };
+    }
+  }
+
+  return bestPeakLongRun?.index ?? null;
 }
 
 function maxLongRunJumpKm(race: string): number {
@@ -2021,16 +2081,33 @@ export function normalizeTaper(
 
     const currentDist = adjusted[idx].distanceKm ?? 0;
     if (targetMinDistance != null && currentDist > targetMinDistance) {
+      const newDuration = recalculateDurationForDistance(
+        adjusted,
+        idx,
+        targetMinDistance,
+        profileData,
+      );
       adjusted[idx] = {
         ...adjusted[idx],
         distanceKm: targetMinDistance,
+        durationMinutes: newDuration,
       };
     } else if (peakMaxDistance != null) {
-      const reduced = Math.max(0.6 * peakMaxDistance, currentDist * reductionFactor);
+      const reduced = Math.max(
+        0.6 * peakMaxDistance,
+        currentDist * reductionFactor,
+      );
       if (reduced < currentDist) {
+        const newDuration = recalculateDurationForDistance(
+          adjusted,
+          idx,
+          reduced,
+          profileData,
+        );
         adjusted[idx] = {
           ...adjusted[idx],
           distanceKm: reduced,
+          durationMinutes: newDuration,
         };
       }
     }

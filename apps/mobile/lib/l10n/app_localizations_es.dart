@@ -2500,4 +2500,19 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planNotReadyRetry => 'Reintentar';
+
+  @override
+  String get phaseBase => 'Base';
+
+  @override
+  String get phaseBuild => 'Construcción';
+
+  @override
+  String get phaseSpecific => 'Específico';
+
+  @override
+  String get phasePeak => 'Pico';
+
+  @override
+  String get phaseTaperRace => 'Reducción';
 }

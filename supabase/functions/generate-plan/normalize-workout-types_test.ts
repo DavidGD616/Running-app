@@ -1,16 +1,27 @@
 import { strict as assert } from "node:assert";
-import {
-  normalizeWorkoutTypesByPhase,
-  phaseForWeek,
-  workoutPolicyForPhase,
-} from "./plan-rules.ts";
+import { normalizeWorkoutTypesByPhase } from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
 
 Deno.test("normalizeWorkoutTypesByPhase downgrades early base-phase intervals for beginner to easyRun", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w1-mon", date: "2026-04-27", weekNumber: 1, type: "intervals" }),
-    session({ id: "w1-wed", date: "2026-04-29", weekNumber: 1, type: "tempoRun" }),
-    session({ id: "w1-sat", date: "2026-05-02", weekNumber: 1, type: "longRun" }),
+    session({
+      id: "w1-mon",
+      date: "2026-04-27",
+      weekNumber: 1,
+      type: "intervals",
+    }),
+    session({
+      id: "w1-wed",
+      date: "2026-04-29",
+      weekNumber: 1,
+      type: "tempoRun",
+    }),
+    session({
+      id: "w1-sat",
+      date: "2026-05-02",
+      weekNumber: 1,
+      type: "longRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -27,8 +38,18 @@ Deno.test("normalizeWorkoutTypesByPhase downgrades early base-phase intervals fo
 
 Deno.test("normalizeWorkoutTypesByPhase downgrades early base-phase intervals for intermediate to fartlek", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w1-mon", date: "2026-04-27", weekNumber: 1, type: "intervals" }),
-    session({ id: "w2-mon", date: "2026-05-04", weekNumber: 2, type: "thresholdRun" }),
+    session({
+      id: "w1-mon",
+      date: "2026-04-27",
+      weekNumber: 1,
+      type: "intervals",
+    }),
+    session({
+      id: "w2-mon",
+      date: "2026-05-04",
+      weekNumber: 2,
+      type: "thresholdRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -44,8 +65,18 @@ Deno.test("normalizeWorkoutTypesByPhase downgrades early base-phase intervals fo
 
 Deno.test("normalizeWorkoutTypesByPhase keeps race-specific work only in specific/peak phases", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w2-thu", date: "2026-05-07", weekNumber: 2, type: "intervals" }),
-    session({ id: "w3-thu", date: "2026-05-14", weekNumber: 3, type: "racePaceRun" }),
+    session({
+      id: "w2-thu",
+      date: "2026-05-07",
+      weekNumber: 2,
+      type: "intervals",
+    }),
+    session({
+      id: "w3-thu",
+      date: "2026-05-14",
+      weekNumber: 3,
+      type: "racePaceRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -61,8 +92,18 @@ Deno.test("normalizeWorkoutTypesByPhase keeps race-specific work only in specifi
 
 Deno.test("normalizeWorkoutTypesByPhase allows race-specific work in specific phase", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w7-thu", date: "2026-06-11", weekNumber: 7, type: "intervals" }),
-    session({ id: "w7-sat", date: "2026-06-13", weekNumber: 7, type: "racePaceRun" }),
+    session({
+      id: "w7-thu",
+      date: "2026-06-11",
+      weekNumber: 7,
+      type: "intervals",
+    }),
+    session({
+      id: "w7-sat",
+      date: "2026-06-13",
+      weekNumber: 7,
+      type: "racePaceRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -78,9 +119,24 @@ Deno.test("normalizeWorkoutTypesByPhase allows race-specific work in specific ph
 
 Deno.test("normalizeWorkoutTypesByPhase allows race-specific work in peak phase", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w10-thu", date: "2026-07-02", weekNumber: 10, type: "intervals" }),
-    session({ id: "w10-sat", date: "2026-07-04", weekNumber: 10, type: "racePaceRun" }),
-    session({ id: "w10-fri", date: "2026-07-03", weekNumber: 10, type: "thresholdRun" }),
+    session({
+      id: "w10-thu",
+      date: "2026-07-02",
+      weekNumber: 10,
+      type: "intervals",
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-07-04",
+      weekNumber: 10,
+      type: "racePaceRun",
+    }),
+    session({
+      id: "w10-fri",
+      date: "2026-07-03",
+      weekNumber: 10,
+      type: "thresholdRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -97,10 +153,30 @@ Deno.test("normalizeWorkoutTypesByPhase allows race-specific work in peak phase"
 
 Deno.test("normalizeWorkoutTypesByPhase downgrades heavy workouts in taper phase", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w11-wed", date: "2026-07-08", weekNumber: 11, type: "intervals" }),
-    session({ id: "w11-fri", date: "2026-07-10", weekNumber: 11, type: "tempoRun" }),
-    session({ id: "w11-sat", date: "2026-07-11", weekNumber: 11, type: "longRun" }),
-    session({ id: "w12-sat", date: "2026-07-18", weekNumber: 12, type: "racePaceRun" }),
+    session({
+      id: "w11-wed",
+      date: "2026-07-08",
+      weekNumber: 11,
+      type: "intervals",
+    }),
+    session({
+      id: "w11-fri",
+      date: "2026-07-10",
+      weekNumber: 11,
+      type: "tempoRun",
+    }),
+    session({
+      id: "w11-sat",
+      date: "2026-07-11",
+      weekNumber: 11,
+      type: "longRun",
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-18",
+      weekNumber: 12,
+      type: "racePaceRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -118,9 +194,24 @@ Deno.test("normalizeWorkoutTypesByPhase downgrades heavy workouts in taper phase
 
 Deno.test("normalizeWorkoutTypesByPhase taper phase keeps easy runs and recovery", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w11-mon", date: "2026-07-06", weekNumber: 11, type: "easyRun" }),
-    session({ id: "w11-tue", date: "2026-07-07", weekNumber: 11, type: "recoveryRun" }),
-    session({ id: "w12-fri", date: "2026-07-17", weekNumber: 12, type: "fartlek" }),
+    session({
+      id: "w11-mon",
+      date: "2026-07-06",
+      weekNumber: 11,
+      type: "easyRun",
+    }),
+    session({
+      id: "w11-tue",
+      date: "2026-07-07",
+      weekNumber: 11,
+      type: "recoveryRun",
+    }),
+    session({
+      id: "w12-fri",
+      date: "2026-07-17",
+      weekNumber: 12,
+      type: "fartlek",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -137,8 +228,18 @@ Deno.test("normalizeWorkoutTypesByPhase taper phase keeps easy runs and recovery
 
 Deno.test("normalizeWorkoutTypesByPhase taper phase downgrades hillRepeats near race", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w11-thu", date: "2026-07-09", weekNumber: 11, type: "hillRepeats" }),
-    session({ id: "w12-sat", date: "2026-07-18", weekNumber: 12, type: "racePaceRun" }),
+    session({
+      id: "w11-thu",
+      date: "2026-07-09",
+      weekNumber: 11,
+      type: "hillRepeats",
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-18",
+      weekNumber: 12,
+      type: "racePaceRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -154,9 +255,24 @@ Deno.test("normalizeWorkoutTypesByPhase taper phase downgrades hillRepeats near 
 
 Deno.test("normalizeWorkoutTypesByPhase does not change sessions already matching policy", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w4-mon", date: "2026-05-18", weekNumber: 4, type: "easyRun" }),
-    session({ id: "w4-sat", date: "2026-05-23", weekNumber: 4, type: "longRun" }),
-    session({ id: "w4-thu", date: "2026-05-21", weekNumber: 4, type: "fartlek" }),
+    session({
+      id: "w4-mon",
+      date: "2026-05-18",
+      weekNumber: 4,
+      type: "easyRun",
+    }),
+    session({
+      id: "w4-sat",
+      date: "2026-05-23",
+      weekNumber: 4,
+      type: "longRun",
+    }),
+    session({
+      id: "w4-thu",
+      date: "2026-05-21",
+      weekNumber: 4,
+      type: "fartlek",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
@@ -173,13 +289,28 @@ Deno.test("normalizeWorkoutTypesByPhase does not change sessions already matchin
 
 Deno.test("normalizeWorkoutTypesByPhase preserves goal race session", () => {
   const sessions: GeneratedSession[] = [
-    session({ id: "w12-sat", date: "2026-07-18", weekNumber: 12, type: "racePaceRun", distanceKm: 10 }),
-    session({ id: "w11-thu", date: "2026-07-09", weekNumber: 11, type: "thresholdRun" }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-18",
+      weekNumber: 12,
+      type: "racePaceRun",
+      distanceKm: 10,
+    }),
+    session({
+      id: "w11-thu",
+      date: "2026-07-09",
+      weekNumber: 11,
+      type: "thresholdRun",
+    }),
   ];
 
   const result = normalizeWorkoutTypesByPhase(
     sessions,
-    profile({ experience: "experience_experienced", race: "race_10k", raceDate: "2026-07-18T00:00:00.000" }),
+    profile({
+      experience: "experience_experienced",
+      race: "race_10k",
+      raceDate: "2026-07-18T00:00:00.000",
+    }),
     12,
     "en",
   );

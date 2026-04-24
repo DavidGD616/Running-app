@@ -2486,4 +2486,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planNotReadyRetry => 'Retry';
+
+  @override
+  String get phaseBase => 'Base';
+
+  @override
+  String get phaseBuild => 'Build';
+
+  @override
+  String get phaseSpecific => 'Specific';
+
+  @override
+  String get phasePeak => 'Peak';
+
+  @override
+  String get phaseTaperRace => 'Taper';
 }
