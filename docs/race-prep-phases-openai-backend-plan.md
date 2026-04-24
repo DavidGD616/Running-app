@@ -232,6 +232,12 @@ TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
   - `taperRace`: reduced volume, light sharpness.
 - **Validation**:
   - Unit tests for beginner, intermediate, experienced policies.
+- **Status**: ✅ COMPLETED
+- **Work Log**: 2026-04-23 - Added WorkoutPolicy type with allowedTypes and maxStressDays. Implemented workoutPolicyForPhase() with 5 phase-specific policies: base (easy/recovery/longRun only for beginners, adds fartlek/progressionRun for intermediate+), build (tempoRun/hillRepeats/fartlek for intermediate+), specific (race-relevant workouts like intervals/racePaceRun for intermediate+), peak (strongest workouts including thresholdRun for experienced), taperRace (reduced volume with light sharpness, racePaceRun for race day). Added 15 unit tests covering all 5 phases × 3 experience levels. All 15 tests pass, type checking passes.
+- **Files Modified**:
+  - `supabase/functions/generate-plan/plan-rules.ts` (added WorkoutPolicy type and 5 policy functions)
+  - `supabase/functions/generate-plan/plan-rules_test.ts` (added 15 workoutPolicyForPhase tests)
+- **Verification**: `deno test plan-rules_test.ts --filter "workoutPolicyForPhase"` — 15 tests passed; `deno check plan-rules.ts plan-rules_test.ts` — passed.
 
 ### Task 4.2: Normalize Workout Types by Phase
 - **Location**: `supabase/functions/generate-plan/plan-rules.ts`, `supabase/functions/generate-plan/index.ts`
