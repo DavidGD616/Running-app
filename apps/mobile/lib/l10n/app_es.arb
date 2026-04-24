@@ -869,5 +869,20 @@
   "fullPlanScheduleLabel": "HORARIO",
 
   "planNotReadyMessage": "Tu plan está siendo preparado",
-  "planNotReadyRetry": "Reintentar"
+  "planNotReadyRetry": "Reintentar",
+
+  "phaseBase": "Base",
+  "@phaseBase": { "description": "Base training phase label" },
+
+  "phaseBuild": "Construcción",
+  "@phaseBuild": { "description": "Build training phase label" },
+
+  "phaseSpecific": "Específico",
+  "@phaseSpecific": { "description": "Specific training phase label" },
+
+  "phasePeak": "Pico",
+  "@phasePeak": { "description": "Peak training phase label" },
+
+  "phaseTaperRace": "Reducción",
+  "@phaseTaperRace": { "description": "Taper/race training phase label" }
 }

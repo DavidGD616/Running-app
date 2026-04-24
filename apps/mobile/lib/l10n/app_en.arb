@@ -2404,5 +2404,20 @@
   "@planNotReadyMessage": { "description": "Shown on the today screen when no training plan has been generated yet" },
 
   "planNotReadyRetry": "Retry",
-  "@planNotReadyRetry": { "description": "Retry button label on the plan-not-ready empty state" }
+  "@planNotReadyRetry": { "description": "Retry button label on the plan-not-ready empty state" },
+
+  "phaseBase": "Base",
+  "@phaseBase": { "description": "Base training phase label" },
+
+  "phaseBuild": "Build",
+  "@phaseBuild": { "description": "Build training phase label" },
+
+  "phaseSpecific": "Specific",
+  "@phaseSpecific": { "description": "Specific training phase label" },
+
+  "phasePeak": "Peak",
+  "@phasePeak": { "description": "Peak training phase label" },
+
+  "phaseTaperRace": "Taper",
+  "@phaseTaperRace": { "description": "Taper/race training phase label" }
 }

@@ -4620,6 +4620,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get planNotReadyRetry;
+
+  /// Base training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get phaseBase;
+
+  /// Build training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get phaseBuild;
+
+  /// Specific training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Specific'**
+  String get phaseSpecific;
+
+  /// Peak training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get phasePeak;
+
+  /// Taper/race training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get phaseTaperRace;
 }
 
 class _AppLocalizationsDelegate
