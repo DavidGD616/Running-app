@@ -2,6 +2,76 @@ import type { GeneratedSession } from "./schema.ts";
 
 type RacePrepPhase = "base" | "build" | "specific" | "peak" | "taperRace";
 
+type PeakLongRunRange = {
+  minKm: number;
+  targetKm: number;
+  maxKm: number;
+};
+
+export function peakLongRunRangeKm(
+  profileData: Record<string, unknown>,
+): PeakLongRunRange {
+  const race = raceFromProfile(profileData);
+  const experience = experienceFromProfile(profileData);
+
+  switch (race) {
+    case "race_5k":
+      switch (experience) {
+        case "experience_beginner":
+          return { minKm: 3, targetKm: 5, maxKm: 7 };
+        case "experience_intermediate":
+          return { minKm: 6, targetKm: 9, maxKm: 12 };
+        case "experience_experienced":
+          return { minKm: 8, targetKm: 11, maxKm: 14 };
+      }
+      break;
+    case "race_10k":
+      switch (experience) {
+        case "experience_beginner":
+          return { minKm: 6, targetKm: 9, maxKm: 12 };
+        case "experience_intermediate":
+          return { minKm: 10, targetKm: 12.5, maxKm: 15 };
+        case "experience_experienced":
+          return { minKm: 11, targetKm: 14.5, maxKm: 18 };
+      }
+      break;
+    case "race_half_marathon":
+      switch (experience) {
+        case "experience_beginner":
+          return { minKm: 11, targetKm: 14.5, maxKm: 18 };
+        case "experience_intermediate":
+          return { minKm: 14, targetKm: 17, maxKm: 20 };
+        case "experience_experienced":
+          return { minKm: 16, targetKm: 19.5, maxKm: 23 };
+      }
+      break;
+    case "race_marathon":
+      switch (experience) {
+        case "experience_beginner":
+          return { minKm: 24, targetKm: 27, maxKm: 30 };
+        case "experience_intermediate":
+          return { minKm: 28, targetKm: 31, maxKm: 34 };
+        case "experience_experienced":
+          return { minKm: 30, targetKm: 33, maxKm: 36 };
+      }
+      break;
+  }
+
+  return { minKm: 5, targetKm: 10, maxKm: 15 };
+}
+
+function raceFromProfile(profileData: Record<string, unknown>): string {
+  const goal = objectOrNull(profileData.goal);
+  return typeof goal?.race === "string" ? goal.race : "race_5k";
+}
+
+function experienceFromProfile(profileData: Record<string, unknown>): string {
+  const fitness = objectOrNull(profileData.fitness);
+  return typeof fitness?.experience === "string"
+    ? fitness.experience
+    : "experience_beginner";
+}
+
 export function phaseForWeek(
   weekNumber: number,
   totalWeeks: number,
@@ -71,6 +141,157 @@ function proportionalPhaseAllocation(totalWeeks: number): PhaseAllocation {
     specific: specificWeeks,
     peak: peakWeeks,
     taperRace: taperRaceWeeks,
+  };
+}
+
+type WorkoutPolicy = {
+  allowedTypes: string[];
+  maxStressDays: number;
+};
+
+export function workoutPolicyForPhase(
+  phase: RacePrepPhase,
+  raceType: string,
+  experience: string,
+): WorkoutPolicy {
+  switch (phase) {
+    case "base":
+      return basePhasePolicy(experience);
+    case "build":
+      return buildPhasePolicy(experience);
+    case "specific":
+      return specificPhasePolicy(experience, raceType);
+    case "peak":
+      return peakPhasePolicy(experience);
+    case "taperRace":
+      return taperRacePhasePolicy(experience);
+  }
+}
+
+function basePhasePolicy(experience: string): WorkoutPolicy {
+  const base: WorkoutPolicy = {
+    allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+    maxStressDays: 2,
+  };
+
+  if (experience === "experience_intermediate" || experience === "experience_experienced") {
+    base.allowedTypes.push("fartlek", "progressionRun");
+    base.maxStressDays = 2;
+  }
+
+  return base;
+}
+
+function buildPhasePolicy(experience: string): WorkoutPolicy {
+  if (experience === "experience_beginner") {
+    return {
+      allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay", "fartlek"],
+      maxStressDays: 2,
+    };
+  }
+
+  if (experience === "experience_intermediate") {
+    return {
+      allowedTypes: [
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+        "tempoRun",
+        "hillRepeats",
+        "fartlek",
+        "progressionRun",
+      ],
+      maxStressDays: 3,
+    };
+  }
+
+  return {
+    allowedTypes: [
+      "easyRun",
+      "recoveryRun",
+      "longRun",
+      "restDay",
+      "tempoRun",
+      "hillRepeats",
+      "fartlek",
+      "progressionRun",
+      "intervals",
+      "racePaceRun",
+    ],
+    maxStressDays: 3,
+  };
+}
+
+function specificPhasePolicy(experience: string, raceType: string): WorkoutPolicy {
+  const allowed: string[] = [
+    "easyRun",
+    "recoveryRun",
+    "longRun",
+    "restDay",
+    "tempoRun",
+    "fartlek",
+    "progressionRun",
+  ];
+
+  if (experience === "experience_intermediate" || experience === "experience_experienced") {
+    allowed.push("intervals", "hillRepeats", "racePaceRun");
+  }
+
+  if (experience === "experience_experienced") {
+    allowed.push("thresholdRun");
+  }
+
+  return {
+    allowedTypes: allowed,
+    maxStressDays: experience === "experience_experienced" ? 3 : 3,
+  };
+}
+
+function peakPhasePolicy(experience: string): WorkoutPolicy {
+  const allowed: string[] = [
+    "easyRun",
+    "recoveryRun",
+    "longRun",
+    "restDay",
+    "tempoRun",
+    "fartlek",
+    "progressionRun",
+    "intervals",
+    "hillRepeats",
+    "racePaceRun",
+  ];
+
+  if (experience === "experience_experienced") {
+    allowed.push("thresholdRun");
+  }
+
+  return {
+    allowedTypes: allowed,
+    maxStressDays: 3,
+  };
+}
+
+function taperRacePhasePolicy(experience: string): WorkoutPolicy {
+  const allowed: string[] = [
+    "easyRun",
+    "recoveryRun",
+    "restDay",
+    "fartlek",
+  ];
+
+  if (experience === "experience_intermediate" || experience === "experience_experienced") {
+    allowed.push("longRun");
+    allowed.push("racePaceRun");
+  }
+
+  if (experience === "experience_experienced") {
+    allowed.push("progressionRun");
+  }
+
+  return {
+    allowedTypes: allowed,
+    maxStressDays: 1,
   };
 }
 
