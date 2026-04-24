@@ -1231,6 +1231,175 @@ Deno.test("normalizePeakLongRun does not update duration when distance unchanged
   assert.equal(peakLongRun!.durationMinutes, 135, "duration should not change when distance unchanged");
 });
 
+Deno.test("smoothLongRunProgression reduces 5K 4km jump to 2km max", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 5, weekNumber: 1 }),
+    session({ id: "w2-sat", date: "2026-05-02", type: "longRun", distanceKm: 9, weekNumber: 2 }),
+    session({ id: "w3-sat", date: "2026-05-09", type: "longRun", distanceKm: 11, weekNumber: 3 }),
+  ];
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_5k", experience: "experience_beginner" }),
+    12,
+    "en",
+  );
+  const longRuns = result.filter((s: GeneratedSession) => s.type === "longRun").sort((a: GeneratedSession, b: GeneratedSession) => a.weekNumber - b.weekNumber);
+  assert.ok(longRuns.length >= 3, "should have at least 3 long runs");
+  const jump2to3 = Math.abs((longRuns[2].distanceKm ?? 0) - (longRuns[1].distanceKm ?? 0));
+  assert.ok(jump2to3 <= 2 + 0.01, `w2→w3 jump ${jump2to3.toFixed(2)}km exceeds 2km max for 5K`);
+});
+
+Deno.test("smoothLongRunProgression reduces marathon 5km jump to 3-4km max", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 15, weekNumber: 1 }),
+    session({ id: "w2-sat", date: "2026-05-02", type: "longRun", distanceKm: 20, weekNumber: 2 }),
+    session({ id: "w3-sat", date: "2026-05-09", type: "longRun", distanceKm: 28, weekNumber: 3 }),
+  ];
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_intermediate" }),
+    12,
+    "en",
+  );
+  const longRuns = result.filter((s: GeneratedSession) => s.type === "longRun").sort((a: GeneratedSession, b: GeneratedSession) => a.weekNumber - b.weekNumber);
+  const jump2to3 = Math.abs((longRuns[2].distanceKm ?? 0) - (longRuns[1].distanceKm ?? 0));
+  assert.ok(jump2to3 <= 4 + 0.01, `w2→w3 jump ${jump2to3.toFixed(2)}km exceeds 4km max for marathon`);
+  assert.ok(jump2to3 >= 3, `w2→w3 jump ${jump2to3.toFixed(2)}km should be at least 3km`);
+});
+
+Deno.test("smoothLongRunProgression preserves down week lower than previous", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 15, weekNumber: 1 }),
+    session({ id: "w2-sat", date: "2026-05-02", type: "longRun", distanceKm: 10, weekNumber: 2 }),
+    session({ id: "w3-sat", date: "2026-05-09", type: "longRun", distanceKm: 12, weekNumber: 3 }),
+  ];
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_5k", experience: "experience_intermediate" }),
+    12,
+    "en",
+  );
+  const longRuns = result.filter((s: GeneratedSession) => s.type === "longRun").sort((a: GeneratedSession, b: GeneratedSession) => a.weekNumber - b.weekNumber);
+  assert.ok(longRuns[1].distanceKm != null, "w2 longRun should have distance");
+  assert.ok(longRuns[1].distanceKm! <= 10 + 0.01, "down week w2 should stay at 10km or lower");
+});
+
+Deno.test("normalizeTaper marathon final 2 long runs reduced vs peak", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 18, weekNumber: 1 }),
+    session({ id: "w5-sat", date: "2026-05-23", type: "longRun", distanceKm: 24, weekNumber: 5 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 27, weekNumber: 8 }),
+    session({ id: "w9-sat", date: "2026-06-20", type: "longRun", distanceKm: 28, weekNumber: 9 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 27, weekNumber: 10 }),
+    session({ id: "w11-sat", date: "2026-07-04", type: "longRun", distanceKm: 16, weekNumber: 11 }),
+    session({ id: "w12-sat", date: "2026-07-11", type: "racePaceRun", distanceKm: 42.2, weekNumber: 12 }),
+  ];
+  const result = normalizeTaper(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_beginner" }),
+    12,
+    "en",
+  );
+  const w11LongRun = result.find((s: GeneratedSession) => s.weekNumber === 11 && s.type === "longRun");
+  assert.ok(w11LongRun, "week 11 longRun should exist");
+  assert.ok(w11LongRun!.distanceKm != null, "week 11 longRun should have distance");
+  assert.ok(
+    w11LongRun!.distanceKm! < 27,
+    `week 11 long run should be reduced vs peak (~27km), got ${w11LongRun!.distanceKm}`,
+  );
+});
+
+Deno.test("normalizeTaper marathon taperRace week just before race has reduced long run", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 18, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 28, weekNumber: 8 }),
+    session({ id: "w9-sat", date: "2026-06-20", type: "longRun", distanceKm: 32, weekNumber: 9 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 18, weekNumber: 10 }),
+    session({ id: "w11-sat", date: "2026-07-04", type: "racePaceRun", distanceKm: 42.2, weekNumber: 11 }),
+  ];
+  const result = normalizeTaper(
+    sessions,
+    profile({ race: "race_marathon", experience: "experience_intermediate" }),
+    11,
+    "en",
+  );
+  const w10LongRun = result.find((s: GeneratedSession) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(w10LongRun, "week 10 longRun in taperRace should exist");
+  assert.ok(
+    w10LongRun!.distanceKm! < 32,
+    `taperRace long run should be reduced from peak 32km, got ${w10LongRun!.distanceKm}`,
+  );
+  const raceSession = result.find((s: GeneratedSession) => s.type === "racePaceRun");
+  assert.equal(raceSession!.distanceKm, 42.2, "race day distance must stay exact");
+});
+
+Deno.test("normalizeTaper half marathon taper is lighter than marathon taper", () => {
+  const sessions = [
+    session({ id: "w1-sat", date: "2026-04-25", type: "longRun", distanceKm: 10, weekNumber: 1 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 16, weekNumber: 8 }),
+    session({ id: "w9-sat", date: "2026-06-20", type: "longRun", distanceKm: 18, weekNumber: 9 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 12, weekNumber: 10 }),
+    session({ id: "w11-sat", date: "2026-07-04", type: "racePaceRun", distanceKm: 21.1, weekNumber: 11 }),
+  ];
+  const result = normalizeTaper(
+    sessions,
+    profile({ race: "race_half_marathon", experience: "experience_intermediate" }),
+    11,
+    "en",
+  );
+  const w10LongRun = result.find((s: GeneratedSession) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(w10LongRun, "taperRace week longRun should exist for half marathon");
+  assert.ok(w10LongRun!.distanceKm! < 18, `half marathon taper should reduce from peak 18km`);
+  const raceSession = result.find((s: GeneratedSession) => s.type === "racePaceRun");
+  assert.equal(raceSession!.distanceKm, 21.1, "race day distance must stay exact for half");
+});
+
+Deno.test("normalizeTaper 5K taper keeps light sharpening but reduces volume", () => {
+  const sessions = [
+    session({ id: "w1-mon", date: "2026-04-27", type: "easyRun", distanceKm: 5, weekNumber: 1 }),
+    session({ id: "w1-sat", date: "2026-05-02", type: "longRun", distanceKm: 8, weekNumber: 1 }),
+    session({ id: "w7-mon", date: "2026-06-08", type: "fartlek", distanceKm: 6, weekNumber: 7 }),
+    session({ id: "w8-sat", date: "2026-06-13", type: "longRun", distanceKm: 9, weekNumber: 8 }),
+    session({ id: "w9-mon", date: "2026-06-15", type: "fartlek", distanceKm: 5, weekNumber: 9 }),
+    session({ id: "w9-sat", date: "2026-06-20", type: "longRun", distanceKm: 7, weekNumber: 9 }),
+    session({ id: "w10-mon", date: "2026-06-22", type: "easyRun", distanceKm: 4, weekNumber: 10 }),
+    session({ id: "w10-sat", date: "2026-06-27", type: "longRun", distanceKm: 6, weekNumber: 10 }),
+    session({ id: "w10-fri", date: "2026-06-26", type: "racePaceRun", distanceKm: 5, weekNumber: 10 }),
+  ];
+  const result = normalizeTaper(
+    sessions,
+    profile({ race: "race_5k", experience: "experience_intermediate" }),
+    10,
+    "en",
+  );
+  const w10LongRun = result.find((s: GeneratedSession) => s.weekNumber === 10 && s.type === "longRun");
+  assert.ok(w10LongRun, "week 10 longRun should exist in taperRace phase");
+  assert.ok(
+    w10LongRun!.distanceKm! < 7,
+    `5K taper long run should be reduced from peak 7km, got ${w10LongRun!.distanceKm}`,
+  );
+  const raceSession = result.find((s: GeneratedSession) => s.type === "racePaceRun");
+  assert.equal(raceSession!.distanceKm, 5, "5K race day distance must stay exact 5km");
+  const w9Fartlek = result.find((s: GeneratedSession) => s.weekNumber === 9 && s.type === "fartlek");
+  assert.ok(w9Fartlek, "light sharpening fartlek should be preserved in taper");
+});
+
+Deno.test("normalizeTaper does not touch final race session distance", () => {
+  const sessions = [
+    session({ id: "w9-mon", date: "2026-06-15", type: "easyRun", distanceKm: 6, weekNumber: 9 }),
+    session({ id: "w10-sat", date: "2026-06-20", type: "longRun", distanceKm: 15, weekNumber: 10 }),
+    session({ id: "w11-sat", date: "2026-06-27", type: "racePaceRun", distanceKm: 21.1, weekNumber: 11 }),
+  ];
+  const result = normalizeTaper(
+    sessions,
+    profile({ race: "race_half_marathon", experience: "experience_beginner" }),
+    11,
+    "en",
+  );
+  const raceSession = result.find((s: GeneratedSession) => s.type === "racePaceRun");
+  assert.equal(raceSession!.distanceKm, 21.1, "race day distance must remain exact 21.1km");
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],

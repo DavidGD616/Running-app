@@ -1919,20 +1919,25 @@ export function smoothLongRunProgression(
   const race = raceFromProfile(profileData);
   const maxJump = maxLongRunJumpKm(race);
 
-  const longRunSessions = sessions
-    .filter((s) => s.type === "longRun" && !isGoalRaceSession(s, profileData))
-    .sort((a, b) => a.weekNumber - b.weekNumber);
-
-  if (longRunSessions.length < 2) return sessions;
-
   const adjusted = sessions.map((s) => ({ ...s }));
 
-  for (let i = 1; i < longRunSessions.length; i += 1) {
-    const prev = longRunSessions[i - 1];
-    const curr = longRunSessions[i];
+  const longRunIndices: number[] = [];
+  for (let i = 0; i < adjusted.length; i += 1) {
+    if (adjusted[i].type === "longRun" && !isGoalRaceSession(adjusted[i], profileData)) {
+      longRunIndices.push(i);
+    }
+  }
 
-    const prevDist = prev.distanceKm ?? 0;
-    const currDist = curr.distanceKm ?? 0;
+  if (longRunIndices.length < 2) return sessions;
+
+  longRunIndices.sort((a, b) => adjusted[a].weekNumber - adjusted[b].weekNumber);
+
+  for (let i = 1; i < longRunIndices.length; i += 1) {
+    const prevIdx = longRunIndices[i - 1];
+    const currIdx = longRunIndices[i];
+
+    const prevDist = adjusted[prevIdx].distanceKm ?? 0;
+    const currDist = adjusted[currIdx].distanceKm ?? 0;
 
     if (currDist <= prevDist) continue;
 
@@ -1940,11 +1945,8 @@ export function smoothLongRunProgression(
     if (jump <= maxJump) continue;
 
     const maxAllowed = prevDist + maxJump;
-    const adjustedIndex = adjusted.findIndex((s) => s.id === curr.id);
-    if (adjustedIndex < 0) continue;
-
-    adjusted[adjustedIndex] = {
-      ...adjusted[adjustedIndex],
+    adjusted[currIdx] = {
+      ...adjusted[currIdx],
       distanceKm: maxAllowed,
     };
   }
