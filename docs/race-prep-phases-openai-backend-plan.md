@@ -160,6 +160,13 @@ TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
   - Beginner marathon example: 20 km peak becomes about 28 km.
   - Intermediate 10K example: 8 km peak becomes about 13 km.
   - Half marathon cap test.
+- **Status**: ✅ COMPLETE
+- **Work Log**: 2026-04-23 - Implemented `normalizePeakLongRun()` in plan-rules.ts. Function finds the best (longest) `longRun` session in peak phase weeks and adjusts its distance to `targetKm` (raised if OpenAI undershot) or `maxKm` (capped if OpenAI overshot). Uses `phaseForWeek()` to identify peak weeks. Does not modify racePaceRun sessions. Adds coach note indicating raise or cap action. Added 3 unit tests covering beginner marathon raise (20km → 27km), intermediate 10K raise (8km → 12.5km), and experienced half marathon cap (25km → 20km). All 72 tests pass. Wired in index.ts before `ensureGoalRaceSession` per Task 3.3 pipeline order.
+- **Files Modified**:
+  - `supabase/functions/generate-plan/plan-rules.ts` (added normalizePeakLongRun function)
+  - `supabase/functions/generate-plan/plan-rules_test.ts` (added 3 unit tests)
+  - `supabase/functions/generate-plan/index.ts` (wired normalizePeakLongRun into pipeline)
+- **Verification**: `deno test plan-rules_test.ts` — 72 tests passed, 0 failed.
 
 ### Task 2.3: Recalculate Duration When Distance Changes
 - **Location**: `supabase/functions/generate-plan/plan-rules.ts`
@@ -171,6 +178,12 @@ TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
   - Avoids stale duration after distance edits.
 - **Validation**:
   - Unit test verifies distance and duration update together.
+- **Status**: ✅ COMPLETE
+- **Work Log**: 2026-04-23 - Added `recalculateDurationForDistance()` helper that uses nearby long-run pace (sessions 1-2 weeks away) when available, with fallback to conservative easy pace per experience level (~7:30/6:30/5:45 min/km for beginner/intermediate/experienced). Only updates duration when distance actually changes. Added 3 unit tests covering raise, cap, and unchanged scenarios. All 75 tests pass.
+- **Files Modified**:
+  - `supabase/functions/generate-plan/plan-rules.ts` (added `recalculateDurationForDistance`, `fallbackEasyPaceMinPerKm` helpers)
+  - `supabase/functions/generate-plan/plan-rules_test.ts` (added 3 duration update tests)
+- **Verification**: `deno test plan-rules_test.ts` — 75 tests passed, 0 failed.
 
 ## Sprint 3: Progression and Taper Validation
 **Goal**: Prevent plans from looking mathematically correct but coaching-poor.
@@ -254,6 +267,15 @@ TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
   - Taper phase avoids heavy workouts too close to race/test.
 - **Validation**:
   - Unit tests for early hard workout cleanup.
+  - Unit tests for taper workout cleanup.
+- **Status**: ✅ COMPLETED
+- **Work Log**: 2026-04-23 - Added normalizeWorkoutTypesByPhase() that uses phaseForWeek() to identify phase per session and workoutPolicyForPhase() to get allowed types. Nearest-allowed-type downgrade when session violates policy. Beginner base intervals → easyRun. Intermediate+ base allows fartlek. Race-specific work (intervals, racePaceRun, thresholdRun) only in specific/peak phases. Taper phase downgrades heavy workouts (intervals, tempoRun, hillRepeats, thresholdRun) to fartlek or easyRun. goalRaceSession preserved unchanged. Added 10 unit tests. All 82 tests pass.
+- **Files Modified**:
+  - `supabase/functions/generate-plan/plan-rules.ts` (added normalizeWorkoutTypesByPhase, nearestAllowedType, withDowngradedType, adjustedForPhase cue)
+  - `supabase/functions/generate-plan/plan-rules_test.ts` (added 15 workoutPolicyForPhase tests)
+  - `supabase/functions/generate-plan/normalize-workout-types_test.ts` (new file with 10 tests)
+  - `supabase/functions/generate-plan/index.ts` (wired normalizeWorkoutTypesByPhase after ensureFullCalendarWeeks)
+- **Verification**: `deno test normalize-workout-types_test.ts` — 10 passed; `deno test plan-rules_test.ts normalize-workout-types_test.ts` — 82 passed.
   - Unit tests for taper workout cleanup.
 
 ## Sprint 5: Optional Phase Display Later
