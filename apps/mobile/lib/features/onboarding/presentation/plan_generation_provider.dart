@@ -64,7 +64,7 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
             'generate-plan',
             body: {'requestedBy': requestedBy, 'locale': localeCode},
           )
-          .timeout(const Duration(seconds: 100));
+          .timeout(const Duration(seconds: 130));
 
       // ignore: avoid_print
       print('[PlanGeneration] response status=${res.status} data=${res.data}');

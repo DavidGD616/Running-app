@@ -25,8 +25,14 @@ Set<T> _enumSetByKeys<T extends Enum>(
   return {for (final key in keys) ?_enumByKey(key, values, keyOf)};
 }
 
-int? _intFromString(String? value) =>
-    value == null ? null : int.tryParse(value);
+int? _intFromString(String? value) {
+  if (value == null) return null;
+  final normalized = value.trim();
+  final parseable = normalized.endsWith('+')
+      ? normalized.substring(0, normalized.length - 1)
+      : normalized;
+  return int.tryParse(parseable);
+}
 
 String? _stringOrNull(Object? value) => value is String ? value : null;
 

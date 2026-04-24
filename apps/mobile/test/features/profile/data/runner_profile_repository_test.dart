@@ -51,6 +51,23 @@ void main() {
     expect(restored.updatedAt, DateTime(2026, 4, 7, 7, 45));
   });
 
+  test('fitness input accepts numeric and legacy 5 plus running days', () {
+    FitnessProfile? buildFitness(String runningDays) {
+      return RunnerProfileDraft.fitnessFromInput(
+        experience: RunnerExperience.intermediate.key,
+        runningDays: runningDays,
+        weeklyVolume: WeeklyVolumeRange.volume4.key,
+        longestRun: LongestRunRange.run4.key,
+        canCompleteGoalDist: TernaryChoice.yes.key,
+        raceDistanceBefore: RaceDistanceExperience.once.key,
+        benchmark: BenchmarkType.skip.key,
+      ).toProfileOrNull();
+    }
+
+    expect(buildFitness('5')?.runningDays, 5);
+    expect(buildFitness('5+')?.runningDays, 5);
+  });
+
   test(
     'repository loads and saves versioned draft/profile storage keys',
     () async {
