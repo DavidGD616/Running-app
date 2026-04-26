@@ -2101,6 +2101,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeRunDistance => 'DISTANCE';
 
   @override
+  String get activeRunDistanceTitle => 'Distance';
+
+  @override
+  String get activeRunCurrentPaceShort => 'Pace';
+
+  @override
   String get activeRunAveragePace => 'AVG PACE';
 
   @override
@@ -2547,6 +2553,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunTimerOnlyLabel => 'Timer only';
+
+  @override
+  String get activeRunStatusTitle => 'Status';
+
+  @override
+  String get activeRunPausedStatusLabel => 'Paused';
+
+  @override
+  String get activeRunTrackingStatusLabel => 'Tracking';
 
   @override
   String get preRunOpenSettings => 'Open Settings';

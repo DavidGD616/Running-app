@@ -17,15 +17,30 @@ const _forwardEndEvent = 'forwardToNativeEnd';
 
 const _notificationId = 61001;
 
-class RunLiveActivityBackgroundService {
+abstract class RunLiveActivityBackgroundServicePort {
+  Future<void> start(RunLiveActivityData data);
+  Future<void> update(RunLiveActivityData data);
+  Future<void> stop();
+  Future<void> configure();
+}
+
+class RunLiveActivityBackgroundService implements RunLiveActivityBackgroundServicePort {
   RunLiveActivityBackgroundService._();
 
-  static final RunLiveActivityBackgroundService instance =
+  static RunLiveActivityBackgroundServicePort get instance =>
+      _instance;
+
+  static void setInstance(RunLiveActivityBackgroundServicePort port) {
+    _instance = port;
+  }
+
+  static RunLiveActivityBackgroundServicePort _instance =
       RunLiveActivityBackgroundService._();
 
   final FlutterBackgroundService _service = FlutterBackgroundService();
   bool _configured = false;
 
+  @override
   Future<void> configure() async {
     if (!Platform.isIOS && !Platform.isAndroid) return;
     if (_configured) return;
@@ -72,14 +87,17 @@ class RunLiveActivityBackgroundService {
     }
   }
 
+  @override
   Future<void> start(RunLiveActivityData data) async {
     await _send(_updateRunEvent, data.toMap(), startIfNeeded: true);
   }
 
+  @override
   Future<void> update(RunLiveActivityData data) async {
     await _send(_updateRunEvent, data.toMap(), startIfNeeded: true);
   }
 
+  @override
   Future<void> stop() async {
     await _send(_endRunEvent, null, startIfNeeded: false);
     await _send(_stopServiceEvent, null, startIfNeeded: false);

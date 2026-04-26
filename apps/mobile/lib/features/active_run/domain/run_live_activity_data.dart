@@ -45,6 +45,8 @@ class RunLiveActivityTimelineBlock {
 class RunLiveActivityData {
   const RunLiveActivityData({
     required this.workoutName,
+    this.statusTitleLabel = '',
+    this.statusLabel = '',
     required this.elapsedSeconds,
     required this.elapsedLabel,
     this.elapsedUnitLabel = '',
@@ -73,6 +75,8 @@ class RunLiveActivityData {
   });
 
   final String workoutName;
+  final String statusTitleLabel;
+  final String statusLabel;
   final int elapsedSeconds;
   final String elapsedLabel;
   final String elapsedUnitLabel;
@@ -88,11 +92,14 @@ class RunLiveActivityData {
   final String? repLabel;
   final bool isPaused;
 
-  /// Live distance in km. Android service uses this as seed and ticks it.
+  /// Live distance in km. Authoritative controller distance used for
+  /// payload, debug, and native display fallback. Native surfaces must
+  /// not infer distance from pace.
   final double distanceKm;
 
-  /// Current pace in seconds-per-kilometre. Service uses this to compute
-  /// per-tick distance increments while Flutter is backgrounded.
+  /// Current pace in seconds-per-kilometre. Authoritative controller
+  /// current pace for payload, debug, and native display fallback.
+  /// Native surfaces must not use this to compute per-tick distance.
   final int paceSecondsPerKm;
 
   /// Multiplier to convert km → user-preferred unit (1.0 km, 0.621371 mi).
@@ -106,9 +113,12 @@ class RunLiveActivityData {
   final double? plannedDistanceKm;
   final int? plannedDurationMs;
 
-  /// Full block timeline (precomputed labels). Service advances blocks
-  /// natively using durationMs / distanceMeters completion rules so the
-  /// notification stays accurate during long backgrounded runs.
+  /// Full block timeline (optional display metadata). This is NOT
+  /// authoritative — native surfaces must render block labels and
+  /// progress from the latest Flutter payload fields:
+  /// `currentBlockLabel`, `nextBlockLabel`, `repLabel`, and
+  /// `blockProgressFraction`. Android must not use `timeline` to
+  /// advance blocks or override current labels.
   final List<RunLiveActivityTimelineBlock>? timeline;
 
   /// Progress 0.0..1.0 for green bar fill (block completion %).
@@ -171,6 +181,8 @@ class RunLiveActivityData {
 
     return RunLiveActivityData(
       workoutName: str('workoutName'),
+      statusTitleLabel: str('statusTitleLabel'),
+      statusLabel: str('statusLabel'),
       elapsedSeconds: intVal('elapsedSeconds'),
       elapsedLabel: str('elapsedLabel', '00:00'),
       elapsedUnitLabel: str('elapsedUnitLabel'),
@@ -202,6 +214,8 @@ class RunLiveActivityData {
   Map<String, dynamic> toMap() {
     return {
       'workoutName': workoutName,
+      'statusTitleLabel': statusTitleLabel,
+      'statusLabel': statusLabel,
       'elapsedSeconds': elapsedSeconds,
       'elapsedLabel': elapsedLabel,
       'elapsedUnitLabel': elapsedUnitLabel,
@@ -233,6 +247,8 @@ class RunLiveActivityData {
 
   RunLiveActivityData copyWith({
     String? workoutName,
+    String? statusTitleLabel,
+    String? statusLabel,
     int? elapsedSeconds,
     String? elapsedLabel,
     String? elapsedUnitLabel,
@@ -261,6 +277,8 @@ class RunLiveActivityData {
   }) {
     return RunLiveActivityData(
       workoutName: workoutName ?? this.workoutName,
+      statusTitleLabel: statusTitleLabel ?? this.statusTitleLabel,
+      statusLabel: statusLabel ?? this.statusLabel,
       elapsedSeconds: elapsedSeconds ?? this.elapsedSeconds,
       elapsedLabel: elapsedLabel ?? this.elapsedLabel,
       elapsedUnitLabel: elapsedUnitLabel ?? this.elapsedUnitLabel,
@@ -295,7 +313,8 @@ class RunLiveActivityData {
       timeline: identical(timeline, _copyWithSentinel)
           ? this.timeline
           : timeline as List<RunLiveActivityTimelineBlock>?,
-      blockProgressFraction: blockProgressFraction ?? this.blockProgressFraction,
+      blockProgressFraction:
+          blockProgressFraction ?? this.blockProgressFraction,
       plannedPaceLabel: plannedPaceLabel ?? this.plannedPaceLabel,
       blockRemainingLabel: identical(blockRemainingLabel, _copyWithSentinel)
           ? this.blockRemainingLabel

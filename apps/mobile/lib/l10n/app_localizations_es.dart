@@ -2113,6 +2113,12 @@ class AppLocalizationsEs extends AppLocalizations {
   String get activeRunDistance => 'DISTANCIA';
 
   @override
+  String get activeRunDistanceTitle => 'Distancia';
+
+  @override
+  String get activeRunCurrentPaceShort => 'Ritmo';
+
+  @override
   String get activeRunAveragePace => 'RITMO PROM.';
 
   @override
@@ -2561,6 +2567,15 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activeRunTimerOnlyLabel => 'Solo temporizador';
+
+  @override
+  String get activeRunStatusTitle => 'Estado';
+
+  @override
+  String get activeRunPausedStatusLabel => 'Pausado';
+
+  @override
+  String get activeRunTrackingStatusLabel => 'Registrando';
 
   @override
   String get preRunOpenSettings => 'Abrir Ajustes';

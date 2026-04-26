@@ -728,6 +728,8 @@
   "activeRunElapsed": "TIEMPO",
   "activeRunTimeUnit": "tiempo",
   "activeRunDistance": "DISTANCIA",
+  "activeRunDistanceTitle": "Distancia",
+  "activeRunCurrentPaceShort": "Ritmo",
   "activeRunAveragePace": "RITMO PROM.",
   "activeRunTarget": "OBJETIVO",
   "activeRunPause": "Pausar",
@@ -925,6 +927,15 @@
 
   "activeRunTimerOnlyLabel": "Solo temporizador",
   "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },
+
+  "activeRunStatusTitle": "Estado",
+  "@activeRunStatusTitle": { "description": "Title label for the live activity or foreground notification run status field" },
+
+  "activeRunPausedStatusLabel": "Pausado",
+  "@activeRunPausedStatusLabel": { "description": "Status label shown in live activity or foreground notification when the active run is paused" },
+
+  "activeRunTrackingStatusLabel": "Registrando",
+  "@activeRunTrackingStatusLabel": { "description": "Status label shown in live activity or foreground notification when GPS tracking is active" },
 
   "preRunOpenSettings": "Abrir Ajustes",
   "@preRunOpenSettings": { "description": "Button label to open app settings when location permission is permanently denied" },

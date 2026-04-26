@@ -13,6 +13,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../active_run_controller.dart';
+import '../active_run_live_activity_mapper.dart';
+import '../active_run_live_activity_sync.dart';
 import '../active_run_timeline.dart';
 import '../../domain/models/gps_state.dart';
 import '../run_live_activity_background_service.dart';
@@ -44,6 +46,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
   final _bridge = RunLiveActivityBridge.instance;
   final _backgroundService = RunLiveActivityBackgroundService.instance;
+  late final ActiveRunLiveActivitySync _syncCoordinator =
+      ActiveRunLiveActivitySync(
+        bridge: _bridge,
+        backgroundService: _backgroundService,
+      );
   bool _finished = false;
 
   @override
@@ -72,8 +79,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     if (_finished) {
-      _backgroundService.stop();
-      _bridge.endActivity();
+      _syncCoordinator.end();
     }
     super.dispose();
   }
@@ -129,10 +135,12 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   void _finishRun() {
     if (_finished) return;
     _finished = true;
-    _backgroundService.stop();
-    _bridge.endActivity();
-
-    ref.read(activeRunControllerProvider.notifier).finish().then((result) {
+    () async {
+      await _syncCoordinator.end();
+      if (!mounted) return;
+      final result = await ref
+          .read(activeRunControllerProvider.notifier)
+          .finish();
       if (!mounted) return;
       ref.read(activeRunSessionProvider.notifier).clear();
       ref.read(activeRunProgressProvider.notifier).clear();
@@ -146,7 +154,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
           actualDistanceKm: result.distanceKm,
         ),
       );
-    });
+    }();
   }
 
   void _togglePause() {
@@ -297,16 +305,35 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     ref.listen(activeRunControllerProvider, (prev, next) {
       if (next.modalIntent != ActiveRunModalIntent.none &&
           prev?.modalIntent != next.modalIntent) {
         _showModalForIntent(next.modalIntent);
       }
+
+      if (_session != null) {
+        final unitSystem =
+            ref.read(userPreferencesProvider).value?.unitSystem ??
+            UnitSystem.km;
+        final data = buildRunLiveActivityData(
+          state: next,
+          session: _session,
+          unitSystem: unitSystem,
+          l10n: l10n,
+        );
+        _syncCoordinator.sync(
+          data: data,
+          timelineIndex: next.timelineIndex,
+          gpsStatus: next.gpsStatus,
+          isTimerOnlyMode: next.isTimerOnlyMode,
+        );
+      }
     });
 
     final runState = ref.watch(activeRunControllerProvider);
     final state = runState;
-    final l10n = AppLocalizations.of(context)!;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final session = _session;

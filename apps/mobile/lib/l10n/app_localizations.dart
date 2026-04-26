@@ -3936,6 +3936,18 @@ abstract class AppLocalizations {
   /// **'DISTANCE'**
   String get activeRunDistance;
 
+  /// Title label for distance in live activity
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get activeRunDistanceTitle;
+
+  /// Short title label for current pace in live activity
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get activeRunCurrentPaceShort;
+
   /// Average pace metric label on the active run screen
   ///
   /// In en, this message translates to:
@@ -4734,6 +4746,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timer only'**
   String get activeRunTimerOnlyLabel;
+
+  /// Title label for the live activity or foreground notification run status field
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get activeRunStatusTitle;
+
+  /// Status label shown in live activity or foreground notification when the active run is paused
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get activeRunPausedStatusLabel;
+
+  /// Status label shown in live activity or foreground notification when GPS tracking is active
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking'**
+  String get activeRunTrackingStatusLabel;
 
   /// Button label to open app settings when location permission is permanently denied
   ///

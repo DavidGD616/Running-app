@@ -5,6 +5,8 @@ void main() {
   test('toMap serialises all fields including null optionals', () {
     const data = RunLiveActivityData(
       workoutName: 'INTERVALS',
+      statusTitleLabel: 'Status',
+      statusLabel: 'Tracking',
       elapsedSeconds: 512,
       elapsedLabel: '08:32',
       distanceLabel: '1.42 km',
@@ -26,6 +28,8 @@ void main() {
     final map = data.toMap();
 
     expect(map['workoutName'], 'INTERVALS');
+    expect(map['statusTitleLabel'], 'Status');
+    expect(map['statusLabel'], 'Tracking');
     expect(map['elapsedSeconds'], 512);
     expect(map['elapsedLabel'], '08:32');
     expect(map['distanceLabel'], '1.42 km');
@@ -101,6 +105,13 @@ void main() {
     expect(updated.elapsedLabel, '06:00');
     expect(updated.distanceLabel, '0.6 km');
     expect(updated.workoutName, 'INTERVALS');
+
+    final statusUpdated = original.copyWith(
+      statusTitleLabel: 'Run status',
+      statusLabel: 'Paused',
+    );
+    expect(statusUpdated.statusTitleLabel, 'Run status');
+    expect(statusUpdated.statusLabel, 'Paused');
   });
 
   test('copyWith can clear nullable labels', () {
@@ -134,6 +145,8 @@ void main() {
   test('round-trip: toMap output can be reconstructed', () {
     const original = RunLiveActivityData(
       workoutName: 'TEMPO RUN',
+      statusTitleLabel: 'Status',
+      statusLabel: 'Tracking',
       elapsedSeconds: 2700,
       elapsedLabel: '45:00',
       distanceLabel: '7.5 km',
@@ -155,6 +168,8 @@ void main() {
     final map = original.toMap();
     final reconstructed = RunLiveActivityData(
       workoutName: map['workoutName'] as String,
+      statusTitleLabel: map['statusTitleLabel'] as String,
+      statusLabel: map['statusLabel'] as String,
       elapsedSeconds: map['elapsedSeconds'] as int,
       elapsedLabel: map['elapsedLabel'] as String,
       distanceLabel: map['distanceLabel'] as String,
@@ -174,6 +189,8 @@ void main() {
     );
 
     expect(reconstructed.workoutName, original.workoutName);
+    expect(reconstructed.statusTitleLabel, original.statusTitleLabel);
+    expect(reconstructed.statusLabel, original.statusLabel);
     expect(reconstructed.elapsedSeconds, original.elapsedSeconds);
     expect(reconstructed.elapsedLabel, original.elapsedLabel);
     expect(reconstructed.distanceLabel, original.distanceLabel);

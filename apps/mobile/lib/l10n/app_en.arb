@@ -2071,6 +2071,10 @@
   "@activeRunTimeUnit": { "description": "Unit label for elapsed time metric" },
   "activeRunDistance": "DISTANCE",
   "@activeRunDistance": { "description": "Distance metric label on the active run screen" },
+  "activeRunDistanceTitle": "Distance",
+  "@activeRunDistanceTitle": { "description": "Title label for distance in live activity" },
+  "activeRunCurrentPaceShort": "Pace",
+  "@activeRunCurrentPaceShort": { "description": "Short title label for current pace in live activity" },
   "activeRunAveragePace": "AVG PACE",
   "@activeRunAveragePace": { "description": "Average pace metric label on the active run screen" },
   "activeRunTarget": "TARGET",
@@ -2468,6 +2472,15 @@
 
   "activeRunTimerOnlyLabel": "Timer only",
   "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },
+
+  "activeRunStatusTitle": "Status",
+  "@activeRunStatusTitle": { "description": "Title label for the live activity or foreground notification run status field" },
+
+  "activeRunPausedStatusLabel": "Paused",
+  "@activeRunPausedStatusLabel": { "description": "Status label shown in live activity or foreground notification when the active run is paused" },
+
+  "activeRunTrackingStatusLabel": "Tracking",
+  "@activeRunTrackingStatusLabel": { "description": "Status label shown in live activity or foreground notification when GPS tracking is active" },
 
   "preRunOpenSettings": "Open Settings",
   "@preRunOpenSettings": { "description": "Button label to open app settings when location permission is permanently denied" },

@@ -18,7 +18,6 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
 import io.flutter.plugin.common.EventChannel
-import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -28,19 +27,8 @@ class RunForegroundService : Service() {
 
     private var latestData = RunNotificationData.empty()
 
-    // Service-owned, ticked natively. Survives app backgrounding.
-    private var serviceDistanceKm: Double = 0.0
-    private var serviceElapsedMs: Long = 0L
     private var lastTickRealtime: Long = 0L
     private var seeded: Boolean = false
-
-    // Timeline (block) tracking — service advances blocks natively while
-    // Flutter is backgrounded so the notification reflects the correct
-    // block/rep/status even across multi-block transitions.
-    private var timeline: List<TimelineBlock> = emptyList()
-    private var blockIndex: Int = 0
-    private var blockElapsedMs: Long = 0L
-    private var blockDistanceKm: Double = 0.0
 
     private val tickHandler = Handler(Looper.getMainLooper())
     private val tickRunnable = object : Runnable {
@@ -88,13 +76,8 @@ class RunForegroundService : Service() {
     }
 
     fun snapshotState(): Map<String, Any> = mapOf(
-        "distanceKm" to serviceDistanceKm,
-        "elapsedMs" to serviceElapsedMs,
         "isPaused" to latestData.isPaused,
         "seeded" to seeded,
-        "blockIndex" to blockIndex,
-        "blockElapsedMs" to blockElapsedMs,
-        "blockDistanceKm" to blockDistanceKm,
     )
 
     fun endRun() {
@@ -114,9 +97,6 @@ class RunForegroundService : Service() {
         val sink = eventsSink ?: return
         val payload = mapOf(
             "type" to "finished",
-            "distanceKm" to serviceDistanceKm,
-            "elapsedMs" to serviceElapsedMs,
-            "blockIndex" to blockIndex,
         )
         Handler(Looper.getMainLooper()).post {
             try { sink.success(payload) } catch (_: Exception) {}
@@ -125,7 +105,6 @@ class RunForegroundService : Service() {
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         super.onTaskRemoved(rootIntent)
-        // App swiped from recents: tear down activity instead of leaving stale notification.
         endRun()
     }
 
@@ -133,39 +112,12 @@ class RunForegroundService : Service() {
 
     private fun applyData(data: RunNotificationData, isInitial: Boolean) {
         if (isInitial) {
-            // Seed service state from Flutter on first start. Subsequent
-            // updates only mutate labels + pace; distance/elapsed stay
-            // service-owned to avoid stomping on values accumulated while
-            // Flutter was backgrounded.
-            serviceDistanceKm = data.distanceKm
-            serviceElapsedMs = data.elapsedSeconds * 1000L
             lastTickRealtime = SystemClock.elapsedRealtime()
             seeded = true
-            blockIndex = 0
-            blockElapsedMs = 0L
-            blockDistanceKm = 0.0
-        }
-        if (data.timeline.isNotEmpty()) {
-            // Timeline only seeded once (length/contents stable for a session).
-            if (timeline.isEmpty()) timeline = data.timeline
         }
         latestData = data
         pushNotification()
         if (data.isPaused) stopTickLoop() else startTickLoop()
-    }
-
-    private fun advanceTimelineIfNeeded() {
-        if (timeline.isEmpty()) return
-        while (blockIndex < timeline.size - 1) {
-            val block = timeline[blockIndex]
-            val durComplete = block.durationMs != null && blockElapsedMs >= block.durationMs
-            val distComplete =
-                block.distanceMeters != null && blockDistanceKm * 1000 >= block.distanceMeters
-            if (!durComplete && !distComplete) return
-            blockIndex += 1
-            blockElapsedMs = 0L
-            blockDistanceKm = 0.0
-        }
     }
 
     private fun startTickLoop() {
@@ -182,20 +134,6 @@ class RunForegroundService : Service() {
     }
 
     private fun tick() {
-        val now = SystemClock.elapsedRealtime()
-        val deltaMs = (now - lastTickRealtime).coerceAtLeast(0L)
-        lastTickRealtime = now
-        if (latestData.isPaused) return
-
-        serviceElapsedMs += deltaMs
-        blockElapsedMs += deltaMs
-        val pace = latestData.paceSecondsPerKm
-        if (pace > 0) {
-            val distDelta = (deltaMs / 1000.0) / pace
-            serviceDistanceKm += distDelta
-            blockDistanceKm += distDelta
-        }
-        advanceTimelineIfNeeded()
         pushNotification()
     }
 
@@ -214,59 +152,8 @@ class RunForegroundService : Service() {
         }
     }
 
-    private fun computedDistanceLabel(): String {
-        val unit = latestData.distanceUnit.ifBlank { "km" }
-        val value = serviceDistanceKm * latestData.unitFactor
-        val format = if (value < 1.0) "%.2f %s" else "%.1f %s"
-        return String.format(Locale.US, format, value, unit)
-    }
-
-    private fun distanceParts(label: String, data: RunNotificationData): Pair<String, String> {
-        val trimmed = label.trim()
-        val splitAt = trimmed.lastIndexOf(' ')
-        if (splitAt > 0 && splitAt < trimmed.length - 1) {
-            return Pair(trimmed.substring(0, splitAt), trimmed.substring(splitAt + 1))
-        }
-        return Pair(trimmed, data.distanceUnit)
-    }
-
-    private fun computedCurrentPaceLabel(): String {
-        val basePace = latestData.paceSecondsPerKm
-        if (basePace <= 0) return latestData.currentPaceLabel
-        val factor = latestData.unitFactor
-        val secondsInUnit = if (factor > 0) (basePace / factor).toInt() else basePace
-        return formatPace(secondsInUnit, latestData.paceUnit)
-    }
-
-    private fun computedAvgPaceLabel(): String {
-        if (serviceDistanceKm < 0.005) return latestData.avgPaceLabel
-        val avgSecPerKm = (serviceElapsedMs / 1000.0) / serviceDistanceKm
-        val factor = latestData.unitFactor
-        val secondsInUnit = if (factor > 0) (avgSecPerKm / factor).toInt() else avgSecPerKm.toInt()
-        return formatPace(secondsInUnit, latestData.paceUnit)
-    }
-
-    private fun formatPace(seconds: Int, unitSuffix: String): String {
-        val safe = seconds.coerceAtLeast(0)
-        val minutes = safe / 60
-        val rem = safe % 60
-        val unit = unitSuffix.ifBlank { "min/km" }
-        return String.format(Locale.US, "%d:%02d %s", minutes, rem, unit)
-    }
-
-    private fun computedProgressPermille(data: RunNotificationData): Int {
-        val distanceTarget = data.plannedDistanceKm
-        if (distanceTarget != null && distanceTarget > 0.0) {
-            return visibleProgress((serviceDistanceKm / distanceTarget).coerceIn(0.0, 1.0))
-        }
-        val durationTarget = data.plannedDurationMs
-        if (durationTarget != null && durationTarget > 0L) {
-            return visibleProgress((serviceElapsedMs.toDouble() / durationTarget).coerceIn(0.0, 1.0))
-        }
-        return 0
-    }
-
-    private fun visibleProgress(progress: Double): Int {
+    private fun progressPermille(data: RunNotificationData): Int {
+        val progress = data.blockProgressFraction.coerceIn(0.0, 1.0)
         if (progress <= 0.0) return 0
         return (progress * 1000).toInt().coerceAtLeast(24)
     }
@@ -301,55 +188,48 @@ class RunForegroundService : Service() {
             .build()
     }
 
-    private fun currentTimelineBlock(): TimelineBlock? =
-        timeline.getOrNull(blockIndex)
-
-    private fun resolvedCurrentBlockLabel(data: RunNotificationData): String =
-        currentTimelineBlock()?.blockLabel ?: data.currentBlockLabel
-
-    private fun resolvedNextBlockLabel(data: RunNotificationData): String? =
-        currentTimelineBlock()?.nextLabel ?: data.nextBlockLabel
-
-    private fun resolvedRepLabel(data: RunNotificationData): String? =
-        currentTimelineBlock()?.repLabel ?: data.repLabel
-
     private fun collapsedViews(data: RunNotificationData): RemoteViews {
-        val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
-        val (distanceValue, distanceUnit) = distanceParts(distance, data)
+        val (distanceValue, distanceUnit) = distanceParts(data.distanceLabel, data)
         return RemoteViews(packageName, R.layout.notification_run_collapsed).apply {
             setTextViewText(R.id.run_distance_value_label, distanceValue)
             setTextViewText(R.id.run_distance_unit_label, distanceUnit)
             setTextViewText(R.id.run_elapsed_unit_label, data.elapsedUnitLabel)
-            setProgressBar(R.id.run_progress_bar, 1000, computedProgressPermille(data), false)
+            setProgressBar(R.id.run_progress_bar, 1000, progressPermille(data), false)
             bindElapsed(this, data)
         }
     }
 
     private fun expandedViews(data: RunNotificationData): RemoteViews {
-        val distance = if (seeded) computedDistanceLabel() else data.distanceLabel
-        val (distanceValue, distanceUnit) = distanceParts(distance, data)
-        val currentPace = if (seeded) computedCurrentPaceLabel() else data.currentPaceLabel
-        val avgPace = if (seeded) computedAvgPaceLabel() else data.avgPaceLabel
+        val (distanceValue, distanceUnit) = distanceParts(data.distanceLabel, data)
         return RemoteViews(packageName, R.layout.notification_run_expanded).apply {
             setTextViewText(R.id.run_workout_name, data.workoutName)
             setTextViewText(R.id.run_status_label, data.statusLabel)
             setTextViewText(R.id.run_distance_value_label, distanceValue)
             setTextViewText(R.id.run_distance_unit_label, distanceUnit)
             setTextViewText(R.id.run_elapsed_unit_label, data.elapsedUnitLabel)
-            setTextViewText(R.id.run_current_block_label, resolvedCurrentBlockLabel(data))
+            setTextViewText(R.id.run_current_block_label, data.currentBlockLabel)
             setTextViewText(R.id.run_current_pace_title, data.currentPaceTitleLabel)
-            setTextViewText(R.id.run_current_pace_label, currentPace)
+            setTextViewText(R.id.run_current_pace_label, data.currentPaceLabel)
             setTextViewText(R.id.run_avg_pace_title, data.avgPaceTitleLabel)
-            setTextViewText(R.id.run_avg_pace_label, avgPace)
-            setOptionalText(R.id.run_next_block_label, resolvedNextBlockLabel(data))
-            setOptionalText(R.id.run_rep_label, resolvedRepLabel(data))
-            setProgressBar(R.id.run_progress_bar, 1000, computedProgressPermille(data), false)
+            setTextViewText(R.id.run_avg_pace_label, data.avgPaceLabel)
+            setOptionalText(R.id.run_next_block_label, data.nextBlockLabel)
+            setOptionalText(R.id.run_rep_label, data.repLabel)
+            setProgressBar(R.id.run_progress_bar, 1000, progressPermille(data), false)
             bindElapsed(this, data)
         }
     }
 
+    private fun distanceParts(label: String, data: RunNotificationData): Pair<String, String> {
+        val trimmed = label.trim()
+        val splitAt = trimmed.lastIndexOf(' ')
+        if (splitAt > 0 && splitAt < trimmed.length - 1) {
+            return Pair(trimmed.substring(0, splitAt), trimmed.substring(splitAt + 1))
+        }
+        return Pair(trimmed, data.distanceUnit)
+    }
+
     private fun bindElapsed(views: RemoteViews, data: RunNotificationData) {
-        val elapsedSec = if (seeded) serviceElapsedMs / 1000L else data.elapsedSeconds
+        val elapsedSec = data.elapsedSeconds
         val base = SystemClock.elapsedRealtime() - elapsedSec * 1000L
         views.setChronometer(R.id.run_elapsed_chrono, base, null, !data.isPaused)
         views.setTextViewText(R.id.run_elapsed_static, data.elapsedLabel)
@@ -397,7 +277,6 @@ class RunForegroundService : Service() {
         var current: RunForegroundService? = null
             private set
 
-        // Set by MainActivity when Dart subscribes via the event channel.
         var eventsSink: EventChannel.EventSink? = null
 
         fun intent(context: Context, action: String, data: Map<*, *>? = null): Intent {
@@ -493,6 +372,7 @@ private data class RunNotificationData(
     val paceUnit: String,
     val plannedDistanceKm: Double?,
     val plannedDurationMs: Long?,
+    val blockProgressFraction: Double,
     val timeline: List<TimelineBlock>,
 ) {
     fun toBundle(): Bundle = Bundle().apply {
@@ -520,6 +400,7 @@ private data class RunNotificationData(
         putString("paceUnit", paceUnit)
         plannedDistanceKm?.let { putDouble("plannedDistanceKm", it) }
         plannedDurationMs?.let { putLong("plannedDurationMs", it) }
+        putDouble("blockProgressFraction", blockProgressFraction)
         if (timeline.isNotEmpty()) putString("timelineJson", timeline.toJsonString())
     }
 
@@ -549,6 +430,7 @@ private data class RunNotificationData(
             paceUnit = "min/km",
             plannedDistanceKm = null,
             plannedDurationMs = null,
+            blockProgressFraction = 0.0,
             timeline = emptyList(),
         )
 
@@ -583,6 +465,7 @@ private data class RunNotificationData(
                     if (bundle.containsKey("plannedDistanceKm")) bundle.getDouble("plannedDistanceKm") else null,
                 plannedDurationMs =
                     if (bundle.containsKey("plannedDurationMs")) bundle.getLong("plannedDurationMs") else null,
+                blockProgressFraction = bundle.getDouble("blockProgressFraction"),
                 timeline = timelineFromJsonString(bundle.getString("timelineJson")),
             )
         }
@@ -614,6 +497,7 @@ private data class RunNotificationData(
                 paceUnit = map.stringValue("paceUnit", "min/km"),
                 plannedDistanceKm = map.optionalDoubleValue("plannedDistanceKm"),
                 plannedDurationMs = map.optionalLongValue("plannedDurationMs"),
+                blockProgressFraction = map.doubleValue("blockProgressFraction", 0.0),
                 timeline = (map["timeline"] as? List<*>)
                     ?.mapNotNull { it as? Map<*, *> }
                     ?.map { TimelineBlock.fromMap(it) }
