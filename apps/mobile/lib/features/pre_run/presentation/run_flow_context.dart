@@ -93,12 +93,14 @@ class RunFlowSessionContext {
     final sessionTypeRaw = json['sessionType'] as String?;
     final sessionType = sessionTypeRaw != null
         ? SessionType.values.cast<SessionType?>().firstWhere(
-              (e) => e?.name == sessionTypeRaw,
-              orElse: () => null,
-            )
+            (e) => e?.name == sessionTypeRaw,
+            orElse: () => null,
+          )
         : null;
     if (sessionType == null) {
-      throw FormatException('Invalid or missing sessionType in JSON: $sessionTypeRaw');
+      throw FormatException(
+        'Invalid or missing sessionType in JSON: $sessionTypeRaw',
+      );
     }
     return RunFlowSessionContext(
       sessionId: json['sessionId'] as String,
@@ -106,15 +108,19 @@ class RunFlowSessionContext {
       sessionType: sessionType,
       weekNumber: json['weekNumber'] as int? ?? 1,
       workoutTarget: json['workoutTarget'] != null
-          ? WorkoutTarget.fromJson(json['workoutTarget'] as Map<String, dynamic>)
+          ? WorkoutTarget.fromJson(
+              json['workoutTarget'] as Map<String, dynamic>,
+            )
           : null,
-      workoutSteps: (json['workoutSteps'] as List?)
+      workoutSteps:
+          (json['workoutSteps'] as List?)
               ?.map((s) => WorkoutStep.fromJson(s as Map<String, dynamic>))
               .whereType<WorkoutStep>()
               .toList() ??
           [],
       supplementalType: supplementalSessionTypeFromKey(
-          json['supplementalType'] as String?),
+        json['supplementalType'] as String?,
+      ),
       isRunSession: json['isRunSession'] as bool? ?? true,
       distanceKm: _doubleOrNull(json['distanceKm']),
       durationMinutes: json['durationMinutes'] as int?,
@@ -192,24 +198,65 @@ class PreRunArgs {
 }
 
 class ActiveRunArgs {
-  const ActiveRunArgs({required this.session, this.checkIn});
+  const ActiveRunArgs({
+    required this.session,
+    this.checkIn,
+    this.timerOnlyMode = false,
+  });
 
   final RunFlowSessionContext? session;
   final PreRunCheckIn? checkIn;
+  final bool timerOnlyMode;
 }
 
 class LogRunArgs {
   const LogRunArgs({
+    this.runId,
     required this.session,
     this.checkIn,
     this.actualDuration,
     this.actualDistanceKm,
   });
 
+  final String? runId;
   final RunFlowSessionContext? session;
   final PreRunCheckIn? checkIn;
   final Duration? actualDuration;
   final double? actualDistanceKm;
+}
+
+class CompletedRunData {
+  const CompletedRunData({
+    required this.runId,
+    required this.duration,
+    required this.distanceKm,
+    required this.averagePaceSecondsPerKm,
+    required this.splits,
+  });
+
+  final String runId;
+  final Duration duration;
+  final double distanceKm;
+  final int averagePaceSecondsPerKm;
+  final List<CompletedRunSplit> splits;
+}
+
+class CompletedRunSplit {
+  const CompletedRunSplit({
+    required this.splitIndex,
+    required this.startedAtMs,
+    required this.endedAtMs,
+    required this.durationMs,
+    required this.distanceKm,
+    required this.paceSecondsPerKm,
+  });
+
+  final int splitIndex;
+  final int startedAtMs;
+  final int endedAtMs;
+  final int durationMs;
+  final double distanceKm;
+  final int paceSecondsPerKm;
 }
 
 T? _enumFromKey<T extends Enum>(List<T> values, Object? raw) {

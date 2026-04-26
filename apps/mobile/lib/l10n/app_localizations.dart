@@ -3822,6 +3822,12 @@ abstract class AppLocalizations {
   /// **'7:31 / km pace'**
   String get logSessionPaceValue;
 
+  /// Average pace subtitle on distance metric card after a completed GPS run
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} / {unit} pace'**
+  String logSessionAveragePaceSubtitle(String pace, String unit);
+
   /// Section heading for perceived effort selection
   ///
   /// In en, this message translates to:
@@ -3948,7 +3954,7 @@ abstract class AppLocalizations {
   /// **'Pause'**
   String get activeRunPause;
 
-  /// Resume CTA on the active run screen
+  /// Button to resume the run after GPS was lost
   ///
   /// In en, this message translates to:
   /// **'Resume'**
@@ -4650,6 +4656,168 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Taper'**
   String get phaseTaperRace;
+
+  /// Title in the Android foreground notification when GPS tracking is active
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking Run'**
+  String get activeRunGpsTrackingNotificationTitle;
+
+  /// Body text in the Android foreground notification when GPS tracking is active
+  ///
+  /// In en, this message translates to:
+  /// **'StrivIQ is recording your run'**
+  String get activeRunGpsTrackingNotificationBody;
+
+  /// Title of the dialog shown when GPS is required for a distance-based workout
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Required'**
+  String get gpsRequiredTitle;
+
+  /// Body text of the dialog shown when GPS is required for a distance-based workout
+  ///
+  /// In en, this message translates to:
+  /// **'This workout has distance-based blocks and requires GPS to track your progress. Please enable location services to start this workout.'**
+  String get gpsRequiredBody;
+
+  /// Status label shown while acquiring GPS signal
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for GPS signal'**
+  String get gpsWaitForSignal;
+
+  /// Warning label shown when GPS signal is weak
+  ///
+  /// In en, this message translates to:
+  /// **'Weak GPS signal'**
+  String get gpsWeakSignal;
+
+  /// Status label shown when GPS signal is lost
+  ///
+  /// In en, this message translates to:
+  /// **'GPS signal lost'**
+  String get gpsLostSignal;
+
+  /// Title chip label shown when GPS is acquiring signal
+  ///
+  /// In en, this message translates to:
+  /// **'Acquiring'**
+  String get gpsAcquiringTitle;
+
+  /// Title chip label shown when GPS signal is weak
+  ///
+  /// In en, this message translates to:
+  /// **'Weak Signal'**
+  String get gpsWeakTitle;
+
+  /// Button label to enable device location services from GPS required dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Location Services'**
+  String get gpsEnableLocationServices;
+
+  /// Title chip label shown when GPS signal is lost
+  ///
+  /// In en, this message translates to:
+  /// **'Signal Lost'**
+  String get gpsLostTitle;
+
+  /// CTA button to end the active run
+  ///
+  /// In en, this message translates to:
+  /// **'End Run'**
+  String get activeRunEndRun;
+
+  /// Status label shown when the active run is in timer-only mode without GPS
+  ///
+  /// In en, this message translates to:
+  /// **'Timer only'**
+  String get activeRunTimerOnlyLabel;
+
+  /// Button label to open app settings when location permission is permanently denied
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get preRunOpenSettings;
+
+  /// Button label to open location settings when location service is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Location Services'**
+  String get preRunEnableLocationServices;
+
+  /// Button label to start run in timer-only mode without GPS
+  ///
+  /// In en, this message translates to:
+  /// **'Timer-only Mode'**
+  String get preRunTimerOnlyMode;
+
+  /// Title of dialog when device location services are disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Location Services Disabled'**
+  String get locationServiceDisabledTitle;
+
+  /// Body text of dialog when device location services are disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location services to track your run with GPS.'**
+  String get locationServiceDisabledBody;
+
+  /// Title of dialog when location permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Location Permission Denied'**
+  String get locationPermissionDeniedTitle;
+
+  /// Body text of dialog when location permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is required to track your run. Please grant permission in Settings.'**
+  String get locationPermissionDeniedBody;
+
+  /// Title of non-dismissible modal when GPS is lost during a distance-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Signal Lost'**
+  String get activeRunGpsLostAutoPauseTitle;
+
+  /// Body of non-dismissible modal when GPS is lost during a distance-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS signal was lost. Your run has been auto-paused. Tap Resume to continue when GPS recovers, or End Run to finish now.'**
+  String get activeRunGpsLostAutoPauseBody;
+
+  /// Title of dismissible warning when GPS is lost during a duration-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Signal Weak'**
+  String get activeRunGpsLostWarningTitle;
+
+  /// Body of dismissible warning when GPS is lost during a duration-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS signal is weak. Distance tracking is paused but your timer is still running.'**
+  String get activeRunGpsLostWarningBody;
+
+  /// Button to wait for GPS signal to recover
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for GPS'**
+  String get activeRunWaitForGps;
+
+  /// Button to dismiss the GPS warning modal
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get activeRunDismiss;
+
+  /// Title of error dialog when timer-only mode is requested for distance-based workout
+  ///
+  /// In en, this message translates to:
+  /// **'Timer-Only Not Supported'**
+  String get activeRunTimerOnlyRestrictionTitle;
 }
 
 class _AppLocalizationsDelegate

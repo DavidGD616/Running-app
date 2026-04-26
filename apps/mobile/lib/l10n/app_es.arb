@@ -708,6 +708,7 @@
   "logSessionMinUnit": "min",
   "logSessionKmUnit": "km",
   "logSessionPaceValue": "7:31 / ritmo km",
+  "logSessionAveragePaceSubtitle": "{pace} / ritmo {unit}",
   "logSessionHowDidItFeel": "¿Cómo te fue?",
   "logSessionEasy": "Fácil",
   "logSessionModerate": "Moderado",
@@ -884,5 +885,89 @@
   "@phasePeak": { "description": "Peak training phase label" },
 
   "phaseTaperRace": "Reducción",
-  "@phaseTaperRace": { "description": "Taper/race training phase label" }
+  "@phaseTaperRace": { "description": "Taper/race training phase label" },
+
+  "activeRunGpsTrackingNotificationTitle": "Registrando carrera",
+  "@activeRunGpsTrackingNotificationTitle": { "description": "Title in the Android foreground notification when GPS tracking is active" },
+
+  "activeRunGpsTrackingNotificationBody": "StrivIQ está registrando tu carrera",
+  "@activeRunGpsTrackingNotificationBody": { "description": "Body text in the Android foreground notification when GPS tracking is active" },
+
+  "gpsRequiredTitle": "GPS Requerido",
+  "@gpsRequiredTitle": { "description": "Title of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsRequiredBody": "Este entrenamiento tiene bloques basados en distancia y requiere GPS para seguir tu progreso. Por favor habilita los servicios de ubicación para comenzar este entrenamiento.",
+  "@gpsRequiredBody": { "description": "Body text of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsWaitForSignal": "Esperando señal GPS",
+  "@gpsWaitForSignal": { "description": "Status label shown while acquiring GPS signal" },
+
+  "gpsWeakSignal": "Señal GPS débil",
+  "@gpsWeakSignal": { "description": "Warning label shown when GPS signal is weak" },
+
+  "gpsLostSignal": "Señal GPS perdida",
+  "@gpsLostSignal": { "description": "Status label shown when GPS signal is lost" },
+
+  "gpsAcquiringTitle": "Adquiriendo",
+  "@gpsAcquiringTitle": { "description": "Title chip label shown when GPS is acquiring signal" },
+
+  "gpsWeakTitle": "Señal Débil",
+  "@gpsWeakTitle": { "description": "Title chip label shown when GPS signal is weak" },
+
+  "gpsEnableLocationServices": "Habilitar Servicios de Ubicación",
+  "@gpsEnableLocationServices": { "description": "Button label to enable device location services from GPS required dialog" },
+
+  "gpsLostTitle": "Señal Perdida",
+  "@gpsLostTitle": { "description": "Title chip label shown when GPS signal is lost" },
+
+  "activeRunEndRun": "Terminar Carrera",
+  "@activeRunEndRun": { "description": "CTA button to end the active run" },
+
+  "activeRunTimerOnlyLabel": "Solo temporizador",
+  "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },
+
+  "preRunOpenSettings": "Abrir Ajustes",
+  "@preRunOpenSettings": { "description": "Button label to open app settings when location permission is permanently denied" },
+
+  "preRunEnableLocationServices": "Habilitar Servicios de Ubicación",
+  "@preRunEnableLocationServices": { "description": "Button label to open location settings when location service is disabled" },
+
+  "preRunTimerOnlyMode": "Modo Solo Temporizador",
+  "@preRunTimerOnlyMode": { "description": "Button label to start run in timer-only mode without GPS" },
+
+  "locationServiceDisabledTitle": "Servicios de Ubicación Deshabilitados",
+  "@locationServiceDisabledTitle": { "description": "Title of dialog when device location services are disabled" },
+
+  "locationServiceDisabledBody": "Por favor habilita los servicios de ubicación para rastrear tu carrera con GPS.",
+  "@locationServiceDisabledBody": { "description": "Body text of dialog when device location services are disabled" },
+
+  "locationPermissionDeniedTitle": "Permiso de Ubicación Denegado",
+  "@locationPermissionDeniedTitle": { "description": "Title of dialog when location permission is denied" },
+
+  "locationPermissionDeniedBody": "Se requiere permiso de ubicación para rastrear tu carrera. Por favor concede el permiso en Ajustes.",
+  "@locationPermissionDeniedBody": { "description": "Body text of dialog when location permission is denied" },
+
+  "activeRunGpsLostAutoPauseTitle": "Señal GPS Perdida",
+  "@activeRunGpsLostAutoPauseTitle": { "description": "Title of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostAutoPauseBody": "Se perdió la señal GPS. Tu carrera ha sido pausada automáticamente. Toca Reanudar para continuar cuando el GPS se recupere, o Terminar Carrera para finalizar ahora.",
+  "@activeRunGpsLostAutoPauseBody": { "description": "Body of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostWarningTitle": "Señal GPS Débil",
+  "@activeRunGpsLostWarningTitle": { "description": "Title of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunGpsLostWarningBody": "La señal GPS es débil. El seguimiento de distancia está en pausa pero tu temporizador sigue funcionando.",
+  "@activeRunGpsLostWarningBody": { "description": "Body of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunResume": "Reanudar",
+  "@activeRunResume": { "description": "Button to resume the run after GPS was lost" },
+
+  "activeRunWaitForGps": "Esperar GPS",
+  "@activeRunWaitForGps": { "description": "Button to wait for GPS signal to recover" },
+
+  "activeRunDismiss": "Cerrar",
+  "@activeRunDismiss": { "description": "Button to dismiss the GPS warning modal" },
+
+  "activeRunTimerOnlyRestrictionTitle": "Modo Solo Temporizador No Compatible",
+  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" }
 }

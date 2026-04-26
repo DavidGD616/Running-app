@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -9,8 +12,12 @@ import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/core/router/route_names.dart';
 import 'package:running_app/features/activity/data/activity_repository.dart';
 import 'package:running_app/features/activity/domain/models/activity_record.dart';
+import 'package:running_app/features/active_run/data/run_location_tracker.dart';
+import 'package:running_app/features/active_run/domain/models/run_track_point.dart';
+import 'package:running_app/features/active_run/presentation/location_tracker_provider.dart';
 import 'package:running_app/features/active_run/presentation/screens/active_run_screen.dart';
 import 'package:running_app/features/log_run/presentation/screens/log_run_screen.dart';
+import 'package:running_app/features/pre_run/presentation/location_permission_service.dart';
 import 'package:running_app/features/pre_run/presentation/run_flow_context.dart';
 import 'package:running_app/features/pre_run/presentation/screens/pre_run_screen.dart';
 import 'package:running_app/features/session_detail/presentation/screens/session_detail_screen.dart';
@@ -21,6 +28,90 @@ import 'package:running_app/features/training_plan/presentation/training_plan_pr
 import 'package:running_app/l10n/app_localizations.dart';
 
 import '../../../helpers/activity_fixtures.dart';
+
+class _WidgetTestRunLocationTracker implements RunLocationTracker {
+  _WidgetTestRunLocationTracker(this._startedAt);
+
+  final DateTime _startedAt;
+  final _controller = StreamController<RunTrackPoint>.broadcast();
+  bool _started = false;
+
+  @override
+  Stream<RunTrackPoint> get points => _controller.stream;
+
+  @override
+  void start() {
+    if (_started) return;
+    _started = true;
+    Future<void>.delayed(Duration.zero, () {
+      if (_controller.isClosed) return;
+      final points = [
+        RunTrackPoint(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: _startedAt,
+          accuracy: 5,
+          altitude: 0,
+          speed: 0,
+          heading: 0,
+          source: RunTrackPointSource.gps,
+        ),
+        RunTrackPoint(
+          latitude: 37.7758,
+          longitude: -122.4194,
+          timestamp: _startedAt.add(const Duration(seconds: 12)),
+          accuracy: 5,
+          altitude: 0,
+          speed: 8,
+          heading: 0,
+          source: RunTrackPointSource.gps,
+        ),
+      ];
+      for (final point in points) {
+        _controller.add(point);
+      }
+    });
+  }
+
+  @override
+  void stop() {
+    _started = false;
+  }
+
+  Future<void> dispose() async {
+    await _controller.close();
+  }
+}
+
+class _WidgetTestLocationPermissionService
+    implements LocationPermissionService {
+  const _WidgetTestLocationPermissionService();
+
+  @override
+  Future<LocationPermission> checkPermission() async {
+    return LocationPermission.whileInUse;
+  }
+
+  @override
+  Future<bool> isLocationServiceEnabled() async {
+    return true;
+  }
+
+  @override
+  Future<bool> openAppSettings() async {
+    return true;
+  }
+
+  @override
+  Future<bool> openLocationSettings() async {
+    return true;
+  }
+
+  @override
+  Future<LocationPermission> requestPermission() async {
+    return LocationPermission.whileInUse;
+  }
+}
 
 class _TestTrainingPlanNotifier extends TrainingPlanNotifier {
   _TestTrainingPlanNotifier(this.fixedPlan);
@@ -46,6 +137,8 @@ void main() {
     required GoRouter router,
     required SharedPreferences prefs,
     required TrainingPlan plan,
+    RunLocationTracker? locationTracker,
+    LocationPermissionService? locationPermissionService,
   }) {
     return ProviderScope(
       overrides: [
@@ -53,6 +146,12 @@ void main() {
         trainingPlanProvider.overrideWith(
           () => _TestTrainingPlanNotifier(plan),
         ),
+        if (locationTracker != null)
+          locationTrackerProvider.overrideWith((ref) => locationTracker),
+        if (locationPermissionService != null)
+          locationPermissionServiceProvider.overrideWith(
+            (ref) => locationPermissionService,
+          ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -87,6 +186,10 @@ void main() {
         weekNumber: 4,
       );
       final plan = buildTestTrainingPlan(sessions: [session]);
+      final tracker = _WidgetTestRunLocationTracker(
+        DateTime(2026, 4, 7, 7, 30),
+      );
+      addTearDown(tracker.dispose);
 
       late final GoRouter router;
       router = GoRouter(
@@ -126,7 +229,14 @@ void main() {
       );
 
       await tester.pumpWidget(
-        wrapApp(router: router, prefs: prefs, plan: plan),
+        wrapApp(
+          router: router,
+          prefs: prefs,
+          plan: plan,
+          locationTracker: tracker,
+          locationPermissionService:
+              const _WidgetTestLocationPermissionService(),
+        ),
       );
       await tester.pumpAndSettle();
 

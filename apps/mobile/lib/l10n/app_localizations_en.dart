@@ -2042,6 +2042,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSessionPaceValue => '7:31 / km pace';
 
   @override
+  String logSessionAveragePaceSubtitle(String pace, String unit) {
+    return '$pace / $unit pace';
+  }
+
+  @override
   String get logSessionHowDidItFeel => 'How did it feel?';
 
   @override
@@ -2501,4 +2506,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get phaseTaperRace => 'Taper';
+
+  @override
+  String get activeRunGpsTrackingNotificationTitle => 'Tracking Run';
+
+  @override
+  String get activeRunGpsTrackingNotificationBody =>
+      'StrivIQ is recording your run';
+
+  @override
+  String get gpsRequiredTitle => 'GPS Required';
+
+  @override
+  String get gpsRequiredBody =>
+      'This workout has distance-based blocks and requires GPS to track your progress. Please enable location services to start this workout.';
+
+  @override
+  String get gpsWaitForSignal => 'Waiting for GPS signal';
+
+  @override
+  String get gpsWeakSignal => 'Weak GPS signal';
+
+  @override
+  String get gpsLostSignal => 'GPS signal lost';
+
+  @override
+  String get gpsAcquiringTitle => 'Acquiring';
+
+  @override
+  String get gpsWeakTitle => 'Weak Signal';
+
+  @override
+  String get gpsEnableLocationServices => 'Enable Location Services';
+
+  @override
+  String get gpsLostTitle => 'Signal Lost';
+
+  @override
+  String get activeRunEndRun => 'End Run';
+
+  @override
+  String get activeRunTimerOnlyLabel => 'Timer only';
+
+  @override
+  String get preRunOpenSettings => 'Open Settings';
+
+  @override
+  String get preRunEnableLocationServices => 'Enable Location Services';
+
+  @override
+  String get preRunTimerOnlyMode => 'Timer-only Mode';
+
+  @override
+  String get locationServiceDisabledTitle => 'Location Services Disabled';
+
+  @override
+  String get locationServiceDisabledBody =>
+      'Please enable location services to track your run with GPS.';
+
+  @override
+  String get locationPermissionDeniedTitle => 'Location Permission Denied';
+
+  @override
+  String get locationPermissionDeniedBody =>
+      'Location permission is required to track your run. Please grant permission in Settings.';
+
+  @override
+  String get activeRunGpsLostAutoPauseTitle => 'GPS Signal Lost';
+
+  @override
+  String get activeRunGpsLostAutoPauseBody =>
+      'GPS signal was lost. Your run has been auto-paused. Tap Resume to continue when GPS recovers, or End Run to finish now.';
+
+  @override
+  String get activeRunGpsLostWarningTitle => 'GPS Signal Weak';
+
+  @override
+  String get activeRunGpsLostWarningBody =>
+      'GPS signal is weak. Distance tracking is paused but your timer is still running.';
+
+  @override
+  String get activeRunWaitForGps => 'Wait for GPS';
+
+  @override
+  String get activeRunDismiss => 'Dismiss';
+
+  @override
+  String get activeRunTimerOnlyRestrictionTitle => 'Timer-Only Not Supported';
 }

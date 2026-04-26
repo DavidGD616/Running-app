@@ -82,7 +82,12 @@
 	<array>
 		<string>fetch</string>
 		<string>processing</string>
+		<string>location</string>
 	</array>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>RunFlow needs your location to track your running route, distance, and pace during active workouts.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>RunFlow needs your location to track your running route, distance, and pace during active workouts.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

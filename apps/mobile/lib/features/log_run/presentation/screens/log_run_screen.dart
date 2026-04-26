@@ -11,6 +11,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../active_run/presentation/run_repository_provider.dart';
 import '../../../activity/activity.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
@@ -30,6 +31,37 @@ class LogRunScreen extends ConsumerStatefulWidget {
 class _LogRunScreenState extends ConsumerState<LogRunScreen> {
   ActivityPerceivedEffort? _selectedFeeling;
   final _notesController = TextEditingController();
+  CompletedRunData? _completedRunData;
+  bool _loadingFromDb = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFromDbIfNeeded();
+  }
+
+  Future<void> _loadFromDbIfNeeded() async {
+    final runId = widget.args?.runId;
+    if (runId == null) return;
+    if (!mounted) return;
+
+    setState(() => _loadingFromDb = true);
+
+    try {
+      final repository = ref.read(runRepositoryProvider);
+      final data = await repository.getCompletedRun(runId);
+      if (mounted) {
+        setState(() {
+          _completedRunData = data;
+          _loadingFromDb = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _loadingFromDb = false);
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -45,11 +77,17 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     }
 
     final now = DateTime.now();
+    final dbData = _completedRunData;
     final actualDuration =
+        dbData?.duration ??
         widget.args?.actualDuration ??
         (session.durationMinutes != null
             ? Duration(minutes: session.durationMinutes!)
             : null);
+    final actualDistanceKm =
+        dbData?.distanceKm ??
+        widget.args?.actualDistanceKm ??
+        session.distanceKm;
     final record = RunActivity(
       id: session.sessionId,
       linkedSessionId: session.sessionId,
@@ -59,7 +97,7 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
       startedAt: actualDuration != null ? now.subtract(actualDuration) : now,
       endedAt: now,
       actualDuration: actualDuration,
-      actualDistanceKm: widget.args?.actualDistanceKm ?? session.distanceKm,
+      actualDistanceKm: actualDistanceKm,
       actualElevationGainMeters: session.elevationGainMeters,
       perceivedEffort: _selectedFeeling,
       notes: _notesController.text.trim().isEmpty
@@ -80,6 +118,15 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
         );
     if (!mounted) return;
     context.go(RouteNames.today);
+  }
+
+  String _formatPace(double secondsPerKm, UnitSystem unitSystem) {
+    final seconds = unitSystem == UnitSystem.km
+        ? secondsPerKm.round()
+        : (secondsPerKm * 1.609344).round();
+    final minutes = seconds ~/ 60;
+    final remainder = (seconds % 60).toString().padLeft(2, '0');
+    return '$minutes:$remainder';
   }
 
   String _sessionTitle(SessionType type, AppLocalizations l10n) {
@@ -129,10 +176,17 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     final session = widget.args?.session;
     final plannedDistanceKm = session?.distanceKm;
     final plannedDurationMinutes = session?.durationMinutes;
+    final dbData = _completedRunData;
     final displayDistanceKm =
-        widget.args?.actualDistanceKm ?? plannedDistanceKm ?? 6.02;
+        dbData?.distanceKm ??
+        widget.args?.actualDistanceKm ??
+        plannedDistanceKm ??
+        6.02;
     final displayDurationMinutes =
-        widget.args?.actualDuration?.inMinutes ?? plannedDurationMinutes ?? 45;
+        dbData?.duration.inMinutes ??
+        widget.args?.actualDuration?.inMinutes ??
+        plannedDurationMinutes ??
+        45;
     final plannedTitle = session != null
         ? _sessionTitle(session.sessionType, l10n)
         : l10n.logSessionSessionName;
@@ -141,6 +195,20 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
       unitSystem,
     );
     final distanceUnit = UnitFormatter.unitLabel(unitSystem, l10n);
+    final avgPaceLabel = dbData != null
+        ? _formatPace(dbData.averagePaceSecondsPerKm.toDouble(), unitSystem)
+        : null;
+
+    if (_loadingFromDb) {
+      return Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        appBar: AppDetailHeaderBar(
+          title: l10n.logSessionTitle,
+          onBack: () => Navigator.of(context).maybePop(),
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -189,7 +257,12 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
                             label: l10n.logSessionDistanceLabel,
                             value: distanceLabel,
                             unit: distanceUnit,
-                            subtitle: l10n.logSessionPaceValue,
+                            subtitle: avgPaceLabel != null
+                                ? l10n.logSessionAveragePaceSubtitle(
+                                    avgPaceLabel,
+                                    distanceUnit,
+                                  )
+                                : l10n.logSessionPaceValue,
                           ),
                         ),
                       ],

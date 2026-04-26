@@ -2017,6 +2017,15 @@
   "logSessionPaceValue": "7:31 / km pace",
   "@logSessionPaceValue": { "description": "Pace subtitle on distance metric card" },
 
+  "logSessionAveragePaceSubtitle": "{pace} / {unit} pace",
+  "@logSessionAveragePaceSubtitle": {
+    "description": "Average pace subtitle on distance metric card after a completed GPS run",
+    "placeholders": {
+      "pace": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
   "logSessionHowDidItFeel": "How did it feel?",
   "@logSessionHowDidItFeel": { "description": "Section heading for perceived effort selection" },
 
@@ -2419,5 +2428,89 @@
   "@phasePeak": { "description": "Peak training phase label" },
 
   "phaseTaperRace": "Taper",
-  "@phaseTaperRace": { "description": "Taper/race training phase label" }
+  "@phaseTaperRace": { "description": "Taper/race training phase label" },
+
+  "activeRunGpsTrackingNotificationTitle": "Tracking Run",
+  "@activeRunGpsTrackingNotificationTitle": { "description": "Title in the Android foreground notification when GPS tracking is active" },
+
+  "activeRunGpsTrackingNotificationBody": "StrivIQ is recording your run",
+  "@activeRunGpsTrackingNotificationBody": { "description": "Body text in the Android foreground notification when GPS tracking is active" },
+
+  "gpsRequiredTitle": "GPS Required",
+  "@gpsRequiredTitle": { "description": "Title of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsRequiredBody": "This workout has distance-based blocks and requires GPS to track your progress. Please enable location services to start this workout.",
+  "@gpsRequiredBody": { "description": "Body text of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsWaitForSignal": "Waiting for GPS signal",
+  "@gpsWaitForSignal": { "description": "Status label shown while acquiring GPS signal" },
+
+  "gpsWeakSignal": "Weak GPS signal",
+  "@gpsWeakSignal": { "description": "Warning label shown when GPS signal is weak" },
+
+  "gpsLostSignal": "GPS signal lost",
+  "@gpsLostSignal": { "description": "Status label shown when GPS signal is lost" },
+
+  "gpsAcquiringTitle": "Acquiring",
+  "@gpsAcquiringTitle": { "description": "Title chip label shown when GPS is acquiring signal" },
+
+  "gpsWeakTitle": "Weak Signal",
+  "@gpsWeakTitle": { "description": "Title chip label shown when GPS signal is weak" },
+
+  "gpsEnableLocationServices": "Enable Location Services",
+  "@gpsEnableLocationServices": { "description": "Button label to enable device location services from GPS required dialog" },
+
+  "gpsLostTitle": "Signal Lost",
+  "@gpsLostTitle": { "description": "Title chip label shown when GPS signal is lost" },
+
+  "activeRunEndRun": "End Run",
+  "@activeRunEndRun": { "description": "CTA button to end the active run" },
+
+  "activeRunTimerOnlyLabel": "Timer only",
+  "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },
+
+  "preRunOpenSettings": "Open Settings",
+  "@preRunOpenSettings": { "description": "Button label to open app settings when location permission is permanently denied" },
+
+  "preRunEnableLocationServices": "Enable Location Services",
+  "@preRunEnableLocationServices": { "description": "Button label to open location settings when location service is disabled" },
+
+  "preRunTimerOnlyMode": "Timer-only Mode",
+  "@preRunTimerOnlyMode": { "description": "Button label to start run in timer-only mode without GPS" },
+
+  "locationServiceDisabledTitle": "Location Services Disabled",
+  "@locationServiceDisabledTitle": { "description": "Title of dialog when device location services are disabled" },
+
+  "locationServiceDisabledBody": "Please enable location services to track your run with GPS.",
+  "@locationServiceDisabledBody": { "description": "Body text of dialog when device location services are disabled" },
+
+  "locationPermissionDeniedTitle": "Location Permission Denied",
+  "@locationPermissionDeniedTitle": { "description": "Title of dialog when location permission is denied" },
+
+  "locationPermissionDeniedBody": "Location permission is required to track your run. Please grant permission in Settings.",
+  "@locationPermissionDeniedBody": { "description": "Body text of dialog when location permission is denied" },
+
+  "activeRunGpsLostAutoPauseTitle": "GPS Signal Lost",
+  "@activeRunGpsLostAutoPauseTitle": { "description": "Title of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostAutoPauseBody": "GPS signal was lost. Your run has been auto-paused. Tap Resume to continue when GPS recovers, or End Run to finish now.",
+  "@activeRunGpsLostAutoPauseBody": { "description": "Body of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostWarningTitle": "GPS Signal Weak",
+  "@activeRunGpsLostWarningTitle": { "description": "Title of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunGpsLostWarningBody": "GPS signal is weak. Distance tracking is paused but your timer is still running.",
+  "@activeRunGpsLostWarningBody": { "description": "Body of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunResume": "Resume",
+  "@activeRunResume": { "description": "Button to resume the run after GPS was lost" },
+
+  "activeRunWaitForGps": "Wait for GPS",
+  "@activeRunWaitForGps": { "description": "Button to wait for GPS signal to recover" },
+
+  "activeRunDismiss": "Dismiss",
+  "@activeRunDismiss": { "description": "Button to dismiss the GPS warning modal" },
+
+  "activeRunTimerOnlyRestrictionTitle": "Timer-Only Not Supported",
+  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" }
 }

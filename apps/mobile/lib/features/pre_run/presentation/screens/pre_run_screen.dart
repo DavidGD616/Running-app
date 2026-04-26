@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -11,7 +12,9 @@ import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../active_run/presentation/active_run_session_provider.dart';
+import '../../../active_run/presentation/active_run_timeline.dart';
 import '../../../training_plan/domain/models/workout_step.dart';
+import '../location_permission_service.dart';
 import '../run_flow_context.dart';
 
 class PreRunScreen extends ConsumerStatefulWidget {
@@ -28,6 +31,224 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
   PreRunPainLevel? _pain;
   PreRunSleepLevel? _sleep;
   PreRunReadinessLevel? _readiness;
+
+  bool _sessionHasDistanceBlocks(RunFlowSessionContext session) {
+    final timeline = ActiveRunTimeline.fromSession(session);
+    for (final block in timeline.blocks) {
+      if (block.distanceMeters != null && block.distanceMeters! > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _onContinue() async {
+    final session = widget.args?.session;
+    final hasDistanceBlocks =
+        session != null && _sessionHasDistanceBlocks(session);
+
+    bool serviceEnabled = true;
+    LocationPermission permission = LocationPermission.whileInUse;
+    final permissionService = ref.read(locationPermissionServiceProvider);
+
+    try {
+      serviceEnabled = await permissionService.isLocationServiceEnabled();
+    } catch (_) {
+      serviceEnabled = true;
+    }
+
+    if (!serviceEnabled) {
+      if (!mounted) return;
+      if (!hasDistanceBlocks) {
+        _startActiveRun(session, timerOnlyMode: true);
+        return;
+      }
+      _showLocationServiceDisabledDialog(hasDistanceBlocks: hasDistanceBlocks);
+      return;
+    }
+
+    try {
+      permission = await permissionService.checkPermission();
+    } catch (_) {
+      permission = LocationPermission.whileInUse;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      if (!hasDistanceBlocks) {
+        _startActiveRun(session, timerOnlyMode: true);
+        return;
+      }
+      _showPermissionDeniedForeverDialog(hasDistanceBlocks: true);
+      return;
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.unableToDetermine) {
+      try {
+        permission = await permissionService.requestPermission();
+      } catch (_) {
+        permission = LocationPermission.whileInUse;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        if (!hasDistanceBlocks) {
+          _startActiveRun(session, timerOnlyMode: true);
+          return;
+        }
+        _showPermissionDeniedForeverDialog(hasDistanceBlocks: true);
+        return;
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.unableToDetermine) {
+        if (!mounted) return;
+        if (hasDistanceBlocks) {
+          _showGpsRequiredDialog();
+        } else {
+          _startActiveRun(session, timerOnlyMode: true);
+        }
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    _startActiveRun(session, timerOnlyMode: false);
+  }
+
+  void _startActiveRun(
+    RunFlowSessionContext? session, {
+    required bool timerOnlyMode,
+  }) {
+    final checkIn = PreRunCheckIn(
+      legs: _legs,
+      pain: _pain,
+      sleep: _sleep,
+      readiness: _readiness,
+    );
+    final router = GoRouter.of(context);
+    if (router.routerDelegate.currentConfiguration.uri.path ==
+        RouteNames.activeRun) {
+      return;
+    }
+    if (session != null) {
+      ref.read(activeRunSessionProvider.notifier).save(session, checkIn);
+    }
+    router.push(
+      RouteNames.activeRun,
+      extra: ActiveRunArgs(
+        session: session,
+        checkIn: checkIn,
+        timerOnlyMode: timerOnlyMode,
+      ),
+    );
+  }
+
+  void _showLocationServiceDisabledDialog({required bool hasDistanceBlocks}) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.locationServiceDisabledTitle),
+        content: Text(l10n.locationServiceDisabledBody),
+        actions: [
+          if (!hasDistanceBlocks)
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _startActiveRun(widget.args?.session, timerOnlyMode: true);
+              },
+              child: Text(l10n.preRunTimerOnlyMode),
+            ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(locationPermissionServiceProvider)
+                  .openLocationSettings();
+            },
+            child: Text(l10n.preRunEnableLocationServices),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDeniedForeverDialog({required bool hasDistanceBlocks}) {
+    final l10n = AppLocalizations.of(context)!;
+    if (hasDistanceBlocks) {
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.locationPermissionDeniedTitle),
+          content: Text(l10n.locationPermissionDeniedBody),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ref.read(locationPermissionServiceProvider).openAppSettings();
+              },
+              child: Text(l10n.preRunOpenSettings),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.locationPermissionDeniedTitle),
+          content: Text(l10n.locationPermissionDeniedBody),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _startActiveRun(widget.args?.session, timerOnlyMode: true);
+              },
+              child: Text(l10n.preRunTimerOnlyMode),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ref.read(locationPermissionServiceProvider).openAppSettings();
+              },
+              child: Text(l10n.preRunOpenSettings),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _showGpsRequiredDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.gpsRequiredTitle),
+        content: Text(l10n.gpsRequiredBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(locationPermissionServiceProvider).openAppSettings();
+            },
+            child: Text(l10n.preRunOpenSettings),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(locationPermissionServiceProvider)
+                  .openLocationSettings();
+            },
+            child: Text(l10n.gpsEnableLocationServices),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -248,32 +469,7 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
               ),
             ),
 
-            _ContinueButton(
-              label: l10n.preRunContinue,
-              onTap: () async {
-                final session = widget.args?.session;
-                final checkIn = PreRunCheckIn(
-                  legs: _legs,
-                  pain: _pain,
-                  sleep: _sleep,
-                  readiness: _readiness,
-                );
-                final router = GoRouter.of(context);
-                if (router.routerDelegate.currentConfiguration.uri.path ==
-                    RouteNames.activeRun) {
-                  return;
-                }
-                if (session != null) {
-                  await ref
-                      .read(activeRunSessionProvider.notifier)
-                      .save(session, checkIn);
-                }
-                router.push(
-                  RouteNames.activeRun,
-                  extra: ActiveRunArgs(session: session, checkIn: checkIn),
-                );
-              },
-            ),
+            _ContinueButton(label: l10n.preRunContinue, onTap: _onContinue),
           ],
         ),
       ),

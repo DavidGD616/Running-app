@@ -1,11 +1,7 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -13,12 +9,12 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
-import '../../../../core/utils/time_source.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../active_run_controller.dart';
 import '../active_run_timeline.dart';
-import '../../domain/run_live_activity_data.dart';
+import '../../domain/models/gps_state.dart';
 import '../run_live_activity_background_service.dart';
 import '../run_live_activity_bridge.dart';
 import '../active_run_session_provider.dart';
@@ -40,29 +36,6 @@ class ActiveRunScreen extends ConsumerStatefulWidget {
 
 class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     with WidgetsBindingObserver {
-  Timer? _timer;
-  late final ActiveRunTimeline _timeline;
-
-  DateTime? _segmentStartedAt;
-  DateTime? _lastTickAt;
-  int _accumulatedActiveMs = 0;
-  bool _activityStarted = false;
-  // Set to false if POST_NOTIFICATIONS is denied; not reset mid-session.
-  // User must restart the app after granting permission in Settings.
-  bool _liveActivityNotificationsAllowed = true;
-  Future<bool>? _notificationPermissionFuture;
-  int _lastSentTimelineIndex = 0;
-  double _lastSentDistanceMilestone = 0;
-  DateTime _lastSentLiveActivityAt = DateTime.fromMillisecondsSinceEpoch(0);
-
-  double _distanceKm = 0;
-  double _blockDistanceKm = 0;
-  Duration _blockElapsed = Duration.zero;
-  int _timelineIndex = 0;
-  bool _isPaused = false;
-  bool _isSurging = false;
-  DateTime _lastSavedProgressAt = DateTime.fromMillisecondsSinceEpoch(0);
-
   late final _session =
       widget.args?.session ?? ref.read(activeRunSessionProvider);
   late final _checkIn =
@@ -71,73 +44,33 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
   final _bridge = RunLiveActivityBridge.instance;
   final _backgroundService = RunLiveActivityBackgroundService.instance;
-  StreamSubscription<RunServiceEvent>? _eventsSub;
   bool _finished = false;
-
-  DateTime get _now => ref.read(timeSourceProvider).now();
-
-  Duration get _currentElapsed {
-    final seg = _segmentStartedAt;
-    if (seg == null) return Duration(milliseconds: _accumulatedActiveMs);
-    return Duration(milliseconds: _accumulatedActiveMs) + _now.difference(seg);
-  }
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _timeline = ActiveRunTimeline.fromSession(_session);
-    _timer = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
-    _eventsSub = _bridge.events().listen(_onServiceEvent);
-
-    final progress = ref.read(activeRunProgressProvider);
-    if (progress != null) {
-      final now = _now;
-      _distanceKm = progress.distanceKm;
-      _accumulatedActiveMs = progress.accumulatedActiveMs;
-      _timelineIndex = progress.timelineIndex;
-      _blockElapsed = Duration(milliseconds: progress.blockElapsedMs);
-      _blockDistanceKm = progress.blockDistanceKm;
-      _isPaused = progress.isPaused;
-      _isSurging = progress.isSurging;
-      // Activity was already started before the cold-start; mark it so we
-      // don't call startActivity/start again and get duplicate services.
-      _activityStarted = true;
-      // Do NOT restore _lastTickAt — a stale timestamp would cause a phantom
-      // distance jump on the first tick after restore. Let it default to 1s.
-      if (progress.isPaused) {
-        _segmentStartedAt = null;
-        _lastTickAt = null;
-      } else {
-        _segmentStartedAt = now;
-        _lastTickAt = now;
-      }
-      _lastSavedProgressAt = now;
-    }
-  }
-
-  void _onServiceEvent(RunServiceEvent event) {
-    if (_finished || !mounted) return;
-    if (event.isFinished) {
-      // Service ended (e.g. user dismissed notification action).
-      // Mirror final state so log-run reflects authoritative numbers.
-      _distanceKm = event.distanceKm;
-      _accumulatedActiveMs = event.elapsedMs;
-      _segmentStartedAt = null;
-      _finishRun();
-    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref
+          .read(activeRunControllerProvider.notifier)
+          .start(
+            ActiveRunStartInput(
+              session: _session,
+              checkIn: _checkIn,
+              timerOnlyMode:
+                  widget.args?.timerOnlyMode ??
+                  ref.read(activeRunProgressProvider)?.timerOnlyMode ??
+                  false,
+            ),
+          );
+    });
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _eventsSub?.cancel();
-    _timer?.cancel();
-    // Only tear down the live activity and background service when the run was
-    // intentionally finished. If the widget is disposed for any other reason
-    // (navigation away, OS reclaim) the service must keep running so the user
-    // can return and resume.
     if (_finished) {
       _backgroundService.stop();
       _bridge.endActivity();
@@ -146,199 +79,33 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) async {
-    // Save immediately when the app is backgrounded so iOS has the latest
-    // progress if it suspends the Dart engine before the next 5s tick.
-    if (!_finished &&
-        (state == AppLifecycleState.paused ||
-            state == AppLifecycleState.inactive ||
-            state == AppLifecycleState.detached)) {
-      await _saveProgress();
-      _lastSavedProgressAt = _now;
-      return;
-    }
-    if (state != AppLifecycleState.resumed || _isPaused) return;
-    final snapshot = await _bridge.getRunState();
-    if (!mounted) return;
-    if (snapshot != null && snapshot.seeded && !snapshot.isPaused) {
-      final currentElapsedMs = _currentElapsed.inMilliseconds;
-      final deltaMs = snapshot.elapsedMs - currentElapsedMs;
-      final deltaKm = snapshot.distanceKm - _distanceKm;
-      if (deltaMs > 0 || deltaKm > 0) {
-        setState(() {
-          if (deltaMs > 0) {
-            _accumulatedActiveMs += deltaMs;
-          }
-          _segmentStartedAt = _now;
-          _lastTickAt = _now;
-          if (deltaKm > 0) {
-            _distanceKm = snapshot.distanceKm;
-          }
-          // Adopt service's authoritative block tracking so labels stay aligned
-          // even after multi-block transitions during background.
-          if (snapshot.blockIndex >= 0 &&
-              snapshot.blockIndex < _timeline.blocks.length) {
-            _timelineIndex = snapshot.blockIndex;
-          }
-          _blockElapsed = Duration(milliseconds: snapshot.blockElapsedMs);
-          _blockDistanceKm = snapshot.blockDistanceKm;
-          _advanceTimeline();
-        });
-        _maybeSendActivityUpdate(wasFirstTick: false);
-        return;
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (!_finished) {
+      if (state == AppLifecycleState.paused ||
+          state == AppLifecycleState.inactive ||
+          state == AppLifecycleState.detached) {
+        ref.read(activeRunControllerProvider.notifier).onAppBackground();
       }
     }
-    _tick();
-  }
-
-  void _tick() {
-    if (_isPaused) {
-      _lastTickAt = null;
-      return;
-    }
-
-    final now = _now;
-    final wasFirstTick = _segmentStartedAt == null && _accumulatedActiveMs == 0;
-    _segmentStartedAt ??= now;
-
-    final lastTick = _lastTickAt;
-    final deltaSeconds = lastTick == null
-        ? 1.0
-        : (now.difference(lastTick).inMilliseconds / 1000.0).clamp(0.0, 3600.0);
-    _lastTickAt = now;
-
-    setState(() {
-      final distanceDeltaKm = _kmPerSecond * _paceMultiplier * deltaSeconds;
-      _distanceKm += distanceDeltaKm;
-      _blockDistanceKm += distanceDeltaKm;
-      _blockElapsed += Duration(milliseconds: (deltaSeconds * 1000).round());
-      _advanceTimeline();
-    });
-
-    final timeSinceLastSave = _now.difference(_lastSavedProgressAt);
-    if (timeSinceLastSave.inSeconds >= 5) {
-      unawaited(_saveProgress());
-      _lastSavedProgressAt = _now;
-    }
-
-    _maybeSendActivityUpdate(wasFirstTick: wasFirstTick);
-  }
-
-  void _advanceTimeline() {
-    while (true) {
-      final block = _currentBlock;
-      if (block == null || _timelineIndex >= _timeline.blocks.length - 1) {
-        return;
-      }
-      final isDurationComplete =
-          block.duration != null && _blockElapsed >= block.duration!;
-      final isDistanceComplete =
-          block.distanceMeters != null &&
-          _blockDistanceKm * 1000 >= block.distanceMeters!;
-      if (!isDurationComplete && !isDistanceComplete) return;
-
-      _timelineIndex += 1;
-      _blockElapsed = Duration.zero;
-      _blockDistanceKm = 0;
-    }
-  }
-
-  ActiveRunTimelineBlock? get _currentBlock {
-    if (_timeline.isEmpty) return null;
-    return _timeline.blocks[_timelineIndex.clamp(
-      0,
-      _timeline.blocks.length - 1,
-    )];
-  }
-
-  ActiveRunTimelineBlock? get _nextBlock {
-    if (_timelineIndex >= _timeline.blocks.length - 1) return null;
-    return _timeline.blocks[_timelineIndex + 1];
-  }
-
-  double get _kmPerSecond {
-    final session = _session;
-    final plannedKm = session?.distanceKm ?? 6.0;
-    final plannedSeconds = (session?.durationMinutes ?? 45) * 60;
-    if (plannedSeconds <= 0) return 0.0022;
-    return plannedKm / plannedSeconds;
-  }
-
-  double get _paceMultiplier {
-    final type = _session?.sessionType ?? SessionType.easyRun;
-    final elapsed = _currentElapsed;
-    final cycle = elapsed.inSeconds % 12;
-    final drift = cycle < 4
-        ? 1.04
-        : cycle < 8
-        ? 0.96
-        : 1.0;
-
-    final block = _currentBlock;
-    if (block != null) {
-      return switch (block.kind) {
-        ActiveRunBlockKind.work => switch (type) {
-          SessionType.intervals => 1.22,
-          SessionType.hillRepeats => 1.16,
-          SessionType.tempoRun ||
-          SessionType.thresholdRun ||
-          SessionType.racePaceRun => 1.08,
-          _ => 1.0,
-        },
-        ActiveRunBlockKind.recovery => 0.72,
-        ActiveRunBlockKind.coolDown => 0.78,
-        ActiveRunBlockKind.warmUp => 0.86,
-        ActiveRunBlockKind.stride => 1.18,
-      };
-    }
-
-    if (type == SessionType.intervals || type == SessionType.hillRepeats) {
-      return _isWorkBlock ? 1.22 : 0.72;
-    }
-    if (type == SessionType.fartlek && _isSurging) return 1.18;
-    if (type == SessionType.recoveryRun) return 0.88;
-    if (type == SessionType.racePaceRun) return 1.08;
-    return drift;
-  }
-
-  bool get _isWorkBlock {
-    final currentBlock = _currentBlock;
-    if (currentBlock != null) {
-      return currentBlock.kind == ActiveRunBlockKind.work ||
-          currentBlock.kind == ActiveRunBlockKind.stride;
-    }
-    final elapsed = _currentElapsed;
-    final blockIndex = elapsed.inSeconds ~/ 90;
-    return blockIndex.isEven;
   }
 
   int get _currentRep {
-    final block = _currentBlock;
+    final state = ref.watch(activeRunControllerProvider);
+    final block = state.currentBlock;
     if (block?.repIndex != null) return block!.repIndex!;
     final reps = _session?.intervalReps ?? 6;
-    final rep = (_currentElapsed.inSeconds ~/ 180) + 1;
+    final rep = (state.elapsed.inSeconds ~/ 180) + 1;
     return rep > reps ? reps : rep;
   }
 
   Duration get _blockRemaining {
-    final block = _currentBlock;
+    final state = ref.watch(activeRunControllerProvider);
+    final block = state.currentBlock;
     if (block?.duration != null) {
-      final remaining = block!.duration! - _blockElapsed;
+      final remaining = block!.duration! - state.blockElapsed;
       return remaining.isNegative ? Duration.zero : remaining;
     }
-    final blockLength = _isWorkBlock ? 90 : 90;
-    final seconds = blockLength - (_currentElapsed.inSeconds % blockLength);
-    return Duration(seconds: seconds);
-  }
-
-  double get _averagePaceSecondsPerKm {
-    if (_distanceKm <= 0.01) return _plannedPaceSecondsPerKm;
-    return _currentElapsed.inSeconds / _distanceKm;
-  }
-
-  double get _currentPaceSecondsPerKm {
-    final pace = _plannedPaceSecondsPerKm / _paceMultiplier;
-    return pace.clamp(210, 780).toDouble();
+    return Duration.zero;
   }
 
   double get _plannedPaceSecondsPerKm {
@@ -349,245 +116,165 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     return plannedSeconds / plannedKm;
   }
 
-  Future<void> _saveProgress() {
-    final elapsed = _currentElapsed;
-    final progress = ActiveRunProgress(
-      distanceKm: _distanceKm,
-      accumulatedActiveMs: elapsed.inMilliseconds,
-      timelineIndex: _timelineIndex,
-      blockElapsedMs: _blockElapsed.inMilliseconds,
-      blockDistanceKm: _blockDistanceKm,
-      currentRep: _currentRep,
-      isPaused: _isPaused,
-      isSurging: _isSurging,
-      segmentStartedAtMs: _segmentStartedAt?.millisecondsSinceEpoch,
-      lastTickAtMs: _lastTickAt?.millisecondsSinceEpoch,
-    );
-    return ref.read(activeRunProgressProvider.notifier).save(progress);
+  bool get _isWorkBlock {
+    final state = ref.watch(activeRunControllerProvider);
+    final currentBlock = state.currentBlock;
+    if (currentBlock != null) {
+      return currentBlock.kind == ActiveRunBlockKind.work ||
+          currentBlock.kind == ActiveRunBlockKind.stride;
+    }
+    return false;
   }
 
   void _finishRun() {
     if (_finished) return;
     _finished = true;
-    _timer?.cancel();
     _backgroundService.stop();
     _bridge.endActivity();
-    ref.read(activeRunSessionProvider.notifier).clear();
-    ref.read(activeRunProgressProvider.notifier).clear();
-    context.push(
-      RouteNames.logRun,
-      extra: LogRunArgs(
-        session: _session,
-        checkIn: _checkIn,
-        actualDuration: _currentElapsed,
-        actualDistanceKm: _distanceKm,
-      ),
-    );
+
+    ref.read(activeRunControllerProvider.notifier).finish().then((result) {
+      if (!mounted) return;
+      ref.read(activeRunSessionProvider.notifier).clear();
+      ref.read(activeRunProgressProvider.notifier).clear();
+      context.push(
+        RouteNames.logRun,
+        extra: LogRunArgs(
+          session: _session,
+          checkIn: _checkIn,
+          runId: result.runId,
+          actualDuration: result.elapsed,
+          actualDistanceKm: result.distanceKm,
+        ),
+      );
+    });
   }
 
   void _togglePause() {
-    setState(() {
-      final now = _now;
-      _isPaused = !_isPaused;
-      if (_isPaused) {
-        final segmentStartedAt = _segmentStartedAt;
-        if (segmentStartedAt != null) {
-          _accumulatedActiveMs += now
-              .difference(segmentStartedAt)
-              .inMilliseconds;
-        }
-        _segmentStartedAt = null;
-        _lastTickAt = null;
-      } else {
-        _segmentStartedAt = now;
-        _lastTickAt = now;
-      }
-    });
-    _maybeSendActivityUpdate(wasFirstTick: false, isPauseToggle: true);
-  }
-
-  Future<void> _maybeSendActivityUpdate({
-    required bool wasFirstTick,
-    bool isPauseToggle = false,
-  }) async {
-    if (!Platform.isIOS && !Platform.isAndroid) return;
-    if (!_liveActivityNotificationsAllowed) return;
-
-    final shouldStart = !_activityStarted;
-    final timelineChanged = _timelineIndex != _lastSentTimelineIndex;
-    final currentMilestone = (_distanceKm * 10).floor() * 0.1;
-    final milestoneCrossed = currentMilestone > _lastSentDistanceMilestone;
-    final timeSinceLastUpdate = _now.difference(_lastSentLiveActivityAt);
-    final periodicUpdate = timeSinceLastUpdate.inSeconds >= 1;
-
-    if (!shouldStart &&
-        !timelineChanged &&
-        !milestoneCrossed &&
-        !isPauseToggle &&
-        !periodicUpdate) {
-      return;
-    }
-
-    if (shouldStart && !await _ensureLiveActivityNotificationsAllowed()) {
-      _liveActivityNotificationsAllowed = false;
-      return;
-    }
-
-    if (timelineChanged) {
-      _lastSentTimelineIndex = _timelineIndex;
-    }
-    if (milestoneCrossed) {
-      _lastSentDistanceMilestone = currentMilestone;
-    }
-
-    final data = _buildLiveActivityData();
-    if (shouldStart) {
-      _activityStarted = true;
-      _bridge.startActivity(data);
-      _backgroundService.start(data);
+    final controller = ref.read(activeRunControllerProvider.notifier);
+    if (ref.read(activeRunControllerProvider).isPaused) {
+      controller.resume();
     } else {
-      _bridge.updateActivity(data);
-      _backgroundService.update(data);
+      controller.pause();
     }
-    _lastSentLiveActivityAt = _now;
   }
 
-  RunLiveActivityData _buildLiveActivityData() {
-    final l10n = AppLocalizations.of(context)!;
-    final unitSystem =
-        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final session = _session;
-    final type = session?.sessionType ?? SessionType.easyRun;
-    final elapsed = _currentElapsed;
-    final currentBlock = _currentBlock;
-    final nextBlock = _nextBlockLabel(type, l10n);
-    final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
-    final repLabel =
-        (type == SessionType.intervals || type == SessionType.hillRepeats)
-        ? '${l10n.activeRunRep} $_currentRep / $totalReps'
-        : null;
+  void _showModalForIntent(ActiveRunModalIntent intent) {
+    switch (intent) {
+      case ActiveRunModalIntent.gpsLostAutoPause:
+        _showGpsLostAutoPauseDialog();
+      case ActiveRunModalIntent.gpsLostWarning:
+        _showGpsLostWarningDialog();
+      case ActiveRunModalIntent.timerOnlyRestriction:
+        _showTimerOnlyRestrictionDialog();
+      case ActiveRunModalIntent.endRunConfirm:
+        _showEndRunConfirmDialog();
+      case ActiveRunModalIntent.finishConfirm:
+      case ActiveRunModalIntent.none:
+        break;
+    }
+  }
 
-    return RunLiveActivityData(
-      workoutName: _sessionTitle(type, l10n),
-      elapsedSeconds: elapsed.inSeconds,
-      elapsedLabel: _formatDuration(elapsed),
-      elapsedUnitLabel: l10n.activeRunTimeUnit,
-      distanceTitleLabel: l10n.activeRunNotificationDistanceShort,
-      distanceLabel: _formatLiveActivityDistance(unitSystem, l10n),
-      currentPaceShortTitleLabel: l10n.activeRunNotificationPaceShort,
-      currentPaceLabel:
-          '${_formatPace(_currentPaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}',
-      currentPaceTitleLabel: l10n.activeRunCurrentPace,
-      avgPaceLabel:
-          '${_formatPace(_averagePaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}',
-      avgPaceTitleLabel: l10n.activeRunAveragePace,
-      currentBlockLabel: _currentBlockLabel(currentBlock, type, l10n),
-      nextBlockLabel: nextBlock == null
-          ? null
-          : l10n.activeRunNextBlock(nextBlock),
-      repLabel: repLabel,
-      isPaused: _isPaused,
-      distanceKm: _distanceKm,
-      paceSecondsPerKm: _currentPaceSecondsPerKm.round(),
-      unitFactor: unitSystem == UnitSystem.km ? 1.0 : 0.621371,
-      distanceUnit: UnitFormatter.unitLabel(unitSystem, l10n),
-      paceUnit: UnitFormatter.paceLabel(unitSystem, l10n),
-      plannedDistanceKm: session?.distanceKm,
-      plannedDurationMs: session?.durationMinutes == null
-          ? null
-          : session!.durationMinutes! * 60 * 1000,
-      timeline: _buildLiveActivityTimeline(type, l10n),
-      blockProgressFraction: _computeBlockProgressFraction(currentBlock),
-      plannedPaceLabel: _plannedPaceSecondsPerKm > 0
-          ? '${_formatPace(_plannedPaceSecondsPerKm, unitSystem)} /${UnitFormatter.unitLabel(unitSystem, l10n)}'
-          : '',
-      blockRemainingLabel: _computeBlockRemainingLabel(
-        currentBlock,
-        unitSystem,
-        l10n,
+  void _showGpsLostAutoPauseDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = ref.read(activeRunControllerProvider.notifier);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.activeRunGpsLostAutoPauseTitle),
+        content: Text(l10n.activeRunGpsLostAutoPauseBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              controller.resume();
+              controller.dismissModal();
+            },
+            child: Text(l10n.activeRunWaitForGps),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              controller.dismissModal();
+              _finishRun();
+            },
+            child: Text(l10n.activeRunEndRun),
+          ),
+        ],
       ),
     );
   }
 
-  List<RunLiveActivityTimelineBlock>? _buildLiveActivityTimeline(
-    SessionType type,
-    AppLocalizations l10n,
-  ) {
-    if (_timeline.isEmpty) return null;
-    final blocks = _timeline.blocks;
-    return List.generate(blocks.length, (i) {
-      final block = blocks[i];
-      final next = i + 1 < blocks.length ? blocks[i + 1] : null;
-      final blockLabel = _currentBlockLabel(block, type, l10n);
-      final nextLabel = next == null
-          ? null
-          : l10n.activeRunNextBlock(_currentBlockLabel(next, type, l10n));
-      final repLabel =
-          (type == SessionType.intervals || type == SessionType.hillRepeats) &&
-              block.repIndex != null &&
-              block.totalReps != null
-          ? '${l10n.activeRunRep} ${block.repIndex} / ${block.totalReps}'
-          : null;
-      return RunLiveActivityTimelineBlock(
-        durationMs: block.duration?.inMilliseconds,
-        distanceMeters: block.distanceMeters,
-        blockLabel: blockLabel,
-        nextLabel: nextLabel,
-        repLabel: repLabel,
-      );
-    });
+  void _showGpsLostWarningDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = ref.read(activeRunControllerProvider.notifier);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.activeRunGpsLostWarningTitle),
+        content: Text(l10n.activeRunGpsLostWarningBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              controller.dismissModal();
+            },
+            child: Text(l10n.activeRunDismiss),
+          ),
+        ],
+      ),
+    );
   }
 
-  double _computeBlockProgressFraction(ActiveRunTimelineBlock? block) {
-    if (block == null) return 0.0;
-    if (block.duration != null && block.duration! > Duration.zero) {
-      return (_blockElapsed.inMilliseconds / block.duration!.inMilliseconds)
-          .clamp(0.0, 1.0);
-    }
-    if (block.distanceMeters != null && block.distanceMeters! > 0) {
-      return ((_blockDistanceKm * 1000) / block.distanceMeters!).clamp(
-        0.0,
-        1.0,
-      );
-    }
-    return 0.0;
+  void _showTimerOnlyRestrictionDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final state = ref.read(activeRunControllerProvider);
+    final error = state.error ?? '';
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.activeRunTimerOnlyRestrictionTitle),
+        content: Text(error),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              ref.read(activeRunControllerProvider.notifier).dismissModal();
+            },
+            child: Text(l10n.activeRunDismiss),
+          ),
+        ],
+      ),
+    );
   }
 
-  String? _computeBlockRemainingLabel(
-    ActiveRunTimelineBlock? block,
-    UnitSystem unitSystem,
-    AppLocalizations l10n,
-  ) {
-    if (block == null) return null;
-    if (block.duration != null && block.duration! > Duration.zero) {
-      final remaining = block.duration! - _blockElapsed;
-      if (remaining.inSeconds <= 0) return null;
-      return '${_formatDuration(remaining)} left';
-    }
-    if (block.distanceMeters != null && block.distanceMeters! > 0) {
-      final remainingKm = (block.distanceMeters! / 1000.0) - _blockDistanceKm;
-      if (remainingKm <= 0.005) return null;
-      final dist = UnitFormatter.formatDistanceWithUnit(
-        remainingKm,
-        unitSystem,
-        l10n,
-      );
-      return '$dist left';
-    }
-    return null;
-  }
-
-  Future<bool> _ensureLiveActivityNotificationsAllowed() {
-    if (!Platform.isAndroid) return Future.value(true);
-    final existingFuture = _notificationPermissionFuture;
-    if (existingFuture != null) return existingFuture;
-
-    return _notificationPermissionFuture = () async {
-      final sdkInt = await _bridge.androidSdkInt();
-      if (sdkInt != null && sdkInt < 33) return true;
-      final status = await Permission.notification.request();
-      return status.isGranted || status.isLimited || status.isProvisional;
-    }();
+  void _showEndRunConfirmDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    final controller = ref.read(activeRunControllerProvider.notifier);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.activeRunEndRun),
+        content: Text(l10n.activeRunGpsLostAutoPauseBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              controller.dismissModal();
+            },
+            child: Text(l10n.activeRunDismiss),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              controller.dismissModal();
+              _finishRun();
+            },
+            child: Text(l10n.activeRunEndRun),
+          ),
+        ],
+      ),
+    );
   }
 
   String _currentBlockLabel(
@@ -610,6 +297,15 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(activeRunControllerProvider, (prev, next) {
+      if (next.modalIntent != ActiveRunModalIntent.none &&
+          prev?.modalIntent != next.modalIntent) {
+        _showModalForIntent(next.modalIntent);
+      }
+    });
+
+    final runState = ref.watch(activeRunControllerProvider);
+    final state = runState;
     final l10n = AppLocalizations.of(context)!;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
@@ -617,7 +313,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final type = session?.sessionType ?? SessionType.easyRun;
     final title = _sessionTitle(type, l10n);
     final plannedSummary = _plannedSummary(session, unitSystem, l10n);
-    final currentBlock = _currentBlock;
+    final currentBlock = state.currentBlock;
     final totalReps = currentBlock?.totalReps ?? session?.intervalReps ?? 6;
 
     return Scaffold(
@@ -667,9 +363,18 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                       ],
                     ),
                     const SizedBox(height: AppSpacing.xl),
-                    _HeroPaceCard(
+                    GpsStatusHeroPaceCard(
+                      gpsStatus: state.gpsStatus,
+                      timerOnlyMode: state.isTimerOnlyMode,
                       label: l10n.activeRunCurrentPace,
-                      value: _formatPace(_currentPaceSecondsPerKm, unitSystem),
+                      value: state.isTimerOnlyMode
+                          ? '--:--'
+                          : _formatPace(
+                              state.currentPaceSecondsPerKm
+                                  .clamp(210, 780)
+                                  .toDouble(),
+                              unitSystem,
+                            ),
                       unit: UnitFormatter.paceLabel(unitSystem, l10n),
                       guidance: _guidanceFor(type, l10n),
                       color: _accentFor(type),
@@ -681,7 +386,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                           child: _MetricTile(
                             iconAsset: 'assets/icons/clock.svg',
                             label: l10n.activeRunElapsed,
-                            value: _formatDuration(_currentElapsed),
+                            value: _formatDuration(state.elapsed),
                             unit: l10n.activeRunTimeUnit,
                           ),
                         ),
@@ -691,7 +396,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                             iconAsset: 'assets/icons/distance.svg',
                             label: l10n.activeRunDistance,
                             value: UnitFormatter.formatDistanceValue(
-                              _distanceKm,
+                              state.isTimerOnlyMode ? 0.0 : state.distanceKm,
                               unitSystem,
                             ),
                             unit: UnitFormatter.unitLabel(unitSystem, l10n),
@@ -737,10 +442,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                       currentBlock: currentBlock,
                       nextBlockLabel: _nextBlockLabel(type, l10n),
                       isWorkBlock: _isWorkBlock,
-                      isSurging: _isSurging,
+                      isSurging: state.isSurging,
                       onToggleSurge: () {
-                        setState(() => _isSurging = !_isSurging);
-                        _maybeSendActivityUpdate(wasFirstTick: false);
+                        ref
+                            .read(activeRunControllerProvider.notifier)
+                            .toggleSurge();
                       },
                     ),
                   ],
@@ -762,7 +468,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                 children: [
                   Expanded(
                     child: AppButton(
-                      label: _isPaused
+                      label: state.isPaused
                           ? l10n.activeRunResume
                           : l10n.activeRunPause,
                       variant: AppButtonVariant.secondary,
@@ -783,6 +489,12 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         ),
       ),
     );
+  }
+
+  double get _averagePaceSecondsPerKm {
+    final state = ref.watch(activeRunControllerProvider);
+    if (state.distanceKm <= 0.01) return _plannedPaceSecondsPerKm;
+    return state.elapsed.inSeconds / state.distanceKm;
   }
 
   String _plannedSummary(
@@ -935,9 +647,10 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     UnitSystem unitSystem,
     AppLocalizations l10n,
   ) {
+    final state = ref.watch(activeRunControllerProvider);
     if (block?.distanceMeters != null) {
       final remainingMeters =
-          block!.distanceMeters! - (_blockDistanceKm * 1000).round();
+          block!.distanceMeters! - (state.blockDistanceKm * 1000).round();
       final value = UnitFormatter.formatWorkoutRepDistance(
         remainingMeters.clamp(0, block.distanceMeters!),
         unitSystem,
@@ -950,7 +663,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   String? _nextBlockLabel(SessionType type, AppLocalizations l10n) {
-    final block = _nextBlock;
+    final state = ref.watch(activeRunControllerProvider);
+    final block = state.nextBlock;
     if (block == null) return null;
     return _currentBlockLabel(block, type, l10n);
   }
@@ -971,21 +685,13 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final remainder = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$remainder';
   }
-
-  String _formatLiveActivityDistance(
-    UnitSystem unitSystem,
-    AppLocalizations l10n,
-  ) {
-    final value = UnitFormatter.distanceValue(_distanceKm, unitSystem);
-    final formatted = value < 1
-        ? value.toStringAsFixed(2)
-        : value.toStringAsFixed(1);
-    return '$formatted ${UnitFormatter.unitLabel(unitSystem, l10n)}';
-  }
 }
 
-class _HeroPaceCard extends StatelessWidget {
-  const _HeroPaceCard({
+class GpsStatusHeroPaceCard extends StatelessWidget {
+  const GpsStatusHeroPaceCard({
+    super.key,
+    required this.gpsStatus,
+    required this.timerOnlyMode,
     required this.label,
     required this.value,
     required this.unit,
@@ -993,6 +699,8 @@ class _HeroPaceCard extends StatelessWidget {
     required this.color,
   });
 
+  final GpsStatus gpsStatus;
+  final bool timerOnlyMode;
   final String label;
   final String value;
   final String unit;
@@ -1001,6 +709,40 @@ class _HeroPaceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
+    String statusChipText;
+    Color statusChipColor;
+    if (timerOnlyMode) {
+      statusChipText = l10n.activeRunTimerOnlyLabel;
+      statusChipColor = AppColors.textSecondary;
+    } else {
+      switch (gpsStatus) {
+        case GpsStatus.acquiring:
+          statusChipText = l10n.gpsAcquiringTitle;
+          statusChipColor = AppColors.warning;
+        case GpsStatus.weak:
+          statusChipText = l10n.gpsWeakTitle;
+          statusChipColor = AppColors.warning;
+        case GpsStatus.lost:
+          statusChipText = l10n.gpsLostTitle;
+          statusChipColor = AppColors.error;
+        case GpsStatus.ready:
+          statusChipText = '';
+          statusChipColor = AppColors.accentPrimary;
+        case GpsStatus.disabled:
+          statusChipText = l10n.activeRunTimerOnlyLabel;
+          statusChipColor = AppColors.textSecondary;
+      }
+    }
+
+    String paceValue = value;
+    if (timerOnlyMode ||
+        gpsStatus == GpsStatus.lost ||
+        gpsStatus == GpsStatus.acquiring) {
+      paceValue = '--:--';
+    }
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
@@ -1021,6 +763,8 @@ class _HeroPaceCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
+              if (statusChipText.isNotEmpty)
+                GpsStatusChip(text: statusChipText, color: statusChipColor),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -1029,7 +773,7 @@ class _HeroPaceCard extends StatelessWidget {
             children: [
               Flexible(
                 child: Text(
-                  value,
+                  paceValue,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.headlineLarge.copyWith(
@@ -1054,12 +798,46 @@ class _HeroPaceCard extends StatelessWidget {
           ),
           const SizedBox(height: AppSpacing.md),
           Text(
-            guidance,
+            timerOnlyMode
+                ? l10n.gpsWaitForSignal
+                : (gpsStatus == GpsStatus.acquiring ||
+                      gpsStatus == GpsStatus.lost)
+                ? l10n.gpsWaitForSignal
+                : guidance,
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class GpsStatusChip extends StatelessWidget {
+  const GpsStatusChip({super.key, required this.text, required this.color});
+
+  final String text;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        borderRadius: AppRadius.borderMd,
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Text(
+        text,
+        style: AppTypography.caption.copyWith(
+          color: color,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
@@ -1392,19 +1170,21 @@ class _FocusCard extends StatelessWidget {
               Expanded(
                 child: _FocusStat(label: primaryLabel, value: primaryValue),
               ),
-              const SizedBox(width: AppSpacing.md),
+              const SizedBox(width: AppSpacing.lg),
               Expanded(
                 child: _FocusStat(label: secondaryLabel, value: secondaryValue),
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          Text(
-            footer,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
+          if (footer.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              footer,
+              style: AppTypography.caption.copyWith(
+                color: AppColors.textSecondary,
+              ),
             ),
-          ),
+          ],
         ],
       ),
     );
@@ -1419,35 +1199,21 @@ class _FocusStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 76),
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundElevated,
-        borderRadius: AppRadius.borderMd,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textSecondary,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          value,
+          style: AppTypography.titleMedium.copyWith(
+            fontWeight: FontWeight.w700,
           ),
-          const SizedBox(height: AppSpacing.sm),
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppTypography.titleMedium.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -1476,62 +1242,76 @@ class _PhaseCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            title,
-            style: AppTypography.titleMedium.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+          Row(
+            children: [
+              SvgPicture.asset(
+                'assets/icons/trending_up.svg',
+                width: 20,
+                height: 20,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.accentPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  title,
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: AppSpacing.lg),
           Row(
-            children: [
-              for (var i = 0; i < phases.length; i++) ...[
-                Expanded(
-                  child: _PhaseStep(
-                    label: phases[i],
-                    isActive: i == activeIndex,
+            children: List.generate(phases.length, (index) {
+              final isActive = index == activeIndex;
+              final isPast = index < activeIndex;
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(
+                    right: index < phases.length - 1 ? AppSpacing.sm : 0,
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: AppSpacing.sm,
+                    horizontal: AppSpacing.xs,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.accentPrimary.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    borderRadius: AppRadius.borderMd,
+                    border: Border.all(
+                      color: isActive
+                          ? AppColors.accentPrimary
+                          : isPast
+                          ? AppColors.accentPrimary.withValues(alpha: 0.3)
+                          : AppColors.borderDefault,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        phases[index],
+                        style: AppTypography.caption.copyWith(
+                          color: isActive
+                              ? AppColors.accentPrimary
+                              : AppColors.textSecondary,
+                          fontWeight: isActive
+                              ? FontWeight.w600
+                              : FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
-                if (i != phases.length - 1)
-                  const SizedBox(width: AppSpacing.sm),
-              ],
-            ],
+              );
+            }),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _PhaseStep extends StatelessWidget {
-  const _PhaseStep({required this.label, required this.isActive});
-
-  final String label;
-  final bool isActive;
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 180),
-      height: 72,
-      padding: const EdgeInsets.all(AppSpacing.sm),
-      decoration: BoxDecoration(
-        color: isActive ? AppColors.accentMuted : AppColors.backgroundElevated,
-        borderRadius: AppRadius.borderMd,
-        border: Border.all(
-          color: isActive ? AppColors.accentPrimary : AppColors.borderDefault,
-        ),
-      ),
-      child: Center(
-        child: Text(
-          label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: AppTypography.labelMedium.copyWith(
-            color: isActive ? AppColors.accentPrimary : AppColors.textSecondary,
-          ),
-        ),
       ),
     );
   }
@@ -1546,6 +1326,7 @@ class _FartlekCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -1557,24 +1338,66 @@ class _FartlekCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Row(
+            children: [
+              SvgPicture.asset(
+                'assets/icons/zap.svg',
+                width: 20,
+                height: 20,
+                colorFilter: ColorFilter.mode(
+                  isSurging ? AppColors.warning : AppColors.accentPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  l10n.activeRunFartlekFocusTitle,
+                  style: AppTypography.titleMedium.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.sm,
+                  vertical: AppSpacing.xs,
+                ),
+                decoration: BoxDecoration(
+                  color:
+                      (isSurging ? AppColors.warning : AppColors.accentPrimary)
+                          .withValues(alpha: 0.15),
+                  borderRadius: AppRadius.borderMd,
+                ),
+                child: Text(
+                  isSurging ? l10n.activeRunEndSurge : l10n.activeRunStartSurge,
+                  style: AppTypography.caption.copyWith(
+                    color: isSurging
+                        ? AppColors.warning
+                        : AppColors.accentPrimary,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
           Text(
-            l10n.activeRunFartlekFocusTitle,
-            style: AppTypography.titleMedium.copyWith(
-              fontWeight: FontWeight.w700,
+            l10n.activeRunGuidanceFartlek,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
-          _FocusStat(
-            label: l10n.activeRunCurrentBlock,
-            value: isSurging ? l10n.activeRunSurge : l10n.activeRunEasyBlock,
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          AppButton(
-            label: isSurging
-                ? l10n.activeRunEndSurge
-                : l10n.activeRunStartSurge,
-            variant: AppButtonVariant.secondary,
-            onPressed: onToggle,
+          SizedBox(
+            width: double.infinity,
+            child: AppButton(
+              label: isSurging
+                  ? l10n.activeRunEndSurge
+                  : l10n.activeRunStartSurge,
+              variant: AppButtonVariant.secondary,
+              onPressed: onToggle,
+            ),
           ),
         ],
       ),

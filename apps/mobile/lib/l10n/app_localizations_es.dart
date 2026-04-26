@@ -2054,6 +2054,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get logSessionPaceValue => '7:31 / ritmo km';
 
   @override
+  String logSessionAveragePaceSubtitle(String pace, String unit) {
+    return '$pace / ritmo $unit';
+  }
+
+  @override
   String get logSessionHowDidItFeel => '¿Cómo te fue?';
 
   @override
@@ -2515,4 +2520,93 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get phaseTaperRace => 'Reducción';
+
+  @override
+  String get activeRunGpsTrackingNotificationTitle => 'Registrando carrera';
+
+  @override
+  String get activeRunGpsTrackingNotificationBody =>
+      'StrivIQ está registrando tu carrera';
+
+  @override
+  String get gpsRequiredTitle => 'GPS Requerido';
+
+  @override
+  String get gpsRequiredBody =>
+      'Este entrenamiento tiene bloques basados en distancia y requiere GPS para seguir tu progreso. Por favor habilita los servicios de ubicación para comenzar este entrenamiento.';
+
+  @override
+  String get gpsWaitForSignal => 'Esperando señal GPS';
+
+  @override
+  String get gpsWeakSignal => 'Señal GPS débil';
+
+  @override
+  String get gpsLostSignal => 'Señal GPS perdida';
+
+  @override
+  String get gpsAcquiringTitle => 'Adquiriendo';
+
+  @override
+  String get gpsWeakTitle => 'Señal Débil';
+
+  @override
+  String get gpsEnableLocationServices => 'Habilitar Servicios de Ubicación';
+
+  @override
+  String get gpsLostTitle => 'Señal Perdida';
+
+  @override
+  String get activeRunEndRun => 'Terminar Carrera';
+
+  @override
+  String get activeRunTimerOnlyLabel => 'Solo temporizador';
+
+  @override
+  String get preRunOpenSettings => 'Abrir Ajustes';
+
+  @override
+  String get preRunEnableLocationServices => 'Habilitar Servicios de Ubicación';
+
+  @override
+  String get preRunTimerOnlyMode => 'Modo Solo Temporizador';
+
+  @override
+  String get locationServiceDisabledTitle =>
+      'Servicios de Ubicación Deshabilitados';
+
+  @override
+  String get locationServiceDisabledBody =>
+      'Por favor habilita los servicios de ubicación para rastrear tu carrera con GPS.';
+
+  @override
+  String get locationPermissionDeniedTitle => 'Permiso de Ubicación Denegado';
+
+  @override
+  String get locationPermissionDeniedBody =>
+      'Se requiere permiso de ubicación para rastrear tu carrera. Por favor concede el permiso en Ajustes.';
+
+  @override
+  String get activeRunGpsLostAutoPauseTitle => 'Señal GPS Perdida';
+
+  @override
+  String get activeRunGpsLostAutoPauseBody =>
+      'Se perdió la señal GPS. Tu carrera ha sido pausada automáticamente. Toca Reanudar para continuar cuando el GPS se recupere, o Terminar Carrera para finalizar ahora.';
+
+  @override
+  String get activeRunGpsLostWarningTitle => 'Señal GPS Débil';
+
+  @override
+  String get activeRunGpsLostWarningBody =>
+      'La señal GPS es débil. El seguimiento de distancia está en pausa pero tu temporizador sigue funcionando.';
+
+  @override
+  String get activeRunWaitForGps => 'Esperar GPS';
+
+  @override
+  String get activeRunDismiss => 'Cerrar';
+
+  @override
+  String get activeRunTimerOnlyRestrictionTitle =>
+      'Modo Solo Temporizador No Compatible';
 }

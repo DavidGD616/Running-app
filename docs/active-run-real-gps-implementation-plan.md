@@ -50,6 +50,15 @@ The main architecture change is to move run behavior out of `ActiveRunScreen`. T
   - App builds past manifest/plist validation.
   - No duplicate or malformed permission entries.
 - **Validation**: `flutter analyze`; `flutter build apk --debug` if time allows.
+- **Status**: Complete
+- **Work Log**:
+  - Added `geolocator: ^14.0.0`, `sqflite: ^2.4.2`, `path: ^1.9.0` to dependencies.
+  - Added `sqflite_common_ffi: ^2.3.4+4` to dev_dependencies.
+  - Android: Added `ACCESS_FINE_LOCATION`, `ACCESS_COARSE_LOCATION`, `FOREGROUND_SERVICE_LOCATION`, `WAKE_LOCK` permissions.
+  - Android: Added `com.baseflow.geolocator.GeolocatorLocationService` with `foregroundServiceType="location"`.
+  - iOS: Added `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription`.
+  - iOS: Added `location` to `UIBackgroundModes`.
+  - `flutter pub get` and `flutter analyze` passed.
 
 ### Task 1.2: Complete GPS Localization
 - **Location**: `apps/mobile/lib/l10n/app_en.arb`, `app_es.arb`
@@ -63,6 +72,8 @@ The main architecture change is to move run behavior out of `ActiveRunScreen`. T
   - All new visible GPS text comes from ARB.
   - Generated localization files include the new keys.
 - **Validation**: `flutter gen-l10n`; `flutter analyze`.
+- **Status**: COMPLETE (2026-04-25)
+- **Work Log**: Added 7 new localization keys: `activeRunGpsTrackingNotificationTitle`, `activeRunGpsTrackingNotificationBody`, `gpsRequiredTitle`, `gpsRequiredBody`, `gpsWaitForSignal`, `activeRunEndRun`, `activeRunTimerOnlyLabel` to both EN and ES ARB files.
 
 ### Task 1.3: Fix Pre-run Permission Actions
 - **Location**: `features/pre_run/presentation/screens/pre_run_screen.dart`
@@ -74,6 +85,8 @@ The main architecture change is to move run behavior out of `ActiveRunScreen`. T
   - GPS-denied duration-only run can enter timer-only mode.
   - GPS-denied distance-block workout shows GPS-required dialog and does not start.
 - **Validation**: widget tests for granted, denied, service disabled, and distance-block denied paths.
+- **Status**: COMPLETE (2026-04-25)
+- **Work Log**: Added injectable permission checking logic to `_onContinue()` in `pre_run_screen.dart` via `LocationPermissionService`. Added `_sessionHasDistanceBlocks()` using `ActiveRunTimeline.fromSession()`. Duration-only runs request GPS first and fall back to timer-only when GPS is unavailable or denied. Distance-block workouts require GPS and show the GPS-required path instead of starting timer-only. Added localization keys for permission dialog buttons and titles.
 
 ## Sprint 2: Core GPS Recording Services
 
