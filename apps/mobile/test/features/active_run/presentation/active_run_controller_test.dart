@@ -395,6 +395,40 @@ void main() {
       final state = container.read(activeRunControllerProvider);
       expect(state.error, isNotNull);
     });
+
+    test('repeated start for the same active run preserves progress', () async {
+      container = ProviderContainer(
+        overrides: [
+          locationTrackerProvider.overrideWith((ref) => fakeTracker),
+          clockProvider.overrideWith(
+            (ref) =>
+                () => fakeClock.now,
+          ),
+        ],
+      );
+
+      final controller = container.read(activeRunControllerProvider.notifier);
+      final session = createTestSession();
+      final input = ActiveRunStartInput(
+        session: session,
+        checkIn: null,
+        timerOnlyMode: false,
+      );
+
+      await controller.start(input);
+      controller.tickClock();
+      controller.tickClock();
+
+      final stateBeforeRestart = container.read(activeRunControllerProvider);
+      expect(stateBeforeRestart.elapsed, const Duration(seconds: 2));
+
+      await controller.start(input);
+
+      final stateAfterRestart = container.read(activeRunControllerProvider);
+      expect(stateAfterRestart.session?.sessionId, session.sessionId);
+      expect(stateAfterRestart.elapsed, const Duration(seconds: 2));
+      expect(stateAfterRestart.timelineIndex, 0);
+    });
   });
 
   group('ActiveRunController pause behavior', () {

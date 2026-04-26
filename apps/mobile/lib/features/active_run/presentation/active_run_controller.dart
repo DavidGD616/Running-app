@@ -225,6 +225,10 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       return;
     }
 
+    if (_isSameActiveRunStartRequest(input)) {
+      return;
+    }
+
     _resetAccumulators();
     _runId = ref.read(clockProvider)().millisecondsSinceEpoch.toString();
 
@@ -271,6 +275,17 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     } catch (_) {}
 
     _startProgressTimer();
+  }
+
+  bool _isSameActiveRunStartRequest(ActiveRunStartInput input) {
+    final currentSession = state.session;
+    final incomingSession = input.session;
+    if (_runId == null || currentSession == null || incomingSession == null) {
+      return false;
+    }
+
+    return currentSession.sessionId == incomingSession.sessionId &&
+        state.isTimerOnlyMode == input.timerOnlyMode;
   }
 
   void _resetAccumulators() {
