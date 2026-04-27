@@ -18,8 +18,6 @@ import '../../features/onboarding/presentation/screens/schedule_screen.dart';
 import '../../features/onboarding/presentation/screens/health_injury_screen.dart';
 import '../../features/onboarding/presentation/screens/training_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/watch_device_screen.dart';
-import '../../features/onboarding/presentation/screens/recovery_lifestyle_screen.dart';
-import '../../features/onboarding/presentation/screens/motivation_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_generation_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_ready_screen.dart';
@@ -76,10 +74,8 @@ const _profileSetupRoutes = <String>{
   RouteNames.schedule,
   RouteNames.health,
   RouteNames.training,
-  RouteNames.device,
-  RouteNames.recovery,
-  RouteNames.motivation,
-  RouteNames.summary,
+    RouteNames.device,
+    RouteNames.summary,
   RouteNames.planGeneration,
   RouteNames.planReady,
 };
@@ -236,14 +232,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.device,
         builder: (context, state) => const WatchDeviceScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.recovery,
-        builder: (context, state) => const RecoveryLifestyleScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.motivation,
-        builder: (context, state) => const MotivationScreen(),
       ),
       GoRoute(
         path: RouteNames.summary,

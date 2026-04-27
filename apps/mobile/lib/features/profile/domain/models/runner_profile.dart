@@ -431,117 +431,6 @@ enum NoWatchGuidanceChoice implements CanonicalKeyed {
       _enumByKey(key, values, (value) => value.key);
 }
 
-enum SleepRange implements CanonicalKeyed {
-  lessThan5h('sleep_less_than_5h'),
-  h5To6('sleep_5_to_6h'),
-  h6To7('sleep_6_to_7h'),
-  h7To8('sleep_7_to_8h'),
-  h8Plus('sleep_8_plus_h');
-
-  const SleepRange(this.key);
-
-  @override
-  final String key;
-
-  static SleepRange? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum WorkLevelChoice implements CanonicalKeyed {
-  mostlyDesk('work_mostly_desk'),
-  mixed('work_mixed'),
-  physical('work_physical');
-
-  const WorkLevelChoice(this.key);
-
-  @override
-  final String key;
-
-  static WorkLevelChoice? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum StressLevelChoice implements CanonicalKeyed {
-  low('stress_low'),
-  moderate('stress_moderate'),
-  high('stress_high');
-
-  const StressLevelChoice(this.key);
-
-  @override
-  final String key;
-
-  static StressLevelChoice? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum DayFeelingChoice implements CanonicalKeyed {
-  fresh('feeling_fresh'),
-  sometimesTired('feeling_sometimes_tired'),
-  oftenTired('feeling_often_tired'),
-  alwaysTired('feeling_always_tired');
-
-  const DayFeelingChoice(this.key);
-
-  @override
-  final String key;
-
-  static DayFeelingChoice? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum MotivationReason implements CanonicalKeyed {
-  personalChallenge('motivation_personal_challenge'),
-  health('motivation_health'),
-  weightLoss('motivation_weight_loss'),
-  improvePerformance('motivation_improve_performance'),
-  raceFriends('motivation_race_friends'),
-  discipline('motivation_discipline'),
-  other('motivation_other');
-
-  const MotivationReason(this.key);
-
-  @override
-  final String key;
-
-  static MotivationReason? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum BarrierReason implements CanonicalKeyed {
-  time('barrier_time'),
-  motivation('barrier_motivation'),
-  fatigue('barrier_fatigue'),
-  stress('barrier_stress'),
-  pain('barrier_pain'),
-  boredom('barrier_boredom'),
-  dontKnowHow('barrier_dont_know_how'),
-  other('barrier_other');
-
-  const BarrierReason(this.key);
-
-  @override
-  final String key;
-
-  static BarrierReason? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum CoachingToneChoice implements CanonicalKeyed {
-  simple('tone_simple'),
-  encouraging('tone_encouraging'),
-  detailed('tone_detailed'),
-  strict('tone_strict');
-
-  const CoachingToneChoice(this.key);
-
-  @override
-  final String key;
-
-  static CoachingToneChoice? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
 class GoalProfile {
   const GoalProfile({
     required this.race,
@@ -892,105 +781,6 @@ class DeviceProfileDraft {
   }
 }
 
-class RecoveryProfile {
-  const RecoveryProfile({
-    required this.sleep,
-    required this.workLevel,
-    required this.stressLevel,
-    required this.dayFeeling,
-  });
-
-  final SleepRange sleep;
-  final WorkLevelChoice workLevel;
-  final StressLevelChoice stressLevel;
-  final DayFeelingChoice dayFeeling;
-}
-
-class RecoveryProfileDraft {
-  const RecoveryProfileDraft({
-    this.sleep,
-    this.workLevel,
-    this.stressLevel,
-    this.dayFeeling,
-  });
-
-  final SleepRange? sleep;
-  final WorkLevelChoice? workLevel;
-  final StressLevelChoice? stressLevel;
-  final DayFeelingChoice? dayFeeling;
-
-  String? get sleepKey => sleep?.key;
-  String? get workLevelKey => workLevel?.key;
-  String? get stressLevelKey => stressLevel?.key;
-  String? get dayFeelingKey => dayFeeling?.key;
-
-  RecoveryProfile? toProfileOrNull() {
-    if (sleep == null ||
-        workLevel == null ||
-        stressLevel == null ||
-        dayFeeling == null) {
-      return null;
-    }
-
-    return RecoveryProfile(
-      sleep: sleep!,
-      workLevel: workLevel!,
-      stressLevel: stressLevel!,
-      dayFeeling: dayFeeling!,
-    );
-  }
-}
-
-class MotivationProfile {
-  const MotivationProfile({
-    required this.motivations,
-    required this.barriers,
-    required this.confidence,
-    required this.coachingTone,
-  });
-
-  final Set<MotivationReason> motivations;
-  final Set<BarrierReason> barriers;
-  final int confidence;
-  final CoachingToneChoice coachingTone;
-}
-
-class MotivationProfileDraft {
-  const MotivationProfileDraft({
-    this.motivations = const {},
-    this.barriers = const {},
-    this.confidence,
-    this.coachingTone,
-  });
-
-  final Set<MotivationReason> motivations;
-  final Set<BarrierReason> barriers;
-  final int? confidence;
-  final CoachingToneChoice? coachingTone;
-
-  List<String> get motivationKeys =>
-      motivations.map((value) => value.key).toList(growable: false);
-  List<String> get barrierKeys =>
-      barriers.map((value) => value.key).toList(growable: false);
-  String? get coachingToneKey => coachingTone?.key;
-
-  MotivationProfile? toProfileOrNull() {
-    if (motivations.isEmpty ||
-        barriers.isEmpty ||
-        confidence == null ||
-        coachingTone == null) {
-      return null;
-    }
-
-    return MotivationProfile(
-      motivations: motivations,
-      barriers: barriers,
-      confidence: confidence!,
-      coachingTone: coachingTone!,
-    );
-  }
-}
-
 class RunnerProfile {
   const RunnerProfile({
     required this.goal,
@@ -1114,8 +904,6 @@ class RunnerProfileDraft {
     this.health = const HealthProfileDraft(),
     this.trainingPreferences = const TrainingPreferencesProfileDraft(),
     this.device = const DeviceProfileDraft(),
-    this.recovery = const RecoveryProfileDraft(),
-    this.motivation = const MotivationProfileDraft(),
   });
 
   final GoalProfileDraft goal;
@@ -1124,8 +912,6 @@ class RunnerProfileDraft {
   final HealthProfileDraft health;
   final TrainingPreferencesProfileDraft trainingPreferences;
   final DeviceProfileDraft device;
-  final RecoveryProfileDraft recovery;
-  final MotivationProfileDraft motivation;
 
   Map<String, dynamic> toJson() {
     return {
@@ -1137,8 +923,6 @@ class RunnerProfileDraft {
         trainingPreferences,
       ),
       'device': _deviceProfileDraftToJson(device),
-      'recovery': _recoveryProfileDraftToJson(recovery),
-      'motivation': _motivationProfileDraftToJson(motivation),
     };
   }
 
@@ -1149,8 +933,6 @@ class RunnerProfileDraft {
     HealthProfileDraft? health,
     TrainingPreferencesProfileDraft? trainingPreferences,
     DeviceProfileDraft? device,
-    RecoveryProfileDraft? recovery,
-    MotivationProfileDraft? motivation,
   }) {
     return RunnerProfileDraft(
       goal: goal ?? this.goal,
@@ -1159,8 +941,6 @@ class RunnerProfileDraft {
       health: health ?? this.health,
       trainingPreferences: trainingPreferences ?? this.trainingPreferences,
       device: device ?? this.device,
-      recovery: recovery ?? this.recovery,
-      motivation: motivation ?? this.motivation,
     );
   }
 
@@ -1174,10 +954,6 @@ class RunnerProfileDraft {
         _mapOrEmpty(json['trainingPreferences']),
       ),
       device: _deviceProfileDraftFromJson(_mapOrEmpty(json['device'])),
-      recovery: _recoveryProfileDraftFromJson(_mapOrEmpty(json['recovery'])),
-      motivation: _motivationProfileDraftFromJson(
-        _mapOrEmpty(json['motivation']),
-      ),
     );
   }
 
@@ -1383,41 +1159,6 @@ class RunnerProfileDraft {
     );
   }
 
-  static RecoveryProfileDraft recoveryFromInput({
-    required String sleep,
-    required String workLevel,
-    required String stressLevel,
-    required String dayFeeling,
-  }) {
-    return RecoveryProfileDraft(
-      sleep: SleepRange.fromKey(sleep),
-      workLevel: WorkLevelChoice.fromKey(workLevel),
-      stressLevel: StressLevelChoice.fromKey(stressLevel),
-      dayFeeling: DayFeelingChoice.fromKey(dayFeeling),
-    );
-  }
-
-  static MotivationProfileDraft motivationFromInput({
-    required List<String> motivations,
-    required List<String> barriers,
-    required int confidence,
-    required String coachingTone,
-  }) {
-    return MotivationProfileDraft(
-      motivations: _enumSetByKeys(
-        motivations,
-        MotivationReason.values,
-        (value) => value.key,
-      ),
-      barriers: _enumSetByKeys(
-        barriers,
-        BarrierReason.values,
-        (value) => value.key,
-      ),
-      confidence: confidence,
-      coachingTone: CoachingToneChoice.fromKey(coachingTone),
-    );
-  }
 }
 
 Map<String, dynamic> _goalProfileDraftToJson(GoalProfileDraft value) {
@@ -1660,53 +1401,3 @@ Map<String, dynamic> _deviceProfileToJson(DeviceProfile value) {
 
 DeviceProfile? _deviceProfileFromJson(Map<String, dynamic> json) =>
     _deviceProfileDraftFromJson(json).toProfileOrNull();
-
-Map<String, dynamic> _recoveryProfileDraftToJson(RecoveryProfileDraft value) {
-  return {
-    'sleep': value.sleepKey,
-    'workLevel': value.workLevelKey,
-    'stressLevel': value.stressLevelKey,
-    'dayFeeling': value.dayFeelingKey,
-  };
-}
-
-RecoveryProfileDraft _recoveryProfileDraftFromJson(Map<String, dynamic> json) {
-  return RecoveryProfileDraft(
-    sleep: SleepRange.fromKey(_stringOrNull(json['sleep'])),
-    workLevel: WorkLevelChoice.fromKey(_stringOrNull(json['workLevel'])),
-    stressLevel: StressLevelChoice.fromKey(_stringOrNull(json['stressLevel'])),
-    dayFeeling: DayFeelingChoice.fromKey(_stringOrNull(json['dayFeeling'])),
-  );
-}
-
-Map<String, dynamic> _motivationProfileDraftToJson(
-  MotivationProfileDraft value,
-) {
-  return {
-    'motivations': value.motivationKeys,
-    'barriers': value.barrierKeys,
-    'confidence': value.confidence,
-    'coachingTone': value.coachingToneKey,
-  };
-}
-
-MotivationProfileDraft _motivationProfileDraftFromJson(
-  Map<String, dynamic> json,
-) {
-  return MotivationProfileDraft(
-    motivations: _enumSetByKeys(
-      _stringListOrEmpty(json['motivations']),
-      MotivationReason.values,
-      (value) => value.key,
-    ),
-    barriers: _enumSetByKeys(
-      _stringListOrEmpty(json['barriers']),
-      BarrierReason.values,
-      (value) => value.key,
-    ),
-    confidence: _intOrNull(json['confidence']),
-    coachingTone: CoachingToneChoice.fromKey(
-      _stringOrNull(json['coachingTone']),
-    ),
-  );
-}

@@ -12,8 +12,6 @@ abstract class RouteNames {
   static const health = '/onboarding/health';
   static const training = '/onboarding/training';
   static const device = '/onboarding/device';
-  static const recovery = '/onboarding/recovery';
-  static const motivation = '/onboarding/motivation';
   static const summary = '/onboarding/summary';
   static const planGeneration = '/plan-generation';
   static const planReady = '/plan-ready';

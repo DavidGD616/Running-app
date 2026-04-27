@@ -200,42 +200,6 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     );
   }
 
-  void setRecovery({
-    required String sleep,
-    required String workLevel,
-    required String stressLevel,
-    required String dayFeeling,
-  }) {
-    _setState(
-      (state.value ?? const RunnerProfileDraft()).copyWith(
-        recovery: RunnerProfileDraft.recoveryFromInput(
-          sleep: sleep,
-          workLevel: workLevel,
-          stressLevel: stressLevel,
-          dayFeeling: dayFeeling,
-        ),
-      ),
-    );
-  }
-
-  void setMotivation({
-    required List<String> motivations,
-    required List<String> barriers,
-    required int confidence,
-    required String coachingTone,
-  }) {
-    _setState(
-      (state.value ?? const RunnerProfileDraft()).copyWith(
-        motivation: RunnerProfileDraft.motivationFromInput(
-          motivations: motivations,
-          barriers: barriers,
-          confidence: confidence,
-          coachingTone: coachingTone,
-        ),
-      ),
-    );
-  }
-
   Future<void> _saveDraft(RunnerProfileDraft nextState) async {
     try {
       if (await _repository.hasPersistedProfileAsync()) return;
