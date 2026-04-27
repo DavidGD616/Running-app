@@ -88,6 +88,21 @@
   "backToLogIn": "Back to Log In",
   "@backToLogIn": { "description": "Back link on forgot password screen" },
 
+  "resetPasswordTitle": "Set New Password",
+  "@resetPasswordTitle": { "description": "Heading on the reset password screen" },
+
+  "resetPasswordNewPasswordLabel": "New password",
+  "@resetPasswordNewPasswordLabel": { "description": "New password field label on the reset password screen" },
+
+  "resetPasswordConfirmPasswordLabel": "Confirm new password",
+  "@resetPasswordConfirmPasswordLabel": { "description": "Confirm new password field label on the reset password screen" },
+
+  "resetPasswordButton": "Update Password",
+  "@resetPasswordButton": { "description": "Submit button on the reset password screen" },
+
+  "resetPasswordUpdating": "Updating...",
+  "@resetPasswordUpdating": { "description": "Loading label on the reset password screen while updating the password" },
+
   "authLoadingSignUp": "Creating account...",
   "@authLoadingSignUp": { "description": "Loading label while creating an account" },
 

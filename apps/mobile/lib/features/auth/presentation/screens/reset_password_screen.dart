@@ -32,28 +32,27 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
     super.dispose();
   }
 
-  bool _validate() {
+  void _validate(AppLocalizations l10n) {
     final password = _passwordController.text;
     final confirmPassword = _confirmPasswordController.text;
 
     setState(() {
       _passwordErrorText = password.isEmpty
-          ? 'Please enter a password'
+          ? l10n.authValidationPasswordRequired
           : password.length < 6
-          ? 'Password must be at least 6 characters'
+          ? l10n.authValidationPasswordTooShort
           : null;
       _confirmPasswordErrorText = confirmPassword.isEmpty
-          ? 'Please enter a password'
+          ? l10n.authValidationConfirmPasswordRequired
           : confirmPassword != password
-          ? 'Passwords do not match'
+          ? l10n.authValidationPasswordMismatch
           : null;
     });
-
-    return _passwordErrorText == null && _confirmPasswordErrorText == null;
   }
 
   Future<void> _submit(AppLocalizations l10n) async {
-    if (!_validate()) return;
+    _validate(l10n);
+    if (_passwordErrorText != null || _confirmPasswordErrorText != null) return;
 
     FocusScope.of(context).unfocus();
 
@@ -98,12 +97,12 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                   children: [
                     const SizedBox(height: AppSpacing.lg),
                     Text(
-                      'Set New Password',
+                      l10n.resetPasswordTitle,
                       style: AppTypography.headlineMedium,
                     ),
                     const SizedBox(height: AppSpacing.xxxl),
                     AppTextField(
-                      label: 'New password',
+                      label: l10n.resetPasswordNewPasswordLabel,
                       errorText: _passwordErrorText,
                       controller: _passwordController,
                       obscureText: true,
@@ -120,14 +119,14 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                                 _confirmPasswordController.text ==
                                     _passwordController.text
                                 ? null
-                                : 'Passwords do not match';
+                                : l10n.authValidationPasswordMismatch;
                           }
                         });
                       },
                     ),
                     const SizedBox(height: AppSpacing.lg),
                     AppTextField(
-                      label: 'Confirm new password',
+                      label: l10n.resetPasswordConfirmPasswordLabel,
                       errorText: _confirmPasswordErrorText,
                       controller: _confirmPasswordController,
                       obscureText: true,
@@ -150,7 +149,7 @@ class _ResetPasswordScreenState extends ConsumerState<ResetPasswordScreen> {
                 AppSpacing.xl,
               ),
               child: AppButton(
-                label: isLoading ? 'Updating...' : 'Update Password',
+                label: isLoading ? l10n.resetPasswordUpdating : l10n.resetPasswordButton,
                 onPressed: isLoading ? null : () => _submit(l10n),
                 isLoading: isLoading,
               ),

@@ -36,6 +36,12 @@
   "sendResetLink": "Enviar enlace",
   "backToLogIn": "Volver a iniciar sesión",
 
+  "resetPasswordTitle": "Nueva contraseña",
+  "resetPasswordNewPasswordLabel": "Nueva contraseña",
+  "resetPasswordConfirmPasswordLabel": "Confirmar nueva contraseña",
+  "resetPasswordButton": "Actualizar contraseña",
+  "resetPasswordUpdating": "Actualizando...",
+
   "authLoadingSignUp": "Creando cuenta...",
   "authLoadingLogIn": "Iniciando sesión...",
   "authLoadingResetPassword": "Enviando enlace...",
