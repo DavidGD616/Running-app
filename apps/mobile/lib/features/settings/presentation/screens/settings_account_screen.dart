@@ -12,6 +12,7 @@ import '../../../../core/widgets/section_label.dart';
 import '../../../../core/widgets/settings_card.dart';
 import '../../../../core/widgets/settings_row.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../auth/presentation/auth_notifier.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
@@ -156,15 +157,29 @@ class SettingsAccountScreen extends ConsumerWidget {
   }
 }
 
-class _AccountLogOutCard extends StatelessWidget {
+class _AccountLogOutCard extends ConsumerWidget {
   const _AccountLogOutCard({required this.label});
 
   final String label;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final isSigningOut = ref.watch(authNotifierProvider).isLoading;
+
     return GestureDetector(
-      onTap: () {},
+      onTap: isSigningOut
+          ? null
+          : () async {
+              final feedback = await ref
+                  .read(authNotifierProvider.notifier)
+                  .signOut(l10n: l10n);
+
+              if (!context.mounted || feedback == null) return;
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text(feedback.message)),
+              );
+            },
       child: Container(
         padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.base,
@@ -191,7 +206,7 @@ class _AccountLogOutCard extends StatelessWidget {
             ),
             const SizedBox(width: AppSpacing.md),
             Text(
-              label,
+              isSigningOut ? l10n.authLoadingSignOut : label,
               style: AppTypography.bodyLarge.copyWith(
                 color: AppColors.error,
                 fontWeight: FontWeight.w600,
