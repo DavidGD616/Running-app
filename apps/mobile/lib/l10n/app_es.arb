@@ -795,6 +795,8 @@
   "@activeRunNextBlock": {
     "placeholders": { "block": { "type": "String" } }
   },
+  "activeRunUpNext": "LO QUE SIGUE",
+  "@activeRunUpNext": { "description": "Column header label for the upcoming block in the lock-screen live activity" },
   "activeRunProgressionFocusTitle": "Fases progresivas",
   "activeRunSteadyBlock": "Estable",
   "activeRunStrongBlock": "Fuerte",

@@ -95,7 +95,7 @@ private struct RunLockScreenView: View {
         VStack(alignment: .leading, spacing: 4) {
           Text(context.state.distanceLabel)
             .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
-          Text("DISTANCE")
+          Text(context.state.distanceTitleLabel)
             .font(.system(size: 10, weight: .semibold))
             .tracking(0.3)
             .foregroundStyle(.secondary)
@@ -105,7 +105,7 @@ private struct RunLockScreenView: View {
           TimerText(state: context.state)
             .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
             .multilineTextAlignment(.center)
-          Text("TIME")
+          Text(context.state.elapsedUnitLabel)
             .font(.system(size: 10, weight: .semibold))
             .tracking(0.3)
             .foregroundStyle(.secondary)
@@ -114,7 +114,7 @@ private struct RunLockScreenView: View {
         VStack(alignment: .trailing, spacing: 4) {
           Text(context.state.avgPaceLabel)
             .font(.system(size: 20, weight: .semibold, design: .rounded).monospacedDigit())
-          Text("AVG. PACE")
+          Text(context.state.avgPaceTitleLabel)
             .font(.system(size: 10, weight: .semibold))
             .tracking(0.3)
             .foregroundStyle(.secondary)
@@ -131,7 +131,7 @@ private struct RunLockScreenView: View {
           VStack(alignment: .leading, spacing: 4) {
             Text(context.state.currentPaceLabel)
               .font(.system(size: 18, weight: .semibold, design: .rounded).monospacedDigit())
-            Text("CURRENT")
+            Text(context.state.currentPaceTitleLabel)
               .font(.system(size: 10, weight: .semibold))
               .tracking(0.3)
               .foregroundStyle(.secondary)
@@ -144,7 +144,7 @@ private struct RunLockScreenView: View {
               .font(.system(size: 18, weight: .semibold, design: .default))
               .lineLimit(1)
             if context.state.nextBlockLabel != nil {
-              Text("UP NEXT")
+              Text(context.state.nextBlockTitleLabel)
                 .font(.system(size: 10, weight: .semibold))
                 .tracking(0.3)
                 .foregroundStyle(.secondary)

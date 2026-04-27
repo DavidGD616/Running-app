@@ -4233,6 +4233,12 @@ abstract class AppLocalizations {
   /// **'Next: {block}'**
   String activeRunNextBlock(String block);
 
+  /// Column header label for the upcoming block in the lock-screen live activity
+  ///
+  /// In en, this message translates to:
+  /// **'UP NEXT'**
+  String get activeRunUpNext;
+
   /// Focus panel title for progression active run
   ///
   /// In en, this message translates to:

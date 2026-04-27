@@ -10,7 +10,9 @@ struct RunActivityAttributes: ActivityAttributes {
     var statusLabel: String
     var timerStartedAt: Date?
     var elapsedLabel: String
+    var elapsedUnitLabel: String
     var isPaused: Bool
+    var distanceTitleLabel: String
     var distanceLabel: String
     var currentPaceTitleLabel: String
     var currentPaceLabel: String
@@ -18,6 +20,7 @@ struct RunActivityAttributes: ActivityAttributes {
     var avgPaceLabel: String
     var currentBlockLabel: String
     var nextBlockLabel: String?
+    var nextBlockTitleLabel: String
     var repLabel: String?
     var blockProgressFraction: Double
     var plannedPaceLabel: String

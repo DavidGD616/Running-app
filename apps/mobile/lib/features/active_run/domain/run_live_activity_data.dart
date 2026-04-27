@@ -59,6 +59,7 @@ class RunLiveActivityData {
     required this.avgPaceLabel,
     required this.currentBlockLabel,
     this.nextBlockLabel,
+    this.nextBlockTitleLabel = '',
     this.repLabel,
     required this.isPaused,
     required this.distanceKm,
@@ -89,6 +90,7 @@ class RunLiveActivityData {
   final String avgPaceLabel;
   final String currentBlockLabel;
   final String? nextBlockLabel;
+  final String nextBlockTitleLabel;
   final String? repLabel;
   final bool isPaused;
 
@@ -195,6 +197,7 @@ class RunLiveActivityData {
       avgPaceLabel: str('avgPaceLabel'),
       currentBlockLabel: str('currentBlockLabel'),
       nextBlockLabel: optStr('nextBlockLabel'),
+      nextBlockTitleLabel: str('nextBlockTitleLabel'),
       repLabel: optStr('repLabel'),
       isPaused: (map['isPaused'] as bool?) ?? false,
       distanceKm: doubleVal('distanceKm', 0),
@@ -228,6 +231,7 @@ class RunLiveActivityData {
       'avgPaceLabel': avgPaceLabel,
       'currentBlockLabel': currentBlockLabel,
       'nextBlockLabel': nextBlockLabel,
+      'nextBlockTitleLabel': nextBlockTitleLabel,
       'repLabel': repLabel,
       'isPaused': isPaused,
       'distanceKm': distanceKm,
@@ -261,6 +265,7 @@ class RunLiveActivityData {
     String? avgPaceLabel,
     String? currentBlockLabel,
     Object? nextBlockLabel = _copyWithSentinel,
+    String? nextBlockTitleLabel,
     Object? repLabel = _copyWithSentinel,
     bool? isPaused,
     double? distanceKm,
@@ -295,6 +300,7 @@ class RunLiveActivityData {
       nextBlockLabel: identical(nextBlockLabel, _copyWithSentinel)
           ? this.nextBlockLabel
           : nextBlockLabel as String?,
+      nextBlockTitleLabel: nextBlockTitleLabel ?? this.nextBlockTitleLabel,
       repLabel: identical(repLabel, _copyWithSentinel)
           ? this.repLabel
           : repLabel as String?,

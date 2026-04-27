@@ -90,6 +90,7 @@ RunLiveActivityData buildRunLiveActivityData({
     avgPaceLabel: avgPaceLabel,
     currentBlockLabel: currentBlockLabel,
     nextBlockLabel: nextBlockLabel,
+    nextBlockTitleLabel: l10n.activeRunUpNext,
     repLabel: repLabel,
     isPaused: isPaused,
     distanceKm: distanceKm,
