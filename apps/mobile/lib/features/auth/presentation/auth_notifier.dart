@@ -143,6 +143,27 @@ class AuthNotifier extends AsyncNotifier<void> {
     }
   }
 
+  Future<AuthActionFeedback?> updatePassword({
+    required String newPassword,
+    required AppLocalizations l10n,
+  }) async {
+    if (!SupabaseConfig.isConfigured) {
+      return AuthActionFeedback.error(l10n.authErrorNotConfigured);
+    }
+    state = const AsyncLoading();
+    try {
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+      state = const AsyncData(null);
+      return null;
+    } on AuthException catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(localizeAuthException(l10n, error));
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(l10n.authErrorGeneric);
+    }
+  }
+
   Future<AuthActionFeedback?> signOut({required AppLocalizations l10n}) async {
     if (!SupabaseConfig.isConfigured) {
       return AuthActionFeedback.error(l10n.authErrorNotConfigured);

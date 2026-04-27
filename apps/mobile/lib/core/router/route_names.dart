@@ -67,4 +67,5 @@ abstract class RouteNames {
   static const fullPlan = '/full-plan';
   static const trainingHistory = '/training-history';
   static const completedSessions = '/completed-sessions';
+  static const resetPassword = '/reset-password';
 }

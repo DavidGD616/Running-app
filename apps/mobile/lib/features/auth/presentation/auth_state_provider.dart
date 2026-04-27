@@ -15,6 +15,17 @@ final authStateProvider = StreamProvider<User?>((ref) {
   });
 });
 
+final passwordRecoveryProvider = StreamProvider<bool>((ref) {
+  if (!SupabaseConfig.isConfigured) {
+    return Stream.value(false);
+  }
+
+  final client = ref.watch(supabaseClientProvider);
+  return client.auth.onAuthStateChange.map((authState) {
+    return authState.event == AuthChangeEvent.passwordRecovery;
+  });
+});
+
 final currentUserProvider = Provider<User?>((ref) {
   if (!SupabaseConfig.isConfigured) {
     return null;
