@@ -101,7 +101,7 @@ abstract class AppLocalizations {
   /// App name
   ///
   /// In en, this message translates to:
-  /// **'RunFlow'**
+  /// **'StrivIQ'**
   String get appTitle;
 
   /// Short English language code shown on the toggle
@@ -125,7 +125,7 @@ abstract class AppLocalizations {
   /// Main heading on the welcome screen
   ///
   /// In en, this message translates to:
-  /// **'Welcome to RunFlow'**
+  /// **'Welcome to StrivIQ'**
   String get welcomeTitle;
 
   /// Subtitle on the welcome screen
@@ -3072,10 +3072,10 @@ abstract class AppLocalizations {
   /// **'Active Plan'**
   String get settingsSubscriptionActivePlan;
 
-  /// Visible plan name for the paid RunFlow subscription
+  /// Visible plan name for the paid StrivIQ subscription
   ///
   /// In en, this message translates to:
-  /// **'RunFlow Pro'**
+  /// **'StrivIQ Pro'**
   String get settingsSubscriptionPlanName;
 
   /// Label for the next billing date on the subscription screen
@@ -3099,7 +3099,7 @@ abstract class AppLocalizations {
   /// Prompt shown at the top of the cancel subscription reasons screen
   ///
   /// In en, this message translates to:
-  /// **'Please tell us why you\'re cancelling RunFlow Pro'**
+  /// **'Please tell us why you\'re cancelling StrivIQ Pro'**
   String get settingsCancelSubscriptionPrompt;
 
   /// Cancellation reason: subscription cost is too high
@@ -3159,7 +3159,7 @@ abstract class AppLocalizations {
   /// Helper copy shown after the user submits cancellation reasons
   ///
   /// In en, this message translates to:
-  /// **'Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.'**
+  /// **'Thanks for sharing your feedback. To finish cancelling StrivIQ Pro, manage your subscription in the store where you purchased it.'**
   String get settingsSubscriptionCancellationInfoBody;
 
   /// Confirmation button label on the cancellation info dialog
@@ -3477,7 +3477,7 @@ abstract class AppLocalizations {
   /// App version string shown at bottom of settings
   ///
   /// In en, this message translates to:
-  /// **'RunFlow v1.0.0 (Build 42)'**
+  /// **'StrivIQ v1.0.0 (Build 42)'**
   String get settingsVersion;
 
   /// Header title on the session detail screen
@@ -3533,6 +3533,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hard effort, Zone 4'**
   String get sessionDetailIntervalsNote;
+
+  /// Strides phase title
+  ///
+  /// In en, this message translates to:
+  /// **'Strides'**
+  String get sessionDetailStrides;
 
   /// Cool-down phase title
   ///
@@ -3623,6 +3629,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{recoverySeconds} s easy jog recovery between each rep'**
   String sessionPhaseIntervalsMainRecovery(int recoverySeconds);
+
+  /// Strides phase duration
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {seconds} s'**
+  String sessionPhaseStridesDuration(int reps, int seconds);
+
+  /// Strides phase note
+  ///
+  /// In en, this message translates to:
+  /// **'Fast but relaxed · smooth form, not a sprint'**
+  String get sessionPhaseStridesNote;
+
+  /// Strides phase recovery note
+  ///
+  /// In en, this message translates to:
+  /// **'{recoverySeconds} s easy walk or jog between strides'**
+  String sessionPhaseStridesRecovery(int recoverySeconds);
 
   /// Intervals cool-down duration
   ///
@@ -3798,6 +3822,12 @@ abstract class AppLocalizations {
   /// **'7:31 / km pace'**
   String get logSessionPaceValue;
 
+  /// Average pace subtitle on distance metric card after a completed GPS run
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} / {unit} pace'**
+  String logSessionAveragePaceSubtitle(String pace, String unit);
+
   /// Section heading for perceived effort selection
   ///
   /// In en, this message translates to:
@@ -3851,6 +3881,477 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Save Session'**
   String get logSessionSaveButton;
+
+  /// Header title on the active run tracking screen
+  ///
+  /// In en, this message translates to:
+  /// **'Active Run'**
+  String get activeRunTitle;
+
+  /// Status pill indicating the active run screen is using mock tracking data
+  ///
+  /// In en, this message translates to:
+  /// **'Demo tracking'**
+  String get activeRunDemoTracking;
+
+  /// Current pace metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'CURRENT PACE'**
+  String get activeRunCurrentPace;
+
+  /// Compact target label in the collapsed active run Android notification
+  ///
+  /// In en, this message translates to:
+  /// **'Target'**
+  String get activeRunNotificationTargetShort;
+
+  /// Compact distance label in the collapsed active run Android notification
+  ///
+  /// In en, this message translates to:
+  /// **'Dist'**
+  String get activeRunNotificationDistanceShort;
+
+  /// Compact pace label in the collapsed active run Android notification
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get activeRunNotificationPaceShort;
+
+  /// Elapsed time metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'ELAPSED'**
+  String get activeRunElapsed;
+
+  /// Unit label for elapsed time metric
+  ///
+  /// In en, this message translates to:
+  /// **'time'**
+  String get activeRunTimeUnit;
+
+  /// Distance metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'DISTANCE'**
+  String get activeRunDistance;
+
+  /// Title label for distance in live activity
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get activeRunDistanceTitle;
+
+  /// Short title label for current pace in live activity
+  ///
+  /// In en, this message translates to:
+  /// **'Pace'**
+  String get activeRunCurrentPaceShort;
+
+  /// Average pace metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'AVG PACE'**
+  String get activeRunAveragePace;
+
+  /// Target metric label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'TARGET'**
+  String get activeRunTarget;
+
+  /// Pause CTA on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get activeRunPause;
+
+  /// Button to resume the run after GPS was lost
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get activeRunResume;
+
+  /// Finish CTA on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Finish'**
+  String get activeRunFinish;
+
+  /// Planned active run summary with duration and distance
+  ///
+  /// In en, this message translates to:
+  /// **'{plannedDuration} · {plannedDistance}'**
+  String activeRunPlannedSummary(
+    String plannedDuration,
+    String plannedDistance,
+  );
+
+  /// Planned active run summary with duration only
+  ///
+  /// In en, this message translates to:
+  /// **'{plannedDuration}'**
+  String activeRunPlannedDuration(String plannedDuration);
+
+  /// Planned active run summary with distance only
+  ///
+  /// In en, this message translates to:
+  /// **'{plannedDistance}'**
+  String activeRunPlannedDistance(String plannedDistance);
+
+  /// Fallback planned active run summary when no planned values exist
+  ///
+  /// In en, this message translates to:
+  /// **'Guided run'**
+  String get activeRunPlannedFallback;
+
+  /// Active run guidance for easy runs
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it conversational and relaxed.'**
+  String get activeRunGuidanceEasy;
+
+  /// Active run guidance for long runs
+  ///
+  /// In en, this message translates to:
+  /// **'Settle into a steady rhythm and protect the finish.'**
+  String get activeRunGuidanceLong;
+
+  /// Active run guidance for progression runs
+  ///
+  /// In en, this message translates to:
+  /// **'Start controlled, then build effort one phase at a time.'**
+  String get activeRunGuidanceProgression;
+
+  /// Active run guidance for interval runs
+  ///
+  /// In en, this message translates to:
+  /// **'Run the fast blocks with intent, then recover fully.'**
+  String get activeRunGuidanceIntervals;
+
+  /// Active run guidance for hill repeat runs
+  ///
+  /// In en, this message translates to:
+  /// **'Drive the climb, recover on the way back down.'**
+  String get activeRunGuidanceHills;
+
+  /// Active run guidance for fartlek runs
+  ///
+  /// In en, this message translates to:
+  /// **'Use surges when ready, then return to easy running.'**
+  String get activeRunGuidanceFartlek;
+
+  /// Active run guidance for tempo runs
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a strong pace you can control.'**
+  String get activeRunGuidanceTempo;
+
+  /// Active run guidance for threshold runs
+  ///
+  /// In en, this message translates to:
+  /// **'Stay firm but smooth. Do not sprint.'**
+  String get activeRunGuidanceThreshold;
+
+  /// Active run guidance for race pace runs
+  ///
+  /// In en, this message translates to:
+  /// **'Lock into goal pace and keep the effort even.'**
+  String get activeRunGuidanceRacePace;
+
+  /// Active run guidance for recovery runs
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this easy enough to feel better afterward.'**
+  String get activeRunGuidanceRecovery;
+
+  /// Active run status when user is going too fast
+  ///
+  /// In en, this message translates to:
+  /// **'Ease off'**
+  String get activeRunEaseOff;
+
+  /// Active run status when user is going too slow
+  ///
+  /// In en, this message translates to:
+  /// **'Pick it up'**
+  String get activeRunPickUp;
+
+  /// Active run status when user is on target
+  ///
+  /// In en, this message translates to:
+  /// **'On target'**
+  String get activeRunOnTarget;
+
+  /// Active run status for work blocks
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get activeRunPush;
+
+  /// Active run status for recovery blocks
+  ///
+  /// In en, this message translates to:
+  /// **'Recover'**
+  String get activeRunRecover;
+
+  /// Active run status or block label for a fartlek surge
+  ///
+  /// In en, this message translates to:
+  /// **'Surge'**
+  String get activeRunSurge;
+
+  /// Easy block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get activeRunEasyBlock;
+
+  /// Fast target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get activeRunTargetFast;
+
+  /// Climb target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Climb'**
+  String get activeRunTargetClimb;
+
+  /// Tempo target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get activeRunTargetTempo;
+
+  /// Threshold target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get activeRunTargetThreshold;
+
+  /// Race pace target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace'**
+  String get activeRunTargetRace;
+
+  /// Easy target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get activeRunTargetEasy;
+
+  /// Steady target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get activeRunTargetSteady;
+
+  /// Build target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get activeRunTargetBuild;
+
+  /// Surges target label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Surges'**
+  String get activeRunTargetSurges;
+
+  /// Unit label for pace-based active run target
+  ///
+  /// In en, this message translates to:
+  /// **'pace'**
+  String get activeRunTargetPaceUnit;
+
+  /// Unit label for effort-based active run target
+  ///
+  /// In en, this message translates to:
+  /// **'effort'**
+  String get activeRunTargetEffortUnit;
+
+  /// Focus panel title for hill repeat active run
+  ///
+  /// In en, this message translates to:
+  /// **'Hill repeat focus'**
+  String get activeRunHillFocusTitle;
+
+  /// Focus panel title for interval active run
+  ///
+  /// In en, this message translates to:
+  /// **'Interval focus'**
+  String get activeRunIntervalFocusTitle;
+
+  /// Current block label on active run focus panel
+  ///
+  /// In en, this message translates to:
+  /// **'Current block'**
+  String get activeRunCurrentBlock;
+
+  /// Climb block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Climb'**
+  String get activeRunClimb;
+
+  /// Fast repetition block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Fast rep'**
+  String get activeRunFastRep;
+
+  /// Stride block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Stride'**
+  String get activeRunStride;
+
+  /// Recovery block label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get activeRunRecovery;
+
+  /// Repetition counter label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Rep'**
+  String get activeRunRep;
+
+  /// Remaining time in the current active run block
+  ///
+  /// In en, this message translates to:
+  /// **'{remaining} remaining'**
+  String activeRunBlockRemaining(String remaining);
+
+  /// Next active run block preview
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {block}'**
+  String activeRunNextBlock(String block);
+
+  /// Column header label for the upcoming block in the lock-screen live activity
+  ///
+  /// In en, this message translates to:
+  /// **'UP NEXT'**
+  String get activeRunUpNext;
+
+  /// Focus panel title for progression active run
+  ///
+  /// In en, this message translates to:
+  /// **'Progression phases'**
+  String get activeRunProgressionFocusTitle;
+
+  /// Steady phase label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get activeRunSteadyBlock;
+
+  /// Strong phase label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strong'**
+  String get activeRunStrongBlock;
+
+  /// Focus panel title for pace-controlled active runs
+  ///
+  /// In en, this message translates to:
+  /// **'Pace control'**
+  String get activeRunPaceFocusTitle;
+
+  /// Control label on active run focus panel
+  ///
+  /// In en, this message translates to:
+  /// **'Control'**
+  String get activeRunControl;
+
+  /// Footer guidance for pace-controlled active runs
+  ///
+  /// In en, this message translates to:
+  /// **'Stay smooth inside the target band.'**
+  String get activeRunPaceFocusFooter;
+
+  /// Focus panel title for long run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Long run focus'**
+  String get activeRunLongFocusTitle;
+
+  /// Focus label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Focus'**
+  String get activeRunFocus;
+
+  /// Reminder label on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder'**
+  String get activeRunReminder;
+
+  /// Fuel reminder value on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Fuel'**
+  String get activeRunFuel;
+
+  /// Footer guidance for long run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Sip water and check effort before the next mile.'**
+  String get activeRunLongFocusFooter;
+
+  /// Focus panel title for recovery run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery focus'**
+  String get activeRunRecoveryFocusTitle;
+
+  /// Focus panel title for easy run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'Easy run focus'**
+  String get activeRunEasyFocusTitle;
+
+  /// Relaxed control value on active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Relaxed'**
+  String get activeRunRelaxed;
+
+  /// Footer guidance for recovery run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'The goal is fresh legs, not a faster split.'**
+  String get activeRunRecoveryFocusFooter;
+
+  /// Footer guidance for easy run active screen
+  ///
+  /// In en, this message translates to:
+  /// **'You should be able to speak in full sentences.'**
+  String get activeRunEasyFocusFooter;
+
+  /// Focus panel title for fartlek active run
+  ///
+  /// In en, this message translates to:
+  /// **'Fartlek control'**
+  String get activeRunFartlekFocusTitle;
+
+  /// CTA to end a fartlek surge
+  ///
+  /// In en, this message translates to:
+  /// **'End surge'**
+  String get activeRunEndSurge;
+
+  /// CTA to start a fartlek surge
+  ///
+  /// In en, this message translates to:
+  /// **'Start surge'**
+  String get activeRunStartSurge;
 
   /// Header title on the pre-run check screen
   ///
@@ -3972,6 +4473,70 @@ abstract class AppLocalizations {
   /// **'Continue'**
   String get preRunContinue;
 
+  /// Section title for workout preview on pre-run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Workout'**
+  String get preRunWorkoutPreviewTitle;
+
+  /// Warm-up block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'Warm-up {duration}'**
+  String preRunWorkoutPreviewWarmUp(String duration);
+
+  /// Strides block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {seconds}s strides · {recoverySeconds}s recovery'**
+  String preRunWorkoutPreviewStrides(
+    int reps,
+    int seconds,
+    int recoverySeconds,
+  );
+
+  /// Main work block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'Main {duration}'**
+  String preRunWorkoutPreviewMain(String duration);
+
+  /// Cool-down block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'Cool-down {duration}'**
+  String preRunWorkoutPreviewCoolDown(String duration);
+
+  /// Repeated work and recovery block in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} × {work} work · {recovery} recovery'**
+  String preRunWorkoutPreviewRepeat(int reps, String work, String recovery);
+
+  /// Duration in minutes in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String preRunWorkoutPreviewDurationMinutes(int minutes);
+
+  /// Duration in seconds in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{seconds} s'**
+  String preRunWorkoutPreviewDurationSeconds(int seconds);
+
+  /// Distance in meters in pre-run workout preview
+  ///
+  /// In en, this message translates to:
+  /// **'{meters} m'**
+  String preRunWorkoutPreviewDistanceMeters(int meters);
+
+  /// Fallback label when a workout preview block has no duration or distance target
+  ///
+  /// In en, this message translates to:
+  /// **'open'**
+  String get preRunWorkoutPreviewOpenDuration;
+
   /// Title of the workout options bottom sheet
   ///
   /// In en, this message translates to:
@@ -4079,6 +4644,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get planNotReadyRetry;
+
+  /// Base training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get phaseBase;
+
+  /// Build training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get phaseBuild;
+
+  /// Specific training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Specific'**
+  String get phaseSpecific;
+
+  /// Peak training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get phasePeak;
+
+  /// Taper/race training phase label
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get phaseTaperRace;
+
+  /// Title in the Android foreground notification when GPS tracking is active
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking Run'**
+  String get activeRunGpsTrackingNotificationTitle;
+
+  /// Body text in the Android foreground notification when GPS tracking is active
+  ///
+  /// In en, this message translates to:
+  /// **'StrivIQ is recording your run'**
+  String get activeRunGpsTrackingNotificationBody;
+
+  /// Title of the dialog shown when GPS is required for a distance-based workout
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Required'**
+  String get gpsRequiredTitle;
+
+  /// Body text of the dialog shown when GPS is required for a distance-based workout
+  ///
+  /// In en, this message translates to:
+  /// **'This workout has distance-based blocks and requires GPS to track your progress. Please enable location services to start this workout.'**
+  String get gpsRequiredBody;
+
+  /// Status label shown while acquiring GPS signal
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for GPS signal'**
+  String get gpsWaitForSignal;
+
+  /// Warning label shown when GPS signal is weak
+  ///
+  /// In en, this message translates to:
+  /// **'Weak GPS signal'**
+  String get gpsWeakSignal;
+
+  /// Status label shown when GPS signal is lost
+  ///
+  /// In en, this message translates to:
+  /// **'GPS signal lost'**
+  String get gpsLostSignal;
+
+  /// Title chip label shown when GPS is acquiring signal
+  ///
+  /// In en, this message translates to:
+  /// **'Acquiring'**
+  String get gpsAcquiringTitle;
+
+  /// Title chip label shown when GPS signal is weak
+  ///
+  /// In en, this message translates to:
+  /// **'Weak Signal'**
+  String get gpsWeakTitle;
+
+  /// Button label to enable device location services from GPS required dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Location Services'**
+  String get gpsEnableLocationServices;
+
+  /// Title chip label shown when GPS signal is lost
+  ///
+  /// In en, this message translates to:
+  /// **'Signal Lost'**
+  String get gpsLostTitle;
+
+  /// CTA button to end the active run
+  ///
+  /// In en, this message translates to:
+  /// **'End Run'**
+  String get activeRunEndRun;
+
+  /// Status label shown when the active run is in timer-only mode without GPS
+  ///
+  /// In en, this message translates to:
+  /// **'Timer only'**
+  String get activeRunTimerOnlyLabel;
+
+  /// Title label for the live activity or foreground notification run status field
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get activeRunStatusTitle;
+
+  /// Status label shown in live activity or foreground notification when the active run is paused
+  ///
+  /// In en, this message translates to:
+  /// **'Paused'**
+  String get activeRunPausedStatusLabel;
+
+  /// Status label shown in live activity or foreground notification when GPS tracking is active
+  ///
+  /// In en, this message translates to:
+  /// **'Tracking'**
+  String get activeRunTrackingStatusLabel;
+
+  /// Button label to open app settings when location permission is permanently denied
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get preRunOpenSettings;
+
+  /// Button label to open location settings when location service is disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Location Services'**
+  String get preRunEnableLocationServices;
+
+  /// Button label to start run in timer-only mode without GPS
+  ///
+  /// In en, this message translates to:
+  /// **'Timer-only Mode'**
+  String get preRunTimerOnlyMode;
+
+  /// Title of dialog when device location services are disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Location Services Disabled'**
+  String get locationServiceDisabledTitle;
+
+  /// Body text of dialog when device location services are disabled
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location services to track your run with GPS.'**
+  String get locationServiceDisabledBody;
+
+  /// Title of dialog when location permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Location Permission Denied'**
+  String get locationPermissionDeniedTitle;
+
+  /// Body text of dialog when location permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is required to track your run. Please grant permission in Settings.'**
+  String get locationPermissionDeniedBody;
+
+  /// Title of non-dismissible modal when GPS is lost during a distance-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Signal Lost'**
+  String get activeRunGpsLostAutoPauseTitle;
+
+  /// Body of non-dismissible modal when GPS is lost during a distance-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS signal was lost. Your run has been auto-paused. Tap Resume to continue when GPS recovers, or End Run to finish now.'**
+  String get activeRunGpsLostAutoPauseBody;
+
+  /// Title of dismissible warning when GPS is lost during a duration-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS Signal Weak'**
+  String get activeRunGpsLostWarningTitle;
+
+  /// Body of dismissible warning when GPS is lost during a duration-based block
+  ///
+  /// In en, this message translates to:
+  /// **'GPS signal is weak. Distance tracking is paused but your timer is still running.'**
+  String get activeRunGpsLostWarningBody;
+
+  /// Button to wait for GPS signal to recover
+  ///
+  /// In en, this message translates to:
+  /// **'Wait for GPS'**
+  String get activeRunWaitForGps;
+
+  /// Button to dismiss the GPS warning modal
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get activeRunDismiss;
+
+  /// Title of error dialog when timer-only mode is requested for distance-based workout
+  ///
+  /// In en, this message translates to:
+  /// **'Timer-Only Not Supported'**
+  String get activeRunTimerOnlyRestrictionTitle;
 }
 
 class _AppLocalizationsDelegate

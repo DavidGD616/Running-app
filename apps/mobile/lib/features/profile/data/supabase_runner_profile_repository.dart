@@ -83,20 +83,24 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
   @override
   Future<void> saveProfile(RunnerProfile profile) async {
     final completedOnboardingAt =
-        await _loadCompletedOnboardingAt() ?? profile.updatedAt;
+        profile.completedOnboardingAt ?? await _loadCompletedOnboardingAt();
+    final profileToPersist =
+        profile.completedOnboardingAt == completedOnboardingAt
+        ? profile
+        : profile.copyWith(completedOnboardingAt: completedOnboardingAt);
 
     await _client.from(_profilesTable).upsert({
       'user_id': _userId,
-      'schema_version': profile.schemaVersion,
-      'updated_at': profile.updatedAt.toUtc().toIso8601String(),
+      'schema_version': profileToPersist.schemaVersion,
+      'updated_at': profileToPersist.updatedAt.toUtc().toIso8601String(),
       'completed_onboarding_at': completedOnboardingAt
-          .toUtc()
+          ?.toUtc()
           .toIso8601String(),
-      'data': _profileData(profile),
+      'data': _profileData(profileToPersist),
     }, onConflict: 'user_id');
 
     await _client.from(_draftsTable).delete().eq('user_id', _userId);
-    await _localCache.saveProfile(profile);
+    await _localCache.saveProfile(profileToPersist);
   }
 
   @override
@@ -125,7 +129,7 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
   Future<RunnerProfile?> _fetchProfile() async {
     final row = await _client
         .from(_profilesTable)
-        .select('schema_version, updated_at, data')
+        .select('schema_version, updated_at, completed_onboarding_at, data')
         .eq('user_id', _userId)
         .maybeSingle();
     if (row == null) return null;
@@ -136,6 +140,9 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
 
     data['schemaVersion'] ??= map['schema_version'];
     data['updatedAt'] ??= _normalizeDateTimeValue(map['updated_at']);
+    data['completedOnboardingAt'] ??= _normalizeDateTimeValue(
+      map['completed_onboarding_at'],
+    );
 
     return RunnerProfile.fromJson(data);
   }

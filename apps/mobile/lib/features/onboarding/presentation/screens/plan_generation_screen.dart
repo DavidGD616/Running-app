@@ -5,6 +5,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -182,7 +183,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Pulsing icon circle
+        // Pulsing app logo
         AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
@@ -192,11 +193,11 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
             );
           },
           child: Container(
-            width: 96,
-            height: 96,
+            width: 220,
+            height: 72,
             decoration: BoxDecoration(
               color: AppColors.backgroundPrimary,
-              shape: BoxShape.circle,
+              borderRadius: AppRadius.borderLg,
               border: Border.all(
                 color: AppColors.accentPrimary,
                 width: 2.5,
@@ -211,13 +212,10 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
             ),
             child: Center(
               child: SvgPicture.asset(
-                'assets/icons/zap.svg',
-                width: 36,
-                height: 36,
-                colorFilter: const ColorFilter.mode(
-                  AppColors.accentPrimary,
-                  BlendMode.srcIn,
-                ),
+                'assets/logos/striviq_logo.svg',
+                width: 174,
+                height: 43,
+                fit: BoxFit.contain,
               ),
             ),
           ),

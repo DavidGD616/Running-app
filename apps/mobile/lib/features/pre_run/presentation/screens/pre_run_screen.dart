@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
@@ -8,22 +11,244 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../active_run/presentation/active_run_session_provider.dart';
+import '../../../active_run/presentation/active_run_timeline.dart';
+import '../../../training_plan/domain/models/workout_step.dart';
+import '../location_permission_service.dart';
 import '../run_flow_context.dart';
 
-class PreRunScreen extends StatefulWidget {
+class PreRunScreen extends ConsumerStatefulWidget {
   const PreRunScreen({super.key, this.args});
 
   final PreRunArgs? args;
 
   @override
-  State<PreRunScreen> createState() => _PreRunScreenState();
+  ConsumerState<PreRunScreen> createState() => _PreRunScreenState();
 }
 
-class _PreRunScreenState extends State<PreRunScreen> {
+class _PreRunScreenState extends ConsumerState<PreRunScreen> {
   PreRunLegCondition? _legs;
   PreRunPainLevel? _pain;
   PreRunSleepLevel? _sleep;
   PreRunReadinessLevel? _readiness;
+
+  bool _sessionHasDistanceBlocks(RunFlowSessionContext session) {
+    final timeline = ActiveRunTimeline.fromSession(session);
+    for (final block in timeline.blocks) {
+      if (block.distanceMeters != null && block.distanceMeters! > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  Future<void> _onContinue() async {
+    final session = widget.args?.session;
+    final hasDistanceBlocks =
+        session != null && _sessionHasDistanceBlocks(session);
+
+    bool serviceEnabled = true;
+    LocationPermission permission = LocationPermission.whileInUse;
+    final permissionService = ref.read(locationPermissionServiceProvider);
+
+    try {
+      serviceEnabled = await permissionService.isLocationServiceEnabled();
+    } catch (_) {
+      serviceEnabled = true;
+    }
+
+    if (!serviceEnabled) {
+      if (!mounted) return;
+      if (!hasDistanceBlocks) {
+        _startActiveRun(session, timerOnlyMode: true);
+        return;
+      }
+      _showLocationServiceDisabledDialog(hasDistanceBlocks: hasDistanceBlocks);
+      return;
+    }
+
+    try {
+      permission = await permissionService.checkPermission();
+    } catch (_) {
+      permission = LocationPermission.whileInUse;
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (!mounted) return;
+      if (!hasDistanceBlocks) {
+        _startActiveRun(session, timerOnlyMode: true);
+        return;
+      }
+      _showPermissionDeniedForeverDialog(hasDistanceBlocks: true);
+      return;
+    }
+
+    if (permission == LocationPermission.denied ||
+        permission == LocationPermission.unableToDetermine) {
+      try {
+        permission = await permissionService.requestPermission();
+      } catch (_) {
+        permission = LocationPermission.whileInUse;
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        if (!hasDistanceBlocks) {
+          _startActiveRun(session, timerOnlyMode: true);
+          return;
+        }
+        _showPermissionDeniedForeverDialog(hasDistanceBlocks: true);
+        return;
+      }
+
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.unableToDetermine) {
+        if (!mounted) return;
+        if (hasDistanceBlocks) {
+          _showGpsRequiredDialog();
+        } else {
+          _startActiveRun(session, timerOnlyMode: true);
+        }
+        return;
+      }
+    }
+
+    if (!mounted) return;
+    _startActiveRun(session, timerOnlyMode: false);
+  }
+
+  void _startActiveRun(
+    RunFlowSessionContext? session, {
+    required bool timerOnlyMode,
+  }) {
+    final checkIn = PreRunCheckIn(
+      legs: _legs,
+      pain: _pain,
+      sleep: _sleep,
+      readiness: _readiness,
+    );
+    final router = GoRouter.of(context);
+    if (router.routerDelegate.currentConfiguration.uri.path ==
+        RouteNames.activeRun) {
+      return;
+    }
+    if (session != null) {
+      ref.read(activeRunSessionProvider.notifier).save(session, checkIn);
+    }
+    router.push(
+      RouteNames.activeRun,
+      extra: ActiveRunArgs(
+        session: session,
+        checkIn: checkIn,
+        timerOnlyMode: timerOnlyMode,
+      ),
+    );
+  }
+
+  void _showLocationServiceDisabledDialog({required bool hasDistanceBlocks}) {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.locationServiceDisabledTitle),
+        content: Text(l10n.locationServiceDisabledBody),
+        actions: [
+          if (!hasDistanceBlocks)
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _startActiveRun(widget.args?.session, timerOnlyMode: true);
+              },
+              child: Text(l10n.preRunTimerOnlyMode),
+            ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(locationPermissionServiceProvider)
+                  .openLocationSettings();
+            },
+            child: Text(l10n.preRunEnableLocationServices),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPermissionDeniedForeverDialog({required bool hasDistanceBlocks}) {
+    final l10n = AppLocalizations.of(context)!;
+    if (hasDistanceBlocks) {
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.locationPermissionDeniedTitle),
+          content: Text(l10n.locationPermissionDeniedBody),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ref.read(locationPermissionServiceProvider).openAppSettings();
+              },
+              child: Text(l10n.preRunOpenSettings),
+            ),
+          ],
+        ),
+      );
+    } else {
+      showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(l10n.locationPermissionDeniedTitle),
+          content: Text(l10n.locationPermissionDeniedBody),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                _startActiveRun(widget.args?.session, timerOnlyMode: true);
+              },
+              child: Text(l10n.preRunTimerOnlyMode),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                ref.read(locationPermissionServiceProvider).openAppSettings();
+              },
+              child: Text(l10n.preRunOpenSettings),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  void _showGpsRequiredDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.gpsRequiredTitle),
+        content: Text(l10n.gpsRequiredBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(locationPermissionServiceProvider).openAppSettings();
+            },
+            child: Text(l10n.preRunOpenSettings),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref
+                  .read(locationPermissionServiceProvider)
+                  .openLocationSettings();
+            },
+            child: Text(l10n.gpsEnableLocationServices),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +287,15 @@ class _PreRunScreenState extends State<PreRunScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
+
+                    if (widget.args?.session.workoutSteps.isNotEmpty ??
+                        false) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      _WorkoutPreview(
+                        steps: widget.args!.session.workoutSteps,
+                        l10n: l10n,
+                      ),
+                    ],
 
                     const SizedBox(height: AppSpacing.xxl),
 
@@ -235,21 +469,7 @@ class _PreRunScreenState extends State<PreRunScreen> {
               ),
             ),
 
-            _ContinueButton(
-              label: l10n.preRunContinue,
-              onTap: () => context.push(
-                RouteNames.logRun,
-                extra: LogRunArgs(
-                  session: widget.args?.session,
-                  checkIn: PreRunCheckIn(
-                    legs: _legs,
-                    pain: _pain,
-                    sleep: _sleep,
-                    readiness: _readiness,
-                  ),
-                ),
-              ),
-            ),
+            _ContinueButton(label: l10n.preRunContinue, onTap: _onContinue),
           ],
         ),
       ),
@@ -376,6 +596,179 @@ class _ContinueButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _WorkoutPreview extends StatelessWidget {
+  const _WorkoutPreview({required this.steps, required this.l10n});
+
+  final List<WorkoutStep> steps;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      padding: const EdgeInsets.all(AppSpacing.base),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.preRunWorkoutPreviewTitle.toUpperCase(),
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textDisabled,
+              fontSize: 10,
+              letterSpacing: 1,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          ..._buildPreviewItems(),
+        ],
+      ),
+    );
+  }
+
+  List<Widget> _buildPreviewItems() {
+    final items = <Widget>[];
+
+    for (final step in steps) {
+      if (step.kind == WorkoutStepKind.warmUp) {
+        items.add(
+          _PreviewItem(
+            iconAsset: 'assets/icons/flame.svg',
+            label: l10n.preRunWorkoutPreviewWarmUp(_formatStepMeasure(step)),
+          ),
+        );
+      } else if (step.kind == WorkoutStepKind.coolDown) {
+        items.add(
+          _PreviewItem(
+            iconAsset: 'assets/icons/heart_rate.svg',
+            label: l10n.preRunWorkoutPreviewCoolDown(_formatStepMeasure(step)),
+          ),
+        );
+      } else if (step.kind == WorkoutStepKind.work) {
+        items.add(
+          _PreviewItem(
+            iconAsset: 'assets/icons/activity.svg',
+            label: l10n.preRunWorkoutPreviewMain(_formatStepMeasure(step)),
+          ),
+        );
+      } else if (step.kind == WorkoutStepKind.repeat) {
+        final strideStep = _childStep(step, WorkoutStepKind.stride);
+        final recoveryStep = _childStep(step, WorkoutStepKind.recovery);
+        if (strideStep != null) {
+          final reps = step.repetitions ?? 1;
+          final seconds = strideStep.duration?.inSeconds ?? 20;
+          final recoverySeconds = recoveryStep?.duration?.inSeconds ?? 60;
+          items.add(
+            _PreviewItem(
+              iconAsset: 'assets/icons/zap.svg',
+              label: l10n.preRunWorkoutPreviewStrides(
+                reps,
+                seconds,
+                recoverySeconds,
+              ),
+            ),
+          );
+          continue;
+        }
+
+        final workStep = _childStep(step, WorkoutStepKind.work);
+        if (workStep != null) {
+          final reps = step.repetitions ?? 1;
+          items.add(
+            _PreviewItem(
+              iconAsset: 'assets/icons/activity.svg',
+              label: l10n.preRunWorkoutPreviewRepeat(
+                reps,
+                _formatStepMeasure(workStep),
+                recoveryStep != null
+                    ? _formatStepMeasure(recoveryStep)
+                    : l10n.preRunWorkoutPreviewOpenDuration,
+              ),
+            ),
+          );
+        }
+      }
+    }
+
+    return items;
+  }
+
+  WorkoutStep? _childStep(WorkoutStep parent, WorkoutStepKind kind) {
+    for (final child in parent.steps) {
+      if (child.kind == kind) return child;
+    }
+    return null;
+  }
+
+  String _formatStepMeasure(WorkoutStep step) {
+    if (step.distanceMeters != null && step.distanceMeters! > 0) {
+      return l10n.preRunWorkoutPreviewDistanceMeters(step.distanceMeters!);
+    }
+    return _formatDuration(step.duration);
+  }
+
+  String _formatDuration(Duration? duration) {
+    if (duration == null) return l10n.preRunWorkoutPreviewOpenDuration;
+    final seconds = duration.inSeconds;
+    if (seconds < 120) {
+      return l10n.preRunWorkoutPreviewDurationSeconds(seconds);
+    }
+    final minutes = duration.inMinutes;
+    if (minutes > 0) return l10n.preRunWorkoutPreviewDurationMinutes(minutes);
+    return l10n.preRunWorkoutPreviewDurationSeconds(seconds);
+  }
+}
+
+class _PreviewItem extends StatelessWidget {
+  const _PreviewItem({required this.iconAsset, required this.label});
+
+  final String iconAsset;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Row(
+        children: [
+          Container(
+            width: 28,
+            height: 28,
+            decoration: BoxDecoration(
+              color: AppColors.accentMuted,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Center(
+              child: SvgPicture.asset(
+                iconAsset,
+                width: 14,
+                height: 14,
+                colorFilter: const ColorFilter.mode(
+                  AppColors.accentPrimary,
+                  BlendMode.srcIn,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Text(
+              label,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

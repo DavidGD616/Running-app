@@ -1,0 +1,64 @@
+{
+  "id": "gen-session-1",
+  "date": "2026-04-14T00:00:00.000Z",
+  "type": "easyRun",
+  "status": "today",
+  "weekNumber": 1,
+  "distanceKm": 8.0,
+  "durationMinutes": 50,
+  "description": "Ejecuta a tu ritmo fácil y sostenible.",
+  "effort": "easy",
+  "workoutTarget": {
+    "zone": "easy"
+  },
+  "workoutSteps": [
+    {
+      "kind": "warmUp",
+      "durationMs": 300000,
+      "target": {
+        "zone": "easy"
+      }
+    },
+    {
+      "kind": "work",
+      "durationMs": 2400000,
+      "target": {
+        "zone": "easy"
+      }
+    },
+    {
+      "kind": "repeat",
+      "repetitions": 4,
+      "steps": [
+        {
+          "kind": "stride",
+          "durationMs": 20000,
+          "target": {
+            "zone": "interval"
+          }
+        },
+        {
+          "kind": "recovery",
+          "durationMs": 60000,
+          "target": {
+            "zone": "recovery"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "coolDown",
+      "durationMs": 300000,
+      "target": {
+        "zone": "recovery"
+      }
+    }
+  ],
+  "supplementalType": null,
+  "elevationGainMeters": 120,
+  "intervalReps": null,
+  "intervalRepDistanceMeters": null,
+  "intervalRecoverySeconds": null,
+  "warmUpMinutes": 5,
+  "coolDownMinutes": 5
+}

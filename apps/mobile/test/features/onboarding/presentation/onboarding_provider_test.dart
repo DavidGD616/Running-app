@@ -254,6 +254,11 @@ void main() {
       );
       expect(restoredProfile.gender, ProfileGender.female);
       expect(restoredProfile.dateOfBirth, DateTime(1994, 6, 20));
+      expect(
+        restoredProfile.completedOnboardingAt,
+        DateTime(2026, 4, 7, 10, 15),
+      );
+      expect(restoredProfile.isOnboardingComplete, isTrue);
       expect(restoredProfile.updatedAt, DateTime(2026, 4, 7, 10, 15));
     },
   );

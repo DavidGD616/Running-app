@@ -36,10 +36,18 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   }) async {
     final preferences = await ref.read(userPreferencesProvider.future);
     final draft = state.value ?? const RunnerProfileDraft();
+    final timestamp = clock ?? DateTime.now();
+    final existingCompletedOnboardingAt =
+        ref.read(runnerProfileProvider).value?.completedOnboardingAt ??
+        _repository.loadProfile()?.completedOnboardingAt;
+    final completedOnboardingAt = markOnboardingComplete
+        ? timestamp
+        : existingCompletedOnboardingAt;
     final profile = draft.toRunnerProfile(
       gender: preferences.gender,
       dateOfBirth: preferences.dateOfBirth,
-      clock: clock,
+      completedOnboardingAt: completedOnboardingAt,
+      clock: timestamp,
     );
     if (profile == null) {
       return false;

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,13 +11,21 @@ import 'l10n/app_localizations.dart';
 import 'core/config/supabase_config.dart';
 import 'core/persistence/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
+import 'core/router/route_names.dart';
 import 'core/theme/app_theme.dart';
+import 'features/active_run/presentation/run_live_activity_background_service.dart';
+import 'features/active_run/presentation/run_live_activity_bridge.dart';
 import 'features/localization/presentation/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting();
+  await RunLiveActivityBackgroundService.instance.configure();
   await _initializeSupabaseIfConfigured();
+  // Register the native→Dart handler before runApp so the MethodChannel
+  // message is never dropped on warm launch (iOS delivers openURLContexts
+  // almost immediately after foregrounding, before the first widget frame).
+  RunLiveActivityBridge.instance.initNativeCallHandler();
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(
@@ -40,11 +50,45 @@ Future<void> _initializeSupabaseIfConfigured() async {
   await Supabase.initialize(url: url, anonKey: anonKey);
 }
 
-class RunningApp extends ConsumerWidget {
+class RunningApp extends ConsumerStatefulWidget {
   const RunningApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<RunningApp> createState() => _RunningAppState();
+}
+
+class _RunningAppState extends ConsumerState<RunningApp> {
+  StreamSubscription<void>? _focusSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final bridge = RunLiveActivityBridge.instance;
+    // initNativeCallHandler() was already called in main() before runApp();
+    // we only set up the Dart-side stream listener here.
+    _focusSub = bridge.focusActiveRunEvents.listen((_) => _focusActiveRun());
+    // Note: no _pendingFocusRequest drain here. On cold launch, the router
+    // redirect (hasActiveRun) owns navigation to /active-run. Draining the
+    // pending flag while currentPath is still /splash would fire
+    // router.go(/active-run) with args=null and destroy the restored session.
+  }
+
+  void _focusActiveRun() {
+    final router = ref.read(appRouterProvider);
+    final currentPath = router.routerDelegate.currentConfiguration.uri.path;
+    if (currentPath != RouteNames.activeRun) {
+      router.go(RouteNames.activeRun);
+    }
+  }
+
+  @override
+  void dispose() {
+    _focusSub?.cancel();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     // Watch the locale — rebuilds MaterialApp when the locale changes
     final localeAsync = ref.watch(localeProvider);
 
@@ -53,7 +97,7 @@ class RunningApp extends ConsumerWidget {
     final locale = localeAsync.value ?? const Locale('en');
 
     return MaterialApp.router(
-      title: 'RunFlow',
+      title: 'StrivIQ',
       theme: AppTheme.dark,
       debugShowCheckedModeBanner: false,
       routerConfig: ref.watch(appRouterProvider),

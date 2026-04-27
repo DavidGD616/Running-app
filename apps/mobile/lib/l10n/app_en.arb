@@ -1,7 +1,7 @@
 {
   "@@locale": "en",
 
-  "appTitle": "RunFlow",
+  "appTitle": "StrivIQ",
   "@appTitle": { "description": "App name" },
 
   "languageCodeEN": "EN",
@@ -13,7 +13,7 @@
   "splashTagline": "Train smarter. Run stronger.",
   "@splashTagline": { "description": "Tagline shown on the splash screen" },
 
-  "welcomeTitle": "Welcome to RunFlow",
+  "welcomeTitle": "Welcome to StrivIQ",
   "@welcomeTitle": { "description": "Main heading on the welcome screen" },
 
   "welcomeSubtitle": "Your personal running coach. Build a plan tailored to your goals, fitness level, and schedule.",
@@ -1590,9 +1590,9 @@
   "@settingsSubscriptionActivePlan": {
     "description": "Label for the active paid plan on the subscription screen"
   },
-  "settingsSubscriptionPlanName": "RunFlow Pro",
+  "settingsSubscriptionPlanName": "StrivIQ Pro",
   "@settingsSubscriptionPlanName": {
-    "description": "Visible plan name for the paid RunFlow subscription"
+    "description": "Visible plan name for the paid StrivIQ subscription"
   },
   "settingsSubscriptionNextBillingDate": "Next Billing Date",
   "@settingsSubscriptionNextBillingDate": {
@@ -1606,7 +1606,7 @@
   "@settingsCancelSubscription": {
     "description": "Button and page title for the subscription cancellation flow"
   },
-  "settingsCancelSubscriptionPrompt": "Please tell us why you're cancelling RunFlow Pro",
+  "settingsCancelSubscriptionPrompt": "Please tell us why you're cancelling StrivIQ Pro",
   "@settingsCancelSubscriptionPrompt": {
     "description": "Prompt shown at the top of the cancel subscription reasons screen"
   },
@@ -1646,7 +1646,7 @@
   "@settingsSubscriptionCancellationInfoTitle": {
     "description": "Title shown after the user submits cancellation reasons"
   },
-  "settingsSubscriptionCancellationInfoBody": "Thanks for sharing your feedback. To finish cancelling RunFlow Pro, manage your subscription in the store where you purchased it.",
+  "settingsSubscriptionCancellationInfoBody": "Thanks for sharing your feedback. To finish cancelling StrivIQ Pro, manage your subscription in the store where you purchased it.",
   "@settingsSubscriptionCancellationInfoBody": {
     "description": "Helper copy shown after the user submits cancellation reasons"
   },
@@ -1809,7 +1809,7 @@
   "settingsLogOut": "Log Out",
   "@settingsLogOut": { "description": "Log out button label" },
 
-  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+  "settingsVersion": "StrivIQ v1.0.0 (Build 42)",
   "@settingsVersion": { "description": "App version string shown at bottom of settings" },
 
   "sessionDetailTitle": "Workout",
@@ -1838,6 +1838,9 @@
 
   "sessionDetailIntervalsNote": "Hard effort, Zone 4",
   "@sessionDetailIntervalsNote": { "description": "Intervals phase zone note" },
+
+  "sessionDetailStrides": "Strides",
+  "@sessionDetailStrides": { "description": "Strides phase title" },
 
   "sessionDetailCoolDown": "Cool-down",
   "@sessionDetailCoolDown": { "description": "Cool-down phase title" },
@@ -1896,6 +1899,21 @@
   "sessionPhaseIntervalsMainRecovery": "{recoverySeconds} s easy jog recovery between each rep",
   "@sessionPhaseIntervalsMainRecovery": {
     "description": "Intervals main phase recovery note",
+    "placeholders": { "recoverySeconds": { "type": "int" } }
+  },
+  "sessionPhaseStridesDuration": "{reps} × {seconds} s",
+  "@sessionPhaseStridesDuration": {
+    "description": "Strides phase duration",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "seconds": { "type": "int" }
+    }
+  },
+  "sessionPhaseStridesNote": "Fast but relaxed · smooth form, not a sprint",
+  "@sessionPhaseStridesNote": { "description": "Strides phase note" },
+  "sessionPhaseStridesRecovery": "{recoverySeconds} s easy walk or jog between strides",
+  "@sessionPhaseStridesRecovery": {
+    "description": "Strides phase recovery note",
     "placeholders": { "recoverySeconds": { "type": "int" } }
   },
   "sessionPhaseIntervalsCoolDuration": "{minutes} min",
@@ -1999,6 +2017,15 @@
   "logSessionPaceValue": "7:31 / km pace",
   "@logSessionPaceValue": { "description": "Pace subtitle on distance metric card" },
 
+  "logSessionAveragePaceSubtitle": "{pace} / {unit} pace",
+  "@logSessionAveragePaceSubtitle": {
+    "description": "Average pace subtitle on distance metric card after a completed GPS run",
+    "placeholders": {
+      "pace": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
   "logSessionHowDidItFeel": "How did it feel?",
   "@logSessionHowDidItFeel": { "description": "Section heading for perceived effort selection" },
 
@@ -2025,6 +2052,181 @@
 
   "logSessionSaveButton": "Save Session",
   "@logSessionSaveButton": { "description": "Save session CTA button label" },
+
+  "activeRunTitle": "Active Run",
+  "@activeRunTitle": { "description": "Header title on the active run tracking screen" },
+  "activeRunDemoTracking": "Demo tracking",
+  "@activeRunDemoTracking": { "description": "Status pill indicating the active run screen is using mock tracking data" },
+  "activeRunCurrentPace": "CURRENT PACE",
+  "@activeRunCurrentPace": { "description": "Current pace metric label on the active run screen" },
+  "activeRunNotificationTargetShort": "Target",
+  "@activeRunNotificationTargetShort": { "description": "Compact target label in the collapsed active run Android notification" },
+  "activeRunNotificationDistanceShort": "Dist",
+  "@activeRunNotificationDistanceShort": { "description": "Compact distance label in the collapsed active run Android notification" },
+  "activeRunNotificationPaceShort": "Pace",
+  "@activeRunNotificationPaceShort": { "description": "Compact pace label in the collapsed active run Android notification" },
+  "activeRunElapsed": "ELAPSED",
+  "@activeRunElapsed": { "description": "Elapsed time metric label on the active run screen" },
+  "activeRunTimeUnit": "time",
+  "@activeRunTimeUnit": { "description": "Unit label for elapsed time metric" },
+  "activeRunDistance": "DISTANCE",
+  "@activeRunDistance": { "description": "Distance metric label on the active run screen" },
+  "activeRunDistanceTitle": "Distance",
+  "@activeRunDistanceTitle": { "description": "Title label for distance in live activity" },
+  "activeRunCurrentPaceShort": "Pace",
+  "@activeRunCurrentPaceShort": { "description": "Short title label for current pace in live activity" },
+  "activeRunAveragePace": "AVG PACE",
+  "@activeRunAveragePace": { "description": "Average pace metric label on the active run screen" },
+  "activeRunTarget": "TARGET",
+  "@activeRunTarget": { "description": "Target metric label on the active run screen" },
+  "activeRunPause": "Pause",
+  "@activeRunPause": { "description": "Pause CTA on the active run screen" },
+  "activeRunResume": "Resume",
+  "@activeRunResume": { "description": "Resume CTA on the active run screen" },
+  "activeRunFinish": "Finish",
+  "@activeRunFinish": { "description": "Finish CTA on the active run screen" },
+  "activeRunPlannedSummary": "{plannedDuration} · {plannedDistance}",
+  "@activeRunPlannedSummary": {
+    "description": "Planned active run summary with duration and distance",
+    "placeholders": {
+      "plannedDuration": { "type": "String" },
+      "plannedDistance": { "type": "String" }
+    }
+  },
+  "activeRunPlannedDuration": "{plannedDuration}",
+  "@activeRunPlannedDuration": {
+    "description": "Planned active run summary with duration only",
+    "placeholders": { "plannedDuration": { "type": "String" } }
+  },
+  "activeRunPlannedDistance": "{plannedDistance}",
+  "@activeRunPlannedDistance": {
+    "description": "Planned active run summary with distance only",
+    "placeholders": { "plannedDistance": { "type": "String" } }
+  },
+  "activeRunPlannedFallback": "Guided run",
+  "@activeRunPlannedFallback": { "description": "Fallback planned active run summary when no planned values exist" },
+  "activeRunGuidanceEasy": "Keep it conversational and relaxed.",
+  "@activeRunGuidanceEasy": { "description": "Active run guidance for easy runs" },
+  "activeRunGuidanceLong": "Settle into a steady rhythm and protect the finish.",
+  "@activeRunGuidanceLong": { "description": "Active run guidance for long runs" },
+  "activeRunGuidanceProgression": "Start controlled, then build effort one phase at a time.",
+  "@activeRunGuidanceProgression": { "description": "Active run guidance for progression runs" },
+  "activeRunGuidanceIntervals": "Run the fast blocks with intent, then recover fully.",
+  "@activeRunGuidanceIntervals": { "description": "Active run guidance for interval runs" },
+  "activeRunGuidanceHills": "Drive the climb, recover on the way back down.",
+  "@activeRunGuidanceHills": { "description": "Active run guidance for hill repeat runs" },
+  "activeRunGuidanceFartlek": "Use surges when ready, then return to easy running.",
+  "@activeRunGuidanceFartlek": { "description": "Active run guidance for fartlek runs" },
+  "activeRunGuidanceTempo": "Hold a strong pace you can control.",
+  "@activeRunGuidanceTempo": { "description": "Active run guidance for tempo runs" },
+  "activeRunGuidanceThreshold": "Stay firm but smooth. Do not sprint.",
+  "@activeRunGuidanceThreshold": { "description": "Active run guidance for threshold runs" },
+  "activeRunGuidanceRacePace": "Lock into goal pace and keep the effort even.",
+  "@activeRunGuidanceRacePace": { "description": "Active run guidance for race pace runs" },
+  "activeRunGuidanceRecovery": "Keep this easy enough to feel better afterward.",
+  "@activeRunGuidanceRecovery": { "description": "Active run guidance for recovery runs" },
+  "activeRunEaseOff": "Ease off",
+  "@activeRunEaseOff": { "description": "Active run status when user is going too fast" },
+  "activeRunPickUp": "Pick it up",
+  "@activeRunPickUp": { "description": "Active run status when user is going too slow" },
+  "activeRunOnTarget": "On target",
+  "@activeRunOnTarget": { "description": "Active run status when user is on target" },
+  "activeRunPush": "Push",
+  "@activeRunPush": { "description": "Active run status for work blocks" },
+  "activeRunRecover": "Recover",
+  "@activeRunRecover": { "description": "Active run status for recovery blocks" },
+  "activeRunSurge": "Surge",
+  "@activeRunSurge": { "description": "Active run status or block label for a fartlek surge" },
+  "activeRunEasyBlock": "Easy",
+  "@activeRunEasyBlock": { "description": "Easy block label on active run screen" },
+  "activeRunTargetFast": "Fast",
+  "@activeRunTargetFast": { "description": "Fast target label on active run screen" },
+  "activeRunTargetClimb": "Climb",
+  "@activeRunTargetClimb": { "description": "Climb target label on active run screen" },
+  "activeRunTargetTempo": "Tempo",
+  "@activeRunTargetTempo": { "description": "Tempo target label on active run screen" },
+  "activeRunTargetThreshold": "Threshold",
+  "@activeRunTargetThreshold": { "description": "Threshold target label on active run screen" },
+  "activeRunTargetRace": "Race pace",
+  "@activeRunTargetRace": { "description": "Race pace target label on active run screen" },
+  "activeRunTargetEasy": "Easy",
+  "@activeRunTargetEasy": { "description": "Easy target label on active run screen" },
+  "activeRunTargetSteady": "Steady",
+  "@activeRunTargetSteady": { "description": "Steady target label on active run screen" },
+  "activeRunTargetBuild": "Build",
+  "@activeRunTargetBuild": { "description": "Build target label on active run screen" },
+  "activeRunTargetSurges": "Surges",
+  "@activeRunTargetSurges": { "description": "Surges target label on active run screen" },
+  "activeRunTargetPaceUnit": "pace",
+  "@activeRunTargetPaceUnit": { "description": "Unit label for pace-based active run target" },
+  "activeRunTargetEffortUnit": "effort",
+  "@activeRunTargetEffortUnit": { "description": "Unit label for effort-based active run target" },
+  "activeRunHillFocusTitle": "Hill repeat focus",
+  "@activeRunHillFocusTitle": { "description": "Focus panel title for hill repeat active run" },
+  "activeRunIntervalFocusTitle": "Interval focus",
+  "@activeRunIntervalFocusTitle": { "description": "Focus panel title for interval active run" },
+  "activeRunCurrentBlock": "Current block",
+  "@activeRunCurrentBlock": { "description": "Current block label on active run focus panel" },
+  "activeRunClimb": "Climb",
+  "@activeRunClimb": { "description": "Climb block label on active run screen" },
+  "activeRunFastRep": "Fast rep",
+  "@activeRunFastRep": { "description": "Fast repetition block label on active run screen" },
+  "activeRunStride": "Stride",
+  "@activeRunStride": { "description": "Stride block label on active run screen" },
+  "activeRunRecovery": "Recovery",
+  "@activeRunRecovery": { "description": "Recovery block label on active run screen" },
+  "activeRunRep": "Rep",
+  "@activeRunRep": { "description": "Repetition counter label on active run screen" },
+  "activeRunBlockRemaining": "{remaining} remaining",
+  "@activeRunBlockRemaining": {
+    "description": "Remaining time in the current active run block",
+    "placeholders": { "remaining": { "type": "String" } }
+  },
+  "activeRunNextBlock": "Next: {block}",
+  "@activeRunNextBlock": {
+    "description": "Next active run block preview",
+    "placeholders": { "block": { "type": "String" } }
+  },
+  "activeRunUpNext": "UP NEXT",
+  "@activeRunUpNext": { "description": "Column header label for the upcoming block in the lock-screen live activity" },
+  "activeRunProgressionFocusTitle": "Progression phases",
+  "@activeRunProgressionFocusTitle": { "description": "Focus panel title for progression active run" },
+  "activeRunSteadyBlock": "Steady",
+  "@activeRunSteadyBlock": { "description": "Steady phase label on active run screen" },
+  "activeRunStrongBlock": "Strong",
+  "@activeRunStrongBlock": { "description": "Strong phase label on active run screen" },
+  "activeRunPaceFocusTitle": "Pace control",
+  "@activeRunPaceFocusTitle": { "description": "Focus panel title for pace-controlled active runs" },
+  "activeRunControl": "Control",
+  "@activeRunControl": { "description": "Control label on active run focus panel" },
+  "activeRunPaceFocusFooter": "Stay smooth inside the target band.",
+  "@activeRunPaceFocusFooter": { "description": "Footer guidance for pace-controlled active runs" },
+  "activeRunLongFocusTitle": "Long run focus",
+  "@activeRunLongFocusTitle": { "description": "Focus panel title for long run active screen" },
+  "activeRunFocus": "Focus",
+  "@activeRunFocus": { "description": "Focus label on active run screen" },
+  "activeRunReminder": "Reminder",
+  "@activeRunReminder": { "description": "Reminder label on active run screen" },
+  "activeRunFuel": "Fuel",
+  "@activeRunFuel": { "description": "Fuel reminder value on active run screen" },
+  "activeRunLongFocusFooter": "Sip water and check effort before the next mile.",
+  "@activeRunLongFocusFooter": { "description": "Footer guidance for long run active screen" },
+  "activeRunRecoveryFocusTitle": "Recovery focus",
+  "@activeRunRecoveryFocusTitle": { "description": "Focus panel title for recovery run active screen" },
+  "activeRunEasyFocusTitle": "Easy run focus",
+  "@activeRunEasyFocusTitle": { "description": "Focus panel title for easy run active screen" },
+  "activeRunRelaxed": "Relaxed",
+  "@activeRunRelaxed": { "description": "Relaxed control value on active run screen" },
+  "activeRunRecoveryFocusFooter": "The goal is fresh legs, not a faster split.",
+  "@activeRunRecoveryFocusFooter": { "description": "Footer guidance for recovery run active screen" },
+  "activeRunEasyFocusFooter": "You should be able to speak in full sentences.",
+  "@activeRunEasyFocusFooter": { "description": "Footer guidance for easy run active screen" },
+  "activeRunFartlekFocusTitle": "Fartlek control",
+  "@activeRunFartlekFocusTitle": { "description": "Focus panel title for fartlek active run" },
+  "activeRunEndSurge": "End surge",
+  "@activeRunEndSurge": { "description": "CTA to end a fartlek surge" },
+  "activeRunStartSurge": "Start surge",
+  "@activeRunStartSurge": { "description": "CTA to start a fartlek surge" },
 
   "preRunTitle": "Pre-run Check",
   "@preRunTitle": { "description": "Header title on the pre-run check screen" },
@@ -2086,6 +2288,80 @@
   "preRunContinue": "Continue",
   "@preRunContinue": { "description": "Continue CTA button on pre-run check screen" },
 
+  "preRunWorkoutPreviewTitle": "Today's Workout",
+  "@preRunWorkoutPreviewTitle": { "description": "Section title for workout preview on pre-run screen" },
+
+  "preRunWorkoutPreviewWarmUp": "Warm-up {duration}",
+  "@preRunWorkoutPreviewWarmUp": {
+    "description": "Warm-up block in pre-run workout preview",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewStrides": "{reps} × {seconds}s strides · {recoverySeconds}s recovery",
+  "@preRunWorkoutPreviewStrides": {
+    "description": "Strides block in pre-run workout preview",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "seconds": { "type": "int" },
+      "recoverySeconds": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewMain": "Main {duration}",
+  "@preRunWorkoutPreviewMain": {
+    "description": "Main work block in pre-run workout preview",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewCoolDown": "Cool-down {duration}",
+  "@preRunWorkoutPreviewCoolDown": {
+    "description": "Cool-down block in pre-run workout preview",
+    "placeholders": {
+      "duration": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewRepeat": "{reps} × {work} work · {recovery} recovery",
+  "@preRunWorkoutPreviewRepeat": {
+    "description": "Repeated work and recovery block in pre-run workout preview",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "work": { "type": "String" },
+      "recovery": { "type": "String" }
+    }
+  },
+
+  "preRunWorkoutPreviewDurationMinutes": "{minutes} min",
+  "@preRunWorkoutPreviewDurationMinutes": {
+    "description": "Duration in minutes in pre-run workout preview",
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewDurationSeconds": "{seconds} s",
+  "@preRunWorkoutPreviewDurationSeconds": {
+    "description": "Duration in seconds in pre-run workout preview",
+    "placeholders": {
+      "seconds": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewDistanceMeters": "{meters} m",
+  "@preRunWorkoutPreviewDistanceMeters": {
+    "description": "Distance in meters in pre-run workout preview",
+    "placeholders": {
+      "meters": { "type": "int" }
+    }
+  },
+
+  "preRunWorkoutPreviewOpenDuration": "open",
+  "@preRunWorkoutPreviewOpenDuration": { "description": "Fallback label when a workout preview block has no duration or distance target" },
+
   "workoutOptionsTitle": "Workout Options",
   "@workoutOptionsTitle": { "description": "Title of the workout options bottom sheet" },
 
@@ -2143,5 +2419,113 @@
   "@planNotReadyMessage": { "description": "Shown on the today screen when no training plan has been generated yet" },
 
   "planNotReadyRetry": "Retry",
-  "@planNotReadyRetry": { "description": "Retry button label on the plan-not-ready empty state" }
+  "@planNotReadyRetry": { "description": "Retry button label on the plan-not-ready empty state" },
+
+  "phaseBase": "Base",
+  "@phaseBase": { "description": "Base training phase label" },
+
+  "phaseBuild": "Build",
+  "@phaseBuild": { "description": "Build training phase label" },
+
+  "phaseSpecific": "Specific",
+  "@phaseSpecific": { "description": "Specific training phase label" },
+
+  "phasePeak": "Peak",
+  "@phasePeak": { "description": "Peak training phase label" },
+
+  "phaseTaperRace": "Taper",
+  "@phaseTaperRace": { "description": "Taper/race training phase label" },
+
+  "activeRunGpsTrackingNotificationTitle": "Tracking Run",
+  "@activeRunGpsTrackingNotificationTitle": { "description": "Title in the Android foreground notification when GPS tracking is active" },
+
+  "activeRunGpsTrackingNotificationBody": "StrivIQ is recording your run",
+  "@activeRunGpsTrackingNotificationBody": { "description": "Body text in the Android foreground notification when GPS tracking is active" },
+
+  "gpsRequiredTitle": "GPS Required",
+  "@gpsRequiredTitle": { "description": "Title of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsRequiredBody": "This workout has distance-based blocks and requires GPS to track your progress. Please enable location services to start this workout.",
+  "@gpsRequiredBody": { "description": "Body text of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsWaitForSignal": "Waiting for GPS signal",
+  "@gpsWaitForSignal": { "description": "Status label shown while acquiring GPS signal" },
+
+  "gpsWeakSignal": "Weak GPS signal",
+  "@gpsWeakSignal": { "description": "Warning label shown when GPS signal is weak" },
+
+  "gpsLostSignal": "GPS signal lost",
+  "@gpsLostSignal": { "description": "Status label shown when GPS signal is lost" },
+
+  "gpsAcquiringTitle": "Acquiring",
+  "@gpsAcquiringTitle": { "description": "Title chip label shown when GPS is acquiring signal" },
+
+  "gpsWeakTitle": "Weak Signal",
+  "@gpsWeakTitle": { "description": "Title chip label shown when GPS signal is weak" },
+
+  "gpsEnableLocationServices": "Enable Location Services",
+  "@gpsEnableLocationServices": { "description": "Button label to enable device location services from GPS required dialog" },
+
+  "gpsLostTitle": "Signal Lost",
+  "@gpsLostTitle": { "description": "Title chip label shown when GPS signal is lost" },
+
+  "activeRunEndRun": "End Run",
+  "@activeRunEndRun": { "description": "CTA button to end the active run" },
+
+  "activeRunTimerOnlyLabel": "Timer only",
+  "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },
+
+  "activeRunStatusTitle": "Status",
+  "@activeRunStatusTitle": { "description": "Title label for the live activity or foreground notification run status field" },
+
+  "activeRunPausedStatusLabel": "Paused",
+  "@activeRunPausedStatusLabel": { "description": "Status label shown in live activity or foreground notification when the active run is paused" },
+
+  "activeRunTrackingStatusLabel": "Tracking",
+  "@activeRunTrackingStatusLabel": { "description": "Status label shown in live activity or foreground notification when GPS tracking is active" },
+
+  "preRunOpenSettings": "Open Settings",
+  "@preRunOpenSettings": { "description": "Button label to open app settings when location permission is permanently denied" },
+
+  "preRunEnableLocationServices": "Enable Location Services",
+  "@preRunEnableLocationServices": { "description": "Button label to open location settings when location service is disabled" },
+
+  "preRunTimerOnlyMode": "Timer-only Mode",
+  "@preRunTimerOnlyMode": { "description": "Button label to start run in timer-only mode without GPS" },
+
+  "locationServiceDisabledTitle": "Location Services Disabled",
+  "@locationServiceDisabledTitle": { "description": "Title of dialog when device location services are disabled" },
+
+  "locationServiceDisabledBody": "Please enable location services to track your run with GPS.",
+  "@locationServiceDisabledBody": { "description": "Body text of dialog when device location services are disabled" },
+
+  "locationPermissionDeniedTitle": "Location Permission Denied",
+  "@locationPermissionDeniedTitle": { "description": "Title of dialog when location permission is denied" },
+
+  "locationPermissionDeniedBody": "Location permission is required to track your run. Please grant permission in Settings.",
+  "@locationPermissionDeniedBody": { "description": "Body text of dialog when location permission is denied" },
+
+  "activeRunGpsLostAutoPauseTitle": "GPS Signal Lost",
+  "@activeRunGpsLostAutoPauseTitle": { "description": "Title of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostAutoPauseBody": "GPS signal was lost. Your run has been auto-paused. Tap Resume to continue when GPS recovers, or End Run to finish now.",
+  "@activeRunGpsLostAutoPauseBody": { "description": "Body of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostWarningTitle": "GPS Signal Weak",
+  "@activeRunGpsLostWarningTitle": { "description": "Title of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunGpsLostWarningBody": "GPS signal is weak. Distance tracking is paused but your timer is still running.",
+  "@activeRunGpsLostWarningBody": { "description": "Body of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunResume": "Resume",
+  "@activeRunResume": { "description": "Button to resume the run after GPS was lost" },
+
+  "activeRunWaitForGps": "Wait for GPS",
+  "@activeRunWaitForGps": { "description": "Button to wait for GPS signal to recover" },
+
+  "activeRunDismiss": "Dismiss",
+  "@activeRunDismiss": { "description": "Button to dismiss the GPS warning modal" },
+
+  "activeRunTimerOnlyRestrictionTitle": "Timer-Only Not Supported",
+  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" }
 }

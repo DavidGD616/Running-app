@@ -1,13 +1,13 @@
 {
   "@@locale": "es",
 
-  "appTitle": "RunFlow",
+  "appTitle": "StrivIQ",
   "languageCodeEN": "EN",
   "languageCodeES": "ES",
 
   "splashTagline": "Entrena más inteligente. Corre más fuerte.",
 
-  "welcomeTitle": "Bienvenido a RunFlow",
+  "welcomeTitle": "Bienvenido a StrivIQ",
   "welcomeSubtitle": "Tu entrenador personal de running. Crea un plan adaptado a tus objetivos, nivel de forma física y horario.",
   "welcomeFeature1": "Planes de entrenamiento personalizados",
   "welcomeFeature2": "Progresión potenciada por IA",
@@ -567,11 +567,11 @@
   "settingsAccount": "Cuenta",
   "settingsSubscription": "Suscripción",
   "settingsSubscriptionActivePlan": "Plan activo",
-  "settingsSubscriptionPlanName": "RunFlow Pro",
+  "settingsSubscriptionPlanName": "StrivIQ Pro",
   "settingsSubscriptionNextBillingDate": "Próxima fecha de cobro",
   "settingsSubscriptionAutoRenewNotice": "Tu suscripción se renovará automáticamente. Si no quieres continuar con tu suscripción, cancélala antes de la próxima fecha de cobro.",
   "settingsCancelSubscription": "Cancelar suscripción",
-  "settingsCancelSubscriptionPrompt": "Cuéntanos por qué estás cancelando RunFlow Pro",
+  "settingsCancelSubscriptionPrompt": "Cuéntanos por qué estás cancelando StrivIQ Pro",
   "settingsCancelSubscriptionReasonTooExpensive": "Es demasiado caro",
   "settingsCancelSubscriptionReasonNotUsingEnough": "No lo estoy usando lo suficiente",
   "settingsCancelSubscriptionReasonNotHelpingGoals": "No me está ayudando a alcanzar mis objetivos",
@@ -581,7 +581,7 @@
   "settingsCancelSubscriptionReasonOther": "Otro",
   "settingsNotNow": "Ahora no",
   "settingsSubscriptionCancellationInfoTitle": "Administra tu suscripción en la tienda",
-  "settingsSubscriptionCancellationInfoBody": "Gracias por compartir tus comentarios. Para completar la cancelación de RunFlow Pro, administra tu suscripción en la tienda donde la compraste.",
+  "settingsSubscriptionCancellationInfoBody": "Gracias por compartir tus comentarios. Para completar la cancelación de StrivIQ Pro, administra tu suscripción en la tienda donde la compraste.",
   "settingsSubscriptionDialogButton": "OK",
   "settingsIntegrations": "Integraciones",
   "settingsAvailableIntegrationsSection": "Integraciones disponibles",
@@ -634,7 +634,7 @@
   "settingsConnected": "Conectado",
   "settingsNoConnectedDevices": "Aun no hay dispositivos conectados",
   "settingsLogOut": "Cerrar sesión",
-  "settingsVersion": "RunFlow v1.0.0 (Build 42)",
+  "settingsVersion": "StrivIQ v1.0.0 (Build 42)",
 
   "sessionDetailTitle": "Entrenamiento",
   "sessionDetailSessionType": "Velocidad",
@@ -645,6 +645,7 @@
   "sessionDetailWarmUpNote": "Ritmo fácil, Zona 2",
   "sessionDetailIntervals": "Intervalos",
   "sessionDetailIntervalsNote": "Esfuerzo intenso, Zona 4",
+  "sessionDetailStrides": "Strides",
   "sessionDetailCoolDown": "Enfriamiento",
   "sessionDetailCoolDownDuration": "10 min",
   "sessionDetailCoolDownNote": "Ritmo fácil o caminata",
@@ -662,6 +663,18 @@
   "sessionPhaseIntervalsMainDuration": "{minutes} min",
   "sessionPhaseIntervalsMainNote": "{reps} × {repDistance} a esfuerzo intenso · RPE 8–9",
   "sessionPhaseIntervalsMainRecovery": "{recoverySeconds} s de trote suave de recuperación entre cada repetición",
+  "sessionPhaseStridesDuration": "{reps} × {seconds} s",
+  "@sessionPhaseStridesDuration": {
+    "placeholders": {
+      "reps": { "type": "int" },
+      "seconds": { "type": "int" }
+    }
+  },
+  "sessionPhaseStridesNote": "Rápido pero relajado · técnica suave, no es un sprint",
+  "sessionPhaseStridesRecovery": "{recoverySeconds} s de caminata o trote suave entre strides",
+  "@sessionPhaseStridesRecovery": {
+    "placeholders": { "recoverySeconds": { "type": "int" } }
+  },
   "sessionPhaseIntervalsCoolDuration": "{minutes} min",
   "sessionPhaseIntervalsCoolNote": "Trote suave → caminata · estiramientos completos",
 
@@ -695,6 +708,7 @@
   "logSessionMinUnit": "min",
   "logSessionKmUnit": "km",
   "logSessionPaceValue": "7:31 / ritmo km",
+  "logSessionAveragePaceSubtitle": "{pace} / ritmo {unit}",
   "logSessionHowDidItFeel": "¿Cómo te fue?",
   "logSessionEasy": "Fácil",
   "logSessionModerate": "Moderado",
@@ -704,6 +718,104 @@
   "logSessionOptional": "(Opcional)",
   "logSessionNotesHint": "¿Cómo fue la carrera?",
   "logSessionSaveButton": "Guardar Sesión",
+
+  "activeRunTitle": "Carrera Activa",
+  "activeRunDemoTracking": "Seguimiento demo",
+  "activeRunCurrentPace": "RITMO ACTUAL",
+  "activeRunNotificationTargetShort": "Obj.",
+  "activeRunNotificationDistanceShort": "Dist.",
+  "activeRunNotificationPaceShort": "Ritmo",
+  "activeRunElapsed": "TIEMPO",
+  "activeRunTimeUnit": "tiempo",
+  "activeRunDistance": "DISTANCIA",
+  "activeRunDistanceTitle": "Distancia",
+  "activeRunCurrentPaceShort": "Ritmo",
+  "activeRunAveragePace": "RITMO PROM.",
+  "activeRunTarget": "OBJETIVO",
+  "activeRunPause": "Pausar",
+  "activeRunResume": "Reanudar",
+  "activeRunFinish": "Finalizar",
+  "activeRunPlannedSummary": "{plannedDuration} · {plannedDistance}",
+  "@activeRunPlannedSummary": {
+    "placeholders": {
+      "plannedDuration": { "type": "String" },
+      "plannedDistance": { "type": "String" }
+    }
+  },
+  "activeRunPlannedDuration": "{plannedDuration}",
+  "@activeRunPlannedDuration": {
+    "placeholders": { "plannedDuration": { "type": "String" } }
+  },
+  "activeRunPlannedDistance": "{plannedDistance}",
+  "@activeRunPlannedDistance": {
+    "placeholders": { "plannedDistance": { "type": "String" } }
+  },
+  "activeRunPlannedFallback": "Carrera guiada",
+  "activeRunGuidanceEasy": "Mantén un ritmo conversacional y relajado.",
+  "activeRunGuidanceLong": "Encuentra un ritmo estable y cuida el final.",
+  "activeRunGuidanceProgression": "Empieza con control y aumenta el esfuerzo por fases.",
+  "activeRunGuidanceIntervals": "Corre los bloques rápidos con intención y recupera bien.",
+  "activeRunGuidanceHills": "Empuja en la subida y recupera al bajar.",
+  "activeRunGuidanceFartlek": "Haz cambios cuando estés listo y vuelve a correr suave.",
+  "activeRunGuidanceTempo": "Mantén un ritmo fuerte que puedas controlar.",
+  "activeRunGuidanceThreshold": "Firme pero fluido. No esprintes.",
+  "activeRunGuidanceRacePace": "Entra en ritmo objetivo y mantén el esfuerzo estable.",
+  "activeRunGuidanceRecovery": "Debe sentirse lo bastante suave para terminar mejor.",
+  "activeRunEaseOff": "Baja ritmo",
+  "activeRunPickUp": "Acelera",
+  "activeRunOnTarget": "En objetivo",
+  "activeRunPush": "Empuja",
+  "activeRunRecover": "Recupera",
+  "activeRunSurge": "Cambio",
+  "activeRunEasyBlock": "Suave",
+  "activeRunTargetFast": "Rápido",
+  "activeRunTargetClimb": "Subida",
+  "activeRunTargetTempo": "Tempo",
+  "activeRunTargetThreshold": "Umbral",
+  "activeRunTargetRace": "Ritmo carrera",
+  "activeRunTargetEasy": "Suave",
+  "activeRunTargetSteady": "Estable",
+  "activeRunTargetBuild": "Progresivo",
+  "activeRunTargetSurges": "Cambios",
+  "activeRunTargetPaceUnit": "ritmo",
+  "activeRunTargetEffortUnit": "esfuerzo",
+  "activeRunHillFocusTitle": "Enfoque de cuestas",
+  "activeRunIntervalFocusTitle": "Enfoque de intervalos",
+  "activeRunCurrentBlock": "Bloque actual",
+  "activeRunClimb": "Subida",
+  "activeRunFastRep": "Rep rápida",
+  "activeRunStride": "Stride",
+  "activeRunRecovery": "Recuperación",
+  "activeRunRep": "Rep",
+  "activeRunBlockRemaining": "quedan {remaining}",
+  "@activeRunBlockRemaining": {
+    "placeholders": { "remaining": { "type": "String" } }
+  },
+  "activeRunNextBlock": "Siguiente: {block}",
+  "@activeRunNextBlock": {
+    "placeholders": { "block": { "type": "String" } }
+  },
+  "activeRunUpNext": "LO QUE SIGUE",
+  "@activeRunUpNext": { "description": "Column header label for the upcoming block in the lock-screen live activity" },
+  "activeRunProgressionFocusTitle": "Fases progresivas",
+  "activeRunSteadyBlock": "Estable",
+  "activeRunStrongBlock": "Fuerte",
+  "activeRunPaceFocusTitle": "Control de ritmo",
+  "activeRunControl": "Control",
+  "activeRunPaceFocusFooter": "Mantente fluido dentro del rango objetivo.",
+  "activeRunLongFocusTitle": "Enfoque de tirada larga",
+  "activeRunFocus": "Enfoque",
+  "activeRunReminder": "Recordatorio",
+  "activeRunFuel": "Energía",
+  "activeRunLongFocusFooter": "Bebe agua y revisa el esfuerzo antes de la próxima milla.",
+  "activeRunRecoveryFocusTitle": "Enfoque de recuperación",
+  "activeRunEasyFocusTitle": "Enfoque suave",
+  "activeRunRelaxed": "Relajado",
+  "activeRunRecoveryFocusFooter": "El objetivo son piernas frescas, no un parcial más rápido.",
+  "activeRunEasyFocusFooter": "Deberías poder hablar en frases completas.",
+  "activeRunFartlekFocusTitle": "Control de fartlek",
+  "activeRunEndSurge": "Terminar cambio",
+  "activeRunStartSurge": "Iniciar cambio",
 
   "preRunTitle": "Control Pre-carrera",
   "preRunHeading": "¿Cómo te sientes?",
@@ -725,6 +837,17 @@
   "preRunLetsGo": "¡Vamos!",
   "preRunNotFullyReady": "No del todo listo",
   "preRunContinue": "Continuar",
+
+  "preRunWorkoutPreviewTitle": "Entrenamiento de Hoy",
+  "preRunWorkoutPreviewWarmUp": "Calentamiento {duration}",
+  "preRunWorkoutPreviewStrides": "{reps} × {seconds}s zancadas · {recoverySeconds}s recuperación",
+  "preRunWorkoutPreviewMain": "Principal {duration}",
+  "preRunWorkoutPreviewCoolDown": "Enfriamiento {duration}",
+  "preRunWorkoutPreviewRepeat": "{reps} × {work} trabajo · {recovery} recuperación",
+  "preRunWorkoutPreviewDurationMinutes": "{minutes} min",
+  "preRunWorkoutPreviewDurationSeconds": "{seconds} s",
+  "preRunWorkoutPreviewDistanceMeters": "{meters} m",
+  "preRunWorkoutPreviewOpenDuration": "libre",
 
   "workoutOptionsTitle": "Opciones de Entrenamiento",
   "workoutOptionsSkipWorkout": "Omitir Entrenamiento",
@@ -751,5 +874,113 @@
   "fullPlanScheduleLabel": "HORARIO",
 
   "planNotReadyMessage": "Tu plan está siendo preparado",
-  "planNotReadyRetry": "Reintentar"
+  "planNotReadyRetry": "Reintentar",
+
+  "phaseBase": "Base",
+  "@phaseBase": { "description": "Base training phase label" },
+
+  "phaseBuild": "Construcción",
+  "@phaseBuild": { "description": "Build training phase label" },
+
+  "phaseSpecific": "Específico",
+  "@phaseSpecific": { "description": "Specific training phase label" },
+
+  "phasePeak": "Pico",
+  "@phasePeak": { "description": "Peak training phase label" },
+
+  "phaseTaperRace": "Reducción",
+  "@phaseTaperRace": { "description": "Taper/race training phase label" },
+
+  "activeRunGpsTrackingNotificationTitle": "Registrando carrera",
+  "@activeRunGpsTrackingNotificationTitle": { "description": "Title in the Android foreground notification when GPS tracking is active" },
+
+  "activeRunGpsTrackingNotificationBody": "StrivIQ está registrando tu carrera",
+  "@activeRunGpsTrackingNotificationBody": { "description": "Body text in the Android foreground notification when GPS tracking is active" },
+
+  "gpsRequiredTitle": "GPS Requerido",
+  "@gpsRequiredTitle": { "description": "Title of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsRequiredBody": "Este entrenamiento tiene bloques basados en distancia y requiere GPS para seguir tu progreso. Por favor habilita los servicios de ubicación para comenzar este entrenamiento.",
+  "@gpsRequiredBody": { "description": "Body text of the dialog shown when GPS is required for a distance-based workout" },
+
+  "gpsWaitForSignal": "Esperando señal GPS",
+  "@gpsWaitForSignal": { "description": "Status label shown while acquiring GPS signal" },
+
+  "gpsWeakSignal": "Señal GPS débil",
+  "@gpsWeakSignal": { "description": "Warning label shown when GPS signal is weak" },
+
+  "gpsLostSignal": "Señal GPS perdida",
+  "@gpsLostSignal": { "description": "Status label shown when GPS signal is lost" },
+
+  "gpsAcquiringTitle": "Adquiriendo",
+  "@gpsAcquiringTitle": { "description": "Title chip label shown when GPS is acquiring signal" },
+
+  "gpsWeakTitle": "Señal Débil",
+  "@gpsWeakTitle": { "description": "Title chip label shown when GPS signal is weak" },
+
+  "gpsEnableLocationServices": "Habilitar Servicios de Ubicación",
+  "@gpsEnableLocationServices": { "description": "Button label to enable device location services from GPS required dialog" },
+
+  "gpsLostTitle": "Señal Perdida",
+  "@gpsLostTitle": { "description": "Title chip label shown when GPS signal is lost" },
+
+  "activeRunEndRun": "Terminar Carrera",
+  "@activeRunEndRun": { "description": "CTA button to end the active run" },
+
+  "activeRunTimerOnlyLabel": "Solo temporizador",
+  "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },
+
+  "activeRunStatusTitle": "Estado",
+  "@activeRunStatusTitle": { "description": "Title label for the live activity or foreground notification run status field" },
+
+  "activeRunPausedStatusLabel": "Pausado",
+  "@activeRunPausedStatusLabel": { "description": "Status label shown in live activity or foreground notification when the active run is paused" },
+
+  "activeRunTrackingStatusLabel": "Registrando",
+  "@activeRunTrackingStatusLabel": { "description": "Status label shown in live activity or foreground notification when GPS tracking is active" },
+
+  "preRunOpenSettings": "Abrir Ajustes",
+  "@preRunOpenSettings": { "description": "Button label to open app settings when location permission is permanently denied" },
+
+  "preRunEnableLocationServices": "Habilitar Servicios de Ubicación",
+  "@preRunEnableLocationServices": { "description": "Button label to open location settings when location service is disabled" },
+
+  "preRunTimerOnlyMode": "Modo Solo Temporizador",
+  "@preRunTimerOnlyMode": { "description": "Button label to start run in timer-only mode without GPS" },
+
+  "locationServiceDisabledTitle": "Servicios de Ubicación Deshabilitados",
+  "@locationServiceDisabledTitle": { "description": "Title of dialog when device location services are disabled" },
+
+  "locationServiceDisabledBody": "Por favor habilita los servicios de ubicación para rastrear tu carrera con GPS.",
+  "@locationServiceDisabledBody": { "description": "Body text of dialog when device location services are disabled" },
+
+  "locationPermissionDeniedTitle": "Permiso de Ubicación Denegado",
+  "@locationPermissionDeniedTitle": { "description": "Title of dialog when location permission is denied" },
+
+  "locationPermissionDeniedBody": "Se requiere permiso de ubicación para rastrear tu carrera. Por favor concede el permiso en Ajustes.",
+  "@locationPermissionDeniedBody": { "description": "Body text of dialog when location permission is denied" },
+
+  "activeRunGpsLostAutoPauseTitle": "Señal GPS Perdida",
+  "@activeRunGpsLostAutoPauseTitle": { "description": "Title of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostAutoPauseBody": "Se perdió la señal GPS. Tu carrera ha sido pausada automáticamente. Toca Reanudar para continuar cuando el GPS se recupere, o Terminar Carrera para finalizar ahora.",
+  "@activeRunGpsLostAutoPauseBody": { "description": "Body of non-dismissible modal when GPS is lost during a distance-based block" },
+
+  "activeRunGpsLostWarningTitle": "Señal GPS Débil",
+  "@activeRunGpsLostWarningTitle": { "description": "Title of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunGpsLostWarningBody": "La señal GPS es débil. El seguimiento de distancia está en pausa pero tu temporizador sigue funcionando.",
+  "@activeRunGpsLostWarningBody": { "description": "Body of dismissible warning when GPS is lost during a duration-based block" },
+
+  "activeRunResume": "Reanudar",
+  "@activeRunResume": { "description": "Button to resume the run after GPS was lost" },
+
+  "activeRunWaitForGps": "Esperar GPS",
+  "@activeRunWaitForGps": { "description": "Button to wait for GPS signal to recover" },
+
+  "activeRunDismiss": "Cerrar",
+  "@activeRunDismiss": { "description": "Button to dismiss the GPS warning modal" },
+
+  "activeRunTimerOnlyRestrictionTitle": "Modo Solo Temporizador No Compatible",
+  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" }
 }

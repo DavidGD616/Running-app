@@ -25,8 +25,14 @@ Set<T> _enumSetByKeys<T extends Enum>(
   return {for (final key in keys) ?_enumByKey(key, values, keyOf)};
 }
 
-int? _intFromString(String? value) =>
-    value == null ? null : int.tryParse(value);
+int? _intFromString(String? value) {
+  if (value == null) return null;
+  final normalized = value.trim();
+  final parseable = normalized.endsWith('+')
+      ? normalized.substring(0, normalized.length - 1)
+      : normalized;
+  return int.tryParse(parseable);
+}
 
 String? _stringOrNull(Object? value) => value is String ? value : null;
 
@@ -997,6 +1003,7 @@ class RunnerProfile {
     required this.updatedAt,
     this.gender,
     this.dateOfBirth,
+    this.completedOnboardingAt,
   });
 
   final GoalProfile goal;
@@ -1007,8 +1014,40 @@ class RunnerProfile {
   final DeviceProfile device;
   final ProfileGender? gender;
   final DateTime? dateOfBirth;
+  final DateTime? completedOnboardingAt;
   final int schemaVersion;
   final DateTime updatedAt;
+
+  bool get isOnboardingComplete => completedOnboardingAt != null;
+
+  RunnerProfile copyWith({
+    GoalProfile? goal,
+    FitnessProfile? fitness,
+    ScheduleProfile? schedule,
+    HealthProfile? health,
+    TrainingPreferencesProfile? trainingPreferences,
+    DeviceProfile? device,
+    ProfileGender? gender,
+    DateTime? dateOfBirth,
+    DateTime? completedOnboardingAt,
+    int? schemaVersion,
+    DateTime? updatedAt,
+  }) {
+    return RunnerProfile(
+      goal: goal ?? this.goal,
+      fitness: fitness ?? this.fitness,
+      schedule: schedule ?? this.schedule,
+      health: health ?? this.health,
+      trainingPreferences: trainingPreferences ?? this.trainingPreferences,
+      device: device ?? this.device,
+      gender: gender ?? this.gender,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      completedOnboardingAt:
+          completedOnboardingAt ?? this.completedOnboardingAt,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      updatedAt: updatedAt ?? this.updatedAt,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
@@ -1022,6 +1061,7 @@ class RunnerProfile {
       'device': _deviceProfileToJson(device),
       'gender': gender?.name,
       'dateOfBirth': dateOfBirth?.toIso8601String(),
+      'completedOnboardingAt': completedOnboardingAt?.toIso8601String(),
       'schemaVersion': schemaVersion,
       'updatedAt': updatedAt.toIso8601String(),
     };
@@ -1059,6 +1099,7 @@ class RunnerProfile {
       device: device,
       gender: _profileGenderFromName(_stringOrNull(json['gender'])),
       dateOfBirth: _dateTimeFromJson(json['dateOfBirth']),
+      completedOnboardingAt: _dateTimeFromJson(json['completedOnboardingAt']),
       schemaVersion: schemaVersion,
       updatedAt: updatedAt,
     );
@@ -1143,6 +1184,7 @@ class RunnerProfileDraft {
   RunnerProfile? toRunnerProfile({
     ProfileGender? gender,
     DateTime? dateOfBirth,
+    DateTime? completedOnboardingAt,
     DateTime? clock,
   }) {
     final goalProfile = goal.toProfileOrNull();
@@ -1170,6 +1212,7 @@ class RunnerProfileDraft {
       device: deviceProfile,
       gender: gender,
       dateOfBirth: dateOfBirth,
+      completedOnboardingAt: completedOnboardingAt,
       schemaVersion: 1,
       updatedAt: clock ?? DateTime.now(),
     );

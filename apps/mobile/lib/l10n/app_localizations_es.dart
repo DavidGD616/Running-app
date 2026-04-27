@@ -9,7 +9,7 @@ class AppLocalizationsEs extends AppLocalizations {
   AppLocalizationsEs([String locale = 'es']) : super(locale);
 
   @override
-  String get appTitle => 'RunFlow';
+  String get appTitle => 'StrivIQ';
 
   @override
   String get languageCodeEN => 'EN';
@@ -21,7 +21,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get splashTagline => 'Entrena más inteligente. Corre más fuerte.';
 
   @override
-  String get welcomeTitle => 'Bienvenido a RunFlow';
+  String get welcomeTitle => 'Bienvenido a StrivIQ';
 
   @override
   String get welcomeSubtitle =>
@@ -1601,7 +1601,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsSubscriptionActivePlan => 'Plan activo';
 
   @override
-  String get settingsSubscriptionPlanName => 'RunFlow Pro';
+  String get settingsSubscriptionPlanName => 'StrivIQ Pro';
 
   @override
   String get settingsSubscriptionNextBillingDate => 'Próxima fecha de cobro';
@@ -1615,7 +1615,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsCancelSubscriptionPrompt =>
-      'Cuéntanos por qué estás cancelando RunFlow Pro';
+      'Cuéntanos por qué estás cancelando StrivIQ Pro';
 
   @override
   String get settingsCancelSubscriptionReasonTooExpensive =>
@@ -1653,7 +1653,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsSubscriptionCancellationInfoBody =>
-      'Gracias por compartir tus comentarios. Para completar la cancelación de RunFlow Pro, administra tu suscripción en la tienda donde la compraste.';
+      'Gracias por compartir tus comentarios. Para completar la cancelación de StrivIQ Pro, administra tu suscripción en la tienda donde la compraste.';
 
   @override
   String get settingsSubscriptionDialogButton => 'OK';
@@ -1827,7 +1827,7 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsLogOut => 'Cerrar sesión';
 
   @override
-  String get settingsVersion => 'RunFlow v1.0.0 (Build 42)';
+  String get settingsVersion => 'StrivIQ v1.0.0 (Build 42)';
 
   @override
   String get sessionDetailTitle => 'Entrenamiento';
@@ -1855,6 +1855,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sessionDetailIntervalsNote => 'Esfuerzo intenso, Zona 4';
+
+  @override
+  String get sessionDetailStrides => 'Strides';
 
   @override
   String get sessionDetailCoolDown => 'Enfriamiento';
@@ -1917,6 +1920,20 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String sessionPhaseIntervalsMainRecovery(int recoverySeconds) {
     return '$recoverySeconds s de trote suave de recuperación entre cada repetición';
+  }
+
+  @override
+  String sessionPhaseStridesDuration(int reps, int seconds) {
+    return '$reps × $seconds s';
+  }
+
+  @override
+  String get sessionPhaseStridesNote =>
+      'Rápido pero relajado · técnica suave, no es un sprint';
+
+  @override
+  String sessionPhaseStridesRecovery(int recoverySeconds) {
+    return '$recoverySeconds s de caminata o trote suave entre strides';
   }
 
   @override
@@ -2037,6 +2054,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get logSessionPaceValue => '7:31 / ritmo km';
 
   @override
+  String logSessionAveragePaceSubtitle(String pace, String unit) {
+    return '$pace / ritmo $unit';
+  }
+
+  @override
   String get logSessionHowDidItFeel => '¿Cómo te fue?';
 
   @override
@@ -2062,6 +2084,266 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get logSessionSaveButton => 'Guardar Sesión';
+
+  @override
+  String get activeRunTitle => 'Carrera Activa';
+
+  @override
+  String get activeRunDemoTracking => 'Seguimiento demo';
+
+  @override
+  String get activeRunCurrentPace => 'RITMO ACTUAL';
+
+  @override
+  String get activeRunNotificationTargetShort => 'Obj.';
+
+  @override
+  String get activeRunNotificationDistanceShort => 'Dist.';
+
+  @override
+  String get activeRunNotificationPaceShort => 'Ritmo';
+
+  @override
+  String get activeRunElapsed => 'TIEMPO';
+
+  @override
+  String get activeRunTimeUnit => 'tiempo';
+
+  @override
+  String get activeRunDistance => 'DISTANCIA';
+
+  @override
+  String get activeRunDistanceTitle => 'Distancia';
+
+  @override
+  String get activeRunCurrentPaceShort => 'Ritmo';
+
+  @override
+  String get activeRunAveragePace => 'RITMO PROM.';
+
+  @override
+  String get activeRunTarget => 'OBJETIVO';
+
+  @override
+  String get activeRunPause => 'Pausar';
+
+  @override
+  String get activeRunResume => 'Reanudar';
+
+  @override
+  String get activeRunFinish => 'Finalizar';
+
+  @override
+  String activeRunPlannedSummary(
+    String plannedDuration,
+    String plannedDistance,
+  ) {
+    return '$plannedDuration · $plannedDistance';
+  }
+
+  @override
+  String activeRunPlannedDuration(String plannedDuration) {
+    return '$plannedDuration';
+  }
+
+  @override
+  String activeRunPlannedDistance(String plannedDistance) {
+    return '$plannedDistance';
+  }
+
+  @override
+  String get activeRunPlannedFallback => 'Carrera guiada';
+
+  @override
+  String get activeRunGuidanceEasy =>
+      'Mantén un ritmo conversacional y relajado.';
+
+  @override
+  String get activeRunGuidanceLong =>
+      'Encuentra un ritmo estable y cuida el final.';
+
+  @override
+  String get activeRunGuidanceProgression =>
+      'Empieza con control y aumenta el esfuerzo por fases.';
+
+  @override
+  String get activeRunGuidanceIntervals =>
+      'Corre los bloques rápidos con intención y recupera bien.';
+
+  @override
+  String get activeRunGuidanceHills =>
+      'Empuja en la subida y recupera al bajar.';
+
+  @override
+  String get activeRunGuidanceFartlek =>
+      'Haz cambios cuando estés listo y vuelve a correr suave.';
+
+  @override
+  String get activeRunGuidanceTempo =>
+      'Mantén un ritmo fuerte que puedas controlar.';
+
+  @override
+  String get activeRunGuidanceThreshold => 'Firme pero fluido. No esprintes.';
+
+  @override
+  String get activeRunGuidanceRacePace =>
+      'Entra en ritmo objetivo y mantén el esfuerzo estable.';
+
+  @override
+  String get activeRunGuidanceRecovery =>
+      'Debe sentirse lo bastante suave para terminar mejor.';
+
+  @override
+  String get activeRunEaseOff => 'Baja ritmo';
+
+  @override
+  String get activeRunPickUp => 'Acelera';
+
+  @override
+  String get activeRunOnTarget => 'En objetivo';
+
+  @override
+  String get activeRunPush => 'Empuja';
+
+  @override
+  String get activeRunRecover => 'Recupera';
+
+  @override
+  String get activeRunSurge => 'Cambio';
+
+  @override
+  String get activeRunEasyBlock => 'Suave';
+
+  @override
+  String get activeRunTargetFast => 'Rápido';
+
+  @override
+  String get activeRunTargetClimb => 'Subida';
+
+  @override
+  String get activeRunTargetTempo => 'Tempo';
+
+  @override
+  String get activeRunTargetThreshold => 'Umbral';
+
+  @override
+  String get activeRunTargetRace => 'Ritmo carrera';
+
+  @override
+  String get activeRunTargetEasy => 'Suave';
+
+  @override
+  String get activeRunTargetSteady => 'Estable';
+
+  @override
+  String get activeRunTargetBuild => 'Progresivo';
+
+  @override
+  String get activeRunTargetSurges => 'Cambios';
+
+  @override
+  String get activeRunTargetPaceUnit => 'ritmo';
+
+  @override
+  String get activeRunTargetEffortUnit => 'esfuerzo';
+
+  @override
+  String get activeRunHillFocusTitle => 'Enfoque de cuestas';
+
+  @override
+  String get activeRunIntervalFocusTitle => 'Enfoque de intervalos';
+
+  @override
+  String get activeRunCurrentBlock => 'Bloque actual';
+
+  @override
+  String get activeRunClimb => 'Subida';
+
+  @override
+  String get activeRunFastRep => 'Rep rápida';
+
+  @override
+  String get activeRunStride => 'Stride';
+
+  @override
+  String get activeRunRecovery => 'Recuperación';
+
+  @override
+  String get activeRunRep => 'Rep';
+
+  @override
+  String activeRunBlockRemaining(String remaining) {
+    return 'quedan $remaining';
+  }
+
+  @override
+  String activeRunNextBlock(String block) {
+    return 'Siguiente: $block';
+  }
+
+  @override
+  String get activeRunUpNext => 'LO QUE SIGUE';
+
+  @override
+  String get activeRunProgressionFocusTitle => 'Fases progresivas';
+
+  @override
+  String get activeRunSteadyBlock => 'Estable';
+
+  @override
+  String get activeRunStrongBlock => 'Fuerte';
+
+  @override
+  String get activeRunPaceFocusTitle => 'Control de ritmo';
+
+  @override
+  String get activeRunControl => 'Control';
+
+  @override
+  String get activeRunPaceFocusFooter =>
+      'Mantente fluido dentro del rango objetivo.';
+
+  @override
+  String get activeRunLongFocusTitle => 'Enfoque de tirada larga';
+
+  @override
+  String get activeRunFocus => 'Enfoque';
+
+  @override
+  String get activeRunReminder => 'Recordatorio';
+
+  @override
+  String get activeRunFuel => 'Energía';
+
+  @override
+  String get activeRunLongFocusFooter =>
+      'Bebe agua y revisa el esfuerzo antes de la próxima milla.';
+
+  @override
+  String get activeRunRecoveryFocusTitle => 'Enfoque de recuperación';
+
+  @override
+  String get activeRunEasyFocusTitle => 'Enfoque suave';
+
+  @override
+  String get activeRunRelaxed => 'Relajado';
+
+  @override
+  String get activeRunRecoveryFocusFooter =>
+      'El objetivo son piernas frescas, no un parcial más rápido.';
+
+  @override
+  String get activeRunEasyFocusFooter =>
+      'Deberías poder hablar en frases completas.';
+
+  @override
+  String get activeRunFartlekFocusTitle => 'Control de fartlek';
+
+  @override
+  String get activeRunEndSurge => 'Terminar cambio';
+
+  @override
+  String get activeRunStartSurge => 'Iniciar cambio';
 
   @override
   String get preRunTitle => 'Control Pre-carrera';
@@ -2125,6 +2407,56 @@ class AppLocalizationsEs extends AppLocalizations {
   String get preRunContinue => 'Continuar';
 
   @override
+  String get preRunWorkoutPreviewTitle => 'Entrenamiento de Hoy';
+
+  @override
+  String preRunWorkoutPreviewWarmUp(String duration) {
+    return 'Calentamiento $duration';
+  }
+
+  @override
+  String preRunWorkoutPreviewStrides(
+    int reps,
+    int seconds,
+    int recoverySeconds,
+  ) {
+    return '$reps × ${seconds}s zancadas · ${recoverySeconds}s recuperación';
+  }
+
+  @override
+  String preRunWorkoutPreviewMain(String duration) {
+    return 'Principal $duration';
+  }
+
+  @override
+  String preRunWorkoutPreviewCoolDown(String duration) {
+    return 'Enfriamiento $duration';
+  }
+
+  @override
+  String preRunWorkoutPreviewRepeat(int reps, String work, String recovery) {
+    return '$reps × $work trabajo · $recovery recuperación';
+  }
+
+  @override
+  String preRunWorkoutPreviewDurationMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String preRunWorkoutPreviewDurationSeconds(int seconds) {
+    return '$seconds s';
+  }
+
+  @override
+  String preRunWorkoutPreviewDistanceMeters(int meters) {
+    return '$meters m';
+  }
+
+  @override
+  String get preRunWorkoutPreviewOpenDuration => 'libre';
+
+  @override
   String get workoutOptionsTitle => 'Opciones de Entrenamiento';
 
   @override
@@ -2182,4 +2514,117 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planNotReadyRetry => 'Reintentar';
+
+  @override
+  String get phaseBase => 'Base';
+
+  @override
+  String get phaseBuild => 'Construcción';
+
+  @override
+  String get phaseSpecific => 'Específico';
+
+  @override
+  String get phasePeak => 'Pico';
+
+  @override
+  String get phaseTaperRace => 'Reducción';
+
+  @override
+  String get activeRunGpsTrackingNotificationTitle => 'Registrando carrera';
+
+  @override
+  String get activeRunGpsTrackingNotificationBody =>
+      'StrivIQ está registrando tu carrera';
+
+  @override
+  String get gpsRequiredTitle => 'GPS Requerido';
+
+  @override
+  String get gpsRequiredBody =>
+      'Este entrenamiento tiene bloques basados en distancia y requiere GPS para seguir tu progreso. Por favor habilita los servicios de ubicación para comenzar este entrenamiento.';
+
+  @override
+  String get gpsWaitForSignal => 'Esperando señal GPS';
+
+  @override
+  String get gpsWeakSignal => 'Señal GPS débil';
+
+  @override
+  String get gpsLostSignal => 'Señal GPS perdida';
+
+  @override
+  String get gpsAcquiringTitle => 'Adquiriendo';
+
+  @override
+  String get gpsWeakTitle => 'Señal Débil';
+
+  @override
+  String get gpsEnableLocationServices => 'Habilitar Servicios de Ubicación';
+
+  @override
+  String get gpsLostTitle => 'Señal Perdida';
+
+  @override
+  String get activeRunEndRun => 'Terminar Carrera';
+
+  @override
+  String get activeRunTimerOnlyLabel => 'Solo temporizador';
+
+  @override
+  String get activeRunStatusTitle => 'Estado';
+
+  @override
+  String get activeRunPausedStatusLabel => 'Pausado';
+
+  @override
+  String get activeRunTrackingStatusLabel => 'Registrando';
+
+  @override
+  String get preRunOpenSettings => 'Abrir Ajustes';
+
+  @override
+  String get preRunEnableLocationServices => 'Habilitar Servicios de Ubicación';
+
+  @override
+  String get preRunTimerOnlyMode => 'Modo Solo Temporizador';
+
+  @override
+  String get locationServiceDisabledTitle =>
+      'Servicios de Ubicación Deshabilitados';
+
+  @override
+  String get locationServiceDisabledBody =>
+      'Por favor habilita los servicios de ubicación para rastrear tu carrera con GPS.';
+
+  @override
+  String get locationPermissionDeniedTitle => 'Permiso de Ubicación Denegado';
+
+  @override
+  String get locationPermissionDeniedBody =>
+      'Se requiere permiso de ubicación para rastrear tu carrera. Por favor concede el permiso en Ajustes.';
+
+  @override
+  String get activeRunGpsLostAutoPauseTitle => 'Señal GPS Perdida';
+
+  @override
+  String get activeRunGpsLostAutoPauseBody =>
+      'Se perdió la señal GPS. Tu carrera ha sido pausada automáticamente. Toca Reanudar para continuar cuando el GPS se recupere, o Terminar Carrera para finalizar ahora.';
+
+  @override
+  String get activeRunGpsLostWarningTitle => 'Señal GPS Débil';
+
+  @override
+  String get activeRunGpsLostWarningBody =>
+      'La señal GPS es débil. El seguimiento de distancia está en pausa pero tu temporizador sigue funcionando.';
+
+  @override
+  String get activeRunWaitForGps => 'Esperar GPS';
+
+  @override
+  String get activeRunDismiss => 'Cerrar';
+
+  @override
+  String get activeRunTimerOnlyRestrictionTitle =>
+      'Modo Solo Temporizador No Compatible';
 }

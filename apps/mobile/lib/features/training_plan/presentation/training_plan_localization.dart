@@ -2,6 +2,26 @@ import '../../../l10n/app_localizations.dart';
 import '../domain/models/training_plan.dart';
 import '../domain/models/training_session.dart';
 
+String localizedPhaseLabel(
+  String? phase,
+  AppLocalizations l10n,
+) {
+  switch (phase) {
+    case 'base':
+      return l10n.phaseBase;
+    case 'build':
+      return l10n.phaseBuild;
+    case 'specific':
+      return l10n.phaseSpecific;
+    case 'peak':
+      return l10n.phasePeak;
+    case 'taperRace':
+      return l10n.phaseTaperRace;
+    default:
+      return '';
+  }
+}
+
 String localizedTrainingPlanRace(
   TrainingPlanRaceType raceType,
   AppLocalizations l10n,

@@ -54,10 +54,16 @@ class TrainingPlan {
     return null;
   }
 
-  /// First upcoming session after today.
+  /// First upcoming session after today (future dates only).
   TrainingSession? get nextUpcomingSession {
+    final now = DateTime.now();
+    final todayDay = DateTime(now.year, now.month, now.day);
     final candidates = sessions
-        .where((s) => s.status == SessionStatus.upcoming)
+        .where(
+          (s) =>
+              s.status == SessionStatus.upcoming &&
+              !s.date.isBefore(todayDay),
+        )
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
     return candidates.isNotEmpty ? candidates.first : null;

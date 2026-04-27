@@ -657,6 +657,90 @@ The completed profile is created from the draft only when every required section
 
 ---
 
+## Active Run Domain (GPS-based)
+
+> **Deprecated note**: Previous active-run implementations relied on simulated timer-based distance and mock tracking. All mock tracking behavior has been replaced by real GPS tracking via `geolocator`. The `ActiveRunController` now owns authoritative run state sourced from real GPS fixes. Mock distance math and simulated pace/distance increments are no longer present.
+
+### Run persistence tables
+
+The app uses `sqflite` for durable storage of completed and in-progress runs. The database is `runflow_runs.db` with three tables:
+
+| Table | Purpose |
+| --- | --- |
+| `runs` | Run summary: id, status, timestamps, duration, distance, session linkage, timer-only flag |
+| `run_route_points` | GPS fix log: run_id, index, lat/lng, accuracy, altitude, speed, heading, timestamp |
+| `run_splits` | Per-kilometer or per-distance splits: run_id, index, boundary, start/end timestamps, duration, pace |
+
+#### `runs`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `id` | TEXT PRIMARY KEY | UUID generated at run start |
+| `status` | TEXT | `active` or `completed` |
+| `started_at_ms` | INTEGER | Unix ms of run start |
+| `ended_at_ms` | INTEGER NULL | Unix ms of run end |
+| `duration_ms` | INTEGER | Accumulated run time in ms |
+| `distance_km` | REAL | Accumulated GPS distance in km |
+| `session_id` | TEXT NULL | Linked `TrainingSession.id` |
+| `session_type` | TEXT | Canonical session type key (e.g. `easy`, `tempo`) |
+| `timer_only` | INTEGER | 1 if GPS was unavailable and run used timer-only mode |
+| `source` | TEXT | Optional source identifier (e.g. for watch or manual import) |
+
+#### `run_route_points`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `run_id` | TEXT | FK to `runs.id`, cascades on delete |
+| `idx` | INTEGER | Sequential point index within the run |
+| `lat` | REAL | Latitude in degrees |
+| `lng` | REAL | Longitude in degrees |
+| `accuracy` | REAL | GPS accuracy in meters; points over 60m accuracy are ignored |
+| `altitude` | REAL NULL | Altitude in meters |
+| `speed` | REAL NULL | Ground speed in m/s |
+| `heading` | REAL NULL | Heading in degrees |
+| `ts_ms` | INTEGER | Timestamp of the GPS fix |
+
+Route points are batch-inserted every 25 accepted fixes and on run finish to avoid memory pressure during long runs. The `run_id+idx` is the primary key.
+
+#### `run_splits`
+
+| Column | Type | Notes |
+| --- | --- | --- |
+| `run_id` | TEXT | FK to `runs.id`, cascades on delete |
+| `idx` | INTEGER | Split sequence index |
+| `boundary_meters` | INTEGER | Distance at split boundary (e.g. 1000 for km splits) |
+| `started_at_ms` | INTEGER | Timestamp when split began |
+| `ended_at_ms` | INTEGER | Timestamp when split ended |
+| `duration_ms` | INTEGER | Split duration in ms |
+| `pace_seconds_per_km` | REAL | Computed pace for the split |
+
+### Active run state management
+
+`ActiveRunController` owns authoritative run state during an active session:
+
+- Timer and GPS subscription are owned by the Riverpod notifier, not the UI.
+- GPS fixes flow through `RunLocationTracker` (interface + `GeolocatorRunLocationTracker` implementation).
+- Accepted fixes are filtered by accuracy (≤60m), minimum movement (≥2m), and maximum speed (≤50 m/s).
+- Distance accumulation uses `DistanceAccumulator` with Haversine calculation.
+- Pace smoothing uses `PaceSmoother` over the last 5 valid points.
+
+### Run repository
+
+`RunRepository` provides CRUD operations:
+
+- `insertActiveRun` — creates the `runs` row with `status=active` at run start.
+- `updateActiveRunSummary` — periodically flushes elapsed duration and distance during an active run.
+- `flushPendingRoutePoints` — batch-inserts accepted GPS fixes every 25 points.
+- `finishRun` — updates run to `status=completed`, inserts final route points and splits in a transaction.
+- `getCompletedRun` — reads run summary with splits and computes average pace.
+- `getRoutePoints` / `getSplits` — retrieves persisted fix and split data.
+
+### Strava export
+
+Strava integration (upload of completed runs) is **out of scope for this implementation phase**. Local GPS recording must be complete and stable before any export pipeline is added. Strava export is classified as post-local-recording work and will be addressed in a future sprint after the core run recording loop is validated on physical devices.
+
+---
+
 ## Target state
 
 The next domain-model expansions planned after the typed profile foundation are:
@@ -666,3 +750,4 @@ The next domain-model expansions planned after the typed profile foundation are:
 3. Structured `WorkoutTarget` and workout-step models so intervals and targets are machine-readable.
 4. `DeviceConnection` and related integration models so watch state lives outside onboarding answers.
 5. Adaptation foundations such as session feedback and plan revision records.
+6. Strava (and other platform) export pipeline for completed run data.

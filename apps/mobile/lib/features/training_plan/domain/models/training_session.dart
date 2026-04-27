@@ -32,6 +32,7 @@ class TrainingSession {
     required this.type,
     required this.status,
     this.weekNumber = 1,
+    this.phase,
     this.distanceKm,
     this.durationMinutes,
     this.description,
@@ -53,6 +54,7 @@ class TrainingSession {
   final SessionType type;
   final SessionStatus status;
   final int weekNumber;
+  final String? phase;
   final double? distanceKm;
   final int? durationMinutes;
   final String? description;
@@ -77,6 +79,7 @@ class TrainingSession {
         'type': type.name,
         'status': status.name,
         'weekNumber': weekNumber,
+        'phase': phase,
         'distanceKm': distanceKm,
         'durationMinutes': durationMinutes,
         'description': description,
@@ -126,6 +129,7 @@ class TrainingSession {
       type: type,
       status: status,
       weekNumber: intOrNull(json['weekNumber']) ?? 1,
+      phase: stringOrNull(json['phase']),
       distanceKm: _doubleOrNull(json['distanceKm']),
       durationMinutes: intOrNull(json['durationMinutes']),
       description: stringOrNull(json['description']),
@@ -162,6 +166,7 @@ class TrainingSession {
     SessionType? type,
     SessionStatus? status,
     int? weekNumber,
+    String? phase,
     double? distanceKm,
     int? durationMinutes,
     String? description,
@@ -183,6 +188,7 @@ class TrainingSession {
       type: type ?? this.type,
       status: status ?? this.status,
       weekNumber: weekNumber ?? this.weekNumber,
+      phase: phase ?? this.phase,
       distanceKm: distanceKm ?? this.distanceKm,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       description: description ?? this.description,

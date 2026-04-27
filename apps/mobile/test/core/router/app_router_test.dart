@@ -74,4 +74,24 @@ void main() {
 
     expect(redirect, RouteNames.today);
   });
+
+  test('cold-start with active run resumes to active-run instead of today', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.splash,
+      bootstrapState: AppBootstrapState.authenticatedReady,
+      hasActiveRun: true,
+    );
+
+    expect(redirect, RouteNames.activeRun);
+  });
+
+  test('active-run route is not redirected away when run is in progress', () {
+    final redirect = resolveAppRedirect(
+      matchedLocation: RouteNames.activeRun,
+      bootstrapState: AppBootstrapState.authenticatedReady,
+      hasActiveRun: true,
+    );
+
+    expect(redirect, isNull);
+  });
 }

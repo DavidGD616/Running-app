@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/supabase/supabase_client_provider.dart';
+import '../../../features/localization/presentation/locale_provider.dart';
 import '../../training_plan/data/supabase_plan_version_repository.dart';
 import '../../training_plan/domain/models/plan_version.dart';
 import '../../training_plan/domain/models/training_plan.dart';
@@ -55,12 +56,15 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
     state = const PlanGenerationLoading();
     try {
       final client = ref.read(supabaseClientProvider);
+      final locale = ref.read(localeProvider).value;
+      final localeCode = locale?.languageCode ?? 'en';
+
       final res = await client.functions
           .invoke(
             'generate-plan',
-            body: {'requestedBy': requestedBy},
+            body: {'requestedBy': requestedBy, 'locale': localeCode},
           )
-          .timeout(const Duration(seconds: 60));
+          .timeout(const Duration(seconds: 130));
 
       // ignore: avoid_print
       print('[PlanGeneration] response status=${res.status} data=${res.data}');
@@ -114,5 +118,5 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
 
 final planGenerationProvider =
     NotifierProvider<PlanGenerationNotifier, PlanGenerationState>(
-  PlanGenerationNotifier.new,
-);
+      PlanGenerationNotifier.new,
+    );

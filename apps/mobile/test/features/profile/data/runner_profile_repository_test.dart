@@ -36,7 +36,7 @@ void main() {
       gender: ProfileGender.other,
       dateOfBirth: DateTime(1991, 11, 4),
       clock: DateTime(2026, 4, 7, 7, 45),
-    );
+    ).copyWith(completedOnboardingAt: DateTime(2026, 4, 7, 8));
 
     final restored = RunnerProfile.fromJson(profile.toJson());
 
@@ -45,8 +45,27 @@ void main() {
     expect(restored.device.device, WatchDeviceType.garmin);
     expect(restored.gender, ProfileGender.other);
     expect(restored.dateOfBirth, DateTime(1991, 11, 4));
+    expect(restored.completedOnboardingAt, DateTime(2026, 4, 7, 8));
+    expect(restored.isOnboardingComplete, isTrue);
     expect(restored.schemaVersion, 1);
     expect(restored.updatedAt, DateTime(2026, 4, 7, 7, 45));
+  });
+
+  test('fitness input accepts numeric and legacy 5 plus running days', () {
+    FitnessProfile? buildFitness(String runningDays) {
+      return RunnerProfileDraft.fitnessFromInput(
+        experience: RunnerExperience.intermediate.key,
+        runningDays: runningDays,
+        weeklyVolume: WeeklyVolumeRange.volume4.key,
+        longestRun: LongestRunRange.run4.key,
+        canCompleteGoalDist: TernaryChoice.yes.key,
+        raceDistanceBefore: RaceDistanceExperience.once.key,
+        benchmark: BenchmarkType.skip.key,
+      ).toProfileOrNull();
+    }
+
+    expect(buildFitness('5')?.runningDays, 5);
+    expect(buildFitness('5+')?.runningDays, 5);
   });
 
   test(

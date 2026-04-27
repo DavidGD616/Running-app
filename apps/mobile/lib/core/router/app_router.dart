@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -42,12 +42,15 @@ import '../../features/settings/presentation/screens/settings_integrations_scree
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
 import '../../features/pre_run/presentation/run_flow_context.dart';
 import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
+import '../../features/active_run/presentation/screens/active_run_screen.dart';
 import '../../features/log_run/presentation/screens/log_run_screen.dart';
 import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
 import '../../features/progress/presentation/screens/completed_sessions_screen.dart';
 import '../../features/profile/data/runner_profile_repository.dart';
+import '../../features/profile/domain/models/runner_profile.dart';
 import '../../features/profile/presentation/runner_profile_provider.dart';
+import '../../features/active_run/presentation/active_run_progress_provider.dart';
 import '../persistence/shared_preferences_provider.dart';
 
 enum AppBootstrapState {
@@ -100,29 +103,28 @@ final appBootstrapStateProvider = Provider<AppBootstrapState>((ref) {
     final repository = ref.watch(runnerProfileRepositoryProvider);
     final profile = repository.loadProfile();
     if (profile == null) return AppBootstrapState.authenticatedNeedsProfile;
-    final onboardingDone = ref
-        .watch(sharedPreferencesProvider)
-        .getBool('onboarding_completed') ??
-        false;
-    return onboardingDone
+    return _isOnboardingComplete(ref, profile)
         ? AppBootstrapState.authenticatedReady
         : AppBootstrapState.authenticatedNeedsProfile;
   }
 
   final profile = profileState.value;
   if (profile == null) return AppBootstrapState.authenticatedNeedsProfile;
-  final onboardingDone = ref
-      .watch(sharedPreferencesProvider)
-      .getBool('onboarding_completed') ??
-      false;
-  return onboardingDone
+  return _isOnboardingComplete(ref, profile)
       ? AppBootstrapState.authenticatedReady
       : AppBootstrapState.authenticatedNeedsProfile;
 });
 
+bool _isOnboardingComplete(Ref ref, RunnerProfile profile) {
+  if (profile.isOnboardingComplete) return true;
+  return ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
+      false;
+}
+
 String? resolveAppRedirect({
   required String matchedLocation,
   required AppBootstrapState bootstrapState,
+  bool hasActiveRun = false,
 }) {
   final isSplashRoute = matchedLocation == RouteNames.splash;
   final isAuthRoute = _authRoutes.contains(matchedLocation);
@@ -139,7 +141,7 @@ String? resolveAppRedirect({
       return isProfileSetupRoute ? null : RouteNames.accountSetup;
     case AppBootstrapState.authenticatedReady:
       if (isSplashRoute || isAuthRoute || isProfileSetupRoute) {
-        return RouteNames.today;
+        return hasActiveRun ? RouteNames.activeRun : RouteNames.today;
       }
       return null;
   }
@@ -166,6 +168,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) => resolveAppRedirect(
       matchedLocation: state.matchedLocation,
       bootstrapState: ref.read(appBootstrapStateProvider),
+      hasActiveRun: ref.read(activeRunProgressProvider) != null,
     ),
     routes: [
       GoRoute(
@@ -394,6 +397,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final args = state.extra as PreRunArgs?;
           return PreRunScreen(args: args);
+        },
+      ),
+      GoRoute(
+        path: RouteNames.activeRun,
+        builder: (context, state) {
+          final args = state.extra as ActiveRunArgs?;
+          return ActiveRunScreen(args: args);
         },
       ),
       GoRoute(
