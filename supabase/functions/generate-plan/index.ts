@@ -5,14 +5,18 @@ import {
   avoidHardDayTraining,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
-  normalizeTrainingDayCount,
-  normalizeTaper,
-  normalizeWorkoutTypesByPhase,
+  normalizeFirstPlannedSession,
   normalizePeakLongRun,
+  normalizeSessionIds,
+  normalizeTaper,
+  normalizeTrainingDayCount,
+  normalizeWorkoutTypesByPhase,
   phaseForWeek,
   placeLongRunsOnPreferredDay,
+  preferRestOnHardDays,
   smoothLongRunProgression,
   spaceStressfulSessions,
+  validateGeneratedSchedule,
 } from "./plan-rules.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
 
@@ -102,17 +106,27 @@ Deno.serve(async (req) => {
     profileData,
     locale,
   );
-  const scheduleAdjustedSessions = avoidHardDayTraining(
+  const fullCalendarSessions = ensureFullCalendarWeeks(
     stressSpacedSessions,
+    locale,
+  );
+  const fullCalendarLongRunPlacedSessions = placeLongRunsOnPreferredDay(
+    fullCalendarSessions,
     profileData,
     locale,
   );
-  const fullCalendarSessions = ensureFullCalendarWeeks(
-    scheduleAdjustedSessions,
+  const hardDayRestedSessions = preferRestOnHardDays(
+    fullCalendarLongRunPlacedSessions,
+    profileData,
+    locale,
+  );
+  const scheduleAdjustedSessions = avoidHardDayTraining(
+    hardDayRestedSessions,
+    profileData,
     locale,
   );
   const peakNormalizedSessions = normalizePeakLongRun(
-    fullCalendarSessions,
+    scheduleAdjustedSessions,
     profileData,
     generatedPlan.totalWeeks,
     locale,
@@ -135,17 +149,46 @@ Deno.serve(async (req) => {
     generatedPlan.totalWeeks,
     locale,
   );
-  const phaseStampedSessions = phaseNormalizedSessions.map((session) => ({
+  const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
+    phaseNormalizedSessions,
+    profileData,
+    locale,
+  );
+  const phaseStampedSessions = firstSessionNormalizedSessions.map((
+    session,
+  ) => ({
     ...session,
-    phase: phaseForWeek(session.weekNumber, generatedPlan.totalWeeks, profileData),
+    phase: phaseForWeek(
+      session.weekNumber,
+      generatedPlan.totalWeeks,
+      profileData,
+    ),
   }));
   const raceFinalizedSessions = ensureGoalRaceSession(
     phaseStampedSessions,
     profileData,
     locale,
   );
+  const idNormalizedSessions = normalizeSessionIds(raceFinalizedSessions);
+  const finalViolations = validateGeneratedSchedule(
+    idNormalizedSessions,
+    profileData,
+  );
+  if (finalViolations.length > 0) {
+    console.error(
+      "Generated plan failed schedule validation:",
+      finalViolations,
+    );
+    return new Response(
+      JSON.stringify({
+        error: "Generated plan failed schedule validation",
+        violations: finalViolations,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
   const sessionsWithSteps = addStrideDefaults(
-    raceFinalizedSessions,
+    idNormalizedSessions,
     profileData,
     generatedPlan.totalWeeks,
     locale,
