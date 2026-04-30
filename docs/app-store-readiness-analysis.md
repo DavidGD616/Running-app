@@ -45,7 +45,7 @@
 | 1 | Monetization? | **Free launch**, payment later | No IAP/billing needed now |
 | 2 | Beta testing? | **Already field-tested on physical devices** | Skip beta setup for speed |
 | 3 | Supabase production? | **Yes**, production project active | Good, auth ready |
-| 4 | App icons? | **Not yet**, need help | Need to generate/create launcher icons |
+| 4 | App icons? | **COMPLETED** — Generated for both platforms | Resolved |
 | 5 | Icon design? | **TBD later** | Can use a simple generated mark for launch |
 | 6 | Privacy policy/terms? | **LIVE** at striviq.fit | **RESOLVED** |
 | 7 | Privacy label strategy? | **Need help deciding** | Recommend "optional" health data, no third-party sharing |
@@ -65,7 +65,7 @@
 | ~~**Google Play Developer Account** ($25)~~ | ~~Need it for Play Console~~ | **RESOLVED** |
 | ~~**Privacy Policy URL**~~ | ~~Required by both Apple & Google~~ | **LIVE** — https://striviq.fit/privacy-policy.html |
 | ~~**Terms of Service URL**~~ | ~~Required/strongly recommended~~ | **LIVE** — https://striviq.fit/terms-of-service.html |
-| **App Launcher Icons** | Both stores require proper icons | Can generate in 1-2 hours |
+| ~~**App Launcher Icons**~~ | ~~Both stores require proper icons~~ | **COMPLETED** — Generated for iOS and Android |
 | **App Display Name = "StrivIQ"** | Currently "Running App" / "running_app" | 5 min code change |
 
 ---
@@ -77,7 +77,7 @@ Since the timeline is **days**, here's the execution order:
 ### Phase 1: Start RIGHT NOW (today)
 1. ~~**User**: Sign up for Apple Developer Account and Google Play Developer Account~~ ✅ **COMPLETED**
 2. ~~**AI**: Generate privacy policy & terms of service text for a GPS fitness app~~ ✅ **COMPLETED** — Live at striviq.fit
-3. **AI**: Create a simple StrivIQ app launcher icon (dark square with green accent mark)
+3. ~~**AI**: Create a simple StrivIQ app launcher icon (dark square with green accent mark)~~ ✅ **COMPLETED**
 4. **AI**: Update app display names to "StrivIQ"
 
 ### Phase 2: Code Readiness (tomorrow)
@@ -110,7 +110,7 @@ The StrivIQ marketing website is now live at **https://striviq.fit** (deployed v
 ### Timeline Reality Check
 **Developer accounts are now resolved.** The remaining blockers are technical and can be completed in parallel:
 - ~~**Privacy Policy & Terms**: ~1 hour to generate~~ **DONE** — Live at striviq.fit
-- **App Icons**: ~1-2 hours to create
+- ~~**App Icons**: ~1-2 hours to create~~ **DONE**
 - **App Display Name**: 5 minute code change
 
 ### Native Config Status
