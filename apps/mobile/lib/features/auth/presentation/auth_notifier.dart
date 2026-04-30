@@ -3,8 +3,10 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/config/supabase_config.dart';
+import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../profile/data/runner_profile_repository.dart';
 import '../auth_error_localizer.dart';
 
 class AuthActionFeedback {
@@ -141,6 +143,27 @@ class AuthNotifier extends AsyncNotifier<void> {
     }
   }
 
+  Future<AuthActionFeedback?> updatePassword({
+    required String newPassword,
+    required AppLocalizations l10n,
+  }) async {
+    if (!SupabaseConfig.isConfigured) {
+      return AuthActionFeedback.error(l10n.authErrorNotConfigured);
+    }
+    state = const AsyncLoading();
+    try {
+      await _client.auth.updateUser(UserAttributes(password: newPassword));
+      state = const AsyncData(null);
+      return null;
+    } on AuthException catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(localizeAuthException(l10n, error));
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(l10n.authErrorGeneric);
+    }
+  }
+
   Future<AuthActionFeedback?> signOut({required AppLocalizations l10n}) async {
     if (!SupabaseConfig.isConfigured) {
       return AuthActionFeedback.error(l10n.authErrorNotConfigured);
@@ -149,6 +172,8 @@ class AuthNotifier extends AsyncNotifier<void> {
     state = const AsyncLoading();
     try {
       await _client.auth.signOut();
+      final prefs = ref.read(sharedPreferencesProvider);
+      await SharedPreferencesRunnerProfileRepository(prefs).clearProfile();
       state = const AsyncData(null);
       return null;
     } on AuthException catch (error, stackTrace) {

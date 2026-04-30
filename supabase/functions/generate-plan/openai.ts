@@ -28,11 +28,15 @@ Write every coachNote in ${coachNoteLanguage}. Keep JSON field names, enum
 values, targetZone values, and all structured data keys exactly as defined in
 the schema. coachNote is display text only; never rely on it for app logic.
 
-Treat schedule.hardDays as days the runner prefers not to train. Avoid placing
-long runs, intervals, hills, tempo, threshold, race-pace, fartlek, progression,
-or other high-stress sessions on those days. If the schedule is constrained, use
-hardDays only for rest, recovery, short easy running, or optional cross-training.
-Do not move a fixed goal race date just because it falls on a hardDay.
+Treat schedule.hardDays as days the runner finds hard to train. These are
+unavailable or prefer-rest days, not hard-workout days. If schedule.trainingDays
+can be satisfied using non-hard days, schedule restDay on every hardDay. If the
+selected schedule is too constrained and a hardDay must be used, use only
+easyRun or recoveryRun there. Never place longRun, intervals, hills, tempo,
+threshold, race-pace, fartlek, progression, or other high-stress sessions on a
+hardDay. Do not move a fixed goal race date just because it falls on a hardDay.
+The app supports run and rest sessions in this flow; do not suggest unsupported
+mobility, strength, or cross-training activities in coachNote text.
 Honor schedule.trainingDays as the target number of training days per week.
 Use restDay sessions for the remaining days when returning full calendar weeks.
 
@@ -59,6 +63,10 @@ Build: increase weekly load and introduce controlled quality.
 Specific: use race-relevant workouts and long-run development.
 Peak: highest useful workload, including the peak long run.
 TaperRace: reduce volume, keep light sharpness, and prepare for race/test day.
+
+The first planned training session should be easyRun or recoveryRun unless it is
+a fixed goal race date. Introduce quality sessions only after the runner has at
+least one controlled easy/base session in the plan.
 
 Always anchor week 1 sessions starting from the nearest upcoming Monday.
 ${raceInstruction}`;

@@ -9,6 +9,7 @@ import '../../features/auth/presentation/screens/welcome_screen.dart';
 import '../../features/auth/presentation/screens/sign_up_screen.dart';
 import '../../features/auth/presentation/screens/log_in_screen.dart';
 import '../../features/auth/presentation/screens/forgot_password_screen.dart';
+import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/account_setup/presentation/screens/account_setup_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_intro_screen.dart';
 import '../../features/onboarding/presentation/screens/goal_screen.dart';
@@ -17,8 +18,6 @@ import '../../features/onboarding/presentation/screens/schedule_screen.dart';
 import '../../features/onboarding/presentation/screens/health_injury_screen.dart';
 import '../../features/onboarding/presentation/screens/training_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/watch_device_screen.dart';
-import '../../features/onboarding/presentation/screens/recovery_lifestyle_screen.dart';
-import '../../features/onboarding/presentation/screens/motivation_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_generation_screen.dart';
 import '../../features/onboarding/presentation/screens/plan_ready_screen.dart';
@@ -75,10 +74,8 @@ const _profileSetupRoutes = <String>{
   RouteNames.schedule,
   RouteNames.health,
   RouteNames.training,
-  RouteNames.device,
-  RouteNames.recovery,
-  RouteNames.motivation,
-  RouteNames.summary,
+    RouteNames.device,
+    RouteNames.summary,
   RouteNames.planGeneration,
   RouteNames.planReady,
 };
@@ -125,7 +122,12 @@ String? resolveAppRedirect({
   required String matchedLocation,
   required AppBootstrapState bootstrapState,
   bool hasActiveRun = false,
+  bool isPasswordRecovery = false,
 }) {
+  if (isPasswordRecovery && matchedLocation != RouteNames.resetPassword) {
+    return RouteNames.resetPassword;
+  }
+
   final isSplashRoute = matchedLocation == RouteNames.splash;
   final isAuthRoute = _authRoutes.contains(matchedLocation);
   final isProfileSetupRoute = _profileSetupRoutes.contains(matchedLocation);
@@ -160,6 +162,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
   ref.listen(runnerProfileProvider, (_, _) {
     refreshNotifier.refresh();
   });
+  ref.listen<AsyncValue<bool>>(passwordRecoveryProvider, (_, _) {
+    refreshNotifier.refresh();
+  });
   ref.onDispose(refreshNotifier.dispose);
 
   return GoRouter(
@@ -169,6 +174,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       matchedLocation: state.matchedLocation,
       bootstrapState: ref.read(appBootstrapStateProvider),
       hasActiveRun: ref.read(activeRunProgressProvider) != null,
+      isPasswordRecovery: ref.read(passwordRecoveryProvider).value == true,
     ),
     routes: [
       GoRoute(
@@ -190,6 +196,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.forgotPassword,
         builder: (context, state) => const ForgotPasswordScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.resetPassword,
+        builder: (context, state) => const ResetPasswordScreen(),
       ),
       GoRoute(
         path: RouteNames.accountSetup,
@@ -222,14 +232,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.device,
         builder: (context, state) => const WatchDeviceScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.recovery,
-        builder: (context, state) => const RecoveryLifestyleScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.motivation,
-        builder: (context, state) => const MotivationScreen(),
       ),
       GoRoute(
         path: RouteNames.summary,

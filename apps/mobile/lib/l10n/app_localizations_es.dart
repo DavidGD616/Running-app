@@ -99,6 +99,21 @@ class AppLocalizationsEs extends AppLocalizations {
   String get backToLogIn => 'Volver a iniciar sesión';
 
   @override
+  String get resetPasswordTitle => 'Nueva contraseña';
+
+  @override
+  String get resetPasswordNewPasswordLabel => 'Nueva contraseña';
+
+  @override
+  String get resetPasswordConfirmPasswordLabel => 'Confirmar nueva contraseña';
+
+  @override
+  String get resetPasswordButton => 'Actualizar contraseña';
+
+  @override
+  String get resetPasswordUpdating => 'Actualizando...';
+
+  @override
   String get authLoadingSignUp => 'Creando cuenta...';
 
   @override

@@ -4,15 +4,20 @@ import {
   avoidHardDayTraining,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
+  normalizeFirstPlannedSession,
   normalizePeakLongRun,
+  normalizeSessionIds,
   normalizeTaper,
   normalizeTrainingDayCount,
+  normalizeWorkoutTypesByPhase,
   peakLongRunRangeKm,
   phaseForWeek,
   phasePlanFor,
   placeLongRunsOnPreferredDay,
+  preferRestOnHardDays,
   smoothLongRunProgression,
   spaceStressfulSessions,
+  validateGeneratedSchedule,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
 import type { GeneratedSession } from "./schema.ts";
@@ -168,15 +173,23 @@ Deno.test("addStrideDefaults adds intermediate stride defaults", () => {
         weekNumber: 1,
         type: "easyRun",
       }),
+      session({
+        id: "w1-wed",
+        date: "2026-04-29",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
     ],
     profile({ experience: "experience_intermediate" }),
     6,
   );
 
-  assert.equal(sessions[0].strideReps, 4);
-  assert.equal(sessions[0].strideSeconds, 20);
-  assert.equal(sessions[0].strideRecoverySeconds, 90);
-  assert.match(sessions[0].coachNote ?? "", /fast but smooth/i);
+  assert.equal(findSession(sessions, "w1-mon").strideReps, null);
+  const laterEasyRun = findSession(sessions, "w1-wed");
+  assert.equal(laterEasyRun.strideReps, 4);
+  assert.equal(laterEasyRun.strideSeconds, 20);
+  assert.equal(laterEasyRun.strideRecoverySeconds, 90);
+  assert.match(laterEasyRun.coachNote ?? "", /fast but smooth/i);
 });
 
 Deno.test("addStrideDefaults adds larger experienced stride defaults", () => {
@@ -188,14 +201,22 @@ Deno.test("addStrideDefaults adds larger experienced stride defaults", () => {
         weekNumber: 1,
         type: "easyRun",
       }),
+      session({
+        id: "w1-wed",
+        date: "2026-04-29",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
     ],
     profile({ experience: "experience_experienced" }),
     6,
   );
 
-  assert.equal(sessions[0].strideReps, 6);
-  assert.equal(sessions[0].strideSeconds, 20);
-  assert.equal(sessions[0].strideRecoverySeconds, 80);
+  assert.equal(findSession(sessions, "w1-mon").strideReps, null);
+  const laterEasyRun = findSession(sessions, "w1-wed");
+  assert.equal(laterEasyRun.strideReps, 6);
+  assert.equal(laterEasyRun.strideSeconds, 20);
+  assert.equal(laterEasyRun.strideRecoverySeconds, 80);
 });
 
 Deno.test("addStrideDefaults can add two weekly stride sessions when safe", () => {
@@ -203,6 +224,7 @@ Deno.test("addStrideDefaults can add two weekly stride sessions when safe", () =
     [
       session({ id: "w1-mon", date: "2026-04-27", type: "easyRun" }),
       session({ id: "w1-wed", date: "2026-04-29", type: "recoveryRun" }),
+      session({ id: "w1-thu", date: "2026-04-30", type: "easyRun" }),
       session({ id: "w1-sat", date: "2026-05-02", type: "longRun" }),
     ],
     profile({ experience: "experience_intermediate" }),
@@ -210,8 +232,9 @@ Deno.test("addStrideDefaults can add two weekly stride sessions when safe", () =
   );
 
   assert.equal(strideCount(sessions), 2);
-  assert.equal(findSession(sessions, "w1-mon").strideReps, 4);
+  assert.equal(findSession(sessions, "w1-mon").strideReps, null);
   assert.equal(findSession(sessions, "w1-wed").strideReps, 4);
+  assert.equal(findSession(sessions, "w1-thu").strideReps, 4);
   assert.equal(findSession(sessions, "w1-sat").strideReps, null);
 });
 
@@ -288,8 +311,13 @@ Deno.test("addStrideDefaults clamps OpenAI stride values to safe ranges", () => 
   const sessions = addStrideDefaults(
     [
       session({
-        id: "w1-mon",
+        id: "w1-mon-start",
         date: "2026-04-27",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-wed",
+        date: "2026-04-29",
         type: "easyRun",
         strideReps: 12,
         strideSeconds: 45,
@@ -300,9 +328,11 @@ Deno.test("addStrideDefaults clamps OpenAI stride values to safe ranges", () => 
     6,
   );
 
-  assert.equal(sessions[0].strideReps, 8);
-  assert.equal(sessions[0].strideSeconds, 30);
-  assert.equal(sessions[0].strideRecoverySeconds, 60);
+  assert.equal(findSession(sessions, "w1-mon-start").strideReps, null);
+  const laterEasyRun = findSession(sessions, "w1-wed");
+  assert.equal(laterEasyRun.strideReps, 8);
+  assert.equal(laterEasyRun.strideSeconds, 30);
+  assert.equal(laterEasyRun.strideRecoverySeconds, 60);
 });
 
 Deno.test("addStrideDefaults removes extra or badly placed stride sessions", () => {
@@ -397,6 +427,72 @@ Deno.test("avoidHardDayTraining does not move a fixed goal race date", () => {
 
   assert.equal(sessions[0].date, "2026-04-28");
   assert.equal(sessions[1].date, "2026-04-29");
+});
+
+Deno.test("preferRestOnHardDays keeps hard days as rest when non-hard days can satisfy 4 training days", () => {
+  const sessions = preferRestOnHardDays(
+    [
+      session({ id: "w1-mon-quality", date: "2026-04-27", type: "intervals" }),
+      session({ id: "w1-tue-easy", date: "2026-04-28", type: "easyRun" }),
+      session({ id: "w1-wed-rest", date: "2026-04-29", type: "restDay" }),
+      session({ id: "w1-thu-easy", date: "2026-04-30", type: "easyRun" }),
+      session({ id: "w1-fri-rest", date: "2026-05-01", type: "restDay" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+      session({ id: "w1-sun-easy", date: "2026-05-03", type: "easyRun" }),
+    ],
+    profile({
+      trainingDays: 4,
+      hardDays: ["day_tue", "day_thu", "day_sun"],
+      longRunDay: "day_sat",
+    }),
+  );
+
+  assert.equal(findByDate(sessions, "2026-04-28").type, "restDay");
+  assert.equal(findByDate(sessions, "2026-04-30").type, "restDay");
+  assert.equal(findByDate(sessions, "2026-05-03").type, "restDay");
+  assert.equal(findByDate(sessions, "2026-05-02").type, "longRun");
+  assert.equal(trainingCountForTest(sessions), 4);
+  assert.ok(
+    sessions.every((item) =>
+      !["2026-04-28", "2026-04-30", "2026-05-03"].includes(item.date) ||
+      item.type === "restDay"
+    ),
+  );
+});
+
+Deno.test("preferRestOnHardDays uses only easy or recovery runs on hard days when schedule is over-constrained", () => {
+  const sessions = preferRestOnHardDays(
+    [
+      session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-tue-tempo", date: "2026-04-28", type: "tempoRun" }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+      session({
+        id: "w1-thu-intervals",
+        date: "2026-04-30",
+        type: "intervals",
+      }),
+      session({ id: "w1-fri-easy", date: "2026-05-01", type: "easyRun" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+      session({ id: "w1-sun-fartlek", date: "2026-05-03", type: "fartlek" }),
+    ],
+    profile({
+      trainingDays: 6,
+      hardDays: ["day_tue", "day_thu", "day_sun"],
+      longRunDay: "day_sat",
+    }),
+  );
+
+  const hardDaySessions = [
+    findByDate(sessions, "2026-04-28"),
+    findByDate(sessions, "2026-04-30"),
+    findByDate(sessions, "2026-05-03"),
+  ];
+  assert.ok(
+    hardDaySessions.every((item) =>
+      ["restDay", "easyRun", "recoveryRun"].includes(item.type)
+    ),
+  );
+  assert.equal(trainingCountForTest(sessions), 6);
 });
 
 Deno.test("normalizeTrainingDayCount converts lowest priority sessions to rest days", () => {
@@ -2032,6 +2128,328 @@ Deno.test("normalizeTaper does not touch final race session distance", () => {
   );
 });
 
+Deno.test("normalizeFirstPlannedSession downgrades first hard workout", () => {
+  const sessions = normalizeFirstPlannedSession(
+    [
+      session({
+        id: "w1-mon-intervals",
+        date: "2026-04-27",
+        type: "intervals",
+      }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+    ],
+    profile({ experience: "experience_experienced" }),
+  );
+
+  const first = findByDate(sessions, "2026-04-27");
+  assert.equal(first.type, "easyRun");
+  assert.equal(first.targetZone, "easy");
+  assert.equal(first.intervalReps, null);
+  assert.equal(first.intervalRepDistanceMeters, null);
+  assert.equal(first.intervalRecoverySeconds, null);
+});
+
+Deno.test("normalizeSessionIds regenerates ids from final date and type", () => {
+  const sessions = normalizeSessionIds([
+    session({
+      id: "w1-2026-04-30-intervals",
+      date: "2026-04-27",
+      weekNumber: 1,
+      type: "easyRun",
+    }),
+    session({
+      id: "custom-rest",
+      date: "2026-04-28",
+      weekNumber: 1,
+      type: "restDay",
+    }),
+  ]);
+
+  assert.equal(sessions[0].id, "w1-2026-04-27-easyRun");
+  assert.equal(sessions[1].id, "w1-2026-04-28-restDay");
+});
+
+Deno.test("validateGeneratedSchedule reports hard-day and id-date violations", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-04-30-intervals",
+        date: "2026-04-28",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-2026-04-29-easyRun",
+        date: "2026-04-29",
+        type: "easyRun",
+      }),
+    ],
+    profile({
+      trainingDays: 4,
+      hardDays: ["day_tue"],
+    }),
+  );
+
+  assert.ok(
+    violations.some((item) => item.rule === "stressful_session_on_hard_day"),
+  );
+  assert.ok(
+    violations.some((item) => item.rule === "session_id_date_mismatch"),
+  );
+});
+
+Deno.test("validateGeneratedSchedule allows over-constrained hard-day easy runs per week", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-04-27-easyRun",
+        date: "2026-04-27",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-04-28-recoveryRun",
+        date: "2026-04-28",
+        weekNumber: 1,
+        type: "recoveryRun",
+        targetZone: "recovery",
+      }),
+      session({
+        id: "w1-2026-04-29-easyRun",
+        date: "2026-04-29",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-04-30-restDay",
+        date: "2026-04-30",
+        weekNumber: 1,
+        type: "restDay",
+        targetZone: null,
+      }),
+      session({
+        id: "w1-2026-05-01-easyRun",
+        date: "2026-05-01",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-05-02-longRun",
+        date: "2026-05-02",
+        weekNumber: 1,
+        type: "longRun",
+        targetZone: "longRun",
+      }),
+      session({
+        id: "w1-2026-05-03-easyRun",
+        date: "2026-05-03",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+      session({
+        id: "w2-2026-05-04-easyRun",
+        date: "2026-05-04",
+        weekNumber: 2,
+        type: "easyRun",
+      }),
+      session({
+        id: "w2-2026-05-05-recoveryRun",
+        date: "2026-05-05",
+        weekNumber: 2,
+        type: "recoveryRun",
+        targetZone: "recovery",
+      }),
+      session({
+        id: "w2-2026-05-06-easyRun",
+        date: "2026-05-06",
+        weekNumber: 2,
+        type: "easyRun",
+      }),
+      session({
+        id: "w2-2026-05-07-restDay",
+        date: "2026-05-07",
+        weekNumber: 2,
+        type: "restDay",
+        targetZone: null,
+      }),
+      session({
+        id: "w2-2026-05-08-easyRun",
+        date: "2026-05-08",
+        weekNumber: 2,
+        type: "easyRun",
+      }),
+      session({
+        id: "w2-2026-05-09-longRun",
+        date: "2026-05-09",
+        weekNumber: 2,
+        type: "longRun",
+        targetZone: "longRun",
+      }),
+      session({
+        id: "w2-2026-05-10-easyRun",
+        date: "2026-05-10",
+        weekNumber: 2,
+        type: "easyRun",
+      }),
+    ],
+    profile({
+      trainingDays: 6,
+      hardDays: ["day_tue", "day_thu", "day_sun"],
+      longRunDay: "day_sat",
+    }),
+  );
+
+  assert.deepEqual(
+    violations.filter((item) => item.rule === "avoidable_training_on_hard_day"),
+    [],
+  );
+  assert.deepEqual(
+    violations.filter((item) => item.rule === "stressful_session_on_hard_day"),
+    [],
+  );
+});
+
+Deno.test("schedule rule pipeline fixes observed Tue Thu Sun hard-day profile", () => {
+  const profileData = profile({
+    race: "race_10k",
+    raceDate: "2026-06-21T00:00:00.000",
+    experience: "experience_experienced",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu", "day_sun"],
+    longRunDay: "day_sat",
+  });
+  const input = [
+    session({
+      id: "w1-2026-04-30-intervals",
+      date: "2026-04-27",
+      type: "intervals",
+    }),
+    session({ id: "w1-2026-04-28-easy", date: "2026-04-28", type: "easyRun" }),
+    session({ id: "w1-2026-04-29-rest", date: "2026-04-29", type: "restDay" }),
+    session({ id: "w1-2026-04-30-rest", date: "2026-04-30", type: "restDay" }),
+    session({ id: "w1-2026-05-01-rest", date: "2026-05-01", type: "restDay" }),
+    session({
+      id: "w1-2026-05-03-longRun",
+      date: "2026-05-02",
+      type: "longRun",
+    }),
+    session({
+      id: "w1-2026-05-02-easyRun",
+      date: "2026-05-03",
+      type: "easyRun",
+    }),
+  ];
+
+  const result = normalizeSessionIds(
+    normalizeFirstPlannedSession(
+      preferRestOnHardDays(
+        placeLongRunsOnPreferredDay(
+          normalizeTrainingDayCount(input, profileData),
+          profileData,
+        ),
+        profileData,
+      ),
+      profileData,
+    ),
+  );
+
+  assert.equal(findByDate(result, "2026-04-27").type, "easyRun");
+  assert.equal(findByDate(result, "2026-04-28").type, "restDay");
+  assert.equal(findByDate(result, "2026-04-30").type, "restDay");
+  assert.equal(findByDate(result, "2026-05-02").type, "longRun");
+  assert.equal(findByDate(result, "2026-05-03").type, "restDay");
+  assert.equal(trainingCountForTest(result), 4);
+  assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
+  assert.ok(result.every((item) => item.id.includes(item.date.slice(0, 10))));
+});
+
+Deno.test("production rule pipeline repairs partial-week hard-day training after calendar fill", () => {
+  const profileData = profile({
+    race: "race_10k",
+    raceDate: "2026-06-21T00:00:00.000",
+    experience: "experience_experienced",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu", "day_sun"],
+    longRunDay: "day_sat",
+  });
+  const totalWeeks = 8;
+  const input = [
+    session({
+      id: "w1-2026-04-28-intervals",
+      date: "2026-04-28",
+      type: "intervals",
+    }),
+    session({
+      id: "w1-2026-04-29-easyRun",
+      date: "2026-04-29",
+      type: "easyRun",
+    }),
+    session({
+      id: "w1-2026-04-30-easyRun",
+      date: "2026-04-30",
+      type: "easyRun",
+    }),
+    session({
+      id: "w1-2026-05-03-longRun",
+      date: "2026-05-03",
+      type: "longRun",
+    }),
+  ];
+
+  const result = runProductionRulePipeline(input, profileData, totalWeeks);
+
+  assert.equal(result.length, 7);
+  assert.equal(findByDate(result, "2026-04-28").type, "restDay");
+  assert.equal(findByDate(result, "2026-04-30").type, "restDay");
+  assert.equal(findByDate(result, "2026-05-02").type, "longRun");
+  assert.equal(findByDate(result, "2026-05-03").type, "restDay");
+  assert.equal(trainingCountForTest(result), 4);
+  assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
+  assert.ok(result.every((item) => item.id.includes(item.date.slice(0, 10))));
+});
+
+Deno.test("production rule pipeline moves partial-week long run onto preferred day after calendar fill", () => {
+  const profileData = profile({
+    race: "race_10k",
+    raceDate: "2026-06-21T00:00:00.000",
+    experience: "experience_experienced",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu", "day_sun"],
+    longRunDay: "day_sat",
+  });
+  const totalWeeks = 8;
+  const input = [
+    session({
+      id: "w1-2026-04-27-easyRun",
+      date: "2026-04-27",
+      type: "easyRun",
+    }),
+    session({
+      id: "w1-2026-04-29-easyRun",
+      date: "2026-04-29",
+      type: "easyRun",
+    }),
+    session({
+      id: "w1-2026-05-01-longRun",
+      date: "2026-05-01",
+      type: "longRun",
+    }),
+    session({
+      id: "w1-2026-05-03-easyRun",
+      date: "2026-05-03",
+      type: "easyRun",
+    }),
+  ];
+
+  const result = runProductionRulePipeline(input, profileData, totalWeeks);
+
+  assert.equal(findByDate(result, "2026-05-02").type, "longRun");
+  assert.notEqual(findByDate(result, "2026-05-01").type, "longRun");
+  assert.equal(findByDate(result, "2026-05-03").type, "restDay");
+  assert.equal(trainingCountForTest(result), 4);
+  assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
@@ -2085,6 +2503,86 @@ function strideCount(sessions: GeneratedSession[]): number {
   return sessions.filter((item) =>
     (item.strideReps ?? 0) > 0 && (item.strideSeconds ?? 0) > 0
   ).length;
+}
+
+function findByDate(
+  sessions: GeneratedSession[],
+  date: string,
+): GeneratedSession {
+  const found = sessions.find((item) => item.date === date);
+  assert.ok(found, `Expected session on ${date} to exist`);
+  return found;
+}
+
+function trainingCountForTest(sessions: GeneratedSession[]): number {
+  return sessions.filter((item) => item.type !== "restDay").length;
+}
+
+function runProductionRulePipeline(
+  input: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+): GeneratedSession[] {
+  const scheduleNormalizedSessions = normalizeTrainingDayCount(
+    input,
+    profileData,
+  );
+  const longRunPlacedSessions = placeLongRunsOnPreferredDay(
+    scheduleNormalizedSessions,
+    profileData,
+  );
+  const stressSpacedSessions = spaceStressfulSessions(
+    longRunPlacedSessions,
+    profileData,
+  );
+  const fullCalendarSessions = ensureFullCalendarWeeks(stressSpacedSessions);
+  const fullCalendarLongRunPlacedSessions = placeLongRunsOnPreferredDay(
+    fullCalendarSessions,
+    profileData,
+  );
+  const hardDayRestedSessions = preferRestOnHardDays(
+    fullCalendarLongRunPlacedSessions,
+    profileData,
+  );
+  const scheduleAdjustedSessions = avoidHardDayTraining(
+    hardDayRestedSessions,
+    profileData,
+  );
+  const peakNormalizedSessions = normalizePeakLongRun(
+    scheduleAdjustedSessions,
+    profileData,
+    totalWeeks,
+  );
+  const progressionSmoothedSessions = smoothLongRunProgression(
+    peakNormalizedSessions,
+    profileData,
+    totalWeeks,
+  );
+  const taperNormalizedSessions = normalizeTaper(
+    progressionSmoothedSessions,
+    profileData,
+    totalWeeks,
+  );
+  const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
+    taperNormalizedSessions,
+    profileData,
+    totalWeeks,
+  );
+  const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
+    phaseNormalizedSessions,
+    profileData,
+  );
+  const phaseStampedSessions = firstSessionNormalizedSessions.map((
+    session,
+  ) => ({
+    ...session,
+    phase: phaseForWeek(session.weekNumber, totalWeeks, profileData),
+  }));
+  const raceFinalizedSessions = ensureGoalRaceSession(
+    phaseStampedSessions,
+    profileData,
+  );
+  return normalizeSessionIds(raceFinalizedSessions);
 }
 
 function session(

@@ -272,6 +272,36 @@ abstract class AppLocalizations {
   /// **'Back to Log In'**
   String get backToLogIn;
 
+  /// Heading on the reset password screen
+  ///
+  /// In en, this message translates to:
+  /// **'Set New Password'**
+  String get resetPasswordTitle;
+
+  /// New password field label on the reset password screen
+  ///
+  /// In en, this message translates to:
+  /// **'New password'**
+  String get resetPasswordNewPasswordLabel;
+
+  /// Confirm new password field label on the reset password screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm new password'**
+  String get resetPasswordConfirmPasswordLabel;
+
+  /// Submit button on the reset password screen
+  ///
+  /// In en, this message translates to:
+  /// **'Update Password'**
+  String get resetPasswordButton;
+
+  /// Loading label on the reset password screen while updating the password
+  ///
+  /// In en, this message translates to:
+  /// **'Updating...'**
+  String get resetPasswordUpdating;
+
   /// Loading label while creating an account
   ///
   /// In en, this message translates to:

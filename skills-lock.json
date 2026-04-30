@@ -6,10 +6,20 @@
       "sourceType": "github",
       "computedHash": "c591208a052cc9f7deb77be1183e4627daf54dbf575ea2653f519f29fe3bd4c8"
     },
+    "accessibility": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "bffe3d08cfe92ebad63699f74ce29e35c19850ebfbf474c1463183cfe34d6a09"
+    },
     "create-design-system-rules": {
       "source": "figma/mcp-server-guide",
       "sourceType": "github",
       "computedHash": "d6043b42474f54b855b0a0394032eb7443945adaa33893eac6d3968f94822d31"
+    },
+    "frontend-design": {
+      "source": "anthropics/skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "82fb11a63fb1e35ee2469516ed02d54695f783115b1540c0e783197af4240a3a"
     },
     "parallel-task": {
       "source": "am-will/codex-skills",
@@ -21,10 +31,21 @@
       "sourceType": "github",
       "computedHash": "ab1d97975dcf20cebe27960f1b0abd7e2db16fa31261aebe29342eca33076f91"
     },
+    "seo": {
+      "source": "addyosmani/web-quality-skills",
+      "sourceType": "autoskills-registry",
+      "computedHash": "c184da724d1c61ad077f27418ea8e7e88fd54bcdf98165e18be7e4681cbd5e20"
+    },
     "ui-ux-pro-max": {
       "source": "nextlevelbuilder/ui-ux-pro-max-skill",
       "sourceType": "github",
       "computedHash": "e688fcd4c5693e14ebd00d48e982dbd2be060fbea89f5f60531e79c704a1bc28"
+    },
+    "writing-plans": {
+      "source": "obra/superpowers",
+      "sourceType": "github",
+      "skillPath": "skills/writing-plans/SKILL.md",
+      "computedHash": "bfaed11054ad8021c66860244e2d2e0d1eca483ae9f5fbfcb956e99c61f5c3d7"
     }
   }
 }
