@@ -47,7 +47,7 @@
 | 3 | Supabase production? | **Yes**, production project active | Good, auth ready |
 | 4 | App icons? | **Not yet**, need help | Need to generate/create launcher icons |
 | 5 | Icon design? | **TBD later** | Can use a simple generated mark for launch |
-| 6 | Privacy policy/terms? | **Not yet**, need help | **Hard blocker** for both stores |
+| 6 | Privacy policy/terms? | **LIVE** at striviq.fit | **RESOLVED** |
 | 7 | Privacy label strategy? | **Need help deciding** | Recommend "optional" health data, no third-party sharing |
 | 8 | Crash reporting/analytics? | **Yes, want it** | Recommend Firebase Crashlytics + Analytics |
 | 9 | Location permission? | **"Always"** on iOS + Android | Update permissions, stronger review justification needed |
@@ -76,7 +76,7 @@ Since the timeline is **days**, here's the execution order:
 
 ### Phase 1: Start RIGHT NOW (today)
 1. ~~**User**: Sign up for Apple Developer Account and Google Play Developer Account~~ ✅ **COMPLETED**
-2. **AI**: Generate privacy policy & terms of service text for a GPS fitness app
+2. ~~**AI**: Generate privacy policy & terms of service text for a GPS fitness app~~ ✅ **COMPLETED** — Live at striviq.fit
 3. **AI**: Create a simple StrivIQ app launcher icon (dark square with green accent mark)
 4. **AI**: Update app display names to "StrivIQ"
 
@@ -148,7 +148,7 @@ The StrivIQ marketing website is now live at **https://striviq.fit** (deployed v
 
 1. **App launcher icon design**: User wants to decide later; can use a simple generated mark for now.
 2. **Crash reporting service**: User said yes but didn't specify which one. Firebase Crashlytics recommended.
-3. **Privacy policy hosting**: Does the user have a domain/website to host the generated policy?
+3. ~~**Privacy policy hosting**~~ ✅ **RESOLVED** — Hosted at striviq.fit with custom domain
 4. **Supabase auth callback URL**: User didn't know if `striviq://login-callback` is configured on Supabase dashboard. Should verify before launch.
 5. **Google Play data safety form**: Will need to be filled out manually in Play Console; this doc provides the recommended answers.
 
