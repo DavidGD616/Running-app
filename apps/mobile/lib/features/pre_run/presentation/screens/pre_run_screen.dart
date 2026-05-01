@@ -113,6 +113,13 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
       }
     }
 
+    // New: for distance-based workouts, require Always permission
+    if (hasDistanceBlocks && permission != LocationPermission.always) {
+      if (!mounted) return;
+      _showAllowAlwaysLocationDialog();
+      return;
+    }
+
     if (!mounted) return;
     _startActiveRun(session, timerOnlyMode: false);
   }
@@ -244,6 +251,32 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
                   .openLocationSettings();
             },
             child: Text(l10n.gpsEnableLocationServices),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showAllowAlwaysLocationDialog() {
+    final l10n = AppLocalizations.of(context)!;
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.allowAlwaysLocationTitle),
+        content: Text(l10n.allowAlwaysLocationBody),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: Text(l10n.activeRunDismiss),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              ref.read(locationPermissionServiceProvider).openAppSettings();
+            },
+            child: Text(l10n.allowAlwaysLocationOpenSettings),
           ),
         ],
       ),

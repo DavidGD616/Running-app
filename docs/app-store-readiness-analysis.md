@@ -82,9 +82,17 @@ Since the timeline is **days**, here's the execution order:
 
 ### Phase 2: Code Readiness (tomorrow)
 5. ~~**AI**: Integrate Firebase Crashlytics~~ ✅ **COMPLETED**
-6. **AI**: Update location permission to "Always" on iOS + Android with proper justification strings
+6. ~~**AI**: Update location permission to "Always" on iOS + Android with proper justification strings~~ ✅ **COMPLETED**
 7. **AI**: Verify all native configs are correct for store review
 8. **Both**: Fill out privacy nutrition labels / data safety forms with recommended answers
+
+### Phase 2 Completion Notes
+- **Step 6 — Location Permission Updates**:
+  - **iOS**: Updated `Info.plist` permission strings from `RunFlow` to `StrivIQ`; `NSLocationAlwaysAndWhenInUseUsageDescription` now adds explicit background-tracking justification for active workouts.
+  - **Android**: Added `android.permission.ACCESS_BACKGROUND_LOCATION` to `AndroidManifest.xml` for Android 10+ background tracking support.
+  - **Pre-run flow**: Updated `_onContinue()` in `pre_run_screen.dart` so that distance-based workouts now require `LocationPermission.always`. If the user only has `whileInUse` permission, a new "Allow Always Location" dialog is shown that opens app settings. Non-distance workouts can still fall back to timer-only mode.
+  - **Localization**: Added new ARB strings (`allowAlwaysLocationTitle`, `allowAlwaysLocationBody`, `allowAlwaysLocationOpenSettings`) in both English and Spanish, and ran `flutter gen-l10n`.
+  - **Tests**: Added 4 new widget tests covering: always permission starts GPS run, whileInUse shows guidance dialog, denied shows GPS required dialog, and non-distance workouts allow timer-only fallback. All 392 tests pass.
 
 ### Phase 3: Store Metadata (next day)
 9. **AI**: Prepare App Store listing (description, keywords, screenshots guidance)

@@ -2626,4 +2626,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunTimerOnlyRestrictionTitle => 'Timer-Only Not Supported';
+
+  @override
+  String get allowAlwaysLocationTitle => 'Allow Always Location';
+
+  @override
+  String get allowAlwaysLocationBody =>
+      'To track your distance-based run while the app is in the background, please allow Always location access in Settings.';
+
+  @override
+  String get allowAlwaysLocationOpenSettings => 'Open Settings';
 }

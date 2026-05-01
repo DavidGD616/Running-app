@@ -2542,5 +2542,14 @@
   "@activeRunDismiss": { "description": "Button to dismiss the GPS warning modal" },
 
   "activeRunTimerOnlyRestrictionTitle": "Timer-Only Not Supported",
-  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" }
+  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" },
+
+  "allowAlwaysLocationTitle": "Allow Always Location",
+  "@allowAlwaysLocationTitle": { "description": "Title of dialog prompting user to enable Always location permission for background GPS tracking during active workouts" },
+
+  "allowAlwaysLocationBody": "To track your distance-based run while the app is in the background, please allow Always location access in Settings.",
+  "@allowAlwaysLocationBody": { "description": "Body text explaining why Always location permission is needed for background GPS tracking during active workouts" },
+
+  "allowAlwaysLocationOpenSettings": "Open Settings",
+  "@allowAlwaysLocationOpenSettings": { "description": "Button label to open app settings to enable Always location permission" }
 }

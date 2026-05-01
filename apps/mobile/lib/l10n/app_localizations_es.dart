@@ -2642,4 +2642,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get activeRunTimerOnlyRestrictionTitle =>
       'Modo Solo Temporizador No Compatible';
+
+  @override
+  String get allowAlwaysLocationTitle => 'Permitir Ubicación Siempre';
+
+  @override
+  String get allowAlwaysLocationBody =>
+      'Para registrar tu carrera basada en distancia mientras la aplicación está en segundo plano, por favor permite el acceso a la ubicación Siempre en Ajustes.';
+
+  @override
+  String get allowAlwaysLocationOpenSettings => 'Abrir Ajustes';
 }
