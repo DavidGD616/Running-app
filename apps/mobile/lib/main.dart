@@ -1,5 +1,8 @@
 import 'dart:async';
+import 'dart:ui';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,6 +14,7 @@ import 'l10n/app_localizations.dart';
 import 'core/config/supabase_config.dart';
 import 'core/persistence/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
+import 'firebase_options.dart';
 import 'core/router/route_names.dart';
 import 'core/theme/app_theme.dart';
 import 'features/active_run/presentation/run_live_activity_background_service.dart';
@@ -19,6 +23,21 @@ import 'features/localization/presentation/locale_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
+
+  // Pass all uncaught fatal errors to Crashlytics
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Catch errors outside Flutter framework (plugins, async, etc.)
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
+
   await initializeDateFormatting();
   await RunLiveActivityBackgroundService.instance.configure();
   await _initializeSupabaseIfConfigured();

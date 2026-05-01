@@ -49,7 +49,7 @@
 | 5 | Icon design? | **TBD later** | Can use a simple generated mark for launch |
 | 6 | Privacy policy/terms? | **LIVE** at striviq.fit | **RESOLVED** |
 | 7 | Privacy label strategy? | **Need help deciding** | Recommend "optional" health data, no third-party sharing |
-| 8 | Crash reporting/analytics? | **Yes, want it** | Recommend Firebase Crashlytics + Analytics |
+| 8 | Crash reporting/analytics? | **COMPLETED** — Firebase Crashlytics integrated | Resolved |
 | 9 | Location permission? | **"Always"** on iOS + Android | Update permissions, stronger review justification needed |
 | 10 | App name? | **"StrivIQ"** | **COMPLETED** — Updated on both platforms |
 | 11 | Dev accounts? | **Apple & Google Play accounts created and verified** | Resolved |
@@ -81,7 +81,7 @@ Since the timeline is **days**, here's the execution order:
 4. ~~**AI**: Update app display names to "StrivIQ"~~ ✅ **COMPLETED**
 
 ### Phase 2: Code Readiness (tomorrow)
-5. **AI**: Integrate Firebase Crashlytics + Analytics (or Sentry if user prefers lighter)
+5. ~~**AI**: Integrate Firebase Crashlytics~~ ✅ **COMPLETED**
 6. **AI**: Update location permission to "Always" on iOS + Android with proper justification strings
 7. **AI**: Verify all native configs are correct for store review
 8. **Both**: Fill out privacy nutrition labels / data safety forms with recommended answers
