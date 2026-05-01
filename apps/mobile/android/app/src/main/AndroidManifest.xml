@@ -8,7 +8,7 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
 
     <application
-        android:label="running_app"
+        android:label="StrivIQ"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
