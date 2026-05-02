@@ -1,4 +1,4 @@
-package com.example.running_app
+package com.davidgd616.striviq
 
 import android.app.Notification
 import android.app.NotificationChannel

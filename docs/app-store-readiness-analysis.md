@@ -83,7 +83,7 @@ Since the timeline is **days**, here's the execution order:
 ### Phase 2: Code Readiness (tomorrow)
 5. ~~**AI**: Integrate Firebase Crashlytics~~ ✅ **COMPLETED**
 6. ~~**AI**: Update location permission to "Always" on iOS + Android with proper justification strings~~ ✅ **COMPLETED**
-7. **AI**: Verify all native configs are correct for store review
+7. ~~**AI**: Verify all native configs are correct for store review~~ ✅ **COMPLETED**
 8. **Both**: Fill out privacy nutrition labels / data safety forms with recommended answers
 
 ### Phase 2 Completion Notes
@@ -93,6 +93,30 @@ Since the timeline is **days**, here's the execution order:
   - **Pre-run flow**: Updated `_onContinue()` in `pre_run_screen.dart` so that distance-based workouts now require `LocationPermission.always`. If the user only has `whileInUse` permission, a new "Allow Always Location" dialog is shown that opens app settings. Non-distance workouts can still fall back to timer-only mode.
   - **Localization**: Added new ARB strings (`allowAlwaysLocationTitle`, `allowAlwaysLocationBody`, `allowAlwaysLocationOpenSettings`) in both English and Spanish, and ran `flutter gen-l10n`.
   - **Tests**: Added 4 new widget tests covering: always permission starts GPS run, whileInUse shows guidance dialog, denied shows GPS required dialog, and non-distance workouts allow timer-only fallback. All 392 tests pass.
+- **Step 7 — Native Config Audit**:
+  - **Android**:
+    - **Fixed critical native package mismatch**: `android/app/build.gradle.kts` uses `namespace = "com.davidgd616.striviq"` and `applicationId = "com.davidgd616.striviq"`, and the Kotlin native files were moved from `com.example.running_app` to `com.davidgd616.striviq` so generated `R` resources resolve correctly.
+    - `applicationId` is correctly set to `com.davidgd616.striviq`.
+    - `AndroidManifest.xml` has required permissions for active run tracking: foreground service location, fine/coarse/background location, notifications, and wake lock.
+    - Geolocator service and custom `RunForegroundService` are declared with `foregroundServiceType="location"` so Play Console foreground-service declarations align with GPS run tracking.
+    - Deep link intent filters for `striviq://login-callback` and `striviq://active-run` are present.
+    - Release builds no longer fall back to debug signing. `android/key.properties` is ignored by git and can be used for the production upload keystore.
+    - Verified `flutter build apk --debug` and `flutter build appbundle --release`.
+  - **iOS**:
+    - **Fixed deep linking**: `FlutterDeepLinkingEnabled` was `false` despite `striviq://` URL schemes being registered. Changed to `true` so Flutter properly handles deep links.
+    - `CFBundleDisplayName` and `CFBundleName` are both "StrivIQ".
+    - Bundle identifier is `com.davidgd616.striviq` across all targets (Runner, Tests, Live Activity Extension).
+    - `Info.plist` has proper location permission strings (updated in Step 6), background location mode, and Live Activities support. Unused `fetch` and `processing` background modes were removed.
+    - `IPHONEOS_DEPLOYMENT_TARGET` is 13.0 for main app, 16.2 for Live Activity Extension — appropriate for feature requirements.
+    - `ENABLE_BITCODE = NO` — correct, Apple deprecated bitcode.
+    - `INFOPLIST_KEY_LSApplicationCategoryType` is `public.app-category.sports`.
+    - Development Team ID is set (`6RUW3X93HY`).
+    - App icon is configured via `flutter_launcher_icons`.
+    - Verified `flutter build ios --no-codesign`.
+  - **Flutter-level**:
+    - `pubspec.yaml`: `version: 1.0.0+1` — appropriate for initial release.
+    - `main.dart`: No debug flags left enabled; `debugShowCheckedModeBanner: false`; Crashlytics properly initialized; Supabase initialization is conditional (gracefully skips if env vars missing).
+    - All dependencies are current and compatible.
 
 ### Phase 3: Store Metadata (next day)
 9. **AI**: Prepare App Store listing (description, keywords, screenshots guidance)
@@ -122,9 +146,9 @@ The StrivIQ marketing website is now live at **https://striviq.fit** (deployed v
 - ~~**App Display Name**: 5 minute code change~~ **DONE**
 
 ### Native Config Status
-- **iOS**: `Info.plist` has `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription` present. Live Activities enabled. Deep linking (`striviq://`) configured. `FlutterDeepLinkingEnabled` is currently `false`.
-- **Android**: Manifest has foreground service permissions, location permissions, Geolocator service declaration, custom `RunForegroundService` declaration. Application ID is `com.davidgd616.striviq`.
-- **Signing**: Android release build currently uses debug signing config — needs proper signing for store release.
+- **iOS**: `Info.plist` has `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription` present. Live Activities enabled. Deep linking (`striviq://`) configured. `FlutterDeepLinkingEnabled` is currently `true`. Background modes are limited to `location`.
+- **Android**: Manifest has foreground service location permission, location permissions, Geolocator service declaration, custom `RunForegroundService` declaration, and location foreground service types. Application ID is `com.davidgd616.striviq`.
+- **Signing**: Android release builds no longer use debug signing. Configure `android/key.properties` with the production upload keystore before final Play Console upload.
 
 ### Bundle ID
 - **Android**: `com.davidgd616.striviq`
