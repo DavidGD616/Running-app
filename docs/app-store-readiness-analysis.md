@@ -123,9 +123,19 @@ Since the timeline is **days**, here's the execution order:
   - **Android**: StrivIQ app created in Google Play Console (`com.davidgd616.striviq`). Data Safety form completed: data encrypted in transit, email+OAuth account creation, precise location + personal info + fitness + crash/diagnostics + device IDs declared as collected, no data shared with third parties. Content ratings (IARC) completed — rated E/3+. Target audience set to 18+. Advertising ID declared as not used. Health app features declared as Activity and fitness.
 
 ### Phase 3: Store Metadata (next day)
-9. **AI**: Prepare App Store listing (description, keywords, screenshots guidance)
+9. ~~**AI**: Prepare App Store listing (description, keywords, screenshots guidance)~~ ✅ **COMPLETED**
 10. **AI**: Prepare Google Play listing (description, feature graphic guidance)
 11. **AI**: Build release APK/AAB and iOS archive
+
+- **Step 9 — App Store Listing**:
+  - **App Information**: Name set to `StrivIQ`, subtitle updated to `Train Smarter. Run Farther.`; category Health & Fitness / Sports confirmed.
+  - **Description**: Full 2,706-char copy entered covering personalized plans, GPS tracking, session guidance, progress tracking, and EN/ES support.
+  - **Promotional Text**: `Your personalized running coach. Build a training plan, track GPS runs, and crush your next race — 5K to Marathon.`
+  - **Keywords**: `running,training plan,marathon,5K,half marathon,GPS run tracker,race training,pace,coaching` (9 keywords, within 100-char limit).
+  - **URLs**: Support URL `https://striviq.fit/support`, Marketing URL `https://striviq.fit`.
+  - **Copyright**: `© 2026 David Guerrero Diaz`.
+  - **Screenshots**: 5 × 6.5" iPhone screenshots uploaded (Today, session detail, active GPS run, progress, onboarding).
+  - **App Review Information**: Test account `reviewer@striviq.fit` entered; contact info filled.
 
 ### Phase 4: Submit
 12. **User**: Upload to App Store Connect + Google Play Console
