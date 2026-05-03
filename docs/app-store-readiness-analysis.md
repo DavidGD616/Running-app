@@ -84,7 +84,7 @@ Since the timeline is **days**, here's the execution order:
 5. ~~**AI**: Integrate Firebase Crashlytics~~ ✅ **COMPLETED**
 6. ~~**AI**: Update location permission to "Always" on iOS + Android with proper justification strings~~ ✅ **COMPLETED**
 7. ~~**AI**: Verify all native configs are correct for store review~~ ✅ **COMPLETED**
-8. **Both**: Fill out privacy nutrition labels / data safety forms with recommended answers
+8. ~~**Both**: Fill out privacy nutrition labels / data safety forms with recommended answers~~ ✅ **COMPLETED**
 
 ### Phase 2 Completion Notes
 - **Step 6 — Location Permission Updates**:
@@ -117,6 +117,10 @@ Since the timeline is **days**, here's the execution order:
     - `pubspec.yaml`: `version: 1.0.0+1` — appropriate for initial release.
     - `main.dart`: No debug flags left enabled; `debugShowCheckedModeBanner: false`; Crashlytics properly initialized; Supabase initialization is conditional (gracefully skips if env vars missing).
     - All dependencies are current and compatible.
+
+- **Step 8 — Privacy Labels / Data Safety**:
+  - **iOS**: All 7 App Privacy labels published in App Store Connect: Name, Email Address, User ID, Precise Location, Fitness (linked to identity, App Functionality); Crash Data, Performance Data (not linked to identity, App Functionality). Privacy Policy URL set to https://striviq.fit/privacy-policy.html.
+  - **Android**: StrivIQ app created in Google Play Console (`com.davidgd616.striviq`). Data Safety form completed: data encrypted in transit, email+OAuth account creation, precise location + personal info + fitness + crash/diagnostics + device IDs declared as collected, no data shared with third parties. Content ratings (IARC) completed — rated E/3+. Target audience set to 18+. Advertising ID declared as not used. Health app features declared as Activity and fitness.
 
 ### Phase 3: Store Metadata (next day)
 9. **AI**: Prepare App Store listing (description, keywords, screenshots guidance)
@@ -155,34 +159,22 @@ The StrivIQ marketing website is now live at **https://striviq.fit** (deployed v
 - **iOS**: Should match or be consistent (e.g., `com.davidgd616.striviq`)
 - Bundle IDs are permanent once an app is submitted.
 
-### Privacy Label Recommendations (for when forms are filled)
-- **Health/Fitness data**: Declare as "optional" since users can use the app without a watch and without logging all health details.
-- **Location**: Declare as "required" for core functionality (GPS tracking).
-- **Email**: Declare as "required" for account creation.
-- **Third-party sharing**: Declare "no sharing" initially (no analytics or ads at launch; add Crashlytics later and update).
+### Submitted Privacy / Data Safety Summary
+- **Apple App Privacy**: Name, email address, user ID, precise location, and fitness data are declared as linked to identity and used for app functionality. Crash data and performance data are declared as not linked to identity and used for app functionality.
+- **Google Play Data Safety**: Email/OAuth account data, precise location, personal info, fitness data, crash/diagnostics data, and device IDs are declared as collected. Data is declared encrypted in transit, not shared with third parties, and not used for ads.
+- **Crash Reporting**: Firebase Crashlytics is integrated and declared through crash/diagnostics and performance data categories.
 - **Data retention**: User can delete account and data.
-
-### Crash Reporting Service Options
-1. **Firebase Crashlytics** (recommended for first launch)
-   - Free, easy Flutter integration via `firebase_crashlytics`
-   - Requires Firebase project creation
-   - Also gives Firebase Analytics for free
-   - Google-owned, well-supported
-
-2. **Sentry**
-   - Developer-friendly, free tier generous
-   - No Google dependency
-   - Good for privacy-conscious apps
+- **Export compliance**: iOS `ITSAppUsesNonExemptEncryption` is set to `false`; StrivIQ uses standard HTTPS/TLS through Supabase, Firebase, Google Sign-In, and platform networking, with no proprietary or non-standard encryption.
 
 ---
 
 ## Open Decisions Pending User Input
 
-1. **App launcher icon design**: User wants to decide later; can use a simple generated mark for now.
-2. **Crash reporting service**: User said yes but didn't specify which one. Firebase Crashlytics recommended.
-3. ~~**Privacy policy hosting**~~ ✅ **RESOLVED** — Hosted at striviq.fit with custom domain
+1. ~~**App launcher icon design**~~ ✅ **RESOLVED** — Generated StrivIQ launcher icon is in place for launch.
+2. ~~**Crash reporting service**~~ ✅ **RESOLVED** — Firebase Crashlytics integrated.
+3. ~~**Privacy policy hosting**~~ ✅ **RESOLVED** — Hosted at striviq.fit with custom domain.
 4. **Supabase auth callback URL**: User didn't know if `striviq://login-callback` is configured on Supabase dashboard. Should verify before launch.
-5. **Google Play data safety form**: Will need to be filled out manually in Play Console; this doc provides the recommended answers.
+5. ~~**Google Play data safety form**~~ ✅ **RESOLVED** — Completed in Play Console.
 
 ---
 
