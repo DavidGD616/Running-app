@@ -3507,8 +3507,8 @@ abstract class AppLocalizations {
   /// App version string shown at bottom of settings
   ///
   /// In en, this message translates to:
-  /// **'StrivIQ v1.0.0 (Build 42)'**
-  String get settingsVersion;
+  /// **'{appName} v{version} (Build {buildNumber})'**
+  String settingsVersion(String appName, String version, String buildNumber);
 
   /// Header title on the session detail screen
   ///

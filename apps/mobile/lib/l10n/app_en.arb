@@ -1824,8 +1824,15 @@
   "settingsLogOut": "Log Out",
   "@settingsLogOut": { "description": "Log out button label" },
 
-  "settingsVersion": "StrivIQ v1.0.0 (Build 42)",
-  "@settingsVersion": { "description": "App version string shown at bottom of settings" },
+  "settingsVersion": "{appName} v{version} (Build {buildNumber})",
+  "@settingsVersion": {
+    "description": "App version string shown at bottom of settings",
+    "placeholders": {
+      "appName": { "type": "String" },
+      "version": { "type": "String" },
+      "buildNumber": { "type": "String" }
+    }
+  },
 
   "sessionDetailTitle": "Workout",
   "@sessionDetailTitle": { "description": "Header title on the session detail screen" },

@@ -1833,7 +1833,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLogOut => 'Log Out';
 
   @override
-  String get settingsVersion => 'StrivIQ v1.0.0 (Build 42)';
+  String settingsVersion(String appName, String version, String buildNumber) {
+    return '$appName v$version (Build $buildNumber)';
+  }
 
   @override
   String get sessionDetailTitle => 'Workout';
