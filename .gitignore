@@ -18,6 +18,7 @@
 .env
 .env.local
 .env*.local
+apps/mobile/config/*.env
 
 # Logs
 *.log
