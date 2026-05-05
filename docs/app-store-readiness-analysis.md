@@ -124,7 +124,7 @@ Since the timeline is **days**, here's the execution order:
 
 ### Phase 3: Store Metadata (next day)
 9. ~~**AI**: Prepare App Store listing (description, keywords, screenshots guidance)~~ ✅ **COMPLETED**
-10. **AI**: Prepare Google Play listing (description, feature graphic guidance)
+10. ~~**AI**: Prepare Google Play listing (description, feature graphic guidance)~~ ✅ **COMPLETED**
 11. **AI**: Build release APK/AAB and iOS archive
 
 - **Step 9 — App Store Listing**:
@@ -136,6 +136,12 @@ Since the timeline is **days**, here's the execution order:
   - **Copyright**: `© 2026 David Guerrero Diaz`.
   - **Screenshots**: 5 × 6.5" iPhone screenshots uploaded (Today, session detail, active GPS run, progress, onboarding).
   - **App Review Information**: Test account `reviewer@striviq.fit` entered; contact info filled.
+
+- **Step 10 — Google Play Listing**:
+  - **Short description**: `Personalized running plans, GPS tracking & race coaching — 5K to Marathon.`
+  - **Full description**: Full copy entered covering personalized plans, GPS tracking, session guidance, progress, EN/ES support.
+  - **Graphics**: Feature graphic (1024×500px, dark bg + logo + tagline), app icon, phone screenshots, 7" and 10" tablet screenshots uploaded.
+  - **Status**: Default store listing → "Ready to send for review" ✅
 
 ### Phase 4: Submit
 12. **User**: Upload to App Store Connect + Google Play Console
