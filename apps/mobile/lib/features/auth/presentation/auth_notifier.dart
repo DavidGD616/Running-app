@@ -9,6 +9,8 @@ import '../../../l10n/app_localizations.dart';
 import '../../profile/data/runner_profile_repository.dart';
 import '../auth_error_localizer.dart';
 
+const _authRedirectUrl = 'striviq://login-callback';
+
 class AuthActionFeedback {
   const AuthActionFeedback.error(this.message) : isError = true;
 
@@ -38,6 +40,7 @@ class AuthNotifier extends AsyncNotifier<void> {
       final response = await _client.auth.signUp(
         email: email,
         password: password,
+        emailRedirectTo: _authRedirectUrl,
       );
       state = const AsyncData(null);
       if (response.session == null) {
@@ -131,7 +134,10 @@ class AuthNotifier extends AsyncNotifier<void> {
 
     state = const AsyncLoading();
     try {
-      await _client.auth.resetPasswordForEmail(email);
+      await _client.auth.resetPasswordForEmail(
+        email,
+        redirectTo: _authRedirectUrl,
+      );
       state = const AsyncData(null);
       return AuthActionFeedback.success(l10n.authSuccessPasswordResetSent);
     } on AuthException catch (error, stackTrace) {

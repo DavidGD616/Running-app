@@ -189,7 +189,7 @@ The StrivIQ marketing website is now live at **https://striviq.fit** (deployed v
 1. ~~**App launcher icon design**~~ ✅ **RESOLVED** — Generated StrivIQ launcher icon is in place for launch.
 2. ~~**Crash reporting service**~~ ✅ **RESOLVED** — Firebase Crashlytics integrated.
 3. ~~**Privacy policy hosting**~~ ✅ **RESOLVED** — Hosted at striviq.fit with custom domain.
-4. **Supabase auth callback URL**: User didn't know if `striviq://login-callback` is configured on Supabase dashboard. Should verify before launch.
+4. ~~**Supabase auth callback URL**~~ ✅ **RESOLVED** — Site URL updated to `https://striviq.fit`, `striviq://login-callback` added to redirect allowlist. Code updated: `signUp` passes `emailRedirectTo` and `resetPasswordForEmail` passes `redirectTo`.
 5. ~~**Google Play data safety form**~~ ✅ **RESOLVED** — Completed in Play Console.
 
 ---
