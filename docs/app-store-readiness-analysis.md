@@ -125,7 +125,7 @@ Since the timeline is **days**, here's the execution order:
 ### Phase 3: Store Metadata (next day)
 9. ~~**AI**: Prepare App Store listing (description, keywords, screenshots guidance)~~ ✅ **COMPLETED**
 10. ~~**AI**: Prepare Google Play listing (description, feature graphic guidance)~~ ✅ **COMPLETED**
-11. **AI**: Build release APK/AAB and iOS archive — **Android AAB completed; iOS archive pending**
+11. **AI**: Build release APK/AAB and iOS archive — **Android AAB completed; iOS submitted**
 
 - **Step 9 — App Store Listing**:
   - **App Information**: Name set to `StrivIQ`, subtitle updated to `Train Smarter. Run Farther.`; category Health & Fitness / Sports confirmed.
@@ -149,10 +149,10 @@ Since the timeline is **days**, here's the execution order:
   - **Android signing**: Upload keystore created at `/Users/davidgd616/upload-keystore.jks`; `apps/mobile/android/key.properties` configured locally and ignored by git.
   - **Google Play signing**: Play App Signing / automatic protection is enabled. The Play app signing SHA-1 was confirmed to match the Android OAuth client for `com.davidgd616.striviq`.
   - **Google Sign-In**: Confirmed working for at least one tester on the Play-installed internal test build.
-  - **iOS**: Release archive / IPA still pending.
+  - **iOS**: App archived and submitted through App Store Connect. Google Cloud iOS OAuth client checked with bundle ID `com.davidgd616.striviq`; optional App Store ID and Team ID fields can remain empty.
 
 ### Phase 4: Submit
-12. **User**: Upload to App Store Connect + Google Play Console — **Google Play internal testing completed; App Store Connect pending**
+12. **User**: Upload to App Store Connect + Google Play Console — **Google Play internal testing completed; iOS submitted to App Store Connect**
 13. **Both**: Handle any review rejection fixes
 
 - **Step 12 — Google Play Internal Testing**:
@@ -160,6 +160,11 @@ Since the timeline is **days**, here's the execution order:
   - Internal testing release `1 (1.0.0)` is active and available to internal testers.
   - Tester opt-in flow is working; at least one tester has installed the Play build.
   - Next Android release milestone is closed testing / production access, depending on Google Play account requirements.
+
+- **Step 12 — App Store Connect Submission**:
+  - iOS app submitted in App Store Connect.
+  - Current iOS follow-up is to monitor App Review/TestFlight status and handle any Apple review feedback.
+  - Google Sign-In iOS console setup was checked: `RunningApp iOS` uses bundle ID `com.davidgd616.striviq`; Supabase Google provider should continue using the Web client ID.
 
 ---
 
