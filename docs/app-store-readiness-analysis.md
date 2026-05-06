@@ -25,7 +25,7 @@
 
 ### Current Quality
 - `flutter analyze`: **Clean**
-- `flutter test`: **388 tests passing**
+- `flutter test`: **392 tests passing**
 - Well-documented data models and implementation plans in `docs/`
 
 ### What's Implemented
@@ -125,7 +125,7 @@ Since the timeline is **days**, here's the execution order:
 ### Phase 3: Store Metadata (next day)
 9. ~~**AI**: Prepare App Store listing (description, keywords, screenshots guidance)~~ ✅ **COMPLETED**
 10. ~~**AI**: Prepare Google Play listing (description, feature graphic guidance)~~ ✅ **COMPLETED**
-11. **AI**: Build release APK/AAB and iOS archive
+11. **AI**: Build release APK/AAB and iOS archive — **Android AAB completed; iOS archive pending**
 
 - **Step 9 — App Store Listing**:
   - **App Information**: Name set to `StrivIQ`, subtitle updated to `Train Smarter. Run Farther.`; category Health & Fitness / Sports confirmed.
@@ -143,9 +143,23 @@ Since the timeline is **days**, here's the execution order:
   - **Graphics**: Feature graphic (1024×500px, dark bg + logo + tagline), app icon, phone screenshots, 7" and 10" tablet screenshots uploaded.
   - **Status**: Default store listing → "Ready to send for review" ✅
 
+- **Step 11 — Release Builds**:
+  - **Android**: Release App Bundle built successfully with production dart defines using `flutter build appbundle --release --dart-define-from-file=config/dart_defines.env`.
+  - **Android output**: `apps/mobile/build/app/outputs/bundle/release/app-release.aab` (`1.0.0+1`, 53.1 MB).
+  - **Android signing**: Upload keystore created at `/Users/davidgd616/upload-keystore.jks`; `apps/mobile/android/key.properties` configured locally and ignored by git.
+  - **Google Play signing**: Play App Signing / automatic protection is enabled. The Play app signing SHA-1 was confirmed to match the Android OAuth client for `com.davidgd616.striviq`.
+  - **Google Sign-In**: Confirmed working for at least one tester on the Play-installed internal test build.
+  - **iOS**: Release archive / IPA still pending.
+
 ### Phase 4: Submit
-12. **User**: Upload to App Store Connect + Google Play Console
+12. **User**: Upload to App Store Connect + Google Play Console — **Google Play internal testing completed; App Store Connect pending**
 13. **Both**: Handle any review rejection fixes
+
+- **Step 12 — Google Play Internal Testing**:
+  - Android AAB uploaded to Google Play Console.
+  - Internal testing release `1 (1.0.0)` is active and available to internal testers.
+  - Tester opt-in flow is working; at least one tester has installed the Play build.
+  - Next Android release milestone is closed testing / production access, depending on Google Play account requirements.
 
 ---
 
@@ -168,7 +182,7 @@ The StrivIQ marketing website is now live at **https://striviq.fit** (deployed v
 ### Native Config Status
 - **iOS**: `Info.plist` has `NSLocationWhenInUseUsageDescription` and `NSLocationAlwaysAndWhenInUseUsageDescription` present. Live Activities enabled. Deep linking (`striviq://`) configured. `FlutterDeepLinkingEnabled` is currently `true`. Background modes are limited to `location`.
 - **Android**: Manifest has foreground service location permission, location permissions, Geolocator service declaration, custom `RunForegroundService` declaration, and location foreground service types. Application ID is `com.davidgd616.striviq`.
-- **Signing**: Android release builds no longer use debug signing. Configure `android/key.properties` with the production upload keystore before final Play Console upload.
+- **Signing**: Android release builds no longer use debug signing. Local `android/key.properties` is configured with the production upload keystore and must remain uncommitted.
 
 ### Bundle ID
 - **Android**: `com.davidgd616.striviq`
