@@ -1,4 +1,4 @@
-package com.example.running_app
+package com.davidgd616.striviq
 
 import android.Manifest
 import android.content.Intent

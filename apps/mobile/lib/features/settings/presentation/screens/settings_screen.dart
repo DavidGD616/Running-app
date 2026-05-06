@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -14,6 +15,10 @@ import '../../../localization/presentation/locale_provider.dart';
 import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
+
+final appPackageInfoProvider = FutureProvider<PackageInfo>((ref) {
+  return PackageInfo.fromPlatform();
+});
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -40,6 +45,17 @@ class SettingsScreen extends ConsumerWidget {
         : l10n.unitM;
   }
 
+  String? _settingsVersionLabel(
+    AppLocalizations l10n,
+    AsyncValue<PackageInfo> packageInfo,
+  ) {
+    return packageInfo.maybeWhen(
+      data: (info) =>
+          l10n.settingsVersion(info.appName, info.version, info.buildNumber),
+      orElse: () => null,
+    );
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -50,6 +66,10 @@ class SettingsScreen extends ConsumerWidget {
     final currentUnitSystem = preferences?.unitSystem ?? UnitSystem.km;
     final currentShortDistanceUnit =
         preferences?.shortDistanceUnit ?? ShortDistanceUnit.meters;
+    final settingsVersionLabel = _settingsVersionLabel(
+      l10n,
+      ref.watch(appPackageInfoProvider),
+    );
     final displayName = preferences?.displayName?.trim();
     final planName = localizedTrainingPlanName(
       raceType: profile.raceType,
@@ -167,15 +187,16 @@ class SettingsScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.lg),
 
               // ── Version ────────────────────────────────────────
-              Center(
-                child: Text(
-                  l10n.settingsVersion,
-                  style: AppTypography.caption.copyWith(
-                    color: AppColors.textDisabled,
-                    letterSpacing: 0,
+              if (settingsVersionLabel != null)
+                Center(
+                  child: Text(
+                    settingsVersionLabel,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textDisabled,
+                      letterSpacing: 0,
+                    ),
                   ),
                 ),
-              ),
             ],
           ),
         ),

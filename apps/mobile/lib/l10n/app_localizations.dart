@@ -3507,8 +3507,8 @@ abstract class AppLocalizations {
   /// App version string shown at bottom of settings
   ///
   /// In en, this message translates to:
-  /// **'StrivIQ v1.0.0 (Build 42)'**
-  String get settingsVersion;
+  /// **'{appName} v{version} (Build {buildNumber})'**
+  String settingsVersion(String appName, String version, String buildNumber);
 
   /// Header title on the session detail screen
   ///
@@ -4884,6 +4884,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Timer-Only Not Supported'**
   String get activeRunTimerOnlyRestrictionTitle;
+
+  /// Title of dialog prompting user to enable Always location permission for background GPS tracking during active workouts
+  ///
+  /// In en, this message translates to:
+  /// **'Allow Always Location'**
+  String get allowAlwaysLocationTitle;
+
+  /// Body text explaining why Always location permission is needed for background GPS tracking during active workouts
+  ///
+  /// In en, this message translates to:
+  /// **'To track your distance-based run while the app is in the background, please allow Always location access in Settings.'**
+  String get allowAlwaysLocationBody;
+
+  /// Button label to open app settings to enable Always location permission
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get allowAlwaysLocationOpenSettings;
 }
 
 class _AppLocalizationsDelegate

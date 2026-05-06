@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "471648964484",
+    "project_id": "striviq",
+    "storage_bucket": "striviq.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:471648964484:android:c51b3605c2e47e9adc17d1",
+        "android_client_info": {
+          "package_name": "com.davidgd616.striviq"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCUfi01FNyVzitQgBruokO3G1uRbOZvEe8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

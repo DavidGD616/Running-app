@@ -1833,7 +1833,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLogOut => 'Log Out';
 
   @override
-  String get settingsVersion => 'StrivIQ v1.0.0 (Build 42)';
+  String settingsVersion(String appName, String version, String buildNumber) {
+    return '$appName v$version (Build $buildNumber)';
+  }
 
   @override
   String get sessionDetailTitle => 'Workout';
@@ -2626,4 +2628,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunTimerOnlyRestrictionTitle => 'Timer-Only Not Supported';
+
+  @override
+  String get allowAlwaysLocationTitle => 'Allow Always Location';
+
+  @override
+  String get allowAlwaysLocationBody =>
+      'To track your distance-based run while the app is in the background, please allow Always location access in Settings.';
+
+  @override
+  String get allowAlwaysLocationOpenSettings => 'Open Settings';
 }

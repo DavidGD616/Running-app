@@ -1842,7 +1842,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsLogOut => 'Cerrar sesión';
 
   @override
-  String get settingsVersion => 'StrivIQ v1.0.0 (Build 42)';
+  String settingsVersion(String appName, String version, String buildNumber) {
+    return '$appName v$version (Build $buildNumber)';
+  }
 
   @override
   String get sessionDetailTitle => 'Entrenamiento';
@@ -2642,4 +2644,14 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get activeRunTimerOnlyRestrictionTitle =>
       'Modo Solo Temporizador No Compatible';
+
+  @override
+  String get allowAlwaysLocationTitle => 'Permitir Ubicación Siempre';
+
+  @override
+  String get allowAlwaysLocationBody =>
+      'Para registrar tu carrera basada en distancia mientras la aplicación está en segundo plano, por favor permite el acceso a la ubicación Siempre en Ajustes.';
+
+  @override
+  String get allowAlwaysLocationOpenSettings => 'Abrir Ajustes';
 }

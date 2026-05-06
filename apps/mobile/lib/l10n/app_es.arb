@@ -640,7 +640,7 @@
   "settingsConnected": "Conectado",
   "settingsNoConnectedDevices": "Aun no hay dispositivos conectados",
   "settingsLogOut": "Cerrar sesión",
-  "settingsVersion": "StrivIQ v1.0.0 (Build 42)",
+  "settingsVersion": "{appName} v{version} (Build {buildNumber})",
 
   "sessionDetailTitle": "Entrenamiento",
   "sessionDetailSessionType": "Velocidad",
@@ -988,5 +988,14 @@
   "@activeRunDismiss": { "description": "Button to dismiss the GPS warning modal" },
 
   "activeRunTimerOnlyRestrictionTitle": "Modo Solo Temporizador No Compatible",
-  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" }
+  "@activeRunTimerOnlyRestrictionTitle": { "description": "Title of error dialog when timer-only mode is requested for distance-based workout" },
+
+  "allowAlwaysLocationTitle": "Permitir Ubicación Siempre",
+  "@allowAlwaysLocationTitle": { "description": "Title of dialog prompting user to enable Always location permission for background GPS tracking during active workouts" },
+
+  "allowAlwaysLocationBody": "Para registrar tu carrera basada en distancia mientras la aplicación está en segundo plano, por favor permite el acceso a la ubicación Siempre en Ajustes.",
+  "@allowAlwaysLocationBody": { "description": "Body text explaining why Always location permission is needed for background GPS tracking during active workouts" },
+
+  "allowAlwaysLocationOpenSettings": "Abrir Ajustes",
+  "@allowAlwaysLocationOpenSettings": { "description": "Button label to open app settings to enable Always location permission" }
 }
