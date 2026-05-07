@@ -167,16 +167,19 @@ Since the timeline is **days**, here's the execution order:
   - Apple auth flow implemented through Supabase using nonce-backed Apple identity token auth, email + full name scopes, and first-sign-in name capture.
   - Sign in with Apple capability enabled through `ios/Runner/Runner.entitlements` and wired into the Runner build settings.
   - Localization added for English and Spanish Apple sign-in labels.
-  - Remaining before resubmission: confirm Apple provider setup in Supabase / Apple Developer account, rebuild iOS archive, and resubmit.
+  - Apple provider enabled in Supabase dashboard with Client ID `com.davidgd616.striviq`.
+  - Sign in with Apple capability enabled on App ID `com.davidgd616.striviq` in Apple Developer portal as primary App ID.
+  - Verified working on iOS simulator — Apple auth sheet appears and sign-in completes.
+  - Remaining before resubmission: rebuild iOS archive and resubmit.
 
 #### Fix B — Guideline 2.1(a): Performance - App Completeness
 **Issue**: "The login button is unresponsive." Observed on iPad Air 11-inch (M3).
-- 15. **AI**: Diagnose and fix login button unresponsive on iPad
-  - Verify test account `reviewer@striviq.fit` credentials are valid and working
-  - Test login flow on iPad simulator (11-inch, iPadOS)
-  - Check for layout/tap-target issues on large screens (constrained width, `GestureDetector` dead zones)
-  - Check for Supabase init race condition that could block button interaction on cold launch
-  - Fix any issues found, rebuild, resubmit
+- 15. ~~**AI**: Diagnose and fix login button unresponsive on iPad~~ ✅ **RESOLVED**
+  - **Root cause**: Test account `reviewer@striviq.fit` was a placeholder email that did not exist in Supabase, so reviewer's login attempts failed silently — perceived as unresponsive button.
+  - **Fix**: Created a real working test account `striviq.reviewer@gmail.com` in Supabase (Authentication → Users → Add user with confirmed email).
+  - Updated App Store Connect → App Review Information with the new working credentials.
+  - Added Notes for reviewer instructing them to use Sign in with Apple as an alternative path (any Apple ID works), with the new test credentials as a fallback.
+  - With Sign in with Apple now available, reviewer has two independent paths to authenticate, eliminating dependence on a single test account.
 
 - **Step 12 — Google Play Internal Testing**:
   - Android AAB uploaded to Google Play Console.
