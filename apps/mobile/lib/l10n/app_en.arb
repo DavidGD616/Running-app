@@ -121,6 +121,12 @@
   "continueWithGoogle": "Continue with Google",
   "@continueWithGoogle": { "description": "OAuth button label on the welcome screen" },
 
+  "continueWithApple": "Continue with Apple",
+  "@continueWithApple": { "description": "Apple Sign-In button label on the welcome screen" },
+
+  "authLoadingAppleSignIn": "Opening Apple...",
+  "@authLoadingAppleSignIn": { "description": "Loading label while starting Apple Sign-In" },
+
   "authSuccessCheckEmailForConfirmation": "Check your email to confirm your account.",
   "@authSuccessCheckEmailForConfirmation": { "description": "Shown after sign up when email confirmation is required" },
 

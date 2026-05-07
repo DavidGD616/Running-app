@@ -155,6 +155,29 @@ Since the timeline is **days**, here's the execution order:
 12. **User**: Upload to App Store Connect + Google Play Console — **Google Play internal testing completed; iOS submitted to App Store Connect**
 13. **Both**: Handle any review rejection fixes
 
+### Phase 5: iOS Review Rejection Fixes (2026-05-06)
+
+**Rejection received**: iOS 1.0 rejected. Review device: iPad Air 11-inch (M3), iPadOS 26.4.2.
+
+#### Fix A — Guideline 4.8: Design - Login Services (MANDATORY)
+**Issue**: App uses Google Sign-In but does not offer Sign in with Apple. Apple requires any app with a third-party login to also offer an equivalent Sign in with Apple option.
+- 14. ~~**AI**: Add `sign_in_with_apple` Flutter package and integrate Sign in with Apple~~ ✅ **COMPLETED**
+  - `sign_in_with_apple` Flutter package added.
+  - Sign in with Apple button added to the welcome auth screen with equivalent placement to Google Sign-In.
+  - Apple auth flow implemented through Supabase using nonce-backed Apple identity token auth, email + full name scopes, and first-sign-in name capture.
+  - Sign in with Apple capability enabled through `ios/Runner/Runner.entitlements` and wired into the Runner build settings.
+  - Localization added for English and Spanish Apple sign-in labels.
+  - Remaining before resubmission: confirm Apple provider setup in Supabase / Apple Developer account, rebuild iOS archive, and resubmit.
+
+#### Fix B — Guideline 2.1(a): Performance - App Completeness
+**Issue**: "The login button is unresponsive." Observed on iPad Air 11-inch (M3).
+- 15. **AI**: Diagnose and fix login button unresponsive on iPad
+  - Verify test account `reviewer@striviq.fit` credentials are valid and working
+  - Test login flow on iPad simulator (11-inch, iPadOS)
+  - Check for layout/tap-target issues on large screens (constrained width, `GestureDetector` dead zones)
+  - Check for Supabase init race condition that could block button interaction on cold launch
+  - Fix any issues found, rebuild, resubmit
+
 - **Step 12 — Google Play Internal Testing**:
   - Android AAB uploaded to Google Play Console.
   - Internal testing release `1 (1.0.0)` is active and available to internal testers.

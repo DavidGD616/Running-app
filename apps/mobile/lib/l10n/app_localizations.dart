@@ -338,6 +338,18 @@ abstract class AppLocalizations {
   /// **'Continue with Google'**
   String get continueWithGoogle;
 
+  /// Apple Sign-In button label on the welcome screen
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Apple'**
+  String get continueWithApple;
+
+  /// Loading label while starting Apple Sign-In
+  ///
+  /// In en, this message translates to:
+  /// **'Opening Apple...'**
+  String get authLoadingAppleSignIn;
+
   /// Shown after sign up when email confirmation is required
   ///
   /// In en, this message translates to:
