@@ -48,6 +48,8 @@
   "authLoadingSignOut": "Cerrando sesión...",
   "authLoadingGoogleSignIn": "Abriendo Google...",
   "continueWithGoogle": "Continuar con Google",
+  "continueWithApple": "Continuar con Apple",
+  "authLoadingAppleSignIn": "Abriendo Apple...",
   "authSuccessCheckEmailForConfirmation": "Revisa tu correo para confirmar tu cuenta.",
   "authSuccessPasswordResetSent": "Correo de restablecimiento enviado. Revisa tu bandeja de entrada.",
   "authErrorGeneric": "Algo salió mal. Inténtalo de nuevo.",

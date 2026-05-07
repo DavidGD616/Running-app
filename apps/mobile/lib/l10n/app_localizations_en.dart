@@ -132,6 +132,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get continueWithGoogle => 'Continue with Google';
 
   @override
+  String get continueWithApple => 'Continue with Apple';
+
+  @override
+  String get authLoadingAppleSignIn => 'Opening Apple...';
+
+  @override
   String get authSuccessCheckEmailForConfirmation =>
       'Check your email to confirm your account.';
 

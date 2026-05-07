@@ -32,6 +32,17 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     ).showSnackBar(SnackBar(content: Text(feedback.message)));
   }
 
+  Future<void> _continueWithApple(AppLocalizations l10n) async {
+    final feedback = await ref
+        .read(authNotifierProvider.notifier)
+        .signInWithApple(l10n: l10n);
+
+    if (!mounted || feedback == null) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(feedback.message)));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -97,6 +108,16 @@ class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           ? null
                           : () => context.push(RouteNames.logIn),
                       variant: AppButtonVariant.secondary,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _AppleSignInButton(
+                      label: isLoading
+                          ? l10n.authLoadingAppleSignIn
+                          : l10n.continueWithApple,
+                      isLoading: isLoading,
+                      onPressed: isLoading
+                          ? null
+                          : () => _continueWithApple(l10n),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _GoogleSignInButton(
@@ -231,6 +252,63 @@ class _LanguageSwitcher extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _AppleSignInButton extends StatelessWidget {
+  const _AppleSignInButton({
+    required this.label,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      height: 52,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          side: const BorderSide(color: Color(0xFF3A3A3A), width: 1),
+          shape: RoundedRectangleBorder(
+            borderRadius: AppRadius.borderMd,
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+        ),
+        child: isLoading
+            ? const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.apple, size: 22, color: Colors.white),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.white,
+                      letterSpacing: 0.1,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
