@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_spacing.dart';
@@ -102,12 +103,30 @@ class SettingsIntegrationsScreen extends ConsumerWidget {
                           ? SettingsRowVariant.toggleOn
                           : SettingsRowVariant.toggleOff,
                       onToggle: (value) async {
-                        await ref
+                        final result = await ref
                             .read(deviceConnectionsProvider.notifier)
                             .setPlatformConnection(
                               vendor: integration.vendor,
                               enabled: value,
                             );
+
+                        if (result == SetPlatformConnectionResult.permissionDenied &&
+                            context.mounted) {
+                          final l10n = AppLocalizations.of(context)!;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                l10n.settingsHealthExportPermissionDenied,
+                              ),
+                              action: SnackBarAction(
+                                label: l10n.settingsHealthExportOpenSettings,
+                                onPressed: () async {
+                                  await openAppSettings();
+                                },
+                              ),
+                            ),
+                          );
+                        }
                       },
                     );
                   }).toList(),
