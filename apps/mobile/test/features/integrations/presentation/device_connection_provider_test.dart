@@ -30,12 +30,14 @@ void main() {
       );
       addTearDown(container.dispose);
 
-      await container
+      final result = await container
           .read(deviceConnectionsProvider.notifier)
           .setPlatformConnection(
             vendor: IntegrationVendor.appleHealth,
             enabled: true,
           );
+
+      expect(result, SetPlatformConnectionResult.connected);
 
       await container.read(deviceConnectionsProvider.future);
       expect(
@@ -91,4 +93,73 @@ void main() {
       ]),
     );
   });
+
+  test('denied does not persist + returns permissionDenied', () async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final container = ProviderContainer.test(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        healthAuthorizationCallbackProvider.overrideWith((ref) => () async => false),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final result = await container
+        .read(deviceConnectionsProvider.notifier)
+        .setPlatformConnection(
+          vendor: IntegrationVendor.appleHealth,
+          enabled: true,
+        );
+
+    expect(result, SetPlatformConnectionResult.permissionDenied);
+
+    await container.read(deviceConnectionsProvider.future);
+    expect(
+      container.read(
+        connectionForVendorProvider(IntegrationVendor.appleHealth),
+      ),
+      isNull,
+    );
+  });
+
+  test(
+    'toggle off after toggle on returns disconnected and persists state',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+
+      final container = ProviderContainer.test(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          healthAuthorizationCallbackProvider.overrideWith(
+            (ref) => () async => true,
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final connectResult = await container
+          .read(deviceConnectionsProvider.notifier)
+          .setPlatformConnection(
+            vendor: IntegrationVendor.appleHealth,
+            enabled: true,
+          );
+      expect(connectResult, SetPlatformConnectionResult.connected);
+
+      final disconnectResult = await container
+          .read(deviceConnectionsProvider.notifier)
+          .setPlatformConnection(
+            vendor: IntegrationVendor.appleHealth,
+            enabled: false,
+          );
+      expect(disconnectResult, SetPlatformConnectionResult.disconnected);
+
+      await container.read(deviceConnectionsProvider.future);
+      final connection = container.read(
+        connectionForVendorProvider(IntegrationVendor.appleHealth),
+      );
+      expect(connection, isNotNull);
+      expect(connection!.state, DeviceConnectionState.disconnected);
+    },
+  );
 }
