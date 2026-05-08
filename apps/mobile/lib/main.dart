@@ -20,6 +20,8 @@ import 'core/theme/app_theme.dart';
 import 'features/active_run/presentation/run_live_activity_background_service.dart';
 import 'features/active_run/presentation/run_live_activity_bridge.dart';
 import 'features/localization/presentation/locale_provider.dart';
+import 'features/health_export/presentation/health_export_provider.dart';
+import 'features/integrations/presentation/device_connection_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,7 +50,16 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   runApp(
     ProviderScope(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        // Wire HealthKit auth into device connections
+        healthAuthorizationCallbackProvider.overrideWith((ref) {
+          return () async {
+            final service = ref.read(healthExportServiceProvider);
+            return service.requestAuthorization();
+          };
+        }),
+      ],
       child: const RunningApp(),
     ),
   );
