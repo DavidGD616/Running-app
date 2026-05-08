@@ -88,6 +88,10 @@
 	<string>StrivIQ uses your location to track your running route, distance, and pace during active workouts.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>StrivIQ uses your location to track your running route, distance, and pace even when the app is in the background during an active workout.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>This app reads workout data to import your running activities.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>This app writes running workouts and route data to Apple Health.</string>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>
