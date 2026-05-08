@@ -1681,6 +1681,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAppleHealth => 'Apple Health';
 
   @override
+  String get settingsHealthExportPermissionDenied =>
+      'Apple Health access was denied. You can enable it in Settings.';
+
+  @override
+  String get settingsHealthExportOpenSettings => 'Open Settings';
+
+  @override
   String get settingsHealthConnect => 'Health Connect';
 
   @override
