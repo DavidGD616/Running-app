@@ -13,8 +13,10 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../active_run/data/run_repository.dart';
 import '../../../active_run/presentation/run_repository_provider.dart';
 import '../../../activity/activity.dart';
+import '../../../health_export/data/health_export_service.dart';
 import '../../../health_export/data/route_points_loader.dart';
 import '../../../health_export/domain/export_route_point.dart';
 import '../../../health_export/domain/health_export_result.dart';
@@ -114,7 +116,21 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     );
 
     await ref.read(activitiesProvider.notifier).saveActivity(record);
-    unawaited(_maybeExportToAppleHealth(record));
+    final appleHealthConnection = ref.read(
+      connectionForVendorProvider(IntegrationVendor.appleHealth),
+    );
+    final runRepository = ref.read(runRepositoryProvider);
+    final healthExportService = ref.read(healthExportServiceProvider);
+    final runId = _completedRunData?.runId;
+    unawaited(
+      _maybeExportToAppleHealth(
+        record,
+        connection: appleHealthConnection,
+        runRepository: runRepository,
+        healthExportService: healthExportService,
+        runId: runId,
+      ),
+    );
     ref
         .read(trainingPlanProvider.notifier)
         .recordCompletedRunFeedback(
@@ -129,7 +145,13 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     context.go(RouteNames.today);
   }
 
-  Future<void> _maybeExportToAppleHealth(RunActivity record) async {
+  Future<void> _maybeExportToAppleHealth(
+    RunActivity record, {
+    required DeviceConnection? connection,
+    required RunRepository runRepository,
+    required HealthExportService healthExportService,
+    required String? runId,
+  }) async {
     // Export any completed run with valid timestamps and distance,
     // including manual logs (no session) and tracked runs.
 
@@ -139,27 +161,21 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
       return;
     }
 
-    final connection = ref.read(
-      connectionForVendorProvider(IntegrationVendor.appleHealth),
-    );
     if (connection?.state != DeviceConnectionState.connected) {
       return;
     }
 
     List<ExportRoutePoint>? routePoints;
-    final runId = _completedRunData?.runId;
     if (runId != null) {
       try {
-        final repo = ref.read(runRepositoryProvider);
-        final rawPoints = await repo.getRoutePoints(runId);
+        final rawPoints = await runRepository.getRoutePoints(runId);
         routePoints = toExportRoutePoints(rawPoints);
       } catch (e) {
         debugPrint('Failed to load route points for Health export: $e');
       }
     }
 
-    final service = ref.read(healthExportServiceProvider);
-    final result = await service.exportRun(
+    final result = await healthExportService.exportRun(
       start: record.startedAt!,
       end: record.endedAt!,
       distanceKm: record.actualDistanceKm!,
