@@ -110,8 +110,10 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         newProgress = _elapsedSeconds / 10.0 * 0.40;
         newMessageIndex = ((_elapsedSeconds - 1) ~/ 2).clamp(0, 4);
       } else {
-        // Phase 2: slow crawl 40% → 92% at ~1%/s
-        newProgress = (0.40 + (_elapsedSeconds - 10) * 0.01).clamp(0.0, 0.92);
+        // Phase 2: slow crawl 40% → 92% over the expected long-tail wait.
+        final secondsIntoPhase2 = _elapsedSeconds - 10;
+        final phase2Progress = (secondsIntoPhase2 / 110).clamp(0.0, 1.0);
+        newProgress = 0.40 + phase2Progress * 0.52;
         // Phase 2 messages cycle every 4s, 4 messages total
         newMessageIndex = 5 + ((_elapsedSeconds - 11) ~/ 4) % 4;
       }
