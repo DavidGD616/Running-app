@@ -2285,7 +2285,7 @@ abstract class AppLocalizations {
   /// Loading message 2 on plan generation screen
   ///
   /// In en, this message translates to:
-  /// **'Calculating optimal training zones...'**
+  /// **'Mapping out your training schedule...'**
   String get planGenerationMsg2;
 
   /// Loading message 3 on plan generation screen
@@ -2303,8 +2303,32 @@ abstract class AppLocalizations {
   /// Loading message 5 on plan generation screen
   ///
   /// In en, this message translates to:
-  /// **'Your plan is almost ready!'**
+  /// **'Crafting your race-day strategy...'**
   String get planGenerationMsg5;
+
+  /// Patience message 1 on plan generation screen
+  ///
+  /// In en, this message translates to:
+  /// **'Training plans take up to a minute to personalize…'**
+  String get planGenerationMsg6;
+
+  /// Patience message 2 on plan generation screen
+  ///
+  /// In en, this message translates to:
+  /// **'Adjusting your plan to your goal race and fitness level…'**
+  String get planGenerationMsg7;
+
+  /// Patience message 3 on plan generation screen
+  ///
+  /// In en, this message translates to:
+  /// **'Almost there — great things take a moment…'**
+  String get planGenerationMsg8;
+
+  /// Patience message 4 on plan generation screen
+  ///
+  /// In en, this message translates to:
+  /// **'Putting the finishing touches on your plan…'**
+  String get planGenerationMsg9;
 
   /// Heading shown when plan generation fails
   ///

@@ -1165,7 +1165,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planGenerationMsg2 =>
-      'Calculando zonas de entrenamiento óptimas...';
+      'Diseñando tu calendario de entrenamiento...';
 
   @override
   String get planGenerationMsg3 => 'Construyendo tu estructura semanal...';
@@ -1174,7 +1174,23 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planGenerationMsg4 => 'Personalizando objetivos de sesión...';
 
   @override
-  String get planGenerationMsg5 => '¡Tu plan está casi listo!';
+  String get planGenerationMsg5 =>
+      'Preparando tu estrategia para el día de la carrera...';
+
+  @override
+  String get planGenerationMsg6 =>
+      'Los planes de entrenamiento pueden tardar hasta un minuto en personalizarse…';
+
+  @override
+  String get planGenerationMsg7 =>
+      'Ajustando tu plan a tu carrera objetivo y nivel físico…';
+
+  @override
+  String get planGenerationMsg8 =>
+      'Ya casi — las cosas buenas requieren un momento…';
+
+  @override
+  String get planGenerationMsg9 => 'Dando los toques finales a tu plan…';
 
   @override
   String get planGenerationErrorTitle => 'No pudimos generar tu plan';
