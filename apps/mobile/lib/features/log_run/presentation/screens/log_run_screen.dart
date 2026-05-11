@@ -152,8 +152,8 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     required HealthExportService healthExportService,
     required String? runId,
   }) async {
-    // Export any completed run with valid timestamps and distance,
-    // including manual logs (no session) and tracked runs.
+    // Export completed runs that reach this path and have valid
+    // timestamps and distance (for example, tracked runs).
 
     if (record.startedAt == null ||
         record.endedAt == null ||
