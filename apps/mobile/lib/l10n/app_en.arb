@@ -1135,7 +1135,7 @@
   "planGenerationMsg1": "Analyzing your fitness profile...",
   "@planGenerationMsg1": { "description": "Loading message 1 on plan generation screen" },
 
-  "planGenerationMsg2": "Calculating optimal training zones...",
+  "planGenerationMsg2": "Mapping out your training schedule...",
   "@planGenerationMsg2": { "description": "Loading message 2 on plan generation screen" },
 
   "planGenerationMsg3": "Building your weekly structure...",
@@ -1144,8 +1144,20 @@
   "planGenerationMsg4": "Personalizing session targets...",
   "@planGenerationMsg4": { "description": "Loading message 4 on plan generation screen" },
 
-  "planGenerationMsg5": "Your plan is almost ready!",
+  "planGenerationMsg5": "Crafting your race-day strategy...",
   "@planGenerationMsg5": { "description": "Loading message 5 on plan generation screen" },
+
+  "planGenerationMsg6": "Training plans take up to a minute to personalize…",
+  "@planGenerationMsg6": { "description": "Patience message 1 on plan generation screen" },
+
+  "planGenerationMsg7": "Adjusting your plan to your goal race and fitness level…",
+  "@planGenerationMsg7": { "description": "Patience message 2 on plan generation screen" },
+
+  "planGenerationMsg8": "Almost there — great things take a moment…",
+  "@planGenerationMsg8": { "description": "Patience message 3 on plan generation screen" },
+
+  "planGenerationMsg9": "Putting the finishing touches on your plan…",
+  "@planGenerationMsg9": { "description": "Patience message 4 on plan generation screen" },
 
   "planGenerationErrorTitle": "Couldn't generate your plan",
   "@planGenerationErrorTitle": { "description": "Heading shown when plan generation fails" },

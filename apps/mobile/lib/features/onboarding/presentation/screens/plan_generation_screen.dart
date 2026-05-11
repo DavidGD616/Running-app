@@ -32,19 +32,26 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     with SingleTickerProviderStateMixin {
   int _messageIndex = 0;
   double _progress = 0.0;
+  int _elapsedSeconds = 0;
   Timer? _timer;
-  bool _animationDone = false;
   bool _showError = false;
 
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
-  List<String> _getMessages(AppLocalizations l10n) => [
+  List<String> _getPhase1Messages(AppLocalizations l10n) => [
     l10n.planGenerationMsg1,
     l10n.planGenerationMsg2,
     l10n.planGenerationMsg3,
     l10n.planGenerationMsg4,
     l10n.planGenerationMsg5,
+  ];
+
+  List<String> _getPhase2Messages(AppLocalizations l10n) => [
+    l10n.planGenerationMsg6,
+    l10n.planGenerationMsg7,
+    l10n.planGenerationMsg8,
+    l10n.planGenerationMsg9,
   ];
 
   String get _requestedBy => switch (widget.mode) {
@@ -90,31 +97,29 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
 
   void _startAnimation() {
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(seconds: 2), (timer) {
+    _elapsedSeconds = 0;
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      final messages = _getMessages(l10n);
-      final nextIndex = _messageIndex + 1;
-      if (nextIndex < messages.length) {
-        setState(() {
-          _messageIndex = nextIndex;
-          _progress = nextIndex / (messages.length - 1);
-        });
-      } else {
-        timer.cancel();
-        setState(() => _animationDone = true);
+      _elapsedSeconds++;
 
-        // If generation already succeeded, navigate immediately
-        final genState = ref.read(planGenerationProvider);
-        if (genState is PlanGenerationSuccess) {
-          final route = _nextRoute;
-          final router = GoRouter.of(context);
-          Future.delayed(const Duration(milliseconds: 600), () {
-            if (mounted) router.go(route);
-          });
-        }
-        // Otherwise, hold at 100% and wait for the listener below
+      double newProgress;
+      int newMessageIndex;
+
+      if (_elapsedSeconds <= 10) {
+        // Phase 1: fast progress 0% → 40% over 10s
+        newProgress = _elapsedSeconds / 10.0 * 0.40;
+        newMessageIndex = ((_elapsedSeconds - 1) ~/ 2).clamp(0, 4);
+      } else {
+        // Phase 2: slow crawl 40% → 92% at ~1%/s
+        newProgress = (0.40 + (_elapsedSeconds - 10) * 0.01).clamp(0.0, 0.92);
+        // Phase 2 messages cycle every 4s, 4 messages total
+        newMessageIndex = 5 + ((_elapsedSeconds - 11) ~/ 4) % 4;
       }
+
+      setState(() {
+        _progress = newProgress;
+        _messageIndex = newMessageIndex;
+      });
     });
   }
 
@@ -124,9 +129,10 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
   }
 
   void _retry() {
+    if (!mounted) return;
     setState(() {
       _showError = false;
-      _animationDone = false;
+      _elapsedSeconds = 0;
       _messageIndex = 0;
       _progress = 0.0;
     });
@@ -134,6 +140,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         .read(planGenerationProvider.notifier)
         .generate(requestedBy: _requestedBy);
     _startAnimation();
+    _pulseController.repeat(reverse: true);
   }
 
   @override
@@ -150,13 +157,19 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     // Listen for generation state changes
     final router = GoRouter.of(context);
     ref.listen<PlanGenerationState>(planGenerationProvider, (_, next) {
-      if (next is PlanGenerationSuccess && _animationDone) {
+      if (next is PlanGenerationSuccess) {
+        _timer?.cancel();
+        if (mounted) {
+          setState(() => _progress = 1.0);
+        }
         final route = _nextRoute;
         Future.delayed(const Duration(milliseconds: 600), () {
           if (mounted) router.go(route);
         });
       }
       if (next is PlanGenerationFailure) {
+        _timer?.cancel();
+        _pulseController.stop();
         if (mounted) setState(() => _showError = true);
       }
     });
@@ -175,10 +188,11 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
   // ── Loading state ───────────────────────────────────────────────────────
 
   Widget _buildLoadingState(AppLocalizations l10n) {
-    final messages = _getMessages(l10n);
-    final genState = ref.watch(planGenerationProvider);
-    // Show spinner overlay at 100% while waiting for the API
-    final holdingForApi = _animationDone && genState is PlanGenerationLoading;
+    final phase1Messages = _getPhase1Messages(l10n);
+    final phase2Messages = _getPhase2Messages(l10n);
+    final message = _messageIndex < 5
+        ? phase1Messages[_messageIndex]
+        : phase2Messages[_messageIndex - 5];
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -232,7 +246,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         AnimatedSwitcher(
           duration: const Duration(milliseconds: 400),
           child: Text(
-            messages[_messageIndex],
+            message,
             key: ValueKey(_messageIndex),
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondary,
@@ -274,19 +288,6 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
             );
           },
         ),
-
-        // Spinner shown when animation is done but API hasn't responded yet
-        if (holdingForApi) ...[
-          const SizedBox(height: AppSpacing.lg),
-          const SizedBox(
-            width: 24,
-            height: 24,
-            child: CircularProgressIndicator(
-              strokeWidth: 2,
-              valueColor: AlwaysStoppedAnimation(AppColors.accentPrimary),
-            ),
-          ),
-        ],
       ],
     );
   }

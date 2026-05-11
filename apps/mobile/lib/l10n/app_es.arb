@@ -392,10 +392,15 @@
 
   "planGenerationTitle": "Construyendo Tu Plan",
   "planGenerationMsg1": "Analizando tu perfil físico...",
-  "planGenerationMsg2": "Calculando zonas de entrenamiento óptimas...",
+  "planGenerationMsg2": "Diseñando tu calendario de entrenamiento...",
   "planGenerationMsg3": "Construyendo tu estructura semanal...",
   "planGenerationMsg4": "Personalizando objetivos de sesión...",
-  "planGenerationMsg5": "¡Tu plan está casi listo!",
+  "planGenerationMsg5": "Preparando tu estrategia para el día de la carrera...",
+
+  "planGenerationMsg6": "Los planes de entrenamiento pueden tardar hasta un minuto en personalizarse…",
+  "planGenerationMsg7": "Ajustando tu plan a tu carrera objetivo y nivel físico…",
+  "planGenerationMsg8": "Ya casi — las cosas buenas requieren un momento…",
+  "planGenerationMsg9": "Dando los toques finales a tu plan…",
 
   "planGenerationErrorTitle": "No pudimos generar tu plan",
   "planGenerationErrorSubtitle": "Algo salió mal. Tus respuestas están guardadas.",
