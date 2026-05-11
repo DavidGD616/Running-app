@@ -1685,6 +1685,12 @@
   "settingsAppleHealth": "Apple Health",
   "@settingsAppleHealth": { "description": "Apple Health integration row label" },
 
+  "settingsHealthExportPermissionDenied": "Apple Health access was denied. You can enable it in Settings.",
+  "@settingsHealthExportPermissionDenied": { "description": "Message shown when Apple Health permission is denied" },
+
+  "settingsHealthExportOpenSettings": "Open Settings",
+  "@settingsHealthExportOpenSettings": { "description": "Button label to open device settings for Apple Health permission" },
+
   "settingsHealthConnect": "Health Connect",
   "@settingsHealthConnect": { "description": "Health Connect integration row label" },
 

@@ -3228,6 +3228,18 @@ abstract class AppLocalizations {
   /// **'Apple Health'**
   String get settingsAppleHealth;
 
+  /// Message shown when Apple Health permission is denied
+  ///
+  /// In en, this message translates to:
+  /// **'Apple Health access was denied. You can enable it in Settings.'**
+  String get settingsHealthExportPermissionDenied;
+
+  /// Button label to open device settings for Apple Health permission
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get settingsHealthExportOpenSettings;
+
   /// Health Connect integration row label
   ///
   /// In en, this message translates to:

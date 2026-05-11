@@ -6,6 +6,12 @@ import '../domain/models/device_connection.dart';
 import '../domain/models/integration_account.dart';
 import '../data/device_connection_repository.dart';
 
+enum SetPlatformConnectionResult {
+  connected,
+  disconnected,
+  permissionDenied,
+}
+
 class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
   AsyncDeviceConnectionRepository get _asyncRepository =>
       ref.read(asyncDeviceConnectionRepositoryProvider);
@@ -58,10 +64,18 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
     await _asyncRepository.clearConnections();
   }
 
-  Future<void> setPlatformConnection({
+  Future<SetPlatformConnectionResult> setPlatformConnection({
     required IntegrationVendor vendor,
     required bool enabled,
   }) async {
+    if (enabled && vendor == IntegrationVendor.appleHealth) {
+      final authCallback = ref.read(healthAuthorizationCallbackProvider);
+      final granted = await authCallback();
+      if (!granted) {
+        return SetPlatformConnectionResult.permissionDenied;
+      }
+    }
+
     final existing = _connectionForVendor(vendor);
     await upsertConnection(
       DeviceConnection(
@@ -77,6 +91,10 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
         seededFromOnboarding: false,
       ),
     );
+
+    return enabled
+        ? SetPlatformConnectionResult.connected
+        : SetPlatformConnectionResult.disconnected;
   }
 
   Future<void> seedWatchFromDeviceProfileIfAbsent(DeviceProfile device) async {
@@ -239,6 +257,10 @@ final deviceConnectionsProvider =
     AsyncNotifierProvider<DeviceConnectionsNotifier, List<DeviceConnection>>(
       DeviceConnectionsNotifier.new,
     );
+
+final healthAuthorizationCallbackProvider = Provider<Future<bool> Function()>(
+  (ref) => () async => true,
+);
 
 final currentWearableConnectionProvider = Provider<DeviceConnection?>((ref) {
   final connections = _deviceConnections(ref);

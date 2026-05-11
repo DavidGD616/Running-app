@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -11,11 +13,19 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../active_run/data/run_repository.dart';
 import '../../../active_run/presentation/run_repository_provider.dart';
 import '../../../activity/activity.dart';
+import '../../../health_export/data/health_export_service.dart';
+import '../../../health_export/data/route_points_loader.dart';
+import '../../../health_export/domain/export_route_point.dart';
+import '../../../health_export/domain/health_export_result.dart';
+import '../../../health_export/presentation/health_export_provider.dart';
+import '../../../integrations/domain/models/device_connection.dart';
+import '../../../integrations/presentation/device_connection_provider.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
-import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
@@ -106,6 +116,21 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     );
 
     await ref.read(activitiesProvider.notifier).saveActivity(record);
+    final appleHealthConnection = ref.read(
+      connectionForVendorProvider(IntegrationVendor.appleHealth),
+    );
+    final runRepository = ref.read(runRepositoryProvider);
+    final healthExportService = ref.read(healthExportServiceProvider);
+    final runId = _completedRunData?.runId;
+    unawaited(
+      _maybeExportToAppleHealth(
+        record,
+        connection: appleHealthConnection,
+        runRepository: runRepository,
+        healthExportService: healthExportService,
+        runId: runId,
+      ),
+    );
     ref
         .read(trainingPlanProvider.notifier)
         .recordCompletedRunFeedback(
@@ -118,6 +143,48 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
         );
     if (!mounted) return;
     context.go(RouteNames.today);
+  }
+
+  Future<void> _maybeExportToAppleHealth(
+    RunActivity record, {
+    required DeviceConnection? connection,
+    required RunRepository runRepository,
+    required HealthExportService healthExportService,
+    required String? runId,
+  }) async {
+    // Export completed runs that reach this path and have valid
+    // timestamps and distance (for example, tracked runs).
+
+    if (record.startedAt == null ||
+        record.endedAt == null ||
+        record.actualDistanceKm == null) {
+      return;
+    }
+
+    if (connection?.state != DeviceConnectionState.connected) {
+      return;
+    }
+
+    List<ExportRoutePoint>? routePoints;
+    if (runId != null) {
+      try {
+        final rawPoints = await runRepository.getRoutePoints(runId);
+        routePoints = toExportRoutePoints(rawPoints);
+      } catch (e) {
+        debugPrint('Failed to load route points for Health export: $e');
+      }
+    }
+
+    final result = await healthExportService.exportRun(
+      start: record.startedAt!,
+      end: record.endedAt!,
+      distanceKm: record.actualDistanceKm!,
+      routePoints: routePoints,
+    );
+
+    if (result is HealthExportFailure) {
+      debugPrint('Health export failed: ${result.reason}');
+    }
   }
 
   String _formatPace(double secondsPerKm, UnitSystem unitSystem) {

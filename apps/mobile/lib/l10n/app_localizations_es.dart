@@ -1690,6 +1690,13 @@ class AppLocalizationsEs extends AppLocalizations {
   String get settingsAppleHealth => 'Apple Health';
 
   @override
+  String get settingsHealthExportPermissionDenied =>
+      'El acceso a Apple Health fue denegado. Puedes habilitarlo en Ajustes.';
+
+  @override
+  String get settingsHealthExportOpenSettings => 'Abrir Ajustes';
+
+  @override
   String get settingsHealthConnect => 'Health Connect';
 
   @override
