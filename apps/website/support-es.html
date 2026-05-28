@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soporte — StrivIQ</title>
+  <meta name="description" content="Obtén ayuda con StrivIQ. Explora las preguntas frecuentes, contacta con soporte y encuentra respuestas a las preguntas más comunes sobre tu entrenador personal de running.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Soporte — StrivIQ">
+  <meta property="og:description" content="Obtén ayuda con StrivIQ. Explora las preguntas frecuentes, contacta con soporte y encuentra respuestas a las preguntas más comunes sobre tu entrenador personal de running.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://striviq.fit/support-es.html">
+
+  <!-- Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/sections.css">
+
+  <style>
+    .support-page {
+      padding: calc(var(--nav-height) + var(--space-xl)) 0 var(--space-2xl);
+    }
+
+    .support-page__header {
+      margin-bottom: var(--space-xl);
+      position: relative;
+    }
+
+    .support-page__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      margin-bottom: var(--space-sm);
+    }
+
+    .support-page__subtitle {
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+      max-width: 600px;
+    }
+
+    .support-page__content {
+      max-width: 720px;
+    }
+
+    .contact-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: var(--space-lg);
+      margin-bottom: var(--space-xl);
+      transition: border-color var(--duration-normal) var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+    }
+
+    .contact-card:hover {
+      border-color: rgba(57, 255, 20, 0.2);
+      box-shadow: 0 0 30px rgba(57, 255, 20, 0.06);
+    }
+
+    .contact-card__title {
+      font-size: 1.25rem;
+      margin-bottom: var(--space-sm);
+      color: var(--color-text);
+    }
+
+    .contact-card__text {
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-md);
+      line-height: 1.7;
+    }
+
+    .contact-card__email {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--color-accent);
+      font-weight: 500;
+      font-size: 1.1rem;
+      transition: gap var(--duration-normal) var(--ease-out);
+    }
+
+    .contact-card__email:hover {
+      gap: var(--space-md);
+    }
+
+    .faq-section__title {
+      font-size: 1.5rem;
+      margin-top: var(--space-xl);
+      margin-bottom: var(--space-md);
+      color: var(--color-accent);
+    }
+
+    .faq-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      margin-bottom: var(--space-md);
+      overflow: hidden;
+      transition: border-color var(--duration-normal) var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+    }
+
+    .faq-item:hover {
+      border-color: rgba(57, 255, 20, 0.15);
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.04);
+    }
+
+    .faq-item summary {
+      padding: var(--space-md) var(--space-lg);
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--color-text);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: color var(--duration-normal) var(--ease-out);
+    }
+
+    .faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-item summary::after {
+      content: '+';
+      font-size: 1.25rem;
+      color: var(--color-accent);
+      transition: transform var(--duration-normal) var(--ease-out);
+    }
+
+    .faq-item[open] summary::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-item summary:hover {
+      color: var(--color-accent);
+    }
+
+    .faq-item__content {
+      padding: 0 var(--space-lg) var(--space-md);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    .faq-item__content p {
+      margin-bottom: var(--space-sm);
+    }
+
+    .faq-item__content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .support-page__back {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-top: var(--space-xl);
+      color: var(--color-accent);
+      font-weight: 500;
+      transition: gap var(--duration-normal) var(--ease-out);
+    }
+
+    .support-page__back:hover {
+      gap: var(--space-md);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" aria-label="Navegación principal">
+    <div class="container nav__inner">
+      <a href="index-es.html" class="nav__logo" aria-label="Inicio StrivIQ">
+        <img src="assets/icons/logo.svg" alt="StrivIQ" width="131" height="32">
+      </a>
+
+      <div class="nav__links">
+        <a href="index-es.html#features" class="nav__link">Características</a>
+        <a href="index-es.html#how-it-works" class="nav__link">Cómo Funciona</a>
+        <a href="index-es.html#download" class="nav__link">Descargar</a>
+        <a href="support.html" class="nav__link" aria-label="Switch to English">EN</a>
+      </div>
+
+      <a href="index-es.html#download" class="btn btn-primary nav__cta">Descargar la App</a>
+
+      <button class="nav__hamburger" aria-label="Alternar menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <div class="nav__menu" role="dialog" aria-label="Menú de navegación">
+      <a href="index-es.html#features" class="nav__link">Características</a>
+      <a href="index-es.html#how-it-works" class="nav__link">Cómo Funciona</a>
+      <a href="index-es.html#download" class="nav__link">Descargar</a>
+      <a href="support.html" class="nav__link" aria-label="Switch to English">EN</a>
+      <a href="index-es.html#download" class="btn btn-primary nav__cta">Descargar la App</a>
+    </div>
+  </nav>
+
+  <main class="support-page">
+    <div class="container">
+      <header class="support-page__header">
+        <h1 class="support-page__title reveal">Soporte</h1>
+        <p class="support-page__subtitle reveal" data-delay="1">¿Necesitas ayuda? Estamos aquí. Explora nuestras preguntas frecuentes o contáctanos directamente.</p>
+      </header>
+
+      <div class="support-page__content">
+        <!-- Contact Card -->
+        <div class="contact-card reveal" data-delay="1">
+          <h2 class="contact-card__title">Contáctanos</h2>
+          <p class="contact-card__text">¿No encuentras lo que buscas? Envíanos un correo y te responderemos lo antes posible.</p>
+          <a href="mailto:David.Guerrero@protonmail.com" class="contact-card__email">
+            David.Guerrero@protonmail.com &rarr;
+          </a>
+        </div>
+
+        <!-- FAQ: Account & Auth -->
+        <section class="reveal" data-delay="2">
+          <h2 class="faq-section__title">Cuenta y Autenticación</h2>
+
+          <details class="faq-item">
+            <summary>¿Cómo me registro o inicio sesión?</summary>
+            <div class="faq-item__content">
+              <p>Puedes crear una cuenta con tu dirección de correo electrónico o iniciar sesión con Google. Abre la app de StrivIQ, toca "Empezar" y sigue las instrucciones para configurar tu cuenta.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>¿Cómo restablezco mi contraseña?</summary>
+            <div class="faq-item__content">
+              <p>En la pantalla de inicio de sesión, toca "¿Olvidaste tu contraseña?" e introduce tu correo electrónico. Te enviaremos un enlace de restablecimiento. Si iniciaste sesión con Google, gestiona tu contraseña a través de la configuración de tu cuenta de Google.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>¿Cómo elimino mi cuenta?</summary>
+            <div class="faq-item__content">
+              <p>Ve a Configuración &rarr; Cuenta &rarr; Eliminar cuenta. Esto eliminará permanentemente todos tus datos, incluidos los planes de entrenamiento y el historial de carreras. Esta acción no se puede deshacer.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- FAQ: Training Plans -->
+        <section class="reveal" data-delay="1">
+          <h2 class="faq-section__title">Planes de Entrenamiento</h2>
+
+          <details class="faq-item">
+            <summary>¿Cómo se generan mis planes de entrenamiento?</summary>
+            <div class="faq-item__content">
+              <p>StrivIQ crea planes de entrenamiento personalizados basados en tu distancia objetivo, fecha objetivo, nivel de forma física actual y disponibilidad semanal. Los planes se adaptan a medida que completas sesiones y registras carreras.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>¿Puedo saltarme una sesión?</summary>
+            <div class="faq-item__content">
+              <p>Sí. En la vista de tu plan, toca la sesión que quieres saltar y selecciona "Saltar". El plan ajustará automáticamente las sesiones futuras para mantenerte en camino hacia tu objetivo.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- FAQ: GPS Runs -->
+        <section class="reveal" data-delay="2">
+          <h2 class="faq-section__title">Carreras con GPS</h2>
+
+          <details class="faq-item">
+            <summary>¿Qué permisos de ubicación necesita StrivIQ?</summary>
+            <div class="faq-item__content">
+              <p>StrivIQ necesita acceso a la ubicación "Mientras se usa la app" para rastrear tus carreras. En iOS, también puedes conceder el permiso "Siempre" si deseas el seguimiento en segundo plano para carreras más largas, pero esto es opcional.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>¿StrivIQ rastrea las carreras en segundo plano?</summary>
+            <div class="faq-item__content">
+              <p>Sí, StrivIQ puede seguir rastreando tu carrera incluso cuando la app está en segundo plano o tu teléfono está bloqueado. Asegúrate de que los permisos de ubicación estén configurados como "Siempre" si quieres esta función.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>¿Qué pasa si la app se bloquea durante una carrera?</summary>
+            <div class="faq-item__content">
+              <p>Si la app se bloquea durante una carrera, tu progreso hasta ese momento suele guardarse localmente. Cuando vuelvas a abrir la app, es posible que se te pregunte si deseas reanudar o guardar la carrera parcial. Si faltan datos, contacta con soporte.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- FAQ: Devices & Sync -->
+        <section class="reveal" data-delay="1">
+          <h2 class="faq-section__title">Dispositivos y Sincronización</h2>
+
+          <details class="faq-item">
+            <summary>¿StrivIQ es compatible con Apple Watch?</summary>
+            <div class="faq-item__content">
+              <p>La compatibilidad con Apple Watch está en nuestra hoja de ruta. Por ahora, puedes rastrear carreras usando el GPS y los sensores de salud de tu iPhone. Mantente atento a las actualizaciones.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>¿StrivIQ usa Live Activities?</summary>
+            <div class="faq-item__content">
+              <p>El soporte de Live Activities está planeado para una actualización futura. Podrás ver las estadísticas de tu carrera actual directamente en la pantalla de bloqueo y en la Dynamic Island.</p>
+            </div>
+          </details>
+        </section>
+
+        <a href="index-es.html" class="support-page__back reveal" data-delay="2">
+          &larr; Volver al Inicio
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 StrivIQ. Todos los derechos reservados.</p>
+      <nav class="footer__links" aria-label="Enlaces legales">
+        <a href="privacy-policy-es.html" class="footer__link">Política de Privacidad</a>
+        <a href="terms-of-service-es.html" class="footer__link">Términos de Servicio</a>
+        <a href="support-es.html" class="footer__link">Soporte</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="js/scroll-animations.js" defer></script>
+</body>
+</html>

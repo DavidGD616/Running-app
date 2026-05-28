@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StrivIQ — Tu Entrenador Personal de Running</title>
+  <meta name="description" content="StrivIQ es tu entrenador personal de running. Obtén planes de entrenamiento adaptativos, onboarding inteligente y todo lo que necesitas para alcanzar tus objetivos de running.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="StrivIQ — Tu Entrenador Personal de Running">
+  <meta property="og:description" content="Obtén planes de entrenamiento adaptativos, onboarding inteligente y todo lo que necesitas para alcanzar tus objetivos de running.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://striviq.fit/index-es.html">
+  <meta property="og:image" content="https://striviq.fit/assets/icons/logo.svg">
+
+  <!-- Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/sections.css">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" aria-label="Navegación principal">
+    <div class="container nav__inner">
+      <a href="index-es.html" class="nav__logo" aria-label="Inicio StrivIQ">
+        <img src="assets/icons/logo.svg" alt="StrivIQ" width="131" height="32">
+      </a>
+
+      <div class="nav__links">
+        <a href="index-es.html#features" class="nav__link">Características</a>
+        <a href="index-es.html#how-it-works" class="nav__link">Cómo Funciona</a>
+        <a href="index-es.html#download" class="nav__link">Descargar</a>
+        <a href="index.html" class="nav__link" aria-label="Switch to English">EN</a>
+      </div>
+
+      <a href="index-es.html#download" class="btn btn-primary nav__cta">Descargar la App</a>
+
+      <button class="nav__hamburger" aria-label="Alternar menú" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <!-- Mobile Menu -->
+    <div class="nav__menu" role="dialog" aria-label="Menú de navegación">
+      <a href="index-es.html#features" class="nav__link">Características</a>
+      <a href="index-es.html#how-it-works" class="nav__link">Cómo Funciona</a>
+      <a href="index-es.html#download" class="nav__link">Descargar</a>
+      <a href="index.html" class="nav__link" aria-label="Switch to English">EN</a>
+      <a href="index-es.html#download" class="btn btn-primary nav__cta">Descargar la App</a>
+    </div>
+  </nav>
+
+  <main>
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+      <canvas id="particles" class="hero__canvas" aria-hidden="true"></canvas>
+      <div class="container hero__inner">
+        <div class="hero__content">
+          <h1 class="hero__title reveal">
+            Tu Entrenador Personal<br>
+            <span class="hero__title-accent">de Running</span>
+          </h1>
+          <p class="hero__subtitle reveal" data-delay="1">
+            Planes de entrenamiento adaptativos construidos alrededor de tus objetivos, nivel de forma física y horario. Sin conjeturas — solo resultados.
+          </p>
+          <div class="hero__actions reveal" data-delay="2">
+            <a href="index-es.html#download" class="btn btn-primary">Empezar a Correr</a>
+            <a href="index-es.html#features" class="btn btn-secondary">Saber Más</a>
+          </div>
+        </div>
+        <div class="hero__illustration reveal" data-delay="3">
+          <img src="assets/illustrations/runner.svg" alt="Figura geométrica abstracta corriendo en movimiento" width="380" height="380" class="animate-float">
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features" id="features">
+      <div class="container">
+        <header class="features__header">
+          <h2 class="features__title reveal">Diseñado para Corredores Reales</h2>
+          <p class="features__subtitle reveal" data-delay="1">Todo lo que necesitas para entrenar más inteligente, no más duro.</p>
+        </header>
+
+        <div class="features__grid">
+          <article class="card reveal" data-delay="1">
+            <img src="assets/illustrations/plan.svg" alt="Visualización de calendario de plan de entrenamiento" class="card__icon" width="48" height="48">
+            <h3 class="card__title">Planes de Entrenamiento Adaptativos</h3>
+            <p class="card__description">
+              Planes personalizados de 12 semanas que se ajustan a tu progreso. Ya sea que estés entrenando para tu primer 5K o un maratón, StrivIQ construye el plan adecuado para ti.
+            </p>
+          </article>
+
+          <article class="card reveal" data-delay="2">
+            <img src="assets/illustrations/onboarding.svg" alt="Flujo de pasos de onboarding inteligente" class="card__icon" width="48" height="48">
+            <h3 class="card__title">Onboarding Inteligente</h3>
+            <p class="card__description">
+              Cuéntanos sobre tu nivel de forma física, objetivos y horario. Usamos tus respuestas para crear un plan que se adapte a tu vida — no al revés.
+            </p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="how-it-works" id="how-it-works">
+      <div class="container">
+        <header class="how-it-works__header">
+          <h2 class="how-it-works__title reveal">Cómo Funciona</h2>
+          <p class="how-it-works__subtitle reveal" data-delay="1">Tres pasos para tu primera carrera.</p>
+        </header>
+
+        <div class="how-it-works__steps">
+          <div class="step reveal" data-delay="1">
+            <div class="step__number">1</div>
+            <h3 class="step__title">Establece tu Objetivo</h3>
+            <p class="step__description">Elige tu distancia objetivo — desde una carrera divertida hasta un maratón completo — y tu fecha objetivo.</p>
+          </div>
+
+          <div class="step reveal" data-delay="2">
+            <div class="step__number">2</div>
+            <h3 class="step__title">Cuéntanos Sobre Ti</h3>
+            <p class="step__description">Comparte tu nivel de forma física actual, disponibilidad semanal y preferencias. Nosotros nos encargamos del resto.</p>
+          </div>
+
+          <div class="step reveal" data-delay="3">
+            <div class="step__number">3</div>
+            <h3 class="step__title">Empieza a Correr</h3>
+            <p class="step__description">Sigue tu plan personalizado sesión por sesión. Rastrea tu progreso, ajústalo sobre la marcha y alcanza tu objetivo.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Download CTA Section -->
+    <section class="download-cta" id="download">
+      <div class="container">
+        <div class="download-cta__inner">
+          <h2 class="download-cta__title reveal">Comienza tu Viaje de Running</h2>
+          <p class="download-cta__subtitle reveal" data-delay="1">Descarga StrivIQ y obtén tu plan de entrenamiento personalizado hoy.</p>
+          <div class="download-cta__badges reveal" data-delay="2">
+            <a href="#" class="btn-store" aria-disabled="true" role="link" aria-label="Descargar en el App Store (próximamente)">
+              <svg class="btn-store__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
+              </svg>
+              <span class="btn-store__text">
+                <span class="btn-store__label">Descargar en el</span>
+                <span class="btn-store__name">App Store</span>
+              </span>
+            </a>
+            <a href="#" class="btn-store" aria-disabled="true" role="link" aria-label="Disponible en Google Play (próximamente)">
+              <svg class="btn-store__icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <path d="M3.609 1.814L13.792 12 3.61 22.186a.996.996 0 0 1-.61-.92V2.734a1 1 0 0 1 .609-.92zm10.89 10.893l2.302 2.302-10.937 6.333 8.635-8.635zm3.199-3.199l2.302 2.302a1 1 0 0 1 0 1.38l-2.302 2.302L15.396 12l2.302-2.492zM5.864 2.658L16.8 8.99l-2.302 2.302L5.864 2.658z"/>
+              </svg>
+              <span class="btn-store__text">
+                <span class="btn-store__label">Disponible en</span>
+                <span class="btn-store__name">Google Play</span>
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 StrivIQ. Todos los derechos reservados.</p>
+      <nav class="footer__links" aria-label="Enlaces legales">
+        <a href="privacy-policy-es.html" class="footer__link">Política de Privacidad</a>
+        <a href="terms-of-service-es.html" class="footer__link">Términos de Servicio</a>
+        <a href="support-es.html" class="footer__link">Soporte</a>
+      </nav>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/effects.js" defer></script>
+  <script src="js/scroll-animations.js" defer></script>
+</body>
+</html>
