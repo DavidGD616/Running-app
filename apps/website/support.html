@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Support — StrivIQ</title>
+  <meta name="description" content="Get help with StrivIQ. Browse FAQs, contact support, and find answers to common questions about your personal running coach.">
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="assets/icons/logo.svg">
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="Support — StrivIQ">
+  <meta property="og:description" content="Get help with StrivIQ. Browse FAQs, contact support, and find answers to common questions about your personal running coach.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://striviq.fit/support.html">
+
+  <!-- Fonts -->
+  <link href="https://api.fontshare.com/v2/css?f[]=clash-display@400,500,600,700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Stylesheets -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/variables.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/animations.css">
+  <link rel="stylesheet" href="css/sections.css">
+
+  <style>
+    .support-page {
+      padding: calc(var(--nav-height) + var(--space-xl)) 0 var(--space-2xl);
+    }
+
+    .support-page__header {
+      margin-bottom: var(--space-xl);
+      position: relative;
+    }
+
+    .support-page__title {
+      font-size: clamp(2rem, 4vw, 3rem);
+      margin-bottom: var(--space-sm);
+    }
+
+    .support-page__subtitle {
+      font-size: 1.1rem;
+      color: var(--color-text-muted);
+      max-width: 600px;
+    }
+
+    .support-page__content {
+      max-width: 720px;
+    }
+
+    .contact-card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: var(--space-lg);
+      margin-bottom: var(--space-xl);
+      transition: border-color var(--duration-normal) var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+    }
+
+    .contact-card:hover {
+      border-color: rgba(57, 255, 20, 0.2);
+      box-shadow: 0 0 30px rgba(57, 255, 20, 0.06);
+    }
+
+    .contact-card__title {
+      font-size: 1.25rem;
+      margin-bottom: var(--space-sm);
+      color: var(--color-text);
+    }
+
+    .contact-card__text {
+      color: var(--color-text-muted);
+      margin-bottom: var(--space-md);
+      line-height: 1.7;
+    }
+
+    .contact-card__email {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      color: var(--color-accent);
+      font-weight: 500;
+      font-size: 1.1rem;
+      transition: gap var(--duration-normal) var(--ease-out);
+    }
+
+    .contact-card__email:hover {
+      gap: var(--space-md);
+    }
+
+    .faq-section__title {
+      font-size: 1.5rem;
+      margin-top: var(--space-xl);
+      margin-bottom: var(--space-md);
+      color: var(--color-accent);
+    }
+
+    .faq-item {
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 12px;
+      margin-bottom: var(--space-md);
+      overflow: hidden;
+      transition: border-color var(--duration-normal) var(--ease-out),
+                  box-shadow var(--duration-normal) var(--ease-out);
+    }
+
+    .faq-item:hover {
+      border-color: rgba(57, 255, 20, 0.15);
+      box-shadow: 0 0 20px rgba(57, 255, 20, 0.04);
+    }
+
+    .faq-item summary {
+      padding: var(--space-md) var(--space-lg);
+      cursor: pointer;
+      font-weight: 500;
+      color: var(--color-text);
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: color var(--duration-normal) var(--ease-out);
+    }
+
+    .faq-item summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .faq-item summary::after {
+      content: '+';
+      font-size: 1.25rem;
+      color: var(--color-accent);
+      transition: transform var(--duration-normal) var(--ease-out);
+    }
+
+    .faq-item[open] summary::after {
+      transform: rotate(45deg);
+    }
+
+    .faq-item summary:hover {
+      color: var(--color-accent);
+    }
+
+    .faq-item__content {
+      padding: 0 var(--space-lg) var(--space-md);
+      color: var(--color-text-muted);
+      line-height: 1.7;
+    }
+
+    .faq-item__content p {
+      margin-bottom: var(--space-sm);
+    }
+
+    .faq-item__content p:last-child {
+      margin-bottom: 0;
+    }
+
+    .support-page__back {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-sm);
+      margin-top: var(--space-xl);
+      color: var(--color-accent);
+      font-weight: 500;
+      transition: gap var(--duration-normal) var(--ease-out);
+    }
+
+    .support-page__back:hover {
+      gap: var(--space-md);
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="nav" aria-label="Main navigation">
+    <div class="container nav__inner">
+      <a href="index.html" class="nav__logo" aria-label="StrivIQ Home">
+        <img src="assets/icons/logo.svg" alt="StrivIQ" width="131" height="32">
+      </a>
+
+      <div class="nav__links">
+        <a href="index.html#features" class="nav__link">Features</a>
+        <a href="index.html#how-it-works" class="nav__link">How It Works</a>
+        <a href="index.html#download" class="nav__link">Download</a>
+        <a href="support-es.html" class="nav__link" aria-label="Switch to Spanish">ES</a>
+      </div>
+
+      <a href="index.html#download" class="btn btn-primary nav__cta">Get the App</a>
+
+      <button class="nav__hamburger" aria-label="Toggle menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+    </div>
+
+    <div class="nav__menu" role="dialog" aria-label="Navigation menu">
+      <a href="index.html#features" class="nav__link">Features</a>
+      <a href="index.html#how-it-works" class="nav__link">How It Works</a>
+      <a href="index.html#download" class="nav__link">Download</a>
+      <a href="support-es.html" class="nav__link" aria-label="Switch to Spanish">ES</a>
+      <a href="index.html#download" class="btn btn-primary nav__cta">Get the App</a>
+    </div>
+  </nav>
+
+  <main class="support-page">
+    <div class="container">
+      <header class="support-page__header">
+        <h1 class="support-page__title reveal">Support</h1>
+        <p class="support-page__subtitle reveal" data-delay="1">Need help? We're here. Browse our FAQs or reach out directly.</p>
+      </header>
+
+      <div class="support-page__content">
+        <!-- Contact Card -->
+        <div class="contact-card reveal" data-delay="1">
+          <h2 class="contact-card__title">Contact Us</h2>
+          <p class="contact-card__text">Can't find what you're looking for? Send us an email and we'll get back to you as soon as possible.</p>
+          <a href="mailto:David.Guerrero@protonmail.com" class="contact-card__email">
+            David.Guerrero@protonmail.com &rarr;
+          </a>
+        </div>
+
+        <!-- FAQ: Account & Auth -->
+        <section class="reveal" data-delay="2">
+          <h2 class="faq-section__title">Account &amp; Authentication</h2>
+
+          <details class="faq-item">
+            <summary>How do I sign up or log in?</summary>
+            <div class="faq-item__content">
+              <p>You can create an account using your email address or sign in with Google. Open the StrivIQ app, tap "Get Started," and follow the prompts to set up your account.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How do I reset my password?</summary>
+            <div class="faq-item__content">
+              <p>On the login screen, tap "Forgot Password?" and enter your email address. We'll send you a reset link. If you signed in with Google, manage your password through your Google account settings.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>How do I delete my account?</summary>
+            <div class="faq-item__content">
+              <p>Go to Settings &rarr; Account &rarr; Delete Account. This will permanently remove all your data, including training plans and run history. This action cannot be undone.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- FAQ: Training Plans -->
+        <section class="reveal" data-delay="1">
+          <h2 class="faq-section__title">Training Plans</h2>
+
+          <details class="faq-item">
+            <summary>How are my training plans generated?</summary>
+            <div class="faq-item__content">
+              <p>StrivIQ creates personalized training plans based on your goal distance, target date, current fitness level, and weekly availability. Plans adapt as you complete sessions and log runs.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Can I skip a session?</summary>
+            <div class="faq-item__content">
+              <p>Yes. In your plan view, tap the session you want to skip and select "Skip." The plan will automatically adjust future sessions to keep you on track toward your goal.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- FAQ: GPS Runs -->
+        <section class="reveal" data-delay="2">
+          <h2 class="faq-section__title">GPS Runs</h2>
+
+          <details class="faq-item">
+            <summary>What location permissions does StrivIQ need?</summary>
+            <div class="faq-item__content">
+              <p>StrivIQ needs "While Using the App" location access to track your runs. On iOS, you can also grant "Always" permission if you want background tracking for longer runs, but this is optional.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Does StrivIQ track runs in the background?</summary>
+            <div class="faq-item__content">
+              <p>Yes, StrivIQ can continue tracking your run even when the app is in the background or your phone is locked. Make sure location permissions are set to "Always" if you want this feature.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>What happens if the app crashes mid-run?</summary>
+            <div class="faq-item__content">
+              <p>If the app crashes during a run, your progress up to that point is usually saved locally. When you reopen the app, you may be prompted to resume or save the partial run. If data appears missing, contact support.</p>
+            </div>
+          </details>
+        </section>
+
+        <!-- FAQ: Devices & Sync -->
+        <section class="reveal" data-delay="1">
+          <h2 class="faq-section__title">Devices &amp; Sync</h2>
+
+          <details class="faq-item">
+            <summary>Does StrivIQ support Apple Watch?</summary>
+            <div class="faq-item__content">
+              <p>Apple Watch support is on our roadmap. For now, you can track runs using your iPhone's GPS and health sensors. Stay tuned for updates.</p>
+            </div>
+          </details>
+
+          <details class="faq-item">
+            <summary>Does StrivIQ use Live Activities?</summary>
+            <div class="faq-item__content">
+              <p>Live Activities support is planned for a future update. You'll be able to see your current run stats directly on your Lock Screen and Dynamic Island.</p>
+            </div>
+          </details>
+        </section>
+
+        <a href="index.html" class="support-page__back reveal" data-delay="2">
+          &larr; Back to Home
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <p class="footer__copy">&copy; 2026 StrivIQ. All rights reserved.</p>
+      <nav class="footer__links" aria-label="Legal links">
+        <a href="privacy-policy.html" class="footer__link">Privacy Policy</a>
+        <a href="terms-of-service.html" class="footer__link">Terms of Service</a>
+        <a href="support.html" class="footer__link">Support</a>
+      </nav>
+    </div>
+  </footer>
+
+  <script src="js/scroll-animations.js" defer></script>
+</body>
+</html>
