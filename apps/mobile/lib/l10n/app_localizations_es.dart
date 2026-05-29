@@ -126,6 +126,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get authLoadingSignOut => 'Cerrando sesión...';
 
   @override
+  String get authLoadingDeleteAccount => 'Eliminando cuenta...';
+
+  @override
   String get authLoadingGoogleSignIn => 'Abriendo Google...';
 
   @override
@@ -1869,6 +1872,29 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsLogOut => 'Cerrar sesión';
+
+  @override
+  String get settingsAccountDelete => 'Eliminar cuenta';
+
+  @override
+  String get settingsAccountDeleteConfirmTitle => '¿Eliminar cuenta?';
+
+  @override
+  String get settingsAccountDeleteConfirmBody =>
+      'Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.';
+
+  @override
+  String get settingsAccountDeleteConfirmCta => 'Eliminar';
+
+  @override
+  String get settingsAccountDeleteCancel => 'Cancelar';
+
+  @override
+  String get settingsAccountDeleteError =>
+      'No se pudo eliminar la cuenta. Inténtalo de nuevo.';
+
+  @override
+  String get settingsAccountDeleteSuccess => 'Cuenta eliminada correctamente.';
 
   @override
   String settingsVersion(String appName, String version, String buildNumber) {

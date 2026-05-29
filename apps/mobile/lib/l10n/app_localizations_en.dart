@@ -126,6 +126,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get authLoadingSignOut => 'Signing out...';
 
   @override
+  String get authLoadingDeleteAccount => 'Deleting account...';
+
+  @override
   String get authLoadingGoogleSignIn => 'Opening Google...';
 
   @override
@@ -1859,6 +1862,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsLogOut => 'Log Out';
+
+  @override
+  String get settingsAccountDelete => 'Delete Account';
+
+  @override
+  String get settingsAccountDeleteConfirmTitle => 'Delete Account?';
+
+  @override
+  String get settingsAccountDeleteConfirmBody =>
+      'This will permanently delete your account and all data. This action cannot be undone.';
+
+  @override
+  String get settingsAccountDeleteConfirmCta => 'Delete';
+
+  @override
+  String get settingsAccountDeleteCancel => 'Cancel';
+
+  @override
+  String get settingsAccountDeleteError =>
+      'Failed to delete account. Please try again.';
+
+  @override
+  String get settingsAccountDeleteSuccess => 'Account deleted successfully.';
 
   @override
   String settingsVersion(String appName, String version, String buildNumber) {

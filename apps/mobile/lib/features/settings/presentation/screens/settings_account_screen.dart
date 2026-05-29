@@ -149,6 +149,8 @@ class SettingsAccountScreen extends ConsumerWidget {
               ),
               const SizedBox(height: AppSpacing.xl),
               _AccountLogOutCard(label: l10n.settingsLogOut),
+              const SizedBox(height: AppSpacing.lg),
+              _AccountDeleteCard(label: l10n.settingsAccountDelete),
             ],
           ),
         ),
@@ -207,6 +209,102 @@ class _AccountLogOutCard extends ConsumerWidget {
             const SizedBox(width: AppSpacing.md),
             Text(
               isSigningOut ? l10n.authLoadingSignOut : label,
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.error,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AccountDeleteCard extends ConsumerWidget {
+  const _AccountDeleteCard({required this.label});
+
+  final String label;
+
+  Future<void> _showDeleteConfirmation(BuildContext context, WidgetRef ref) async {
+    final l10n = AppLocalizations.of(context)!;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        backgroundColor: AppColors.backgroundSecondary,
+        title: Text(l10n.settingsAccountDeleteConfirmTitle),
+        content: Text(
+          l10n.settingsAccountDeleteConfirmBody,
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(l10n.settingsAccountDeleteCancel),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.error),
+            child: Text(l10n.settingsAccountDeleteConfirmCta),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final feedback = await ref
+        .read(authNotifierProvider.notifier)
+        .deleteAccount(l10n: l10n);
+
+    if (!context.mounted) return;
+
+    if (feedback.isError) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(feedback.message)),
+      );
+      return;
+    }
+
+    context.go(RouteNames.welcome);
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context)!;
+    final isLoading = ref.watch(authNotifierProvider).isLoading;
+
+    return GestureDetector(
+      onTap: isLoading ? null : () => _showDeleteConfirmation(context, ref),
+      child: Container(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.base,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: AppColors.error.withValues(alpha: 0.06),
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Center(
+                child: Icon(Icons.delete_forever, color: AppColors.error, size: 18),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text(
+              isLoading ? l10n.authLoadingDeleteAccount : label,
               style: AppTypography.bodyLarge.copyWith(
                 color: AppColors.error,
                 fontWeight: FontWeight.w600,
