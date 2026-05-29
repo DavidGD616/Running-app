@@ -1416,11 +1416,29 @@
   "@sessionTypeRestDay": { "description": "Rest day session type name" },
 
   "sessionCategoryEndurance": "Endurance",
+  "@sessionCategoryEndurance": {
+    "description": "Label for the endurance session category"
+  },
   "sessionCategorySpeedWork": "Speed Work",
+  "@sessionCategorySpeedWork": {
+    "description": "Label for the speed work session category"
+  },
   "sessionCategoryThreshold": "Threshold",
+  "@sessionCategoryThreshold": {
+    "description": "Label for the threshold session category"
+  },
   "sessionCategoryRaceSpecific": "Race Specific",
+  "@sessionCategoryRaceSpecific": {
+    "description": "Label for the race-specific session category"
+  },
   "sessionCategoryRecovery": "Recovery",
+  "@sessionCategoryRecovery": {
+    "description": "Label for the recovery session category"
+  },
   "sessionCategoryRest": "Rest",
+  "@sessionCategoryRest": {
+    "description": "Label for the rest session category"
+  },
 
   "weeklyPlanDayMon": "Mon",
   "@weeklyPlanDayMon": { "description": "Monday abbreviation in weekly plan" },

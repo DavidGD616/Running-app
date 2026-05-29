@@ -490,11 +490,29 @@
   "sessionTypeRestDay": "Día de Descanso",
 
   "sessionCategoryEndurance": "Resistencia",
+  "@sessionCategoryEndurance": {
+    "description": "Etiqueta para la categoría de sesión de resistencia"
+  },
   "sessionCategorySpeedWork": "Velocidad",
+  "@sessionCategorySpeedWork": {
+    "description": "Etiqueta para la categoría de sesión de velocidad"
+  },
   "sessionCategoryThreshold": "Umbral",
+  "@sessionCategoryThreshold": {
+    "description": "Etiqueta para la categoría de sesión de umbral"
+  },
   "sessionCategoryRaceSpecific": "Específico de Carrera",
+  "@sessionCategoryRaceSpecific": {
+    "description": "Etiqueta para la categoría de sesión específica de carrera"
+  },
   "sessionCategoryRecovery": "Recuperación",
+  "@sessionCategoryRecovery": {
+    "description": "Etiqueta para la categoría de sesión de recuperación"
+  },
   "sessionCategoryRest": "Descanso",
+  "@sessionCategoryRest": {
+    "description": "Etiqueta para la categoría de sesión de descanso"
+  },
 
   "weeklyPlanDayMon": "Lun",
   "weeklyPlanDayTue": "Mar",
