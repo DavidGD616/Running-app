@@ -272,11 +272,10 @@ class AuthNotifier extends AsyncNotifier<void> {
       // 1. Delete user on server (this is the critical operation)
       final res = await _client.functions.invoke('delete-account');
       if (res.status != 200) {
-        final errorData = res.data as Map<String, dynamic>?;
-        final errorMessage = errorData?['error'] as String? ??
-            l10n.settingsAccountDeleteError;
+        // Never surface the raw server error string to the user — it is not
+        // localized. Use the localized failure message instead.
         state = const AsyncData(null);
-        return AuthActionFeedback.error(errorMessage);
+        return AuthActionFeedback.error(l10n.settingsAccountDeleteError);
       }
 
       // 2. Clear local state — best effort, never block sign-out
@@ -298,6 +297,11 @@ class AuthNotifier extends AsyncNotifier<void> {
       }
       state = const AsyncData(null);
       return AuthActionFeedback.success(l10n.settingsAccountDeleteSuccess);
+    } on FunctionException {
+      // Edge function returned non-2xx (invoke throws). Never surface the raw
+      // server error — show the localized failure message and keep state clean.
+      state = const AsyncData(null);
+      return AuthActionFeedback.error(l10n.settingsAccountDeleteError);
     } on AuthException catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
       return AuthActionFeedback.error(localizeAuthException(l10n, error));
