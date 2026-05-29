@@ -9,13 +9,44 @@ function requireEnv(name: string): string {
   return value;
 }
 
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json" },
+  });
+}
+
+async function revokeAppleRefreshToken(
+  refreshToken: string,
+): Promise<Response | null> {
+  const clientSecret = await buildAppleClientSecret();
+  const revokeRes = await fetch("https://appleid.apple.com/auth/revoke", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      token: refreshToken,
+      token_type_hint: "refresh_token",
+      client_id: requireEnv("APPLE_BUNDLE_ID"),
+      client_secret: clientSecret,
+    }),
+  });
+
+  if (revokeRes.ok) {
+    return null;
+  }
+
+  const detail = await revokeRes.text();
+  console.error("Apple revoke failed:", detail);
+  return jsonResponse(
+    { error: "Apple token revocation failed" },
+    502,
+  );
+}
+
 Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
-    return new Response(JSON.stringify({ error: "Missing authorization" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Missing authorization" }, 401);
   }
 
   // Use SB_PUBLISHABLE_KEY + getClaims() for asymmetric ES256 JWT verification.
@@ -32,10 +63,7 @@ Deno.serve(async (req) => {
   const userId = claimsData?.claims?.sub;
   if (!userId || claimsError) {
     console.error("getClaims failed:", claimsError);
-    return new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-      headers: { "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Unauthorized" }, 401);
   }
 
   // Service-role client — bypasses RLS for reads/writes and admin operations
@@ -53,43 +81,40 @@ Deno.serve(async (req) => {
 
   if (tokenError) {
     console.error("Failed to query apple_tokens:", tokenError);
+    return jsonResponse(
+      { error: "Failed to verify Apple token state" },
+      500,
+    );
   }
 
-  // 2. Revoke Apple token if present — tolerate errors and continue
+  // 2. Revoke Apple token if present. If this fails, preserve the account and
+  // stored refresh token so account deletion can be retried.
   if (appleTokenRow?.refresh_token) {
     try {
-      const clientSecret = await buildAppleClientSecret();
-      const revokeRes = await fetch("https://appleid.apple.com/auth/revoke", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          token: appleTokenRow.refresh_token,
-          token_type_hint: "refresh_token",
-          client_id: requireEnv("APPLE_BUNDLE_ID"),
-          client_secret: clientSecret,
-        }),
-      });
-
-      if (!revokeRes.ok) {
-        const errText = await revokeRes.text();
-        console.error("Apple revoke failed:", errText);
-      }
+      const revokeError = await revokeAppleRefreshToken(
+        appleTokenRow.refresh_token,
+      );
+      if (revokeError) return revokeError;
     } catch (err) {
       console.error("Apple revoke exception:", err);
+      return jsonResponse(
+        { error: "Apple token revocation failed" },
+        502,
+      );
     }
   }
 
   // 3. Delete the Supabase user — cascades all related tables
-  const { error: deleteError } = await adminClient.auth.admin.deleteUser(userId);
+  const { error: deleteError } = await adminClient.auth.admin.deleteUser(
+    userId,
+  );
   if (deleteError) {
     console.error("Failed to delete user:", deleteError);
-    return new Response(
-      JSON.stringify({ error: "Failed to delete user", detail: deleteError.message }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
+    return jsonResponse(
+      { error: "Failed to delete user", detail: deleteError.message },
+      500,
     );
   }
 
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { "Content-Type": "application/json" },
-  });
+  return jsonResponse({ success: true });
 });

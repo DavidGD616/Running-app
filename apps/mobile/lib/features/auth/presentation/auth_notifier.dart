@@ -160,18 +160,20 @@ class AuthNotifier extends AsyncNotifier<void> {
       final givenName = credential.givenName;
       final familyName = credential.familyName;
       if (givenName != null || familyName != null) {
-        final fullName = [givenName, familyName]
-            .where((p) => p != null && p.isNotEmpty)
-            .join(' ');
+        final fullName = [
+          givenName,
+          familyName,
+        ].where((p) => p != null && p.isNotEmpty).join(' ');
         await _client.auth.updateUser(
           UserAttributes(data: {'full_name': fullName}),
         );
       }
       // Best-effort: store Apple authorization code for future account deletion
       try {
-        await _client.functions.invoke('store-apple-token', body: {
-          'authorizationCode': credential.authorizationCode,
-        });
+        await _client.functions.invoke(
+          'store-apple-token',
+          body: {'authorizationCode': credential.authorizationCode},
+        );
       } catch (e) {
         // Log but don't block login
         // ignore: avoid_print
@@ -278,22 +280,25 @@ class AuthNotifier extends AsyncNotifier<void> {
         return AuthActionFeedback.error(l10n.settingsAccountDeleteError);
       }
 
-      // 2. Clear local state — best effort, never block sign-out
+      // 2. Clear Supabase's in-memory auth session before broad prefs cleanup.
+      // If this fails, do not report success because routing still sees the
+      // user as authenticated.
+      try {
+        await _client.auth.signOut(scope: SignOutScope.local);
+      } catch (e) {
+        // ignore: avoid_print
+        print('[deleteAccount] signOut failed after deletion: $e');
+        state = const AsyncData(null);
+        return AuthActionFeedback.error(l10n.settingsAccountDeleteError);
+      }
+
+      // 3. Clear local app state after the auth stream has emitted sign-out.
       try {
         await _clearAllLocalState();
       } catch (e) {
-        // Log but don't block — prefs will be cleared on next launch
+        // Log but don't block — auth has been reset and app prefs can recover.
         // ignore: avoid_print
         print('[deleteAccount] Local state clear failed: $e');
-      }
-
-      // 3. Always sign out to reset auth state — non-critical after deletion
-      try {
-        await _client.auth.signOut();
-      } catch (e) {
-        // Account already deleted — signOut failure is non-critical
-        // ignore: avoid_print
-        print('[deleteAccount] signOut failed after deletion: $e');
       }
       state = const AsyncData(null);
       return AuthActionFeedback.success(l10n.settingsAccountDeleteSuccess);

@@ -2778,37 +2778,37 @@ abstract class AppLocalizations {
   /// **'Rest Day'**
   String get sessionTypeRestDay;
 
-  /// No description provided for @sessionCategoryEndurance.
+  /// Label for the endurance session category
   ///
   /// In en, this message translates to:
   /// **'Endurance'**
   String get sessionCategoryEndurance;
 
-  /// No description provided for @sessionCategorySpeedWork.
+  /// Label for the speed work session category
   ///
   /// In en, this message translates to:
   /// **'Speed Work'**
   String get sessionCategorySpeedWork;
 
-  /// No description provided for @sessionCategoryThreshold.
+  /// Label for the threshold session category
   ///
   /// In en, this message translates to:
   /// **'Threshold'**
   String get sessionCategoryThreshold;
 
-  /// No description provided for @sessionCategoryRaceSpecific.
+  /// Label for the race-specific session category
   ///
   /// In en, this message translates to:
   /// **'Race Specific'**
   String get sessionCategoryRaceSpecific;
 
-  /// No description provided for @sessionCategoryRecovery.
+  /// Label for the recovery session category
   ///
   /// In en, this message translates to:
   /// **'Recovery'**
   String get sessionCategoryRecovery;
 
-  /// No description provided for @sessionCategoryRest.
+  /// Label for the rest session category
   ///
   /// In en, this message translates to:
   /// **'Rest'**
