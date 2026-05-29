@@ -18,10 +18,10 @@ PR: https://github.com/DavidGD616/Running-app/pull/17
    - Deployment: migration `20260529000000_apple_tokens` pushed; `delete-account` + `store-apple-token` functions ACTIVE; `APPLE_TEAM_ID`/`APPLE_KEY_ID`/`APPLE_BUNDLE_ID`/`APPLE_PRIVATE_KEY` secrets set on project `hedwyrmfeaqcqqwbexzf`.
    - Branch: `feat/account-deletion`.
 
-2. **Working Support URL**
-   - App Store Connect uses `https://striviq.fit/support`.
-   - Verify that exact URL returns HTTP 200 after PR 17 deploys.
-   - If GitHub Pages still returns 404 for `/support`, either add `apps/website/support/index.html` or update App Store Connect to `https://striviq.fit/support.html`.
+2. **Working Support URL — VERIFIED ✅**
+   - [x] `https://striviq.fit/support` (the App Store Connect URL) returns **200** and serves the real Support page (`<title>Support — StrivIQ</title>`, identical to `/support.html`).
+   - [x] `/support.html`, `/support-es`, `/support-es.html` all return **200**.
+   - Website source lives in `apps/website/` (`support.html`, `support-es.html`, `index.html`, `index-es.html`, `CNAME`). No fallback page needed — extensionless and `.html` forms both resolve.
 
 3. **Remove or disable fake subscription UI**
    - If there is no real IAP/subscription in v1, do not show `StrivIQ Pro`, billing dates, auto-renew copy, or cancellation UI.
