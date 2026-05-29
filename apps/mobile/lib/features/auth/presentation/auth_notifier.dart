@@ -167,6 +167,16 @@ class AuthNotifier extends AsyncNotifier<void> {
           UserAttributes(data: {'full_name': fullName}),
         );
       }
+      // Best-effort: store Apple authorization code for future account deletion
+      try {
+        await _client.functions.invoke('store-apple-token', body: {
+          'authorizationCode': credential.authorizationCode,
+        });
+      } catch (e) {
+        // Log but don't block login
+        // ignore: avoid_print
+        print('[AppleSignIn] Failed to store Apple token: $e');
+      }
       state = const AsyncData(null);
       return null;
     } on SignInWithAppleAuthorizationException catch (e, stackTrace) {
@@ -247,6 +257,66 @@ class AuthNotifier extends AsyncNotifier<void> {
     } catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
       return AuthActionFeedback.error(l10n.authErrorGeneric);
+    }
+  }
+
+  Future<AuthActionFeedback> deleteAccount({
+    required AppLocalizations l10n,
+  }) async {
+    if (!SupabaseConfig.isConfigured) {
+      return AuthActionFeedback.error(l10n.authErrorNotConfigured);
+    }
+
+    state = const AsyncLoading();
+    try {
+      // 1. Delete user on server (this is the critical operation)
+      final res = await _client.functions.invoke('delete-account');
+      if (res.status != 200) {
+        final errorData = res.data as Map<String, dynamic>?;
+        final errorMessage = errorData?['error'] as String? ??
+            l10n.settingsAccountDeleteError;
+        state = const AsyncData(null);
+        return AuthActionFeedback.error(errorMessage);
+      }
+
+      // 2. Clear local state — best effort, never block sign-out
+      try {
+        await _clearAllLocalState();
+      } catch (e) {
+        // Log but don't block — prefs will be cleared on next launch
+        // ignore: avoid_print
+        print('[deleteAccount] Local state clear failed: $e');
+      }
+
+      // 3. Always sign out to reset auth state — non-critical after deletion
+      try {
+        await _client.auth.signOut();
+      } catch (e) {
+        // Account already deleted — signOut failure is non-critical
+        // ignore: avoid_print
+        print('[deleteAccount] signOut failed after deletion: $e');
+      }
+      state = const AsyncData(null);
+      return AuthActionFeedback.success(l10n.settingsAccountDeleteSuccess);
+    } on AuthException catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(localizeAuthException(l10n, error));
+    } catch (error, stackTrace) {
+      state = AsyncError(error, stackTrace);
+      return AuthActionFeedback.error(l10n.settingsAccountDeleteError);
+    }
+  }
+
+  Future<void> _clearAllLocalState() async {
+    final prefs = ref.read(sharedPreferencesProvider);
+
+    // Preserve locale so the app stays in the user's chosen language
+    final locale = prefs.getString('pref_locale');
+
+    await prefs.clear();
+
+    if (locale != null) {
+      await prefs.setString('pref_locale', locale);
     }
   }
 }
