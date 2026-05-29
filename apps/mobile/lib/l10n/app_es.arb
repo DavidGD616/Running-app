@@ -46,6 +46,8 @@
   "authLoadingLogIn": "Iniciando sesión...",
   "authLoadingResetPassword": "Enviando enlace...",
   "authLoadingSignOut": "Cerrando sesión...",
+  "authLoadingDeleteAccount": "Eliminando cuenta...",
+  "@authLoadingDeleteAccount": { "description": "Etiqueta de carga mientras se elimina una cuenta" },
   "authLoadingGoogleSignIn": "Abriendo Google...",
   "continueWithGoogle": "Continuar con Google",
   "continueWithApple": "Continuar con Apple",
@@ -651,6 +653,23 @@
   "settingsConnected": "Conectado",
   "settingsNoConnectedDevices": "Aun no hay dispositivos conectados",
   "settingsLogOut": "Cerrar sesión",
+
+  "settingsAccountDelete": "Eliminar cuenta",
+  "@settingsAccountDelete": { "description": "Etiqueta del botón Eliminar cuenta" },
+  "settingsAccountDeleteConfirmTitle": "¿Eliminar cuenta?",
+  "@settingsAccountDeleteConfirmTitle": { "description": "Título del diálogo de confirmación de eliminación de cuenta" },
+  "settingsAccountDeleteConfirmBody": "Esto eliminará permanentemente tu cuenta y todos tus datos. Esta acción no se puede deshacer.",
+  "@settingsAccountDeleteConfirmBody": { "description": "Texto del cuerpo del diálogo de confirmación de eliminación de cuenta" },
+  "settingsAccountDeleteConfirmCta": "Eliminar",
+  "@settingsAccountDeleteConfirmCta": { "description": "Botón de confirmación en el diálogo de eliminación de cuenta" },
+  "settingsAccountDeleteCancel": "Cancelar",
+  "@settingsAccountDeleteCancel": { "description": "Botón de cancelación en el diálogo de eliminación de cuenta" },
+  "settingsAccountDeleteError": "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
+  "@settingsAccountDeleteError": { "description": "Mensaje de error cuando falla la eliminación de cuenta" },
+
+  "settingsAccountDeleteSuccess": "Cuenta eliminada correctamente.",
+  "@settingsAccountDeleteSuccess": { "description": "Mensaje de éxito después de eliminar la cuenta" },
+
   "settingsVersion": "{appName} v{version} (Build {buildNumber})",
 
   "sessionDetailTitle": "Entrenamiento",

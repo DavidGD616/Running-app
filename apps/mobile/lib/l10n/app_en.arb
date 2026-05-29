@@ -115,6 +115,9 @@
   "authLoadingSignOut": "Signing out...",
   "@authLoadingSignOut": { "description": "Loading label while signing out" },
 
+  "authLoadingDeleteAccount": "Deleting account...",
+  "@authLoadingDeleteAccount": { "description": "Loading label while deleting an account" },
+
   "authLoadingGoogleSignIn": "Opening Google...",
   "@authLoadingGoogleSignIn": { "description": "Loading label while starting Google OAuth sign-in" },
 
@@ -1847,6 +1850,27 @@
 
   "settingsLogOut": "Log Out",
   "@settingsLogOut": { "description": "Log out button label" },
+
+  "settingsAccountDelete": "Delete Account",
+  "@settingsAccountDelete": { "description": "Delete account button label" },
+
+  "settingsAccountDeleteConfirmTitle": "Delete Account?",
+  "@settingsAccountDeleteConfirmTitle": { "description": "Title of the account deletion confirmation dialog" },
+
+  "settingsAccountDeleteConfirmBody": "This will permanently delete your account and all data. This action cannot be undone.",
+  "@settingsAccountDeleteConfirmBody": { "description": "Body text of the account deletion confirmation dialog" },
+
+  "settingsAccountDeleteConfirmCta": "Delete",
+  "@settingsAccountDeleteConfirmCta": { "description": "Confirm button on the account deletion dialog" },
+
+  "settingsAccountDeleteCancel": "Cancel",
+  "@settingsAccountDeleteCancel": { "description": "Cancel button on the account deletion dialog" },
+
+  "settingsAccountDeleteError": "Failed to delete account. Please try again.",
+  "@settingsAccountDeleteError": { "description": "Error message shown when account deletion fails" },
+
+  "settingsAccountDeleteSuccess": "Account deleted successfully.",
+  "@settingsAccountDeleteSuccess": { "description": "Success message shown after account deletion" },
 
   "settingsVersion": "{appName} v{version} (Build {buildNumber})",
   "@settingsVersion": {

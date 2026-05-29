@@ -326,6 +326,12 @@ abstract class AppLocalizations {
   /// **'Signing out...'**
   String get authLoadingSignOut;
 
+  /// Loading label while deleting an account
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting account...'**
+  String get authLoadingDeleteAccount;
+
   /// Loading label while starting Google OAuth sign-in
   ///
   /// In en, this message translates to:
@@ -3551,6 +3557,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Log Out'**
   String get settingsLogOut;
+
+  /// Delete account button label
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account'**
+  String get settingsAccountDelete;
+
+  /// Title of the account deletion confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Account?'**
+  String get settingsAccountDeleteConfirmTitle;
+
+  /// Body text of the account deletion confirmation dialog
+  ///
+  /// In en, this message translates to:
+  /// **'This will permanently delete your account and all data. This action cannot be undone.'**
+  String get settingsAccountDeleteConfirmBody;
+
+  /// Confirm button on the account deletion dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get settingsAccountDeleteConfirmCta;
+
+  /// Cancel button on the account deletion dialog
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get settingsAccountDeleteCancel;
+
+  /// Error message shown when account deletion fails
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to delete account. Please try again.'**
+  String get settingsAccountDeleteError;
+
+  /// Success message shown after account deletion
+  ///
+  /// In en, this message translates to:
+  /// **'Account deleted successfully.'**
+  String get settingsAccountDeleteSuccess;
 
   /// App version string shown at bottom of settings
   ///
