@@ -115,6 +115,34 @@ export function phasePlanFor(
 type PhaseAllocation = Record<RacePrepPhase, number>;
 
 function phaseAllocationFor(totalWeeks: number): PhaseAllocation {
+  if (totalWeeks <= 3) {
+    return {
+      base: 0,
+      build: 0,
+      specific: Math.max(0, totalWeeks - 1),
+      peak: 0,
+      taperRace: 1,
+    };
+  }
+  if (totalWeeks <= 5) {
+    return {
+      base: 0,
+      build: 1,
+      specific: totalWeeks - 2,
+      peak: 0,
+      taperRace: 1,
+    };
+  }
+  if (totalWeeks <= 7) {
+    return {
+      base: 1,
+      build: totalWeeks - 5,
+      specific: 3,
+      peak: 0,
+      taperRace: 1,
+    };
+  }
+
   switch (totalWeeks) {
     case 8:
       return { base: 2, build: 2, specific: 2, peak: 1, taperRace: 1 };
