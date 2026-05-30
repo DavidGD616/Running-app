@@ -2227,6 +2227,38 @@ export function normalizeTaper(
   return adjusted;
 }
 
+export function enforcePreRaceTaper(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const goalRace = sessions.find((s) => isGoalRaceSession(s, profileData));
+  if (!goalRace) return sessions;
+
+  const raceDate = goalRace.date;
+  const race = raceFromProfile(profileData);
+  const quietWindowDays = race === "race_5k" || race === "race_10k"
+    ? 2
+    : race === "race_half_marathon" || race === "race_marathon"
+    ? 3
+    : 2;
+
+  const adjusted = sessions.map((session) => {
+    const daysBeforeRace = dateDifferenceDays(session.date, raceDate);
+    if (
+      daysBeforeRace > 0 &&
+      daysBeforeRace <= quietWindowDays &&
+      isStressfulSession(session) &&
+      !isGoalRaceSession(session, profileData)
+    ) {
+      return toEasyStressFallback(session, locale);
+    }
+    return { ...session };
+  });
+
+  return adjusted.sort(compareSessionsByDate);
+}
+
 function marathonReductionFactor(race: string): number {
   switch (race) {
     case "race_marathon":
