@@ -2570,6 +2570,85 @@ Deno.test("enforcePreRaceTaper uses 3-day quiet window for marathon", () => {
   assert.equal(findByDate(sessions, "2026-06-19").type, "easyRun");
 });
 
+Deno.test("validateGeneratedSchedule flags session after race date", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({ id: "w1-2026-06-20-easyRun", date: "2026-06-20", type: "easyRun" }),
+      session({ id: "w1-2026-06-21-racePaceRun", date: "2026-06-21", type: "racePaceRun", distanceKm: 10 }),
+      session({ id: "w1-2026-06-22-intervals", date: "2026-06-22", type: "intervals" }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "session_after_race_date");
+  assert.equal(violations[0].sessionId, "w1-2026-06-22-intervals");
+});
+
+Deno.test("validateGeneratedSchedule does not flag session on race date", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({ id: "w1-2026-06-21-racePaceRun", date: "2026-06-21", type: "racePaceRun", distanceKm: 10 }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("validateGeneratedSchedule flags stressful session before race", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({ id: "w1-2026-06-19-easyRun", date: "2026-06-19", type: "easyRun" }),
+      session({ id: "w1-2026-06-20-intervals", date: "2026-06-20", type: "intervals" }),
+      session({ id: "w1-2026-06-21-racePaceRun", date: "2026-06-21", type: "racePaceRun", distanceKm: 10 }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "stressful_session_before_race");
+  assert.equal(violations[0].sessionId, "w1-2026-06-20-intervals");
+});
+
+Deno.test("validateGeneratedSchedule does not flag easy run before race", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({ id: "w1-2026-06-19-easyRun", date: "2026-06-19", type: "easyRun" }),
+      session({ id: "w1-2026-06-20-easyRun", date: "2026-06-20", type: "easyRun" }),
+      session({ id: "w1-2026-06-21-racePaceRun", date: "2026-06-21", type: "racePaceRun", distanceKm: 10 }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("validateGeneratedSchedule uses 3-day quiet window for marathon", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({ id: "w1-2026-06-17-easyRun", date: "2026-06-17", type: "easyRun" }),
+      session({ id: "w1-2026-06-18-tempoRun", date: "2026-06-18", type: "tempoRun" }),
+      session({ id: "w1-2026-06-19-easyRun", date: "2026-06-19", type: "easyRun" }),
+      session({ id: "w1-2026-06-20-restDay", date: "2026-06-20", type: "restDay" }),
+      session({ id: "w1-2026-06-21-racePaceRun", date: "2026-06-21", type: "racePaceRun", distanceKm: 42.2 }),
+    ],
+    profile({ race: "race_marathon", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "stressful_session_before_race");
+  assert.equal(violations[0].sessionId, "w1-2026-06-18-tempoRun");
+  assert.ok(!violations.some((v) => v.sessionId === "w1-2026-06-19-easyRun"));
+});
+
+Deno.test("validateGeneratedSchedule returns no violations when no fixed race date", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({ id: "w1-2026-06-21-easyRun", date: "2026-06-21", type: "easyRun" }),
+      session({ id: "w1-2026-06-22-intervals", date: "2026-06-22", type: "intervals" }),
+      session({ id: "w1-2026-06-23-easyRun", date: "2026-06-23", type: "easyRun" }),
+    ],
+    profile({ race: "race_10k", raceDate: null }),
+  );
+  assert.deepEqual(violations, []);
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
@@ -2702,7 +2781,15 @@ function runProductionRulePipeline(
     phaseStampedSessions,
     profileData,
   );
-  return normalizeSessionIds(raceFinalizedSessions);
+  const truncatedSessions = truncateAfterRaceDate(
+    raceFinalizedSessions,
+    profileData,
+  );
+  const preRaceTaperedSessions = enforcePreRaceTaper(
+    truncatedSessions,
+    profileData,
+  );
+  return normalizeSessionIds(preRaceTaperedSessions);
 }
 
 function session(
