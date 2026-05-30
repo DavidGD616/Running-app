@@ -68,7 +68,7 @@ The first planned training session should be easyRun or recoveryRun unless it is
 a fixed goal race date. Introduce quality sessions only after the runner has at
 least one controlled easy/base session in the plan.
 
-Always anchor week 1 sessions starting from the nearest upcoming Monday.
+Always anchor week 1 sessions starting from the Monday of the current week.
 ${raceInstruction}`;
 
   const userPrompt = `Runner profile:\n${JSON.stringify(profileData, null, 2)}
@@ -89,7 +89,7 @@ Generate a complete personalized training plan. Return only the JSON matching th
         schema: {
           type: "object",
           properties: {
-            totalWeeks: { type: "integer", minimum: 4, maximum: 26 },
+            totalWeeks: { type: "integer", minimum: 3, maximum: 26 },
             raceType: {
               type: "string",
               enum: ["fiveK", "tenK", "halfMarathon", "marathon", "other"],
