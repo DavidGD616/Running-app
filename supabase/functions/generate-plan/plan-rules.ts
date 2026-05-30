@@ -486,6 +486,46 @@ export function ensureGoalRaceSession(
   return adjusted.sort(compareSessionsByDate);
 }
 
+export function expectedTotalWeeks(
+  profileData: Record<string, unknown>,
+): number | null {
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate == null) return null;
+
+  const raceDateParsed = parseDateOnly(raceDate);
+  if (raceDateParsed == null) return null;
+
+  const today = new Date();
+  const todayDayIndex = today.getUTCDay();
+  const todayMondayOffset = todayDayIndex === 0 ? -6 : 1 - todayDayIndex;
+  const anchorMonday = new Date(today);
+  anchorMonday.setUTCDate(today.getUTCDate() + todayMondayOffset);
+
+  const raceDayIndex = raceDateParsed.getUTCDay();
+  const raceMondayOffset = raceDayIndex === 0 ? -6 : 1 - raceDayIndex;
+  const raceMonday = new Date(raceDateParsed);
+  raceMonday.setUTCDate(raceDateParsed.getUTCDate() + raceMondayOffset);
+
+  const weeks = Math.ceil(
+    (raceMonday.getTime() - anchorMonday.getTime()) /
+      (7 * 24 * 60 * 60 * 1000),
+  ) + 1;
+
+  return Math.max(3, weeks);
+}
+
+export function truncateAfterRaceDate(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate == null) return sessions;
+
+  return sessions
+    .filter((session) => session.date.slice(0, 10) <= raceDate)
+    .sort(compareSessionsByDate);
+}
+
 export function addStrideDefaults(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
