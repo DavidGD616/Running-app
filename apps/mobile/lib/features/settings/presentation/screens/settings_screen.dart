@@ -121,12 +121,6 @@ class SettingsScreen extends ConsumerWidget {
                     onTap: () => context.push(RouteNames.settingsAccount),
                   ),
                   SettingsRow(
-                    label: l10n.settingsSubscription,
-                    iconAsset: 'assets/icons/star.svg',
-                    variant: SettingsRowVariant.chevron,
-                    onTap: () => context.push(RouteNames.settingsSubscription),
-                  ),
-                  SettingsRow(
                     label: l10n.settingsIntegrations,
                     iconAsset: 'assets/icons/wifi.svg',
                     variant: SettingsRowVariant.chevron,

@@ -23,9 +23,11 @@ PR: https://github.com/DavidGD616/Running-app/pull/17
    - [x] `/support.html`, `/support-es`, `/support-es.html` all return **200**.
    - Website source lives in `apps/website/` (`support.html`, `support-es.html`, `index.html`, `index-es.html`, `CNAME`). No fallback page needed — extensionless and `.html` forms both resolve.
 
-3. **Remove or disable fake subscription UI**
-   - If there is no real IAP/subscription in v1, do not show `StrivIQ Pro`, billing dates, auto-renew copy, or cancellation UI.
-   - Keep subscription screens hidden until StoreKit/IAP is implemented.
+3. **Remove or disable fake subscription UI — DONE ✅**
+   - [x] Deleted the mock subscription screens (`settings_subscription_screen.dart`, `settings_cancel_subscription_screen.dart`) — they showed a hardcoded `StrivIQ Pro` plan, a fake next-billing date, auto-renew copy, and a cancellation flow with no StoreKit/IAP behind it.
+   - [x] Removed the Settings entry row, both routes (`/settings/subscription`, `/settings/subscription/cancel`) and their `RouteNames` constants.
+   - [x] Purged all subscription/`StrivIQ Pro` strings from `app_en.arb` and `app_es.arb` and regenerated l10n. No `StrivIQ Pro`, billing, auto-renew, or cancellation copy remains in the app.
+   - Re-add behind StoreKit/IAP when a real subscription ships (recoverable from git history).
 
 4. **Accurate support/legal copy**
    - [x] Account deletion now exists in the app, so the FAQ deletion claim is accurate.
