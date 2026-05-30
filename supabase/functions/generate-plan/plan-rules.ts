@@ -525,7 +525,7 @@ export function expectedTotalWeeks(
 
   const today = new Date();
   const todayDayIndex = today.getUTCDay();
-  const todayMondayOffset = todayDayIndex === 0 ? -6 : 1 - todayDayIndex;
+  const todayMondayOffset = todayDayIndex === 0 ? 1 : 1 - todayDayIndex;
   const anchorMonday = new Date(today);
   anchorMonday.setUTCDate(today.getUTCDate() + todayMondayOffset);
   anchorMonday.setUTCHours(0, 0, 0, 0);
