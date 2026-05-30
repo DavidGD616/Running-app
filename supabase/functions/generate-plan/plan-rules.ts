@@ -2518,7 +2518,9 @@ export type ScheduleValidationViolation = {
     | "avoidable_training_on_hard_day"
     | "first_session_is_stressful"
     | "session_id_date_mismatch"
-    | "long_run_not_on_preferred_day";
+    | "long_run_not_on_preferred_day"
+    | "session_after_race_date"
+    | "stressful_session_before_race";
   sessionId: string;
   date: string;
   message: string;
@@ -2630,6 +2632,48 @@ export function validateGeneratedSchedule(
           sessionId: longRun.id,
           date: longRun.date,
           message: `Long run is not on preferred day ${preferredLongRunDay}.`,
+        });
+      }
+    }
+  }
+
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate != null) {
+    for (const session of sorted) {
+      if (dateDifferenceDays(raceDate, session.date) > 0) {
+        violations.push({
+          rule: "session_after_race_date",
+          sessionId: session.id,
+          date: session.date,
+          message: `Session is scheduled after the goal race date ${raceDate}.`,
+        });
+      }
+    }
+  }
+
+  const goalRace = sorted.find((s) => isGoalRaceSession(s, profileData));
+  if (goalRace != null) {
+    const race = raceFromProfile(profileData);
+    const quietWindowDays = race === "race_5k" || race === "race_10k"
+      ? 2
+      : race === "race_half_marathon" || race === "race_marathon"
+      ? 3
+      : 2;
+
+    for (const session of sorted) {
+      const daysBeforeRace = dateDifferenceDays(session.date, goalRace.date);
+      if (
+        daysBeforeRace > 0 &&
+        daysBeforeRace <= quietWindowDays &&
+        isStressfulSession(session) &&
+        !isGoalRaceSession(session, profileData)
+      ) {
+        violations.push({
+          rule: "stressful_session_before_race",
+          sessionId: session.id,
+          date: session.date,
+          message:
+            `${session.type} is within ${quietWindowDays} days before the goal race.`,
         });
       }
     }

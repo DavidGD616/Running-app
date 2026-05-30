@@ -5,6 +5,8 @@ import {
   avoidHardDayTraining,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
+  enforcePreRaceTaper,
+  expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
@@ -16,6 +18,7 @@ import {
   preferRestOnHardDays,
   smoothLongRunProgression,
   spaceStressfulSessions,
+  truncateAfterRaceDate,
   validateGeneratedSchedule,
 } from "./plan-rules.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
@@ -86,6 +89,11 @@ Deno.serve(async (req) => {
       JSON.stringify({ error: "Plan generation failed", detail: String(err) }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
+  }
+
+  const expectedWeeks = expectedTotalWeeks(profileData);
+  if (expectedWeeks != null) {
+    generatedPlan.totalWeeks = Math.max(3, expectedWeeks);
   }
 
   // 3. Build phone-first workout steps deterministically for each session.
@@ -169,7 +177,16 @@ Deno.serve(async (req) => {
     profileData,
     locale,
   );
-  const idNormalizedSessions = normalizeSessionIds(raceFinalizedSessions);
+  const truncatedSessions = truncateAfterRaceDate(
+    raceFinalizedSessions,
+    profileData,
+  );
+  const preRaceTaperedSessions = enforcePreRaceTaper(
+    truncatedSessions,
+    profileData,
+    locale,
+  );
+  const idNormalizedSessions = normalizeSessionIds(preRaceTaperedSessions);
   const finalViolations = validateGeneratedSchedule(
     idNormalizedSessions,
     profileData,

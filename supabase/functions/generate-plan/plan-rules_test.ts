@@ -4,6 +4,8 @@ import {
   avoidHardDayTraining,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
+  enforcePreRaceTaper,
+  expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
@@ -17,6 +19,7 @@ import {
   preferRestOnHardDays,
   smoothLongRunProgression,
   spaceStressfulSessions,
+  truncateAfterRaceDate,
   validateGeneratedSchedule,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
@@ -2448,6 +2451,123 @@ Deno.test("production rule pipeline moves partial-week long run onto preferred d
   assert.equal(findByDate(result, "2026-05-03").type, "restDay");
   assert.equal(trainingCountForTest(result), 4);
   assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
+});
+
+Deno.test("expectedTotalWeeks computes weeks from nearest Monday to race Monday", () => {
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.ok(weeks != null, "expectedTotalWeeks should return a number for fixed race date");
+  assert.ok(weeks >= 3, `expected at least 3 weeks, got ${weeks}`);
+});
+
+Deno.test("expectedTotalWeeks returns null when no fixed race date", () => {
+  const weeks = expectedTotalWeeks(profile({ race: "race_10k", raceDate: null }));
+  assert.equal(weeks, null);
+});
+
+Deno.test("truncateAfterRaceDate removes sessions after race date", () => {
+  const sessions = truncateAfterRaceDate(
+    [
+      session({ id: "w3-mon", date: "2026-06-15", type: "easyRun", weekNumber: 3 }),
+      session({ id: "race", date: "2026-06-21", type: "racePaceRun", weekNumber: 3, distanceKm: 10 }),
+      session({ id: "w4-mon", date: "2026-06-22", type: "easyRun", weekNumber: 4 }),
+      session({ id: "w4-wed", date: "2026-06-24", type: "intervals", weekNumber: 4 }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(sessions.length, 2);
+  assert.ok(sessions.some((s) => s.id === "race"));
+  assert.ok(!sessions.some((s) => s.date > "2026-06-21"));
+});
+
+Deno.test("truncateAfterRaceDate returns unchanged when no fixed race date", () => {
+  const input = [
+    session({ id: "w1-mon", date: "2026-06-15", type: "easyRun" }),
+    session({ id: "w2-mon", date: "2026-06-22", type: "easyRun" }),
+  ];
+  const sessions = truncateAfterRaceDate(input, profile({ race: "race_10k", raceDate: null }));
+  assert.equal(sessions.length, 2);
+});
+
+Deno.test("phaseAllocationFor 3 weeks is specific + taperRace only", () => {
+  const phases = phasePlanFor(3, {});
+  assert.equal(phases.length, 3);
+  assert.equal(phases.filter((p) => p === "base").length, 0);
+  assert.equal(phases.filter((p) => p === "build").length, 0);
+  assert.equal(phases.filter((p) => p === "specific").length, 2);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[2], "taperRace");
+});
+
+Deno.test("phaseAllocationFor 5 weeks is build + specific + taperRace", () => {
+  const phases = phasePlanFor(5, {});
+  assert.equal(phases.length, 5);
+  assert.equal(phases.filter((p) => p === "base").length, 0);
+  assert.equal(phases.filter((p) => p === "build").length, 1);
+  assert.equal(phases.filter((p) => p === "specific").length, 3);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[4], "taperRace");
+});
+
+Deno.test("phaseAllocationFor 7 weeks is base + build + specific + taperRace", () => {
+  const phases = phasePlanFor(7, {});
+  assert.equal(phases.length, 7);
+  assert.equal(phases.filter((p) => p === "base").length, 1);
+  assert.equal(phases.filter((p) => p === "build").length, 2);
+  assert.equal(phases.filter((p) => p === "specific").length, 3);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[6], "taperRace");
+});
+
+Deno.test("enforcePreRaceTaper downgrades intervals day before 10K race", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({ id: "w4-sat", date: "2026-06-20", type: "intervals", weekNumber: 4 }),
+      session({ id: "race", date: "2026-06-21", type: "racePaceRun", weekNumber: 4, distanceKm: 10 }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  const dayBefore = findByDate(sessions, "2026-06-20");
+  assert.ok(
+    dayBefore.type === "recoveryRun" || dayBefore.type === "easyRun",
+    `day-before-race intervals should be downgraded, got ${dayBefore.type}`,
+  );
+});
+
+Deno.test("enforcePreRaceTaper leaves rest days before race untouched", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({ id: "w4-sat", date: "2026-06-20", type: "restDay", weekNumber: 4 }),
+      session({ id: "race", date: "2026-06-21", type: "racePaceRun", weekNumber: 4, distanceKm: 10 }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  assert.equal(findByDate(sessions, "2026-06-20").type, "restDay");
+});
+
+Deno.test("enforcePreRaceTaper uses 3-day quiet window for marathon", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({ id: "w4-thu", date: "2026-06-18", type: "tempoRun", weekNumber: 4 }),
+      session({ id: "w4-fri", date: "2026-06-19", type: "easyRun", weekNumber: 4 }),
+      session({ id: "w4-sat", date: "2026-06-20", type: "restDay", weekNumber: 4 }),
+      session({ id: "race", date: "2026-06-21", type: "racePaceRun", weekNumber: 4, distanceKm: 42.2 }),
+    ],
+    profile({ race: "race_marathon", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  const thu = findByDate(sessions, "2026-06-18");
+  assert.ok(
+    thu.type === "recoveryRun" || thu.type === "easyRun",
+    `3-days-before marathon tempo should be downgraded, got ${thu.type}`,
+  );
+  assert.equal(findByDate(sessions, "2026-06-19").type, "easyRun");
 });
 
 function profile({

@@ -13,7 +13,7 @@ export async function generatePlanFromProfile(
   const hasRaceDate = typeof goal.raceDate === "string" &&
     goal.raceDate.length > 0;
   const raceInstruction = hasRaceDate
-    ? "Ensure a proper taper in the final 2 weeks before the fixed race date."
+    ? "When a fixed race date is given, the goal race is the final session and the plan ends exactly on race day — generate no sessions after it. Keep the last 2–3 days before the race easy or rest (no intervals, tempo, or long runs in that window)."
     : "The runner has no fixed race date. Build toward a final goal-distance race/test in the last week; do not create a short fake race.";
 
   const systemPrompt = `You are an expert running coach. Generate a personalized
