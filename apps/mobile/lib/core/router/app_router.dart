@@ -35,8 +35,6 @@ import '../../features/settings/presentation/screens/settings_account_screen.dar
 import '../../features/settings/presentation/screens/settings_account_name_screen.dart';
 import '../../features/settings/presentation/screens/settings_account_sex_screen.dart';
 import '../../features/settings/presentation/screens/settings_account_security_info_screen.dart';
-import '../../features/settings/presentation/screens/settings_subscription_screen.dart';
-import '../../features/settings/presentation/screens/settings_cancel_subscription_screen.dart';
 import '../../features/settings/presentation/screens/settings_integrations_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
 import '../../features/pre_run/presentation/run_flow_context.dart';
@@ -268,14 +266,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SettingsAccountSecurityInfoScreen(
           mode: SettingsAccountSecurityInfoMode.password,
         ),
-      ),
-      GoRoute(
-        path: RouteNames.settingsSubscription,
-        builder: (context, state) => const SettingsSubscriptionScreen(),
-      ),
-      GoRoute(
-        path: RouteNames.settingsSubscriptionCancel,
-        builder: (context, state) => const SettingsCancelSubscriptionScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsIntegrations,
