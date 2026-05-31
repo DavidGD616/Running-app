@@ -115,6 +115,34 @@ export function phasePlanFor(
 type PhaseAllocation = Record<RacePrepPhase, number>;
 
 function phaseAllocationFor(totalWeeks: number): PhaseAllocation {
+  if (totalWeeks <= 3) {
+    return {
+      base: 0,
+      build: 0,
+      specific: Math.max(0, totalWeeks - 1),
+      peak: 0,
+      taperRace: 1,
+    };
+  }
+  if (totalWeeks <= 5) {
+    return {
+      base: 0,
+      build: 1,
+      specific: totalWeeks - 2,
+      peak: 0,
+      taperRace: 1,
+    };
+  }
+  if (totalWeeks <= 7) {
+    return {
+      base: 1,
+      build: totalWeeks - 5,
+      specific: 3,
+      peak: 0,
+      taperRace: 1,
+    };
+  }
+
   switch (totalWeeks) {
     case 8:
       return { base: 2, build: 2, specific: 2, peak: 1, taperRace: 1 };
@@ -484,6 +512,61 @@ export function ensureGoalRaceSession(
   );
 
   return adjusted.sort(compareSessionsByDate);
+}
+
+export function expectedTotalWeeks(
+  profileData: Record<string, unknown>,
+  today: Date = new Date(),
+): number | null {
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate == null) return null;
+
+  const raceDateParsed = parseDateOnly(raceDate);
+  if (raceDateParsed == null) return null;
+
+  const anchorMonday = anchorMondayFor(today);
+
+  const raceDayIndex = raceDateParsed.getUTCDay();
+  const raceMondayOffset = raceDayIndex === 0 ? -6 : 1 - raceDayIndex;
+  const raceMonday = new Date(raceDateParsed);
+  raceMonday.setUTCDate(raceDateParsed.getUTCDate() + raceMondayOffset);
+
+  if (raceMonday.getTime() < anchorMonday.getTime()) return null;
+
+  const weeks = Math.ceil(
+    (raceMonday.getTime() - anchorMonday.getTime()) /
+      (7 * 24 * 60 * 60 * 1000),
+  ) + 1;
+
+  return weeks;
+}
+
+function anchorMondayFor(date: Date): Date {
+  const dayIndex = date.getUTCDay();
+  const mondayOffset = dayIndex === 0 ? -6 : 1 - dayIndex;
+  const monday = new Date(date);
+  monday.setUTCDate(date.getUTCDate() + mondayOffset);
+  monday.setUTCHours(0, 0, 0, 0);
+  return monday;
+}
+
+function weekNumberFromAnchor(date: string, anchorMonday: Date): number | null {
+  const parsed = parseDateOnly(date);
+  if (parsed == null) return null;
+  return Math.floor(
+    (parsed.getTime() - anchorMonday.getTime()) / (7 * 24 * 60 * 60 * 1000),
+  ) + 1;
+}
+
+export function truncateAfterRaceDate(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+): GeneratedSession[] {
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate == null) return sessions;
+
+  return sessions
+    .filter((session) => session.date.slice(0, 10) <= raceDate);
 }
 
 export function addStrideDefaults(
@@ -2072,6 +2155,19 @@ function maxLongRunJumpKm(race: string): number {
   }
 }
 
+function quietWindowDaysFor(race: string): number {
+  switch (race) {
+    case "race_5k":
+    case "race_10k":
+      return 2;
+    case "race_half_marathon":
+    case "race_marathon":
+      return 3;
+    default:
+      return 2;
+  }
+}
+
 export function normalizeTaper(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
@@ -2157,6 +2253,34 @@ export function normalizeTaper(
   }
 
   return adjusted;
+}
+
+export function enforcePreRaceTaper(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const goalRace = sessions.find((s) => isGoalRaceSession(s, profileData));
+  if (!goalRace) return sessions;
+
+  const raceDate = goalRace.date;
+  const race = raceFromProfile(profileData);
+  const quietWindowDays = quietWindowDaysFor(race);
+
+  const adjusted = sessions.map((session) => {
+    const daysBeforeRace = dateDifferenceDays(session.date, raceDate);
+    if (
+      daysBeforeRace > 0 &&
+      daysBeforeRace <= quietWindowDays &&
+      isStressfulSession(session) &&
+      !isGoalRaceSession(session, profileData)
+    ) {
+      return toEasyStressFallback(session, locale);
+    }
+    return { ...session };
+  });
+
+  return adjusted.sort(compareSessionsByDate);
 }
 
 function marathonReductionFactor(race: string): number {
@@ -2418,11 +2542,131 @@ export type ScheduleValidationViolation = {
     | "avoidable_training_on_hard_day"
     | "first_session_is_stressful"
     | "session_id_date_mismatch"
-    | "long_run_not_on_preferred_day";
+    | "long_run_not_on_preferred_day"
+    | "session_after_race_date"
+    | "stressful_session_before_race"
+    | "missing_plan_week"
+    | "session_week_after_total_weeks"
+    | "session_date_week_mismatch"
+    | "missing_fixed_goal_race_session"
+    | "fixed_goal_race_not_final_week"
+    | "duplicate_fixed_race_date_session";
   sessionId: string;
   date: string;
   message: string;
 };
+
+export function validateGeneratedPlanShape(
+  sessions: GeneratedSession[],
+  totalWeeks: number,
+  profileData: Record<string, unknown>,
+  today: Date = new Date(),
+): ScheduleValidationViolation[] {
+  const violations: ScheduleValidationViolation[] = [];
+  const sorted = [...sessions].sort(compareSessionsByDate);
+  const anchorMonday = anchorMondayFor(today);
+
+  if (Number.isFinite(totalWeeks) && totalWeeks >= 1) {
+    const weekNumbers = new Set(sorted.map((session) => session.weekNumber));
+    for (let weekNumber = 1; weekNumber <= totalWeeks; weekNumber += 1) {
+      if (weekNumbers.has(weekNumber)) continue;
+      violations.push({
+        rule: "missing_plan_week",
+        sessionId: `week-${weekNumber}`,
+        date: "",
+        message: `Plan has no sessions for week ${weekNumber}.`,
+      });
+    }
+
+    for (const session of sorted) {
+      if (session.weekNumber <= totalWeeks) continue;
+      violations.push({
+        rule: "session_week_after_total_weeks",
+        sessionId: session.id,
+        date: session.date,
+        message:
+          `Session week ${session.weekNumber} is after totalWeeks ${totalWeeks}.`,
+      });
+    }
+
+    for (const session of sorted) {
+      const expectedWeekNumber = weekNumberFromAnchor(
+        session.date,
+        anchorMonday,
+      );
+      if (
+        expectedWeekNumber == null ||
+        expectedWeekNumber === session.weekNumber
+      ) {
+        continue;
+      }
+      violations.push({
+        rule: "session_date_week_mismatch",
+        sessionId: session.id,
+        date: session.date,
+        message:
+          `Session date maps to week ${expectedWeekNumber}, got week ${session.weekNumber}.`,
+      });
+    }
+  }
+
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate != null) {
+    const raceDaySessions = sorted.filter((session) =>
+      session.date.slice(0, 10) === raceDate
+    );
+    const goalRace = raceDaySessions.find((session) =>
+      isGoalRaceSession(session, profileData)
+    );
+    if (raceDaySessions.length !== 1) {
+      violations.push({
+        rule: "duplicate_fixed_race_date_session",
+        sessionId: "goal-race-date",
+        date: raceDate,
+        message:
+          `Expected exactly one session on fixed goal race date ${raceDate}, got ${raceDaySessions.length}.`,
+      });
+    }
+    if (goalRace == null) {
+      violations.push({
+        rule: "missing_fixed_goal_race_session",
+        sessionId: "goal-race",
+        date: raceDate,
+        message: `Plan is missing the fixed goal race session on ${raceDate}.`,
+      });
+    } else if (
+      Number.isFinite(totalWeeks) &&
+      totalWeeks >= 1 &&
+      goalRace.weekNumber !== totalWeeks
+    ) {
+      violations.push({
+        rule: "fixed_goal_race_not_final_week",
+        sessionId: goalRace.id,
+        date: goalRace.date,
+        message:
+          `Fixed goal race is in week ${goalRace.weekNumber}, expected final week ${totalWeeks}.`,
+      });
+    }
+
+    const raceWeekNumber = weekNumberFromAnchor(raceDate, anchorMonday);
+    if (
+      raceWeekNumber != null &&
+      Number.isFinite(totalWeeks) &&
+      totalWeeks >= 1 &&
+      raceWeekNumber !== totalWeeks
+    ) {
+      violations.push({
+        rule: "fixed_goal_race_not_final_week",
+        sessionId: goalRace?.id ?? "goal-race",
+        date: raceDate,
+        message:
+          `Fixed goal race date maps to week ${raceWeekNumber}, expected final week ${totalWeeks}.`,
+      });
+    }
+  }
+
+  return violations;
+}
 
 export function validateGeneratedSchedule(
   sessions: GeneratedSession[],
@@ -2530,6 +2774,44 @@ export function validateGeneratedSchedule(
           sessionId: longRun.id,
           date: longRun.date,
           message: `Long run is not on preferred day ${preferredLongRunDay}.`,
+        });
+      }
+    }
+  }
+
+  const raceDate = goalRaceDate(profileData);
+  if (raceDate != null) {
+    for (const session of sorted) {
+      if (dateDifferenceDays(raceDate, session.date) > 0) {
+        violations.push({
+          rule: "session_after_race_date",
+          sessionId: session.id,
+          date: session.date,
+          message: `Session is scheduled after the goal race date ${raceDate}.`,
+        });
+      }
+    }
+  }
+
+  const goalRace = sorted.find((s) => isGoalRaceSession(s, profileData));
+  if (goalRace != null) {
+    const race = raceFromProfile(profileData);
+    const quietWindowDays = quietWindowDaysFor(race);
+
+    for (const session of sorted) {
+      const daysBeforeRace = dateDifferenceDays(session.date, goalRace.date);
+      if (
+        daysBeforeRace > 0 &&
+        daysBeforeRace <= quietWindowDays &&
+        isStressfulSession(session) &&
+        !isGoalRaceSession(session, profileData)
+      ) {
+        violations.push({
+          rule: "stressful_session_before_race",
+          sessionId: session.id,
+          date: session.date,
+          message:
+            `${session.type} is within ${quietWindowDays} days before the goal race.`,
         });
       }
     }

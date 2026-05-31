@@ -2,8 +2,10 @@ import { strict as assert } from "node:assert";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
+  expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
@@ -17,6 +19,8 @@ import {
   preferRestOnHardDays,
   smoothLongRunProgression,
   spaceStressfulSessions,
+  truncateAfterRaceDate,
+  validateGeneratedPlanShape,
   validateGeneratedSchedule,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
@@ -2450,6 +2454,713 @@ Deno.test("production rule pipeline moves partial-week long run onto preferred d
   assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
 });
 
+Deno.test("expectedTotalWeeks anchors Sunday to current week's Monday", () => {
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    new Date(Date.UTC(2026, 4, 31, 12)),
+  );
+  assert.equal(weeks, 4);
+});
+
+Deno.test("expectedTotalWeeks computes exact 3-week minimum window", () => {
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(weeks, 3);
+});
+
+Deno.test("expectedTotalWeeks returns exact unsupported short window", () => {
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_5k", raceDate: "2026-06-01T00:00:00.000" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(weeks, 1);
+});
+
+Deno.test("expectedTotalWeeks returns null when no fixed race date", () => {
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_10k", raceDate: null }),
+  );
+  assert.equal(weeks, null);
+});
+
+Deno.test("truncateAfterRaceDate removes sessions after race date", () => {
+  const sessions = truncateAfterRaceDate(
+    [
+      session({
+        id: "w3-mon",
+        date: "2026-06-15",
+        type: "easyRun",
+        weekNumber: 3,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 3,
+        distanceKm: 10,
+      }),
+      session({
+        id: "w4-mon",
+        date: "2026-06-22",
+        type: "easyRun",
+        weekNumber: 4,
+      }),
+      session({
+        id: "w4-wed",
+        date: "2026-06-24",
+        type: "intervals",
+        weekNumber: 4,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(sessions.length, 2);
+  assert.ok(sessions.some((s) => s.id === "race"));
+  assert.ok(!sessions.some((s) => s.date > "2026-06-21"));
+});
+
+Deno.test("truncateAfterRaceDate returns unchanged when no fixed race date", () => {
+  const input = [
+    session({ id: "w1-mon", date: "2026-06-15", type: "easyRun" }),
+    session({ id: "w2-mon", date: "2026-06-22", type: "easyRun" }),
+  ];
+  const sessions = truncateAfterRaceDate(
+    input,
+    profile({ race: "race_10k", raceDate: null }),
+  );
+  assert.equal(sessions.length, 2);
+});
+
+Deno.test("phaseAllocationFor 3 weeks is specific + taperRace only", () => {
+  const phases = phasePlanFor(3, {});
+  assert.equal(phases.length, 3);
+  assert.equal(phases.filter((p) => p === "base").length, 0);
+  assert.equal(phases.filter((p) => p === "build").length, 0);
+  assert.equal(phases.filter((p) => p === "specific").length, 2);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[2], "taperRace");
+});
+
+Deno.test("phaseAllocationFor 5 weeks is build + specific + taperRace", () => {
+  const phases = phasePlanFor(5, {});
+  assert.equal(phases.length, 5);
+  assert.equal(phases.filter((p) => p === "base").length, 0);
+  assert.equal(phases.filter((p) => p === "build").length, 1);
+  assert.equal(phases.filter((p) => p === "specific").length, 3);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[4], "taperRace");
+});
+
+Deno.test("phaseAllocationFor 7 weeks is base + build + specific + taperRace", () => {
+  const phases = phasePlanFor(7, {});
+  assert.equal(phases.length, 7);
+  assert.equal(phases.filter((p) => p === "base").length, 1);
+  assert.equal(phases.filter((p) => p === "build").length, 2);
+  assert.equal(phases.filter((p) => p === "specific").length, 3);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+  assert.equal(phases[6], "taperRace");
+});
+
+Deno.test("enforcePreRaceTaper downgrades intervals day before 10K race", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w4-sat",
+        date: "2026-06-20",
+        type: "intervals",
+        weekNumber: 4,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 4,
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  const dayBefore = findByDate(sessions, "2026-06-20");
+  assert.ok(
+    dayBefore.type === "recoveryRun" || dayBefore.type === "easyRun",
+    `day-before-race intervals should be downgraded, got ${dayBefore.type}`,
+  );
+});
+
+Deno.test("enforcePreRaceTaper leaves rest days before race untouched", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w4-sat",
+        date: "2026-06-20",
+        type: "restDay",
+        weekNumber: 4,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 4,
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  assert.equal(findByDate(sessions, "2026-06-20").type, "restDay");
+});
+
+Deno.test("enforcePreRaceTaper uses 3-day quiet window for marathon", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w4-thu",
+        date: "2026-06-18",
+        type: "tempoRun",
+        weekNumber: 4,
+      }),
+      session({
+        id: "w4-fri",
+        date: "2026-06-19",
+        type: "easyRun",
+        weekNumber: 4,
+      }),
+      session({
+        id: "w4-sat",
+        date: "2026-06-20",
+        type: "restDay",
+        weekNumber: 4,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 4,
+        distanceKm: 42.2,
+      }),
+    ],
+    profile({ race: "race_marathon", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  const thu = findByDate(sessions, "2026-06-18");
+  assert.ok(
+    thu.type === "recoveryRun" || thu.type === "easyRun",
+    `3-days-before marathon tempo should be downgraded, got ${thu.type}`,
+  );
+  assert.equal(findByDate(sessions, "2026-06-19").type, "easyRun");
+});
+
+Deno.test("validateGeneratedSchedule flags session after race date", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-20-easyRun",
+        date: "2026-06-20",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 10,
+      }),
+      session({
+        id: "w1-2026-06-22-intervals",
+        date: "2026-06-22",
+        type: "intervals",
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "session_after_race_date");
+  assert.equal(violations[0].sessionId, "w1-2026-06-22-intervals");
+});
+
+Deno.test("validateGeneratedSchedule does not flag session on race date", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("validateGeneratedSchedule flags stressful session before race", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-19-easyRun",
+        date: "2026-06-19",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-20-intervals",
+        date: "2026-06-20",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "stressful_session_before_race");
+  assert.equal(violations[0].sessionId, "w1-2026-06-20-intervals");
+});
+
+Deno.test("validateGeneratedSchedule does not flag easy run before race", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-19-easyRun",
+        date: "2026-06-19",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-20-easyRun",
+        date: "2026-06-20",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("validateGeneratedSchedule uses 3-day quiet window for marathon", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-17-easyRun",
+        date: "2026-06-17",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-18-tempoRun",
+        date: "2026-06-18",
+        type: "tempoRun",
+      }),
+      session({
+        id: "w1-2026-06-19-easyRun",
+        date: "2026-06-19",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-20-restDay",
+        date: "2026-06-20",
+        type: "restDay",
+      }),
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 42.2,
+      }),
+    ],
+    profile({ race: "race_marathon", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].rule, "stressful_session_before_race");
+  assert.equal(violations[0].sessionId, "w1-2026-06-18-tempoRun");
+  assert.ok(!violations.some((v) => v.sessionId === "w1-2026-06-19-easyRun"));
+});
+
+Deno.test("expectedTotalWeeks returns null when race date is in the past", () => {
+  const pastRaceDate = new Date(Date.now() - 60 * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_10k", raceDate: pastRaceDate }),
+  );
+  assert.equal(weeks, null);
+});
+
+Deno.test("validateGeneratedSchedule does not flag goal race as stressful_session_before_race", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-19-easyRun",
+        date: "2026-06-19",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-20-easyRun",
+        date: "2026-06-20",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.ok(
+    !violations.some((v) =>
+      v.rule === "stressful_session_before_race" &&
+      v.sessionId === "w1-2026-06-21-racePaceRun"
+    ),
+    "goal race day must never be flagged as stressful_session_before_race",
+  );
+});
+
+Deno.test("enforcePreRaceTaper leaves race-day racePaceRun untouched", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w4-fri",
+        date: "2026-06-19",
+        type: "easyRun",
+        weekNumber: 4,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 4,
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  const race = findByDate(sessions, "2026-06-21");
+  assert.equal(race.type, "racePaceRun");
+  assert.equal(race.distanceKm, 10);
+});
+
+Deno.test("phaseAllocationFor 4 weeks is build + specific + taperRace", () => {
+  const phases = phasePlanFor(4, {});
+  assert.equal(phases.length, 4);
+  assert.equal(phases.filter((p) => p === "base").length, 0);
+  assert.equal(phases.filter((p) => p === "build").length, 1);
+  assert.equal(phases.filter((p) => p === "specific").length, 2);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+});
+
+Deno.test("phaseAllocationFor 6 weeks includes base and taperRace", () => {
+  const phases = phasePlanFor(6, {});
+  assert.equal(phases.length, 6);
+  assert.equal(phases.filter((p) => p === "base").length, 1);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+});
+
+Deno.test("phaseAllocationFor invariant: sums to totalWeeks and includes taperRace >= 1", () => {
+  for (const totalWeeks of [3, 4, 5, 6, 7, 8, 12, 16, 20]) {
+    const phases = phasePlanFor(totalWeeks, {});
+    assert.equal(
+      phases.length,
+      totalWeeks,
+      `phases length should equal ${totalWeeks}`,
+    );
+    const taperCount = phases.filter((p) => p === "taperRace").length;
+    assert.ok(
+      taperCount >= 1,
+      `weeks=${totalWeeks}: taperRace count should be >= 1, got ${taperCount}`,
+    );
+  }
+});
+
+Deno.test("validateGeneratedSchedule returns no violations when no fixed race date", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-21-easyRun",
+        date: "2026-06-21",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-22-intervals",
+        date: "2026-06-22",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-2026-06-23-easyRun",
+        date: "2026-06-23",
+        type: "easyRun",
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: null }),
+  );
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("validateGeneratedPlanShape flags missing weeks", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w3-2026-06-15-racePaceRun",
+        date: "2026-06-15",
+        weekNumber: 3,
+        type: "racePaceRun",
+        distanceKm: 5,
+      }),
+    ],
+    3,
+    profile({ race: "race_5k", raceDate: "2026-06-15" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "missing_plan_week" && v.sessionId === "week-2"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape flags sessions after totalWeeks", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-racePaceRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+        type: "racePaceRun",
+        distanceKm: 5,
+      }),
+      session({
+        id: "w3-2026-06-15-easyRun",
+        date: "2026-06-15",
+        weekNumber: 3,
+      }),
+    ],
+    2,
+    profile({ race: "race_5k", raceDate: "2026-06-08" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "session_week_after_total_weeks" &&
+      v.sessionId === "w3-2026-06-15-easyRun"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape flags missing fixed race session", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+      }),
+      session({
+        id: "w3-2026-06-14-easyRun",
+        date: "2026-06-14",
+        weekNumber: 3,
+      }),
+    ],
+    3,
+    profile({ race: "race_5k", raceDate: "2026-06-15" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "missing_fixed_goal_race_session" && v.date === "2026-06-15"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape flags fixed race outside final week", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-racePaceRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+        type: "racePaceRun",
+        distanceKm: 5,
+      }),
+      session({
+        id: "w3-2026-06-15-easyRun",
+        date: "2026-06-15",
+        weekNumber: 3,
+      }),
+    ],
+    3,
+    profile({ race: "race_5k", raceDate: "2026-06-08" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "fixed_goal_race_not_final_week" &&
+      v.sessionId === "w2-2026-06-08-racePaceRun"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape requires fixed race session for custom race distance", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+      }),
+      session({
+        id: "w3-2026-06-15-easyRun",
+        date: "2026-06-15",
+        weekNumber: 3,
+      }),
+    ],
+    3,
+    profile({ race: "race_other", raceDate: "2026-06-15" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "missing_fixed_goal_race_session" && v.date === "2026-06-15"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape accepts fixed custom race session", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+      }),
+      session({
+        id: "w3-2026-06-15-racePaceRun",
+        date: "2026-06-15",
+        weekNumber: 3,
+        type: "racePaceRun",
+        distanceKm: null,
+      }),
+    ],
+    3,
+    profile({ race: "race_other", raceDate: "2026-06-15" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-15-racePaceRun",
+        date: "2026-06-15",
+        weekNumber: 2,
+        type: "racePaceRun",
+        distanceKm: 5,
+      }),
+    ],
+    2,
+    profile({ race: "race_5k", raceDate: "2026-06-15" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "session_date_week_mismatch" &&
+      v.sessionId === "w2-2026-06-15-racePaceRun"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape flags duplicate fixed race date sessions", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+      }),
+      session({
+        id: "w3-2026-06-15-racePaceRun",
+        date: "2026-06-15",
+        weekNumber: 3,
+        type: "racePaceRun",
+        distanceKm: 5,
+      }),
+      session({
+        id: "w3-2026-06-15-restDay",
+        date: "2026-06-15",
+        weekNumber: 3,
+        type: "restDay",
+        distanceKm: null,
+        durationMinutes: null,
+      }),
+    ],
+    3,
+    profile({ race: "race_5k", raceDate: "2026-06-15" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "duplicate_fixed_race_date_session" &&
+      v.date === "2026-06-15"
+    ),
+  );
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
@@ -2582,7 +3293,15 @@ function runProductionRulePipeline(
     phaseStampedSessions,
     profileData,
   );
-  return normalizeSessionIds(raceFinalizedSessions);
+  const truncatedSessions = truncateAfterRaceDate(
+    raceFinalizedSessions,
+    profileData,
+  );
+  const preRaceTaperedSessions = enforcePreRaceTaper(
+    truncatedSessions,
+    profileData,
+  );
+  return normalizeSessionIds(preRaceTaperedSessions);
 }
 
 function session(

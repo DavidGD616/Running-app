@@ -4,6 +4,7 @@ import { type GeneratedPlan, GeneratedPlanSchema } from "./schema.ts";
 export async function generatePlanFromProfile(
   profileData: Record<string, unknown>,
   locale: "en" | "es" = "en",
+  expectedTotalWeeks: number | null = null,
 ): Promise<GeneratedPlan> {
   const client = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
   const coachNoteLanguage = locale === "es" ? "Spanish" : "English";
@@ -13,8 +14,11 @@ export async function generatePlanFromProfile(
   const hasRaceDate = typeof goal.raceDate === "string" &&
     goal.raceDate.length > 0;
   const raceInstruction = hasRaceDate
-    ? "Ensure a proper taper in the final 2 weeks before the fixed race date."
+    ? "When a fixed race date is given, the goal race is the final session and the plan ends exactly on race day — generate no sessions after it. Keep the last 2–3 days before the race easy or rest (no intervals, tempo, or long runs in that window)."
     : "The runner has no fixed race date. Build toward a final goal-distance race/test in the last week; do not create a short fake race.";
+  const totalWeeksInstruction = expectedTotalWeeks == null
+    ? ""
+    : `\nThe fixed race date requires exactly ${expectedTotalWeeks} plan weeks. Return totalWeeks=${expectedTotalWeeks}, include at least one session for every weekNumber 1 through ${expectedTotalWeeks}, and place the fixed goal race in weekNumber ${expectedTotalWeeks}.`;
 
   const systemPrompt = `You are an expert running coach. Generate a personalized
 training plan based on the runner profile provided. Be specific and progressive.
@@ -68,8 +72,8 @@ The first planned training session should be easyRun or recoveryRun unless it is
 a fixed goal race date. Introduce quality sessions only after the runner has at
 least one controlled easy/base session in the plan.
 
-Always anchor week 1 sessions starting from the nearest upcoming Monday.
-${raceInstruction}`;
+Always anchor week 1 sessions starting from the Monday of the current week.
+${raceInstruction}${totalWeeksInstruction}`;
 
   const userPrompt = `Runner profile:\n${JSON.stringify(profileData, null, 2)}
 
@@ -89,7 +93,7 @@ Generate a complete personalized training plan. Return only the JSON matching th
         schema: {
           type: "object",
           properties: {
-            totalWeeks: { type: "integer", minimum: 4, maximum: 26 },
+            totalWeeks: { type: "integer", minimum: 3, maximum: 26 },
             raceType: {
               type: "string",
               enum: ["fiveK", "tenK", "halfMarathon", "marathon", "other"],
