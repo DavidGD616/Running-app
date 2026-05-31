@@ -312,6 +312,21 @@
   "onboardingStravaConnectError": "We couldn't connect to Strava right now. Try again or continue without Strava.",
   "@onboardingStravaConnectError": { "description": "Error shown when mock Strava connect fails" },
 
+  "onboardingStravaConnectDeniedError": "Strava connection was canceled. You can try again or continue manually.",
+  "@onboardingStravaConnectDeniedError": { "description": "Error shown when user denies Strava OAuth consent" },
+
+  "onboardingStravaConnectMissingScopeError": "Strava access was missing required permissions. Please allow all requested permissions.",
+  "@onboardingStravaConnectMissingScopeError": { "description": "Error shown when required Strava scopes are not granted" },
+
+  "onboardingStravaConnectAuthRequiredError": "You need to be signed in to connect Strava.",
+  "@onboardingStravaConnectAuthRequiredError": { "description": "Error shown when attempting Strava connect without an authenticated user" },
+
+  "onboardingStravaConnectMissingClientIdError": "This build is missing Strava configuration.",
+  "@onboardingStravaConnectMissingClientIdError": { "description": "Error shown when STRAVA_CLIENT_ID is not configured in app build" },
+
+  "onboardingStravaConnectStateError": "We couldn't verify the Strava callback. Please try connecting again.",
+  "@onboardingStravaConnectStateError": { "description": "Error shown when Strava OAuth callback state verification fails" },
+
   "goalTitle": "What's your goal?",
   "@goalTitle": { "description": "Heading on the goal screen" },
 
@@ -1682,6 +1697,21 @@
 
   "settingsHealthConnect": "Health Connect",
   "@settingsHealthConnect": { "description": "Health Connect integration row label" },
+
+  "settingsStrava": "Strava",
+  "@settingsStrava": { "description": "Strava integration row label in settings integrations screen" },
+
+  "settingsStravaConnectSuccess": "Strava connected.",
+  "@settingsStravaConnectSuccess": { "description": "Snackbar text shown after successful Strava connect from settings" },
+
+  "settingsStravaConnectError": "We couldn't connect Strava right now.",
+  "@settingsStravaConnectError": { "description": "Snackbar text shown when Strava connect fails from settings" },
+
+  "settingsStravaDisconnectSuccess": "Strava disconnected.",
+  "@settingsStravaDisconnectSuccess": { "description": "Snackbar text shown after successful Strava disconnect from settings" },
+
+  "settingsStravaDisconnectError": "We couldn't disconnect Strava right now.",
+  "@settingsStravaDisconnectError": { "description": "Snackbar text shown when Strava disconnect fails from settings" },
 
   "settingsAccountProfileSection": "Profile",
   "@settingsAccountProfileSection": { "description": "Profile section header on account settings screen" },

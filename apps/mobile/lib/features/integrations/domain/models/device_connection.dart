@@ -41,7 +41,8 @@ Set<T> _enumSetByKeys<T extends Enum>(
 
 enum DeviceConnectionKind implements CanonicalKeyed {
   wearable('wearable'),
-  healthPlatform('health_platform');
+  healthPlatform('health_platform'),
+  service('service');
 
   const DeviceConnectionKind(this.key);
 
@@ -61,7 +62,8 @@ enum IntegrationVendor implements CanonicalKeyed {
   fitbit('device_fitbit'),
   other('device_other'),
   appleHealth('integration_apple_health'),
-  healthConnect('integration_health_connect');
+  healthConnect('integration_health_connect'),
+  strava('integration_strava');
 
   const IntegrationVendor(this.key);
 
@@ -131,6 +133,7 @@ class DeviceConnection {
   bool get isConnected => state == DeviceConnectionState.connected;
   bool get isWearable => kind == DeviceConnectionKind.wearable;
   bool get isHealthPlatform => kind == DeviceConnectionKind.healthPlatform;
+  bool get isService => kind == DeviceConnectionKind.service;
   bool supports(IntegrationCapability capability) =>
       capabilities.contains(capability);
 

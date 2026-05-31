@@ -686,6 +686,36 @@ abstract class AppLocalizations {
   /// **'We couldn\'t connect to Strava right now. Try again or continue without Strava.'**
   String get onboardingStravaConnectError;
 
+  /// Error shown when user denies Strava OAuth consent
+  ///
+  /// In en, this message translates to:
+  /// **'Strava connection was canceled. You can try again or continue manually.'**
+  String get onboardingStravaConnectDeniedError;
+
+  /// Error shown when required Strava scopes are not granted
+  ///
+  /// In en, this message translates to:
+  /// **'Strava access was missing required permissions. Please allow all requested permissions.'**
+  String get onboardingStravaConnectMissingScopeError;
+
+  /// Error shown when attempting Strava connect without an authenticated user
+  ///
+  /// In en, this message translates to:
+  /// **'You need to be signed in to connect Strava.'**
+  String get onboardingStravaConnectAuthRequiredError;
+
+  /// Error shown when STRAVA_CLIENT_ID is not configured in app build
+  ///
+  /// In en, this message translates to:
+  /// **'This build is missing Strava configuration.'**
+  String get onboardingStravaConnectMissingClientIdError;
+
+  /// Error shown when Strava OAuth callback state verification fails
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t verify the Strava callback. Please try connecting again.'**
+  String get onboardingStravaConnectStateError;
+
   /// Heading on the goal screen
   ///
   /// In en, this message translates to:
@@ -3221,6 +3251,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Health Connect'**
   String get settingsHealthConnect;
+
+  /// Strava integration row label in settings integrations screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strava'**
+  String get settingsStrava;
+
+  /// Snackbar text shown after successful Strava connect from settings
+  ///
+  /// In en, this message translates to:
+  /// **'Strava connected.'**
+  String get settingsStravaConnectSuccess;
+
+  /// Snackbar text shown when Strava connect fails from settings
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t connect Strava right now.'**
+  String get settingsStravaConnectError;
+
+  /// Snackbar text shown after successful Strava disconnect from settings
+  ///
+  /// In en, this message translates to:
+  /// **'Strava disconnected.'**
+  String get settingsStravaDisconnectSuccess;
+
+  /// Snackbar text shown when Strava disconnect fails from settings
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t disconnect Strava right now.'**
+  String get settingsStravaDisconnectError;
 
   /// Profile section header on account settings screen
   ///

@@ -11,6 +11,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../integrations/domain/models/device_connection.dart';
+import '../../../integrations/presentation/device_connection_provider.dart';
 import '../../../strava/data/strava_service.dart';
 import '../../../strava/domain/athlete_summary.dart';
 import '../onboarding_provider.dart';
@@ -54,6 +56,18 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
         DateTime.now().toUtc(),
       );
       ref.read(onboardingProvider.notifier).setStrava(summary: summary);
+      await ref.read(deviceConnectionsProvider.notifier).upsertServiceConnection(
+        vendor: IntegrationVendor.strava,
+        capabilities: {
+          IntegrationCapability.autoImport,
+          IntegrationCapability.heartRate,
+          IntegrationCapability.heartRateZones,
+          IntegrationCapability.distance,
+          IntegrationCapability.pace,
+          IntegrationCapability.elevation,
+        },
+        lastSyncedAt: DateTime.now(),
+      );
 
       if (!mounted) return;
 
@@ -63,6 +77,28 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
       }
 
       context.push(RouteNames.schedule);
+    } on StravaServiceException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = switch (error.code) {
+          StravaServiceErrorCode.missingClientId =>
+            l10n.onboardingStravaConnectMissingClientIdError,
+          StravaServiceErrorCode.missingAuthSession =>
+            l10n.onboardingStravaConnectAuthRequiredError,
+          StravaServiceErrorCode.oauthDenied =>
+            l10n.onboardingStravaConnectDeniedError,
+          StravaServiceErrorCode.oauthMissingScope =>
+            l10n.onboardingStravaConnectMissingScopeError,
+          StravaServiceErrorCode.oauthStateInvalid =>
+            l10n.onboardingStravaConnectStateError,
+          _ => l10n.onboardingStravaConnectError,
+        };
+      });
+    } on StateError {
+      if (!mounted) return;
+      setState(() {
+        _errorMessage = l10n.onboardingStravaConnectAuthRequiredError;
+      });
     } catch (_) {
       if (!mounted) return;
       setState(() {

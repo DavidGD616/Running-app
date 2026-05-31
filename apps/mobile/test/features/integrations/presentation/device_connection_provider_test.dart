@@ -81,10 +81,11 @@ void main() {
 
     final integrations = container.read(availablePlatformIntegrationsProvider);
 
-    expect(integrations, hasLength(1));
-    expect(integrations.single.vendor, IntegrationVendor.appleHealth);
+    expect(integrations, hasLength(2));
+    expect(integrations.first.vendor, IntegrationVendor.strava);
+    expect(integrations.last.vendor, IntegrationVendor.appleHealth);
     expect(
-      integrations.single.supportedCapabilities,
+      integrations.last.supportedCapabilities,
       containsAll([
         IntegrationCapability.autoImport,
         IntegrationCapability.heartRate,

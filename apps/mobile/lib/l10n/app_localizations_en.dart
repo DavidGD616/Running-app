@@ -324,6 +324,26 @@ class AppLocalizationsEn extends AppLocalizations {
       'We couldn\'t connect to Strava right now. Try again or continue without Strava.';
 
   @override
+  String get onboardingStravaConnectDeniedError =>
+      'Strava connection was canceled. You can try again or continue manually.';
+
+  @override
+  String get onboardingStravaConnectMissingScopeError =>
+      'Strava access was missing required permissions. Please allow all requested permissions.';
+
+  @override
+  String get onboardingStravaConnectAuthRequiredError =>
+      'You need to be signed in to connect Strava.';
+
+  @override
+  String get onboardingStravaConnectMissingClientIdError =>
+      'This build is missing Strava configuration.';
+
+  @override
+  String get onboardingStravaConnectStateError =>
+      'We couldn\'t verify the Strava callback. Please try connecting again.';
+
+  @override
   String get goalTitle => 'What\'s your goal?';
 
   @override
@@ -1674,6 +1694,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsHealthConnect => 'Health Connect';
+
+  @override
+  String get settingsStrava => 'Strava';
+
+  @override
+  String get settingsStravaConnectSuccess => 'Strava connected.';
+
+  @override
+  String get settingsStravaConnectError =>
+      'We couldn\'t connect Strava right now.';
+
+  @override
+  String get settingsStravaDisconnectSuccess => 'Strava disconnected.';
+
+  @override
+  String get settingsStravaDisconnectError =>
+      'We couldn\'t disconnect Strava right now.';
 
   @override
   String get settingsAccountProfileSection => 'Profile';

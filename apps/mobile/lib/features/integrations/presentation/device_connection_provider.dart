@@ -64,6 +64,32 @@ class DeviceConnectionsNotifier extends AsyncNotifier<List<DeviceConnection>> {
     await _asyncRepository.clearConnections();
   }
 
+  Future<void> removeConnectionForVendor(IntegrationVendor vendor) async {
+    final existing = _connectionForVendor(vendor);
+    if (existing == null) return;
+    await removeConnection(existing.id);
+  }
+
+  Future<void> upsertServiceConnection({
+    required IntegrationVendor vendor,
+    required Set<IntegrationCapability> capabilities,
+    DateTime? lastSyncedAt,
+  }) async {
+    final existing = _connectionForVendor(vendor);
+    await upsertConnection(
+      DeviceConnection(
+        id: existing?.id ?? vendor.key,
+        kind: DeviceConnectionKind.service,
+        vendor: vendor,
+        state: DeviceConnectionState.connected,
+        capabilities: capabilities,
+        connectedAt: existing?.connectedAt ?? DateTime.now(),
+        lastSyncedAt: lastSyncedAt ?? existing?.lastSyncedAt,
+        seededFromOnboarding: false,
+      ),
+    );
+  }
+
   Future<SetPlatformConnectionResult> setPlatformConnection({
     required IntegrationVendor vendor,
     required bool enabled,
@@ -286,6 +312,15 @@ final connectedWearableConnectionsProvider = Provider<List<DeviceConnection>>((
       .toList(growable: false);
 });
 
+final connectedIntegrationConnectionsProvider = Provider<List<DeviceConnection>>( (
+  ref,
+) {
+  final connections = _deviceConnections(ref);
+  return connections
+      .where((connection) => connection.isConnected)
+      .toList(growable: false);
+});
+
 final connectionForVendorProvider =
     Provider.family<DeviceConnection?, IntegrationVendor>((ref, vendor) {
       final connections = _deviceConnections(ref);
@@ -303,8 +338,22 @@ List<DeviceConnection> _deviceConnections(Ref ref) {
 
 final availablePlatformIntegrationsProvider =
     Provider<List<IntegrationAccount>>((ref) {
+      const stravaIntegration = IntegrationAccount(
+        vendor: IntegrationVendor.strava,
+        kind: DeviceConnectionKind.service,
+        supportedCapabilities: {
+          IntegrationCapability.autoImport,
+          IntegrationCapability.heartRate,
+          IntegrationCapability.heartRateZones,
+          IntegrationCapability.distance,
+          IntegrationCapability.pace,
+          IntegrationCapability.elevation,
+        },
+      );
+
       return switch (defaultTargetPlatform) {
         TargetPlatform.iOS => const [
+          stravaIntegration,
           IntegrationAccount(
             vendor: IntegrationVendor.appleHealth,
             kind: DeviceConnectionKind.healthPlatform,
@@ -317,6 +366,7 @@ final availablePlatformIntegrationsProvider =
           ),
         ],
         TargetPlatform.android => const [
+          stravaIntegration,
           IntegrationAccount(
             vendor: IntegrationVendor.healthConnect,
             kind: DeviceConnectionKind.healthPlatform,
@@ -328,6 +378,6 @@ final availablePlatformIntegrationsProvider =
             },
           ),
         ],
-        _ => const [],
+        _ => const [stravaIntegration],
       };
     });
