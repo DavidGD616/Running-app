@@ -13,6 +13,7 @@ import '../../features/auth/presentation/screens/reset_password_screen.dart';
 import '../../features/account_setup/presentation/screens/account_setup_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_intro_screen.dart';
 import '../../features/onboarding/presentation/screens/goal_screen.dart';
+import '../../features/onboarding/presentation/screens/strava_connect_screen.dart';
 import '../../features/onboarding/presentation/screens/current_fitness_screen.dart';
 import '../../features/onboarding/presentation/screens/schedule_screen.dart';
 import '../../features/onboarding/presentation/screens/health_injury_screen.dart';
@@ -68,12 +69,13 @@ const _profileSetupRoutes = <String>{
   RouteNames.accountSetup,
   RouteNames.onboarding,
   RouteNames.goal,
+  RouteNames.stravaConnect,
   RouteNames.fitness,
   RouteNames.schedule,
   RouteNames.health,
   RouteNames.training,
-    RouteNames.device,
-    RouteNames.summary,
+  RouteNames.device,
+  RouteNames.summary,
   RouteNames.planGeneration,
   RouteNames.planReady,
 };
@@ -210,6 +212,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.goal,
         builder: (context, state) => const GoalScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.stravaConnect,
+        builder: (context, state) => const StravaConnectScreen(),
       ),
       GoRoute(
         path: RouteNames.fitness,

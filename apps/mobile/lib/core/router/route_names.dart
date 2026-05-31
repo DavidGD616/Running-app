@@ -7,6 +7,7 @@ abstract class RouteNames {
   static const accountSetup = '/account-setup';
   static const onboarding = '/onboarding';
   static const goal = '/onboarding/goal';
+  static const stravaConnect = '/onboarding/strava';
   static const fitness = '/onboarding/fitness';
   static const schedule = '/onboarding/schedule';
   static const health = '/onboarding/health';

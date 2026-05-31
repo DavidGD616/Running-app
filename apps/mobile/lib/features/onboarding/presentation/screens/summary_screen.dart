@@ -61,11 +61,34 @@ class SummaryScreen extends ConsumerWidget {
     return OnboardingValues.localizeExperience(exp, l10n);
   }
 
+  String? _fitnessTag(RunnerProfileDraft a, AppLocalizations l10n) {
+    if (a.fitness.fitnessSource == OnboardingValues.fitnessSourceStrava) {
+      return l10n.onboardingFitnessSourceStravaTag;
+    }
+    return null;
+  }
+
   String _fitnessDetail(
     RunnerProfileDraft a,
     UnitSystem unitSystem,
     AppLocalizations l10n,
   ) {
+    if (a.fitness.fitnessSource == OnboardingValues.fitnessSourceStrava) {
+      final runsPerWeek = a.fitness.stravaRunsPerWeek;
+      final runsText = runsPerWeek == null
+          ? '—'
+          : runsPerWeek.round().clamp(1, 7).toString();
+      final weeklyVolume = a.fitness.weeklyVolumeKey;
+      final volume = weeklyVolume != null
+          ? OnboardingValues.localizeWeeklyVolume(
+              weeklyVolume,
+              unitSystem,
+              l10n,
+            )
+          : '—';
+      return l10n.summaryFitnessDetail(runsText, volume);
+    }
+
     final experience = a.fitness.experienceKey;
     if (experience == OnboardingValues.experienceBrandNew) {
       final can = a.fitness.canRun10Min;
@@ -205,7 +228,7 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(7, 7),
+                        l10n.onboardingStep(8, 8),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -216,7 +239,7 @@ class SummaryScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 7, total: 7),
+                    child: AppProgressBar(current: 8, total: 8),
                   ),
                 ],
               ),
@@ -261,7 +284,15 @@ class SummaryScreen extends ConsumerWidget {
                       category: l10n.summaryCurrentLevel,
                       value: _fitnessValue(answers, l10n),
                       detail: _fitnessDetail(answers, unitSystem, l10n),
-                      onEdit: () => context.go(RouteNames.fitness),
+                      tag: _fitnessTag(answers, l10n),
+                      onEdit: () {
+                        if (answers.fitness.fitnessSource ==
+                            OnboardingValues.fitnessSourceStrava) {
+                          context.go(RouteNames.stravaConnect);
+                          return;
+                        }
+                        context.go(RouteNames.fitness);
+                      },
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
@@ -364,6 +395,7 @@ class _SummaryCard extends StatelessWidget {
     required this.value,
     required this.detail,
     required this.onEdit,
+    this.tag,
   });
 
   final String icon;
@@ -371,6 +403,7 @@ class _SummaryCard extends StatelessWidget {
   final String value;
   final String detail;
   final VoidCallback onEdit;
+  final String? tag;
 
   @override
   Widget build(BuildContext context) {
@@ -432,6 +465,27 @@ class _SummaryCard extends StatelessWidget {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
+                if (tag != null) ...[
+                  const SizedBox(height: 4),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm,
+                      vertical: 2,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.accentMuted,
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: AppColors.accentPrimary),
+                    ),
+                    child: Text(
+                      tag!,
+                      style: AppTypography.caption.copyWith(
+                        color: AppColors.accentPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 2),
                 Text(
                   detail,

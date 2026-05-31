@@ -629,7 +629,7 @@ abstract class AppLocalizations {
   /// Footer note on onboarding intro screen
   ///
   /// In en, this message translates to:
-  /// **'7 short sections · You can edit answers later'**
+  /// **'8 short sections · You can edit answers later'**
   String get onboardingIntroFooter;
 
   /// CTA button on the onboarding intro screen
@@ -637,6 +637,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Let\'s Go'**
   String get letsGo;
+
+  /// Heading on the onboarding Strava connect screen
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Strava'**
+  String get onboardingStravaConnectTitle;
+
+  /// Subtitle on the onboarding Strava connect screen
+  ///
+  /// In en, this message translates to:
+  /// **'Import your recent running activity to prefill your fitness profile.'**
+  String get onboardingStravaConnectSubtitle;
+
+  /// Primary CTA on Strava connect screen
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Strava'**
+  String get onboardingStravaConnectPrimary;
+
+  /// Secondary CTA on Strava connect screen for manual flow
+  ///
+  /// In en, this message translates to:
+  /// **'I don\'t use Strava — I\'ll answer a few questions'**
+  String get onboardingStravaConnectSecondary;
+
+  /// Attribution title shown in onboarding Strava connect screen
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by Strava'**
+  String get onboardingStravaAttributionTitle;
+
+  /// Attribution helper copy on Strava connect screen
+  ///
+  /// In en, this message translates to:
+  /// **'We only use your recent running data to estimate your training starting point.'**
+  String get onboardingStravaAttributionSubtitle;
+
+  /// Small attribution text shown under Strava connect actions
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by Strava'**
+  String get onboardingStravaPoweredBy;
+
+  /// Error shown when mock Strava connect fails
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t connect to Strava right now. Try again or continue without Strava.'**
+  String get onboardingStravaConnectError;
 
   /// Heading on the goal screen
   ///
@@ -2131,6 +2179,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Current Level'**
   String get summaryCurrentLevel;
+
+  /// Tag shown in summary when fitness was derived from Strava
+  ///
+  /// In en, this message translates to:
+  /// **'From Strava'**
+  String get onboardingFitnessSourceStravaTag;
 
   /// Summary card category label
   ///

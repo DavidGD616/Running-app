@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../integrations/presentation/device_connection_provider.dart';
+import '../../strava/domain/athlete_summary.dart';
 import '../../profile/data/runner_profile_repository.dart';
 import '../../profile/domain/models/runner_profile.dart';
 import '../../profile/presentation/runner_profile_provider.dart';
 import '../../user_preferences/presentation/user_preferences_provider.dart';
+import 'onboarding_values.dart';
 
 class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   static const _keyCompleted = 'onboarding_completed';
@@ -119,6 +121,61 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           raceDistanceBefore: raceDistanceBefore,
           benchmark: benchmark,
           benchmarkTime: benchmarkTime,
+          fitnessSource: OnboardingValues.fitnessSourceManual,
+          stravaWeeklyVolumeKm: null,
+          stravaLongestRecentRunKm: null,
+          stravaRunsPerWeek: null,
+          stravaDataWeeks: null,
+          stravaInsufficientData: null,
+        ),
+      ),
+    );
+  }
+
+  void useManualFitnessInput() {
+    final draft = state.value ?? const RunnerProfileDraft();
+    final fitness = draft.fitness;
+    _setState(
+      draft.copyWith(
+        fitness: FitnessProfileDraft(
+          experience: fitness.experience,
+          canRun10Min: fitness.canRun10Min,
+          runningDays: fitness.runningDays,
+          weeklyVolume: fitness.weeklyVolume,
+          longestRun: fitness.longestRun,
+          canCompleteGoalDistance: fitness.canCompleteGoalDistance,
+          raceDistanceBefore: fitness.raceDistanceBefore,
+          benchmark: fitness.benchmark,
+          benchmarkTime: fitness.benchmarkTime,
+          fitnessSource: OnboardingValues.fitnessSourceManual,
+        ),
+      ),
+    );
+  }
+
+  void setStrava({required AthleteSummary summary}) {
+    final mapping = mapSummaryToOnboarding(summary);
+    final canRun10Min = mapping.experience == RunnerExperience.brandNew
+        ? true
+        : null;
+    _setState(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
+        fitness: RunnerProfileDraft.fitnessFromInput(
+          experience: mapping.experience.key,
+          canRun10Min: canRun10Min,
+          runningDays: summary.runsPerWeek.round().clamp(1, 7).toString(),
+          weeklyVolume: mapping.weeklyVolume.key,
+          longestRun: mapping.longestRun.key,
+          canCompleteGoalDist: OnboardingValues.notSure,
+          raceDistanceBefore: OnboardingValues.raceDistanceNever,
+          benchmark: mapping.benchmark.type.key,
+          benchmarkTime: mapping.benchmark.time,
+          fitnessSource: OnboardingValues.fitnessSourceStrava,
+          stravaWeeklyVolumeKm: summary.weeklyVolumeKm,
+          stravaLongestRecentRunKm: summary.longestRecentRunKm,
+          stravaRunsPerWeek: summary.runsPerWeek,
+          stravaDataWeeks: summary.dataWeeks,
+          stravaInsufficientData: summary.insufficientData,
         ),
       ),
     );

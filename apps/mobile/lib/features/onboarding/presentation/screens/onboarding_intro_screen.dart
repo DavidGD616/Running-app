@@ -28,7 +28,7 @@ class OnboardingIntroScreen extends StatelessWidget {
           ),
           child: Column(
             children: [
-              const AppProgressBar(current: 1, total: 7),
+              const AppProgressBar(current: 1, total: 8),
               Expanded(
                 child: Center(
                   child: Column(

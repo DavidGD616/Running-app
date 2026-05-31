@@ -282,11 +282,35 @@
   "onboardingIntroFeature3": "Schedule and preferences",
   "@onboardingIntroFeature3": { "description": "Third bullet on onboarding intro screen" },
 
-  "onboardingIntroFooter": "7 short sections · You can edit answers later",
+  "onboardingIntroFooter": "8 short sections · You can edit answers later",
   "@onboardingIntroFooter": { "description": "Footer note on onboarding intro screen" },
 
   "letsGo": "Let's Go",
   "@letsGo": { "description": "CTA button on the onboarding intro screen" },
+
+  "onboardingStravaConnectTitle": "Connect Strava",
+  "@onboardingStravaConnectTitle": { "description": "Heading on the onboarding Strava connect screen" },
+
+  "onboardingStravaConnectSubtitle": "Import your recent running activity to prefill your fitness profile.",
+  "@onboardingStravaConnectSubtitle": { "description": "Subtitle on the onboarding Strava connect screen" },
+
+  "onboardingStravaConnectPrimary": "Connect Strava",
+  "@onboardingStravaConnectPrimary": { "description": "Primary CTA on Strava connect screen" },
+
+  "onboardingStravaConnectSecondary": "I don't use Strava — I'll answer a few questions",
+  "@onboardingStravaConnectSecondary": { "description": "Secondary CTA on Strava connect screen for manual flow" },
+
+  "onboardingStravaAttributionTitle": "Powered by Strava",
+  "@onboardingStravaAttributionTitle": { "description": "Attribution title shown in onboarding Strava connect screen" },
+
+  "onboardingStravaAttributionSubtitle": "We only use your recent running data to estimate your training starting point.",
+  "@onboardingStravaAttributionSubtitle": { "description": "Attribution helper copy on Strava connect screen" },
+
+  "onboardingStravaPoweredBy": "Powered by Strava",
+  "@onboardingStravaPoweredBy": { "description": "Small attribution text shown under Strava connect actions" },
+
+  "onboardingStravaConnectError": "We couldn't connect to Strava right now. Try again or continue without Strava.",
+  "@onboardingStravaConnectError": { "description": "Error shown when mock Strava connect fails" },
 
   "goalTitle": "What's your goal?",
   "@goalTitle": { "description": "Heading on the goal screen" },
@@ -1031,6 +1055,9 @@
 
   "summaryCurrentLevel": "Current Level",
   "@summaryCurrentLevel": { "description": "Summary card category label" },
+
+  "onboardingFitnessSourceStravaTag": "From Strava",
+  "@onboardingFitnessSourceStravaTag": { "description": "Tag shown in summary when fitness was derived from Strava" },
 
   "summarySchedule": "Schedule",
   "@summarySchedule": { "description": "Summary card category label" },
