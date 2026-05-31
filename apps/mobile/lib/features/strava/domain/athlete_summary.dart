@@ -7,7 +7,7 @@ const int _distanceScale = 10000;
 const int _oneKmScaled = _distanceScale; // 1 km in fixed-point distance units.
 const int _fiveKmScaled = 5 * _oneKmScaled;
 const int _tenKmScaled = 10 * _oneKmScaled;
-const int _halfMarathonKmScaled = 210975;
+const int _halfMarathonKmScaled = 210975; // 21.0975 km in fixed-point distance units.
 
 enum VolumeTrend { building, steady, detraining }
 
