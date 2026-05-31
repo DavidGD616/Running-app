@@ -137,6 +137,26 @@ void main() {
     expect(mapSummaryToExperience(summary), RunnerExperience.beginner);
   });
 
+  test('insufficient data with low runs per week maps to brand new', () {
+    final summary = AthleteSummary(
+      weeklyVolumeKm: 12,
+      volumeTrend: VolumeTrend.steady,
+      acuteChronicRatio: 1,
+      longestRecentRunKm: 6,
+      typicalEasyPaceSecPerKm: 380,
+      typicalHardPaceSecPerKm: 340,
+      estimatedThresholdPaceSecPerKm: 355,
+      runsPerWeek: 1.25,
+      longestLayoffDays: 16,
+      weeksActiveInLast8: 3,
+      dataWeeks: 8,
+      insufficientData: true,
+      hasHeartRateZones: false,
+    );
+
+    expect(mapSummaryToExperience(summary), RunnerExperience.brandNew);
+  });
+
   test('half marathon benchmark uses official 21.0975 km distance', () {
     final summary = AthleteSummary(
       weeklyVolumeKm: 42,

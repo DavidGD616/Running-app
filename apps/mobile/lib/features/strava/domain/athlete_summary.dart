@@ -4,9 +4,9 @@ import '../../profile/domain/models/runner_profile.dart';
 import 'models/strava_athlete.dart';
 
 const int _distanceScale = 10000;
-const int _oneKmScaled = 10000;
-const int _fiveKmScaled = 50000;
-const int _tenKmScaled = 100000;
+const int _oneKmScaled = _distanceScale; // 1 km in fixed-point distance units.
+const int _fiveKmScaled = 5 * _oneKmScaled;
+const int _tenKmScaled = 10 * _oneKmScaled;
 const int _halfMarathonKmScaled = 210975;
 
 enum VolumeTrend { building, steady, detraining }
@@ -310,6 +310,7 @@ int _projectDurationSeconds({
   }
 
   final scaledSeconds = paceSecPerKm * scaledDistanceKm;
+  // Convert from fixed-point math and round to the nearest whole second.
   return (scaledSeconds + (_distanceScale ~/ 2)) ~/ _distanceScale;
 }
 
