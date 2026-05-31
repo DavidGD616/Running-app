@@ -2637,6 +2637,105 @@ Deno.test("validateGeneratedSchedule uses 3-day quiet window for marathon", () =
   assert.ok(!violations.some((v) => v.sessionId === "w1-2026-06-19-easyRun"));
 });
 
+Deno.test("expectedTotalWeeks returns null when race date is in the past", () => {
+  const pastRaceDate = new Date(Date.now() - 60 * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
+  const weeks = expectedTotalWeeks(
+    profile({ race: "race_10k", raceDate: pastRaceDate }),
+  );
+  assert.equal(weeks, null);
+});
+
+Deno.test("validateGeneratedSchedule does not flag goal race as stressful_session_before_race", () => {
+  const violations = validateGeneratedSchedule(
+    [
+      session({
+        id: "w1-2026-06-19-easyRun",
+        date: "2026-06-19",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-20-easyRun",
+        date: "2026-06-20",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-21-racePaceRun",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+  );
+  assert.ok(
+    !violations.some((v) =>
+      v.rule === "stressful_session_before_race" &&
+      v.sessionId === "w1-2026-06-21-racePaceRun"
+    ),
+    "goal race day must never be flagged as stressful_session_before_race",
+  );
+});
+
+Deno.test("enforcePreRaceTaper leaves race-day racePaceRun untouched", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w4-fri",
+        date: "2026-06-19",
+        type: "easyRun",
+        weekNumber: 4,
+      }),
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 4,
+        distanceKm: 10,
+      }),
+    ],
+    profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+    "en",
+  );
+  const race = findByDate(sessions, "2026-06-21");
+  assert.equal(race.type, "racePaceRun");
+  assert.equal(race.distanceKm, 10);
+});
+
+Deno.test("phaseAllocationFor 4 weeks is build + specific + taperRace", () => {
+  const phases = phasePlanFor(4, {});
+  assert.equal(phases.length, 4);
+  assert.equal(phases.filter((p) => p === "base").length, 0);
+  assert.equal(phases.filter((p) => p === "build").length, 1);
+  assert.equal(phases.filter((p) => p === "specific").length, 2);
+  assert.equal(phases.filter((p) => p === "peak").length, 0);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+});
+
+Deno.test("phaseAllocationFor 6 weeks includes base and taperRace", () => {
+  const phases = phasePlanFor(6, {});
+  assert.equal(phases.length, 6);
+  assert.equal(phases.filter((p) => p === "base").length, 1);
+  assert.equal(phases.filter((p) => p === "taperRace").length, 1);
+});
+
+Deno.test("phaseAllocationFor invariant: sums to totalWeeks and includes taperRace >= 1", () => {
+  for (const totalWeeks of [3, 4, 5, 6, 7, 8, 12, 16, 20]) {
+    const phases = phasePlanFor(totalWeeks, {});
+    assert.equal(
+      phases.length,
+      totalWeeks,
+      `phases length should equal ${totalWeeks}`,
+    );
+    const taperCount = phases.filter((p) => p === "taperRace").length;
+    assert.ok(
+      taperCount >= 1,
+      `weeks=${totalWeeks}: taperRace count should be >= 1, got ${taperCount}`,
+    );
+  }
+});
+
 Deno.test("validateGeneratedSchedule returns no violations when no fixed race date", () => {
   const violations = validateGeneratedSchedule(
     [
