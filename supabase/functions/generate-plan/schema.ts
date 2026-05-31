@@ -44,7 +44,7 @@ export const GeneratedSessionSchema = z.object({
 });
 
 export const GeneratedPlanSchema = z.object({
-  totalWeeks: z.number().int().min(4).max(26),
+  totalWeeks: z.number().int().min(3).max(26),
   raceType: z.enum(["fiveK", "tenK", "halfMarathon", "marathon", "other"]),
   sessions: z.array(GeneratedSessionSchema),
 });

@@ -3,9 +3,9 @@ import { generatePlanFromProfile } from "./openai.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   ensureGoalRaceSession,
-  enforcePreRaceTaper,
   expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
@@ -19,6 +19,7 @@ import {
   smoothLongRunProgression,
   spaceStressfulSessions,
   truncateAfterRaceDate,
+  validateGeneratedPlanShape,
   validateGeneratedSchedule,
 } from "./plan-rules.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
@@ -79,10 +80,26 @@ Deno.serve(async (req) => {
 
   const profileData = profileRow.data as Record<string, unknown>;
 
+  const generationStartedAt = new Date();
+  const expectedWeeks = expectedTotalWeeks(profileData, generationStartedAt);
+  if (expectedWeeks != null && expectedWeeks < 3) {
+    return new Response(
+      JSON.stringify({
+        error: "Race date is too soon for plan generation",
+        detail: "Fixed race-date plans require at least 3 calendar weeks.",
+      }),
+      { status: 422, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
   // 2. Call OpenAI with structured output
   let generatedPlan;
   try {
-    generatedPlan = await generatePlanFromProfile(profileData, locale);
+    generatedPlan = await generatePlanFromProfile(
+      profileData,
+      locale,
+      expectedWeeks,
+    );
   } catch (err) {
     console.error("OpenAI generation failed:", err);
     return new Response(
@@ -91,9 +108,8 @@ Deno.serve(async (req) => {
     );
   }
 
-  const expectedWeeks = expectedTotalWeeks(profileData);
   if (expectedWeeks != null) {
-    generatedPlan.totalWeeks = Math.max(3, expectedWeeks);
+    generatedPlan.totalWeeks = expectedWeeks;
   }
 
   // 3. Build phone-first workout steps deterministically for each session.
@@ -187,10 +203,15 @@ Deno.serve(async (req) => {
     locale,
   );
   const idNormalizedSessions = normalizeSessionIds(preRaceTaperedSessions);
-  const finalViolations = validateGeneratedSchedule(
-    idNormalizedSessions,
-    profileData,
-  );
+  const finalViolations = [
+    ...validateGeneratedPlanShape(
+      idNormalizedSessions,
+      generatedPlan.totalWeeks,
+      profileData,
+      generationStartedAt,
+    ),
+    ...validateGeneratedSchedule(idNormalizedSessions, profileData),
+  ];
   if (finalViolations.length > 0) {
     console.error(
       "Generated plan failed schedule validation:",
