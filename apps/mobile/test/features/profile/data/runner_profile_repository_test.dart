@@ -51,6 +51,46 @@ void main() {
     expect(restored.updatedAt, DateTime(2026, 4, 7, 7, 45));
   });
 
+  test(
+    'runner profile JSON includes fitnessSource and optional athleteSummary',
+    () {
+      final stravaDraft = buildRunnerProfileDraft().copyWith(
+        fitness: RunnerProfileDraft.fitnessFromInput(
+          experience: RunnerExperience.intermediate.key,
+          runningDays: '4',
+          weeklyVolume: WeeklyVolumeRange.volume4.key,
+          longestRun: LongestRunRange.run3.key,
+          canCompleteGoalDist: TernaryChoice.yes.key,
+          raceDistanceBefore: RaceDistanceExperience.once.key,
+          benchmark: BenchmarkType.skip.key,
+          fitnessSource: 'strava',
+          athleteSummary: const AthleteSummarySnapshot(
+            weeklyVolumeKm: 32,
+            acuteChronicRatio: 1.04,
+            longestRecentRunKm: 14,
+          ),
+        ),
+      );
+      final stravaProfile = stravaDraft.toRunnerProfile(
+        gender: ProfileGender.female,
+        dateOfBirth: DateTime(1993, 5, 12),
+        clock: DateTime(2026, 4, 7, 9, 30),
+      );
+
+      expect(stravaProfile, isNotNull);
+      final stravaFitness =
+          stravaProfile!.toJson()['fitness'] as Map<String, dynamic>;
+      expect(stravaFitness['fitnessSource'], 'strava');
+      expect(stravaFitness.containsKey('athleteSummary'), isTrue);
+
+      final manualFitness =
+          buildRunnerProfile(clock: DateTime(2026, 4, 7, 8, 0)).toJson()['fitness']
+              as Map<String, dynamic>;
+      expect(manualFitness.containsKey('fitnessSource'), isTrue);
+      expect(manualFitness.containsKey('athleteSummary'), isFalse);
+    },
+  );
+
   test('fitness input accepts numeric and legacy 5 plus running days', () {
     FitnessProfile? buildFitness(String runningDays) {
       return RunnerProfileDraft.fitnessFromInput(

@@ -28,6 +28,21 @@ watch-only metrics. Adapt workout difficulty, volume, workout type, and
 progression to the runner's experience level, fitness history, health
 constraints, schedule, and goal.
 
+If profileData.fitness.athleteSummary is present, treat it as measured training
+history and prefer it over self-reported fitness when they conflict. Anchor
+week-1 total volume around athleteSummary.weeklyVolumeKm with a conservative
+distribution across the selected training days. Use
+athleteSummary.acuteChronicRatio to cap weekly ramp and avoid aggressive
+increases; when the athlete is already building, keep growth generally <=10%.
+Use athleteSummary.longestRecentRunKm to size easy and long-run distances and
+avoid sudden long-run jumps. Use derived paces
+(typicalEasyPaceSecPerKm, typicalHardPaceSecPerKm,
+estimatedThresholdPaceSecPerKm) as effort context only. Keep coach notes in
+effort-based, mobile-readable language.
+
+If athleteSummary is absent, keep current no-Strava behavior and rely on the
+existing profile fields only.
+
 Write every coachNote in ${coachNoteLanguage}. Keep JSON field names, enum
 values, targetZone values, and all structured data keys exactly as defined in
 the schema. coachNote is display text only; never rely on it for app logic.

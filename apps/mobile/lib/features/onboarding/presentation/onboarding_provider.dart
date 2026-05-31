@@ -176,6 +176,22 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           stravaRunsPerWeek: summary.runsPerWeek,
           stravaDataWeeks: summary.dataWeeks,
           stravaInsufficientData: summary.insufficientData,
+          athleteSummary: AthleteSummarySnapshot(
+            weeklyVolumeKm: summary.weeklyVolumeKm,
+            volumeTrend: summary.volumeTrend.name,
+            acuteChronicRatio: summary.acuteChronicRatio,
+            longestRecentRunKm: summary.longestRecentRunKm,
+            typicalEasyPaceSecPerKm: summary.typicalEasyPaceSecPerKm,
+            typicalHardPaceSecPerKm: summary.typicalHardPaceSecPerKm,
+            estimatedThresholdPaceSecPerKm:
+                summary.estimatedThresholdPaceSecPerKm,
+            runsPerWeek: summary.runsPerWeek,
+            longestLayoffDays: summary.longestLayoffDays,
+            weeksActiveInLast8: summary.weeksActiveInLast8,
+            dataWeeks: summary.dataWeeks,
+            insufficientData: summary.insufficientData,
+            hasHeartRateZones: summary.hasHeartRateZones,
+          ),
         ),
       ),
     );

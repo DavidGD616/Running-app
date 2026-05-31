@@ -72,6 +72,21 @@ function experienceFromProfile(profileData: Record<string, unknown>): string {
     : "experience_beginner";
 }
 
+function athleteSummaryLongestRecentRunKm(
+  profileData: Record<string, unknown>,
+): number | null {
+  const fitness = objectOrNull(profileData.fitness);
+  const athleteSummary = objectOrNull(fitness?.athleteSummary);
+  if (athleteSummary == null) return null;
+
+  const value = athleteSummary.longestRecentRunKm;
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return value;
+}
+
 export function phaseForWeek(
   weekNumber: number,
   totalWeeks: number,
@@ -1935,6 +1950,17 @@ export function normalizePeakLongRun(
   locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const range = peakLongRunRangeKm(profileData);
+  const measuredLongestRecentRunKm = athleteSummaryLongestRecentRunKm(
+    profileData,
+  );
+  const historyFloorKm = measuredLongestRecentRunKm == null
+    ? null
+    : measuredLongestRecentRunKm * 0.9;
+  const normalizedRange = {
+    minKm: Math.max(range.minKm, historyFloorKm ?? range.minKm),
+    targetKm: Math.max(range.targetKm, historyFloorKm ?? range.targetKm),
+    maxKm: Math.max(range.maxKm, historyFloorKm ?? range.maxKm),
+  };
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
       .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
@@ -1959,11 +1985,11 @@ export function normalizePeakLongRun(
 
   if (bestPeakLongRun == null) return sessions;
 
-  const targetDistance = range.targetKm;
+  const targetDistance = normalizedRange.targetKm;
   const currentDistance = bestPeakLongRun.distanceKm;
   const finalDistance = Math.max(
-    range.minKm,
-    Math.min(range.maxKm, targetDistance),
+    normalizedRange.minKm,
+    Math.min(normalizedRange.maxKm, targetDistance),
   );
 
   if (Math.abs(finalDistance - currentDistance) > 0.01) {
