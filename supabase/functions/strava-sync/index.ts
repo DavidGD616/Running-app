@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { hasRequiredScopes } from "../_shared/strava-scopes.ts";
 
 const STRAVA_TOKEN_URL = "https://www.strava.com/api/v3/oauth/token";
 const STRAVA_ATHLETE_STATS_URL = "https://www.strava.com/api/v3/athletes";
@@ -370,14 +371,11 @@ Deno.serve(async (req) => {
   }
 
   const tokenRow = data as StravaTokenRow;
-  const tokenScopeSet = new Set(
-    tokenRow.scope.split(" ").map((scope) => scope.trim()).filter((scope) =>
-      scope.length > 0
-    ),
-  );
   if (
-    !tokenScopeSet.has("activity:read_all") ||
-    !tokenScopeSet.has("profile:read_all")
+    !hasRequiredScopes(tokenRow.scope, [
+      "activity:read_all",
+      "profile:read_all",
+    ])
   ) {
     return jsonResponse(
       {

@@ -111,8 +111,6 @@ class RealStravaService implements StravaService {
   static const String _stravaClientId = String.fromEnvironment(
     'STRAVA_CLIENT_ID',
   );
-  static const String _redirectUri =
-      'https://hedwyrmfeaqcqqwbexzf.supabase.co/functions/v1/strava-oauth';
   static const String _scopes = 'read,activity:read_all,profile:read_all';
   static const String _authorizeBaseUrl =
       'https://www.strava.com/oauth/mobile/authorize';
@@ -220,6 +218,7 @@ class RealStravaService implements StravaService {
         StravaServiceErrorCode.missingClientId,
       );
     }
+    final redirectUri = _resolveStravaOauthRedirectUri();
 
     final startResponse = await _client.functions.invoke(
       'strava-oauth',
@@ -241,7 +240,7 @@ class RealStravaService implements StravaService {
     final authorizationUrl = Uri.parse(_authorizeBaseUrl).replace(
       queryParameters: {
         'client_id': _stravaClientId,
-        'redirect_uri': _redirectUri,
+        'redirect_uri': redirectUri,
         'response_type': 'code',
         'approval_prompt': 'auto',
         'scope': _scopes,
@@ -285,6 +284,39 @@ class RealStravaService implements StravaService {
       StravaServiceErrorCode.oauthFailed,
       detail: error ?? detail,
     );
+  }
+
+  String _resolveStravaOauthRedirectUri() {
+    final supabaseUrl = SupabaseConfig.url.trim();
+    if (supabaseUrl.isEmpty) {
+      throw const StravaServiceException(
+        StravaServiceErrorCode.missingSupabase,
+      );
+    }
+
+    final baseUri = Uri.tryParse(supabaseUrl);
+    final hasValidBaseUri = baseUri != null &&
+        (baseUri.scheme == 'https' || baseUri.scheme == 'http') &&
+        baseUri.host.isNotEmpty;
+    if (!hasValidBaseUri) {
+      throw StravaServiceException(
+        StravaServiceErrorCode.missingSupabase,
+        detail: 'Invalid SUPABASE_URL: $supabaseUrl',
+      );
+    }
+
+    return baseUri
+        .replace(
+          pathSegments: [
+            ...baseUri.pathSegments.where((segment) => segment.isNotEmpty),
+            'functions',
+            'v1',
+            'strava-oauth',
+          ],
+          query: null,
+          fragment: null,
+        )
+        .toString();
   }
 
   StravaAthleteDataBundle _bundleFromSyncResponse(dynamic payload) {

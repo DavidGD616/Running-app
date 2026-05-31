@@ -1,12 +1,43 @@
 import OpenAI from "openai";
 import { type GeneratedPlan, GeneratedPlanSchema } from "./schema.ts";
 
+const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
+
+function requireEnv(name: string): string {
+  const value = Deno.env.get(name);
+  if (!value || value.trim().length === 0) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+  return value;
+}
+
+export function resolveOpenAiModel(modelFromEnv: string | undefined): string {
+  if (modelFromEnv == null) {
+    return DEFAULT_OPENAI_MODEL;
+  }
+
+  const normalizedModel = modelFromEnv.trim();
+  if (normalizedModel.length === 0) {
+    throw new Error(
+      "OPENAI_MODEL is set but empty. Provide a valid model name or unset OPENAI_MODEL to use the default model.",
+    );
+  }
+  if (/\s/u.test(normalizedModel)) {
+    throw new Error(
+      `OPENAI_MODEL is invalid: "${normalizedModel}". Model names must not contain whitespace.`,
+    );
+  }
+
+  return normalizedModel;
+}
+
 export async function generatePlanFromProfile(
   profileData: Record<string, unknown>,
   locale: "en" | "es" = "en",
   expectedTotalWeeks: number | null = null,
 ): Promise<GeneratedPlan> {
-  const client = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
+  const client = new OpenAI({ apiKey: requireEnv("OPENAI_API_KEY") });
+  const model = resolveOpenAiModel(Deno.env.get("OPENAI_MODEL") ?? undefined);
   const coachNoteLanguage = locale === "es" ? "Spanish" : "English";
   const goal = typeof profileData.goal === "object" && profileData.goal != null
     ? profileData.goal as Record<string, unknown>
@@ -97,7 +128,7 @@ ${raceInstruction}${totalWeeksInstruction}`;
 Generate a complete personalized training plan. Return only the JSON matching the schema exactly.`;
 
   const completion = await client.chat.completions.create({
-    model: "gpt-5.4-mini",
+    model,
     messages: [
       { role: "system", content: systemPrompt },
       { role: "user", content: userPrompt },

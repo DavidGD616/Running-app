@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { hasRequiredScopes } from "../_shared/strava-scopes.ts";
 
 const STRAVA_TOKEN_URL = "https://www.strava.com/api/v3/oauth/token";
 const STRAVA_DEAUTHORIZE_URL = "https://www.strava.com/oauth/deauthorize";
@@ -188,18 +189,6 @@ async function verifyState(state: string): Promise<SignedStatePayload | null> {
 
   if (exp < epochSecondsNow()) return null;
   return { userId, nonce, exp };
-}
-
-function requiredScopesGranted(scopeText: string): boolean {
-  const granted = new Set(
-    scopeText.split(" ").map((scope) => scope.trim()).filter((scope) =>
-      scope.length > 0
-    ),
-  );
-  for (const requiredScope of REQUIRED_SCOPES) {
-    if (!granted.has(requiredScope)) return false;
-  }
-  return true;
 }
 
 function buildDeepLink(params: Record<string, string>) {
@@ -444,7 +433,7 @@ async function handleOAuthCallback(requestUrl: URL): Promise<Response> {
     });
   }
 
-  if (!requiredScopesGranted(scopeText)) {
+  if (!hasRequiredScopes(scopeText, REQUIRED_SCOPES)) {
     return redirectToApp({
       strava_status: "missing_scope",
       strava_error: "required_scope_not_granted",
