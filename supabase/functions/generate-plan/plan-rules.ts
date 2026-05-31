@@ -535,6 +535,8 @@ export function expectedTotalWeeks(
   const raceMonday = new Date(raceDateParsed);
   raceMonday.setUTCDate(raceDateParsed.getUTCDate() + raceMondayOffset);
 
+  if (raceMonday.getTime() < anchorMonday.getTime()) return null;
+
   const weeks = Math.ceil(
     (raceMonday.getTime() - anchorMonday.getTime()) /
       (7 * 24 * 60 * 60 * 1000),
@@ -551,8 +553,7 @@ export function truncateAfterRaceDate(
   if (raceDate == null) return sessions;
 
   return sessions
-    .filter((session) => session.date.slice(0, 10) <= raceDate)
-    .sort(compareSessionsByDate);
+    .filter((session) => session.date.slice(0, 10) <= raceDate);
 }
 
 export function addStrideDefaults(
@@ -2141,6 +2142,19 @@ function maxLongRunJumpKm(race: string): number {
   }
 }
 
+function quietWindowDaysFor(race: string): number {
+  switch (race) {
+    case "race_5k":
+    case "race_10k":
+      return 2;
+    case "race_half_marathon":
+    case "race_marathon":
+      return 3;
+    default:
+      return 2;
+  }
+}
+
 export function normalizeTaper(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
@@ -2238,11 +2252,7 @@ export function enforcePreRaceTaper(
 
   const raceDate = goalRace.date;
   const race = raceFromProfile(profileData);
-  const quietWindowDays = race === "race_5k" || race === "race_10k"
-    ? 2
-    : race === "race_half_marathon" || race === "race_marathon"
-    ? 3
-    : 2;
+  const quietWindowDays = quietWindowDaysFor(race);
 
   const adjusted = sessions.map((session) => {
     const daysBeforeRace = dateDifferenceDays(session.date, raceDate);
@@ -2655,11 +2665,7 @@ export function validateGeneratedSchedule(
   const goalRace = sorted.find((s) => isGoalRaceSession(s, profileData));
   if (goalRace != null) {
     const race = raceFromProfile(profileData);
-    const quietWindowDays = race === "race_5k" || race === "race_10k"
-      ? 2
-      : race === "race_half_marathon" || race === "race_marathon"
-      ? 3
-      : 2;
+    const quietWindowDays = quietWindowDaysFor(race);
 
     for (const session of sorted) {
       const daysBeforeRace = dateDifferenceDays(session.date, goalRace.date);
