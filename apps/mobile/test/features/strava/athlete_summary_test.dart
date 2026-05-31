@@ -7,6 +7,12 @@ void main() {
   final now = DateTime(2026, 4, 5);
   final currentWeekStart = DateTime(2026, 3, 30);
 
+  test('volume trend persistence keys are stable', () {
+    expect(VolumeTrend.building.toKey(), 'building');
+    expect(VolumeTrend.steady.toKey(), 'steady');
+    expect(VolumeTrend.detraining.toKey(), 'detraining');
+  });
+
   test('beginner fixture derives stable low volume summary', () {
     final summary = deriveAthleteSummary(
       _buildBeginnerActivities(currentWeekStart),

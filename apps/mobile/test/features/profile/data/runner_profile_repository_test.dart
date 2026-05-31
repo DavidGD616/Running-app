@@ -66,6 +66,7 @@ void main() {
           fitnessSource: 'strava',
           athleteSummary: const AthleteSummarySnapshot(
             weeklyVolumeKm: 32,
+            volumeTrend: 'steady',
             acuteChronicRatio: 1.04,
             longestRecentRunKm: 14,
           ),
@@ -85,9 +86,10 @@ void main() {
       final athleteSummary = Map<String, dynamic>.from(
         stravaFitness['athleteSummary'] as Map,
       );
-      expect(athleteSummary['weeklyVolumeKm'], 32);
+      expect(athleteSummary['weeklyVolumeKm'], 32.0);
+      expect(athleteSummary['volumeTrend'], 'steady');
       expect(athleteSummary['acuteChronicRatio'], 1.04);
-      expect(athleteSummary['longestRecentRunKm'], 14);
+      expect(athleteSummary['longestRecentRunKm'], 14.0);
 
       final manualFitness =
           buildRunnerProfile(clock: DateTime(2026, 4, 7, 8, 0)).toJson()['fitness']
