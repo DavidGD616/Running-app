@@ -39,6 +39,8 @@ avoid sudden long-run jumps. Use derived paces
 (typicalEasyPaceSecPerKm, typicalHardPaceSecPerKm,
 estimatedThresholdPaceSecPerKm) as effort context only. Keep coach notes in
 effort-based, mobile-readable language.
+If athleteSummary.insufficientData is true, treat athleteSummary as a weak
+signal and do not override self-reported fitness with it.
 
 If athleteSummary is absent, keep current no-Strava behavior and rely on the
 existing profile fields only.

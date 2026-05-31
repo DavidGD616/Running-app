@@ -11,6 +11,16 @@ const int _halfMarathonKmScaled = 210975; // 21.0975 km in fixed-point distance 
 
 enum VolumeTrend { building, steady, detraining }
 
+extension VolumeTrendPersistence on VolumeTrend {
+  String toKey() {
+    return switch (this) {
+      VolumeTrend.building => 'building',
+      VolumeTrend.steady => 'steady',
+      VolumeTrend.detraining => 'detraining',
+    };
+  }
+}
+
 class AthleteSummary {
   const AthleteSummary({
     required this.weeklyVolumeKm,

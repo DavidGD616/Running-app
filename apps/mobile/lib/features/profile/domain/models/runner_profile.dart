@@ -1376,19 +1376,28 @@ Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
 
 Map<String, dynamic> _athleteSummaryToJson(AthleteSummarySnapshot value) {
   return {
-    'weeklyVolumeKm': value.weeklyVolumeKm,
-    'volumeTrend': value.volumeTrend,
-    'acuteChronicRatio': value.acuteChronicRatio,
-    'longestRecentRunKm': value.longestRecentRunKm,
-    'typicalEasyPaceSecPerKm': value.typicalEasyPaceSecPerKm,
-    'typicalHardPaceSecPerKm': value.typicalHardPaceSecPerKm,
-    'estimatedThresholdPaceSecPerKm': value.estimatedThresholdPaceSecPerKm,
-    'runsPerWeek': value.runsPerWeek,
-    'longestLayoffDays': value.longestLayoffDays,
-    'weeksActiveInLast8': value.weeksActiveInLast8,
-    'dataWeeks': value.dataWeeks,
-    'insufficientData': value.insufficientData,
-    'hasHeartRateZones': value.hasHeartRateZones,
+    if (value.weeklyVolumeKm != null) 'weeklyVolumeKm': value.weeklyVolumeKm,
+    if (value.volumeTrend != null) 'volumeTrend': value.volumeTrend,
+    if (value.acuteChronicRatio != null)
+      'acuteChronicRatio': value.acuteChronicRatio,
+    if (value.longestRecentRunKm != null)
+      'longestRecentRunKm': value.longestRecentRunKm,
+    if (value.typicalEasyPaceSecPerKm != null)
+      'typicalEasyPaceSecPerKm': value.typicalEasyPaceSecPerKm,
+    if (value.typicalHardPaceSecPerKm != null)
+      'typicalHardPaceSecPerKm': value.typicalHardPaceSecPerKm,
+    if (value.estimatedThresholdPaceSecPerKm != null)
+      'estimatedThresholdPaceSecPerKm': value.estimatedThresholdPaceSecPerKm,
+    if (value.runsPerWeek != null) 'runsPerWeek': value.runsPerWeek,
+    if (value.longestLayoffDays != null)
+      'longestLayoffDays': value.longestLayoffDays,
+    if (value.weeksActiveInLast8 != null)
+      'weeksActiveInLast8': value.weeksActiveInLast8,
+    if (value.dataWeeks != null) 'dataWeeks': value.dataWeeks,
+    if (value.insufficientData != null)
+      'insufficientData': value.insufficientData,
+    if (value.hasHeartRateZones != null)
+      'hasHeartRateZones': value.hasHeartRateZones,
   };
 }
 

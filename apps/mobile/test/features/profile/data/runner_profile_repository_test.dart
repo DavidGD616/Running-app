@@ -82,6 +82,12 @@ void main() {
           stravaProfile!.toJson()['fitness'] as Map<String, dynamic>;
       expect(stravaFitness['fitnessSource'], 'strava');
       expect(stravaFitness.containsKey('athleteSummary'), isTrue);
+      final athleteSummary = Map<String, dynamic>.from(
+        stravaFitness['athleteSummary'] as Map,
+      );
+      expect(athleteSummary['weeklyVolumeKm'], 32);
+      expect(athleteSummary['acuteChronicRatio'], 1.04);
+      expect(athleteSummary['longestRecentRunKm'], 14);
 
       final manualFitness =
           buildRunnerProfile(clock: DateTime(2026, 4, 7, 8, 0)).toJson()['fitness']

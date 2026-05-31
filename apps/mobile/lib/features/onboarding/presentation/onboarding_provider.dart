@@ -178,7 +178,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           stravaInsufficientData: summary.insufficientData,
           athleteSummary: AthleteSummarySnapshot(
             weeklyVolumeKm: summary.weeklyVolumeKm,
-            volumeTrend: summary.volumeTrend.name,
+            volumeTrend: summary.volumeTrend.toKey(),
             acuteChronicRatio: summary.acuteChronicRatio,
             longestRecentRunKm: summary.longestRecentRunKm,
             typicalEasyPaceSecPerKm: summary.typicalEasyPaceSecPerKm,
