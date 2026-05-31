@@ -21,20 +21,37 @@ enum StravaAthleteSex {
 }
 
 class StravaHeartRateZone {
+  static const int unboundedMaxBpmSentinel = -1;
+
   const StravaHeartRateZone({this.minBpm, required this.maxBpm});
 
   final int? minBpm;
   final int maxBpm;
 
+  bool get hasUnboundedUpperBound => maxBpm == unboundedMaxBpmSentinel;
+
   factory StravaHeartRateZone.fromJson(Map<String, dynamic> json) {
     final maxBpm = _intFromJson(json['max']);
-    if (maxBpm == null || maxBpm <= 0) {
+    if (maxBpm == null) {
       throw const FormatException('Strava HR zone max must be a positive int.');
     }
 
     final minBpm = _intFromJson(json['min']);
     if (minBpm != null && minBpm < 0) {
       throw const FormatException('Strava HR zone min must be >= 0.');
+    }
+
+    if (maxBpm == unboundedMaxBpmSentinel) {
+      if (minBpm == null || minBpm <= 0) {
+        throw const FormatException(
+          'Strava unbounded top HR zone must include a positive min.',
+        );
+      }
+      return StravaHeartRateZone(minBpm: minBpm, maxBpm: maxBpm);
+    }
+
+    if (maxBpm <= 0) {
+      throw const FormatException('Strava HR zone max must be a positive int.');
     }
 
     if (minBpm != null && minBpm >= maxBpm) {

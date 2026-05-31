@@ -3,6 +3,12 @@ import 'dart:math' as math;
 import '../../profile/domain/models/runner_profile.dart';
 import 'models/strava_athlete.dart';
 
+const int _distanceScale = 10000;
+const int _oneKmScaled = 10000;
+const int _fiveKmScaled = 50000;
+const int _tenKmScaled = 100000;
+const int _halfMarathonKmScaled = 210975;
+
 enum VolumeTrend { building, steady, detraining }
 
 class AthleteSummary {
@@ -216,8 +222,11 @@ LongestRunRange mapLongestRunKmToCanonicalRange(double longestRunKm) {
 }
 
 RunnerExperience mapSummaryToExperience(AthleteSummary summary) {
-  if (summary.insufficientData && summary.weeklyVolumeKm < 8) {
-    return RunnerExperience.brandNew;
+  if (summary.insufficientData) {
+    if (summary.weeklyVolumeKm < 8 || summary.runsPerWeek < 1.5) {
+      return RunnerExperience.brandNew;
+    }
+    return RunnerExperience.beginner;
   }
 
   if (summary.weeklyVolumeKm < 20 || summary.runsPerWeek < 2) {
@@ -238,30 +247,70 @@ BenchmarkProjection mapSummaryToBenchmark(AthleteSummary summary) {
   }
 
   if (summary.longestRecentRunKm >= 18) {
+    final projectedHalfMarathonSeconds = _projectDurationSeconds(
+      paceSecPerKm: thresholdPaceSecPerKm,
+      scaledDistanceKm: _halfMarathonKmScaled,
+    );
     return BenchmarkProjection(
       type: BenchmarkType.halfMarathon,
-      time: Duration(seconds: thresholdPaceSecPerKm * 21),
+      time: Duration(seconds: projectedHalfMarathonSeconds),
     );
   }
 
   if (summary.longestRecentRunKm >= 9) {
+    final projectedTenKSeconds = _projectDurationSeconds(
+      paceSecPerKm: thresholdPaceSecPerKm,
+      scaledDistanceKm: _tenKmScaled,
+    );
     return BenchmarkProjection(
       type: BenchmarkType.tenK,
-      time: Duration(seconds: thresholdPaceSecPerKm * 10),
+      time: Duration(seconds: projectedTenKSeconds),
     );
   }
 
   if (summary.longestRecentRunKm >= 4) {
+    final projectedFiveKSeconds = _projectDurationSeconds(
+      paceSecPerKm: thresholdPaceSecPerKm,
+      scaledDistanceKm: _fiveKmScaled,
+    );
     return BenchmarkProjection(
       type: BenchmarkType.fiveK,
-      time: Duration(seconds: thresholdPaceSecPerKm * 5),
+      time: Duration(seconds: projectedFiveKSeconds),
     );
   }
 
+  final projectedOneKmSeconds = _projectDurationSeconds(
+    paceSecPerKm: thresholdPaceSecPerKm,
+    scaledDistanceKm: _oneKmScaled,
+  );
+
   return BenchmarkProjection(
     type: BenchmarkType.oneKmRun,
-    time: Duration(seconds: thresholdPaceSecPerKm),
+    time: Duration(seconds: projectedOneKmSeconds),
   );
+}
+
+int _projectDurationSeconds({
+  required int paceSecPerKm,
+  required int scaledDistanceKm,
+}) {
+  if (paceSecPerKm <= 0) {
+    throw ArgumentError.value(
+      paceSecPerKm,
+      'paceSecPerKm',
+      'Benchmark pace must be positive.',
+    );
+  }
+  if (scaledDistanceKm <= 0) {
+    throw ArgumentError.value(
+      scaledDistanceKm,
+      'scaledDistanceKm',
+      'Benchmark distance must be positive.',
+    );
+  }
+
+  final scaledSeconds = paceSecPerKm * scaledDistanceKm;
+  return (scaledSeconds + (_distanceScale ~/ 2)) ~/ _distanceScale;
 }
 
 List<double> _buildEightWeekVolumeBuckets({

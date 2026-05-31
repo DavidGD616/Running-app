@@ -116,6 +116,69 @@ void main() {
     expect(mapping.benchmark.type, BenchmarkType.skip);
     expect(mapping.benchmark.time, isNull);
   });
+
+  test('insufficient data mapping never promotes above beginner', () {
+    final summary = AthleteSummary(
+      weeklyVolumeKm: 36,
+      volumeTrend: VolumeTrend.steady,
+      acuteChronicRatio: 1,
+      longestRecentRunKm: 14,
+      typicalEasyPaceSecPerKm: 360,
+      typicalHardPaceSecPerKm: 325,
+      estimatedThresholdPaceSecPerKm: 345,
+      runsPerWeek: 3,
+      longestLayoffDays: 12,
+      weeksActiveInLast8: 2,
+      dataWeeks: 8,
+      insufficientData: true,
+      hasHeartRateZones: false,
+    );
+
+    expect(mapSummaryToExperience(summary), RunnerExperience.beginner);
+  });
+
+  test('half marathon benchmark uses official 21.0975 km distance', () {
+    final summary = AthleteSummary(
+      weeklyVolumeKm: 42,
+      volumeTrend: VolumeTrend.steady,
+      acuteChronicRatio: 1,
+      longestRecentRunKm: 18,
+      typicalEasyPaceSecPerKm: 360,
+      typicalHardPaceSecPerKm: 330,
+      estimatedThresholdPaceSecPerKm: 300,
+      runsPerWeek: 4,
+      longestLayoffDays: 5,
+      weeksActiveInLast8: 8,
+      dataWeeks: 8,
+      insufficientData: false,
+      hasHeartRateZones: true,
+    );
+
+    final benchmark = mapSummaryToBenchmark(summary);
+    expect(benchmark.type, BenchmarkType.halfMarathon);
+    expect(benchmark.time, const Duration(seconds: 6329));
+  });
+
+  test('strava parser accepts top HR zone max sentinel -1', () {
+    final athlete = StravaAthlete.fromJson({
+      'sex': 'F',
+      'weight': 61.2,
+      'heart_rate_zones': {
+        'zones': [
+          {'max': 135},
+          {'min': 136, 'max': 148},
+          {'min': 149, 'max': 160},
+          {'min': 161, 'max': 172},
+          {'min': 173, 'max': -1},
+        ],
+      },
+    });
+
+    final topZone = athlete.heartRateZones?.zone5;
+    expect(topZone, isNotNull);
+    expect(topZone!.maxBpm, StravaHeartRateZone.unboundedMaxBpmSentinel);
+    expect(topZone.hasUnboundedUpperBound, isTrue);
+  });
 }
 
 StravaAthleteStats _stats({required int activityCount}) {
