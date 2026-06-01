@@ -258,6 +258,7 @@
 				9705A1C41CF9048500538489 /* Embed Frameworks */,
 				A2125E7D06DF7F7E3D965FB0 /* Embed Foundation Extensions */,
 				3B06AD1E1E4923F5004D2608 /* Thin Binary */,
+				7D9A4C7A2F7E4E0AA5F9C3B1 /* Sign Flutter Native Asset Frameworks */,
 				2C63CB669D3B6E82943A37FE /* [CP] Embed Pods Frameworks */,
 				D67BC703CB044ED4CE7F352C /* [CP] Copy Pods Resources */,
 			);
@@ -434,6 +435,21 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+		};
+		7D9A4C7A2F7E4E0AA5F9C3B1 /* Sign Flutter Native Asset Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputPaths = (
+			);
+			name = "Sign Flutter Native Asset Frameworks";
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/bash;
+			shellScript = "if [[ \"${CODE_SIGNING_ALLOWED:-}\" != \"YES\" ]]; then\n  exit 0\nfi\n\nif [[ \"${PLATFORM_NAME:-}\" == *simulator* ]]; then\n  exit 0\nfi\n\nif [[ -z \"${EXPANDED_CODE_SIGN_IDENTITY:-}\" || \"${EXPANDED_CODE_SIGN_IDENTITY}\" == \"-\" ]]; then\n  exit 0\nfi\n\nframeworks_dir=\"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}\"\nif [[ ! -d \"$frameworks_dir\" ]]; then\n  exit 0\nfi\n\nresigned_native_asset=0\nwhile IFS= read -r -d '' framework; do\n  identifier=$(/usr/libexec/PlistBuddy -c \"Print :CFBundleIdentifier\" \"$framework/Info.plist\" 2>/dev/null || true)\n  case \"$identifier\" in\n    io.flutter.flutter.native-assets.*)\n      /usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --timestamp=none --preserve-metadata=identifier,flags \"$framework\"\n      resigned_native_asset=1\n      ;;\n  esac\ndone < <(find \"$frameworks_dir\" -maxdepth 1 -type d -name \"*.framework\" -print0)\n\nif [[ \"$resigned_native_asset\" == \"1\" ]]; then\n  app_path=\"${TARGET_BUILD_DIR}/${WRAPPER_NAME}\"\n  entitlements_path=\"${TARGET_TEMP_DIR}/${PRODUCT_NAME}.app.xcent\"\n  if [[ -f \"$entitlements_path\" ]]; then\n    /usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --timestamp=none --entitlements \"$entitlements_path\" --generate-entitlement-der \"$app_path\"\n  else\n    /usr/bin/codesign --force --sign \"$EXPANDED_CODE_SIGN_IDENTITY\" --timestamp=none \"$app_path\"\n  fi\nfi\n";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
