@@ -97,19 +97,21 @@ class SettingsIntegrationsScreen extends ConsumerWidget {
       } on StravaServiceException catch (error) {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(_stravaConnectErrorMessage(l10n, error.code)),
-          ),
+          SnackBar(content: Text(_stravaConnectErrorMessage(l10n, error.code))),
         );
       } on StateError {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.onboardingStravaConnectAuthRequiredError)),
+          SnackBar(
+            content: Text(l10n.onboardingStravaConnectAuthRequiredError),
+          ),
         );
       } on AuthException {
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.onboardingStravaConnectAuthRequiredError)),
+          SnackBar(
+            content: Text(l10n.onboardingStravaConnectAuthRequiredError),
+          ),
         );
       } catch (_) {
         if (!context.mounted) return;
@@ -121,11 +123,12 @@ class SettingsIntegrationsScreen extends ConsumerWidget {
       return;
     }
 
-    await connectionNotifier.removeConnectionForVendor(IntegrationVendor.strava);
-
     try {
       final stravaService = ref.read(stravaServiceProvider);
       await stravaService.disconnect();
+      await connectionNotifier.removeConnectionForVendor(
+        IntegrationVendor.strava,
+      );
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -225,7 +228,8 @@ class SettingsIntegrationsScreen extends ConsumerWidget {
                               enabled: value,
                             );
 
-                        if (result == SetPlatformConnectionResult.permissionDenied &&
+                        if (result ==
+                                SetPlatformConnectionResult.permissionDenied &&
                             context.mounted) {
                           final l10n = AppLocalizations.of(context)!;
                           ScaffoldMessenger.of(context).showSnackBar(
