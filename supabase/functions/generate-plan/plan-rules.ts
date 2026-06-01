@@ -87,6 +87,26 @@ function athleteSummaryLongestRecentRunKm(
   return value;
 }
 
+function athleteSummaryWeeklyVolumeKm(
+  profileData: Record<string, unknown>,
+): number | null {
+  const fitness = objectOrNull(profileData.fitness);
+  const athleteSummary = objectOrNull(fitness?.athleteSummary);
+  if (athleteSummary == null) return null;
+
+  // When Strava history is too thin, athleteSummary is only a weak signal and
+  // must not override self-reported fitness (mirrors the prompt guidance), so
+  // skip the volume anchor entirely.
+  if (athleteSummary.insufficientData === true) return null;
+
+  const value = athleteSummary.weeklyVolumeKm;
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+
+  return value;
+}
+
 export function phaseForWeek(
   weekNumber: number,
   totalWeeks: number,
@@ -2135,6 +2155,115 @@ export function smoothLongRunProgression(
   }
 
   return adjusted;
+}
+
+const WEEKLY_VOLUME_RAMP_FACTOR = 1.1; // ~10% week-over-week ceiling.
+const WEEKLY_VOLUME_TOLERANCE = 0.05; // small slack before clamping kicks in.
+
+// FIX B: deterministic acute:chronic ramp guard. The prompt asks the model to
+// cap weekly growth (~<=10%) using athleteSummary.acuteChronicRatio, but that is
+// advisory only. When measured Strava history is present, anchor week-1 total
+// volume near athleteSummary.weeklyVolumeKm and hard-clamp each week's increase
+// to ~10% over the prior week's (post-clamp) volume. Taper/down weeks plan less
+// than the prior week, so they fall under their cap and are left untouched.
+// Absent athleteSummary, the function is a no-op (no regression).
+export function normalizeWeeklyVolumeRamp(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+  _locale: CoachNoteLocale = "en",
+): GeneratedSession[] {
+  const anchorVolumeKm = athleteSummaryWeeklyVolumeKm(profileData);
+  if (anchorVolumeKm == null) return sessions;
+
+  const adjusted = sessions.map((s) => ({ ...s }));
+
+  const weekNumbers = Array.from(
+    new Set(adjusted.map((s) => s.weekNumber)),
+  ).sort((a, b) => a - b);
+
+  let previousCappedVolumeKm: number | null = null;
+
+  for (const weekNumber of weekNumbers) {
+    const phase = phaseForWeek(weekNumber, totalWeeks, profileData);
+    const indices = adjusted
+      .map((s, i) => ({ s, i }))
+      .filter(({ s }) =>
+        s.weekNumber === weekNumber &&
+        s.type !== "restDay" &&
+        !isGoalRaceSession(s, profileData)
+      )
+      .map(({ i }) => i);
+
+    const weekVolumeKm = indices.reduce(
+      (sum, i) => sum + estimateSessionVolumeKm(adjusted[i], profileData),
+      0,
+    );
+
+    // Taper weeks are intentionally reduced; never let the ramp guard touch
+    // them and don't let their low volume become the base for later weeks.
+    if (phase === "taperRace") {
+      continue;
+    }
+
+    const cap = previousCappedVolumeKm == null
+      ? anchorVolumeKm * WEEKLY_VOLUME_RAMP_FACTOR
+      : previousCappedVolumeKm * WEEKLY_VOLUME_RAMP_FACTOR;
+
+    if (
+      weekVolumeKm <= cap * (1 + WEEKLY_VOLUME_TOLERANCE) || weekVolumeKm <= 0
+    ) {
+      // Within budget (covers down weeks that plan less than the prior week).
+      previousCappedVolumeKm = weekVolumeKm;
+      continue;
+    }
+
+    const scale = cap / weekVolumeKm;
+    for (const i of indices) {
+      const session = adjusted[i];
+      const currentDistance = session.distanceKm;
+      if (currentDistance == null || currentDistance <= 0) continue;
+      const scaledDistance = Math.round(currentDistance * scale * 100) / 100;
+      const newDuration = recalculateDurationForDistance(
+        adjusted,
+        i,
+        scaledDistance,
+        profileData,
+      );
+      adjusted[i] = {
+        ...session,
+        distanceKm: scaledDistance,
+        durationMinutes: newDuration,
+      };
+    }
+
+    previousCappedVolumeKm = indices.reduce(
+      (sum, i) => sum + estimateSessionVolumeKm(adjusted[i], profileData),
+      0,
+    );
+  }
+
+  return adjusted;
+}
+
+// Best-effort weekly-volume signal: prefer explicit distance, else convert
+// duration to km using the experience-based fallback easy pace.
+function estimateSessionVolumeKm(
+  session: GeneratedSession,
+  profileData: Record<string, unknown>,
+): number {
+  if (typeof session.distanceKm === "number" && session.distanceKm > 0) {
+    return session.distanceKm;
+  }
+  if (
+    typeof session.durationMinutes === "number" && session.durationMinutes > 0
+  ) {
+    const paceMinPerKm = fallbackEasyPaceMinPerKm(
+      experienceFromProfile(profileData),
+    );
+    if (paceMinPerKm > 0) return session.durationMinutes / paceMinPerKm;
+  }
+  return 0;
 }
 
 function protectedPeakLongRunIndex(

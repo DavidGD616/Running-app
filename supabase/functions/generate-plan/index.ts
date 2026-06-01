@@ -12,6 +12,7 @@ import {
   normalizeSessionIds,
   normalizeTaper,
   normalizeTrainingDayCount,
+  normalizeWeeklyVolumeRamp,
   normalizeWorkoutTypesByPhase,
   phaseForWeek,
   placeLongRunsOnPreferredDay,
@@ -149,8 +150,18 @@ Deno.serve(async (req) => {
     profileData,
     locale,
   );
-  const peakNormalizedSessions = normalizePeakLongRun(
+  // Clamp week-over-week total volume ramp against measured Strava history
+  // before the long-run rules, so peak/progression normalization can still
+  // re-anchor long runs to their history-aware ranges afterward. No-op when
+  // athleteSummary is absent (manual-profile generation is unaffected).
+  const volumeRampedSessions = normalizeWeeklyVolumeRamp(
     scheduleAdjustedSessions,
+    profileData,
+    generatedPlan.totalWeeks,
+    locale,
+  );
+  const peakNormalizedSessions = normalizePeakLongRun(
+    volumeRampedSessions,
     profileData,
     generatedPlan.totalWeeks,
     locale,

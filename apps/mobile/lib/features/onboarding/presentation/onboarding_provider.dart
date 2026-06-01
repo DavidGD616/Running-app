@@ -135,22 +135,78 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   void useManualFitnessInput() {
     final draft = state.value ?? const RunnerProfileDraft();
     final fitness = draft.fitness;
+    final wasStrava =
+        fitness.fitnessSource == OnboardingValues.fitnessSourceStrava;
+
+    // When the prior source was Strava, the canonical fitness fields hold
+    // values that were *derived* from Strava data. Opting into manual input
+    // should start the Fitness screen blank rather than presenting those
+    // inferred answers as if the user had typed them. For genuinely manual
+    // input (no prior Strava connect), preserve whatever the user entered.
     _setState(
       draft.copyWith(
-        fitness: FitnessProfileDraft(
-          experience: fitness.experience,
-          canRun10Min: fitness.canRun10Min,
-          runningDays: fitness.runningDays,
-          weeklyVolume: fitness.weeklyVolume,
-          longestRun: fitness.longestRun,
-          canCompleteGoalDistance: fitness.canCompleteGoalDistance,
-          raceDistanceBefore: fitness.raceDistanceBefore,
-          benchmark: fitness.benchmark,
-          benchmarkTime: fitness.benchmarkTime,
-          fitnessSource: OnboardingValues.fitnessSourceManual,
-        ),
+        fitness: wasStrava
+            ? const FitnessProfileDraft(
+                fitnessSource: OnboardingValues.fitnessSourceManual,
+              )
+            : FitnessProfileDraft(
+                experience: fitness.experience,
+                canRun10Min: fitness.canRun10Min,
+                runningDays: fitness.runningDays,
+                weeklyVolume: fitness.weeklyVolume,
+                longestRun: fitness.longestRun,
+                canCompleteGoalDistance: fitness.canCompleteGoalDistance,
+                raceDistanceBefore: fitness.raceDistanceBefore,
+                benchmark: fitness.benchmark,
+                benchmarkTime: fitness.benchmarkTime,
+                fitnessSource: OnboardingValues.fitnessSourceManual,
+              ),
       ),
     );
+  }
+
+  /// Clears Strava-derived fitness state after the user disconnects the
+  /// Strava integration. Switches the onboarding draft back to manual input
+  /// (dropping derived answers + snapshot fields) and, when a RunnerProfile
+  /// has already been persisted, rewrites its fitness section so the backend
+  /// no longer receives `fitnessSource: 'strava'` + athleteSummary and the
+  /// Summary screen stops showing the "From Strava" tag.
+  Future<void> clearStravaFitness({DateTime? clock}) async {
+    final draft = state.value ?? const RunnerProfileDraft();
+    final wasStravaDraft =
+        draft.fitness.fitnessSource == OnboardingValues.fitnessSourceStrava;
+    if (wasStravaDraft) {
+      useManualFitnessInput();
+    }
+
+    final profile = ref.read(runnerProfileProvider).value;
+    if (profile == null) return;
+    if (profile.fitness.fitnessSource != OnboardingValues.fitnessSourceStrava) {
+      return;
+    }
+
+    final clearedFitness = FitnessProfile(
+      experience: profile.fitness.experience,
+      canRun10Min: profile.fitness.canRun10Min,
+      runningDays: profile.fitness.runningDays,
+      weeklyVolume: profile.fitness.weeklyVolume,
+      longestRun: profile.fitness.longestRun,
+      canCompleteGoalDistance: profile.fitness.canCompleteGoalDistance,
+      raceDistanceBefore: profile.fitness.raceDistanceBefore,
+      benchmark: profile.fitness.benchmark,
+      benchmarkTime: profile.fitness.benchmarkTime,
+      fitnessSource: OnboardingValues.fitnessSourceManual,
+      athleteSummary: null,
+    );
+    final updatedProfile = profile.copyWith(
+      fitness: clearedFitness,
+      updatedAt: clock ?? DateTime.now(),
+    );
+
+    await ref.read(runnerProfileProvider.notifier).setProfile(updatedProfile);
+    if (ref.mounted && !wasStravaDraft) {
+      state = AsyncData(RunnerProfileDraft.fromRunnerProfile(updatedProfile));
+    }
   }
 
   void setStrava({required AthleteSummary summary}) {

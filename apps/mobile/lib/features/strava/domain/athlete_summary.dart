@@ -36,6 +36,8 @@ class AthleteSummary {
     required this.dataWeeks,
     required this.insufficientData,
     required this.hasHeartRateZones,
+    this.referenceEffortDistanceKm,
+    this.referenceEffortSeconds,
   });
 
   final double weeklyVolumeKm;
@@ -51,6 +53,13 @@ class AthleteSummary {
   final int dataWeeks;
   final bool insufficientData;
   final bool hasHeartRateZones;
+
+  /// Distance of the best recent sustained effort used as the Riegel anchor for
+  /// benchmark projections. Null when no reliable effort is available.
+  final double? referenceEffortDistanceKm;
+
+  /// Moving time (seconds) of [referenceEffortDistanceKm]'s effort.
+  final int? referenceEffortSeconds;
 }
 
 class BenchmarkProjection {
@@ -104,16 +113,33 @@ AthleteSummary deriveAthleteSummary(
     nowDate: nowDate,
   );
 
-  final weeksForVolume = dataWeeks == 0 ? 4 : dataWeeks.clamp(4, 8);
+  // The trailing bucket is the week containing `now`. When `now` is mid-week
+  // that bucket only holds a partial week of running, which would deflate the
+  // volume mean and distort the trend. Drop it from completed-week stats unless
+  // `now` is the final day of its week (Sunday), in which case it is complete.
+  final currentWeekComplete = nowDate.weekday == DateTime.sunday;
+  final completedWeekBuckets = currentWeekComplete
+      ? weeklyKmByBucket
+      : weeklyKmByBucket.sublist(0, weeklyKmByBucket.length - 1);
+
+  final completedDataWeeks = currentWeekComplete
+      ? dataWeeks
+      : (dataWeeks - 1).clamp(0, completedWeekBuckets.length);
+  final weeksForVolume = completedDataWeeks == 0
+      ? math.min(4, completedWeekBuckets.length)
+      : completedDataWeeks.clamp(4, completedWeekBuckets.length);
   final weeklyVolumeKm = _mean(
-    weeklyKmByBucket.sublist(weeklyKmByBucket.length - weeksForVolume),
+    completedWeekBuckets.sublist(completedWeekBuckets.length - weeksForVolume),
   );
 
-  final priorFourWeekMean = _mean(weeklyKmByBucket.sublist(0, 4));
-  final lastFourWeekMean = _mean(weeklyKmByBucket.sublist(4, 8));
+  // Compare the older half of the completed weeks against the more recent half
+  // so the in-progress week never skews the trend toward false detraining.
+  final trendSplit = completedWeekBuckets.length ~/ 2;
+  final priorMean = _mean(completedWeekBuckets.sublist(0, trendSplit));
+  final recentMean = _mean(completedWeekBuckets.sublist(trendSplit));
   final volumeTrend = _deriveVolumeTrend(
-    previousMean: priorFourWeekMean,
-    currentMean: lastFourWeekMean,
+    previousMean: priorMean,
+    currentMean: recentMean,
   );
 
   final recentRuns12Weeks = runActivities
@@ -128,14 +154,16 @@ AthleteSummary deriveAthleteSummary(
   final acuteDistanceKm = _sumDistance(
     runActivities.where((activity) {
       final activityDate = _dateOnly(activity.startDate);
-      return !activityDate.isBefore(nowDate.subtract(const Duration(days: 7)));
+      // True trailing 7-day window: [now-6, now] inclusive spans 7 calendar days.
+      return !activityDate.isBefore(nowDate.subtract(const Duration(days: 6)));
     }),
   );
 
   final chronicDistanceKm = _sumDistance(
     runActivities.where((activity) {
       final activityDate = _dateOnly(activity.startDate);
-      return !activityDate.isBefore(nowDate.subtract(const Duration(days: 28)));
+      // True trailing 28-day window: [now-27, now] inclusive spans 28 days.
+      return !activityDate.isBefore(nowDate.subtract(const Duration(days: 27)));
     }),
   );
   final chronicWeeklyAverageKm = chronicDistanceKm / 4.0;
@@ -159,8 +187,13 @@ AthleteSummary deriveAthleteSummary(
 
   final typicalHardPaceSecPerKm = _deriveTypicalHardPace(paceSamplesSecPerKm);
   final typicalEasyPaceSecPerKm = _deriveTypicalEasyPace(paceSamplesSecPerKm);
+
+  // The fastest sustained effort is the most reliable single (distance, time)
+  // data point and anchors both the threshold estimate and benchmark Riegel
+  // projections.
+  final referenceEffort = _bestSustainedEffort(recentRuns12Weeks);
   final estimatedThresholdPaceSecPerKm = _deriveEstimatedThresholdPace(
-    recentRuns12Weeks: recentRuns12Weeks,
+    referenceEffort: referenceEffort,
     fallbackHardPaceSecPerKm: typicalHardPaceSecPerKm,
   );
 
@@ -199,6 +232,8 @@ AthleteSummary deriveAthleteSummary(
     insufficientData: insufficientData,
     hasHeartRateZones:
         athlete?.heartRateZones?.orderedZones.isNotEmpty ?? false,
+    referenceEffortDistanceKm: referenceEffort?.distanceKm,
+    referenceEffortSeconds: referenceEffort?.movingTimeSeconds,
   );
 }
 
@@ -250,78 +285,92 @@ RunnerExperience mapSummaryToExperience(AthleteSummary summary) {
   return RunnerExperience.experienced;
 }
 
+/// Riegel endurance exponent. Times grow faster than linearly with distance:
+/// `T2 = T1 * (D2 / D1)^_riegelExponent`.
+const double _riegelExponent = 1.06;
+
 BenchmarkProjection mapSummaryToBenchmark(AthleteSummary summary) {
   final thresholdPaceSecPerKm = summary.estimatedThresholdPaceSecPerKm;
   if (thresholdPaceSecPerKm == null || thresholdPaceSecPerKm <= 0) {
     return const BenchmarkProjection(type: BenchmarkType.skip);
   }
 
+  // Anchor the Riegel projection on the best recent sustained effort when
+  // available. Otherwise fall back to the effort implied by threshold pace:
+  // threshold pace is, by definition, sustainable for ~1 hour, so anchor at
+  // (threshold distance, 3600 s) rather than a 1 km pace point (which would
+  // exaggerate fade across many doublings).
+  final hasReferenceEffort =
+      summary.referenceEffortDistanceKm != null &&
+      summary.referenceEffortDistanceKm! > 0 &&
+      summary.referenceEffortSeconds != null &&
+      summary.referenceEffortSeconds! > 0;
+  final double knownDistanceKm;
+  final double knownSeconds;
+  if (hasReferenceEffort) {
+    knownDistanceKm = summary.referenceEffortDistanceKm!;
+    knownSeconds = summary.referenceEffortSeconds!.toDouble();
+  } else {
+    knownSeconds = 3600.0;
+    knownDistanceKm = knownSeconds / thresholdPaceSecPerKm;
+  }
+
+  BenchmarkProjection project(BenchmarkType type, int scaledTargetDistanceKm) {
+    final seconds = _projectDurationSeconds(
+      knownDistanceKm: knownDistanceKm,
+      knownSeconds: knownSeconds,
+      scaledTargetDistanceKm: scaledTargetDistanceKm,
+    );
+    return BenchmarkProjection(type: type, time: Duration(seconds: seconds));
+  }
+
   if (summary.longestRecentRunKm >= 18) {
-    final projectedHalfMarathonSeconds = _projectDurationSeconds(
-      paceSecPerKm: thresholdPaceSecPerKm,
-      scaledDistanceKm: _halfMarathonKmScaled,
-    );
-    return BenchmarkProjection(
-      type: BenchmarkType.halfMarathon,
-      time: Duration(seconds: projectedHalfMarathonSeconds),
-    );
+    return project(BenchmarkType.halfMarathon, _halfMarathonKmScaled);
   }
-
   if (summary.longestRecentRunKm >= 9) {
-    final projectedTenKSeconds = _projectDurationSeconds(
-      paceSecPerKm: thresholdPaceSecPerKm,
-      scaledDistanceKm: _tenKmScaled,
-    );
-    return BenchmarkProjection(
-      type: BenchmarkType.tenK,
-      time: Duration(seconds: projectedTenKSeconds),
-    );
+    return project(BenchmarkType.tenK, _tenKmScaled);
   }
-
   if (summary.longestRecentRunKm >= 4) {
-    final projectedFiveKSeconds = _projectDurationSeconds(
-      paceSecPerKm: thresholdPaceSecPerKm,
-      scaledDistanceKm: _fiveKmScaled,
-    );
-    return BenchmarkProjection(
-      type: BenchmarkType.fiveK,
-      time: Duration(seconds: projectedFiveKSeconds),
-    );
+    return project(BenchmarkType.fiveK, _fiveKmScaled);
   }
-
-  final projectedOneKmSeconds = _projectDurationSeconds(
-    paceSecPerKm: thresholdPaceSecPerKm,
-    scaledDistanceKm: _oneKmScaled,
-  );
-
-  return BenchmarkProjection(
-    type: BenchmarkType.oneKmRun,
-    time: Duration(seconds: projectedOneKmSeconds),
-  );
+  return project(BenchmarkType.oneKmRun, _oneKmScaled);
 }
 
+/// Projects the duration for [scaledTargetDistanceKm] from a known
+/// (distance, time) effort using Riegel's endurance model:
+/// `T_target = T_known * (D_target / D_known)^_riegelExponent`.
 int _projectDurationSeconds({
-  required int paceSecPerKm,
-  required int scaledDistanceKm,
+  required double knownDistanceKm,
+  required double knownSeconds,
+  required int scaledTargetDistanceKm,
 }) {
-  if (paceSecPerKm <= 0) {
+  if (knownDistanceKm <= 0) {
     throw ArgumentError.value(
-      paceSecPerKm,
-      'paceSecPerKm',
-      'Benchmark pace must be positive.',
+      knownDistanceKm,
+      'knownDistanceKm',
+      'Known effort distance must be positive.',
     );
   }
-  if (scaledDistanceKm <= 0) {
+  if (knownSeconds <= 0) {
     throw ArgumentError.value(
-      scaledDistanceKm,
-      'scaledDistanceKm',
+      knownSeconds,
+      'knownSeconds',
+      'Known effort time must be positive.',
+    );
+  }
+  if (scaledTargetDistanceKm <= 0) {
+    throw ArgumentError.value(
+      scaledTargetDistanceKm,
+      'scaledTargetDistanceKm',
       'Benchmark distance must be positive.',
     );
   }
 
-  final scaledSeconds = paceSecPerKm * scaledDistanceKm;
-  // Convert from fixed-point math and round to the nearest whole second.
-  return (scaledSeconds + (_distanceScale ~/ 2)) ~/ _distanceScale;
+  final targetDistanceKm = scaledTargetDistanceKm / _distanceScale;
+  final projectedSeconds =
+      knownSeconds *
+      math.pow(targetDistanceKm / knownDistanceKm, _riegelExponent);
+  return projectedSeconds.round();
 }
 
 List<double> _buildEightWeekVolumeBuckets({
@@ -407,23 +456,54 @@ int? _deriveTypicalEasyPace(List<double> paceSamplesSecPerKm) {
   return _median(easiest)?.round();
 }
 
+/// Picks the most reliable recent sustained effort (>= 20 min, >= 3 km) as the
+/// single fastest-paced effort. Returns null when none qualify.
+StravaSummaryActivity? _bestSustainedEffort(
+  List<StravaSummaryActivity> recentRuns12Weeks,
+) {
+  StravaSummaryActivity? best;
+  double? bestPace;
+  for (final run in recentRuns12Weeks) {
+    if (run.movingTimeSeconds < 20 * 60 || run.distanceKm < 3) continue;
+    final pace = run.movingTimeSeconds / run.distanceKm;
+    if (!pace.isFinite || pace <= 0) continue;
+    if (bestPace == null || pace < bestPace) {
+      bestPace = pace;
+      best = run;
+    }
+  }
+  return best;
+}
+
 int? _deriveEstimatedThresholdPace({
-  required List<StravaSummaryActivity> recentRuns12Weeks,
+  required StravaSummaryActivity? referenceEffort,
   required int? fallbackHardPaceSecPerKm,
 }) {
-  final sustainedRuns = recentRuns12Weeks
-      .where((run) => run.movingTimeSeconds >= 20 * 60 && run.distanceKm >= 3)
-      .toList(growable: false);
-
-  if (sustainedRuns.isEmpty) {
+  if (referenceEffort == null) {
     if (fallbackHardPaceSecPerKm == null) return null;
     return (fallbackHardPaceSecPerKm * 1.04).round();
   }
 
-  final fastestSustainedPaceSecPerKm = sustainedRuns
-      .map((run) => run.movingTimeSeconds / run.distanceKm)
-      .reduce(math.min);
-  return (fastestSustainedPaceSecPerKm * 1.06).round();
+  // Threshold pace is the pace sustainable for ~1 hour. Project the reference
+  // effort to the distance that takes 3600 s under Riegel, then take that
+  // distance's average pace. Solving T_known * (D / D_known)^e = 3600 gives
+  // D = D_known * (3600 / T_known)^(1/e); threshold pace = 3600 / D.
+  final knownDistanceKm = referenceEffort.distanceKm;
+  final knownSeconds = referenceEffort.movingTimeSeconds.toDouble();
+  if (knownDistanceKm <= 0 || knownSeconds <= 0) {
+    if (fallbackHardPaceSecPerKm == null) return null;
+    return (fallbackHardPaceSecPerKm * 1.04).round();
+  }
+
+  const thresholdSeconds = 3600.0;
+  final thresholdDistanceKm =
+      knownDistanceKm *
+      math.pow(thresholdSeconds / knownSeconds, 1 / _riegelExponent);
+  if (thresholdDistanceKm <= 0) {
+    if (fallbackHardPaceSecPerKm == null) return null;
+    return (fallbackHardPaceSecPerKm * 1.04).round();
+  }
+  return (thresholdSeconds / thresholdDistanceKm).round();
 }
 
 int _countRunsInDataWindow({

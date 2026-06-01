@@ -191,6 +191,38 @@ async function verifyState(state: string): Promise<SignedStatePayload | null> {
   return { userId, nonce, exp };
 }
 
+// FIX C: atomically consume a previously issued state nonce. Deleting the row
+// (scoped to the signed userId) and requiring exactly one affected row makes the
+// state single-use: a replayed callback finds no matching row and is rejected.
+async function consumeStateNonce(
+  adminClient: any,
+  userId: string,
+  nonce: string,
+): Promise<boolean> {
+  const { data, error } = await adminClient
+    .from("strava_oauth_states")
+    .delete()
+    .eq("nonce", nonce)
+    .eq("user_id", userId)
+    .select("nonce");
+  return interpretNonceConsumption(data, error);
+}
+
+// Pure interpretation of the conditional delete result: a state nonce is
+// successfully consumed only when exactly one matching row was deleted. A
+// replayed callback (already consumed) or expired/cleaned-up nonce deletes
+// zero rows and is rejected.
+function interpretNonceConsumption(
+  data: unknown,
+  error: unknown,
+): boolean {
+  if (error) {
+    console.error("Failed to consume Strava OAuth state nonce:", error);
+    return false;
+  }
+  return Array.isArray(data) && data.length === 1;
+}
+
 function buildDeepLink(params: Record<string, string>) {
   const query = new URLSearchParams(params).toString();
   return `striviq://login-callback?${query}`;
@@ -263,11 +295,29 @@ async function deauthorizeAtStrava(accessToken: string) {
   throw new Error(`Strava deauthorize failed: ${response.status} ${text}`);
 }
 
-async function handleStart(userId: string) {
+async function handleStart(adminClient: any, userId: string) {
+  const nonce = crypto.randomUUID();
+  const expSeconds = epochSecondsNow() + STATE_TTL_SECONDS;
+
+  // FIX C: persist the nonce so it can be consumed exactly once on callback.
+  // The HMAC signature still authenticates the state; the table makes it
+  // single-use and non-replayable within the TTL window.
+  const { error: insertError } = await adminClient
+    .from("strava_oauth_states")
+    .insert({
+      nonce,
+      user_id: userId,
+      expires_at: toIsoFromEpochSeconds(expSeconds),
+    });
+  if (insertError) {
+    console.error("Failed to persist Strava OAuth state nonce:", insertError);
+    return jsonResponse({ error: "Failed to start Strava authorization" }, 500);
+  }
+
   const state = await signState({
     userId,
-    nonce: crypto.randomUUID(),
-    exp: epochSecondsNow() + STATE_TTL_SECONDS,
+    nonce,
+    exp: expSeconds,
   });
 
   return jsonResponse({
@@ -402,6 +452,22 @@ async function handleOAuthCallback(requestUrl: URL): Promise<Response> {
     });
   }
 
+  const adminClient = createAdminClient();
+
+  // FIX C: a signed state is only valid the first time it is presented. If the
+  // nonce was already consumed (replay) or has expired/been cleaned up, reject.
+  const nonceConsumed = await consumeStateNonce(
+    adminClient,
+    statePayload.userId,
+    statePayload.nonce,
+  );
+  if (!nonceConsumed) {
+    return redirectToApp({
+      strava_status: "invalid_state",
+      strava_error: "state_already_used",
+    });
+  }
+
   let tokenPayload: StravaOAuthTokenResponse;
   try {
     tokenPayload = await exchangeCodeForToken(code);
@@ -440,7 +506,6 @@ async function handleOAuthCallback(requestUrl: URL): Promise<Response> {
     });
   }
 
-  const adminClient = createAdminClient();
   const { error: upsertError } = await adminClient
     .from("strava_tokens")
     .upsert({
@@ -463,7 +528,7 @@ async function handleOAuthCallback(requestUrl: URL): Promise<Response> {
   return redirectToApp({ strava_status: "success" });
 }
 
-Deno.serve(async (req) => {
+async function handleRequest(req: Request): Promise<Response> {
   try {
     const requestUrl = new URL(req.url);
 
@@ -490,7 +555,7 @@ Deno.serve(async (req) => {
 
     switch (action) {
       case "start":
-        return await handleStart(userId);
+        return await handleStart(adminClient, userId);
       case "refresh":
         return await handleRefresh(adminClient, userId);
       case "disconnect":
@@ -502,4 +567,12 @@ Deno.serve(async (req) => {
     console.error("Unhandled strava-oauth error:", error);
     return jsonResponse({ error: "Internal server error" }, 500);
   }
-});
+}
+
+// Only bind the server when executed as the entrypoint (Supabase runtime).
+// Importing this module from tests must not start a listener.
+if (import.meta.main) {
+  Deno.serve(handleRequest);
+}
+
+export { interpretNonceConsumption, signState, verifyState };

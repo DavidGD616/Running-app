@@ -288,7 +288,9 @@ class SummaryScreen extends ConsumerWidget {
                       onEdit: () {
                         if (answers.fitness.fitnessSource ==
                             OnboardingValues.fitnessSourceStrava) {
-                          context.go(RouteNames.stravaConnect);
+                          // Push (not go) so the Strava screen's back button
+                          // returns cleanly to Summary instead of orphaning it.
+                          context.push(RouteNames.stravaConnect);
                           return;
                         }
                         context.go(RouteNames.fitness);

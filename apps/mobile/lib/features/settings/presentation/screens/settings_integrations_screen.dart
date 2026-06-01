@@ -12,6 +12,7 @@ import '../../../../core/widgets/settings_row.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../integrations/domain/models/device_connection.dart';
 import '../../../integrations/presentation/device_connection_provider.dart';
+import '../../../onboarding/presentation/onboarding_provider.dart';
 import '../../../onboarding/presentation/onboarding_values.dart';
 import '../../../strava/data/strava_service.dart';
 export '../../../profile/domain/models/runner_profile.dart'
@@ -129,6 +130,10 @@ class SettingsIntegrationsScreen extends ConsumerWidget {
       await connectionNotifier.removeConnectionForVendor(
         IntegrationVendor.strava,
       );
+      // Drop Strava-derived fitness state so the profile stops shipping
+      // fitnessSource:'strava' + athleteSummary and the Summary "From Strava"
+      // tag disappears.
+      await ref.read(onboardingProvider.notifier).clearStravaFitness();
 
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

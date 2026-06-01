@@ -9,6 +9,8 @@ import 'package:running_app/features/integrations/presentation/device_connection
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/features/profile/data/runner_profile_repository.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
+import 'package:running_app/features/onboarding/presentation/onboarding_values.dart';
+import 'package:running_app/features/strava/domain/athlete_summary.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/profile/presentation/runner_profile_provider.dart';
 import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
@@ -42,12 +44,157 @@ class _FailingRunnerProfileNotifier extends RunnerProfileNotifier {
   }
 }
 
+AthleteSummary _buildAthleteSummary() {
+  return const AthleteSummary(
+    weeklyVolumeKm: 32.5,
+    volumeTrend: VolumeTrend.steady,
+    acuteChronicRatio: 1.05,
+    longestRecentRunKm: 14.2,
+    typicalEasyPaceSecPerKm: 330,
+    typicalHardPaceSecPerKm: 270,
+    estimatedThresholdPaceSecPerKm: 290,
+    runsPerWeek: 4,
+    longestLayoffDays: 3,
+    weeksActiveInLast8: 8,
+    dataWeeks: 8,
+    insufficientData: false,
+    hasHeartRateZones: true,
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
   });
+
+  test(
+    'useManualFitnessInput clears Strava-derived canonical fields after a prior connect',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setStrava(summary: _buildAthleteSummary());
+      await Future<void>.delayed(Duration.zero);
+
+      // Sanity: Strava connect populated canonical + snapshot fields.
+      final stravaFitness = container.read(onboardingProvider).value!.fitness;
+      expect(stravaFitness.fitnessSource, OnboardingValues.fitnessSourceStrava);
+      expect(stravaFitness.experience, isNotNull);
+      expect(stravaFitness.athleteSummary, isNotNull);
+
+      notifier.useManualFitnessInput();
+      await Future<void>.delayed(Duration.zero);
+
+      final manualFitness = container.read(onboardingProvider).value!.fitness;
+      expect(manualFitness.fitnessSource, OnboardingValues.fitnessSourceManual);
+      expect(manualFitness.experience, isNull);
+      expect(manualFitness.runningDays, isNull);
+      expect(manualFitness.weeklyVolume, isNull);
+      expect(manualFitness.longestRun, isNull);
+      expect(manualFitness.benchmark, isNull);
+      expect(manualFitness.athleteSummary, isNull);
+      expect(manualFitness.stravaWeeklyVolumeKm, isNull);
+    },
+  );
+
+  test(
+    'useManualFitnessInput preserves genuinely manual answers when no prior Strava connect',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setFitness(
+        experience: RunnerExperience.intermediate.key,
+        runningDays: '4',
+        weeklyVolume: WeeklyVolumeRange.volume3.key,
+        longestRun: LongestRunRange.run3.key,
+        canCompleteGoalDist: TernaryChoice.yes.key,
+        raceDistanceBefore: RaceDistanceExperience.once.key,
+        benchmark: BenchmarkType.fiveK.key,
+        benchmarkTime: const Duration(minutes: 26, seconds: 12),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      notifier.useManualFitnessInput();
+      await Future<void>.delayed(Duration.zero);
+
+      final fitness = container.read(onboardingProvider).value!.fitness;
+      expect(fitness.fitnessSource, OnboardingValues.fitnessSourceManual);
+      expect(fitness.experience, RunnerExperience.intermediate);
+      expect(fitness.runningDays, 4);
+      expect(fitness.weeklyVolume, WeeklyVolumeRange.volume3);
+      expect(fitness.benchmark, BenchmarkType.fiveK);
+    },
+  );
+
+  test(
+    'clearStravaFitness resets the persisted profile fitness source and drops the athlete summary',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+      await container.read(runnerProfileProvider.future);
+
+      // Build a persisted profile whose fitness section came from Strava.
+      final baseDraft = buildRunnerProfileDraft();
+      final stravaFitness = RunnerProfileDraft.fitnessFromInput(
+        experience: RunnerExperience.intermediate.key,
+        runningDays: '4',
+        weeklyVolume: WeeklyVolumeRange.volume3.key,
+        longestRun: LongestRunRange.run3.key,
+        canCompleteGoalDist: TernaryChoice.notSure.key,
+        raceDistanceBefore: RaceDistanceExperience.never.key,
+        benchmark: BenchmarkType.fiveK.key,
+        benchmarkTime: const Duration(minutes: 26),
+        fitnessSource: OnboardingValues.fitnessSourceStrava,
+        athleteSummary: const AthleteSummarySnapshot(
+          weeklyVolumeKm: 32.5,
+          runsPerWeek: 4,
+          dataWeeks: 8,
+          insufficientData: false,
+          hasHeartRateZones: true,
+        ),
+      );
+      final profile = baseDraft
+          .copyWith(fitness: stravaFitness)
+          .toRunnerProfile(
+            gender: ProfileGender.female,
+            dateOfBirth: DateTime(1994, 6, 20),
+            completedOnboardingAt: DateTime(2026, 4, 7),
+            clock: DateTime(2026, 4, 7),
+          )!;
+      await container.read(runnerProfileProvider.notifier).setProfile(profile);
+
+      expect(
+        container.read(runnerProfileProvider).value!.fitness.fitnessSource,
+        OnboardingValues.fitnessSourceStrava,
+      );
+      expect(
+        container.read(runnerProfileProvider).value!.fitness.athleteSummary,
+        isNotNull,
+      );
+
+      await container
+          .read(onboardingProvider.notifier)
+          .clearStravaFitness(clock: DateTime(2026, 5, 1));
+
+      final clearedFitness =
+          container.read(runnerProfileProvider).value!.fitness;
+      expect(clearedFitness.fitnessSource, OnboardingValues.fitnessSourceManual);
+      expect(clearedFitness.athleteSummary, isNull);
+      // Canonical answers remain so plan generation still has data to work with.
+      expect(clearedFitness.experience, RunnerExperience.intermediate);
+    },
+  );
 
   test(
     'setGoal persists the onboarding draft while progress is in flight',

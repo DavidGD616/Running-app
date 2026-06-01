@@ -45,6 +45,16 @@ type NormalizedStravaSyncResponse = {
   };
 };
 
+// Raised when Strava rejects the access token (401) and a forced refresh also
+// fails, meaning the integration can no longer recover without the user
+// reconnecting on Strava's side.
+class StravaReauthRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "StravaReauthRequiredError";
+  }
+}
+
 function requireEnv(name: string): string {
   const value = Deno.env.get(name);
   if (!value || value.trim().length === 0) {
@@ -123,7 +133,13 @@ async function refreshTokenIfNeeded(
   tokenRow: StravaTokenRow,
 ) {
   if (!tokenIsExpired(tokenRow.expires_at)) return tokenRow;
+  return await forceRefreshToken(adminClient, tokenRow);
+}
 
+async function forceRefreshToken(
+  adminClient: any,
+  tokenRow: StravaTokenRow,
+) {
   const response = await fetch(STRAVA_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -137,6 +153,16 @@ async function refreshTokenIfNeeded(
 
   const bodyText = await response.text();
   if (!response.ok) {
+    // A 400/401 from the token endpoint means the refresh token itself is no
+    // longer valid (e.g. the user revoked access on Strava). The integration
+    // cannot recover without a fresh OAuth grant, so clear the dead row and
+    // signal that a reconnect is required.
+    if (response.status === 400 || response.status === 401) {
+      await clearStoredToken(adminClient, tokenRow.user_id);
+      throw new StravaReauthRequiredError(
+        `Strava refresh rejected: ${response.status} ${bodyText}`,
+      );
+    }
     throw new Error(`Strava refresh failed: ${response.status} ${bodyText}`);
   }
 
@@ -174,6 +200,25 @@ async function refreshTokenIfNeeded(
   } satisfies StravaTokenRow;
 }
 
+async function clearStoredToken(adminClient: any, userId: string) {
+  const { error } = await adminClient
+    .from("strava_tokens")
+    .delete()
+    .eq("user_id", userId);
+  if (error) {
+    // Surfacing this would mask the underlying reauth signal; log and move on.
+    console.error("Failed to clear revoked Strava token row:", error);
+  }
+}
+
+// Shared per-request state so a forced token refresh triggered by one core
+// endpoint is reused by every later endpoint in the same sync.
+type SyncContext = {
+  adminClient: any;
+  tokenRow: StravaTokenRow;
+  refreshedOnce: boolean;
+};
+
 async function stravaGet(
   url: string,
   accessToken: string,
@@ -185,6 +230,39 @@ async function stravaGet(
   const bodyText = await response.text();
   await maybePauseForRateLimit(response.headers);
   return { status: response.status, headers: response.headers, bodyText };
+}
+
+// Performs a Strava GET, and if Strava answers 401 (token revoked or
+// invalidated early), forces a single token refresh and retries once. If the
+// refresh fails because the grant is gone, forceRefreshToken throws
+// StravaReauthRequiredError, which the top-level handler maps to a distinct
+// "reconnect required" client status.
+async function stravaGetWithReauth(
+  ctx: SyncContext,
+  url: string,
+): Promise<StravaHttpResult> {
+  const result = await stravaGet(url, ctx.tokenRow.access_token);
+  if (result.status !== 401) return result;
+
+  if (ctx.refreshedOnce) {
+    // Already refreshed during this sync and Strava still rejects us.
+    await clearStoredToken(ctx.adminClient, ctx.tokenRow.user_id);
+    throw new StravaReauthRequiredError(
+      `Strava returned 401 after token refresh for ${url}`,
+    );
+  }
+
+  ctx.tokenRow = await forceRefreshToken(ctx.adminClient, ctx.tokenRow);
+  ctx.refreshedOnce = true;
+
+  const retry = await stravaGet(url, ctx.tokenRow.access_token);
+  if (retry.status === 401) {
+    await clearStoredToken(ctx.adminClient, ctx.tokenRow.user_id);
+    throw new StravaReauthRequiredError(
+      `Strava returned 401 after token refresh for ${url}`,
+    );
+  }
+  return retry;
 }
 
 async function maybePauseForRateLimit(headers: Headers) {
@@ -242,12 +320,11 @@ function normalizeActivity(raw: Record<string, unknown>): Record<string, unknown
 }
 
 async function fetchAthleteStats(
-  accessToken: string,
-  athleteId: number,
+  ctx: SyncContext,
 ): Promise<Record<string, unknown>> {
-  const result = await stravaGet(
-    `${STRAVA_ATHLETE_STATS_URL}/${athleteId}/stats`,
-    accessToken,
+  const result = await stravaGetWithReauth(
+    ctx,
+    `${STRAVA_ATHLETE_STATS_URL}/${ctx.tokenRow.athlete_id}/stats`,
   );
   if (result.status < 200 || result.status >= 300) {
     throwStravaError("Failed to fetch Strava athlete stats", result);
@@ -258,10 +335,13 @@ async function fetchAthleteStats(
 }
 
 async function fetchAthleteZones(
-  accessToken: string,
+  ctx: SyncContext,
 ): Promise<Record<string, unknown> | null> {
-  const result = await stravaGet(STRAVA_ZONES_URL, accessToken);
-  if (result.status === 403 || result.status === 401 || result.status === 404) {
+  // Zones are optional. A 401 still routes through the shared reauth retry for
+  // consistency with the other core endpoints; only 403/404 are treated as a
+  // benign "not available" signal here.
+  const result = await stravaGetWithReauth(ctx, STRAVA_ZONES_URL);
+  if (result.status === 403 || result.status === 404) {
     return null;
   }
   if (result.status < 200 || result.status >= 300) {
@@ -275,7 +355,7 @@ async function fetchAthleteZones(
 }
 
 async function fetchActivities(
-  accessToken: string,
+  ctx: SyncContext,
 ): Promise<Array<Record<string, unknown>>> {
   const after = epochSecondsNow() - TWELVE_WEEKS_IN_SECONDS;
   const activities: Array<Record<string, unknown>> = [];
@@ -290,7 +370,7 @@ async function fetchActivities(
     url.searchParams.set("per_page", String(STRAVA_ACTIVITY_PAGE_SIZE));
     url.searchParams.set("page", String(pageNumber));
 
-    const result = await stravaGet(url.toString(), accessToken);
+    const result = await stravaGetWithReauth(ctx, url.toString());
     if (result.status < 200 || result.status >= 300) {
       throwStravaError("Failed to fetch Strava activities", result);
     }
@@ -348,7 +428,7 @@ function normalizeSyncResponse(
   } satisfies NormalizedStravaSyncResponse;
 }
 
-Deno.serve(async (req) => {
+async function handleRequest(req: Request): Promise<Response> {
   if (req.method !== "POST") {
     return jsonResponse({ error: "Method not allowed" }, 405);
   }
@@ -386,25 +466,60 @@ Deno.serve(async (req) => {
 
   try {
     const freshTokenRow = await refreshTokenIfNeeded(adminClient, tokenRow);
-    const stats = await fetchAthleteStats(
-      freshTokenRow.access_token,
-      freshTokenRow.athlete_id,
-    );
-    const activities = await fetchActivities(freshTokenRow.access_token);
-    const zones = await fetchAthleteZones(freshTokenRow.access_token);
+    const ctx: SyncContext = {
+      adminClient,
+      tokenRow: freshTokenRow,
+      refreshedOnce: tokenIsExpired(tokenRow.expires_at),
+    };
+    const stats = await fetchAthleteStats(ctx);
+    const activities = await fetchActivities(ctx);
+    const zones = await fetchAthleteZones(ctx);
 
     return jsonResponse(
-      normalizeSyncResponse(freshTokenRow, stats, activities, zones),
+      normalizeSyncResponse(ctx.tokenRow, stats, activities, zones),
       200,
     );
   } catch (error) {
-    console.error("Strava sync failed:", error);
-    return jsonResponse(
-      {
-        error: "Strava sync failed",
-        detail: String(error),
-      },
-      502,
-    );
+    const mapped = mapSyncError(error);
+    // FIX D: log the full upstream detail server-side; the returned body never
+    // reflects raw Strava error bodies back to the client.
+    console.error(mapped.logMessage, error);
+    return jsonResponse(mapped.body, mapped.status);
   }
-});
+}
+
+// Only bind the server when executed as the entrypoint (Supabase runtime).
+// Importing this module from tests must not start a listener.
+if (import.meta.main) {
+  Deno.serve(handleRequest);
+}
+
+type SyncErrorMapping = {
+  status: number;
+  body: Record<string, unknown>;
+  logMessage: string;
+};
+
+// Pure mapping from a caught sync error to a safe client response.
+// FIX A: a revoked/early-invalidated grant returns a distinct, app-actionable
+// "reconnect required" signal instead of a generic upstream failure.
+// FIX D: every other failure returns a generic message with no upstream detail.
+export function mapSyncError(error: unknown): SyncErrorMapping {
+  if (error instanceof StravaReauthRequiredError) {
+    return {
+      status: 409,
+      body: {
+        error: "Strava authorization is no longer valid",
+        code: "strava_reconnect_required",
+      },
+      logMessage: "Strava reauthorization required:",
+    };
+  }
+  return {
+    status: 502,
+    body: { error: "Strava sync failed" },
+    logMessage: "Strava sync failed:",
+  };
+}
+
+export { StravaReauthRequiredError };

@@ -60,7 +60,10 @@ void main() {
       expect(summary.weeklyVolumeKm, closeTo(32, 0.01));
       expect(summary.runsPerWeek, closeTo(3.875, 0.001));
       expect(summary.longestRecentRunKm, closeTo(12, 0.01));
-      expect(summary.acuteChronicRatio, greaterThan(1.2));
+      // A steady 33 km/week runner should sit at an ACWR of ~1.0 (acute load
+      // equals one week of the chronic average), not the inflated >1.2 the
+      // old 8-day/29-day windows produced.
+      expect(summary.acuteChronicRatio, closeTo(1.0, 0.05));
       expect(summary.typicalHardPaceSecPerKm, isNotNull);
       expect(summary.typicalEasyPaceSecPerKm, isNotNull);
       expect(summary.estimatedThresholdPaceSecPerKm, isNotNull);
@@ -123,6 +126,60 @@ void main() {
     expect(mapping.benchmark.time, isNull);
   });
 
+  test(
+    'partial current week (now on Tuesday) does not deflate weekly volume',
+    () {
+      // Seven completed weeks of a steady 30 km/week, plus an in-progress
+      // current week holding only a single early 5 km run. `now` is a Tuesday,
+      // so the current week is partial and must be excluded from the volume
+      // mean. UTC dates avoid local DST drift in the fixture arithmetic.
+      final partialNow = DateTime.utc(2026, 4, 7, 12); // Tuesday
+      final partialWeekStart = DateTime.utc(2026, 4, 6); // Monday
+
+      final activities = <StravaSummaryActivity>[];
+      for (var weeksAgo = 7; weeksAgo >= 1; weeksAgo--) {
+        final weekStart = partialWeekStart.subtract(
+          Duration(days: weeksAgo * 7),
+        );
+        activities.addAll([
+          _run(date: weekStart, distanceKm: 10, paceSecPerKm: 360),
+          _run(
+            date: weekStart.add(const Duration(days: 2)),
+            distanceKm: 8,
+            paceSecPerKm: 360,
+          ),
+          _run(
+            date: weekStart.add(const Duration(days: 4)),
+            distanceKm: 12,
+            paceSecPerKm: 360,
+          ),
+        ]);
+      }
+      // Lone partial-week run on the current Tuesday.
+      activities.add(
+        _run(
+          date: partialWeekStart.add(const Duration(days: 1, hours: 8)),
+          distanceKm: 5,
+          paceSecPerKm: 360,
+        ),
+      );
+
+      final summary = deriveAthleteSummary(
+        activities,
+        _stats(activityCount: 22),
+        null,
+        partialNow,
+      );
+
+      // Completed-week mean is exactly 30 km. Counting the 5 km partial week
+      // would drag this to (7*30 + 5) / 8 = 26.875, so excluding it keeps the
+      // volume honest.
+      expect(summary.weeklyVolumeKm, closeTo(30.0, 0.01));
+      expect(summary.volumeTrend, VolumeTrend.steady);
+      expect(summary.dataWeeks, 8);
+    },
+  );
+
   test('insufficient data mapping never promotes above beginner', () {
     final summary = AthleteSummary(
       weeklyVolumeKm: 36,
@@ -182,7 +239,47 @@ void main() {
 
     final benchmark = mapSummaryToBenchmark(summary);
     expect(benchmark.type, BenchmarkType.halfMarathon);
-    expect(benchmark.time, const Duration(seconds: 6329));
+    // Riegel projection from the threshold anchor (12 km in 3600 s) to the
+    // official 21.0975 km distance, with endurance fade applied.
+    expect(benchmark.time, const Duration(seconds: 6547));
+  });
+
+  test('benchmark projections apply Riegel endurance fade across distances', () {
+    // Same athlete, anchored on a real 5 km reference effort at 300 s/km.
+    AthleteSummary summaryForLongestRun(double longestRecentRunKm) {
+      return AthleteSummary(
+        weeklyVolumeKm: 42,
+        volumeTrend: VolumeTrend.steady,
+        acuteChronicRatio: 1,
+        longestRecentRunKm: longestRecentRunKm,
+        typicalEasyPaceSecPerKm: 360,
+        typicalHardPaceSecPerKm: 300,
+        estimatedThresholdPaceSecPerKm: 310,
+        runsPerWeek: 4,
+        longestLayoffDays: 5,
+        weeksActiveInLast8: 8,
+        dataWeeks: 8,
+        insufficientData: false,
+        hasHeartRateZones: true,
+        referenceEffortDistanceKm: 5,
+        referenceEffortSeconds: 1500,
+      );
+    }
+
+    final fiveK = mapSummaryToBenchmark(summaryForLongestRun(5));
+    final halfMarathon = mapSummaryToBenchmark(summaryForLongestRun(18));
+
+    expect(fiveK.type, BenchmarkType.fiveK);
+    expect(halfMarathon.type, BenchmarkType.halfMarathon);
+
+    final fiveKPerKm = fiveK.time!.inSeconds / 5.0;
+    final halfMarathonPerKm = halfMarathon.time!.inSeconds / 21.0975;
+
+    // Endurance fade: the half marathon must be SLOWER per km than the short
+    // effort, never equal (which the old linear projection produced).
+    expect(halfMarathonPerKm, greaterThan(fiveKPerKm));
+    // The 5 km projection sits essentially at the reference pace.
+    expect(fiveKPerKm, closeTo(300, 1));
   });
 
   test('strava parser accepts top HR zone max sentinel -1', () {
