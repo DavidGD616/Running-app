@@ -1,5 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
-import { hasRequiredScopes } from "../_shared/strava-scopes.ts";
+import {
+  hasRequiredScopes,
+  SYNC_REQUIRED_SCOPES,
+} from "../_shared/strava-scopes.ts";
 
 const STRAVA_TOKEN_URL = "https://www.strava.com/api/v3/oauth/token";
 const STRAVA_ATHLETE_STATS_URL = "https://www.strava.com/api/v3/athletes";
@@ -44,7 +47,7 @@ type NormalizedStravaSyncResponse = {
 
 function requireEnv(name: string): string {
   const value = Deno.env.get(name);
-  if (!value) {
+  if (!value || value.trim().length === 0) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
@@ -371,12 +374,7 @@ Deno.serve(async (req) => {
   }
 
   const tokenRow = data as StravaTokenRow;
-  if (
-    !hasRequiredScopes(tokenRow.scope, [
-      "activity:read_all",
-      "profile:read_all",
-    ])
-  ) {
+  if (!hasRequiredScopes(tokenRow.scope, SYNC_REQUIRED_SCOPES)) {
     return jsonResponse(
       {
         error: "Stored Strava scope is insufficient",

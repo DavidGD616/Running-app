@@ -1,5 +1,10 @@
 import { strict as assert } from "node:assert";
-import { hasRequiredScopes, parseStravaScopes } from "./strava-scopes.ts";
+import {
+  hasRequiredScopes,
+  OAUTH_REQUIRED_SCOPES,
+  parseStravaScopes,
+  SYNC_REQUIRED_SCOPES,
+} from "./strava-scopes.ts";
 
 Deno.test("parseStravaScopes parses comma-delimited scopes", () => {
   const scopes = parseStravaScopes("read,activity:read_all,profile:read_all");
@@ -26,4 +31,19 @@ Deno.test("hasRequiredScopes returns false when any required scope missing", () 
     "profile:read_all",
   ]);
   assert.equal(hasAllRequiredScopes, false);
+});
+
+Deno.test("OAUTH_REQUIRED_SCOPES includes legacy read consent", () => {
+  assert.deepEqual(OAUTH_REQUIRED_SCOPES, [
+    "read",
+    "activity:read_all",
+    "profile:read_all",
+  ]);
+});
+
+Deno.test("SYNC_REQUIRED_SCOPES keeps only sync-critical scopes", () => {
+  assert.deepEqual(SYNC_REQUIRED_SCOPES, [
+    "activity:read_all",
+    "profile:read_all",
+  ]);
 });

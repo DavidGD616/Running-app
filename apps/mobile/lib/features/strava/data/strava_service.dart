@@ -183,7 +183,8 @@ class RealStravaService implements StravaService {
       return _bundleFromSyncResponse(initialSync.data);
     }
 
-    if (initialSync.status != 404 && initialSync.status != 401) {
+    if (initialSync.status != 404 && initialSync.status != 401 &&
+        initialSync.status != 412) {
       throw StravaServiceException(
         StravaServiceErrorCode.syncFailed,
         detail: initialSync.data?.toString(),

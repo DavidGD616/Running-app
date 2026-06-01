@@ -1,5 +1,18 @@
 const STRAVA_SCOPE_DELIMITER = /[\s,]+/u;
 
+export const OAUTH_REQUIRED_SCOPES = [
+  "read",
+  "activity:read_all",
+  "profile:read_all",
+] as const;
+
+// Sync only reads activities/profile data and does not require Strava's broad
+// `read` scope. OAuth keeps `read` to preserve existing consent expectations.
+export const SYNC_REQUIRED_SCOPES = [
+  "activity:read_all",
+  "profile:read_all",
+] as const;
+
 export function parseStravaScopes(scopeText: string): Set<string> {
   const normalizedScopeText = scopeText.trim();
   if (normalizedScopeText.length === 0) {

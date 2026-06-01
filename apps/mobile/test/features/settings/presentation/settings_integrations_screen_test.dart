@@ -41,6 +41,30 @@ class _DisconnectFailingStravaService implements StravaService {
   }
 }
 
+class _DisconnectSuccessfulStravaService implements StravaService {
+  int disconnectCallCount = 0;
+
+  @override
+  Future<void> disconnect() async {
+    disconnectCallCount++;
+  }
+
+  @override
+  Future<StravaAthlete> fetchAthlete() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<StravaAthleteStats> fetchAthleteStats() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<StravaSummaryActivity>> fetchSummaryActivities() {
+    throw UnimplementedError();
+  }
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   TargetPlatform? previousPlatform;
@@ -203,6 +227,89 @@ void main() {
           .toList(growable: false);
       expect(
         stravaRows.any((row) => row.variant == SettingsRowVariant.toggleOn),
+        isTrue,
+      );
+
+      debugDefaultTargetPlatformOverride = previousPlatform;
+    },
+  );
+
+  testWidgets(
+    'successful Strava disconnect removes local connection and turns toggle off',
+    (tester) async {
+      debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+
+      final prefs = await SharedPreferences.getInstance();
+      final repository = SharedPreferencesDeviceConnectionRepository(prefs);
+      await repository.saveConnections([
+        buildDeviceConnection(
+          id: 'strava',
+          vendor: IntegrationVendor.strava,
+          kind: DeviceConnectionKind.service,
+          state: DeviceConnectionState.connected,
+          capabilities: {
+            IntegrationCapability.autoImport,
+            IntegrationCapability.distance,
+            IntegrationCapability.heartRate,
+            IntegrationCapability.heartRateZones,
+            IntegrationCapability.pace,
+            IntegrationCapability.elevation,
+          },
+          connectedAt: DateTime(2026, 4, 7, 9, 15),
+          lastSyncedAt: DateTime(2026, 4, 7, 10, 0),
+        ),
+      ]);
+
+      final stravaService = _DisconnectSuccessfulStravaService();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            stravaServiceProvider.overrideWithValue(stravaService),
+          ],
+          child: MaterialApp(
+            locale: const Locale('en'),
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('es')],
+            home: const SettingsIntegrationsScreen(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(SettingsIntegrationsScreen)),
+      )!;
+      final stravaToggle = find.byWidgetPredicate(
+        (widget) =>
+            widget is Switch && widget.value && widget.onChanged != null,
+        description: 'Strava connected toggle',
+      );
+      expect(stravaToggle, findsOneWidget);
+
+      await tester.tap(stravaToggle);
+      await tester.pumpAndSettle();
+
+      expect(find.text(l10n.settingsStravaDisconnectSuccess), findsOneWidget);
+      expect(stravaService.disconnectCallCount, 1);
+
+      final persisted = repository.loadConnectionByVendor(
+        IntegrationVendor.strava,
+      );
+      expect(persisted, isNull);
+
+      final stravaRows = tester
+          .widgetList<SettingsRow>(find.byType(SettingsRow))
+          .where((row) => row.label == l10n.settingsStrava)
+          .toList(growable: false);
+      expect(
+        stravaRows.any((row) => row.variant == SettingsRowVariant.toggleOff),
         isTrue,
       );
 

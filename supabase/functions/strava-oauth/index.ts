@@ -1,11 +1,11 @@
 import { createClient } from "@supabase/supabase-js";
-import { hasRequiredScopes } from "../_shared/strava-scopes.ts";
+import {
+  hasRequiredScopes,
+  OAUTH_REQUIRED_SCOPES,
+} from "../_shared/strava-scopes.ts";
 
 const STRAVA_TOKEN_URL = "https://www.strava.com/api/v3/oauth/token";
 const STRAVA_DEAUTHORIZE_URL = "https://www.strava.com/oauth/deauthorize";
-const STRAVA_REDIRECT_URI =
-  "https://hedwyrmfeaqcqqwbexzf.supabase.co/functions/v1/strava-oauth";
-const REQUIRED_SCOPES = ["read", "activity:read_all", "profile:read_all"];
 const STATE_TTL_SECONDS = 10 * 60;
 
 type StravaOAuthTokenResponse = {
@@ -32,7 +32,7 @@ type SignedStatePayload = {
 
 function requireEnv(name: string): string {
   const value = Deno.env.get(name);
-  if (!value) {
+  if (!value || value.trim().length === 0) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
   return value;
@@ -272,8 +272,7 @@ async function handleStart(userId: string) {
 
   return jsonResponse({
     state,
-    redirectUri: STRAVA_REDIRECT_URI,
-    scope: REQUIRED_SCOPES.join(","),
+    scope: OAUTH_REQUIRED_SCOPES.join(","),
   });
 }
 
@@ -433,7 +432,7 @@ async function handleOAuthCallback(requestUrl: URL): Promise<Response> {
     });
   }
 
-  if (!hasRequiredScopes(scopeText, REQUIRED_SCOPES)) {
+  if (!hasRequiredScopes(scopeText, OAUTH_REQUIRED_SCOPES)) {
     return redirectToApp({
       strava_status: "missing_scope",
       strava_error: "required_scope_not_granted",

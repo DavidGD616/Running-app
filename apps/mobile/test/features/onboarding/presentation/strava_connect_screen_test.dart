@@ -78,6 +78,30 @@ class _FakeStravaService implements StravaService {
   Future<void> disconnect() async {}
 }
 
+class _FailingStravaService implements StravaService {
+  const _FailingStravaService(this.errorCode);
+
+  final StravaServiceErrorCode errorCode;
+
+  @override
+  Future<StravaAthlete> fetchAthlete() {
+    throw StravaServiceException(errorCode);
+  }
+
+  @override
+  Future<StravaAthleteStats> fetchAthleteStats() {
+    throw const StravaServiceException(StravaServiceErrorCode.syncFailed);
+  }
+
+  @override
+  Future<List<StravaSummaryActivity>> fetchSummaryActivities() {
+    throw const StravaServiceException(StravaServiceErrorCode.syncFailed);
+  }
+
+  @override
+  Future<void> disconnect() async {}
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -211,6 +235,38 @@ void main() {
     expect(service.fetchAthleteCount, 0);
     expect(service.fetchAthleteStatsCount, 0);
     expect(service.fetchSummaryActivitiesCount, 0);
+  });
+
+  testWidgets('Strava missing-scope error shows localized message', (
+    tester,
+  ) async {
+    final service = const _FailingStravaService(
+      StravaServiceErrorCode.oauthMissingScope,
+    );
+    final prefs = await SharedPreferences.getInstance();
+    final container = ProviderContainer.test(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        stravaServiceProvider.overrideWithValue(service),
+      ],
+    );
+    await container.read(onboardingProvider.future);
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(buildApp(container));
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(StravaConnectScreen)),
+    )!;
+    await tester.tap(
+      find.widgetWithText(AppButton, l10n.onboardingStravaConnectPrimary),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.onboardingStravaConnectMissingScopeError), findsOneWidget);
+    expect(find.text('schedule-screen'), findsNothing);
+    expect(find.text('fitness-screen'), findsNothing);
   });
 }
 
