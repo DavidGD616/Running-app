@@ -6,6 +6,14 @@ import '../../../core/config/supabase_config.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../domain/models/strava_athlete.dart';
 
+typedef StravaFunctionInvoker =
+    Future<FunctionResponse> Function(String name, {Object? body});
+typedef StravaWebAuthenticator =
+    Future<String> Function({
+      required String url,
+      required String callbackUrlScheme,
+    });
+
 class StravaAthleteDataBundle {
   const StravaAthleteDataBundle({
     required this.athlete,
@@ -106,16 +114,34 @@ class MockStravaService implements StravaService {
 }
 
 class RealStravaService implements StravaService {
-  RealStravaService({required SupabaseClient client}) : _client = client;
+  RealStravaService({
+    required SupabaseClient client,
+    StravaFunctionInvoker? functionInvoker,
+    StravaWebAuthenticator? webAuthenticator,
+    bool Function()? hasAuthSession,
+    String? stravaClientId,
+    String? oauthRedirectUri,
+  }) : _functionInvoker =
+           functionInvoker ??
+           ((name, {body}) => client.functions.invoke(name, body: body)),
+       _webAuthenticator = webAuthenticator ?? FlutterWebAuth2.authenticate,
+       _hasAuthSession =
+           hasAuthSession ?? (() => client.auth.currentUser != null),
+       _stravaClientId = stravaClientId ?? _defaultStravaClientId,
+       _oauthRedirectUri = oauthRedirectUri;
 
-  static const String _stravaClientId = String.fromEnvironment(
+  static const String _defaultStravaClientId = String.fromEnvironment(
     'STRAVA_CLIENT_ID',
   );
   static const String _scopes = 'read,activity:read_all,profile:read_all';
   static const String _authorizeBaseUrl =
       'https://www.strava.com/oauth/mobile/authorize';
 
-  final SupabaseClient _client;
+  final StravaFunctionInvoker _functionInvoker;
+  final StravaWebAuthenticator _webAuthenticator;
+  final bool Function() _hasAuthSession;
+  final String _stravaClientId;
+  final String? _oauthRedirectUri;
 
   StravaAthleteDataBundle? _cachedBundle;
   Future<StravaAthleteDataBundle>? _inFlightSync;
@@ -140,7 +166,7 @@ class RealStravaService implements StravaService {
 
   @override
   Future<void> disconnect() async {
-    final response = await _client.functions.invoke(
+    final response = await _invokeFunction(
       'strava-oauth',
       body: {'action': 'disconnect'},
     );
@@ -160,19 +186,20 @@ class RealStravaService implements StravaService {
     final inFlight = _inFlightSync;
     if (inFlight != null) return inFlight;
 
-    final syncFuture = _syncBundle().then((bundle) {
-      _cachedBundle = bundle;
-      return bundle;
-    }).whenComplete(() {
-      _inFlightSync = null;
-    });
+    final syncFuture = _syncBundle()
+        .then((bundle) {
+          _cachedBundle = bundle;
+          return bundle;
+        })
+        .whenComplete(() {
+          _inFlightSync = null;
+        });
     _inFlightSync = syncFuture;
     return syncFuture;
   }
 
   Future<StravaAthleteDataBundle> _syncBundle() async {
-    final currentUser = _client.auth.currentUser;
-    if (currentUser == null) {
+    if (!_hasAuthSession()) {
       throw const StravaServiceException(
         StravaServiceErrorCode.missingAuthSession,
       );
@@ -183,8 +210,7 @@ class RealStravaService implements StravaService {
       return _bundleFromSyncResponse(initialSync.data);
     }
 
-    if (initialSync.status != 404 && initialSync.status != 401 &&
-        initialSync.status != 412) {
+    if (!_shouldStartOauth(initialSync.status)) {
       throw StravaServiceException(
         StravaServiceErrorCode.syncFailed,
         detail: initialSync.data?.toString(),
@@ -204,12 +230,27 @@ class RealStravaService implements StravaService {
     return _bundleFromSyncResponse(postOauthSync.data);
   }
 
-  Future<FunctionResponse> _invokeSync() {
-    return _client.functions.invoke('strava-sync');
+  Future<_StravaFunctionResult> _invokeSync() {
+    return _invokeFunction('strava-sync');
+  }
+
+  Future<_StravaFunctionResult> _invokeFunction(
+    String name, {
+    Object? body,
+  }) async {
+    try {
+      final response = await _functionInvoker(name, body: body);
+      return _StravaFunctionResult(
+        status: response.status,
+        data: response.data,
+      );
+    } on FunctionException catch (error) {
+      return _StravaFunctionResult(status: error.status, data: error.details);
+    }
   }
 
   Future<void> _runOauthFlow() async {
-    if (!SupabaseConfig.isConfigured) {
+    if (_oauthRedirectUri == null && !SupabaseConfig.isConfigured) {
       throw const StravaServiceException(
         StravaServiceErrorCode.missingSupabase,
       );
@@ -219,9 +260,9 @@ class RealStravaService implements StravaService {
         StravaServiceErrorCode.missingClientId,
       );
     }
-    final redirectUri = _resolveStravaOauthRedirectUri();
+    final redirectUri = _oauthRedirectUri ?? _resolveStravaOauthRedirectUri();
 
-    final startResponse = await _client.functions.invoke(
+    final startResponse = await _invokeFunction(
       'strava-oauth',
       body: {'action': 'start'},
     );
@@ -249,7 +290,7 @@ class RealStravaService implements StravaService {
       },
     );
 
-    final callbackUrl = await FlutterWebAuth2.authenticate(
+    final callbackUrl = await _webAuthenticator(
       url: authorizationUrl.toString(),
       callbackUrlScheme: 'striviq',
     );
@@ -278,7 +319,9 @@ class RealStravaService implements StravaService {
     }
 
     if (status == 'invalid_state') {
-      throw const StravaServiceException(StravaServiceErrorCode.oauthStateInvalid);
+      throw const StravaServiceException(
+        StravaServiceErrorCode.oauthStateInvalid,
+      );
     }
 
     throw StravaServiceException(
@@ -296,7 +339,8 @@ class RealStravaService implements StravaService {
     }
 
     final baseUri = Uri.tryParse(supabaseUrl);
-    final hasValidBaseUri = baseUri != null &&
+    final hasValidBaseUri =
+        baseUri != null &&
         (baseUri.scheme == 'https' || baseUri.scheme == 'http') &&
         baseUri.host.isNotEmpty;
     if (!hasValidBaseUri) {
@@ -320,16 +364,21 @@ class RealStravaService implements StravaService {
         .toString();
   }
 
+  bool _shouldStartOauth(int status) {
+    return status == 401 || status == 404 || status == 409 || status == 412;
+  }
+
   StravaAthleteDataBundle _bundleFromSyncResponse(dynamic payload) {
     final root = _asStringMap(payload);
     final athlete = StravaAthlete.fromJson(_asStringMap(root['athlete']));
     final stats = StravaAthleteStats.fromJson(_asStringMap(root['stats']));
     final rawActivities = root['activities'];
     final activities = switch (rawActivities) {
-      List<dynamic> list => list
-          .map(_asStringMap)
-          .map(StravaSummaryActivity.fromJson)
-          .toList(growable: false),
+      List<dynamic> list =>
+        list
+            .map(_asStringMap)
+            .map(StravaSummaryActivity.fromJson)
+            .toList(growable: false),
       _ => const <StravaSummaryActivity>[],
     };
 
@@ -341,15 +390,20 @@ class RealStravaService implements StravaService {
   }
 }
 
-final stravaServiceProvider = Provider<StravaService>(
-  (ref) {
-    if (!SupabaseConfig.isConfigured) {
-      return const MockStravaService();
-    }
-    final client = ref.watch(supabaseClientProvider);
-    return RealStravaService(client: client);
-  },
-);
+final stravaServiceProvider = Provider<StravaService>((ref) {
+  if (!SupabaseConfig.isConfigured) {
+    return const MockStravaService();
+  }
+  final client = ref.watch(supabaseClientProvider);
+  return RealStravaService(client: client);
+});
+
+class _StravaFunctionResult {
+  const _StravaFunctionResult({required this.status, this.data});
+
+  final int status;
+  final dynamic data;
+}
 
 Map<String, dynamic> _asStringMap(dynamic value) {
   if (value is Map<String, dynamic>) {
