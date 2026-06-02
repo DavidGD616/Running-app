@@ -6,7 +6,8 @@ import {
 
 const STRAVA_TOKEN_URL = "https://www.strava.com/api/v3/oauth/token";
 const STRAVA_ATHLETE_STATS_URL = "https://www.strava.com/api/v3/athletes";
-const STRAVA_ACTIVITIES_URL = "https://www.strava.com/api/v3/athlete/activities";
+const STRAVA_ACTIVITIES_URL =
+  "https://www.strava.com/api/v3/athlete/activities";
 const STRAVA_ZONES_URL = "https://www.strava.com/api/v3/athlete/zones";
 const STRAVA_RATE_LIMIT_BUFFER_MS = 200;
 const STRAVA_ACTIVITY_PAGE_SIZE = 100;
@@ -166,7 +167,9 @@ async function forceRefreshToken(
     throw new Error(`Strava refresh failed: ${response.status} ${bodyText}`);
   }
 
-  const payload = parseJsonObject(JSON.parse(bodyText)) as StravaOAuthTokenResponse;
+  const payload = parseJsonObject(
+    JSON.parse(bodyText),
+  ) as StravaOAuthTokenResponse;
   const nextAccessToken = payload.access_token;
   const nextRefreshToken = payload.refresh_token;
   const nextExpiresAtSeconds = payload.expires_at;
@@ -189,7 +192,9 @@ async function forceRefreshToken(
     })
     .eq("user_id", tokenRow.user_id);
   if (updateError) {
-    throw new Error(`Failed to persist refreshed token: ${updateError.message}`);
+    throw new Error(
+      `Failed to persist refreshed token: ${updateError.message}`,
+    );
   }
 
   return {
@@ -307,7 +312,9 @@ function throwStravaError(message: string, result: StravaHttpResult): never {
   );
 }
 
-function normalizeActivity(raw: Record<string, unknown>): Record<string, unknown> {
+function normalizeActivity(
+  raw: Record<string, unknown>,
+): Record<string, unknown> {
   return {
     distance: raw.distance,
     moving_time: raw.moving_time,
@@ -404,8 +411,8 @@ function mapAthleteFromTokenAndZones(
     athlete_id: tokenRow.athlete_id,
     heart_rate_zones: {
       zones: Array.isArray(zonesList)
-          ? zonesList.map((zone) => parseJsonObject(zone))
-          : [],
+        ? zonesList.map((zone) => parseJsonObject(zone))
+        : [],
     },
   } satisfies Record<string, unknown>;
 }
@@ -442,7 +449,9 @@ async function handleRequest(req: Request): Promise<Response> {
 
   const { data, error } = await adminClient
     .from("strava_tokens")
-    .select("user_id, access_token, refresh_token, expires_at, athlete_id, scope")
+    .select(
+      "user_id, access_token, refresh_token, expires_at, athlete_id, scope",
+    )
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {

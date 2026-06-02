@@ -24,6 +24,15 @@ type StravaTokenRow = {
   expires_at: string;
 };
 
+type RefreshAccessTokenFn = (
+  refreshToken: string,
+) => Promise<StravaOAuthTokenResponse>;
+
+type DisconnectAccessTokenSelection = {
+  accessToken: string;
+  refreshedTokenRow?: StravaTokenRow;
+};
+
 type SignedStatePayload = {
   userId: string;
   nonce: string;
@@ -118,7 +127,10 @@ function base64UrlDecode(value: string): Uint8Array {
   return bytes;
 }
 
-async function hmacSha256(secret: string, message: string): Promise<Uint8Array> {
+async function hmacSha256(
+  secret: string,
+  message: string,
+): Promise<Uint8Array> {
   const key = await crypto.subtle.importKey(
     "raw",
     new TextEncoder().encode(secret),
@@ -242,6 +254,60 @@ function tokenIsExpired(expiresAtIso: string): boolean {
   return expiresAt <= Date.now();
 }
 
+function parseStravaTokenRow(raw: unknown): StravaTokenRow | null {
+  const row = parseJsonObject(raw);
+  const accessToken = row.access_token;
+  const refreshToken = row.refresh_token;
+  const expiresAt = row.expires_at;
+  if (
+    typeof accessToken !== "string" ||
+    accessToken.length === 0 ||
+    typeof refreshToken !== "string" ||
+    refreshToken.length === 0 ||
+    typeof expiresAt !== "string" ||
+    expiresAt.length === 0
+  ) {
+    return null;
+  }
+
+  return {
+    access_token: accessToken,
+    refresh_token: refreshToken,
+    expires_at: expiresAt,
+  };
+}
+
+async function selectDisconnectAccessToken(
+  tokenRow: StravaTokenRow,
+  refresh: RefreshAccessTokenFn = refreshAccessToken,
+): Promise<DisconnectAccessTokenSelection> {
+  if (!tokenIsExpired(tokenRow.expires_at)) {
+    return { accessToken: tokenRow.access_token };
+  }
+
+  const refreshed = await refresh(tokenRow.refresh_token);
+  const nextAccessToken = refreshed.access_token;
+  const nextRefreshToken = refreshed.refresh_token;
+  const nextExpiresAt = refreshed.expires_at;
+  if (
+    typeof nextAccessToken !== "string" || nextAccessToken.length === 0 ||
+    typeof nextRefreshToken !== "string" ||
+    nextRefreshToken.length === 0 ||
+    typeof nextExpiresAt !== "number"
+  ) {
+    throw new Error("Invalid Strava refresh payload");
+  }
+
+  return {
+    accessToken: nextAccessToken,
+    refreshedTokenRow: {
+      access_token: nextAccessToken,
+      refresh_token: nextRefreshToken,
+      expires_at: toIsoFromEpochSeconds(nextExpiresAt),
+    },
+  };
+}
+
 async function exchangeCodeForToken(code: string) {
   const response = await fetch(STRAVA_TOKEN_URL, {
     method: "POST",
@@ -256,7 +322,9 @@ async function exchangeCodeForToken(code: string) {
 
   const bodyText = await response.text();
   if (!response.ok) {
-    throw new Error(`Strava token exchange failed: ${response.status} ${bodyText}`);
+    throw new Error(
+      `Strava token exchange failed: ${response.status} ${bodyText}`,
+    );
   }
 
   return parseJsonObject(JSON.parse(bodyText)) as StravaOAuthTokenResponse;
@@ -357,7 +425,7 @@ async function handleRefresh(
     if (
       typeof nextAccessToken !== "string" || nextAccessToken.length === 0 ||
       typeof nextRefreshToken !== "string" ||
-        nextRefreshToken.length === 0 ||
+      nextRefreshToken.length === 0 ||
       typeof nextExpiresAt !== "number"
     ) {
       return jsonResponse({ error: "Invalid Strava refresh payload" }, 502);
@@ -373,7 +441,10 @@ async function handleRefresh(
       })
       .eq("user_id", userId);
     if (updateError) {
-      console.error("Failed to update strava token after refresh:", updateError);
+      console.error(
+        "Failed to update strava token after refresh:",
+        updateError,
+      );
       return jsonResponse({ error: "Failed to persist refreshed token" }, 500);
     }
 
@@ -393,22 +464,51 @@ async function handleDisconnect(
 ) {
   const { data, error } = await adminClient
     .from("strava_tokens")
-    .select("access_token")
+    .select("access_token, refresh_token, expires_at")
     .eq("user_id", userId)
     .maybeSingle();
   if (error) {
     console.error("Failed to read strava token for disconnect:", error);
     return jsonResponse({ error: "Failed to read Strava token" }, 500);
   }
+  if (!data) {
+    return jsonResponse({ success: true });
+  }
 
-  const accessToken = parseJsonObject(data).access_token;
-  if (typeof accessToken === "string" && accessToken.length > 0) {
-    try {
-      await deauthorizeAtStrava(accessToken);
-    } catch (error) {
-      console.error("Strava deauthorize failed:", error);
-      return jsonResponse({ error: "Failed to deauthorize at Strava" }, 502);
+  const tokenRow = parseStravaTokenRow(data);
+  if (!tokenRow) {
+    console.error("Invalid strava token row for disconnect");
+    return jsonResponse({ error: "Invalid Strava token row" }, 500);
+  }
+
+  try {
+    const selection = await selectDisconnectAccessToken(tokenRow);
+    if (selection.refreshedTokenRow) {
+      const { error: updateError } = await adminClient
+        .from("strava_tokens")
+        .update({
+          access_token: selection.refreshedTokenRow.access_token,
+          refresh_token: selection.refreshedTokenRow.refresh_token,
+          expires_at: selection.refreshedTokenRow.expires_at,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", userId);
+      if (updateError) {
+        console.error(
+          "Failed to persist refreshed token before disconnect:",
+          updateError,
+        );
+        return jsonResponse(
+          { error: "Failed to persist refreshed token" },
+          500,
+        );
+      }
     }
+
+    await deauthorizeAtStrava(selection.accessToken);
+  } catch (error) {
+    console.error("Strava deauthorize failed:", error);
+    return jsonResponse({ error: "Failed to deauthorize at Strava" }, 502);
   }
 
   const { error: deleteError } = await adminClient
@@ -575,4 +675,9 @@ if (import.meta.main) {
   Deno.serve(handleRequest);
 }
 
-export { interpretNonceConsumption, signState, verifyState };
+export {
+  interpretNonceConsumption,
+  selectDisconnectAccessToken,
+  signState,
+  verifyState,
+};

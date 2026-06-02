@@ -104,7 +104,10 @@ Deno.serve(async (req) => {
   if (upsertError) {
     console.error("Failed to upsert apple_tokens:", upsertError);
     return new Response(
-      JSON.stringify({ error: "Failed to store token", detail: upsertError.message }),
+      JSON.stringify({
+        error: "Failed to store token",
+        detail: upsertError.message,
+      }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }

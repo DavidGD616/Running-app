@@ -1598,7 +1598,9 @@ Deno.test("normalizePeakLongRun respects athleteSummary history floor when prese
   assert.ok(peakLongRun!.distanceKm != null, "distance should be present");
   assert.ok(
     peakLongRun!.distanceKm! >= 12.5,
-    `peak long run should respect history floor, got ${peakLongRun!.distanceKm}`,
+    `peak long run should respect history floor, got ${
+      peakLongRun!.distanceKm
+    }`,
   );
 });
 
