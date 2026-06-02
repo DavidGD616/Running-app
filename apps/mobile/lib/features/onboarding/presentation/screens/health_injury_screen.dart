@@ -132,7 +132,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(4, 7),
+                        l10n.onboardingStep(5, 8),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -143,7 +143,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 4, total: 7),
+                    child: AppProgressBar(current: 5, total: 8),
                   ),
                 ],
               ),

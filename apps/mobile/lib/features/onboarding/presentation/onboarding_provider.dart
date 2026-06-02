@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../integrations/presentation/device_connection_provider.dart';
+import '../../strava/domain/athlete_summary.dart';
 import '../../profile/data/runner_profile_repository.dart';
 import '../../profile/domain/models/runner_profile.dart';
 import '../../profile/presentation/runner_profile_provider.dart';
 import '../../user_preferences/presentation/user_preferences_provider.dart';
+import 'onboarding_values.dart';
 
 class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
   static const _keyCompleted = 'onboarding_completed';
@@ -119,6 +121,133 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           raceDistanceBefore: raceDistanceBefore,
           benchmark: benchmark,
           benchmarkTime: benchmarkTime,
+          fitnessSource: OnboardingValues.fitnessSourceManual,
+          stravaWeeklyVolumeKm: null,
+          stravaLongestRecentRunKm: null,
+          stravaRunsPerWeek: null,
+          stravaDataWeeks: null,
+          stravaInsufficientData: null,
+        ),
+      ),
+    );
+  }
+
+  void useManualFitnessInput() {
+    final draft = state.value ?? const RunnerProfileDraft();
+    final fitness = draft.fitness;
+    final wasStrava =
+        fitness.fitnessSource == OnboardingValues.fitnessSourceStrava;
+
+    // When the prior source was Strava, the canonical fitness fields hold
+    // values that were *derived* from Strava data. Opting into manual input
+    // should start the Fitness screen blank rather than presenting those
+    // inferred answers as if the user had typed them. For genuinely manual
+    // input (no prior Strava connect), preserve whatever the user entered.
+    _setState(
+      draft.copyWith(
+        fitness: wasStrava
+            ? const FitnessProfileDraft(
+                fitnessSource: OnboardingValues.fitnessSourceManual,
+              )
+            : FitnessProfileDraft(
+                experience: fitness.experience,
+                canRun10Min: fitness.canRun10Min,
+                runningDays: fitness.runningDays,
+                weeklyVolume: fitness.weeklyVolume,
+                longestRun: fitness.longestRun,
+                canCompleteGoalDistance: fitness.canCompleteGoalDistance,
+                raceDistanceBefore: fitness.raceDistanceBefore,
+                benchmark: fitness.benchmark,
+                benchmarkTime: fitness.benchmarkTime,
+                fitnessSource: OnboardingValues.fitnessSourceManual,
+              ),
+      ),
+    );
+  }
+
+  /// Clears Strava-derived fitness state after the user disconnects the
+  /// Strava integration. Switches the onboarding draft back to manual input
+  /// (dropping derived answers + snapshot fields) and, when a RunnerProfile
+  /// has already been persisted, rewrites its fitness section so the backend
+  /// no longer receives `fitnessSource: 'strava'` + athleteSummary and the
+  /// Summary screen stops showing the "From Strava" tag.
+  Future<void> clearStravaFitness({DateTime? clock}) async {
+    final draft = state.value ?? const RunnerProfileDraft();
+    final wasStravaDraft =
+        draft.fitness.fitnessSource == OnboardingValues.fitnessSourceStrava;
+    if (wasStravaDraft) {
+      useManualFitnessInput();
+    }
+
+    final profile = ref.read(runnerProfileProvider).value;
+    if (profile == null) return;
+    if (profile.fitness.fitnessSource != OnboardingValues.fitnessSourceStrava) {
+      return;
+    }
+
+    final clearedFitness = FitnessProfile(
+      experience: profile.fitness.experience,
+      canRun10Min: profile.fitness.canRun10Min,
+      runningDays: profile.fitness.runningDays,
+      weeklyVolume: profile.fitness.weeklyVolume,
+      longestRun: profile.fitness.longestRun,
+      canCompleteGoalDistance: profile.fitness.canCompleteGoalDistance,
+      raceDistanceBefore: profile.fitness.raceDistanceBefore,
+      benchmark: profile.fitness.benchmark,
+      benchmarkTime: profile.fitness.benchmarkTime,
+      fitnessSource: OnboardingValues.fitnessSourceManual,
+      athleteSummary: null,
+    );
+    final updatedProfile = profile.copyWith(
+      fitness: clearedFitness,
+      updatedAt: clock ?? DateTime.now(),
+    );
+
+    await ref.read(runnerProfileProvider.notifier).setProfile(updatedProfile);
+    if (ref.mounted && !wasStravaDraft) {
+      state = AsyncData(RunnerProfileDraft.fromRunnerProfile(updatedProfile));
+    }
+  }
+
+  void setStrava({required AthleteSummary summary}) {
+    final mapping = mapSummaryToOnboarding(summary);
+    final canRun10Min = mapping.experience == RunnerExperience.brandNew
+        ? true
+        : null;
+    _setState(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
+        fitness: RunnerProfileDraft.fitnessFromInput(
+          experience: mapping.experience.key,
+          canRun10Min: canRun10Min,
+          runningDays: summary.runsPerWeek.round().clamp(1, 7).toString(),
+          weeklyVolume: mapping.weeklyVolume.key,
+          longestRun: mapping.longestRun.key,
+          canCompleteGoalDist: OnboardingValues.notSure,
+          raceDistanceBefore: OnboardingValues.raceDistanceNever,
+          benchmark: mapping.benchmark.type.key,
+          benchmarkTime: mapping.benchmark.time,
+          fitnessSource: OnboardingValues.fitnessSourceStrava,
+          stravaWeeklyVolumeKm: summary.weeklyVolumeKm,
+          stravaLongestRecentRunKm: summary.longestRecentRunKm,
+          stravaRunsPerWeek: summary.runsPerWeek,
+          stravaDataWeeks: summary.dataWeeks,
+          stravaInsufficientData: summary.insufficientData,
+          athleteSummary: AthleteSummarySnapshot(
+            weeklyVolumeKm: summary.weeklyVolumeKm,
+            volumeTrend: summary.volumeTrend.toKey(),
+            acuteChronicRatio: summary.acuteChronicRatio,
+            longestRecentRunKm: summary.longestRecentRunKm,
+            typicalEasyPaceSecPerKm: summary.typicalEasyPaceSecPerKm,
+            typicalHardPaceSecPerKm: summary.typicalHardPaceSecPerKm,
+            estimatedThresholdPaceSecPerKm:
+                summary.estimatedThresholdPaceSecPerKm,
+            runsPerWeek: summary.runsPerWeek,
+            longestLayoffDays: summary.longestLayoffDays,
+            weeksActiveInLast8: summary.weeksActiveInLast8,
+            dataWeeks: summary.dataWeeks,
+            insufficientData: summary.insufficientData,
+            hasHeartRateZones: summary.hasHeartRateZones,
+          ),
         ),
       ),
     );

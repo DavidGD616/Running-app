@@ -1552,6 +1552,58 @@ Deno.test("normalizePeakLongRun updates duration when capping distance", () => {
   );
 });
 
+Deno.test("normalizePeakLongRun respects athleteSummary history floor when present", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 8,
+      durationMinutes: 50,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      durationMinutes: 52,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 21.1,
+      weekNumber: 12,
+    }),
+  ];
+  const result = normalizePeakLongRun(
+    sessions,
+    {
+      goal: { race: "race_half_marathon" },
+      fitness: {
+        experience: "experience_beginner",
+        athleteSummary: { longestRecentRunKm: 14 },
+      },
+    },
+    12,
+    "en",
+  );
+  const peakLongRun = result.find((s) =>
+    s.weekNumber === 10 && s.type === "longRun"
+  );
+
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(peakLongRun!.distanceKm != null, "distance should be present");
+  assert.ok(
+    peakLongRun!.distanceKm! >= 12.5,
+    `peak long run should respect history floor, got ${
+      peakLongRun!.distanceKm
+    }`,
+  );
+});
+
 Deno.test("normalizePeakLongRun does not update duration when distance unchanged", () => {
   const sessions = [
     session({

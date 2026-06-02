@@ -121,6 +121,93 @@ void main() {
     );
   }
 
+  testWidgets(
+    'summary Strava fitness edit pushes Strava screen and returns to summary',
+    (tester) async {
+      final draft = buildRunnerProfileDraft().copyWith(
+        fitness: const FitnessProfileDraft(
+          experience: RunnerExperience.intermediate,
+          runningDays: 4,
+          weeklyVolume: WeeklyVolumeRange.volume3,
+          longestRun: LongestRunRange.run3,
+          canCompleteGoalDistance: TernaryChoice.notSure,
+          raceDistanceBefore: RaceDistanceExperience.never,
+          fitnessSource: 'strava',
+          stravaRunsPerWeek: 4,
+        ),
+      );
+      final goal = buildHalfMarathonTimeGoal();
+
+      final router = GoRouter(
+        initialLocation: RouteNames.summary,
+        routes: [
+          GoRoute(
+            path: RouteNames.summary,
+            builder: (context, state) => const SummaryScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.stravaConnect,
+            builder: (context, state) => Scaffold(
+              body: Column(
+                children: [
+                  const Text('strava-screen'),
+                  TextButton(
+                    onPressed: () => context.pop(),
+                    child: const Text('back-button'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            onboardingProvider.overrideWith(
+              () => _TestOnboardingNotifier(draft),
+            ),
+            onboardingGoalProvider.overrideWithValue(goal),
+          ],
+          child: MaterialApp.router(
+            locale: const Locale('en'),
+            localizationsDelegates: const [
+              AppLocalizations.delegate,
+              GlobalMaterialLocalizations.delegate,
+              GlobalWidgetsLocalizations.delegate,
+              GlobalCupertinoLocalizations.delegate,
+            ],
+            supportedLocales: const [Locale('en'), Locale('es')],
+            routerConfig: router,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Locate the edit pencil inside the fitness (From Strava) card by
+      // scoping to the card's main Row, then tapping its edit GestureDetector.
+      final fitnessCardRow = find
+          .ancestor(of: find.text('From Strava'), matching: find.byType(Row))
+          .first;
+      final editButton = find.descendant(
+        of: fitnessCardRow,
+        matching: find.byType(GestureDetector),
+      );
+      await tester.tap(editButton.last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('strava-screen'), findsOneWidget);
+
+      // Returning lands back on Summary rather than orphaning the stack.
+      await tester.tap(find.text('back-button'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('strava-screen'), findsNothing);
+      expect(find.text('From Strava'), findsOneWidget);
+    },
+  );
+
   testWidgets('summary screen reads goal data from the goal provider', (
     tester,
   ) async {

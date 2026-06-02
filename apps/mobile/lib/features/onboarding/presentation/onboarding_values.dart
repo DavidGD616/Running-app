@@ -18,6 +18,8 @@ abstract final class OnboardingValues {
   static const hrOnly = 'hr_only';
   static const none = 'none';
   static const decideForMe = 'decide_for_me';
+  static const fitnessSourceManual = 'manual';
+  static const fitnessSourceStrava = 'strava';
 
   static const race5k = 'race_5k';
   static const race10k = 'race_10k';
@@ -657,5 +659,4 @@ abstract final class OnboardingValues {
         return key;
     }
   }
-
 }

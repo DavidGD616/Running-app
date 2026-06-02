@@ -43,6 +43,13 @@ int? _intOrNull(Object? value) {
   return null;
 }
 
+double? _doubleFromJson(Object? value) {
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  if (value is String) return double.tryParse(value);
+  return null;
+}
+
 bool? _boolOrNull(Object? value) {
   if (value is bool) return value;
   if (value is String) {
@@ -486,6 +493,53 @@ class GoalProfileDraft {
   }
 }
 
+class AthleteSummarySnapshot {
+  const AthleteSummarySnapshot({
+    this.weeklyVolumeKm,
+    this.volumeTrend,
+    this.acuteChronicRatio,
+    this.longestRecentRunKm,
+    this.typicalEasyPaceSecPerKm,
+    this.typicalHardPaceSecPerKm,
+    this.estimatedThresholdPaceSecPerKm,
+    this.runsPerWeek,
+    this.longestLayoffDays,
+    this.weeksActiveInLast8,
+    this.dataWeeks,
+    this.insufficientData,
+    this.hasHeartRateZones,
+  });
+
+  final double? weeklyVolumeKm;
+  final String? volumeTrend;
+  final double? acuteChronicRatio;
+  final double? longestRecentRunKm;
+  final int? typicalEasyPaceSecPerKm;
+  final int? typicalHardPaceSecPerKm;
+  final int? estimatedThresholdPaceSecPerKm;
+  final double? runsPerWeek;
+  final int? longestLayoffDays;
+  final int? weeksActiveInLast8;
+  final int? dataWeeks;
+  final bool? insufficientData;
+  final bool? hasHeartRateZones;
+
+  bool get hasData =>
+      weeklyVolumeKm != null ||
+      volumeTrend != null ||
+      acuteChronicRatio != null ||
+      longestRecentRunKm != null ||
+      typicalEasyPaceSecPerKm != null ||
+      typicalHardPaceSecPerKm != null ||
+      estimatedThresholdPaceSecPerKm != null ||
+      runsPerWeek != null ||
+      longestLayoffDays != null ||
+      weeksActiveInLast8 != null ||
+      dataWeeks != null ||
+      insufficientData != null ||
+      hasHeartRateZones != null;
+}
+
 class FitnessProfile {
   const FitnessProfile({
     required this.experience,
@@ -497,6 +551,8 @@ class FitnessProfile {
     this.raceDistanceBefore,
     this.benchmark,
     this.benchmarkTime,
+    this.fitnessSource,
+    this.athleteSummary,
   });
 
   final RunnerExperience experience;
@@ -508,6 +564,8 @@ class FitnessProfile {
   final RaceDistanceExperience? raceDistanceBefore;
   final BenchmarkType? benchmark;
   final Duration? benchmarkTime;
+  final String? fitnessSource;
+  final AthleteSummarySnapshot? athleteSummary;
 }
 
 class FitnessProfileDraft {
@@ -521,6 +579,13 @@ class FitnessProfileDraft {
     this.raceDistanceBefore,
     this.benchmark,
     this.benchmarkTime,
+    this.fitnessSource,
+    this.stravaWeeklyVolumeKm,
+    this.stravaLongestRecentRunKm,
+    this.stravaRunsPerWeek,
+    this.stravaDataWeeks,
+    this.stravaInsufficientData,
+    this.athleteSummary,
   });
 
   final RunnerExperience? experience;
@@ -532,6 +597,13 @@ class FitnessProfileDraft {
   final RaceDistanceExperience? raceDistanceBefore;
   final BenchmarkType? benchmark;
   final Duration? benchmarkTime;
+  final String? fitnessSource;
+  final double? stravaWeeklyVolumeKm;
+  final double? stravaLongestRecentRunKm;
+  final double? stravaRunsPerWeek;
+  final int? stravaDataWeeks;
+  final bool? stravaInsufficientData;
+  final AthleteSummarySnapshot? athleteSummary;
 
   String? get experienceKey => experience?.key;
   String? get runningDaysKey => runningDays?.toString();
@@ -578,6 +650,15 @@ class FitnessProfileDraft {
       benchmarkTime: benchmark == null || benchmark == BenchmarkType.skip
           ? null
           : benchmarkTime,
+      fitnessSource: fitnessSource,
+      athleteSummary: athleteSummary ??
+          _athleteSummaryFromLegacyStravaFields(
+            weeklyVolumeKm: stravaWeeklyVolumeKm,
+            longestRecentRunKm: stravaLongestRecentRunKm,
+            runsPerWeek: stravaRunsPerWeek,
+            dataWeeks: stravaDataWeeks,
+            insufficientData: stravaInsufficientData,
+          ),
     );
   }
 }
@@ -1034,6 +1115,15 @@ class RunnerProfileDraft {
         raceDistanceBefore: profile.fitness.raceDistanceBefore,
         benchmark: profile.fitness.benchmark,
         benchmarkTime: profile.fitness.benchmarkTime,
+        fitnessSource: profile.fitness.fitnessSource,
+        stravaWeeklyVolumeKm: profile.fitness.athleteSummary?.weeklyVolumeKm,
+        stravaLongestRecentRunKm:
+            profile.fitness.athleteSummary?.longestRecentRunKm,
+        stravaRunsPerWeek: profile.fitness.athleteSummary?.runsPerWeek,
+        stravaDataWeeks: profile.fitness.athleteSummary?.dataWeeks,
+        stravaInsufficientData:
+            profile.fitness.athleteSummary?.insufficientData,
+        athleteSummary: profile.fitness.athleteSummary,
       ),
       schedule: ScheduleProfileDraft(
         trainingDays: profile.schedule.trainingDays,
@@ -1075,6 +1165,13 @@ class RunnerProfileDraft {
     String? raceDistanceBefore,
     String? benchmark,
     Duration? benchmarkTime,
+    String? fitnessSource,
+    double? stravaWeeklyVolumeKm,
+    double? stravaLongestRecentRunKm,
+    double? stravaRunsPerWeek,
+    int? stravaDataWeeks,
+    bool? stravaInsufficientData,
+    AthleteSummarySnapshot? athleteSummary,
   }) {
     return FitnessProfileDraft(
       experience: RunnerExperience.fromKey(experience),
@@ -1086,6 +1183,13 @@ class RunnerProfileDraft {
       raceDistanceBefore: RaceDistanceExperience.fromKey(raceDistanceBefore),
       benchmark: BenchmarkType.fromKey(benchmark),
       benchmarkTime: benchmarkTime,
+      fitnessSource: fitnessSource,
+      stravaWeeklyVolumeKm: stravaWeeklyVolumeKm,
+      stravaLongestRecentRunKm: stravaLongestRecentRunKm,
+      stravaRunsPerWeek: stravaRunsPerWeek,
+      stravaDataWeeks: stravaDataWeeks,
+      stravaInsufficientData: stravaInsufficientData,
+      athleteSummary: athleteSummary,
     );
   }
 
@@ -1158,7 +1262,6 @@ class RunnerProfileDraft {
       noWatchGuidance: NoWatchGuidanceChoice.fromKey(noWatchGuidance),
     );
   }
-
 }
 
 Map<String, dynamic> _goalProfileDraftToJson(GoalProfileDraft value) {
@@ -1208,6 +1311,14 @@ Map<String, dynamic> _fitnessProfileDraftToJson(FitnessProfileDraft value) {
     'raceDistanceBefore': value.raceDistanceBeforeKey,
     'benchmark': value.benchmarkKey,
     'benchmarkTimeMs': _durationToJson(value.benchmarkTime),
+    'fitnessSource': value.fitnessSource,
+    'stravaWeeklyVolumeKm': value.stravaWeeklyVolumeKm,
+    'stravaLongestRecentRunKm': value.stravaLongestRecentRunKm,
+    'stravaRunsPerWeek': value.stravaRunsPerWeek,
+    'stravaDataWeeks': value.stravaDataWeeks,
+    'stravaInsufficientData': value.stravaInsufficientData,
+    if (value.athleteSummary?.hasData == true)
+      'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
   };
 }
 
@@ -1228,6 +1339,21 @@ FitnessProfileDraft _fitnessProfileDraftFromJson(Map<String, dynamic> json) {
     ),
     benchmark: BenchmarkType.fromKey(_stringOrNull(json['benchmark'])),
     benchmarkTime: _durationFromJson(json['benchmarkTimeMs']),
+    fitnessSource: _stringOrNull(json['fitnessSource']),
+    stravaWeeklyVolumeKm: _doubleFromJson(json['stravaWeeklyVolumeKm']),
+    stravaLongestRecentRunKm: _doubleFromJson(json['stravaLongestRecentRunKm']),
+    stravaRunsPerWeek: _doubleFromJson(json['stravaRunsPerWeek']),
+    stravaDataWeeks: _intOrNull(json['stravaDataWeeks']),
+    stravaInsufficientData: _boolOrNull(json['stravaInsufficientData']),
+    athleteSummary:
+        _athleteSummaryFromJson(_mapOrEmpty(json['athleteSummary'])) ??
+        _athleteSummaryFromLegacyStravaFields(
+          weeklyVolumeKm: _doubleFromJson(json['stravaWeeklyVolumeKm']),
+          longestRecentRunKm: _doubleFromJson(json['stravaLongestRecentRunKm']),
+          runsPerWeek: _doubleFromJson(json['stravaRunsPerWeek']),
+          dataWeeks: _intOrNull(json['stravaDataWeeks']),
+          insufficientData: _boolOrNull(json['stravaInsufficientData']),
+        ),
   );
 }
 
@@ -1242,7 +1368,78 @@ Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
     'raceDistanceBefore': value.raceDistanceBefore?.key,
     'benchmark': value.benchmark?.key,
     'benchmarkTimeMs': _durationToJson(value.benchmarkTime),
+    'fitnessSource': value.fitnessSource,
+    if (value.athleteSummary?.hasData == true)
+      'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
   };
+}
+
+Map<String, dynamic> _athleteSummaryToJson(AthleteSummarySnapshot value) {
+  return {
+    if (value.weeklyVolumeKm != null) 'weeklyVolumeKm': value.weeklyVolumeKm,
+    if (value.volumeTrend != null) 'volumeTrend': value.volumeTrend,
+    if (value.acuteChronicRatio != null)
+      'acuteChronicRatio': value.acuteChronicRatio,
+    if (value.longestRecentRunKm != null)
+      'longestRecentRunKm': value.longestRecentRunKm,
+    if (value.typicalEasyPaceSecPerKm != null)
+      'typicalEasyPaceSecPerKm': value.typicalEasyPaceSecPerKm,
+    if (value.typicalHardPaceSecPerKm != null)
+      'typicalHardPaceSecPerKm': value.typicalHardPaceSecPerKm,
+    if (value.estimatedThresholdPaceSecPerKm != null)
+      'estimatedThresholdPaceSecPerKm': value.estimatedThresholdPaceSecPerKm,
+    if (value.runsPerWeek != null) 'runsPerWeek': value.runsPerWeek,
+    if (value.longestLayoffDays != null)
+      'longestLayoffDays': value.longestLayoffDays,
+    if (value.weeksActiveInLast8 != null)
+      'weeksActiveInLast8': value.weeksActiveInLast8,
+    if (value.dataWeeks != null) 'dataWeeks': value.dataWeeks,
+    if (value.insufficientData != null)
+      'insufficientData': value.insufficientData,
+    if (value.hasHeartRateZones != null)
+      'hasHeartRateZones': value.hasHeartRateZones,
+  };
+}
+
+AthleteSummarySnapshot? _athleteSummaryFromJson(Map<String, dynamic> json) {
+  if (json.isEmpty) return null;
+
+  final summary = AthleteSummarySnapshot(
+    weeklyVolumeKm: _doubleFromJson(json['weeklyVolumeKm']),
+    volumeTrend: _stringOrNull(json['volumeTrend']),
+    acuteChronicRatio: _doubleFromJson(json['acuteChronicRatio']),
+    longestRecentRunKm: _doubleFromJson(json['longestRecentRunKm']),
+    typicalEasyPaceSecPerKm: _intOrNull(json['typicalEasyPaceSecPerKm']),
+    typicalHardPaceSecPerKm: _intOrNull(json['typicalHardPaceSecPerKm']),
+    estimatedThresholdPaceSecPerKm: _intOrNull(
+      json['estimatedThresholdPaceSecPerKm'],
+    ),
+    runsPerWeek: _doubleFromJson(json['runsPerWeek']),
+    longestLayoffDays: _intOrNull(json['longestLayoffDays']),
+    weeksActiveInLast8: _intOrNull(json['weeksActiveInLast8']),
+    dataWeeks: _intOrNull(json['dataWeeks']),
+    insufficientData: _boolOrNull(json['insufficientData']),
+    hasHeartRateZones: _boolOrNull(json['hasHeartRateZones']),
+  );
+
+  return summary.hasData ? summary : null;
+}
+
+AthleteSummarySnapshot? _athleteSummaryFromLegacyStravaFields({
+  required double? weeklyVolumeKm,
+  required double? longestRecentRunKm,
+  required double? runsPerWeek,
+  required int? dataWeeks,
+  required bool? insufficientData,
+}) {
+  final summary = AthleteSummarySnapshot(
+    weeklyVolumeKm: weeklyVolumeKm,
+    longestRecentRunKm: longestRecentRunKm,
+    runsPerWeek: runsPerWeek,
+    dataWeeks: dataWeeks,
+    insufficientData: insufficientData,
+  );
+  return summary.hasData ? summary : null;
 }
 
 FitnessProfile? _fitnessProfileFromJson(Map<String, dynamic> json) =>

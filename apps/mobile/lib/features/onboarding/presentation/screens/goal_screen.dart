@@ -202,7 +202,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
       GoalFlowMode.newGoal => l10n.settingsNewGoal,
     };
     final nextRoute = switch (widget.mode) {
-      GoalFlowMode.onboarding => RouteNames.fitness,
+      GoalFlowMode.onboarding => RouteNames.stravaConnect,
       GoalFlowMode.editGoal => RouteNames.settingsUpdatePlanEditGoalSchedule,
       GoalFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalSchedule,
     };
@@ -262,7 +262,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(1, 7),
+                          l10n.onboardingStep(1, 8),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -273,7 +273,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 1, total: 7),
+                      child: AppProgressBar(current: 1, total: 8),
                     ),
                   ],
                 ),

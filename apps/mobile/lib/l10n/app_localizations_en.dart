@@ -290,10 +290,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '7 short sections · You can edit answers later';
+      '8 short sections · You can edit answers later';
 
   @override
   String get letsGo => 'Let\'s Go';
+
+  @override
+  String get onboardingStravaConnectTitle => 'Connect Strava';
+
+  @override
+  String get onboardingStravaConnectSubtitle =>
+      'Import your recent running activity to prefill your fitness profile.';
+
+  @override
+  String get onboardingStravaConnectPrimary => 'Connect Strava';
+
+  @override
+  String get onboardingStravaConnectSecondary =>
+      'I don\'t use Strava — I\'ll answer a few questions';
+
+  @override
+  String get onboardingStravaAttributionTitle => 'Powered by Strava';
+
+  @override
+  String get onboardingStravaAttributionSubtitle =>
+      'We only use your recent running data to estimate your training starting point.';
+
+  @override
+  String get onboardingStravaPoweredBy => 'Powered by Strava';
+
+  @override
+  String get onboardingStravaConnectError =>
+      'We couldn\'t connect to Strava right now. Try again or continue without Strava.';
+
+  @override
+  String get onboardingStravaConnectDeniedError =>
+      'Strava connection was canceled. You can try again or continue manually.';
+
+  @override
+  String get onboardingStravaConnectMissingScopeError =>
+      'Strava access was missing required permissions. Please allow all requested permissions.';
+
+  @override
+  String get onboardingStravaConnectAuthRequiredError =>
+      'You need to be signed in to connect Strava.';
+
+  @override
+  String get onboardingStravaConnectMissingClientIdError =>
+      'This build is missing Strava configuration.';
+
+  @override
+  String get onboardingStravaConnectStateError =>
+      'We couldn\'t verify the Strava callback. Please try connecting again.';
 
   @override
   String get goalTitle => 'What\'s your goal?';
@@ -1056,6 +1104,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get summaryCurrentLevel => 'Current Level';
 
   @override
+  String get onboardingFitnessSourceStravaTag => 'From Strava';
+
+  @override
   String get summarySchedule => 'Schedule';
 
   @override
@@ -1643,6 +1694,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsHealthConnect => 'Health Connect';
+
+  @override
+  String get settingsStrava => 'Strava';
+
+  @override
+  String get settingsStravaConnectSuccess => 'Strava connected.';
+
+  @override
+  String get settingsStravaConnectError =>
+      'We couldn\'t connect Strava right now.';
+
+  @override
+  String get settingsStravaDisconnectSuccess => 'Strava disconnected.';
+
+  @override
+  String get settingsStravaDisconnectError =>
+      'We couldn\'t disconnect Strava right now.';
 
   @override
   String get settingsAccountProfileSection => 'Profile';

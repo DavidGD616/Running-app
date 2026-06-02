@@ -161,6 +161,25 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
     }
 
     final l10n = AppLocalizations.of(context)!;
+    final onboardingDraft =
+        ref.read(onboardingProvider).value ?? const RunnerProfileDraft();
+    final shouldSkipScreen =
+        !widget.isEditingPlanInfo &&
+        onboardingDraft.fitness.fitnessSource ==
+            OnboardingValues.fitnessSourceStrava &&
+        onboardingDraft.fitness.stravaInsufficientData == false;
+
+    if (shouldSkipScreen) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.go(RouteNames.schedule);
+      });
+      return const Scaffold(
+        backgroundColor: AppColors.backgroundPrimary,
+        body: SizedBox.shrink(),
+      );
+    }
+
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
@@ -292,7 +311,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(2, 7),
+                          l10n.onboardingStep(3, 8),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -303,7 +322,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 2, total: 7),
+                      child: AppProgressBar(current: 3, total: 8),
                     ),
                   ],
                 ),
