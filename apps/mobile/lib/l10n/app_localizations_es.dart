@@ -2440,6 +2440,50 @@ class AppLocalizationsEs extends AppLocalizations {
   String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
 
   @override
+  String get sessionDetailSupportTitle => 'Sesión de soporte';
+
+  @override
+  String get sessionDetailSupportTypeLabel => 'Tipo';
+
+  @override
+  String get sessionDetailSupportStatusLabel => 'Estado';
+
+  @override
+  String get sessionDetailSupportMetadataLabel => 'Guía de la sesión';
+
+  @override
+  String get sessionDetailSupportNotesLabel => 'Notas';
+
+  @override
+  String get supportSessionStatusPlanned => 'Planificada';
+
+  @override
+  String get supportSessionStatusCompleted => 'Completada';
+
+  @override
+  String get supportSessionStatusSkipped => 'Omitida';
+
+  @override
+  String get sessionDetailTargetRangeLabel => 'Rango de ritmo objetivo';
+
+  @override
+  String get sessionDetailEffortCueLabel => 'Referencia de esfuerzo';
+
+  @override
+  String sessionDetailTargetAtLeastValue(String value, String unit) {
+    return 'Mínimo $value $unit';
+  }
+
+  @override
+  String sessionDetailTargetAtMostValue(String value, String unit) {
+    return 'Máximo $value $unit';
+  }
+
+  @override
+  String get sessionDetailTargetGuidanceNote =>
+      'Estos objetivos de ritmo son una guía antes de comenzar. La retroalimentación en tiempo real de ritmo aparece cuando la carrera está activa.';
+
+  @override
   String sessionPhaseEasyRunWarmDuration(int minutes) {
     return '$minutes min';
   }

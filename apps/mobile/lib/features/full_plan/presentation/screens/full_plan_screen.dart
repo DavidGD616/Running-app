@@ -523,8 +523,13 @@ class _WeekCardState extends State<_WeekCard> {
                               ? _supportSessionIcon(row.supportSession!.type)
                               : row.session!.type.iconAsset,
                           nowLabel: l10n.weeklyPlanNowBadge,
-                          onTap: row.isSupport
-                              ? null
+                            onTap: row.isSupport
+                              ? () => context.push(
+                                  RouteNames.sessionDetail,
+                                  extra: SessionDetailArgs(
+                                    supportSession: row.supportSession!,
+                                  ),
+                                )
                               : row.session!.type.isRest
                               ? null
                               : () => context.push(

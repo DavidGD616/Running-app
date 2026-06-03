@@ -425,6 +425,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final args = state.extra as SessionDetailArgs;
           return SessionDetailScreen(
             session: args.session,
+            supportSession: args.supportSession,
             showStartWorkout: args.showStartWorkout,
           );
         },

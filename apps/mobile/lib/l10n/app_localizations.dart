@@ -4499,6 +4499,84 @@ abstract class AppLocalizations {
   /// **'Start Workout'**
   String get sessionDetailStartWorkout;
 
+  /// Heading for support session detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Support Session'**
+  String get sessionDetailSupportTitle;
+
+  /// Label for support session type field
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get sessionDetailSupportTypeLabel;
+
+  /// Label for support session status field
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get sessionDetailSupportStatusLabel;
+
+  /// Header for support session metadata section
+  ///
+  /// In en, this message translates to:
+  /// **'Session guidance'**
+  String get sessionDetailSupportMetadataLabel;
+
+  /// Header for support session notes section
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get sessionDetailSupportNotesLabel;
+
+  /// Support session status label
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get supportSessionStatusPlanned;
+
+  /// Support session status label
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get supportSessionStatusCompleted;
+
+  /// Support session status label
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get supportSessionStatusSkipped;
+
+  /// Label for target pace range on session detail
+  ///
+  /// In en, this message translates to:
+  /// **'Target pace range'**
+  String get sessionDetailTargetRangeLabel;
+
+  /// Label for effort cue text
+  ///
+  /// In en, this message translates to:
+  /// **'Effort cue'**
+  String get sessionDetailEffortCueLabel;
+
+  /// Formatted minimum pace bound
+  ///
+  /// In en, this message translates to:
+  /// **'At least {value} {unit}'**
+  String sessionDetailTargetAtLeastValue(String value, String unit);
+
+  /// Formatted maximum pace bound
+  ///
+  /// In en, this message translates to:
+  /// **'At most {value} {unit}'**
+  String sessionDetailTargetAtMostValue(String value, String unit);
+
+  /// No description provided for @sessionDetailTargetGuidanceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'These pace targets are guidance before the run starts. Live pace feedback and alerts appear once your run is active.'**
+  String get sessionDetailTargetGuidanceNote;
+
   /// Easy run warm-up duration
   ///
   /// In en, this message translates to:

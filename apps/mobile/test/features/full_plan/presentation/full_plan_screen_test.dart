@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:running_app/core/router/route_names.dart';
 import 'package:running_app/core/widgets/session_row.dart';
 import 'package:running_app/features/full_plan/presentation/screens/full_plan_screen.dart';
 import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
+import 'package:running_app/features/session_detail/presentation/screens/session_detail_screen.dart';
 import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/support_session.dart';
@@ -53,6 +56,51 @@ void main() {
         ),
       ],
       child: wrap(child, locale: locale),
+    );
+  }
+
+  Widget wrapWithPlanAndRouter(
+    TrainingPlan plan, {
+    Locale locale = const Locale('en'),
+  }) {
+    final router = GoRouter(
+      initialLocation: RouteNames.fullPlan,
+      routes: [
+        GoRoute(
+          path: RouteNames.fullPlan,
+          builder: (context, state) => const FullPlanScreen(),
+        ),
+        GoRoute(
+          path: RouteNames.sessionDetail,
+          builder: (context, state) {
+            final args = state.extra as SessionDetailArgs;
+            return SessionDetailScreen(
+              session: args.session,
+              supportSession: args.supportSession,
+              showStartWorkout: false,
+            );
+          },
+        ),
+      ],
+    );
+
+    return ProviderScope(
+      overrides: [
+        trainingPlanProvider.overrideWith(
+          () => _TestTrainingPlanNotifier(plan),
+        ),
+      ],
+      child: MaterialApp.router(
+        locale: locale,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('es')],
+        routerConfig: router,
+      ),
     );
   }
 
@@ -189,6 +237,68 @@ void main() {
     final rowTitles = rows.map((row) => row.title).toList(growable: false);
     expect(rowTitles, contains(l10n.sessionTypeThresholdRun));
     expect(rowTitles, contains(l10n.planSupportStrengthLabel));
+  });
+
+  testWidgets('full plan support row opens support session detail', (
+    tester,
+  ) async {
+    final weekStart = currentWeekStart();
+    final plan = TrainingPlan(
+      id: 'full-plan-support-tappable',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 1,
+      sessions: [
+        TrainingSession(
+          id: 'run-1',
+          date: weekStart,
+          type: SessionType.thresholdRun,
+          status: SessionStatus.upcoming,
+          weekNumber: 1,
+          distanceKm: 10,
+          durationMinutes: 55,
+        ),
+      ],
+      supportSessions: [
+        SupportSession(
+          id: 'strength-1',
+          date: weekStart.add(const Duration(days: 2)),
+          weekNumber: 1,
+          type: SupplementalSessionType.strength,
+          status: SupportSessionStatus.planned,
+          durationMinutes: 25,
+        ),
+      ],
+      paceZones: null,
+      raceGuidance: null,
+    );
+
+    await tester.pumpWidget(wrapWithPlanAndRouter(plan));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(FullPlanScreen));
+    final l10n = AppLocalizations.of(context)!;
+    final supportRow = find.widgetWithText(
+      SessionRow,
+      l10n.planSupportStrengthLabel,
+    );
+
+    await tester.tap(supportRow);
+    await tester.pumpAndSettle();
+
+    expect(find.text(l10n.sessionDetailSupportTitle), findsOneWidget);
+    expect(
+      find.textContaining(
+        '${l10n.sessionDetailSupportTypeLabel}: ${l10n.planSupportStrengthLabel}',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        '${l10n.sessionDetailSupportStatusLabel}: ${l10n.supportSessionStatusPlanned}',
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets(

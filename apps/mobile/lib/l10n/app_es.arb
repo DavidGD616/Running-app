@@ -928,6 +928,34 @@
   "sessionDetailCoolDownNote": "Ritmo fácil o caminata",
   "sessionDetailStartWorkout": "Iniciar entrenamiento",
 
+  "sessionDetailSupportTitle": "Sesión de soporte",
+  "sessionDetailSupportTypeLabel": "Tipo",
+  "sessionDetailSupportStatusLabel": "Estado",
+  "sessionDetailSupportMetadataLabel": "Guía de la sesión",
+  "sessionDetailSupportNotesLabel": "Notas",
+  "supportSessionStatusPlanned": "Planificada",
+  "supportSessionStatusCompleted": "Completada",
+  "supportSessionStatusSkipped": "Omitida",
+  "sessionDetailTargetRangeLabel": "Rango de ritmo objetivo",
+  "sessionDetailEffortCueLabel": "Referencia de esfuerzo",
+  "sessionDetailTargetAtLeastValue": "Mínimo {value} {unit}",
+  "@sessionDetailTargetAtLeastValue": {
+    "description": "Valor de límite mínimo de ritmo",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "sessionDetailTargetAtMostValue": "Máximo {value} {unit}",
+  "@sessionDetailTargetAtMostValue": {
+    "description": "Valor de límite máximo de ritmo",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "sessionDetailTargetGuidanceNote": "Estos objetivos de ritmo son una guía antes de comenzar. La retroalimentación en tiempo real de ritmo aparece cuando la carrera está activa.",
+
   "sessionPhaseEasyRunWarmDuration": "{minutes} min",
   "sessionPhaseEasyRunWarmNote": "Caminata rápida + estiramientos dinámicos suaves de piernas",
   "sessionPhaseEasyRunMainDuration": "{minutes} min",

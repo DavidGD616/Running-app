@@ -2424,6 +2424,50 @@ class AppLocalizationsEn extends AppLocalizations {
   String get sessionDetailStartWorkout => 'Start Workout';
 
   @override
+  String get sessionDetailSupportTitle => 'Support Session';
+
+  @override
+  String get sessionDetailSupportTypeLabel => 'Type';
+
+  @override
+  String get sessionDetailSupportStatusLabel => 'Status';
+
+  @override
+  String get sessionDetailSupportMetadataLabel => 'Session guidance';
+
+  @override
+  String get sessionDetailSupportNotesLabel => 'Notes';
+
+  @override
+  String get supportSessionStatusPlanned => 'Planned';
+
+  @override
+  String get supportSessionStatusCompleted => 'Completed';
+
+  @override
+  String get supportSessionStatusSkipped => 'Skipped';
+
+  @override
+  String get sessionDetailTargetRangeLabel => 'Target pace range';
+
+  @override
+  String get sessionDetailEffortCueLabel => 'Effort cue';
+
+  @override
+  String sessionDetailTargetAtLeastValue(String value, String unit) {
+    return 'At least $value $unit';
+  }
+
+  @override
+  String sessionDetailTargetAtMostValue(String value, String unit) {
+    return 'At most $value $unit';
+  }
+
+  @override
+  String get sessionDetailTargetGuidanceNote =>
+      'These pace targets are guidance before the run starts. Live pace feedback and alerts appear once your run is active.';
+
+  @override
   String sessionPhaseEasyRunWarmDuration(int minutes) {
     return '$minutes min';
   }

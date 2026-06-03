@@ -242,7 +242,12 @@ class WeeklyPlanScreen extends ConsumerWidget {
                         : row.session!.type.iconAsset,
                     nowLabel: l10n.weeklyPlanNowBadge,
                     onTap: row.isSupport
-                        ? null
+                        ? () => context.push(
+                            RouteNames.sessionDetail,
+                            extra: SessionDetailArgs(
+                              supportSession: row.supportSession!,
+                            ),
+                          )
                         : row.session!.type.isRest
                         ? null
                         : () => context.push(

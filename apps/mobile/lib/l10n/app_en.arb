@@ -2318,6 +2318,76 @@
   "sessionDetailStartWorkout": "Start Workout",
   "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" },
 
+  "sessionDetailSupportTitle": "Support Session",
+  "@sessionDetailSupportTitle": {
+    "description": "Heading for support session detail screen"
+  },
+
+  "sessionDetailSupportTypeLabel": "Type",
+  "@sessionDetailSupportTypeLabel": {
+    "description": "Label for support session type field"
+  },
+
+  "sessionDetailSupportStatusLabel": "Status",
+  "@sessionDetailSupportStatusLabel": {
+    "description": "Label for support session status field"
+  },
+
+  "sessionDetailSupportMetadataLabel": "Session guidance",
+  "@sessionDetailSupportMetadataLabel": {
+    "description": "Header for support session metadata section"
+  },
+
+  "sessionDetailSupportNotesLabel": "Notes",
+  "@sessionDetailSupportNotesLabel": {
+    "description": "Header for support session notes section"
+  },
+
+  "supportSessionStatusPlanned": "Planned",
+  "@supportSessionStatusPlanned": {
+    "description": "Support session status label"
+  },
+
+  "supportSessionStatusCompleted": "Completed",
+  "@supportSessionStatusCompleted": {
+    "description": "Support session status label"
+  },
+
+  "supportSessionStatusSkipped": "Skipped",
+  "@supportSessionStatusSkipped": {
+    "description": "Support session status label"
+  },
+
+  "sessionDetailTargetRangeLabel": "Target pace range",
+  "@sessionDetailTargetRangeLabel": {
+    "description": "Label for target pace range on session detail"
+  },
+
+  "sessionDetailEffortCueLabel": "Effort cue",
+  "@sessionDetailEffortCueLabel": {
+    "description": "Label for effort cue text"
+  },
+
+  "sessionDetailTargetAtLeastValue": "At least {value} {unit}",
+  "@sessionDetailTargetAtLeastValue": {
+    "description": "Formatted minimum pace bound",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "sessionDetailTargetAtMostValue": "At most {value} {unit}",
+  "@sessionDetailTargetAtMostValue": {
+    "description": "Formatted maximum pace bound",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "sessionDetailTargetGuidanceNote": "These pace targets are guidance before the run starts. Live pace feedback and alerts appear once your run is active.",
+
   "sessionPhaseEasyRunWarmDuration": "{minutes} min",
   "@sessionPhaseEasyRunWarmDuration": {
     "description": "Easy run warm-up duration",
