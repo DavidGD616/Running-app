@@ -18,7 +18,7 @@
 - Add tests before behavior changes.
 - Run relevant Flutter and Supabase tests after each phase.
 
-## Phase 1: Data Contracts
+## Phase 1: Data Contracts [COMPLETE]
 
 ### Task 1: Define Strava Coaching Profile Models
 
@@ -106,7 +106,13 @@
 - Session detail can render target pace ranges without parsing `coachNote`.
 - Existing plan serialization tests are updated or replaced to match the new contract.
 
-## Phase 2: Strava Sync And Analysis
+### Phase 1 Completion Notes (2026-06-03)
+
+- Task 1 commit: `c687652` — "feat(strava): add StravaCoachingProfile data contract models"
+- Task 2 commit: `7605629` — "feat(onboarding): add ProfessionalPlanInput data contract"
+- Task 3 commit: `95abd67` — "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
+
+## Phase 2: Strava Sync And Analysis [IN PROGRESS]
 
 ### Task 4: Enrich Strava Sync Summary Fields
 

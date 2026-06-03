@@ -68,3 +68,13 @@ This file records the decisions made during product discovery for the Strava pro
 - Whether support sessions are stored in the same list as run/rest sessions or separately.
 - Whether active run live pace guidance ships with initial professional generation or a later milestone.
 - Whether post-run target adherence recaps are included later.
+
+## Implementation Updates
+
+### 2026-06-03 — Phase 1 Data Contracts Complete
+
+- Task 1 completed in commit `c687652` — "feat(strava): add StravaCoachingProfile data contract models"
+- Task 2 completed in commit `7605629` — "feat(onboarding): add ProfessionalPlanInput data contract"
+- Task 3 completed in commit `95abd67` — "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
+- Phase 1 acceptance criteria were met.
+- Tests pass.
