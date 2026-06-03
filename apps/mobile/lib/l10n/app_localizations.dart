@@ -692,6 +692,443 @@ abstract class AppLocalizations {
   /// **'We reviewed your recent running data. Next, confirm the race target we\'ll use for your plan.'**
   String get onboardingStravaAnalysisSubtitle;
 
+  /// No description provided for @onboardingStravaAnalysisConfidenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence'**
+  String get onboardingStravaAnalysisConfidenceLabel;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong data'**
+  String get onboardingStravaAnalysisConfidenceStrong;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak data'**
+  String get onboardingStravaAnalysisConfidenceWeak;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceNoUsefulData.
+  ///
+  /// In en, this message translates to:
+  /// **'No useful data'**
+  String get onboardingStravaAnalysisConfidenceNoUsefulData;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceStrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recent runs give us enough evidence to seed your training plan from Strava.'**
+  String get onboardingStravaAnalysisConfidenceStrongBody;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceWeakBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Strava history gives us a few signals, but manual details will make the plan safer.'**
+  String get onboardingStravaAnalysisConfidenceWeakBody;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceNoUsefulDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not find enough reliable recent running data to use Strava for this step.'**
+  String get onboardingStravaAnalysisConfidenceNoUsefulDataBody;
+
+  /// No description provided for @onboardingStravaAnalysisWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'{fromDate} - {throughDate} · {runCount} runs'**
+  String onboardingStravaAnalysisWindow(
+    String fromDate,
+    String throughDate,
+    int runCount,
+  );
+
+  /// No description provided for @onboardingStravaAnalysisNoDataWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'No analysis window available'**
+  String get onboardingStravaAnalysisNoDataWindow;
+
+  /// No description provided for @onboardingStravaAnalysisTrainingBaseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Training Base'**
+  String get onboardingStravaAnalysisTrainingBaseSection;
+
+  /// No description provided for @onboardingStravaAnalysisEnduranceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get onboardingStravaAnalysisEnduranceSection;
+
+  /// No description provided for @onboardingStravaAnalysisSpeedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed / Pace Zones'**
+  String get onboardingStravaAnalysisSpeedSection;
+
+  /// No description provided for @onboardingStravaAnalysisTerrainSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain'**
+  String get onboardingStravaAnalysisTerrainSection;
+
+  /// No description provided for @onboardingStravaAnalysisRecoverySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery / Guardrails'**
+  String get onboardingStravaAnalysisRecoverySection;
+
+  /// No description provided for @onboardingStravaAnalysisRaceTargetSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Race Target'**
+  String get onboardingStravaAnalysisRaceTargetSection;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan Focus'**
+  String get onboardingStravaAnalysisPlanFocusSection;
+
+  /// No description provided for @onboardingStravaAnalysisNoUsefulDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited Strava signal'**
+  String get onboardingStravaAnalysisNoUsefulDataTitle;
+
+  /// No description provided for @onboardingStravaAnalysisNoUsefulDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with manual fitness details so we can build your starting point from answers you control.'**
+  String get onboardingStravaAnalysisNoUsefulDataBody;
+
+  /// No description provided for @onboardingStravaAnalysisNoSectionData.
+  ///
+  /// In en, this message translates to:
+  /// **'No reliable signal found.'**
+  String get onboardingStravaAnalysisNoSectionData;
+
+  /// No description provided for @onboardingStravaAnalysisNoGuardrails.
+  ///
+  /// In en, this message translates to:
+  /// **'No extra recovery limits detected.'**
+  String get onboardingStravaAnalysisNoGuardrails;
+
+  /// No description provided for @onboardingStravaAnalysisNoRaceTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual race details needed.'**
+  String get onboardingStravaAnalysisNoRaceTarget;
+
+  /// No description provided for @onboardingStravaAnalysisEvidenceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} · {date}'**
+  String onboardingStravaAnalysisEvidenceValue(String value, String date);
+
+  /// No description provided for @onboardingStravaAnalysisPaceRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{minPace}-{maxPace} {unit}'**
+  String onboardingStravaAnalysisPaceRange(
+    String minPace,
+    String maxPace,
+    String unit,
+  );
+
+  /// No description provided for @onboardingStravaAnalysisPaceSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} {unit}'**
+  String onboardingStravaAnalysisPaceSingle(String pace, String unit);
+
+  /// No description provided for @onboardingStravaAnalysisPerWeekValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} {unit}/week'**
+  String onboardingStravaAnalysisPerWeekValue(String value, String unit);
+
+  /// No description provided for @onboardingStravaAnalysisRunsPerWeekValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} runs/week'**
+  String onboardingStravaAnalysisRunsPerWeekValue(String value);
+
+  /// No description provided for @onboardingStravaAnalysisDaysValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String onboardingStravaAnalysisDaysValue(int days);
+
+  /// No description provided for @onboardingStravaAnalysisRaceTargetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · {confidence}'**
+  String onboardingStravaAnalysisRaceTargetValue(
+    String time,
+    String confidence,
+  );
+
+  /// No description provided for @onboardingStravaAnalysisRaceTargetStretch.
+  ///
+  /// In en, this message translates to:
+  /// **'Stretch: {time}'**
+  String onboardingStravaAnalysisRaceTargetStretch(String time);
+
+  /// No description provided for @onboardingStravaAnalysisMetricWeeklyVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly volume'**
+  String get onboardingStravaAnalysisMetricWeeklyVolume;
+
+  /// No description provided for @onboardingStravaAnalysisMetricRunsPerWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs per week'**
+  String get onboardingStravaAnalysisMetricRunsPerWeek;
+
+  /// No description provided for @onboardingStravaAnalysisMetricLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest recent run'**
+  String get onboardingStravaAnalysisMetricLongRun;
+
+  /// No description provided for @onboardingStravaAnalysisMetricLongestLayoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest layoff'**
+  String get onboardingStravaAnalysisMetricLongestLayoff;
+
+  /// No description provided for @onboardingStravaAnalysisMetricHardPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard pace marker'**
+  String get onboardingStravaAnalysisMetricHardPace;
+
+  /// No description provided for @onboardingStravaAnalysisMetricEasyPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy pace marker'**
+  String get onboardingStravaAnalysisMetricEasyPace;
+
+  /// No description provided for @onboardingStravaAnalysisMetricThresholdPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold pace marker'**
+  String get onboardingStravaAnalysisMetricThresholdPace;
+
+  /// No description provided for @onboardingStravaAnalysisMetricRaceReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Race target reference'**
+  String get onboardingStravaAnalysisMetricRaceReference;
+
+  /// No description provided for @onboardingStravaAnalysisMetricTrainingSignal.
+  ///
+  /// In en, this message translates to:
+  /// **'Training signal'**
+  String get onboardingStravaAnalysisMetricTrainingSignal;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get onboardingStravaAnalysisPaceZoneRecovery;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get onboardingStravaAnalysisPaceZoneEasy;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run'**
+  String get onboardingStravaAnalysisPaceZoneLongRun;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get onboardingStravaAnalysisPaceZoneSteady;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get onboardingStravaAnalysisPaceZoneTempo;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get onboardingStravaAnalysisPaceZoneThreshold;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace'**
+  String get onboardingStravaAnalysisPaceZoneRace;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get onboardingStravaAnalysisPaceZoneIntervals;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneStrides.
+  ///
+  /// In en, this message translates to:
+  /// **'Strides'**
+  String get onboardingStravaAnalysisPaceZoneStrides;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLoadSpikeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent load spike'**
+  String get onboardingStravaAnalysisGuardrailLoadSpikeTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLoadSpikeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep recovery days easy and frequent while the plan ramps up.'**
+  String get onboardingStravaAnalysisGuardrailLoadSpikeBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDetrainingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Consistency first'**
+  String get onboardingStravaAnalysisGuardrailDetrainingTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDetrainingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Build steady frequency before adding much intensity.'**
+  String get onboardingStravaAnalysisGuardrailDetrainingBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLongLayoffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent layoff'**
+  String get onboardingStravaAnalysisGuardrailLongLayoffTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLongLayoffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase volume gradually over the next block.'**
+  String get onboardingStravaAnalysisGuardrailLongLayoffBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailSparseDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparse recent data'**
+  String get onboardingStravaAnalysisGuardrailSparseDataTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailSparseDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use effort cues when pace guidance is uncertain.'**
+  String get onboardingStravaAnalysisGuardrailSparseDataBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailPaceUncertaintyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace uncertainty'**
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailPaceUncertaintyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Treat pace ranges as flexible until more runs support them.'**
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDataCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'More data needed'**
+  String get onboardingStravaAnalysisGuardrailDataCollectionTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDataCollectionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect more consistent run data before relying on intensity targets.'**
+  String get onboardingStravaAnalysisGuardrailDataCollectionBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery caution'**
+  String get onboardingStravaAnalysisGuardrailFallbackTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailFallbackBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use conservative recovery until we have clearer trends.'**
+  String get onboardingStravaAnalysisGuardrailFallbackBody;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusDataCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect more consistent runs before using Strava for target setting.'**
+  String get onboardingStravaAnalysisPlanFocusDataCollection;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusRecoveryConsistency.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead with consistency and recovery before increasing training load.'**
+  String get onboardingStravaAnalysisPlanFocusRecoveryConsistency;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusThresholdEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Build threshold strength while growing long-run endurance gradually.'**
+  String get onboardingStravaAnalysisPlanFocusThresholdEndurance;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusEnduranceSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance endurance consistency with controlled speed development.'**
+  String get onboardingStravaAnalysisPlanFocusEnduranceSpeed;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a steady base while we refine your plan signals.'**
+  String get onboardingStravaAnalysisPlanFocusFallback;
+
+  /// No description provided for @onboardingStravaAnalysisUseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Strava Analysis'**
+  String get onboardingStravaAnalysisUseAction;
+
+  /// No description provided for @onboardingStravaAnalysisManualContinueAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue With Manual Details'**
+  String get onboardingStravaAnalysisManualContinueAction;
+
+  /// No description provided for @onboardingStravaAnalysisManualAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Manual Fitness Instead'**
+  String get onboardingStravaAnalysisManualAction;
+
+  /// No description provided for @onboardingStravaAnalysisDisconnectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Strava'**
+  String get onboardingStravaAnalysisDisconnectAction;
+
+  /// No description provided for @onboardingStravaAnalysisDisconnectError.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t disconnect Strava right now. Try again or continue with manual details.'**
+  String get onboardingStravaAnalysisDisconnectError;
+
   /// Error shown when mock Strava connect fails
   ///
   /// In en, this message translates to:

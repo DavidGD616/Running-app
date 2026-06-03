@@ -327,6 +327,285 @@ class AppLocalizationsEs extends AppLocalizations {
       'Revisamos tus datos recientes de running. A continuación, confirma el objetivo de carrera que usaremos para tu plan.';
 
   @override
+  String get onboardingStravaAnalysisConfidenceLabel => 'Confianza';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceStrong => 'Datos sólidos';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceWeak => 'Datos débiles';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceNoUsefulData =>
+      'Sin datos útiles';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceStrongBody =>
+      'Tus carreras recientes dan suficiente evidencia para iniciar tu plan desde Strava.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceWeakBody =>
+      'Tu historial de Strava aporta algunas señales, pero los detalles manuales harán el plan más seguro.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceNoUsefulDataBody =>
+      'No encontramos suficientes datos recientes de running fiables para usar Strava en este paso.';
+
+  @override
+  String onboardingStravaAnalysisWindow(
+    String fromDate,
+    String throughDate,
+    int runCount,
+  ) {
+    return '$fromDate - $throughDate · $runCount carreras';
+  }
+
+  @override
+  String get onboardingStravaAnalysisNoDataWindow =>
+      'No hay ventana de análisis disponible';
+
+  @override
+  String get onboardingStravaAnalysisTrainingBaseSection =>
+      'Base de entrenamiento';
+
+  @override
+  String get onboardingStravaAnalysisEnduranceSection => 'Resistencia';
+
+  @override
+  String get onboardingStravaAnalysisSpeedSection =>
+      'Velocidad / Zonas de ritmo';
+
+  @override
+  String get onboardingStravaAnalysisTerrainSection => 'Terreno';
+
+  @override
+  String get onboardingStravaAnalysisRecoverySection =>
+      'Recuperación / Límites';
+
+  @override
+  String get onboardingStravaAnalysisRaceTargetSection => 'Objetivo de carrera';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusSection => 'Enfoque del plan';
+
+  @override
+  String get onboardingStravaAnalysisNoUsefulDataTitle =>
+      'Señal limitada de Strava';
+
+  @override
+  String get onboardingStravaAnalysisNoUsefulDataBody =>
+      'Continúa con detalles manuales de forma física para construir tu punto de partida desde respuestas que controlas.';
+
+  @override
+  String get onboardingStravaAnalysisNoSectionData =>
+      'No se encontró una señal fiable.';
+
+  @override
+  String get onboardingStravaAnalysisNoGuardrails =>
+      'No se detectaron límites adicionales de recuperación.';
+
+  @override
+  String get onboardingStravaAnalysisNoRaceTarget =>
+      'Se necesitan detalles manuales de carrera.';
+
+  @override
+  String onboardingStravaAnalysisEvidenceValue(String value, String date) {
+    return '$value · $date';
+  }
+
+  @override
+  String onboardingStravaAnalysisPaceRange(
+    String minPace,
+    String maxPace,
+    String unit,
+  ) {
+    return '$minPace-$maxPace $unit';
+  }
+
+  @override
+  String onboardingStravaAnalysisPaceSingle(String pace, String unit) {
+    return '$pace $unit';
+  }
+
+  @override
+  String onboardingStravaAnalysisPerWeekValue(String value, String unit) {
+    return '$value $unit/semana';
+  }
+
+  @override
+  String onboardingStravaAnalysisRunsPerWeekValue(String value) {
+    return '$value carreras/semana';
+  }
+
+  @override
+  String onboardingStravaAnalysisDaysValue(int days) {
+    return '$days días';
+  }
+
+  @override
+  String onboardingStravaAnalysisRaceTargetValue(
+    String time,
+    String confidence,
+  ) {
+    return '$time · $confidence';
+  }
+
+  @override
+  String onboardingStravaAnalysisRaceTargetStretch(String time) {
+    return 'Ambicioso: $time';
+  }
+
+  @override
+  String get onboardingStravaAnalysisMetricWeeklyVolume => 'Volumen semanal';
+
+  @override
+  String get onboardingStravaAnalysisMetricRunsPerWeek => 'Carreras por semana';
+
+  @override
+  String get onboardingStravaAnalysisMetricLongRun => 'Carrera larga reciente';
+
+  @override
+  String get onboardingStravaAnalysisMetricLongestLayoff => 'Pausa más larga';
+
+  @override
+  String get onboardingStravaAnalysisMetricHardPace => 'Señal de ritmo intenso';
+
+  @override
+  String get onboardingStravaAnalysisMetricEasyPace => 'Señal de ritmo fácil';
+
+  @override
+  String get onboardingStravaAnalysisMetricThresholdPace =>
+      'Señal de ritmo umbral';
+
+  @override
+  String get onboardingStravaAnalysisMetricRaceReference =>
+      'Referencia del objetivo';
+
+  @override
+  String get onboardingStravaAnalysisMetricTrainingSignal =>
+      'Señal de entrenamiento';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneRecovery => 'Recuperación';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneEasy => 'Fácil';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneLongRun => 'Carrera larga';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneSteady => 'Constante';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneTempo => 'Tempo';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneThreshold => 'Umbral';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneRace => 'Ritmo de carrera';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneIntervals => 'Intervalos';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneStrides => 'Strides';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLoadSpikeTitle =>
+      'Pico reciente de carga';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLoadSpikeBody =>
+      'Mantén días de recuperación fáciles y frecuentes mientras sube el plan.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDetrainingTitle =>
+      'Primero constancia';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDetrainingBody =>
+      'Construye una frecuencia estable antes de añadir mucha intensidad.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLongLayoffTitle =>
+      'Pausa reciente';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLongLayoffBody =>
+      'Aumenta el volumen gradualmente durante el próximo bloque.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailSparseDataTitle =>
+      'Datos recientes escasos';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailSparseDataBody =>
+      'Usa señales de esfuerzo cuando la guía de ritmo sea incierta.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyTitle =>
+      'Ritmo incierto';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyBody =>
+      'Trata los rangos de ritmo como flexibles hasta que más carreras los respalden.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDataCollectionTitle =>
+      'Se necesitan más datos';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDataCollectionBody =>
+      'Registra carreras más constantes antes de depender de objetivos de intensidad.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailFallbackTitle =>
+      'Cuidado con la recuperación';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailFallbackBody =>
+      'Usa recuperación conservadora hasta que tengamos tendencias más claras.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusDataCollection =>
+      'Registra carreras más constantes antes de usar Strava para definir objetivos.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusRecoveryConsistency =>
+      'Prioriza constancia y recuperación antes de aumentar la carga.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusThresholdEndurance =>
+      'Desarrolla fuerza de umbral mientras aumentas la resistencia de carrera larga gradualmente.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusEnduranceSpeed =>
+      'Equilibra constancia de resistencia con desarrollo controlado de velocidad.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusFallback =>
+      'Construye una base estable mientras refinamos las señales del plan.';
+
+  @override
+  String get onboardingStravaAnalysisUseAction => 'Usar análisis de Strava';
+
+  @override
+  String get onboardingStravaAnalysisManualContinueAction =>
+      'Continuar con detalles manuales';
+
+  @override
+  String get onboardingStravaAnalysisManualAction => 'Usar forma física manual';
+
+  @override
+  String get onboardingStravaAnalysisDisconnectAction => 'Desconectar Strava';
+
+  @override
+  String get onboardingStravaAnalysisDisconnectError =>
+      'No pudimos desconectar Strava ahora mismo. Inténtalo de nuevo o continúa con detalles manuales.';
+
+  @override
   String get onboardingStravaConnectError =>
       'No pudimos conectar con Strava ahora mismo. Inténtalo de nuevo o continúa sin Strava.';
 

@@ -315,6 +315,131 @@
   "onboardingStravaAnalysisSubtitle": "We reviewed your recent running data. Next, confirm the race target we'll use for your plan.",
   "@onboardingStravaAnalysisSubtitle": { "description": "Subtitle on the temporary Strava analysis onboarding screen" },
 
+  "onboardingStravaAnalysisConfidenceLabel": "Confidence",
+  "onboardingStravaAnalysisConfidenceStrong": "Strong data",
+  "onboardingStravaAnalysisConfidenceWeak": "Weak data",
+  "onboardingStravaAnalysisConfidenceNoUsefulData": "No useful data",
+  "onboardingStravaAnalysisConfidenceStrongBody": "Your recent runs give us enough evidence to seed your training plan from Strava.",
+  "onboardingStravaAnalysisConfidenceWeakBody": "Your Strava history gives us a few signals, but manual details will make the plan safer.",
+  "onboardingStravaAnalysisConfidenceNoUsefulDataBody": "We could not find enough reliable recent running data to use Strava for this step.",
+  "onboardingStravaAnalysisWindow": "{fromDate} - {throughDate} · {runCount} runs",
+  "@onboardingStravaAnalysisWindow": {
+    "placeholders": {
+      "fromDate": { "type": "String" },
+      "throughDate": { "type": "String" },
+      "runCount": { "type": "int" }
+    }
+  },
+  "onboardingStravaAnalysisNoDataWindow": "No analysis window available",
+  "onboardingStravaAnalysisTrainingBaseSection": "Training Base",
+  "onboardingStravaAnalysisEnduranceSection": "Endurance",
+  "onboardingStravaAnalysisSpeedSection": "Speed / Pace Zones",
+  "onboardingStravaAnalysisTerrainSection": "Terrain",
+  "onboardingStravaAnalysisRecoverySection": "Recovery / Guardrails",
+  "onboardingStravaAnalysisRaceTargetSection": "Race Target",
+  "onboardingStravaAnalysisPlanFocusSection": "Plan Focus",
+  "onboardingStravaAnalysisNoUsefulDataTitle": "Limited Strava signal",
+  "onboardingStravaAnalysisNoUsefulDataBody": "Continue with manual fitness details so we can build your starting point from answers you control.",
+  "onboardingStravaAnalysisNoSectionData": "No reliable signal found.",
+  "onboardingStravaAnalysisNoGuardrails": "No extra recovery limits detected.",
+  "onboardingStravaAnalysisNoRaceTarget": "Manual race details needed.",
+  "onboardingStravaAnalysisEvidenceValue": "{value} · {date}",
+  "@onboardingStravaAnalysisEvidenceValue": {
+    "placeholders": {
+      "value": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisPaceRange": "{minPace}-{maxPace} {unit}",
+  "@onboardingStravaAnalysisPaceRange": {
+    "placeholders": {
+      "minPace": { "type": "String" },
+      "maxPace": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisPaceSingle": "{pace} {unit}",
+  "@onboardingStravaAnalysisPaceSingle": {
+    "placeholders": {
+      "pace": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisPerWeekValue": "{value} {unit}/week",
+  "@onboardingStravaAnalysisPerWeekValue": {
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisRunsPerWeekValue": "{value} runs/week",
+  "@onboardingStravaAnalysisRunsPerWeekValue": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisDaysValue": "{days} days",
+  "@onboardingStravaAnalysisDaysValue": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "onboardingStravaAnalysisRaceTargetValue": "{time} · {confidence}",
+  "@onboardingStravaAnalysisRaceTargetValue": {
+    "placeholders": {
+      "time": { "type": "String" },
+      "confidence": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisRaceTargetStretch": "Stretch: {time}",
+  "@onboardingStravaAnalysisRaceTargetStretch": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisMetricWeeklyVolume": "Weekly volume",
+  "onboardingStravaAnalysisMetricRunsPerWeek": "Runs per week",
+  "onboardingStravaAnalysisMetricLongRun": "Longest recent run",
+  "onboardingStravaAnalysisMetricLongestLayoff": "Longest layoff",
+  "onboardingStravaAnalysisMetricHardPace": "Hard pace marker",
+  "onboardingStravaAnalysisMetricEasyPace": "Easy pace marker",
+  "onboardingStravaAnalysisMetricThresholdPace": "Threshold pace marker",
+  "onboardingStravaAnalysisMetricRaceReference": "Race target reference",
+  "onboardingStravaAnalysisMetricTrainingSignal": "Training signal",
+  "onboardingStravaAnalysisPaceZoneRecovery": "Recovery",
+  "onboardingStravaAnalysisPaceZoneEasy": "Easy",
+  "onboardingStravaAnalysisPaceZoneLongRun": "Long run",
+  "onboardingStravaAnalysisPaceZoneSteady": "Steady",
+  "onboardingStravaAnalysisPaceZoneTempo": "Tempo",
+  "onboardingStravaAnalysisPaceZoneThreshold": "Threshold",
+  "onboardingStravaAnalysisPaceZoneRace": "Race pace",
+  "onboardingStravaAnalysisPaceZoneIntervals": "Intervals",
+  "onboardingStravaAnalysisPaceZoneStrides": "Strides",
+  "onboardingStravaAnalysisGuardrailLoadSpikeTitle": "Recent load spike",
+  "onboardingStravaAnalysisGuardrailLoadSpikeBody": "Keep recovery days easy and frequent while the plan ramps up.",
+  "onboardingStravaAnalysisGuardrailDetrainingTitle": "Consistency first",
+  "onboardingStravaAnalysisGuardrailDetrainingBody": "Build steady frequency before adding much intensity.",
+  "onboardingStravaAnalysisGuardrailLongLayoffTitle": "Recent layoff",
+  "onboardingStravaAnalysisGuardrailLongLayoffBody": "Increase volume gradually over the next block.",
+  "onboardingStravaAnalysisGuardrailSparseDataTitle": "Sparse recent data",
+  "onboardingStravaAnalysisGuardrailSparseDataBody": "Use effort cues when pace guidance is uncertain.",
+  "onboardingStravaAnalysisGuardrailPaceUncertaintyTitle": "Pace uncertainty",
+  "onboardingStravaAnalysisGuardrailPaceUncertaintyBody": "Treat pace ranges as flexible until more runs support them.",
+  "onboardingStravaAnalysisGuardrailDataCollectionTitle": "More data needed",
+  "onboardingStravaAnalysisGuardrailDataCollectionBody": "Collect more consistent run data before relying on intensity targets.",
+  "onboardingStravaAnalysisGuardrailFallbackTitle": "Recovery caution",
+  "onboardingStravaAnalysisGuardrailFallbackBody": "Use conservative recovery until we have clearer trends.",
+  "onboardingStravaAnalysisPlanFocusDataCollection": "Collect more consistent runs before using Strava for target setting.",
+  "onboardingStravaAnalysisPlanFocusRecoveryConsistency": "Lead with consistency and recovery before increasing training load.",
+  "onboardingStravaAnalysisPlanFocusThresholdEndurance": "Build threshold strength while growing long-run endurance gradually.",
+  "onboardingStravaAnalysisPlanFocusEnduranceSpeed": "Balance endurance consistency with controlled speed development.",
+  "onboardingStravaAnalysisPlanFocusFallback": "Build a steady base while we refine your plan signals.",
+  "onboardingStravaAnalysisUseAction": "Use Strava Analysis",
+  "onboardingStravaAnalysisManualContinueAction": "Continue With Manual Details",
+  "onboardingStravaAnalysisManualAction": "Use Manual Fitness Instead",
+  "onboardingStravaAnalysisDisconnectAction": "Disconnect Strava",
+  "onboardingStravaAnalysisDisconnectError": "We couldn't disconnect Strava right now. Try again or continue with manual details.",
+
   "onboardingStravaConnectError": "We couldn't connect to Strava right now. Try again or continue without Strava.",
   "@onboardingStravaConnectError": { "description": "Error shown when mock Strava connect fails" },
 
