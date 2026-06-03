@@ -214,3 +214,24 @@ This file records the decisions made during product discovery for the Strava pro
   - `apps/mobile`: `flutter analyze` (No issues found)
   - `apps/mobile`: `flutter test` (528 tests passed)
 - Phase 5 remains in progress because Task 12 is next.
+
+### 2026-06-03 - Phase 5 Task 12 Complete
+
+- Task 12 completed in commit `3a0911d` - "feat(session-detail): show structured targets and support details"
+- Session detail now shows structured target pace ranges from `WorkoutTarget` and `WorkoutStep` numeric data only.
+- Effort cues are displayed when present, with localized effort fallback.
+- Pre-run guidance avoids promising live pace feedback before active run.
+- Support session details are reachable from full and weekly plan support rows and render localized metadata/details without canonical key leakage.
+- Unknown support metadata is hidden instead of humanized.
+- Race/run navigation remains safe.
+- Reviewer approved after the support metadata leak fix.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: targeted session detail, full plan, and pre-run tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (535 tests passed)
+
+### 2026-06-03 - Phase 5 Plan UI And Session Detail Complete
+
+- Phase 5 is complete because Task 11 and Task 12 are complete.
+- Phase 6 Task 13 is next.

@@ -504,7 +504,7 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Phase 4 is complete because Task 9 and Task 10 are complete.
 - Phase 5 Task 11 is next.
 
-## Phase 5: Plan UI And Session Detail
+## Phase 5: Plan UI And Session Detail [COMPLETE]
 
 ### Task 11: Update Plan Ready And Full Plan Views
 
@@ -569,6 +569,29 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Session detail never parses pace from coach notes.
 - It shows target range and effort cue.
 - It does not claim live pace feedback before a run is active.
+
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `3a0911d` - "feat(session-detail): show structured targets and support details"
+- Session detail now shows structured target pace ranges from `WorkoutTarget` and `WorkoutStep` numeric data only.
+- Effort cues are displayed when present, with localized effort fallback.
+- Pre-run guidance avoids promising live pace feedback before active run.
+- Support session details are reachable from full and weekly plan support rows and render localized metadata/details without canonical key leakage.
+- Unknown support metadata is hidden instead of humanized.
+- Race/run navigation remains safe.
+- Reviewer approved after the support metadata leak fix.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: targeted session detail, full plan, and pre-run tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (535 tests passed)
+
+### Phase 5 Plan UI And Session Detail Complete
+
+- Phase 5 is complete because Task 11 and Task 12 are complete.
+- Phase 6 Task 13 is next.
 
 ## Phase 6: Active Run Pace Guidance
 
