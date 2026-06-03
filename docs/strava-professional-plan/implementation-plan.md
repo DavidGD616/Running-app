@@ -1,0 +1,460 @@
+# Strava Professional Plan Implementation Plan
+
+**Goal:** Replace basic/manual plan creation with a professional Strava-informed onboarding, analysis, and plan-generation flow.
+
+**Architecture:** Build a new plan-generation contract around a curated `StravaCoachingProfile` and user-owned preferences. Keep Strava analysis and generated plan output structured so UI screens can render localized labels, pace ranges, support sessions, race guidance, and session targets without parsing prose.
+
+**Tech Stack:** Flutter/Dart, Riverpod, go_router, Material 3, Supabase Edge Functions, TypeScript/Deno, OpenAI structured output, ARB localization, Strava API.
+
+---
+
+## Implementation Principles
+
+- Replace the old onboarding and plan-generation contract completely.
+- Preserve existing app behavior only where it still matches the professional-plan direction.
+- Store canonical keys and structured values. Localize only at the UI boundary except AI-written coaching text.
+- Store paces internally as seconds per kilometer.
+- Keep AI prose out of fields that the app needs for logic.
+- Add tests before behavior changes.
+- Run relevant Flutter and Supabase tests after each phase.
+
+## Phase 1: Data Contracts
+
+### Task 1: Define Strava Coaching Profile Models
+
+**Files:**
+
+- Create: `apps/mobile/lib/features/strava/domain/models/strava_coaching_profile.dart`
+- Modify: `apps/mobile/lib/features/strava/domain/athlete_summary.dart`
+- Test: `apps/mobile/test/features/strava/strava_coaching_profile_test.dart`
+
+**Build:**
+
+- `StravaCoachingProfile`
+- `StravaAnalysisProvenance`
+- `StravaDataConfidence`
+- `StravaEvidencePoint`
+- `StravaPaceZones`
+- `StravaGuardrail`
+- `StravaPlanFocus`
+- `StravaTerrainProfile`
+- `StravaRaceTargetEstimate`
+
+**Acceptance Criteria:**
+
+- Model supports JSON serialization.
+- Model stores pace zones in seconds per kilometer.
+- Evidence points store dates but not activity names by default.
+- Provenance includes source, sync time, data window, activity counts, and confidence.
+- Tests cover strong, weak, and no-useful-data profiles.
+
+### Task 2: Define New Plan Generation Input Contract
+
+**Files:**
+
+- Create: `apps/mobile/lib/features/onboarding/domain/models/professional_plan_input.dart`
+- Modify: `apps/mobile/lib/features/profile/domain/models/runner_profile.dart`
+- Test: `apps/mobile/test/features/onboarding/domain/professional_plan_input_test.dart`
+
+**Build:**
+
+- Goal input.
+- Fitness source input.
+- Optional Strava coaching profile.
+- Optional manual fitness fallback.
+- Accepted race target.
+- Schedule preferences.
+- Health constraints.
+- Strength preferences.
+- Plan intensity.
+- Unit preference.
+- Locale.
+- Optional race course terrain.
+
+**Acceptance Criteria:**
+
+- Strong Strava data can skip manual fitness fields.
+- Weak Strava data can include targeted manual fields.
+- User-owned schedule fields are never overwritten by Strava.
+- Serialization keeps canonical keys only.
+
+### Task 3: Define New Generated Plan Schema
+
+**Files:**
+
+- Modify: `apps/mobile/lib/features/training_plan/domain/models/training_plan.dart`
+- Modify: `apps/mobile/lib/features/training_plan/domain/models/training_session.dart`
+- Modify: `apps/mobile/lib/features/training_plan/domain/models/workout_target.dart`
+- Modify: `apps/mobile/lib/features/training_plan/domain/models/workout_step.dart`
+- Create: `apps/mobile/lib/features/training_plan/domain/models/support_plan_session.dart`
+- Create: `apps/mobile/lib/features/training_plan/domain/models/race_guidance.dart`
+- Test: `apps/mobile/test/features/training_plan/domain/models/professional_plan_serialization_test.dart`
+
+**Build:**
+
+- Structured session pace targets.
+- Plan-level pace zones.
+- Support sessions.
+- Race guidance.
+- Generated locale.
+- Strava coaching snapshot on the plan version.
+
+**Acceptance Criteria:**
+
+- Race day guidance is not represented as a normal training session.
+- Support sessions can represent lower body, upper body, core/mobility, and full body.
+- Session detail can render target pace ranges without parsing `coachNote`.
+- Existing plan serialization tests are updated or replaced to match the new contract.
+
+## Phase 2: Strava Sync And Analysis
+
+### Task 4: Enrich Strava Sync Summary Fields
+
+**Files:**
+
+- Modify: `supabase/functions/strava-sync/index.ts`
+- Modify: `apps/mobile/lib/features/strava/domain/models/strava_athlete.dart`
+- Modify: `apps/mobile/lib/features/strava/data/strava_service.dart`
+- Test: `supabase/functions/strava-sync/index_test.ts`
+- Test: `apps/mobile/test/features/strava/data/strava_service_test.dart`
+
+**Build:**
+
+- Include activity id.
+- Include elapsed time.
+- Include max speed when available.
+- Include max HR when available.
+- Include elevation gain.
+- Include workout type or perceived exertion only if available and safe to parse.
+
+**Acceptance Criteria:**
+
+- Existing sync works when optional fields are missing.
+- Activity names are not sent to UI-facing coaching evidence by default.
+- Tests cover missing optional fields.
+
+### Task 5: Build Coaching Profile Derivation
+
+**Files:**
+
+- Modify: `apps/mobile/lib/features/strava/domain/athlete_summary.dart`
+- Create: `apps/mobile/lib/features/strava/domain/strava_coaching_profile_builder.dart`
+- Test: `apps/mobile/test/features/strava/strava_coaching_profile_builder_test.dart`
+
+**Build:**
+
+- Strong/weak/no-useful-data classification.
+- Training base section.
+- Endurance section.
+- Speed markers.
+- Pace zones.
+- Terrain profile.
+- Recovery guardrails.
+- Race target estimates.
+- Plan focus.
+
+**Acceptance Criteria:**
+
+- Runs drive running plan inputs.
+- Non-runs do not appear in Strava Analysis.
+- Older best efforts up to 6 months affect confidence/stretch targets only.
+- Recent 8 to 12 week data controls safety and paces.
+- Guardrails are limited to 0 to 3 priority flags.
+
+## Phase 3: Onboarding Replacement
+
+### Task 6: Replace Onboarding State With Professional Flow State
+
+**Files:**
+
+- Modify: `apps/mobile/lib/features/onboarding/presentation/onboarding_provider.dart`
+- Modify: `apps/mobile/lib/features/onboarding/presentation/onboarding_values.dart`
+- Modify: `apps/mobile/lib/core/router/app_router.dart`
+- Test: `apps/mobile/test/features/onboarding/presentation/onboarding_provider_test.dart`
+
+**Build:**
+
+- New ordered flow:
+  - Goal.
+  - Fitness source.
+  - Strava/manual fitness.
+  - Strava Analysis.
+  - Race target confirmation.
+  - Schedule.
+  - Health.
+  - Strength.
+  - Preferences/intensity.
+  - Generate plan.
+
+**Acceptance Criteria:**
+
+- Strava Analysis is mandatory after Strava connection.
+- Manual fitness remains available as an alternative.
+- Old flow routes are removed or redirected.
+- Onboarding state stores canonical values only.
+
+### Task 7: Build Strava Analysis Screen
+
+**Files:**
+
+- Create: `apps/mobile/lib/features/onboarding/presentation/screens/strava_analysis_screen.dart`
+- Modify: `apps/mobile/lib/l10n/app_en.arb`
+- Modify: `apps/mobile/lib/l10n/app_es.arb`
+- Test: `apps/mobile/test/features/onboarding/presentation/strava_analysis_screen_test.dart`
+
+**Build:**
+
+- Training Base.
+- Endurance.
+- Speed and pace zones.
+- Terrain.
+- Recovery and guardrails.
+- Race target.
+- Plan focus.
+- Confidence label.
+- Strong/weak/no-useful-data actions.
+
+**Acceptance Criteria:**
+
+- Uses localized app labels.
+- Formats dates and paces by locale and unit preference.
+- Shows dates, not activity names.
+- Shows "Use Strava Analysis" as primary action for strong data.
+- Shows "Continue With Manual Details" for weak data.
+
+### Task 8: Add Strength Preference Screen
+
+**Files:**
+
+- Create: `apps/mobile/lib/features/onboarding/presentation/screens/strength_preferences_screen.dart`
+- Modify: `apps/mobile/lib/l10n/app_en.arb`
+- Modify: `apps/mobile/lib/l10n/app_es.arb`
+- Test: `apps/mobile/test/features/onboarding/presentation/strength_preferences_screen_test.dart`
+
+**Build:**
+
+- Whether user lifts.
+- Weekly frequency.
+- Strength categories.
+- Lower-body/preferred lifting days.
+- Same-day order preference.
+
+**Acceptance Criteria:**
+
+- No exact exercise prescription.
+- Values are canonical.
+- Spanish and English strings are present.
+
+## Phase 4: Plan Generation Backend
+
+### Task 9: Replace Supabase Generate Plan Request Shape
+
+**Files:**
+
+- Modify: `supabase/functions/generate-plan/index.ts`
+- Modify: `supabase/functions/generate-plan/schema.ts`
+- Modify: `supabase/functions/generate-plan/openai.ts`
+- Test: `supabase/functions/generate-plan/schema_test.ts`
+- Test: `supabase/functions/generate-plan/openai_test.ts`
+
+**Build:**
+
+- Accept new professional input.
+- Produce new structured output.
+- Include pace zones, support sessions, race guidance, generated locale, and Strava snapshot.
+
+**Acceptance Criteria:**
+
+- AI-written coaching text is generated in requested locale.
+- Structured paces are numeric seconds per kilometer.
+- Race day is guidance only, not a session.
+- Schema rejects prose-only pace targets.
+
+### Task 10: Update Deterministic Plan Rules
+
+**Files:**
+
+- Modify: `supabase/functions/generate-plan/plan-rules.ts`
+- Test: `supabase/functions/generate-plan/plan-rules_test.ts`
+- Test: `supabase/functions/generate-plan/weekly-volume-ramp_test.ts`
+
+**Build:**
+
+- Preserve user-selected run days.
+- Preserve user hard-to-train days.
+- Keep volume and ramp inside Strava safety limits.
+- Place support sessions according to strength preferences.
+- Reduce lower-body support sessions near race day.
+- Avoid using older efforts to override recent safety.
+
+**Acceptance Criteria:**
+
+- User training-day count wins.
+- Strava controls session size/intensity, not number of weekly run days.
+- Aggressive race targets do not bypass safety limits.
+- Lower-body support avoids day-before long runs and key workouts unless explicitly stacked after quality work.
+
+## Phase 5: Plan UI And Session Detail
+
+### Task 11: Update Plan Ready And Full Plan Views
+
+**Files:**
+
+- Modify: `apps/mobile/lib/features/onboarding/presentation/screens/plan_ready_screen.dart`
+- Modify: `apps/mobile/lib/features/full_plan/presentation/screens/full_plan_screen.dart`
+- Create: `apps/mobile/lib/features/training_plan/presentation/widgets/pace_zones_card.dart`
+- Create: `apps/mobile/lib/features/training_plan/presentation/widgets/race_guidance_section.dart`
+- Test: `apps/mobile/test/features/onboarding/presentation/plan_ready_screen_test.dart`
+- Test: `apps/mobile/test/features/full_plan/presentation/full_plan_screen_test.dart`
+
+**Build:**
+
+- Pace zones reference.
+- Race-day execution section.
+- Coaching notes section.
+- Support sessions in weekly plan views.
+
+**Acceptance Criteria:**
+
+- Race guidance appears after generation and later in plan/full-plan.
+- Race day is not listed as a normal session.
+- Pace zones are readable in English and Spanish.
+
+### Task 12: Update Session Detail
+
+**Files:**
+
+- Modify: `apps/mobile/lib/features/session_detail/presentation/screens/session_detail_screen.dart`
+- Test: `apps/mobile/test/features/session_detail/presentation/session_detail_screen_test.dart`
+
+**Build:**
+
+- Structured target pace display.
+- Effort cue display.
+- Support session detail display.
+- Target warnings/guidance copy before run.
+
+**Acceptance Criteria:**
+
+- Session detail never parses pace from coach notes.
+- It shows target range and effort cue.
+- It does not claim live pace feedback before a run is active.
+
+## Phase 6: Active Run Pace Guidance
+
+### Task 13: Add Low-Noise Live Pace Guidance
+
+**Files:**
+
+- Modify: `apps/mobile/lib/features/active_run/presentation/active_run_live_activity_mapper.dart`
+- Modify: `apps/mobile/lib/features/active_run/presentation/active_run_live_activity_sync.dart`
+- Create: `apps/mobile/lib/features/active_run/domain/live_pace_guidance.dart`
+- Test: `apps/mobile/test/features/active_run/domain/live_pace_guidance_test.dart`
+
+**Build:**
+
+- Rolling pace evaluator.
+- Tolerance windows.
+- Sustained deviation detection.
+- Calm guidance messages.
+- Different behavior by workout zone.
+
+**Acceptance Criteria:**
+
+- No prompt for tiny deviations.
+- No repeated alerts within a short cooldown.
+- Easy/long runs warn more strongly about going too fast than too slow.
+- Intervals/race-pace runs use narrower tolerances than easy runs.
+
+## Phase 7: Verification
+
+### Task 14: Run Localization Generation
+
+**Command:**
+
+```bash
+cd apps/mobile
+flutter gen-l10n
+```
+
+**Acceptance Criteria:**
+
+- Generated localization files update cleanly.
+- No user-facing strings in touched feature files bypass ARB.
+
+### Task 15: Run Flutter Verification
+
+**Command:**
+
+```bash
+cd apps/mobile
+flutter analyze
+flutter test
+```
+
+**Acceptance Criteria:**
+
+- Analyzer passes.
+- Tests pass.
+
+### Task 16: Run Supabase Function Tests
+
+**Commands:**
+
+```bash
+cd supabase/functions/strava-sync
+deno test --allow-env --allow-net --allow-read
+```
+
+```bash
+cd supabase/functions/generate-plan
+deno test --allow-env --allow-net --allow-read
+```
+
+**Acceptance Criteria:**
+
+- Strava sync tests pass.
+- Generate plan tests pass.
+- Schema tests pass.
+- Plan rule tests pass.
+
+## Recommended Implementation Order
+
+1. Data contracts.
+2. Strava sync enrichment.
+3. Coaching profile derivation.
+4. Onboarding replacement.
+5. Strava Analysis screen.
+6. Generate-plan backend contract.
+7. Plan and session UI updates.
+8. Support sessions.
+9. Race guidance and pace zones.
+10. Active run live pace guidance.
+
+## Milestone Boundaries
+
+### Milestone 1: Analysis Without Generation Changes
+
+- New `StravaCoachingProfile`.
+- Strava sync enrichment.
+- Strava Analysis screen in isolation.
+
+### Milestone 2: Professional Generation
+
+- New plan-generation input.
+- New generated plan schema.
+- Supabase generate-plan updates.
+- Plan-ready support for new output.
+
+### Milestone 3: Full App Rendering
+
+- Full plan.
+- Session detail.
+- Pace zones.
+- Race guidance.
+- Support sessions.
+
+### Milestone 4: Live Guidance
+
+- Active run pace guidance.
+- Post-run pace adherence can be added later when activity data supports it.
