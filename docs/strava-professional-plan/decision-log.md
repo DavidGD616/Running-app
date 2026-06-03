@@ -155,3 +155,20 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Phase 3 is complete because Task 6, Task 7, and Task 8 are complete.
 - Phase 4 Task 9 is next.
+
+### 2026-06-03 - Phase 4 Task 9 Complete
+
+- Task 9 completed in commit `de5517c` - "feat(generate-plan): accept professional plan input"
+- Generate-plan now validates and accepts `professionalPlanInput` while preserving authenticated user ownership from the JWT/user claim.
+- Generated plan output now includes generated locale, numeric pace zones, workout targets, race guidance, support sessions, and a curated Strava coaching profile snapshot.
+- AI prompting requests coaching text in the requested locale and keeps structured output fields canonical.
+- Race day is guidance only. Run and support sessions on the race date are filtered before persistence.
+- Structured paces are numeric seconds per kilometer. Schema validation rejects prose, null, omitted, and `min > max` pace ranges.
+- OpenAI receives only an allowlist-sanitized Strava/profile payload, excluding raw activities, names, tokens, streams, upstream errors, and unsafe nested fields.
+- Strict OpenAI JSON schema compatibility with `strict: true` was fixed, including recursive required-property coverage.
+- Reviewer approved after privacy and security fixes.
+- Verification passed:
+  - `supabase/functions/generate-plan`: `deno check index.ts openai.ts schema.ts`
+  - `supabase/functions/generate-plan`: focused `schema_test.ts openai_test.ts`
+  - `supabase/functions/generate-plan`: full `deno test --allow-env --allow-net --allow-read`
+- Phase 4 remains in progress because Task 10 is next.

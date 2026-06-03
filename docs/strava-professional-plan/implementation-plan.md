@@ -435,6 +435,25 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Race day is guidance only, not a session.
 - Schema rejects prose-only pace targets.
 
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `de5517c` - "feat(generate-plan): accept professional plan input"
+- Generate-plan now validates and accepts `professionalPlanInput` while preserving authenticated user ownership from the JWT/user claim.
+- Output schema now includes generated locale, numeric pace zones, workout targets, race guidance, support sessions, and a curated Strava coaching profile snapshot.
+- AI prompt requests coaching text in the requested locale while keeping structured fields canonical.
+- Race day remains guidance only; run and support sessions on the race date are filtered before persistence.
+- Structured paces are numeric seconds per kilometer. Schema validation rejects prose, null, omitted, and `min > max` pace ranges.
+- Strava/profile payload sent to OpenAI is allowlist-sanitized to avoid raw activities, names, tokens, streams, upstream errors, and unsafe nested fields.
+- Strict OpenAI JSON schema was made compatible with `strict: true`, including recursive required-property coverage.
+- Reviewer approved after privacy and security fixes.
+- Verification passed:
+  - `supabase/functions/generate-plan`: `deno check index.ts openai.ts schema.ts`
+  - `supabase/functions/generate-plan`: focused `schema_test.ts openai_test.ts`
+  - `supabase/functions/generate-plan`: full `deno test --allow-env --allow-net --allow-read`
+- Phase 4 remains in progress because Task 10 is next.
+
 ### Task 10: Update Deterministic Plan Rules
 
 **Files:**
