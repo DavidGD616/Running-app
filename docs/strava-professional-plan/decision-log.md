@@ -59,6 +59,10 @@ This file records the decisions made during product discovery for the Strava pro
 53. Live pace guidance should be calm, coach-like, and low-noise.
 54. Spanish support is required in the first implementation.
 55. Store AI-written coaching text in the selected language at generation time.
+56. Execute the implementation through a review-gated sequential sub-agent pipeline.
+57. Use one Codex coder sub-agent per implementation task, with GPT-5.3 Codex as the coder model.
+58. Commit every completed task separately after reviewer approval.
+59. Update the implementation plan after each task with status, commit hash, and verification notes.
 
 ## Deferred Decisions
 
@@ -71,10 +75,10 @@ This file records the decisions made during product discovery for the Strava pro
 
 ## Implementation Updates
 
-### 2026-06-03 — Phase 1 Data Contracts Complete
+### 2026-06-03 - Phase 1 Data Contracts Complete
 
-- Task 1 completed in commit `c687652` — "feat(strava): add StravaCoachingProfile data contract models"
-- Task 2 completed in commit `7605629` — "feat(onboarding): add ProfessionalPlanInput data contract"
-- Task 3 completed in commit `95abd67` — "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
+- Task 1 completed in commit `c687652` - "feat(strava): add StravaCoachingProfile data contract models"
+- Task 2 completed in commit `7605629` - "feat(onboarding): add ProfessionalPlanInput data contract"
+- Task 3 completed in commit `95abd67` - "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
 - Phase 1 acceptance criteria were met.
 - Tests pass.

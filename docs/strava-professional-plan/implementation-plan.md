@@ -18,6 +18,78 @@
 - Add tests before behavior changes.
 - Run relevant Flutter and Supabase tests after each phase.
 
+## Sub-Agent Execution Strategy
+
+Use a review-gated sequential pipeline. The orchestrator owns task selection, acceptance criteria, integration, commits, and final judgment. Sub-agents can help, but only one coder should own one implementation task at a time.
+
+### Roles
+
+- Orchestrator: coordinates the work, assigns the next task, inspects changes, runs final checks, and commits after approval.
+- Explorer: reads the codebase for one bounded task and reports exact files, existing patterns, risks, and relevant tests. Explorer does not edit files.
+- Researcher: checks current external documentation only when API/library behavior matters, such as Strava API, Supabase Edge Functions, OpenAI structured output, Flutter packages, or localization tooling. Researcher does not edit files.
+- Coder: implements one narrow task. The coder sub-agent is Codex using GPT-5.3 Codex. The coder writes tests first where practical, makes the implementation, runs focused verification, and reports changed files.
+- Reviewer: audits the finished task for bugs, regressions, security, privacy, localization, data-model consistency, and missing tests. Reviewer does not edit files by default.
+- Scribe: updates docs/spec notes when implementation decisions change. Scribe does not edit product logic.
+
+### Task Loop
+
+For each task:
+
+1. Orchestrator confirms the task scope and acceptance criteria.
+2. Explorer maps the current code when the task touches unfamiliar or broad surfaces.
+3. Researcher checks current documentation when the task depends on external API/library behavior.
+4. Coder implements exactly one task with a clear file ownership boundary.
+5. Coder runs focused tests and reports results.
+6. Reviewer audits the task, including security and privacy.
+7. If reviewer finds issues, Coder fixes them and the task returns to review.
+8. Orchestrator runs final verification for the task.
+9. Orchestrator commits only that task.
+10. Orchestrator updates this plan with the task status and commit hash.
+
+No implementation task should be committed until the reviewer is satisfied. If a reviewer concern cannot be resolved inside the current task, the task stops and the orchestrator asks for direction before any commit.
+
+### Commit Rules
+
+- Commit every completed task separately.
+- Keep commits small enough to review and revert.
+- Do not mix unrelated tasks in one commit.
+- Do not commit generated files without the source change that required them.
+- Do not add co-author footers.
+- Update this plan after each task with status, commit hash, and verification notes.
+
+### Parallelism Rules
+
+- Run Explorer and Researcher work in parallel when their questions are independent.
+- Run Reviewer work after a coder task is complete.
+- Do not run parallel coder sub-agents for this integration.
+- Keep implementation sequential: one coder, one task, reviewer approval, commit, then the next task.
+
+### Reviewer Security And Privacy Checklist
+
+Reviewer must explicitly check Strava, Supabase, OpenAI, and plan-generation tasks for:
+
+- No tokens, refresh tokens, authorization headers, API keys, or secrets are logged.
+- Raw Strava activity history is not retained unless the task explicitly requires it.
+- Strava activity names are not displayed by default.
+- Upstream Strava error bodies are not leaked to the client.
+- OAuth scopes remain limited to the feature requirements.
+- Supabase service-role usage is server-only and does not bypass user boundaries incorrectly.
+- User-owned choices are not silently overwritten by Strava-derived analysis.
+- Generated AI prose is not used for app logic.
+- Canonical keys are stored instead of localized display strings.
+- English and Spanish localization paths are both handled for visible app text.
+- Prompt payloads avoid unnecessary personal data.
+- Aggressive user goals cannot bypass Strava-derived safety limits.
+
+### Stop Conditions
+
+Continue through fixes until reviewer approval when the task is feasible. Stop and ask for direction only when:
+
+- Required credentials, network access, or external service state is unavailable.
+- The task needs a product decision not captured in this spec.
+- A reviewer concern conflicts with an existing documented decision.
+- The implementation would require destructive changes outside the task scope.
+
 ## Phase 1: Data Contracts [COMPLETE]
 
 ### Task 1: Define Strava Coaching Profile Models
@@ -108,9 +180,9 @@
 
 ### Phase 1 Completion Notes (2026-06-03)
 
-- Task 1 commit: `c687652` — "feat(strava): add StravaCoachingProfile data contract models"
-- Task 2 commit: `7605629` — "feat(onboarding): add ProfessionalPlanInput data contract"
-- Task 3 commit: `95abd67` — "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
+- Task 1 commit: `c687652` - "feat(strava): add StravaCoachingProfile data contract models"
+- Task 2 commit: `7605629` - "feat(onboarding): add ProfessionalPlanInput data contract"
+- Task 3 commit: `95abd67` - "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
 
 ## Phase 2: Strava Sync And Analysis [IN PROGRESS]
 
