@@ -15,8 +15,11 @@ import '../../../../core/widgets/session_row.dart';
 import '../../../../core/widgets/stat_column.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/support_session.dart';
+import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../training_plan/domain/models/week_progress.dart';
+import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
@@ -90,6 +93,58 @@ class WeeklyPlanScreen extends ConsumerWidget {
     }
   }
 
+  String _supportSessionTitle(AppLocalizations l10n, SupportSession s) {
+    return switch (s.type) {
+      SupplementalSessionType.strength => l10n.planSupportStrengthLabel,
+      SupplementalSessionType.mobility => l10n.planSupportMobilityLabel,
+      SupplementalSessionType.drills => l10n.planSupportDrillsLabel,
+    };
+  }
+
+  String _supportSessionIcon(SupplementalSessionType type) {
+    return switch (type) {
+      SupplementalSessionType.strength => 'assets/icons/target.svg',
+      SupplementalSessionType.mobility => 'assets/icons/heart_rate.svg',
+      SupplementalSessionType.drills => 'assets/icons/activity.svg',
+    };
+  }
+
+  String? _supportSessionSubtitle(SupportSession session, AppLocalizations l10n) {
+    final details = localizedSupportSessionSubtitles(session, l10n);
+    if (details.isEmpty) return null;
+    return details.join(' • ');
+  }
+
+  SessionStatus _supportSessionStatus(SupportSessionStatus status) {
+    return switch (status) {
+      SupportSessionStatus.planned => SessionStatus.upcoming,
+      SupportSessionStatus.completed => SessionStatus.completed,
+      SupportSessionStatus.skipped => SessionStatus.skipped,
+    };
+  }
+
+  List<_SessionRowData> _buildRows(TrainingPlan? plan) {
+    if (plan == null) return const [];
+
+    final rows = <_SessionRowData>[
+      ...plan.currentWeekSessions.map(
+        (session) => _SessionRowData.run(session),
+      ),
+      ...plan.currentWeekSupportSessions.map(
+        (session) => _SessionRowData.support(session),
+      ),
+    ];
+
+    rows.sort((a, b) {
+      final compareDate = a.date.compareTo(b.date);
+      if (compareDate != 0) return compareDate;
+      if (a.isSupport != b.isSupport) return a.isSupport ? 1 : -1;
+      return 0;
+    });
+
+    return rows;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -97,10 +152,8 @@ class WeeklyPlanScreen extends ConsumerWidget {
     final progress = ref.watch(weekProgressProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final sessions = plan?.currentWeekSessions ?? const [];
-    final weekStart = sessions.isNotEmpty
-        ? sessions.first.date.day.toString()
-        : '';
+    final rows = _buildRows(plan);
+    final weekStart = rows.isNotEmpty ? rows.first.date.day.toString() : '';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -141,36 +194,60 @@ class WeeklyPlanScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
 
               // Session rows
-              ...sessions.map(
-                (s) => Padding(
+              ...rows.map(
+                (row) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: SessionRow(
-                    dayLabel: _dayLabel(s, l10n),
-                    dateNumber: s.date.day.toString(),
-                    sessionDate: s.date,
-                    title: _sessionTitle(s.type, l10n),
-                    subtitle: s.type.isRest
+                    dayLabel: row.isSupport
+                        ? _dayLabelDate(row.date, l10n)
+                        : _dayLabel(row.session!, l10n),
+                    dateNumber: row.date.day.toString(),
+                    sessionDate: row.date,
+                    title: row.isSupport
+                        ? _supportSessionTitle(l10n, row.supportSession!)
+                        : _sessionTitle(row.session!.type, l10n),
+                    subtitle: row.isSupport
+                        ? _supportSessionSubtitle(row.supportSession!, l10n)
+                        : row.session!.type.isRest
                         ? l10n.weeklyPlanRestSubtitle
                         : null,
-                    distance: s.distanceKm != null
+                    distance: row.isSupport
+                        ? null
+                        : row.session!.distanceKm != null
                         ? UnitFormatter.formatDistanceLabel(
-                            s.distanceKm!,
+                            row.session!.distanceKm!,
                             unitSystem,
                             l10n,
                           )
                         : null,
-                    duration: s.durationMinutes != null
-                        ? UnitFormatter.formatDuration(s.durationMinutes!, l10n)
+                    duration: row.isSupport
+                        ? row.supportSession!.durationMinutes != null
+                              ? UnitFormatter.formatDuration(
+                                  row.supportSession!.durationMinutes!,
+                                  l10n,
+                                )
+                              : null
+                        : row.session!.durationMinutes != null
+                        ? UnitFormatter.formatDuration(
+                            row.session!.durationMinutes!,
+                            l10n,
+                          )
                         : null,
-                    status: s.status,
-                    isRest: s.type.isRest,
-                    trailingIcon: s.type.iconAsset,
+                    status: row.isSupport
+                        ? _supportSessionStatus(row.supportSession!.status)
+                        : row.session!.status,
+                    isRest: row.isSupport ? false : row.session!.type.isRest,
+                    trailingIcon: row.isSupport
+                        ? _supportSessionIcon(row.supportSession!.type)
+                        : row.session!.type.iconAsset,
                     nowLabel: l10n.weeklyPlanNowBadge,
-                    onTap: s.type.isRest
+                    onTap: row.isSupport
+                        ? null
+                        : row.session!.type.isRest
                         ? null
                         : () => context.push(
                             RouteNames.sessionDetail,
-                            extra: SessionDetailArgs(session: s),
+                            extra: SessionDetailArgs(session: row.session!),
                           ),
                   ),
                 ),
@@ -188,6 +265,46 @@ class WeeklyPlanScreen extends ConsumerWidget {
         ),
       ),
     );
+  }
+}
+
+class _SessionRowData {
+  _SessionRowData.run(TrainingSession this.session)
+    : supportSession = null,
+      date = session.date;
+
+  _SessionRowData.support(SupportSession this.supportSession)
+    : session = null,
+      date = supportSession.date;
+
+  final TrainingSession? session;
+  final SupportSession? supportSession;
+  final DateTime date;
+
+  bool get isSupport => supportSession != null;
+}
+
+String _dayLabelDate(DateTime date, AppLocalizations l10n) {
+  final now = DateTime.now();
+  if (date.year == now.year && date.month == now.month && date.day == now.day) {
+    return l10n.weeklyPlanDayToday;
+  }
+
+  switch (date.weekday) {
+    case 1:
+      return l10n.weeklyPlanDayMon;
+    case 2:
+      return l10n.weeklyPlanDayTue;
+    case 3:
+      return l10n.weeklyPlanDayWed;
+    case 4:
+      return l10n.weeklyPlanDayThu;
+    case 5:
+      return l10n.weeklyPlanDayFri;
+    case 6:
+      return l10n.weeklyPlanDaySat;
+    default:
+      return l10n.weeklyPlanDaySun;
   }
 }
 

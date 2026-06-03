@@ -555,6 +555,126 @@
   "planReadyStartPlan": "Iniciar plan",
   "planReadyViewFullWeek": "Ver semana completa",
 
+  "planGuidancePaceZonesTitle": "Zonas de ritmo",
+  "planGuidanceRaceGuidanceTitle": "Guía del día de carrera",
+  "planGuidanceRaceDayExecutionLabel": "Ejecución de carrera",
+  "planGuidanceWarmupLabel": "Calentamiento",
+  "planGuidancePrimaryTargetLabel": "Objetivo principal",
+  "planGuidanceStretchTargetLabel": "Objetivo de estiramiento",
+  "planGuidanceSplitPlanLabel": "Plan de parciales",
+  "planGuidanceWhenToPressLabel": "Cuándo apretar",
+  "planGuidanceWhatToAvoidLabel": "Qué evitar",
+  "planGuidanceCoachingNotesLabel": "Notas del coach",
+  "planGuidanceSleepNotesLabel": "Sueño",
+  "planGuidanceFuelingNotesLabel": "Nutrición",
+  "planGuidanceHydrationNotesLabel": "Hidratación",
+  "planGuidanceTaperRemindersLabel": "Recordatorios de baja de carga",
+  "planGuidanceWeatherCourseNotesLabel": "Clima y recorrido",
+  "planGuidanceAtMostPace": "No más rápido de {zoneValue} {unit}",
+  "@planGuidanceAtMostPace": {
+    "description": "Pace upper bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "planGuidanceAtLeastPace": "No más lento de {zoneValue} {unit}",
+  "@planGuidanceAtLeastPace": {
+    "description": "Pace lower bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "planSupportStrengthLabel": "Fuerza",
+  "planSupportMobilityLabel": "Movilidad",
+  "planSupportDrillsLabel": "Ejercicios",
+  "@planSupportDrillsLabel": {
+    "description": "Label for drills support session rows"
+  },
+
+  "planSupportSessionLoadLabel": "Carga",
+  "@planSupportSessionLoadLabel": {
+    "description": "Label for support session load field in subtitle"
+  },
+
+  "planSupportSessionTimingLabel": "Calendario",
+  "@planSupportSessionTimingLabel": {
+    "description": "Label for support session timing guidance field in subtitle"
+  },
+
+  "planSupportSessionInterferenceLabel": "Interferencia",
+  "@planSupportSessionInterferenceLabel": {
+    "description": "Label for support session interference rule field in subtitle"
+  },
+
+  "planSupportSessionTaperLabel": "Disminuir carga",
+  "@planSupportSessionTaperLabel": {
+    "description": "Label for support session taper adjustment field in subtitle"
+  },
+
+  "supportSessionLoadLight": "Ligera",
+  "@supportSessionLoadLight": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadModerate": "Moderada",
+  "@supportSessionLoadModerate": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadHigh": "Alta",
+  "@supportSessionLoadHigh": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionTimingOnOffDays": "Días de descanso",
+  "@supportSessionTimingOnOffDays": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingNextDay": "Día siguiente",
+  "@supportSessionTimingNextDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingSameDay": "Mismo día",
+  "@supportSessionTimingSameDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeLongRun": "Evitar el día previo a carrera larga",
+  "@supportSessionInterferenceAvoidDayBeforeLongRun": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeRace": "Evitar el día previo a la carrera",
+  "@supportSessionInterferenceAvoidDayBeforeRace": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeKeyWorkout": "Evitar el día previo al entrenamiento clave",
+  "@supportSessionInterferenceAvoidDayBeforeKeyWorkout": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionTaperReduceLoadWeekBeforeRace": "Reducir carga la semana previa a la carrera",
+  "@supportSessionTaperReduceLoadWeekBeforeRace": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "supportSessionTaperReduceLoad": "Reducir carga",
+  "@supportSessionTaperReduceLoad": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "fullPlanRunsValue": "{value} carreras",
+  "@fullPlanRunsValue": {
+    "description": "Collapsed weekly run count label in full-plan week card",
+    "placeholders": { "value": { "type": "int" } }
+  },
+
   "homeTitle": "Hoy",
   "homeSectionTodaysWorkout": "Entrenamiento de Hoy",
   "homeSectionUpNext": "A Continuación",

@@ -3,8 +3,10 @@ import 'plan_week.dart';
 import 'race_guidance.dart';
 import 'session_type.dart';
 import 'support_session.dart';
+import 'support_plan_session.dart';
 import 'training_session.dart';
 import '../../../strava/domain/models/strava_coaching_profile.dart';
+import '../../../profile/domain/models/runner_profile.dart';
 
 enum TrainingPlanRaceType { fiveK, tenK, halfMarathon, marathon, other }
 
@@ -152,7 +154,12 @@ class TrainingPlan {
     if (rawSupport is List) {
       for (final item in rawSupport) {
         if (item is Map<String, dynamic>) {
-          final s = SupportSession.fromJson(item);
+          final s = _supportSessionFromAnyShape(item);
+          if (s != null) supportSessions.add(s);
+        } else if (item is Map) {
+          final s = _supportSessionFromAnyShape(
+            item.map((key, value) => MapEntry('$key', value)),
+          );
           if (s != null) supportSessions.add(s);
         }
       }
@@ -182,15 +189,23 @@ class TrainingPlan {
     final rawStravaCoachingProfileSnapshot =
         json['stravaCoachingProfileSnapshot'];
     if (rawStravaCoachingProfileSnapshot is Map<String, dynamic>) {
-      stravaCoachingProfileSnapshot = StravaCoachingProfile.fromJson(
-        rawStravaCoachingProfileSnapshot,
-      );
+      try {
+        stravaCoachingProfileSnapshot = StravaCoachingProfile.fromJson(
+          rawStravaCoachingProfileSnapshot,
+        );
+      } on FormatException {
+        stravaCoachingProfileSnapshot = null;
+      }
     } else if (rawStravaCoachingProfileSnapshot is Map) {
-      stravaCoachingProfileSnapshot = StravaCoachingProfile.fromJson(
-        rawStravaCoachingProfileSnapshot.map(
-          (key, value) => MapEntry('$key', value),
-        ),
-      );
+      try {
+        stravaCoachingProfileSnapshot = StravaCoachingProfile.fromJson(
+          rawStravaCoachingProfileSnapshot.map(
+            (key, value) => MapEntry('$key', value),
+          ),
+        );
+      } on FormatException {
+        stravaCoachingProfileSnapshot = null;
+      }
     }
 
     return TrainingPlan(
@@ -210,6 +225,41 @@ class TrainingPlan {
   static DateTime _mondayOf(DateTime date) {
     final weekday = date.weekday; // 1 = Mon, 7 = Sun
     return DateTime(date.year, date.month, date.day - (weekday - 1));
+  }
+}
+
+SupportSession? _supportSessionFromAnyShape(Map<String, dynamic> json) {
+  final supportSession = SupportSession.fromJson(json);
+  if (supportSession != null) return supportSession;
+
+  try {
+    final legacy = SupportPlanSession.fromJson(json);
+    return SupportSession(
+      id: legacy.id,
+      date: legacy.date,
+      weekNumber: legacy.weekNumber,
+      type: _typeFromSupportCategory(legacy.category),
+      status: SupportSessionStatus.planned,
+      durationMinutes: legacy.durationMinutes,
+      notes: legacy.notes,
+      load: legacy.load,
+      timingGuidance: legacy.timingGuidance,
+      interferenceRule: legacy.interferenceRule,
+      taperAdjustment: legacy.taperAdjustment,
+    );
+  } on FormatException {
+    return null;
+  }
+}
+
+SupplementalSessionType _typeFromSupportCategory(StrengthCategory category) {
+  switch (category) {
+    case StrengthCategory.lowerBody:
+    case StrengthCategory.upperBody:
+    case StrengthCategory.fullBody:
+      return SupplementalSessionType.strength;
+    case StrengthCategory.coreMobility:
+      return SupplementalSessionType.mobility;
   }
 }
 

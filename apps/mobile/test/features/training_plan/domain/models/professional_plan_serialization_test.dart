@@ -169,6 +169,52 @@ void main() {
       expect(restored.category, StrengthCategory.coreMobility);
     });
 
+    test(
+      'TrainingPlan parses backend support sessions without dropping them',
+      () {
+        final restored = TrainingPlan.fromJson({
+          'schemaVersion': 1,
+          'id': 'backend-support-plan',
+          'raceType': 'tenK',
+          'totalWeeks': 8,
+          'currentWeekNumber': 2,
+          'sessions': <Map<String, dynamic>>[],
+          'supportSessions': [
+            {
+              'id': 'backend-support-lower-body',
+              'date': '2026-06-08T07:00:00.000Z',
+              'weekNumber': 2,
+              'category': 'lower_body',
+              'durationMinutes': 45,
+              'notes': 'Leg strength ladder.',
+              'load': 'moderate',
+              'timingGuidance': 'on_off_days',
+              'interferenceRule': 'avoid_day_before_long_run',
+              'taperAdjustment': 'reduce_load_week_before_race',
+            },
+          ],
+        });
+
+        expect(restored, isNotNull);
+        final supportSessions = restored!.supportSessions;
+
+        expect(supportSessions, hasLength(1));
+        expect(supportSessions.first.type, SupplementalSessionType.strength);
+        expect(supportSessions.first.durationMinutes, 45);
+        expect(supportSessions.first.load, 'moderate');
+        expect(supportSessions.first.timingGuidance, 'on_off_days');
+        expect(
+          supportSessions.first.interferenceRule,
+          'avoid_day_before_long_run',
+        );
+        expect(
+          supportSessions.first.taperAdjustment,
+          'reduce_load_week_before_race',
+        );
+        expect(supportSessions.first.notes, 'Leg strength ladder.');
+      },
+    );
+
     test('WorkoutStep stride round-trip', () {
       const step = WorkoutStep.stride(
         target: WorkoutTarget.pace(
@@ -211,7 +257,7 @@ void main() {
     });
 
     test(
-      'Malformed stravaCoachingProfileSnapshot propagates FormatException',
+      'Malformed stravaCoachingProfileSnapshot does not throw and falls back to null',
       () {
         final json = TrainingPlan(
           id: 'plan-pro-2',
@@ -227,12 +273,10 @@ void main() {
               ..remove('provenance');
         json['stravaCoachingProfileSnapshot'] = malformedSnapshot;
 
-        // TrainingPlan.fromJson intentionally propagates nested snapshot
-        // contract violations as FormatException.
-        expect(
-          () => TrainingPlan.fromJson(json),
-          throwsA(isA<FormatException>()),
-        );
+        final restored = TrainingPlan.fromJson(json);
+
+        expect(restored, isNotNull);
+        expect(restored!.stravaCoachingProfileSnapshot, isNull);
       },
     );
   });

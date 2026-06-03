@@ -3187,6 +3187,222 @@ abstract class AppLocalizations {
   /// **'View Full Week'**
   String get planReadyViewFullWeek;
 
+  /// Heading for pace zones section in plan guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Pace Zones'**
+  String get planGuidancePaceZonesTitle;
+
+  /// Heading for the race guidance section
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day Guidance'**
+  String get planGuidanceRaceGuidanceTitle;
+
+  /// Race-day execution guidance heading
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day Execution'**
+  String get planGuidanceRaceDayExecutionLabel;
+
+  /// Warmup guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Warmup'**
+  String get planGuidanceWarmupLabel;
+
+  /// Primary target guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Primary target'**
+  String get planGuidancePrimaryTargetLabel;
+
+  /// Stretch target guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Stretch target'**
+  String get planGuidanceStretchTargetLabel;
+
+  /// Split plan guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Split plan'**
+  String get planGuidanceSplitPlanLabel;
+
+  /// Label for when to push effort guidance
+  ///
+  /// In en, this message translates to:
+  /// **'When to push'**
+  String get planGuidanceWhenToPressLabel;
+
+  /// Label for what-to-avoid guidance
+  ///
+  /// In en, this message translates to:
+  /// **'What to avoid'**
+  String get planGuidanceWhatToAvoidLabel;
+
+  /// Label for coaching notes guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Coaching notes'**
+  String get planGuidanceCoachingNotesLabel;
+
+  /// Label for sleep guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep'**
+  String get planGuidanceSleepNotesLabel;
+
+  /// Label for fueling guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Fueling'**
+  String get planGuidanceFuelingNotesLabel;
+
+  /// Label for hydration guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Hydration'**
+  String get planGuidanceHydrationNotesLabel;
+
+  /// Label for taper reminders guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Taper reminders'**
+  String get planGuidanceTaperRemindersLabel;
+
+  /// Label for weather/course guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Weather and course'**
+  String get planGuidanceWeatherCourseNotesLabel;
+
+  /// Pace upper bound formatting
+  ///
+  /// In en, this message translates to:
+  /// **'No faster than {zoneValue} {unit}'**
+  String planGuidanceAtMostPace(String zoneValue, String unit);
+
+  /// Pace lower bound formatting
+  ///
+  /// In en, this message translates to:
+  /// **'No slower than {zoneValue} {unit}'**
+  String planGuidanceAtLeastPace(String zoneValue, String unit);
+
+  /// Label for strength support session rows
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get planSupportStrengthLabel;
+
+  /// Label for mobility support session rows
+  ///
+  /// In en, this message translates to:
+  /// **'Mobility'**
+  String get planSupportMobilityLabel;
+
+  /// Label for drills support session rows
+  ///
+  /// In en, this message translates to:
+  /// **'Drills'**
+  String get planSupportDrillsLabel;
+
+  /// Label for support session load field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get planSupportSessionLoadLabel;
+
+  /// Label for support session timing guidance field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Timing'**
+  String get planSupportSessionTimingLabel;
+
+  /// Label for support session interference rule field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Interference'**
+  String get planSupportSessionInterferenceLabel;
+
+  /// Label for support session taper adjustment field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get planSupportSessionTaperLabel;
+
+  /// Support session load value label
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get supportSessionLoadLight;
+
+  /// Support session load value label
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get supportSessionLoadModerate;
+
+  /// Support session load value label
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get supportSessionLoadHigh;
+
+  /// Support session timing value label
+  ///
+  /// In en, this message translates to:
+  /// **'On off days'**
+  String get supportSessionTimingOnOffDays;
+
+  /// Support session timing value label
+  ///
+  /// In en, this message translates to:
+  /// **'Next day'**
+  String get supportSessionTimingNextDay;
+
+  /// Support session timing value label
+  ///
+  /// In en, this message translates to:
+  /// **'Same day'**
+  String get supportSessionTimingSameDay;
+
+  /// Support session interference rule value label
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid day before long run'**
+  String get supportSessionInterferenceAvoidDayBeforeLongRun;
+
+  /// Support session interference rule value label
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid day before race'**
+  String get supportSessionInterferenceAvoidDayBeforeRace;
+
+  /// Support session interference rule value label
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid day before key workout'**
+  String get supportSessionInterferenceAvoidDayBeforeKeyWorkout;
+
+  /// Support session taper adjustment value label
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce load week before race'**
+  String get supportSessionTaperReduceLoadWeekBeforeRace;
+
+  /// Support session taper adjustment value label
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce load'**
+  String get supportSessionTaperReduceLoad;
+
+  /// Collapsed weekly run count label in full-plan week card
+  ///
+  /// In en, this message translates to:
+  /// **'{value} runs'**
+  String fullPlanRunsValue(int value);
+
   /// Title of the home/today screen
   ///
   /// In en, this message translates to:

@@ -1719,6 +1719,125 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planReadyViewFullWeek => 'Ver semana completa';
 
   @override
+  String get planGuidancePaceZonesTitle => 'Zonas de ritmo';
+
+  @override
+  String get planGuidanceRaceGuidanceTitle => 'Guía del día de carrera';
+
+  @override
+  String get planGuidanceRaceDayExecutionLabel => 'Ejecución de carrera';
+
+  @override
+  String get planGuidanceWarmupLabel => 'Calentamiento';
+
+  @override
+  String get planGuidancePrimaryTargetLabel => 'Objetivo principal';
+
+  @override
+  String get planGuidanceStretchTargetLabel => 'Objetivo de estiramiento';
+
+  @override
+  String get planGuidanceSplitPlanLabel => 'Plan de parciales';
+
+  @override
+  String get planGuidanceWhenToPressLabel => 'Cuándo apretar';
+
+  @override
+  String get planGuidanceWhatToAvoidLabel => 'Qué evitar';
+
+  @override
+  String get planGuidanceCoachingNotesLabel => 'Notas del coach';
+
+  @override
+  String get planGuidanceSleepNotesLabel => 'Sueño';
+
+  @override
+  String get planGuidanceFuelingNotesLabel => 'Nutrición';
+
+  @override
+  String get planGuidanceHydrationNotesLabel => 'Hidratación';
+
+  @override
+  String get planGuidanceTaperRemindersLabel =>
+      'Recordatorios de baja de carga';
+
+  @override
+  String get planGuidanceWeatherCourseNotesLabel => 'Clima y recorrido';
+
+  @override
+  String planGuidanceAtMostPace(String zoneValue, String unit) {
+    return 'No más rápido de $zoneValue $unit';
+  }
+
+  @override
+  String planGuidanceAtLeastPace(String zoneValue, String unit) {
+    return 'No más lento de $zoneValue $unit';
+  }
+
+  @override
+  String get planSupportStrengthLabel => 'Fuerza';
+
+  @override
+  String get planSupportMobilityLabel => 'Movilidad';
+
+  @override
+  String get planSupportDrillsLabel => 'Ejercicios';
+
+  @override
+  String get planSupportSessionLoadLabel => 'Carga';
+
+  @override
+  String get planSupportSessionTimingLabel => 'Calendario';
+
+  @override
+  String get planSupportSessionInterferenceLabel => 'Interferencia';
+
+  @override
+  String get planSupportSessionTaperLabel => 'Disminuir carga';
+
+  @override
+  String get supportSessionLoadLight => 'Ligera';
+
+  @override
+  String get supportSessionLoadModerate => 'Moderada';
+
+  @override
+  String get supportSessionLoadHigh => 'Alta';
+
+  @override
+  String get supportSessionTimingOnOffDays => 'Días de descanso';
+
+  @override
+  String get supportSessionTimingNextDay => 'Día siguiente';
+
+  @override
+  String get supportSessionTimingSameDay => 'Mismo día';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeLongRun =>
+      'Evitar el día previo a carrera larga';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeRace =>
+      'Evitar el día previo a la carrera';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeKeyWorkout =>
+      'Evitar el día previo al entrenamiento clave';
+
+  @override
+  String get supportSessionTaperReduceLoadWeekBeforeRace =>
+      'Reducir carga la semana previa a la carrera';
+
+  @override
+  String get supportSessionTaperReduceLoad => 'Reducir carga';
+
+  @override
+  String fullPlanRunsValue(int value) {
+    return '$value carreras';
+  }
+
+  @override
   String get homeTitle => 'Hoy';
 
   @override

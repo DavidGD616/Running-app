@@ -24,6 +24,10 @@ class SupportSession {
     required this.status,
     this.durationMinutes,
     this.notes,
+    this.load,
+    this.timingGuidance,
+    this.interferenceRule,
+    this.taperAdjustment,
     this.feedbackId,
     this.revisionId,
     this.adjustmentId,
@@ -38,6 +42,10 @@ class SupportSession {
   final SupportSessionStatus status;
   final int? durationMinutes;
   final String? notes;
+  final String? load;
+  final String? timingGuidance;
+  final String? interferenceRule;
+  final String? taperAdjustment;
   final String? feedbackId;
   final String? revisionId;
   final String? adjustmentId;
@@ -58,6 +66,10 @@ class SupportSession {
     SupportSessionStatus? status,
     int? durationMinutes,
     String? notes,
+    String? load,
+    String? timingGuidance,
+    String? interferenceRule,
+    String? taperAdjustment,
     String? feedbackId,
     String? revisionId,
     String? adjustmentId,
@@ -70,6 +82,10 @@ class SupportSession {
       status: status ?? this.status,
       durationMinutes: durationMinutes ?? this.durationMinutes,
       notes: notes ?? this.notes,
+      load: load ?? this.load,
+      timingGuidance: timingGuidance ?? this.timingGuidance,
+      interferenceRule: interferenceRule ?? this.interferenceRule,
+      taperAdjustment: taperAdjustment ?? this.taperAdjustment,
       feedbackId: feedbackId ?? this.feedbackId,
       revisionId: revisionId ?? this.revisionId,
       adjustmentId: adjustmentId ?? this.adjustmentId,
@@ -86,6 +102,10 @@ class SupportSession {
       'status': status.key,
       'durationMinutes': durationMinutes,
       'notes': notes,
+      'load': load,
+      'timingGuidance': timingGuidance,
+      'interferenceRule': interferenceRule,
+      'taperAdjustment': taperAdjustment,
       'feedbackId': feedbackId,
       'revisionId': revisionId,
       'adjustmentId': adjustmentId,
@@ -111,6 +131,10 @@ class SupportSession {
       status: status,
       durationMinutes: intOrNull(json['durationMinutes']),
       notes: stringOrNull(json['notes']),
+      load: stringOrNull(json['load']),
+      timingGuidance: stringOrNull(json['timingGuidance']),
+      interferenceRule: stringOrNull(json['interferenceRule']),
+      taperAdjustment: stringOrNull(json['taperAdjustment']),
       feedbackId: stringOrNull(json['feedbackId']),
       revisionId: stringOrNull(json['revisionId']),
       adjustmentId: stringOrNull(json['adjustmentId']),

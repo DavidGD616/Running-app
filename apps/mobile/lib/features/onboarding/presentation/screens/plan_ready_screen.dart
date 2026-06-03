@@ -12,6 +12,11 @@ import '../../../goals/domain/models/goal.dart';
 import '../../../goals/presentation/goal_presenter.dart';
 import '../../../goals/presentation/goal_provider.dart';
 import '../../../profile/domain/models/runner_profile.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../training_plan/presentation/widgets/pace_zones_card.dart';
+import '../../../training_plan/presentation/widgets/race_guidance_section.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -69,6 +74,10 @@ class PlanReadyScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
     final onboardingAsync = ref.watch(onboardingProvider);
+    final plan = ref.watch(trainingPlanProvider).value;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+
     if (onboardingAsync.isLoading) {
       return const Scaffold(
         backgroundColor: AppColors.backgroundPrimary,
@@ -201,6 +210,23 @@ class PlanReadyScreen extends ConsumerWidget {
                         color: AppColors.textSecondary,
                       ),
                     ),
+
+                    if (plan?.paceZones != null) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      PaceZonesCard(
+                        paceZones: plan!.paceZones!,
+                        unitSystem: unitSystem,
+                        l10n: l10n,
+                      ),
+                    ],
+
+                    if (plan?.raceGuidance != null) ...[
+                      const SizedBox(height: AppSpacing.xl),
+                      RaceGuidanceSection(
+                        guidance: plan!.raceGuidance!,
+                        l10n: l10n,
+                      ),
+                    ],
                   ],
                 ),
               ),

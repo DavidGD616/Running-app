@@ -1514,6 +1514,191 @@
   "planReadyViewFullWeek": "View Full Week",
   "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" },
 
+  "planGuidancePaceZonesTitle": "Pace Zones",
+  "@planGuidancePaceZonesTitle": {
+    "description": "Heading for pace zones section in plan guidance"
+  },
+
+  "planGuidanceRaceGuidanceTitle": "Race Day Guidance",
+  "@planGuidanceRaceGuidanceTitle": {
+    "description": "Heading for the race guidance section"
+  },
+
+  "planGuidanceRaceDayExecutionLabel": "Race Day Execution",
+  "@planGuidanceRaceDayExecutionLabel": {
+    "description": "Race-day execution guidance heading"
+  },
+
+  "planGuidanceWarmupLabel": "Warmup",
+  "@planGuidanceWarmupLabel": { "description": "Warmup guidance label" },
+
+  "planGuidancePrimaryTargetLabel": "Primary target",
+  "@planGuidancePrimaryTargetLabel": {
+    "description": "Primary target guidance label"
+  },
+
+  "planGuidanceStretchTargetLabel": "Stretch target",
+  "@planGuidanceStretchTargetLabel": {
+    "description": "Stretch target guidance label"
+  },
+
+  "planGuidanceSplitPlanLabel": "Split plan",
+  "@planGuidanceSplitPlanLabel": { "description": "Split plan guidance label" },
+
+  "planGuidanceWhenToPressLabel": "When to push",
+  "@planGuidanceWhenToPressLabel": {
+    "description": "Label for when to push effort guidance"
+  },
+
+  "planGuidanceWhatToAvoidLabel": "What to avoid",
+  "@planGuidanceWhatToAvoidLabel": {
+    "description": "Label for what-to-avoid guidance"
+  },
+
+  "planGuidanceCoachingNotesLabel": "Coaching notes",
+  "@planGuidanceCoachingNotesLabel": {
+    "description": "Label for coaching notes guidance"
+  },
+
+  "planGuidanceSleepNotesLabel": "Sleep",
+  "@planGuidanceSleepNotesLabel": {
+    "description": "Label for sleep guidance notes"
+  },
+
+  "planGuidanceFuelingNotesLabel": "Fueling",
+  "@planGuidanceFuelingNotesLabel": {
+    "description": "Label for fueling guidance notes"
+  },
+
+  "planGuidanceHydrationNotesLabel": "Hydration",
+  "@planGuidanceHydrationNotesLabel": {
+    "description": "Label for hydration guidance notes"
+  },
+
+  "planGuidanceTaperRemindersLabel": "Taper reminders",
+  "@planGuidanceTaperRemindersLabel": {
+    "description": "Label for taper reminders guidance"
+  },
+
+  "planGuidanceWeatherCourseNotesLabel": "Weather and course",
+  "@planGuidanceWeatherCourseNotesLabel": {
+    "description": "Label for weather/course guidance notes"
+  },
+
+  "planGuidanceAtMostPace": "No faster than {zoneValue} {unit}",
+  "@planGuidanceAtMostPace": {
+    "description": "Pace upper bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "planGuidanceAtLeastPace": "No slower than {zoneValue} {unit}",
+  "@planGuidanceAtLeastPace": {
+    "description": "Pace lower bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "planSupportStrengthLabel": "Strength",
+  "@planSupportStrengthLabel": {
+    "description": "Label for strength support session rows"
+  },
+
+  "planSupportMobilityLabel": "Mobility",
+  "@planSupportMobilityLabel": {
+    "description": "Label for mobility support session rows"
+  },
+
+  "planSupportDrillsLabel": "Drills",
+  "@planSupportDrillsLabel": {
+    "description": "Label for drills support session rows"
+  },
+
+  "planSupportSessionLoadLabel": "Load",
+  "@planSupportSessionLoadLabel": {
+    "description": "Label for support session load field in subtitle"
+  },
+
+  "planSupportSessionTimingLabel": "Timing",
+  "@planSupportSessionTimingLabel": {
+    "description": "Label for support session timing guidance field in subtitle"
+  },
+
+  "planSupportSessionInterferenceLabel": "Interference",
+  "@planSupportSessionInterferenceLabel": {
+    "description": "Label for support session interference rule field in subtitle"
+  },
+
+  "planSupportSessionTaperLabel": "Taper",
+  "@planSupportSessionTaperLabel": {
+    "description": "Label for support session taper adjustment field in subtitle"
+  },
+
+  "supportSessionLoadLight": "Light",
+  "@supportSessionLoadLight": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadModerate": "Moderate",
+  "@supportSessionLoadModerate": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadHigh": "High",
+  "@supportSessionLoadHigh": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionTimingOnOffDays": "On off days",
+  "@supportSessionTimingOnOffDays": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingNextDay": "Next day",
+  "@supportSessionTimingNextDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingSameDay": "Same day",
+  "@supportSessionTimingSameDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeLongRun": "Avoid day before long run",
+  "@supportSessionInterferenceAvoidDayBeforeLongRun": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeRace": "Avoid day before race",
+  "@supportSessionInterferenceAvoidDayBeforeRace": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeKeyWorkout": "Avoid day before key workout",
+  "@supportSessionInterferenceAvoidDayBeforeKeyWorkout": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionTaperReduceLoadWeekBeforeRace": "Reduce load week before race",
+  "@supportSessionTaperReduceLoadWeekBeforeRace": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "supportSessionTaperReduceLoad": "Reduce load",
+  "@supportSessionTaperReduceLoad": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "fullPlanRunsValue": "{value} runs",
+  "@fullPlanRunsValue": {
+    "description": "Collapsed weekly run count label in full-plan week card",
+    "placeholders": { "value": { "type": "int" } }
+  },
+
   "homeTitle": "Today",
   "@homeTitle": { "description": "Title of the home/today screen" },
 

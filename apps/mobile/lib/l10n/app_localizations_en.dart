@@ -1706,6 +1706,124 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planReadyViewFullWeek => 'View Full Week';
 
   @override
+  String get planGuidancePaceZonesTitle => 'Pace Zones';
+
+  @override
+  String get planGuidanceRaceGuidanceTitle => 'Race Day Guidance';
+
+  @override
+  String get planGuidanceRaceDayExecutionLabel => 'Race Day Execution';
+
+  @override
+  String get planGuidanceWarmupLabel => 'Warmup';
+
+  @override
+  String get planGuidancePrimaryTargetLabel => 'Primary target';
+
+  @override
+  String get planGuidanceStretchTargetLabel => 'Stretch target';
+
+  @override
+  String get planGuidanceSplitPlanLabel => 'Split plan';
+
+  @override
+  String get planGuidanceWhenToPressLabel => 'When to push';
+
+  @override
+  String get planGuidanceWhatToAvoidLabel => 'What to avoid';
+
+  @override
+  String get planGuidanceCoachingNotesLabel => 'Coaching notes';
+
+  @override
+  String get planGuidanceSleepNotesLabel => 'Sleep';
+
+  @override
+  String get planGuidanceFuelingNotesLabel => 'Fueling';
+
+  @override
+  String get planGuidanceHydrationNotesLabel => 'Hydration';
+
+  @override
+  String get planGuidanceTaperRemindersLabel => 'Taper reminders';
+
+  @override
+  String get planGuidanceWeatherCourseNotesLabel => 'Weather and course';
+
+  @override
+  String planGuidanceAtMostPace(String zoneValue, String unit) {
+    return 'No faster than $zoneValue $unit';
+  }
+
+  @override
+  String planGuidanceAtLeastPace(String zoneValue, String unit) {
+    return 'No slower than $zoneValue $unit';
+  }
+
+  @override
+  String get planSupportStrengthLabel => 'Strength';
+
+  @override
+  String get planSupportMobilityLabel => 'Mobility';
+
+  @override
+  String get planSupportDrillsLabel => 'Drills';
+
+  @override
+  String get planSupportSessionLoadLabel => 'Load';
+
+  @override
+  String get planSupportSessionTimingLabel => 'Timing';
+
+  @override
+  String get planSupportSessionInterferenceLabel => 'Interference';
+
+  @override
+  String get planSupportSessionTaperLabel => 'Taper';
+
+  @override
+  String get supportSessionLoadLight => 'Light';
+
+  @override
+  String get supportSessionLoadModerate => 'Moderate';
+
+  @override
+  String get supportSessionLoadHigh => 'High';
+
+  @override
+  String get supportSessionTimingOnOffDays => 'On off days';
+
+  @override
+  String get supportSessionTimingNextDay => 'Next day';
+
+  @override
+  String get supportSessionTimingSameDay => 'Same day';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeLongRun =>
+      'Avoid day before long run';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeRace =>
+      'Avoid day before race';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeKeyWorkout =>
+      'Avoid day before key workout';
+
+  @override
+  String get supportSessionTaperReduceLoadWeekBeforeRace =>
+      'Reduce load week before race';
+
+  @override
+  String get supportSessionTaperReduceLoad => 'Reduce load';
+
+  @override
+  String fullPlanRunsValue(int value) {
+    return '$value runs';
+  }
+
+  @override
   String get homeTitle => 'Today';
 
   @override
