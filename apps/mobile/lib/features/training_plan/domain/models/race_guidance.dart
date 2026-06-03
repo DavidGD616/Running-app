@@ -1,3 +1,5 @@
+import 'model_json_utils.dart';
+
 class RaceGuidance {
   const RaceGuidance({
     required this.raceDayExecution,
@@ -52,7 +54,7 @@ class RaceGuidance {
 
   factory RaceGuidance.fromJson(Map<String, dynamic> json) {
     const context = 'race guidance';
-    final raceDayExecution = _requiredString(
+    final raceDayExecution = requiredString(
       json,
       'raceDayExecution',
       context: context,
@@ -78,52 +80,34 @@ class RaceGuidance {
         'Invalid race guidance: stretchTargetSec must be > 0 when present.',
       );
     }
+    if (stretchTarget != null &&
+        primaryTarget != null &&
+        stretchTarget >= primaryTarget) {
+      throw const FormatException(
+        'stretchTarget must be less than primaryTarget',
+      );
+    }
 
     return RaceGuidance(
       raceDayExecution: raceDayExecution,
-      warmup: _optionalString(json, 'warmup', context: context),
+      warmup: optionalString(json, 'warmup', context: context),
       primaryTarget: primaryTarget,
       stretchTarget: stretchTarget,
-      splitPlan: _optionalString(json, 'splitPlan', context: context),
-      whenToPress: _optionalString(json, 'whenToPress', context: context),
-      whatToAvoid: _optionalString(json, 'whatToAvoid', context: context),
-      coachingNotes: _optionalString(json, 'coachingNotes', context: context),
-      sleepNotes: _optionalString(json, 'sleepNotes', context: context),
-      fuelingNotes: _optionalString(json, 'fuelingNotes', context: context),
-      hydrationNotes: _optionalString(json, 'hydrationNotes', context: context),
-      taperReminders: _optionalString(json, 'taperReminders', context: context),
-      weatherCourseNotes: _optionalString(
+      splitPlan: optionalString(json, 'splitPlan', context: context),
+      whenToPress: optionalString(json, 'whenToPress', context: context),
+      whatToAvoid: optionalString(json, 'whatToAvoid', context: context),
+      coachingNotes: optionalString(json, 'coachingNotes', context: context),
+      sleepNotes: optionalString(json, 'sleepNotes', context: context),
+      fuelingNotes: optionalString(json, 'fuelingNotes', context: context),
+      hydrationNotes: optionalString(json, 'hydrationNotes', context: context),
+      taperReminders: optionalString(json, 'taperReminders', context: context),
+      weatherCourseNotes: optionalString(
         json,
         'weatherCourseNotes',
         context: context,
       ),
     );
   }
-}
-
-String _requiredString(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final value = json[key];
-  if (value is! String || value.trim().isEmpty) {
-    throw FormatException('Invalid $context: $key must be a non-empty string.');
-  }
-  return value;
-}
-
-String? _optionalString(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final value = json[key];
-  if (value == null) return null;
-  if (value is! String || value.trim().isEmpty) {
-    throw FormatException('Invalid $context: $key must be a non-empty string.');
-  }
-  return value;
 }
 
 Duration? _optionalDurationSeconds(
@@ -133,13 +117,7 @@ Duration? _optionalDurationSeconds(
 }) {
   final raw = json[key];
   if (raw == null) return null;
-  if (raw is int) return Duration(seconds: raw);
-  if (raw is double && raw.isFinite && raw == raw.roundToDouble()) {
-    return Duration(seconds: raw.toInt());
-  }
-  if (raw is String && raw.isNotEmpty) {
-    final parsed = int.tryParse(raw);
-    if (parsed != null) return Duration(seconds: parsed);
-  }
+  final seconds = optionalInt(raw);
+  if (seconds != null) return Duration(seconds: seconds);
   throw FormatException('Invalid $context: $key must be an int duration.');
 }

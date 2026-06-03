@@ -1,5 +1,6 @@
 import '../../../profile/domain/models/runner_profile.dart';
 import '../../../strava/domain/models/strava_coaching_profile.dart';
+import '../../../training_plan/domain/models/model_json_utils.dart';
 
 class ManualFitnessInput {
   const ManualFitnessInput({
@@ -34,7 +35,7 @@ class ManualFitnessInput {
 
   factory ManualFitnessInput.fromJson(Map<String, dynamic> json) {
     final context = 'manual fitness input';
-    final experienceKey = _requiredString(json, 'experience', context: context);
+    final experienceKey = requiredString(json, 'experience', context: context);
     final experience = RunnerExperience.fromKey(experienceKey);
     if (experience == null) {
       throw FormatException(
@@ -42,42 +43,42 @@ class ManualFitnessInput {
       );
     }
 
-    final weeklyVolume = _optionalEnumFromKey(
+    final weeklyVolume = optionalEnumFromKey(
       json,
       'weeklyVolume',
       context: context,
       parse: WeeklyVolumeRange.fromKey,
       fieldLabel: 'weeklyVolume',
     );
-    final longestRun = _optionalEnumFromKey(
+    final longestRun = optionalEnumFromKey(
       json,
       'longestRun',
       context: context,
       parse: LongestRunRange.fromKey,
       fieldLabel: 'longestRun',
     );
-    final canCompleteGoalDistance = _optionalEnumFromKey(
+    final canCompleteGoalDistance = optionalEnumFromKey(
       json,
       'canCompleteGoalDistance',
       context: context,
       parse: TernaryChoice.fromKey,
       fieldLabel: 'canCompleteGoalDistance',
     );
-    final raceDistanceBefore = _optionalEnumFromKey(
+    final raceDistanceBefore = optionalEnumFromKey(
       json,
       'raceDistanceBefore',
       context: context,
       parse: RaceDistanceExperience.fromKey,
       fieldLabel: 'raceDistanceBefore',
     );
-    final benchmark = _optionalEnumFromKey(
+    final benchmark = optionalEnumFromKey(
       json,
       'benchmark',
       context: context,
       parse: BenchmarkType.fromKey,
       fieldLabel: 'benchmark',
     );
-    final benchmarkTime = _optionalDurationMs(
+    final benchmarkTime = optionalDurationMs(
       json,
       'benchmarkTimeMs',
       context: context,
@@ -99,7 +100,7 @@ class ManualFitnessInput {
 
     if (!benchmarkNeedsTime && benchmarkTime != null) {
       throw const FormatException(
-        'Invalid manual fitness input: benchmarkTimeMs is only allowed for a non-skip benchmark.',
+        'Invalid manual fitness input: benchmarkTimeMs is only allowed when benchmark is not skip.',
       );
     }
 
@@ -166,7 +167,7 @@ class ProfessionalPlanInput {
 
     final goal = _requiredGoalProfile(json, 'goal', context: context);
 
-    final fitnessSourceKey = _requiredString(
+    final fitnessSourceKey = requiredString(
       json,
       'fitnessSource',
       context: context,
@@ -178,20 +179,20 @@ class ProfessionalPlanInput {
       );
     }
 
-    final stravaCoachingProfile = _optionalNested(
+    final stravaCoachingProfile = optionalNested(
       json,
       'stravaCoachingProfile',
       context: context,
       parse: StravaCoachingProfile.fromJson,
     );
-    final manualFitness = _optionalNested(
+    final manualFitness = optionalNested(
       json,
       'manualFitness',
       context: context,
       parse: ManualFitnessInput.fromJson,
     );
 
-    final acceptedRaceTarget = _requiredNested(
+    final acceptedRaceTarget = requiredNested(
       json,
       'acceptedRaceTarget',
       context: context,
@@ -203,14 +204,14 @@ class ProfessionalPlanInput {
       context: context,
     );
     final health = _requiredHealthProfile(json, 'health', context: context);
-    final strengthPreferences = _requiredNested(
+    final strengthPreferences = requiredNested(
       json,
       'strengthPreferences',
       context: context,
       parse: StrengthPreferences.fromJson,
     );
 
-    final planIntensityKey = _requiredString(
+    final planIntensityKey = requiredString(
       json,
       'planIntensity',
       context: context,
@@ -222,14 +223,14 @@ class ProfessionalPlanInput {
       );
     }
 
-    final unitPreference = _optionalString(
+    final unitPreference = optionalString(
       json,
       'unitPreference',
       context: context,
     );
-    final locale = _requiredString(json, 'locale', context: context);
+    final locale = requiredString(json, 'locale', context: context);
 
-    final raceCourseTerrain = _optionalEnumFromKey(
+    final raceCourseTerrain = optionalEnumFromKey(
       json,
       'raceCourseTerrain',
       context: context,
@@ -291,6 +292,10 @@ void _validateFitnessInputContract({
       'Invalid professional plan input: strong Strava data must not include manualFitness.',
     );
   }
+
+  // limited confidence is intentionally allowed without manualFitness:
+  // the plan generator will produce a conservative base plan and
+  // the user can supplement with manual details in a later iteration.
 }
 
 GoalProfile _requiredGoalProfile(
@@ -298,10 +303,10 @@ GoalProfile _requiredGoalProfile(
   String key, {
   required String context,
 }) {
-  final value = _requiredMap(json, key, context: context);
+  final value = requiredMap(json, key, context: context);
   final nestedContext = '$context.goal';
 
-  final raceKey = _requiredString(value, 'race', context: nestedContext);
+  final raceKey = requiredString(value, 'race', context: nestedContext);
   final race = RunnerGoalRace.fromKey(raceKey);
   if (race == null) {
     throw FormatException(
@@ -309,23 +314,19 @@ GoalProfile _requiredGoalProfile(
     );
   }
 
-  final hasRaceDate = _requiredBool(
+  final hasRaceDate = requiredBool(
     value,
     'hasRaceDate',
     context: nestedContext,
   );
-  final raceDate = _optionalDateTime(value, 'raceDate', context: nestedContext);
+  final raceDate = optionalDateTime(value, 'raceDate', context: nestedContext);
   if (hasRaceDate && raceDate == null) {
     throw const FormatException(
       'Invalid professional plan input.goal: raceDate is required when hasRaceDate is true.',
     );
   }
 
-  final priorityKey = _requiredString(
-    value,
-    'priority',
-    context: nestedContext,
-  );
+  final priorityKey = requiredString(value, 'priority', context: nestedContext);
   final priority = GoalPriority.fromKey(priorityKey);
   if (priority == null) {
     throw FormatException(
@@ -333,12 +334,12 @@ GoalProfile _requiredGoalProfile(
     );
   }
 
-  final currentTime = _optionalDurationMs(
+  final currentTime = optionalDurationMs(
     value,
     'currentTimeMs',
     context: nestedContext,
   );
-  final targetTime = _optionalDurationMs(
+  final targetTime = optionalDurationMs(
     value,
     'targetTimeMs',
     context: nestedContext,
@@ -377,10 +378,10 @@ ScheduleProfile _requiredScheduleProfile(
   String key, {
   required String context,
 }) {
-  final value = _requiredMap(json, key, context: context);
+  final value = requiredMap(json, key, context: context);
   final nestedContext = '$context.schedule';
 
-  final trainingDays = _requiredInt(
+  final trainingDays = requiredInt(
     value,
     'trainingDays',
     context: nestedContext,
@@ -391,32 +392,32 @@ ScheduleProfile _requiredScheduleProfile(
     );
   }
 
-  final longRunDay = _requiredEnumFromKey(
+  final longRunDay = requiredEnumFromKey(
     value,
     'longRunDay',
     context: nestedContext,
     parse: WeekdayChoice.fromKey,
   );
-  final weekdayTime = _requiredEnumFromKey(
+  final weekdayTime = requiredEnumFromKey(
     value,
     'weekdayTime',
     context: nestedContext,
     parse: TimeSlot.fromKey,
   );
-  final weekendTime = _requiredEnumFromKey(
+  final weekendTime = requiredEnumFromKey(
     value,
     'weekendTime',
     context: nestedContext,
     parse: TimeSlot.fromKey,
   );
 
-  final hardDays = _optionalCanonicalSet(
+  final hardDays = optionalCanonicalSet(
     value,
     'hardDays',
     context: nestedContext,
     parse: WeekdayChoice.fromKey,
   );
-  final preferredTimeOfDay = _optionalEnumFromKey(
+  final preferredTimeOfDay = optionalEnumFromKey(
     value,
     'preferredTimeOfDay',
     context: nestedContext,
@@ -439,22 +440,22 @@ HealthProfile _requiredHealthProfile(
   String key, {
   required String context,
 }) {
-  final value = _requiredMap(json, key, context: context);
+  final value = requiredMap(json, key, context: context);
   final nestedContext = '$context.health';
 
-  final painLevel = _requiredEnumFromKey(
+  final painLevel = requiredEnumFromKey(
     value,
     'painLevel',
     context: nestedContext,
     parse: PainLevelChoice.fromKey,
   );
-  final injuryHistory = _requiredEnumFromKey(
+  final injuryHistory = requiredEnumFromKey(
     value,
     'injuryHistory',
     context: nestedContext,
     parse: InjuryHistoryChoice.fromKey,
   );
-  final hasHealthConditions = _requiredEnumFromKey(
+  final hasHealthConditions = requiredEnumFromKey(
     value,
     'hasHealthConditions',
     context: nestedContext,
@@ -485,7 +486,7 @@ Map<String, dynamic> _scheduleProfileToJson(ScheduleProfile value) {
     'longRunDay': value.longRunDay.key,
     'weekdayTime': value.weekdayTime.key,
     'weekendTime': value.weekendTime.key,
-    'hardDays': _sortedCanonicalKeys(value.hardDays),
+    'hardDays': sortedCanonicalKeys(value.hardDays),
     'preferredTimeOfDay': value.preferredTimeOfDay?.key,
   };
 }
@@ -496,204 +497,4 @@ Map<String, dynamic> _healthProfileToJson(HealthProfile value) {
     'injuryHistory': value.injuryHistory.key,
     'hasHealthConditions': value.hasHealthConditions.key,
   };
-}
-
-List<String> _sortedCanonicalKeys<T extends CanonicalKeyed>(
-  Iterable<T> values,
-) {
-  final keys = values.map((value) => value.key).toList(growable: false);
-  keys.sort();
-  return keys;
-}
-
-T _requiredNested<T>(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-  required T Function(Map<String, dynamic> value) parse,
-}) {
-  return parse(_requiredMap(json, key, context: context));
-}
-
-T? _optionalNested<T>(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-  required T Function(Map<String, dynamic> value) parse,
-}) {
-  final value = json[key];
-  if (value == null) return null;
-  if (value is! Map) {
-    throw FormatException('Invalid $context: $key must be an object.');
-  }
-  return parse(value.cast<String, dynamic>());
-}
-
-T _requiredEnumFromKey<T>(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-  required T? Function(String? key) parse,
-}) {
-  final value = _requiredString(json, key, context: context);
-  final parsed = parse(value);
-  if (parsed == null) {
-    throw FormatException('Invalid $context: unsupported $key "$value".');
-  }
-  return parsed;
-}
-
-T? _optionalEnumFromKey<T>(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-  required T? Function(String? key) parse,
-  required String fieldLabel,
-}) {
-  final value = json[key];
-  if (value == null) return null;
-  if (value is! String) {
-    throw FormatException(
-      'Invalid $context: $fieldLabel must be a string key.',
-    );
-  }
-  final parsed = parse(value);
-  if (parsed == null) {
-    throw FormatException(
-      'Invalid $context: unsupported $fieldLabel "$value".',
-    );
-  }
-  return parsed;
-}
-
-Set<T> _optionalCanonicalSet<T>(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-  required T? Function(String? key) parse,
-}) {
-  final value = json[key];
-  if (value == null) return const {};
-  if (value is! List) {
-    throw FormatException('Invalid $context: $key must be a list of keys.');
-  }
-
-  final parsedValues = <T>{};
-  for (final entry in value) {
-    if (entry is! String) {
-      throw FormatException('Invalid $context: $key entries must be strings.');
-    }
-    final parsed = parse(entry);
-    if (parsed == null) {
-      throw FormatException(
-        'Invalid $context: unsupported $key entry "$entry".',
-      );
-    }
-    parsedValues.add(parsed);
-  }
-
-  return parsedValues;
-}
-
-Map<String, dynamic> _requiredMap(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final value = json[key];
-  if (value is! Map) {
-    throw FormatException('Invalid $context: $key must be an object.');
-  }
-  return value.cast<String, dynamic>();
-}
-
-String _requiredString(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final value = json[key];
-  if (value is! String || value.trim().isEmpty) {
-    throw FormatException('Invalid $context: $key must be a non-empty string.');
-  }
-  return value;
-}
-
-String? _optionalString(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final value = json[key];
-  if (value == null) return null;
-  if (value is! String || value.trim().isEmpty) {
-    throw FormatException('Invalid $context: $key must be a non-empty string.');
-  }
-  return value;
-}
-
-bool _requiredBool(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final value = json[key];
-  if (value is bool) return value;
-  throw FormatException('Invalid $context: $key must be a bool.');
-}
-
-int _requiredInt(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final parsed = _intOrNull(json[key]);
-  if (parsed == null) {
-    throw FormatException('Invalid $context: $key must be an int.');
-  }
-  return parsed;
-}
-
-Duration? _optionalDurationMs(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw == null) return null;
-
-  final milliseconds = _intOrNull(raw);
-  if (milliseconds == null) {
-    throw FormatException('Invalid $context: $key must be an int duration.');
-  }
-  return Duration(milliseconds: milliseconds);
-}
-
-DateTime? _optionalDateTime(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw == null) return null;
-  if (raw is! String || raw.trim().isEmpty) {
-    throw FormatException('Invalid $context: $key must be an ISO date string.');
-  }
-
-  final parsed = DateTime.tryParse(raw);
-  if (parsed == null) {
-    throw FormatException('Invalid $context: $key must be an ISO date string.');
-  }
-  return parsed;
-}
-
-int? _intOrNull(Object? value) {
-  if (value is int) return value;
-  if (value is double && value.isFinite && value == value.roundToDouble()) {
-    return value.toInt();
-  }
-  if (value is String && value.trim().isNotEmpty) {
-    return int.tryParse(value);
-  }
-  return null;
 }

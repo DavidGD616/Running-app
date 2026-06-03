@@ -1,6 +1,4 @@
-abstract interface class CanonicalKeyed {
-  String get key;
-}
+import '../../../training_plan/domain/models/model_json_utils.dart';
 
 T? _enumByKey<T extends Enum>(
   String? key,
@@ -189,9 +187,7 @@ class RunActivity extends ActivityRecord {
     super.perceivedEffort,
     super.linkedSessionId,
     super.notes,
-  }) : super(
-         kind: ActivityKind.run,
-       );
+  }) : super(kind: ActivityKind.run);
 
   static RunActivity? tryFromJson(Map<String, dynamic> json) {
     final id = _stringOrNull(json['id']);

@@ -176,7 +176,7 @@ void main() {
 
       expect(
         container.read(runnerProfileProvider).value!.fitness.fitnessSource,
-        OnboardingValues.fitnessSourceStrava,
+        FitnessSource.strava,
       );
       expect(
         container.read(runnerProfileProvider).value!.fitness.athleteSummary,
@@ -187,9 +187,11 @@ void main() {
           .read(onboardingProvider.notifier)
           .clearStravaFitness(clock: DateTime(2026, 5, 1));
 
-      final clearedFitness =
-          container.read(runnerProfileProvider).value!.fitness;
-      expect(clearedFitness.fitnessSource, OnboardingValues.fitnessSourceManual);
+      final clearedFitness = container
+          .read(runnerProfileProvider)
+          .value!
+          .fitness;
+      expect(clearedFitness.fitnessSource, FitnessSource.manual);
       expect(clearedFitness.athleteSummary, isNull);
       // Canonical answers remain so plan generation still has data to work with.
       expect(clearedFitness.experience, RunnerExperience.intermediate);

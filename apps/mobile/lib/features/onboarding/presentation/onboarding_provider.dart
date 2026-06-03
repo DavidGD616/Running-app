@@ -181,7 +181,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
 
     final profile = ref.read(runnerProfileProvider).value;
     if (profile == null) return;
-    if (profile.fitness.fitnessSource != OnboardingValues.fitnessSourceStrava) {
+    if (profile.fitness.fitnessSource != FitnessSource.strava) {
       return;
     }
 
@@ -195,7 +195,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
       raceDistanceBefore: profile.fitness.raceDistanceBefore,
       benchmark: profile.fitness.benchmark,
       benchmarkTime: profile.fitness.benchmarkTime,
-      fitnessSource: OnboardingValues.fitnessSourceManual,
+      fitnessSource: FitnessSource.manual,
       athleteSummary: null,
     );
     final updatedProfile = profile.copyWith(
@@ -234,7 +234,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           stravaInsufficientData: summary.insufficientData,
           athleteSummary: AthleteSummarySnapshot(
             weeklyVolumeKm: summary.weeklyVolumeKm,
-            volumeTrend: summary.volumeTrend.toKey(),
+            volumeTrend: summary.volumeTrend,
             acuteChronicRatio: summary.acuteChronicRatio,
             longestRecentRunKm: summary.longestRecentRunKm,
             typicalEasyPaceSecPerKm: summary.typicalEasyPaceSecPerKm,

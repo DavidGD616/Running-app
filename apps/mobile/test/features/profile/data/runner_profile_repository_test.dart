@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/features/profile/data/runner_profile_repository.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
+import 'package:running_app/features/strava/domain/athlete_summary.dart';
 import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
 
 import '../../../helpers/runner_profile_fixtures.dart';
@@ -66,7 +67,7 @@ void main() {
           fitnessSource: 'strava',
           athleteSummary: const AthleteSummarySnapshot(
             weeklyVolumeKm: 32,
-            volumeTrend: 'steady',
+            volumeTrend: VolumeTrend.steady,
             acuteChronicRatio: 1.04,
             longestRecentRunKm: 14,
           ),
@@ -92,7 +93,9 @@ void main() {
       expect(athleteSummary['longestRecentRunKm'], 14.0);
 
       final manualFitness =
-          buildRunnerProfile(clock: DateTime(2026, 4, 7, 8, 0)).toJson()['fitness']
+          buildRunnerProfile(
+                clock: DateTime(2026, 4, 7, 8, 0),
+              ).toJson()['fitness']
               as Map<String, dynamic>;
       expect(manualFitness.containsKey('fitnessSource'), isTrue);
       expect(manualFitness.containsKey('athleteSummary'), isFalse);

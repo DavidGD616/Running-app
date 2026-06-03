@@ -6,6 +6,7 @@ import 'package:running_app/features/training_plan/domain/models/session_type.da
 import 'package:running_app/features/training_plan/domain/models/support_plan_session.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
 import 'package:running_app/features/training_plan/domain/models/training_session.dart';
+import 'package:running_app/features/training_plan/domain/models/workout_step.dart';
 import 'package:running_app/features/training_plan/domain/models/workout_target.dart';
 
 void main() {
@@ -168,6 +169,25 @@ void main() {
       expect(restored.category, StrengthCategory.coreMobility);
     });
 
+    test('WorkoutStep stride round-trip', () {
+      const step = WorkoutStep.stride(
+        target: WorkoutTarget.pace(
+          TargetZone.interval,
+          paceMinSecPerKm: 180,
+          paceMaxSecPerKm: 220,
+          effortCue: 'relaxed fast',
+        ),
+        duration: Duration(seconds: 20),
+        distanceMeters: 100,
+      );
+
+      final restored = WorkoutStep.fromJson(step.toJson());
+
+      expect(restored, isNotNull);
+      expect(restored!.toJson(), step.toJson());
+      expect(restored.kind, WorkoutStepKind.stride);
+    });
+
     test('Invalid pace range (min > max) throws FormatException', () {
       expect(
         () => WorkoutTarget.fromJson({
@@ -189,6 +209,32 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test(
+      'Malformed stravaCoachingProfileSnapshot propagates FormatException',
+      () {
+        final json = TrainingPlan(
+          id: 'plan-pro-2',
+          raceType: TrainingPlanRaceType.halfMarathon,
+          totalWeeks: 12,
+          currentWeekNumber: 1,
+          sessions: const [],
+          stravaCoachingProfileSnapshot: _stravaSnapshot(),
+        ).toJson();
+
+        final malformedSnapshot =
+            (json['stravaCoachingProfileSnapshot'] as Map<String, dynamic>)
+              ..remove('provenance');
+        json['stravaCoachingProfileSnapshot'] = malformedSnapshot;
+
+        // TrainingPlan.fromJson intentionally propagates nested snapshot
+        // contract violations as FormatException.
+        expect(
+          () => TrainingPlan.fromJson(json),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
   });
 }
 

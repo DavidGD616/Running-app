@@ -107,6 +107,8 @@ class WorkoutTarget {
 
   const WorkoutTarget.heartRate(
     this.zone, {
+    // pace fields may be present for mixed-target guidance but are typically
+    // null for heartRate targets.
     this.paceMinSecPerKm,
     this.paceMaxSecPerKm,
     this.effortCue,
@@ -127,6 +129,8 @@ class WorkoutTarget {
     int? paceMaxSecPerKm,
     String? effortCue,
   }) {
+    // Limitation: nullable pace fields cannot be explicitly nulled out via
+    // copyWith because null means "keep existing".
     return WorkoutTarget(
       type: type ?? this.type,
       zone: zone ?? this.zone,

@@ -1,3 +1,5 @@
+import '../../../training_plan/domain/models/model_json_utils.dart';
+
 enum StravaDataConfidence {
   high('high'),
   medium('medium'),
@@ -53,29 +55,29 @@ class StravaAnalysisProvenance {
   }
 
   factory StravaAnalysisProvenance.fromJson(Map<String, dynamic> json) {
-    final source = _requiredString(json, 'source', context: 'provenance');
-    final syncedAt = _requiredDateTime(json, 'syncedAt', context: 'provenance');
-    final dataWindow = _requiredString(
+    final source = requiredString(json, 'source', context: 'provenance');
+    final syncedAt = requiredDateTime(json, 'syncedAt', context: 'provenance');
+    final dataWindow = requiredString(
       json,
       'dataWindow',
       context: 'provenance',
     );
-    final dataFromDate = _requiredDateTime(
+    final dataFromDate = requiredDateTime(
       json,
       'dataFromDate',
       context: 'provenance',
     );
-    final dataThroughDate = _requiredDateTime(
+    final dataThroughDate = requiredDateTime(
       json,
       'dataThroughDate',
       context: 'provenance',
     );
-    final activityCount = _requiredInt(
+    final activityCount = requiredInt(
       json,
       'activityCount',
       context: 'provenance',
     );
-    final runActivityCount = _requiredInt(
+    final runActivityCount = requiredInt(
       json,
       'runActivityCount',
       context: 'provenance',
@@ -138,10 +140,10 @@ class StravaEvidencePoint {
   }
 
   factory StravaEvidencePoint.fromJson(Map<String, dynamic> json) {
-    final metric = _requiredString(json, 'metric', context: 'evidence point');
-    final date = _requiredDateTime(json, 'date', context: 'evidence point');
-    final value = _requiredNum(json, 'value', context: 'evidence point');
-    final unit = _requiredString(json, 'unit', context: 'evidence point');
+    final metric = requiredString(json, 'metric', context: 'evidence point');
+    final date = requiredDateTime(json, 'date', context: 'evidence point');
+    final value = requiredNum(json, 'value', context: 'evidence point');
+    final unit = requiredString(json, 'unit', context: 'evidence point');
 
     if (value is double && !value.isFinite) {
       throw const FormatException(
@@ -149,7 +151,12 @@ class StravaEvidencePoint {
       );
     }
 
-    return StravaEvidencePoint(metric: metric, date: date, value: value, unit: unit);
+    return StravaEvidencePoint(
+      metric: metric,
+      date: date,
+      value: value,
+      unit: unit,
+    );
   }
 }
 
@@ -172,8 +179,8 @@ class StravaPaceZone {
   }) {
     final rawPaceMinSecPerKm = json['paceMinSecPerKm'];
     final rawPaceMaxSecPerKm = json['paceMaxSecPerKm'];
-    final paceMinSecPerKm = _optionalInt(json['paceMinSecPerKm']);
-    final paceMaxSecPerKm = _optionalInt(json['paceMaxSecPerKm']);
+    final paceMinSecPerKm = optionalInt(json['paceMinSecPerKm']);
+    final paceMaxSecPerKm = optionalInt(json['paceMaxSecPerKm']);
 
     final contextLabel = context ?? 'pace zone';
     if (rawPaceMinSecPerKm != null && paceMinSecPerKm == null) {
@@ -262,15 +269,15 @@ class StravaPaceZones {
 
   factory StravaPaceZones.fromJson(Map<String, dynamic> json) {
     return StravaPaceZones(
-      recovery: _requiredPaceZone(json, 'recovery'),
-      easy: _requiredPaceZone(json, 'easy'),
-      longRun: _requiredPaceZone(json, 'longRun'),
-      steady: _requiredPaceZone(json, 'steady'),
-      tempo: _requiredPaceZone(json, 'tempo'),
-      threshold: _requiredPaceZone(json, 'threshold'),
-      racePace: _requiredPaceZone(json, 'racePace'),
-      intervals: _requiredPaceZone(json, 'intervals'),
-      strides: _requiredPaceZone(json, 'strides'),
+      recovery: _paceZoneOrEmpty(json, 'recovery'),
+      easy: _paceZoneOrEmpty(json, 'easy'),
+      longRun: _paceZoneOrEmpty(json, 'longRun'),
+      steady: _paceZoneOrEmpty(json, 'steady'),
+      tempo: _paceZoneOrEmpty(json, 'tempo'),
+      threshold: _paceZoneOrEmpty(json, 'threshold'),
+      racePace: _paceZoneOrEmpty(json, 'racePace'),
+      intervals: _paceZoneOrEmpty(json, 'intervals'),
+      strides: _paceZoneOrEmpty(json, 'strides'),
     );
   }
 }
@@ -291,9 +298,9 @@ class StravaGuardrail {
   }
 
   factory StravaGuardrail.fromJson(Map<String, dynamic> json) {
-    final priority = _requiredInt(json, 'priority', context: 'guardrail');
-    final category = _requiredString(json, 'category', context: 'guardrail');
-    final message = _requiredString(json, 'message', context: 'guardrail');
+    final priority = requiredInt(json, 'priority', context: 'guardrail');
+    final category = requiredString(json, 'category', context: 'guardrail');
+    final message = requiredString(json, 'message', context: 'guardrail');
 
     if (priority < 0 || priority > 3) {
       throw const FormatException(
@@ -351,23 +358,25 @@ class StravaRaceTargetEstimate {
       'primaryTimeSec': primaryTime.inSeconds,
       'stretchTimeSec': stretchTime?.inSeconds,
       'confidence': confidence.key,
-      'evidence': evidence.map((point) => point.toJson()).toList(growable: false),
+      'evidence': evidence
+          .map((point) => point.toJson())
+          .toList(growable: false),
     };
   }
 
   factory StravaRaceTargetEstimate.fromJson(Map<String, dynamic> json) {
-    final distanceKm = _requiredDouble(
+    final distanceKm = requiredDouble(
       json,
       'distanceKm',
       context: 'race target estimate',
     );
-    final primaryTimeSeconds = _requiredInt(
+    final primaryTimeSeconds = requiredInt(
       json,
       'primaryTimeSec',
       context: 'race target estimate',
     );
     final rawStretchTimeSeconds = json['stretchTimeSec'];
-    final stretchTimeSeconds = _optionalInt(json['stretchTimeSec']);
+    final stretchTimeSeconds = optionalInt(json['stretchTimeSec']);
     final confidence = _requiredConfidence(
       json,
       'confidence',
@@ -424,8 +433,8 @@ class StravaPlanFocus {
 
   factory StravaPlanFocus.fromJson(Map<String, dynamic> json) {
     return StravaPlanFocus(
-      category: _requiredString(json, 'category', context: 'plan focus'),
-      summary: _requiredString(json, 'summary', context: 'plan focus'),
+      category: requiredString(json, 'category', context: 'plan focus'),
+      summary: requiredString(json, 'summary', context: 'plan focus'),
     );
   }
 }
@@ -459,28 +468,30 @@ class StravaCoachingProfile {
     return {
       'provenance': provenance.toJson(),
       'dataConfidence': dataConfidence.key,
-      'trainingBase':
-          trainingBase.map((point) => point.toJson()).toList(growable: false),
-      'endurance': endurance.map((point) => point.toJson()).toList(growable: false),
-      'speedMarkers':
-          speedMarkers.map((point) => point.toJson()).toList(growable: false),
+      'trainingBase': trainingBase
+          .map((point) => point.toJson())
+          .toList(growable: false),
+      'endurance': endurance
+          .map((point) => point.toJson())
+          .toList(growable: false),
+      'speedMarkers': speedMarkers
+          .map((point) => point.toJson())
+          .toList(growable: false),
       'paceZones': paceZones.toJson(),
       'terrain': terrain.key,
-      'recoveryGuardrails':
-          recoveryGuardrails
-              .map((guardrail) => guardrail.toJson())
-              .toList(growable: false),
-      'raceTargets':
-          raceTargets
-              .map((targetEstimate) => targetEstimate.toJson())
-              .toList(growable: false),
+      'recoveryGuardrails': recoveryGuardrails
+          .map((guardrail) => guardrail.toJson())
+          .toList(growable: false),
+      'raceTargets': raceTargets
+          .map((targetEstimate) => targetEstimate.toJson())
+          .toList(growable: false),
       'planFocus': planFocus.toJson(),
     };
   }
 
   factory StravaCoachingProfile.fromJson(Map<String, dynamic> json) {
     final provenance = StravaAnalysisProvenance.fromJson(
-      _requiredMap(json, 'provenance', context: 'coaching profile'),
+      requiredMap(json, 'provenance', context: 'coaching profile'),
     );
     final dataConfidence = _requiredConfidence(
       json,
@@ -503,7 +514,7 @@ class StravaCoachingProfile {
       context: 'coaching profile',
     );
     final paceZones = StravaPaceZones.fromJson(
-      _requiredMap(json, 'paceZones', context: 'coaching profile'),
+      requiredMap(json, 'paceZones', context: 'coaching profile'),
     );
     final terrain = _requiredTerrain(
       json,
@@ -521,7 +532,7 @@ class StravaCoachingProfile {
       context: 'coaching profile',
     );
     final planFocus = StravaPlanFocus.fromJson(
-      _requiredMap(json, 'planFocus', context: 'coaching profile'),
+      requiredMap(json, 'planFocus', context: 'coaching profile'),
     );
 
     return StravaCoachingProfile(
@@ -544,7 +555,7 @@ StravaDataConfidence _requiredConfidence(
   String key, {
   required String context,
 }) {
-  final raw = _requiredString(json, key, context: context);
+  final raw = requiredString(json, key, context: context);
   final parsed = StravaDataConfidence.fromKey(raw);
   if (parsed == null) {
     throw FormatException('Invalid $context: unsupported $key "$raw".');
@@ -557,7 +568,7 @@ StravaTerrainProfile _requiredTerrain(
   String key, {
   required String context,
 }) {
-  final raw = _requiredString(json, key, context: context);
+  final raw = requiredString(json, key, context: context);
   final parsed = StravaTerrainProfile.fromKey(raw);
   if (parsed == null) {
     throw FormatException('Invalid $context: unsupported $key "$raw".');
@@ -565,13 +576,15 @@ StravaTerrainProfile _requiredTerrain(
   return parsed;
 }
 
-StravaPaceZone _requiredPaceZone(Map<String, dynamic> json, String key) {
+StravaPaceZone _paceZoneOrEmpty(Map<String, dynamic> json, String key) {
   final raw = json[key];
   if (raw == null) {
     return const StravaPaceZone();
   }
   if (raw is! Map) {
-    throw FormatException('Invalid pace zones: $key must be a map when present.');
+    throw FormatException(
+      'Invalid pace zones: $key must be a map when present.',
+    );
   }
   return StravaPaceZone.fromJson(
     raw.cast<String, dynamic>(),
@@ -584,13 +597,17 @@ List<StravaEvidencePoint> _requiredEvidenceList(
   String key, {
   required String context,
 }) {
-  final list = _requiredList(json, key, context: context);
-  return list.map((entry) {
-    if (entry is! Map) {
-      throw FormatException('Invalid $context: $key must contain object entries.');
-    }
-    return StravaEvidencePoint.fromJson(entry.cast<String, dynamic>());
-  }).toList(growable: false);
+  final list = requiredList(json, key, context: context);
+  return list
+      .map((entry) {
+        if (entry is! Map) {
+          throw FormatException(
+            'Invalid $context: $key must contain object entries.',
+          );
+        }
+        return StravaEvidencePoint.fromJson(entry.cast<String, dynamic>());
+      })
+      .toList(growable: false);
 }
 
 List<StravaGuardrail> _requiredGuardrailList(
@@ -598,13 +615,17 @@ List<StravaGuardrail> _requiredGuardrailList(
   String key, {
   required String context,
 }) {
-  final list = _requiredList(json, key, context: context);
-  return list.map((entry) {
-    if (entry is! Map) {
-      throw FormatException('Invalid $context: $key must contain object entries.');
-    }
-    return StravaGuardrail.fromJson(entry.cast<String, dynamic>());
-  }).toList(growable: false);
+  final list = requiredList(json, key, context: context);
+  return list
+      .map((entry) {
+        if (entry is! Map) {
+          throw FormatException(
+            'Invalid $context: $key must contain object entries.',
+          );
+        }
+        return StravaGuardrail.fromJson(entry.cast<String, dynamic>());
+      })
+      .toList(growable: false);
 }
 
 List<StravaRaceTargetEstimate> _requiredRaceTargetList(
@@ -612,125 +633,15 @@ List<StravaRaceTargetEstimate> _requiredRaceTargetList(
   String key, {
   required String context,
 }) {
-  final list = _requiredList(json, key, context: context);
-  return list.map((entry) {
-    if (entry is! Map) {
-      throw FormatException('Invalid $context: $key must contain object entries.');
-    }
-    return StravaRaceTargetEstimate.fromJson(entry.cast<String, dynamic>());
-  }).toList(growable: false);
-}
-
-String _requiredString(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw is! String || raw.isEmpty) {
-    throw FormatException('Invalid $context: $key must be a non-empty string.');
-  }
-  return raw;
-}
-
-int _requiredInt(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final parsed = _optionalInt(json[key]);
-  if (parsed == null) {
-    throw FormatException('Invalid $context: $key must be an int.');
-  }
-  return parsed;
-}
-
-int? _optionalInt(Object? value) {
-  if (value is int) return value;
-  if (value is double && value.isFinite && value == value.roundToDouble()) {
-    return value.toInt();
-  }
-  if (value is String && value.isNotEmpty) {
-    return int.tryParse(value);
-  }
-  return null;
-}
-
-double _requiredDouble(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final parsed = _optionalDouble(json[key]);
-  if (parsed == null) {
-    throw FormatException('Invalid $context: $key must be a double.');
-  }
-  return parsed;
-}
-
-double? _optionalDouble(Object? value) {
-  if (value is double) return value;
-  if (value is int) return value.toDouble();
-  if (value is String && value.isNotEmpty) {
-    return double.tryParse(value);
-  }
-  return null;
-}
-
-num _requiredNum(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw is num) return raw;
-  if (raw is String && raw.isNotEmpty) {
-    final intValue = int.tryParse(raw);
-    if (intValue != null) return intValue;
-    final doubleValue = double.tryParse(raw);
-    if (doubleValue != null) return doubleValue;
-  }
-
-  throw FormatException('Invalid $context: $key must be a numeric value.');
-}
-
-DateTime _requiredDateTime(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw is! String || raw.isEmpty) {
-    throw FormatException('Invalid $context: $key must be an ISO date string.');
-  }
-
-  final parsed = DateTime.tryParse(raw);
-  if (parsed == null) {
-    throw FormatException('Invalid $context: $key must be an ISO date string.');
-  }
-  return parsed;
-}
-
-Map<String, dynamic> _requiredMap(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw is! Map) {
-    throw FormatException('Invalid $context: $key must be an object.');
-  }
-  return raw.cast<String, dynamic>();
-}
-
-List<dynamic> _requiredList(
-  Map<String, dynamic> json,
-  String key, {
-  required String context,
-}) {
-  final raw = json[key];
-  if (raw is! List) {
-    throw FormatException('Invalid $context: $key must be a list.');
-  }
-  return raw;
+  final list = requiredList(json, key, context: context);
+  return list
+      .map((entry) {
+        if (entry is! Map) {
+          throw FormatException(
+            'Invalid $context: $key must contain object entries.',
+          );
+        }
+        return StravaRaceTargetEstimate.fromJson(entry.cast<String, dynamic>());
+      })
+      .toList(growable: false);
 }

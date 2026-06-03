@@ -23,7 +23,10 @@ void main() {
       expect(restored.toJson(), profile.toJson());
       expect(restored.dataConfidence, StravaDataConfidence.medium);
       expect(restored.recoveryGuardrails, hasLength(2));
-      expect(restored.raceTargets.single.confidence, StravaDataConfidence.medium);
+      expect(
+        restored.raceTargets.single.confidence,
+        StravaDataConfidence.medium,
+      );
     });
 
     test('no-useful-data profile round-trip keeps limited confidence', () {
@@ -90,10 +93,22 @@ void main() {
         StravaAnalysisProvenance.fromJson(provenance.toJson()).toJson(),
         provenance.toJson(),
       );
-      expect(StravaEvidencePoint.fromJson(evidence.toJson()).toJson(), evidence.toJson());
-      expect(StravaPaceZone.fromJson(paceZone.toJson()).toJson(), paceZone.toJson());
-      expect(StravaPaceZones.fromJson(paceZones.toJson()).toJson(), paceZones.toJson());
-      expect(StravaGuardrail.fromJson(guardrail.toJson()).toJson(), guardrail.toJson());
+      expect(
+        StravaEvidencePoint.fromJson(evidence.toJson()).toJson(),
+        evidence.toJson(),
+      );
+      expect(
+        StravaPaceZone.fromJson(paceZone.toJson()).toJson(),
+        paceZone.toJson(),
+      );
+      expect(
+        StravaPaceZones.fromJson(paceZones.toJson()).toJson(),
+        paceZones.toJson(),
+      );
+      expect(
+        StravaGuardrail.fromJson(guardrail.toJson()).toJson(),
+        guardrail.toJson(),
+      );
       expect(
         StravaRaceTargetEstimate.fromJson(raceTarget.toJson()).toJson(),
         raceTarget.toJson(),
@@ -163,6 +178,47 @@ void main() {
         }),
         throwsA(isA<FormatException>()),
       );
+    });
+
+    test('StravaGuardrail priority 4 throws FormatException', () {
+      expect(
+        () => StravaGuardrail.fromJson({
+          'priority': 4,
+          'category': 'recovery',
+          'message': 'message',
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('StravaGuardrail priority -1 throws FormatException', () {
+      expect(
+        () => StravaGuardrail.fromJson({
+          'priority': -1,
+          'category': 'recovery',
+          'message': 'message',
+        }),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('unrecognized terrain key throws FormatException', () {
+      final json = _strongProfile().toJson()..['terrain'] = 'mountainous';
+
+      expect(
+        () => StravaCoachingProfile.fromJson(json),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('StravaGuardrail priority double is accepted and coerced', () {
+      final parsed = StravaGuardrail.fromJson({
+        'priority': 2.0,
+        'category': 'recovery',
+        'message': 'message',
+      });
+
+      expect(parsed.priority, 2);
     });
   });
 }

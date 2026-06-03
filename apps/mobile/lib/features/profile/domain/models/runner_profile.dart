@@ -1,9 +1,6 @@
 import '../../../user_preferences/domain/user_preferences.dart';
-import '../../../strava/domain/models/strava_coaching_profile.dart';
-
-abstract interface class CanonicalKeyed {
-  String get key;
-}
+import '../../../strava/domain/athlete_summary.dart';
+import '../../../training_plan/domain/models/model_json_utils.dart';
 
 T? _enumByKey<T extends Enum>(
   String? key,
@@ -99,6 +96,15 @@ ProfileGender? _profileGenderFromName(String? value) {
     'male' => ProfileGender.male,
     'female' => ProfileGender.female,
     'other' => ProfileGender.other,
+    _ => null,
+  };
+}
+
+VolumeTrend? _volumeTrendFromKey(String? key) {
+  return switch (key) {
+    'building' => VolumeTrend.building,
+    'steady' => VolumeTrend.steady,
+    'detraining' => VolumeTrend.detraining,
     _ => null,
   };
 }
@@ -612,21 +618,25 @@ class AcceptedRaceTarget {
     }
 
     final rawEvidence = json['evidence'];
-    if (rawEvidence is! List) {
-      throw const FormatException(
+    final evidence = switch (rawEvidence) {
+      null => const <StravaEvidencePoint>[],
+      List entries =>
+        entries
+            .map((entry) {
+              if (entry is! Map) {
+                throw const FormatException(
+                  'Invalid accepted race target: evidence entries must be objects.',
+                );
+              }
+              return StravaEvidencePoint.fromJson(
+                entry.cast<String, dynamic>(),
+              );
+            })
+            .toList(growable: false),
+      _ => throw const FormatException(
         'Invalid accepted race target: evidence must be a list.',
-      );
-    }
-    final evidence = rawEvidence
-        .map((entry) {
-          if (entry is! Map) {
-            throw const FormatException(
-              'Invalid accepted race target: evidence entries must be objects.',
-            );
-          }
-          return StravaEvidencePoint.fromJson(entry.cast<String, dynamic>());
-        })
-        .toList(growable: false);
+      ),
+    };
 
     return AcceptedRaceTarget(
       distanceKm: distanceKm,
@@ -709,7 +719,7 @@ enum WatchMetric implements CanonicalKeyed {
 enum AutoAdjustPreference implements CanonicalKeyed {
   auto('auto_adjust_auto'),
   askFirst('auto_adjust_ask_first'),
-  no('no');
+  no('auto_adjust_no');
 
   const AutoAdjustPreference(this.key);
 
@@ -808,7 +818,7 @@ class AthleteSummarySnapshot {
   });
 
   final double? weeklyVolumeKm;
-  final String? volumeTrend;
+  final VolumeTrend? volumeTrend;
   final double? acuteChronicRatio;
   final double? longestRecentRunKm;
   final int? typicalEasyPaceSecPerKm;
@@ -861,7 +871,7 @@ class FitnessProfile {
   final RaceDistanceExperience? raceDistanceBefore;
   final BenchmarkType? benchmark;
   final Duration? benchmarkTime;
-  final String? fitnessSource;
+  final FitnessSource? fitnessSource;
   final AthleteSummarySnapshot? athleteSummary;
 }
 
@@ -947,7 +957,7 @@ class FitnessProfileDraft {
       benchmarkTime: benchmark == null || benchmark == BenchmarkType.skip
           ? null
           : benchmarkTime,
-      fitnessSource: fitnessSource,
+      fitnessSource: FitnessSource.fromKey(fitnessSource),
       athleteSummary:
           athleteSummary ??
           _athleteSummaryFromLegacyStravaFields(
@@ -1413,7 +1423,7 @@ class RunnerProfileDraft {
         raceDistanceBefore: profile.fitness.raceDistanceBefore,
         benchmark: profile.fitness.benchmark,
         benchmarkTime: profile.fitness.benchmarkTime,
-        fitnessSource: profile.fitness.fitnessSource,
+        fitnessSource: profile.fitness.fitnessSource?.key,
         stravaWeeklyVolumeKm: profile.fitness.athleteSummary?.weeklyVolumeKm,
         stravaLongestRecentRunKm:
             profile.fitness.athleteSummary?.longestRecentRunKm,
@@ -1666,7 +1676,7 @@ Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
     'raceDistanceBefore': value.raceDistanceBefore?.key,
     'benchmark': value.benchmark?.key,
     'benchmarkTimeMs': _durationToJson(value.benchmarkTime),
-    'fitnessSource': value.fitnessSource,
+    'fitnessSource': value.fitnessSource?.key,
     if (value.athleteSummary?.hasData == true)
       'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
   };
@@ -1675,7 +1685,7 @@ Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
 Map<String, dynamic> _athleteSummaryToJson(AthleteSummarySnapshot value) {
   return {
     if (value.weeklyVolumeKm != null) 'weeklyVolumeKm': value.weeklyVolumeKm,
-    if (value.volumeTrend != null) 'volumeTrend': value.volumeTrend,
+    if (value.volumeTrend != null) 'volumeTrend': value.volumeTrend!.toKey(),
     if (value.acuteChronicRatio != null)
       'acuteChronicRatio': value.acuteChronicRatio,
     if (value.longestRecentRunKm != null)
@@ -1704,7 +1714,7 @@ AthleteSummarySnapshot? _athleteSummaryFromJson(Map<String, dynamic> json) {
 
   final summary = AthleteSummarySnapshot(
     weeklyVolumeKm: _doubleFromJson(json['weeklyVolumeKm']),
-    volumeTrend: _stringOrNull(json['volumeTrend']),
+    volumeTrend: _volumeTrendFromKey(_stringOrNull(json['volumeTrend'])),
     acuteChronicRatio: _doubleFromJson(json['acuteChronicRatio']),
     longestRecentRunKm: _doubleFromJson(json['longestRecentRunKm']),
     typicalEasyPaceSecPerKm: _intOrNull(json['typicalEasyPaceSecPerKm']),

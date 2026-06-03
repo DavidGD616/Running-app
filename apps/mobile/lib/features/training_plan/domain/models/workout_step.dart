@@ -137,12 +137,17 @@ class WorkoutStep {
       );
     }
 
+    final repetitions = _intFromJson(json['repetitions']);
+    if (kind == WorkoutStepKind.repeat && (repetitions ?? 0) <= 0) {
+      return null;
+    }
+
     return WorkoutStep(
       kind: kind,
       target: target,
       duration: _durationFromJson(json['durationMs']),
       distanceMeters: _intFromJson(json['distanceMeters']),
-      repetitions: _intFromJson(json['repetitions']),
+      repetitions: repetitions,
       steps: steps,
     );
   }
@@ -158,7 +163,12 @@ WorkoutStepKind? _stepKindFromKey(String? key) {
 
 int? _intFromJson(Object? value) {
   if (value is int) return value;
-  if (value is double) return value.toInt();
+  if (value is double) {
+    if (value.isFinite && value == value.roundToDouble()) {
+      return value.toInt();
+    }
+    throw const FormatException('Invalid workout step: value must be an int.');
+  }
   if (value is String) return int.tryParse(value);
   return null;
 }

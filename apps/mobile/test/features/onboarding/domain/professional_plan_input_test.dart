@@ -123,6 +123,87 @@ void main() {
         throwsA(isA<FormatException>()),
       );
     });
+
+    test('Strava limited confidence without manualFitness is valid', () {
+      final input = _baseInput(
+        fitnessSource: FitnessSource.strava,
+        stravaCoachingProfile: _stravaProfile(
+          confidence: StravaDataConfidence.limited,
+        ),
+        manualFitness: null,
+      );
+
+      final restored = ProfessionalPlanInput.fromJson(input.toJson());
+
+      expect(restored.fitnessSource, FitnessSource.strava);
+      expect(
+        restored.stravaCoachingProfile?.dataConfidence,
+        StravaDataConfidence.limited,
+      );
+      expect(restored.manualFitness, isNull);
+    });
+
+    test('manual source with no manualFitness throws', () {
+      final json = _baseInput(
+        fitnessSource: FitnessSource.manual,
+        stravaCoachingProfile: null,
+        manualFitness: null,
+      ).toJson();
+
+      expect(
+        () => ProfessionalPlanInput.fromJson(json),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('strava source with no stravaCoachingProfile throws', () {
+      final json = _baseInput(
+        fitnessSource: FitnessSource.strava,
+        stravaCoachingProfile: _stravaProfile(
+          confidence: StravaDataConfidence.medium,
+        ),
+        manualFitness: null,
+      ).toJson()..remove('stravaCoachingProfile');
+
+      expect(
+        () => ProfessionalPlanInput.fromJson(json),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test(
+      'improveTime priority with missing currentTimeMs or targetTimeMs throws',
+      () {
+        final missingCurrent = _baseInput(
+          fitnessSource: FitnessSource.strava,
+          stravaCoachingProfile: _stravaProfile(
+            confidence: StravaDataConfidence.medium,
+          ),
+          manualFitness: null,
+        ).toJson();
+        (missingCurrent['goal'] as Map<String, dynamic>).remove(
+          'currentTimeMs',
+        );
+
+        final missingTarget = _baseInput(
+          fitnessSource: FitnessSource.strava,
+          stravaCoachingProfile: _stravaProfile(
+            confidence: StravaDataConfidence.medium,
+          ),
+          manualFitness: null,
+        ).toJson();
+        (missingTarget['goal'] as Map<String, dynamic>).remove('targetTimeMs');
+
+        expect(
+          () => ProfessionalPlanInput.fromJson(missingCurrent),
+          throwsA(isA<FormatException>()),
+        );
+        expect(
+          () => ProfessionalPlanInput.fromJson(missingTarget),
+          throwsA(isA<FormatException>()),
+        );
+      },
+    );
   });
 }
 
