@@ -91,3 +91,17 @@ This file records the decisions made during product discovery for the Strava pro
   - `supabase/functions/strava-sync`: `deno test --allow-env --allow-net --allow-read index_test.ts` (8 passed)
   - `apps/mobile`: `flutter test test/features/strava/data/strava_service_test.dart` (13 passed)
 - Phase 2 remains in progress because Task 5 is next.
+
+### 2026-06-03 - Phase 2 Task 5 Complete
+
+- Task 5 completed in commit `c9a18c4` - "feat(strava): derive coaching profile analysis"
+- Reviewer approved with no findings after fix passes.
+- Verification passed:
+  - `apps/mobile`: `flutter test test/features/strava/strava_coaching_profile_builder_test.dart` (14 passed)
+  - `apps/mobile`: `flutter test test/features/strava/athlete_summary_test.dart test/features/strava/strava_coaching_profile_test.dart` (24 passed)
+  - `apps/mobile`: `flutter analyze` (No issues found)
+
+### 2026-06-03 - Phase 2 Strava Sync And Analysis Complete
+
+- Phase 2 is complete because Task 4 and Task 5 are complete.
+- Phase 3 Task 6 is next.

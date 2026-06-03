@@ -184,7 +184,7 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Task 2 commit: `7605629` - "feat(onboarding): add ProfessionalPlanInput data contract"
 - Task 3 commit: `95abd67` - "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
 
-## Phase 2: Strava Sync And Analysis [IN PROGRESS]
+## Phase 2: Strava Sync And Analysis [COMPLETE]
 
 ### Task 4: Enrich Strava Sync Summary Fields
 
@@ -250,7 +250,27 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Recent 8 to 12 week data controls safety and paces.
 - Guardrails are limited to 0 to 3 priority flags.
 
-## Phase 3: Onboarding Replacement
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `c9a18c4` - "feat(strava): derive coaching profile analysis"
+- Reviewer approved with no findings after fix passes.
+- Verification passed:
+  - `apps/mobile`: `flutter test test/features/strava/strava_coaching_profile_builder_test.dart` (14 passed)
+  - `apps/mobile`: `flutter test test/features/strava/athlete_summary_test.dart test/features/strava/strava_coaching_profile_test.dart` (24 passed)
+  - `apps/mobile`: `flutter analyze` (No issues found)
+- Phase 2 is complete because Task 4 and Task 5 are complete.
+- Phase 3 Task 6 is next.
+
+### Phase 2 Completion Notes (2026-06-03)
+
+- Task 4 commit: `ccd9615` - "feat(strava): enrich synced activity summaries"
+- Task 5 commit: `c9a18c4` - "feat(strava): derive coaching profile analysis"
+- Phase 2 acceptance criteria were met.
+- Phase 3 Task 6 is next.
+
+## Phase 3: Onboarding Replacement [NEXT]
 
 ### Task 6: Replace Onboarding State With Professional Flow State
 
