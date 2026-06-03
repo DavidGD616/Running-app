@@ -44,12 +44,32 @@ void main() {
     expect(restored, isNotNull);
     expect(restored!.goal.priority, GoalPriority.improveTime);
     expect(restored.device.device, WatchDeviceType.garmin);
+    expect(restored.strength.lifts, isTrue);
+    expect(restored.strength.weeklyFrequency, 2);
+    expect(restored.strength.categories, {
+      StrengthCategory.lowerBody,
+      StrengthCategory.coreMobility,
+    });
     expect(restored.gender, ProfileGender.other);
     expect(restored.dateOfBirth, DateTime(1991, 11, 4));
     expect(restored.completedOnboardingAt, DateTime(2026, 4, 7, 8));
     expect(restored.isOnboardingComplete, isTrue);
     expect(restored.schemaVersion, 1);
     expect(restored.updatedAt, DateTime(2026, 4, 7, 7, 45));
+  });
+
+  test('runner profile JSON without strength remains backward compatible', () {
+    final json = buildRunnerProfile(clock: DateTime(2026, 4, 7, 7, 45)).toJson()
+      ..remove('strength');
+
+    final restored = RunnerProfile.fromJson(json);
+
+    expect(restored, isNotNull);
+    expect(restored!.strength.lifts, isFalse);
+    expect(restored.strength.weeklyFrequency, isNull);
+    expect(restored.strength.categories, isEmpty);
+    expect(restored.strength.preferredDays, isEmpty);
+    expect(restored.strength.sameDayOrder, isNull);
   });
 
   test(

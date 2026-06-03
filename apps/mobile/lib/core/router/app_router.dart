@@ -18,6 +18,7 @@ import '../../features/onboarding/presentation/screens/strava_analysis_screen.da
 import '../../features/onboarding/presentation/screens/current_fitness_screen.dart';
 import '../../features/onboarding/presentation/screens/schedule_screen.dart';
 import '../../features/onboarding/presentation/screens/health_injury_screen.dart';
+import '../../features/onboarding/presentation/screens/strength_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/training_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/watch_device_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
@@ -267,7 +268,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.strength,
-        redirect: (_, _) => RouteNames.preferences,
+        builder: (context, state) => const StrengthPreferencesScreen(),
       ),
       GoRoute(
         path: RouteNames.preferences,

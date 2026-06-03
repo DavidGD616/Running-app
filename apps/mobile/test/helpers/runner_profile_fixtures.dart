@@ -34,6 +34,13 @@ RunnerProfileDraft buildRunnerProfileDraft() {
       injuryHistory: InjuryHistoryChoice.once,
       hasHealthConditions: BinaryChoice.no,
     ),
+    strength: const StrengthProfileDraft(
+      lifts: true,
+      weeklyFrequency: 2,
+      categories: {StrengthCategory.lowerBody, StrengthCategory.coreMobility},
+      preferredDays: {WeekdayChoice.monday, WeekdayChoice.thursday},
+      sameDayOrder: SameDayOrderPreference.runFirst,
+    ),
     trainingPreferences: const TrainingPreferencesProfileDraft(
       planPreference: PlanPreferenceChoice.balanced,
     ),

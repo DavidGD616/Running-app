@@ -228,7 +228,7 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(8, 8),
+                        l10n.onboardingStep(9, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -239,7 +239,7 @@ class SummaryScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 8, total: 8),
+                    child: AppProgressBar(current: 9, total: 9),
                   ),
                 ],
               ),

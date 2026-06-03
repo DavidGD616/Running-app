@@ -282,7 +282,7 @@
   "onboardingIntroFeature3": "Schedule and preferences",
   "@onboardingIntroFeature3": { "description": "Third bullet on onboarding intro screen" },
 
-  "onboardingIntroFooter": "8 short sections · You can edit answers later",
+  "onboardingIntroFooter": "9 short sections · You can edit answers later",
   "@onboardingIntroFooter": { "description": "Footer note on onboarding intro screen" },
 
   "letsGo": "Let's Go",
@@ -862,6 +862,80 @@
 
   "strength3DaysWeek": "3 days/week",
   "@strength3DaysWeek": { "description": "Strength training option: 3 days/week" },
+
+  "strengthPreferencesTitle": "Strength Preferences",
+  "@strengthPreferencesTitle": { "description": "Heading on the strength preferences onboarding screen" },
+
+  "strengthPreferencesSubtitle": "Tell us how lifting fits around your running so your plan can protect key workouts.",
+  "@strengthPreferencesSubtitle": { "description": "Subtitle on the strength preferences onboarding screen" },
+
+  "strengthLiftsLabel": "Do you lift or do strength training?",
+  "@strengthLiftsLabel": { "description": "Question asking whether the user currently lifts" },
+
+  "strengthFrequencyLabel": "How many days per week?",
+  "@strengthFrequencyLabel": { "description": "Section label for weekly strength frequency" },
+
+  "strengthFrequencyOption": "{days, plural, =1{1 day} other{{days} days}}",
+  "@strengthFrequencyOption": {
+    "description": "Weekly strength frequency option",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "strengthCategoriesLabel": "What types of strength work?",
+  "@strengthCategoriesLabel": { "description": "Section label for strength categories" },
+
+  "strengthCategoriesHelper": "Choose categories only. Your running plan will not prescribe exact exercises.",
+  "@strengthCategoriesHelper": { "description": "Helper copy explaining strength categories are not exercise prescriptions" },
+
+  "strengthCategoryLowerBody": "Lower body",
+  "@strengthCategoryLowerBody": { "description": "Strength category option" },
+
+  "strengthCategoryUpperBody": "Upper body",
+  "@strengthCategoryUpperBody": { "description": "Strength category option" },
+
+  "strengthCategoryCoreMobility": "Core / mobility",
+  "@strengthCategoryCoreMobility": { "description": "Strength category option" },
+
+  "strengthCategoryFullBody": "Full body",
+  "@strengthCategoryFullBody": { "description": "Strength category option" },
+
+  "strengthPreferredDaysLabel": "Preferred lifting days",
+  "@strengthPreferredDaysLabel": { "description": "Section label for preferred lifting days" },
+
+  "strengthPreferredDaysHelper": "Pick the days you usually lift or prefer lower-body work.",
+  "@strengthPreferredDaysHelper": { "description": "Helper copy for selecting preferred lifting days" },
+
+  "strengthSameDayOrderLabel": "When running and lifting share a day",
+  "@strengthSameDayOrderLabel": { "description": "Section label for same-day run and lift order" },
+
+  "strengthSameDayOrderHelper": "This helps us place lower-body strength around hard runs and long runs.",
+  "@strengthSameDayOrderHelper": { "description": "Helper copy for same-day order preference" },
+
+  "strengthOrderRunFirst": "Run first",
+  "@strengthOrderRunFirst": { "description": "Same-day order option" },
+
+  "strengthOrderRunFirstSub": "Best for quality run days. Put lower-body lifting after the run or later in the day.",
+  "@strengthOrderRunFirstSub": { "description": "Guidance copy for running before lifting" },
+
+  "strengthOrderLiftFirst": "Lift first",
+  "@strengthOrderLiftFirst": { "description": "Same-day order option" },
+
+  "strengthOrderLiftFirstSub": "Use when the lift matters more. Keep the run easy or separate it if legs feel heavy.",
+  "@strengthOrderLiftFirstSub": { "description": "Guidance copy for lifting before running" },
+
+  "strengthOrderSeparate": "Separate sessions",
+  "@strengthOrderSeparate": { "description": "Same-day order option" },
+
+  "strengthOrderSeparateSub": "Prefer morning/evening separation when a run and lift share a day.",
+  "@strengthOrderSeparateSub": { "description": "Guidance copy for separating sessions on the same day" },
+
+  "strengthOrderDepends": "It depends",
+  "@strengthOrderDepends": { "description": "Same-day order option" },
+
+  "strengthOrderDependsSub": "We'll place strength around harder runs and long runs.",
+  "@strengthOrderDependsSub": { "description": "Guidance copy when the user has no fixed same-day order" },
 
   "runSurfaceLabel": "Where do you run most?",
   "@runSurfaceLabel": { "description": "Section label on training preferences screen" },

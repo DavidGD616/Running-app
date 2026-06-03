@@ -290,7 +290,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '8 secciones cortas · Puedes editar tus respuestas después';
+      '9 secciones cortas · Puedes editar tus respuestas después';
 
   @override
   String get letsGo => '¡Empecemos!';
@@ -1048,6 +1048,93 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get strength3DaysWeek => '3 días/semana';
+
+  @override
+  String get strengthPreferencesTitle => 'Preferencias de Fuerza';
+
+  @override
+  String get strengthPreferencesSubtitle =>
+      'Cuéntanos cómo encaja la fuerza con tu running para que tu plan proteja los entrenamientos clave.';
+
+  @override
+  String get strengthLiftsLabel =>
+      '¿Levantas pesas o haces entrenamiento de fuerza?';
+
+  @override
+  String get strengthFrequencyLabel => '¿Cuántos días por semana?';
+
+  @override
+  String strengthFrequencyOption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '1 día',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get strengthCategoriesLabel => '¿Qué tipos de trabajo de fuerza?';
+
+  @override
+  String get strengthCategoriesHelper =>
+      'Elige solo categorías. Tu plan de running no recetará ejercicios exactos.';
+
+  @override
+  String get strengthCategoryLowerBody => 'Tren inferior';
+
+  @override
+  String get strengthCategoryUpperBody => 'Tren superior';
+
+  @override
+  String get strengthCategoryCoreMobility => 'Core / movilidad';
+
+  @override
+  String get strengthCategoryFullBody => 'Cuerpo completo';
+
+  @override
+  String get strengthPreferredDaysLabel => 'Días preferidos para fuerza';
+
+  @override
+  String get strengthPreferredDaysHelper =>
+      'Elige los días en que normalmente levantas o prefieres trabajar tren inferior.';
+
+  @override
+  String get strengthSameDayOrderLabel =>
+      'Cuando correr y levantar coinciden el mismo día';
+
+  @override
+  String get strengthSameDayOrderHelper =>
+      'Esto nos ayuda a ubicar la fuerza de tren inferior alrededor de carreras duras y tiradas largas.';
+
+  @override
+  String get strengthOrderRunFirst => 'Correr primero';
+
+  @override
+  String get strengthOrderRunFirstSub =>
+      'Mejor para días de running de calidad. Haz tren inferior después de correr o más tarde ese día.';
+
+  @override
+  String get strengthOrderLiftFirst => 'Levantar primero';
+
+  @override
+  String get strengthOrderLiftFirstSub =>
+      'Úsalo cuando la fuerza importe más. Mantén la carrera suave o sepárala si sientes las piernas pesadas.';
+
+  @override
+  String get strengthOrderSeparate => 'Sesiones separadas';
+
+  @override
+  String get strengthOrderSeparateSub =>
+      'Prefiere separar mañana/tarde cuando correr y levantar coincidan en un día.';
+
+  @override
+  String get strengthOrderDepends => 'Depende';
+
+  @override
+  String get strengthOrderDependsSub =>
+      'Ubicaremos la fuerza alrededor de las carreras más duras y tiradas largas.';
 
   @override
   String get runSurfaceLabel => '¿Dónde corres más?';

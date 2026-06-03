@@ -167,7 +167,7 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(2, 8),
+                        l10n.onboardingStep(2, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -178,7 +178,7 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 2, total: 8),
+                    child: AppProgressBar(current: 2, total: 9),
                   ),
                 ],
               ),

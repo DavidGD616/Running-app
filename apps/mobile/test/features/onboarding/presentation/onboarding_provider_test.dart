@@ -179,6 +179,60 @@ void main() {
   );
 
   test(
+    'setStrength stores no-lifting canonical value without lift fields',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      container.read(onboardingProvider.notifier).setStrength(lifts: false);
+      await Future<void>.delayed(Duration.zero);
+
+      final strength = container.read(onboardingProvider).value!.strength;
+      expect(strength.lifts, isFalse);
+      expect(strength.weeklyFrequency, isNull);
+      expect(strength.categories, isEmpty);
+      expect(strength.preferredDays, isEmpty);
+      expect(strength.sameDayOrder, isNull);
+    },
+  );
+
+  test('setStrength stores lifting canonical values', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final container = _testContainer(prefs);
+    addTearDown(container.dispose);
+    await container.read(onboardingProvider.future);
+
+    container
+        .read(onboardingProvider.notifier)
+        .setStrength(
+          lifts: true,
+          weeklyFrequency: '2',
+          categories: [
+            StrengthCategory.lowerBody.key,
+            StrengthCategory.coreMobility.key,
+          ],
+          preferredDays: [WeekdayChoice.monday.key, WeekdayChoice.thursday.key],
+          sameDayOrder: SameDayOrderPreference.runFirst.key,
+        );
+    await Future<void>.delayed(Duration.zero);
+
+    final strength = container.read(onboardingProvider).value!.strength;
+    expect(strength.lifts, isTrue);
+    expect(strength.weeklyFrequency, 2);
+    expect(strength.categories, {
+      StrengthCategory.lowerBody,
+      StrengthCategory.coreMobility,
+    });
+    expect(strength.preferredDays, {
+      WeekdayChoice.monday,
+      WeekdayChoice.thursday,
+    });
+    expect(strength.sameDayOrder, SameDayOrderPreference.runFirst);
+  });
+
+  test(
     'setting Strava coaching profile stores canonical source and curated profile only',
     () async {
       final prefs = await SharedPreferences.getInstance();
@@ -444,6 +498,7 @@ void main() {
         injuryHistory: InjuryHistoryChoice.once.key,
         healthConditions: BinaryChoice.no.key,
       );
+      notifier.setStrength(lifts: false);
       notifier.setTraining(planPreference: PlanPreferenceChoice.balanced.key);
       notifier.setDevice(
         hasWatch: BinaryChoice.yes.key,
@@ -518,6 +573,7 @@ void main() {
         injuryHistory: InjuryHistoryChoice.once.key,
         healthConditions: BinaryChoice.no.key,
       );
+      notifier.setStrength(lifts: false);
       notifier.setTraining(planPreference: PlanPreferenceChoice.balanced.key);
       notifier.setDevice(
         hasWatch: BinaryChoice.yes.key,
@@ -663,6 +719,7 @@ void main() {
         injuryHistory: InjuryHistoryChoice.none.key,
         healthConditions: BinaryChoice.no.key,
       );
+      notifier.setStrength(lifts: false);
       notifier.setTraining(planPreference: PlanPreferenceChoice.balanced.key);
       notifier.setDevice(
         hasWatch: BinaryChoice.yes.key,

@@ -182,7 +182,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(4, 8),
+                          l10n.onboardingStep(4, 9),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -193,7 +193,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 4, total: 8),
+                      child: AppProgressBar(current: 4, total: 9),
                     ),
                   ],
                 ),

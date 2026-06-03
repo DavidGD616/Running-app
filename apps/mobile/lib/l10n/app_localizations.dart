@@ -629,7 +629,7 @@ abstract class AppLocalizations {
   /// Footer note on onboarding intro screen
   ///
   /// In en, this message translates to:
-  /// **'8 short sections · You can edit answers later'**
+  /// **'9 short sections · You can edit answers later'**
   String get onboardingIntroFooter;
 
   /// CTA button on the onboarding intro screen
@@ -1980,6 +1980,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'3 days/week'**
   String get strength3DaysWeek;
+
+  /// Heading on the strength preferences onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strength Preferences'**
+  String get strengthPreferencesTitle;
+
+  /// Subtitle on the strength preferences onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us how lifting fits around your running so your plan can protect key workouts.'**
+  String get strengthPreferencesSubtitle;
+
+  /// Question asking whether the user currently lifts
+  ///
+  /// In en, this message translates to:
+  /// **'Do you lift or do strength training?'**
+  String get strengthLiftsLabel;
+
+  /// Section label for weekly strength frequency
+  ///
+  /// In en, this message translates to:
+  /// **'How many days per week?'**
+  String get strengthFrequencyLabel;
+
+  /// Weekly strength frequency option
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String strengthFrequencyOption(int days);
+
+  /// Section label for strength categories
+  ///
+  /// In en, this message translates to:
+  /// **'What types of strength work?'**
+  String get strengthCategoriesLabel;
+
+  /// Helper copy explaining strength categories are not exercise prescriptions
+  ///
+  /// In en, this message translates to:
+  /// **'Choose categories only. Your running plan will not prescribe exact exercises.'**
+  String get strengthCategoriesHelper;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Lower body'**
+  String get strengthCategoryLowerBody;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Upper body'**
+  String get strengthCategoryUpperBody;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Core / mobility'**
+  String get strengthCategoryCoreMobility;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Full body'**
+  String get strengthCategoryFullBody;
+
+  /// Section label for preferred lifting days
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred lifting days'**
+  String get strengthPreferredDaysLabel;
+
+  /// Helper copy for selecting preferred lifting days
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the days you usually lift or prefer lower-body work.'**
+  String get strengthPreferredDaysHelper;
+
+  /// Section label for same-day run and lift order
+  ///
+  /// In en, this message translates to:
+  /// **'When running and lifting share a day'**
+  String get strengthSameDayOrderLabel;
+
+  /// Helper copy for same-day order preference
+  ///
+  /// In en, this message translates to:
+  /// **'This helps us place lower-body strength around hard runs and long runs.'**
+  String get strengthSameDayOrderHelper;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'Run first'**
+  String get strengthOrderRunFirst;
+
+  /// Guidance copy for running before lifting
+  ///
+  /// In en, this message translates to:
+  /// **'Best for quality run days. Put lower-body lifting after the run or later in the day.'**
+  String get strengthOrderRunFirstSub;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'Lift first'**
+  String get strengthOrderLiftFirst;
+
+  /// Guidance copy for lifting before running
+  ///
+  /// In en, this message translates to:
+  /// **'Use when the lift matters more. Keep the run easy or separate it if legs feel heavy.'**
+  String get strengthOrderLiftFirstSub;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'Separate sessions'**
+  String get strengthOrderSeparate;
+
+  /// Guidance copy for separating sessions on the same day
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer morning/evening separation when a run and lift share a day.'**
+  String get strengthOrderSeparateSub;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'It depends'**
+  String get strengthOrderDepends;
+
+  /// Guidance copy when the user has no fixed same-day order
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll place strength around harder runs and long runs.'**
+  String get strengthOrderDependsSub;
 
   /// Section label on training preferences screen
   ///

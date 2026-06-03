@@ -132,7 +132,7 @@ class _TrainingPreferencesScreenState
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(6, 8),
+                          l10n.onboardingStep(7, 9),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -143,7 +143,7 @@ class _TrainingPreferencesScreenState
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 6, total: 8),
+                      child: AppProgressBar(current: 7, total: 9),
                     ),
                   ],
                 ),

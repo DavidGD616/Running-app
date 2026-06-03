@@ -262,7 +262,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(1, 8),
+                          l10n.onboardingStep(1, 9),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -273,7 +273,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 1, total: 8),
+                      child: AppProgressBar(current: 1, total: 9),
                     ),
                   ],
                 ),

@@ -290,7 +290,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '8 short sections · You can edit answers later';
+      '9 short sections · You can edit answers later';
 
   @override
   String get letsGo => 'Let\'s Go';
@@ -1041,6 +1041,92 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strength3DaysWeek => '3 days/week';
+
+  @override
+  String get strengthPreferencesTitle => 'Strength Preferences';
+
+  @override
+  String get strengthPreferencesSubtitle =>
+      'Tell us how lifting fits around your running so your plan can protect key workouts.';
+
+  @override
+  String get strengthLiftsLabel => 'Do you lift or do strength training?';
+
+  @override
+  String get strengthFrequencyLabel => 'How many days per week?';
+
+  @override
+  String strengthFrequencyOption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get strengthCategoriesLabel => 'What types of strength work?';
+
+  @override
+  String get strengthCategoriesHelper =>
+      'Choose categories only. Your running plan will not prescribe exact exercises.';
+
+  @override
+  String get strengthCategoryLowerBody => 'Lower body';
+
+  @override
+  String get strengthCategoryUpperBody => 'Upper body';
+
+  @override
+  String get strengthCategoryCoreMobility => 'Core / mobility';
+
+  @override
+  String get strengthCategoryFullBody => 'Full body';
+
+  @override
+  String get strengthPreferredDaysLabel => 'Preferred lifting days';
+
+  @override
+  String get strengthPreferredDaysHelper =>
+      'Pick the days you usually lift or prefer lower-body work.';
+
+  @override
+  String get strengthSameDayOrderLabel =>
+      'When running and lifting share a day';
+
+  @override
+  String get strengthSameDayOrderHelper =>
+      'This helps us place lower-body strength around hard runs and long runs.';
+
+  @override
+  String get strengthOrderRunFirst => 'Run first';
+
+  @override
+  String get strengthOrderRunFirstSub =>
+      'Best for quality run days. Put lower-body lifting after the run or later in the day.';
+
+  @override
+  String get strengthOrderLiftFirst => 'Lift first';
+
+  @override
+  String get strengthOrderLiftFirstSub =>
+      'Use when the lift matters more. Keep the run easy or separate it if legs feel heavy.';
+
+  @override
+  String get strengthOrderSeparate => 'Separate sessions';
+
+  @override
+  String get strengthOrderSeparateSub =>
+      'Prefer morning/evening separation when a run and lift share a day.';
+
+  @override
+  String get strengthOrderDepends => 'It depends';
+
+  @override
+  String get strengthOrderDependsSub =>
+      'We\'ll place strength around harder runs and long runs.';
 
   @override
   String get runSurfaceLabel => 'Where do you run most?';

@@ -169,7 +169,7 @@ void main() {
       final l10n = AppLocalizations.of(context)!;
       final dateFormatter = DateFormat.yMMMd('en');
 
-      expect(find.text(l10n.onboardingStep(3, 8)), findsOneWidget);
+      expect(find.text(l10n.onboardingStep(3, 9)), findsOneWidget);
       expect(
         find.text(l10n.onboardingStravaAnalysisTrainingBaseSection),
         findsOneWidget,

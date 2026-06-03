@@ -330,6 +330,26 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     );
   }
 
+  void setStrength({
+    required bool lifts,
+    String? weeklyFrequency,
+    List<String>? categories,
+    List<String>? preferredDays,
+    String? sameDayOrder,
+  }) {
+    _setState(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
+        strength: RunnerProfileDraft.strengthFromInput(
+          lifts: lifts,
+          weeklyFrequency: weeklyFrequency,
+          categories: categories,
+          preferredDays: preferredDays,
+          sameDayOrder: sameDayOrder,
+        ),
+      ),
+    );
+  }
+
   void setTraining({required String planPreference}) {
     _setState(
       (state.value ?? const RunnerProfileDraft()).copyWith(

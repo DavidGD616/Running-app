@@ -448,6 +448,15 @@ class StrengthPreferences {
   factory StrengthPreferences.fromJson(Map<String, dynamic> json) {
     final lifts = _boolOrNull(json['lifts']);
     if (lifts == null) {
+      if (!json.containsKey('lifts')) {
+        return const StrengthPreferences(
+          lifts: false,
+          weeklyFrequency: null,
+          categories: {},
+          preferredDays: {},
+          sameDayOrder: null,
+        );
+      }
       throw const FormatException(
         'Invalid strength preferences: lifts must be a bool.',
       );
@@ -535,6 +544,47 @@ class StrengthPreferences {
 
     return StrengthPreferences(
       lifts: lifts,
+      weeklyFrequency: weeklyFrequency,
+      categories: categories,
+      preferredDays: preferredDays,
+      sameDayOrder: sameDayOrder,
+    );
+  }
+}
+
+class StrengthProfileDraft {
+  const StrengthProfileDraft({
+    this.lifts,
+    this.weeklyFrequency,
+    this.categories = const {},
+    this.preferredDays = const {},
+    this.sameDayOrder,
+  });
+
+  final bool? lifts;
+  final int? weeklyFrequency;
+  final Set<StrengthCategory> categories;
+  final Set<WeekdayChoice> preferredDays;
+  final SameDayOrderPreference? sameDayOrder;
+
+  StrengthPreferences? toProfileOrNull() {
+    if (lifts == null) {
+      return null;
+    }
+    if (lifts == false) {
+      return const StrengthPreferences(lifts: false);
+    }
+
+    if (weeklyFrequency == null ||
+        weeklyFrequency! <= 0 ||
+        categories.isEmpty ||
+        preferredDays.isEmpty ||
+        sameDayOrder == null) {
+      return null;
+    }
+
+    return StrengthPreferences(
+      lifts: true,
       weeklyFrequency: weeklyFrequency,
       categories: categories,
       preferredDays: preferredDays,
@@ -1181,6 +1231,7 @@ class RunnerProfile {
     required this.fitness,
     required this.schedule,
     required this.health,
+    required this.strength,
     required this.trainingPreferences,
     required this.device,
     required this.schemaVersion,
@@ -1194,6 +1245,7 @@ class RunnerProfile {
   final FitnessProfile fitness;
   final ScheduleProfile schedule;
   final HealthProfile health;
+  final StrengthPreferences strength;
   final TrainingPreferencesProfile trainingPreferences;
   final DeviceProfile device;
   final ProfileGender? gender;
@@ -1209,6 +1261,7 @@ class RunnerProfile {
     FitnessProfile? fitness,
     ScheduleProfile? schedule,
     HealthProfile? health,
+    StrengthPreferences? strength,
     TrainingPreferencesProfile? trainingPreferences,
     DeviceProfile? device,
     ProfileGender? gender,
@@ -1222,6 +1275,7 @@ class RunnerProfile {
       fitness: fitness ?? this.fitness,
       schedule: schedule ?? this.schedule,
       health: health ?? this.health,
+      strength: strength ?? this.strength,
       trainingPreferences: trainingPreferences ?? this.trainingPreferences,
       device: device ?? this.device,
       gender: gender ?? this.gender,
@@ -1239,6 +1293,7 @@ class RunnerProfile {
       'fitness': _fitnessProfileToJson(fitness),
       'schedule': _scheduleProfileToJson(schedule),
       'health': _healthProfileToJson(health),
+      'strength': _strengthProfileToJson(strength),
       'trainingPreferences': _trainingPreferencesProfileToJson(
         trainingPreferences,
       ),
@@ -1256,6 +1311,7 @@ class RunnerProfile {
     final fitness = _fitnessProfileFromJson(_mapOrEmpty(json['fitness']));
     final schedule = _scheduleProfileFromJson(_mapOrEmpty(json['schedule']));
     final health = _healthProfileFromJson(_mapOrEmpty(json['health']));
+    final strength = _strengthProfileFromJson(_mapOrEmpty(json['strength']));
     final trainingPreferences = _trainingPreferencesProfileFromJson(
       _mapOrEmpty(json['trainingPreferences']),
     );
@@ -1267,6 +1323,7 @@ class RunnerProfile {
         fitness == null ||
         schedule == null ||
         health == null ||
+        strength == null ||
         trainingPreferences == null ||
         device == null ||
         updatedAt == null ||
@@ -1279,6 +1336,7 @@ class RunnerProfile {
       fitness: fitness,
       schedule: schedule,
       health: health,
+      strength: strength,
       trainingPreferences: trainingPreferences,
       device: device,
       gender: _profileGenderFromName(_stringOrNull(json['gender'])),
@@ -1296,6 +1354,7 @@ class RunnerProfileDraft {
     this.fitness = const FitnessProfileDraft(),
     this.schedule = const ScheduleProfileDraft(),
     this.health = const HealthProfileDraft(),
+    this.strength = const StrengthProfileDraft(),
     this.trainingPreferences = const TrainingPreferencesProfileDraft(),
     this.device = const DeviceProfileDraft(),
   });
@@ -1304,6 +1363,7 @@ class RunnerProfileDraft {
   final FitnessProfileDraft fitness;
   final ScheduleProfileDraft schedule;
   final HealthProfileDraft health;
+  final StrengthProfileDraft strength;
   final TrainingPreferencesProfileDraft trainingPreferences;
   final DeviceProfileDraft device;
 
@@ -1313,6 +1373,7 @@ class RunnerProfileDraft {
       'fitness': _fitnessProfileDraftToJson(fitness),
       'schedule': _scheduleProfileDraftToJson(schedule),
       'health': _healthProfileDraftToJson(health),
+      'strength': _strengthProfileDraftToJson(strength),
       'trainingPreferences': _trainingPreferencesProfileDraftToJson(
         trainingPreferences,
       ),
@@ -1325,6 +1386,7 @@ class RunnerProfileDraft {
     FitnessProfileDraft? fitness,
     ScheduleProfileDraft? schedule,
     HealthProfileDraft? health,
+    StrengthProfileDraft? strength,
     TrainingPreferencesProfileDraft? trainingPreferences,
     DeviceProfileDraft? device,
   }) {
@@ -1333,6 +1395,7 @@ class RunnerProfileDraft {
       fitness: fitness ?? this.fitness,
       schedule: schedule ?? this.schedule,
       health: health ?? this.health,
+      strength: strength ?? this.strength,
       trainingPreferences: trainingPreferences ?? this.trainingPreferences,
       device: device ?? this.device,
     );
@@ -1344,6 +1407,7 @@ class RunnerProfileDraft {
       fitness: _fitnessProfileDraftFromJson(_mapOrEmpty(json['fitness'])),
       schedule: _scheduleProfileDraftFromJson(_mapOrEmpty(json['schedule'])),
       health: _healthProfileDraftFromJson(_mapOrEmpty(json['health'])),
+      strength: _strengthProfileDraftFromJson(_mapOrEmpty(json['strength'])),
       trainingPreferences: _trainingPreferencesProfileDraftFromJson(
         _mapOrEmpty(json['trainingPreferences']),
       ),
@@ -1361,6 +1425,7 @@ class RunnerProfileDraft {
     final fitnessProfile = fitness.toProfileOrNull();
     final scheduleProfile = schedule.toProfileOrNull();
     final healthProfile = health.toProfileOrNull();
+    final strengthProfile = strength.toProfileOrNull();
     final trainingPreferencesProfile = trainingPreferences.toProfileOrNull();
     final deviceProfile = device.toProfileOrNull();
 
@@ -1368,6 +1433,7 @@ class RunnerProfileDraft {
         fitnessProfile == null ||
         scheduleProfile == null ||
         healthProfile == null ||
+        strengthProfile == null ||
         trainingPreferencesProfile == null ||
         deviceProfile == null) {
       return null;
@@ -1378,6 +1444,7 @@ class RunnerProfileDraft {
       fitness: fitnessProfile,
       schedule: scheduleProfile,
       health: healthProfile,
+      strength: strengthProfile,
       trainingPreferences: trainingPreferencesProfile,
       device: deviceProfile,
       gender: gender,
@@ -1452,6 +1519,13 @@ class RunnerProfileDraft {
         injuryHistory: profile.health.injuryHistory,
         hasHealthConditions: profile.health.hasHealthConditions,
       ),
+      strength: StrengthProfileDraft(
+        lifts: profile.strength.lifts,
+        weeklyFrequency: profile.strength.weeklyFrequency,
+        categories: profile.strength.categories,
+        preferredDays: profile.strength.preferredDays,
+        sameDayOrder: profile.strength.sameDayOrder,
+      ),
       trainingPreferences: TrainingPreferencesProfileDraft(
         planPreference: profile.trainingPreferences.planPreference,
       ),
@@ -1506,6 +1580,30 @@ class RunnerProfileDraft {
       stravaInsufficientData: stravaInsufficientData,
       athleteSummary: athleteSummary,
       stravaCoachingProfile: stravaCoachingProfile,
+    );
+  }
+
+  static StrengthProfileDraft strengthFromInput({
+    required bool lifts,
+    String? weeklyFrequency,
+    List<String>? categories,
+    List<String>? preferredDays,
+    String? sameDayOrder,
+  }) {
+    return StrengthProfileDraft(
+      lifts: lifts,
+      weeklyFrequency: _intFromString(weeklyFrequency),
+      categories: _enumSetByKeys(
+        categories,
+        StrengthCategory.values,
+        (value) => value.key,
+      ),
+      preferredDays: _enumSetByKeys(
+        preferredDays,
+        WeekdayChoice.values,
+        (value) => value.key,
+      ),
+      sameDayOrder: SameDayOrderPreference.fromKey(sameDayOrder),
     );
   }
 
@@ -1919,6 +2017,48 @@ Map<String, dynamic> _healthProfileToJson(HealthProfile value) {
 
 HealthProfile? _healthProfileFromJson(Map<String, dynamic> json) =>
     _healthProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _strengthProfileDraftToJson(StrengthProfileDraft value) {
+  return {
+    'lifts': value.lifts,
+    'weeklyFrequency': value.weeklyFrequency,
+    'categories': _sortedCanonicalKeys(value.categories),
+    'preferredDays': _sortedCanonicalKeys(value.preferredDays),
+    'sameDayOrder': value.sameDayOrder?.key,
+  };
+}
+
+StrengthProfileDraft _strengthProfileDraftFromJson(Map<String, dynamic> json) {
+  return StrengthProfileDraft(
+    lifts: _boolOrNull(json['lifts']),
+    weeklyFrequency: _intOrNull(json['weeklyFrequency']),
+    categories: _enumSetByKeys(
+      _stringListOrEmpty(json['categories']),
+      StrengthCategory.values,
+      (value) => value.key,
+    ),
+    preferredDays: _enumSetByKeys(
+      _stringListOrEmpty(json['preferredDays']),
+      WeekdayChoice.values,
+      (value) => value.key,
+    ),
+    sameDayOrder: SameDayOrderPreference.fromKey(
+      _stringOrNull(json['sameDayOrder']),
+    ),
+  );
+}
+
+Map<String, dynamic> _strengthProfileToJson(StrengthPreferences value) {
+  return value.toJson();
+}
+
+StrengthPreferences? _strengthProfileFromJson(Map<String, dynamic> json) {
+  try {
+    return StrengthPreferences.fromJson(json);
+  } on FormatException {
+    return null;
+  }
+}
 
 Map<String, dynamic> _trainingPreferencesProfileDraftToJson(
   TrainingPreferencesProfileDraft value,
