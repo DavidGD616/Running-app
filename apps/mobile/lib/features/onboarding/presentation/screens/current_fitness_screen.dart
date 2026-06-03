@@ -172,7 +172,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
     if (shouldSkipScreen) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        context.go(RouteNames.schedule);
+        context.go(RouteNames.stravaAnalysis);
       });
       return const Scaffold(
         backgroundColor: AppColors.backgroundPrimary,
@@ -734,7 +734,7 @@ class _CurrentFitnessScreenState extends ConsumerState<CurrentFitnessScreen> {
                         if (widget.isEditingPlanInfo) {
                           context.pop();
                         } else {
-                          context.push(RouteNames.schedule);
+                          context.push(RouteNames.raceTarget);
                         }
                       }
                     : null,

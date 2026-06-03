@@ -860,6 +860,7 @@ class FitnessProfile {
     this.benchmarkTime,
     this.fitnessSource,
     this.athleteSummary,
+    this.stravaCoachingProfile,
   });
 
   final RunnerExperience experience;
@@ -873,6 +874,7 @@ class FitnessProfile {
   final Duration? benchmarkTime;
   final FitnessSource? fitnessSource;
   final AthleteSummarySnapshot? athleteSummary;
+  final StravaCoachingProfile? stravaCoachingProfile;
 }
 
 class FitnessProfileDraft {
@@ -893,6 +895,7 @@ class FitnessProfileDraft {
     this.stravaDataWeeks,
     this.stravaInsufficientData,
     this.athleteSummary,
+    this.stravaCoachingProfile,
   });
 
   final RunnerExperience? experience;
@@ -911,6 +914,7 @@ class FitnessProfileDraft {
   final int? stravaDataWeeks;
   final bool? stravaInsufficientData;
   final AthleteSummarySnapshot? athleteSummary;
+  final StravaCoachingProfile? stravaCoachingProfile;
 
   String? get experienceKey => experience?.key;
   String? get runningDaysKey => runningDays?.toString();
@@ -967,6 +971,7 @@ class FitnessProfileDraft {
             dataWeeks: stravaDataWeeks,
             insufficientData: stravaInsufficientData,
           ),
+      stravaCoachingProfile: stravaCoachingProfile,
     );
   }
 }
@@ -1432,6 +1437,7 @@ class RunnerProfileDraft {
         stravaInsufficientData:
             profile.fitness.athleteSummary?.insufficientData,
         athleteSummary: profile.fitness.athleteSummary,
+        stravaCoachingProfile: profile.fitness.stravaCoachingProfile,
       ),
       schedule: ScheduleProfileDraft(
         trainingDays: profile.schedule.trainingDays,
@@ -1480,6 +1486,7 @@ class RunnerProfileDraft {
     int? stravaDataWeeks,
     bool? stravaInsufficientData,
     AthleteSummarySnapshot? athleteSummary,
+    StravaCoachingProfile? stravaCoachingProfile,
   }) {
     return FitnessProfileDraft(
       experience: RunnerExperience.fromKey(experience),
@@ -1498,6 +1505,7 @@ class RunnerProfileDraft {
       stravaDataWeeks: stravaDataWeeks,
       stravaInsufficientData: stravaInsufficientData,
       athleteSummary: athleteSummary,
+      stravaCoachingProfile: stravaCoachingProfile,
     );
   }
 
@@ -1627,6 +1635,10 @@ Map<String, dynamic> _fitnessProfileDraftToJson(FitnessProfileDraft value) {
     'stravaInsufficientData': value.stravaInsufficientData,
     if (value.athleteSummary?.hasData == true)
       'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
+    if (value.stravaCoachingProfile != null)
+      'stravaCoachingProfile': _stravaCoachingProfilePersistenceJson(
+        value.stravaCoachingProfile!,
+      ),
   };
 }
 
@@ -1662,6 +1674,9 @@ FitnessProfileDraft _fitnessProfileDraftFromJson(Map<String, dynamic> json) {
           dataWeeks: _intOrNull(json['stravaDataWeeks']),
           insufficientData: _boolOrNull(json['stravaInsufficientData']),
         ),
+    stravaCoachingProfile: _stravaCoachingProfileFromJson(
+      _mapOrEmpty(json['stravaCoachingProfile']),
+    ),
   );
 }
 
@@ -1679,7 +1694,86 @@ Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
     'fitnessSource': value.fitnessSource?.key,
     if (value.athleteSummary?.hasData == true)
       'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
+    if (value.stravaCoachingProfile != null)
+      'stravaCoachingProfile': _stravaCoachingProfilePersistenceJson(
+        value.stravaCoachingProfile!,
+      ),
   };
+}
+
+Map<String, dynamic> _stravaCoachingProfilePersistenceJson(
+  StravaCoachingProfile value,
+) {
+  final json = value.toJson();
+  final recoveryGuardrails = json['recoveryGuardrails'];
+  if (recoveryGuardrails is List) {
+    json['recoveryGuardrails'] = recoveryGuardrails
+        .map((entry) {
+          if (entry is! Map) return entry;
+          final guardrail = entry.map(
+            (key, nestedValue) => MapEntry('$key', nestedValue),
+          );
+          guardrail.remove('message');
+          return guardrail;
+        })
+        .toList(growable: false);
+  }
+
+  final planFocus = json['planFocus'];
+  if (planFocus is Map) {
+    final focus = planFocus.map(
+      (key, nestedValue) => MapEntry('$key', nestedValue),
+    );
+    focus.remove('summary');
+    json['planFocus'] = focus;
+  }
+
+  return json;
+}
+
+StravaCoachingProfile? _stravaCoachingProfileFromJson(
+  Map<String, dynamic> json,
+) {
+  if (json.isEmpty) return null;
+  return StravaCoachingProfile.fromJson(
+    _stravaCoachingProfileRuntimeJson(json),
+  );
+}
+
+Map<String, dynamic> _stravaCoachingProfileRuntimeJson(
+  Map<String, dynamic> json,
+) {
+  final hydrated = Map<String, dynamic>.from(json);
+  final recoveryGuardrails = hydrated['recoveryGuardrails'];
+  if (recoveryGuardrails is List) {
+    hydrated['recoveryGuardrails'] = recoveryGuardrails
+        .map((entry) {
+          if (entry is! Map) return entry;
+          final guardrail = entry.map(
+            (key, nestedValue) => MapEntry('$key', nestedValue),
+          );
+          guardrail.putIfAbsent(
+            'message',
+            () => _stringOrNull(guardrail['category']) ?? 'strava_guardrail',
+          );
+          return guardrail;
+        })
+        .toList(growable: false);
+  }
+
+  final planFocus = hydrated['planFocus'];
+  if (planFocus is Map) {
+    final focus = planFocus.map(
+      (key, nestedValue) => MapEntry('$key', nestedValue),
+    );
+    focus.putIfAbsent(
+      'summary',
+      () => _stringOrNull(focus['category']) ?? 'strava_plan_focus',
+    );
+    hydrated['planFocus'] = focus;
+  }
+
+  return hydrated;
 }
 
 Map<String, dynamic> _athleteSummaryToJson(AthleteSummarySnapshot value) {

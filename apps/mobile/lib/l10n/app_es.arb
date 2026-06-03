@@ -114,6 +114,8 @@
   "onboardingStravaAttributionTitle": "Powered by Strava",
   "onboardingStravaAttributionSubtitle": "Solo usamos tus datos recientes de running para estimar tu punto de partida.",
   "onboardingStravaPoweredBy": "Powered by Strava",
+  "onboardingStravaAnalysisTitle": "Análisis de Strava listo",
+  "onboardingStravaAnalysisSubtitle": "Revisamos tus datos recientes de running. A continuación, confirma el objetivo de carrera que usaremos para tu plan.",
   "onboardingStravaConnectError": "No pudimos conectar con Strava ahora mismo. Inténtalo de nuevo o continúa sin Strava.",
   "onboardingStravaConnectDeniedError": "Se canceló la conexión con Strava. Puedes intentarlo de nuevo o continuar manualmente.",
   "onboardingStravaConnectMissingScopeError": "Faltan permisos requeridos de Strava. Acepta todos los permisos solicitados.",

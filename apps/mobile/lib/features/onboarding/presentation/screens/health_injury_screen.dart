@@ -284,7 +284,7 @@ class _HealthInjuryScreenState extends ConsumerState<HealthInjuryScreen> {
                               injuryHistory: _injuryHistory!,
                               healthConditions: _healthConditions!,
                             );
-                        context.push(RouteNames.training);
+                        context.push(RouteNames.strength);
                       }
                     : null,
               ),

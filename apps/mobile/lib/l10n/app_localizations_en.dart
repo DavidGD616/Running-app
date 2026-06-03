@@ -320,6 +320,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onboardingStravaPoweredBy => 'Powered by Strava';
 
   @override
+  String get onboardingStravaAnalysisTitle => 'Strava analysis ready';
+
+  @override
+  String get onboardingStravaAnalysisSubtitle =>
+      'We reviewed your recent running data. Next, confirm the race target we\'ll use for your plan.';
+
+  @override
   String get onboardingStravaConnectError =>
       'We couldn\'t connect to Strava right now. Try again or continue without Strava.';
 

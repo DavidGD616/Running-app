@@ -290,10 +290,10 @@ class SummaryScreen extends ConsumerWidget {
                             OnboardingValues.fitnessSourceStrava) {
                           // Push (not go) so the Strava screen's back button
                           // returns cleanly to Summary instead of orphaning it.
-                          context.push(RouteNames.stravaConnect);
+                          context.push(RouteNames.fitnessSource);
                           return;
                         }
-                        context.go(RouteNames.fitness);
+                        context.go(RouteNames.manualFitness);
                       },
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -318,7 +318,7 @@ class SummaryScreen extends ConsumerWidget {
                       category: l10n.summaryTraining,
                       value: _trainingValue(answers, l10n),
                       detail: _trainingDetail(answers, l10n),
-                      onEdit: () => context.go(RouteNames.training),
+                      onEdit: () => context.go(RouteNames.preferences),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
@@ -370,7 +370,7 @@ class SummaryScreen extends ConsumerWidget {
                 children: [
                   AppButton(
                     label: l10n.buildMyPlan,
-                    onPressed: () => context.go(RouteNames.planGeneration),
+                    onPressed: () => context.go(RouteNames.generatePlan),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppButton(

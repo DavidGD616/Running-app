@@ -202,7 +202,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
       GoalFlowMode.newGoal => l10n.settingsNewGoal,
     };
     final nextRoute = switch (widget.mode) {
-      GoalFlowMode.onboarding => RouteNames.stravaConnect,
+      GoalFlowMode.onboarding => RouteNames.fitnessSource,
       GoalFlowMode.editGoal => RouteNames.settingsUpdatePlanEditGoalSchedule,
       GoalFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalSchedule,
     };

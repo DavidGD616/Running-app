@@ -127,9 +127,44 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           stravaRunsPerWeek: null,
           stravaDataWeeks: null,
           stravaInsufficientData: null,
+          athleteSummary: null,
+          stravaCoachingProfile: null,
         ),
       ),
     );
+  }
+
+  void setFitnessSource(String source) {
+    switch (source) {
+      case OnboardingValues.fitnessSourceManual:
+        useManualFitnessInput();
+      case OnboardingValues.fitnessSourceStrava:
+        final draft = state.value ?? const RunnerProfileDraft();
+        final fitness = draft.fitness;
+        _setState(
+          draft.copyWith(
+            fitness: FitnessProfileDraft(
+              experience: fitness.experience,
+              canRun10Min: fitness.canRun10Min,
+              runningDays: fitness.runningDays,
+              weeklyVolume: fitness.weeklyVolume,
+              longestRun: fitness.longestRun,
+              canCompleteGoalDistance: fitness.canCompleteGoalDistance,
+              raceDistanceBefore: fitness.raceDistanceBefore,
+              benchmark: fitness.benchmark,
+              benchmarkTime: fitness.benchmarkTime,
+              fitnessSource: OnboardingValues.fitnessSourceStrava,
+              stravaWeeklyVolumeKm: fitness.stravaWeeklyVolumeKm,
+              stravaLongestRecentRunKm: fitness.stravaLongestRecentRunKm,
+              stravaRunsPerWeek: fitness.stravaRunsPerWeek,
+              stravaDataWeeks: fitness.stravaDataWeeks,
+              stravaInsufficientData: fitness.stravaInsufficientData,
+              athleteSummary: fitness.athleteSummary,
+              stravaCoachingProfile: fitness.stravaCoachingProfile,
+            ),
+          ),
+        );
+    }
   }
 
   void useManualFitnessInput() {
@@ -209,7 +244,10 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     }
   }
 
-  void setStrava({required AthleteSummary summary}) {
+  void setStravaCoachingProfile({
+    required AthleteSummary summary,
+    required StravaCoachingProfile coachingProfile,
+  }) {
     final mapping = mapSummaryToOnboarding(summary);
     final canRun10Min = mapping.experience == RunnerExperience.brandNew
         ? true
@@ -248,6 +286,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
             insufficientData: summary.insufficientData,
             hasHeartRateZones: summary.hasHeartRateZones,
           ),
+          stravaCoachingProfile: coachingProfile,
         ),
       ),
     );

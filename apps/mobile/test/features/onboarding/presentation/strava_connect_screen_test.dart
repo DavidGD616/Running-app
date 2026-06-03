@@ -123,21 +123,21 @@ void main() {
 
   Widget buildApp(ProviderContainer container) {
     final router = GoRouter(
-      initialLocation: RouteNames.stravaConnect,
+      initialLocation: RouteNames.fitnessSource,
       routes: [
         GoRoute(
-          path: RouteNames.stravaConnect,
+          path: RouteNames.fitnessSource,
           builder: (context, state) => const StravaConnectScreen(),
         ),
         GoRoute(
-          path: RouteNames.fitness,
+          path: RouteNames.manualFitness,
           builder: (context, state) =>
               const Scaffold(body: Text('fitness-screen')),
         ),
         GoRoute(
-          path: RouteNames.schedule,
+          path: RouteNames.stravaAnalysis,
           builder: (context, state) =>
-              const Scaffold(body: Text('schedule-screen')),
+              const Scaffold(body: Text('strava-analysis-screen')),
         ),
       ],
     );
@@ -158,55 +158,57 @@ void main() {
     );
   }
 
-  testWidgets('connected with sufficient Strava data navigates to schedule', (
-    tester,
-  ) async {
-    final service = _FakeStravaService(
-      allRunActivityCount: 40,
-      activitiesBuilder: _buildSufficientRuns,
-    );
-    final container = await createContainer(service);
-    addTearDown(container.dispose);
+  testWidgets(
+    'connected with sufficient Strava data navigates to Strava analysis',
+    (tester) async {
+      final service = _FakeStravaService(
+        allRunActivityCount: 40,
+        activitiesBuilder: _buildSufficientRuns,
+      );
+      final container = await createContainer(service);
+      addTearDown(container.dispose);
 
-    await tester.pumpWidget(buildApp(container));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(buildApp(container));
+      await tester.pumpAndSettle();
 
-    final l10n = AppLocalizations.of(
-      tester.element(find.byType(StravaConnectScreen)),
-    )!;
-    await tester.tap(
-      find.widgetWithText(AppButton, l10n.onboardingStravaConnectPrimary),
-    );
-    await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(StravaConnectScreen)),
+      )!;
+      await tester.tap(
+        find.widgetWithText(AppButton, l10n.onboardingStravaConnectPrimary),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('schedule-screen'), findsOneWidget);
-    expect(find.text('fitness-screen'), findsNothing);
-  });
+      expect(find.text('strava-analysis-screen'), findsOneWidget);
+      expect(find.text('fitness-screen'), findsNothing);
+    },
+  );
 
-  testWidgets('connected with insufficient Strava data routes to fitness', (
-    tester,
-  ) async {
-    final service = _FakeStravaService(
-      allRunActivityCount: 2,
-      activitiesBuilder: _buildSparseRuns,
-    );
-    final container = await createContainer(service);
-    addTearDown(container.dispose);
+  testWidgets(
+    'connected with insufficient Strava data still routes to Strava analysis',
+    (tester) async {
+      final service = _FakeStravaService(
+        allRunActivityCount: 2,
+        activitiesBuilder: _buildSparseRuns,
+      );
+      final container = await createContainer(service);
+      addTearDown(container.dispose);
 
-    await tester.pumpWidget(buildApp(container));
-    await tester.pumpAndSettle();
+      await tester.pumpWidget(buildApp(container));
+      await tester.pumpAndSettle();
 
-    final l10n = AppLocalizations.of(
-      tester.element(find.byType(StravaConnectScreen)),
-    )!;
-    await tester.tap(
-      find.widgetWithText(AppButton, l10n.onboardingStravaConnectPrimary),
-    );
-    await tester.pumpAndSettle();
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(StravaConnectScreen)),
+      )!;
+      await tester.tap(
+        find.widgetWithText(AppButton, l10n.onboardingStravaConnectPrimary),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('fitness-screen'), findsOneWidget);
-    expect(find.text('schedule-screen'), findsNothing);
-  });
+      expect(find.text('strava-analysis-screen'), findsOneWidget);
+      expect(find.text('fitness-screen'), findsNothing);
+    },
+  );
 
   testWidgets('continue without Strava keeps manual fitness onboarding path', (
     tester,
@@ -264,8 +266,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text(l10n.onboardingStravaConnectMissingScopeError), findsOneWidget);
-    expect(find.text('schedule-screen'), findsNothing);
+    expect(
+      find.text(l10n.onboardingStravaConnectMissingScopeError),
+      findsOneWidget,
+    );
+    expect(find.text('strava-analysis-screen'), findsNothing);
     expect(find.text('fitness-screen'), findsNothing);
   });
 }

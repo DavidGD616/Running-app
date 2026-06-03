@@ -146,7 +146,7 @@ void main() {
             builder: (context, state) => const SummaryScreen(),
           ),
           GoRoute(
-            path: RouteNames.stravaConnect,
+            path: RouteNames.fitnessSource,
             builder: (context, state) => Scaffold(
               body: Column(
                 children: [

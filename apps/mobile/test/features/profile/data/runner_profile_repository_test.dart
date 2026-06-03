@@ -71,8 +71,15 @@ void main() {
             acuteChronicRatio: 1.04,
             longestRecentRunKm: 14,
           ),
+          stravaCoachingProfile: _buildStravaCoachingProfile(),
         ),
       );
+      final stravaDraftFitness =
+          stravaDraft.toJson()['fitness'] as Map<String, dynamic>;
+      _expectSanitizedStravaCoachingProfile(
+        stravaDraftFitness['stravaCoachingProfile'] as Map,
+      );
+
       final stravaProfile = stravaDraft.toRunnerProfile(
         gender: ProfileGender.female,
         dateOfBirth: DateTime(1993, 5, 12),
@@ -91,6 +98,24 @@ void main() {
       expect(athleteSummary['volumeTrend'], 'steady');
       expect(athleteSummary['acuteChronicRatio'], 1.04);
       expect(athleteSummary['longestRecentRunKm'], 14.0);
+      _expectSanitizedStravaCoachingProfile(
+        stravaFitness['stravaCoachingProfile'] as Map,
+      );
+      final restoredProfile = RunnerProfile.fromJson(stravaProfile.toJson());
+      expect(restoredProfile?.fitness.stravaCoachingProfile, isNotNull);
+      expect(
+        restoredProfile!.fitness.stravaCoachingProfile!.provenance.source,
+        'strava_sync',
+      );
+      expect(
+        restoredProfile
+            .fitness
+            .stravaCoachingProfile!
+            .trainingBase
+            .single
+            .metric,
+        'training_base_weekly_km',
+      );
 
       final manualFitness =
           buildRunnerProfile(
@@ -234,5 +259,95 @@ void main() {
       expect(repository.loadDraft(), isNull);
       expect(repository.loadProfile(), isNull);
     },
+  );
+}
+
+StravaCoachingProfile _buildStravaCoachingProfile() {
+  final evidence = StravaEvidencePoint(
+    metric: 'training_base_weekly_km',
+    date: DateTime.utc(2026, 6, 1),
+    value: 32,
+    unit: 'km_per_week',
+  );
+
+  return StravaCoachingProfile(
+    provenance: StravaAnalysisProvenance(
+      source: 'strava_sync',
+      syncedAt: DateTime.utc(2026, 6, 2, 8),
+      dataWindow: 'last12Weeks',
+      dataFromDate: DateTime.utc(2026, 3, 10),
+      dataThroughDate: DateTime.utc(2026, 6, 2),
+      activityCount: 34,
+      runActivityCount: 32,
+      confidence: StravaDataConfidence.high,
+    ),
+    dataConfidence: StravaDataConfidence.high,
+    trainingBase: [evidence],
+    endurance: const [],
+    speedMarkers: const [],
+    paceZones: const StravaPaceZones(
+      recovery: StravaPaceZone(paceMinSecPerKm: 395, paceMaxSecPerKm: 445),
+      easy: StravaPaceZone(paceMinSecPerKm: 350, paceMaxSecPerKm: 395),
+      longRun: StravaPaceZone(paceMinSecPerKm: 345, paceMaxSecPerKm: 380),
+      steady: StravaPaceZone(paceMinSecPerKm: 325, paceMaxSecPerKm: 345),
+      tempo: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 325),
+      threshold: StravaPaceZone(paceMinSecPerKm: 285, paceMaxSecPerKm: 300),
+      racePace: StravaPaceZone(paceMinSecPerKm: 280, paceMaxSecPerKm: 295),
+      intervals: StravaPaceZone(paceMinSecPerKm: 255, paceMaxSecPerKm: 280),
+      strides: StravaPaceZone(paceMinSecPerKm: 220, paceMaxSecPerKm: 255),
+    ),
+    terrain: StravaTerrainProfile.rolling,
+    recoveryGuardrails: const [
+      StravaGuardrail(
+        priority: 1,
+        category: 'recovery_spacing',
+        message: 'Keep at least one easy day between hard sessions.',
+      ),
+    ],
+    raceTargets: [
+      StravaRaceTargetEstimate(
+        distanceKm: 21.097,
+        primaryTime: const Duration(hours: 1, minutes: 55),
+        confidence: StravaDataConfidence.high,
+        evidence: [evidence],
+      ),
+    ],
+    planFocus: const StravaPlanFocus(
+      category: 'focus_threshold_durability',
+      summary: 'Build consistency and threshold durability.',
+    ),
+  );
+}
+
+void _expectSanitizedStravaCoachingProfile(Map rawJson) {
+  final json = Map<String, dynamic>.from(rawJson);
+  final provenance = Map<String, dynamic>.from(json['provenance'] as Map);
+  expect(provenance['source'], 'strava_sync');
+  expect(json['dataConfidence'], 'high');
+  expect(
+    (json['trainingBase'] as List).cast<Map>().single['metric'],
+    'training_base_weekly_km',
+  );
+  expect(json['terrain'], 'rolling');
+
+  final guardrail = Map<String, dynamic>.from(
+    (json['recoveryGuardrails'] as List).single as Map,
+  );
+  expect(guardrail['priority'], 1);
+  expect(guardrail['category'], 'recovery_spacing');
+  expect(guardrail.containsKey('message'), isFalse);
+
+  final focus = Map<String, dynamic>.from(json['planFocus'] as Map);
+  expect(focus['category'], 'focus_threshold_durability');
+  expect(focus.containsKey('summary'), isFalse);
+
+  final encoded = jsonEncode(json);
+  expect(
+    encoded.contains('Keep at least one easy day between hard sessions.'),
+    isFalse,
+  );
+  expect(
+    encoded.contains('Build consistency and threshold durability.'),
+    isFalse,
   );
 }

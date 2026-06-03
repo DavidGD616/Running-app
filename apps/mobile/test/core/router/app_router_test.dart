@@ -57,6 +57,45 @@ void main() {
     expect(redirect, isNull);
   });
 
+  test('new onboarding routes stay open while profile is missing', () {
+    for (final route in [
+      RouteNames.fitnessSource,
+      RouteNames.manualFitness,
+      RouteNames.stravaAnalysis,
+      RouteNames.raceTarget,
+      RouteNames.strength,
+      RouteNames.preferences,
+      RouteNames.generatePlan,
+    ]) {
+      final redirect = resolveAppRedirect(
+        matchedLocation: route,
+        bootstrapState: AppBootstrapState.authenticatedNeedsProfile,
+      );
+
+      expect(redirect, isNull, reason: route);
+    }
+  });
+
+  test('legacy onboarding routes resolve to canonical replacements', () {
+    expect(
+      resolveLegacyOnboardingRedirect(RouteNames.stravaConnect),
+      RouteNames.fitnessSource,
+    );
+    expect(
+      resolveLegacyOnboardingRedirect(RouteNames.fitness),
+      RouteNames.manualFitness,
+    );
+    expect(
+      resolveLegacyOnboardingRedirect(RouteNames.training),
+      RouteNames.preferences,
+    );
+    expect(
+      resolveLegacyOnboardingRedirect(RouteNames.planGeneration),
+      RouteNames.generatePlan,
+    );
+    expect(resolveLegacyOnboardingRedirect(RouteNames.schedule), isNull);
+  });
+
   test('authenticated ready bootstrap sends splash traffic to today', () {
     final redirect = resolveAppRedirect(
       matchedLocation: RouteNames.splash,

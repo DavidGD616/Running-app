@@ -62,6 +62,77 @@ AthleteSummary _buildAthleteSummary() {
   );
 }
 
+StravaCoachingProfile _buildStravaCoachingProfile() {
+  final evidence = StravaEvidencePoint(
+    metric: 'training_base_weekly_km',
+    date: DateTime.utc(2026, 6, 1),
+    value: 32.5,
+    unit: 'km_per_week',
+  );
+
+  return StravaCoachingProfile(
+    provenance: StravaAnalysisProvenance(
+      source: 'strava_sync',
+      syncedAt: DateTime.utc(2026, 6, 2, 8),
+      dataWindow: 'last12Weeks',
+      dataFromDate: DateTime.utc(2026, 3, 10),
+      dataThroughDate: DateTime.utc(2026, 6, 2),
+      activityCount: 34,
+      runActivityCount: 32,
+      confidence: StravaDataConfidence.high,
+    ),
+    dataConfidence: StravaDataConfidence.high,
+    trainingBase: [evidence],
+    endurance: [
+      StravaEvidencePoint(
+        metric: 'endurance_long_run_km',
+        date: DateTime.utc(2026, 5, 31),
+        value: 14.2,
+        unit: 'km',
+      ),
+    ],
+    speedMarkers: [
+      StravaEvidencePoint(
+        metric: 'speed_marker_threshold_pace',
+        date: DateTime.utc(2026, 5, 30),
+        value: 290,
+        unit: 'sec_per_km',
+      ),
+    ],
+    paceZones: const StravaPaceZones(
+      recovery: StravaPaceZone(paceMinSecPerKm: 395, paceMaxSecPerKm: 445),
+      easy: StravaPaceZone(paceMinSecPerKm: 350, paceMaxSecPerKm: 395),
+      longRun: StravaPaceZone(paceMinSecPerKm: 345, paceMaxSecPerKm: 380),
+      steady: StravaPaceZone(paceMinSecPerKm: 325, paceMaxSecPerKm: 345),
+      tempo: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 325),
+      threshold: StravaPaceZone(paceMinSecPerKm: 285, paceMaxSecPerKm: 300),
+      racePace: StravaPaceZone(paceMinSecPerKm: 280, paceMaxSecPerKm: 295),
+      intervals: StravaPaceZone(paceMinSecPerKm: 255, paceMaxSecPerKm: 280),
+      strides: StravaPaceZone(paceMinSecPerKm: 220, paceMaxSecPerKm: 255),
+    ),
+    terrain: StravaTerrainProfile.rolling,
+    recoveryGuardrails: const [
+      StravaGuardrail(
+        priority: 1,
+        category: 'recovery_spacing',
+        message: 'Keep at least one easy day between hard sessions.',
+      ),
+    ],
+    raceTargets: [
+      StravaRaceTargetEstimate(
+        distanceKm: 21.097,
+        primaryTime: const Duration(hours: 1, minutes: 55),
+        confidence: StravaDataConfidence.high,
+        evidence: [evidence],
+      ),
+    ],
+    planFocus: const StravaPlanFocus(
+      category: 'focus_threshold_durability',
+      summary: 'Build consistency and threshold durability.',
+    ),
+  );
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -78,7 +149,10 @@ void main() {
       await container.read(onboardingProvider.future);
 
       final notifier = container.read(onboardingProvider.notifier);
-      notifier.setStrava(summary: _buildAthleteSummary());
+      notifier.setStravaCoachingProfile(
+        summary: _buildAthleteSummary(),
+        coachingProfile: _buildStravaCoachingProfile(),
+      );
       await Future<void>.delayed(Duration.zero);
 
       // Sanity: Strava connect populated canonical + snapshot fields.
@@ -86,8 +160,9 @@ void main() {
       expect(stravaFitness.fitnessSource, OnboardingValues.fitnessSourceStrava);
       expect(stravaFitness.experience, isNotNull);
       expect(stravaFitness.athleteSummary, isNotNull);
+      expect(stravaFitness.stravaCoachingProfile, isNotNull);
 
-      notifier.useManualFitnessInput();
+      notifier.setFitnessSource(OnboardingValues.fitnessSourceManual);
       await Future<void>.delayed(Duration.zero);
 
       final manualFitness = container.read(onboardingProvider).value!.fitness;
@@ -98,7 +173,87 @@ void main() {
       expect(manualFitness.longestRun, isNull);
       expect(manualFitness.benchmark, isNull);
       expect(manualFitness.athleteSummary, isNull);
+      expect(manualFitness.stravaCoachingProfile, isNull);
       expect(manualFitness.stravaWeeklyVolumeKm, isNull);
+    },
+  );
+
+  test(
+    'setting Strava coaching profile stores canonical source and curated profile only',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setStravaCoachingProfile(
+        summary: _buildAthleteSummary(),
+        coachingProfile: _buildStravaCoachingProfile(),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      final fitness = container.read(onboardingProvider).value!.fitness;
+      expect(fitness.fitnessSource, OnboardingValues.fitnessSourceStrava);
+      expect(fitness.stravaCoachingProfile, isNotNull);
+      expect(fitness.stravaCoachingProfile!.provenance.source, 'strava_sync');
+      expect(fitness.athleteSummary, isNotNull);
+
+      final rawDraft = prefs.getString(
+        SharedPreferencesRunnerProfileRepository.draftStorageKey,
+      );
+      expect(rawDraft, isNotNull);
+      final draftJson = jsonDecode(rawDraft!) as Map<String, dynamic>;
+      final fitnessJson = draftJson['fitness'] as Map<String, dynamic>;
+      expect(
+        fitnessJson['fitnessSource'],
+        OnboardingValues.fitnessSourceStrava,
+      );
+      expect(fitnessJson['stravaCoachingProfile'], isA<Map>());
+      final coachingJson = Map<String, dynamic>.from(
+        fitnessJson['stravaCoachingProfile'] as Map,
+      );
+      final provenanceJson = Map<String, dynamic>.from(
+        coachingJson['provenance'] as Map,
+      );
+      expect(provenanceJson['source'], 'strava_sync');
+      expect(coachingJson['dataConfidence'], 'high');
+      expect(
+        (coachingJson['trainingBase'] as List).cast<Map>().single['metric'],
+        'training_base_weekly_km',
+      );
+      final guardrailJson = Map<String, dynamic>.from(
+        (coachingJson['recoveryGuardrails'] as List).single as Map,
+      );
+      expect(guardrailJson['priority'], 1);
+      expect(guardrailJson['category'], 'recovery_spacing');
+      expect(guardrailJson.containsKey('message'), isFalse);
+      final planFocusJson = Map<String, dynamic>.from(
+        coachingJson['planFocus'] as Map,
+      );
+      expect(planFocusJson['category'], 'focus_threshold_durability');
+      expect(planFocusJson.containsKey('summary'), isFalse);
+      expect(fitnessJson.containsKey('activities'), isFalse);
+      expect(rawDraft.contains('Morning Run'), isFalse);
+      expect(
+        rawDraft.contains('Keep at least one easy day between hard sessions.'),
+        isFalse,
+      );
+      expect(
+        rawDraft.contains('Build consistency and threshold durability.'),
+        isFalse,
+      );
+
+      final restoredDraft = RunnerProfileDraft.fromJson(draftJson);
+      expect(restoredDraft.fitness.stravaCoachingProfile, isNotNull);
+      expect(
+        restoredDraft.fitness.stravaCoachingProfile!.provenance.source,
+        'strava_sync',
+      );
+      expect(
+        restoredDraft.fitness.stravaCoachingProfile!.trainingBase.single.metric,
+        'training_base_weekly_km',
+      );
     },
   );
 

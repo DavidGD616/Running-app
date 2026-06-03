@@ -680,6 +680,18 @@ abstract class AppLocalizations {
   /// **'Powered by Strava'**
   String get onboardingStravaPoweredBy;
 
+  /// Heading on the temporary Strava analysis onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strava analysis ready'**
+  String get onboardingStravaAnalysisTitle;
+
+  /// Subtitle on the temporary Strava analysis onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'We reviewed your recent running data. Next, confirm the race target we\'ll use for your plan.'**
+  String get onboardingStravaAnalysisSubtitle;
+
   /// Error shown when mock Strava connect fails
   ///
   /// In en, this message translates to:

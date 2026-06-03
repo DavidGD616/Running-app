@@ -309,6 +309,12 @@
   "onboardingStravaPoweredBy": "Powered by Strava",
   "@onboardingStravaPoweredBy": { "description": "Small attribution text shown under Strava connect actions" },
 
+  "onboardingStravaAnalysisTitle": "Strava analysis ready",
+  "@onboardingStravaAnalysisTitle": { "description": "Heading on the temporary Strava analysis onboarding screen" },
+
+  "onboardingStravaAnalysisSubtitle": "We reviewed your recent running data. Next, confirm the race target we'll use for your plan.",
+  "@onboardingStravaAnalysisSubtitle": { "description": "Subtitle on the temporary Strava analysis onboarding screen" },
+
   "onboardingStravaConnectError": "We couldn't connect to Strava right now. Try again or continue without Strava.",
   "@onboardingStravaConnectError": { "description": "Error shown when mock Strava connect fails" },
 
