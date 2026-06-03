@@ -172,3 +172,27 @@ This file records the decisions made during product discovery for the Strava pro
   - `supabase/functions/generate-plan`: focused `schema_test.ts openai_test.ts`
   - `supabase/functions/generate-plan`: full `deno test --allow-env --allow-net --allow-read`
 - Phase 4 remains in progress because Task 10 is next.
+
+### 2026-06-03 - Phase 4 Task 10 Complete
+
+- Task 10 completed in commit `17d2c69` - "feat(generate-plan): apply Strava safety plan rules"
+- Deterministic rules now keep `schedule.trainingDays` authoritative. Strava runs per week affects safety sizing only, not run-day count.
+- Hard-to-train days remain rest when possible. Overconstrained hard days are easy or recovery only.
+- Strava coaching profile evidence and guardrails are used before legacy `athleteSummary` for weekly volume, ramp, and peak long-run safety.
+- Final safety prevents later long-run normalization from bypassing Strava caps.
+- Aggressive accepted race targets cannot bypass volume or long-run safety caps.
+- Limited, sparse, and recovery guardrails prevent older efforts from raising long-run targets.
+- Support sessions are normalized from strength preferences: weekly frequency, categories, preferred days, and same-day order.
+- Lower-body and full-body support avoids race date, taper week, race week, day-before long runs, and day-before key workouts unless explicit run-first same-day stacking after quality work.
+- Support guidance is categories-only, strips model exercise prescription text, and is locale-aware for English and Spanish.
+- Reviewer approved.
+- Verification passed:
+  - `supabase/functions/generate-plan`: `deno check index.ts plan-rules.ts schema.ts openai.ts`
+  - `supabase/functions/generate-plan`: focused `plan-rules_test.ts weekly-volume-ramp_test.ts`
+  - `supabase/functions/generate-plan`: focused `schema_test.ts openai_test.ts`
+  - `supabase/functions/generate-plan`: full `deno test --allow-env --allow-net --allow-read`
+
+### 2026-06-03 - Phase 4 Plan Generation Backend Complete
+
+- Phase 4 is complete because Task 9 and Task 10 are complete.
+- Phase 5 Task 11 is next.
