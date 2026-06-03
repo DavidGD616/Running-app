@@ -131,4 +131,27 @@ This file records the decisions made during product discovery for the Strava pro
   - `apps/mobile`: focused onboarding tests
   - `apps/mobile`: `flutter analyze` (No issues found)
   - `apps/mobile`: `flutter test`
-- Phase 3 remains in progress because Task 8 is next.
+- Phase 3 continued with Task 8.
+
+### 2026-06-03 - Phase 3 Task 8 Complete
+
+- Task 8 completed in commit `e35077d` - "feat(onboarding): add strength preferences step"
+- New localized Strength Preferences onboarding screen was added at `/onboarding/strength`.
+- The screen captures whether the user lifts.
+- No-lifting path stores canonical `lifts: false` and does not require lift-specific fields.
+- Lifting path stores canonical weekly frequency, strength categories, preferred/lower-body lifting days, and same-day order preference.
+- Scope remains running-focused with strength categories only and no exercise prescription.
+- `RunnerProfile` and `RunnerProfileDraft` now persist strength preferences with backward-compatible JSON for older profiles missing strength.
+- Onboarding progress was updated coherently to 9 steps across Strava and manual branches.
+- English and Spanish strings were added, including plural-safe frequency labels and 9-section intro copy.
+- Reviewer approved with no findings.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: focused strength, router, provider, profile, and Strava analysis tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test`
+
+### 2026-06-03 - Phase 3 Onboarding Replacement Complete
+
+- Phase 3 is complete because Task 6, Task 7, and Task 8 are complete.
+- Phase 4 Task 9 is next.
