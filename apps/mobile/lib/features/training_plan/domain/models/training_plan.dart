@@ -1,8 +1,10 @@
 import 'model_json_utils.dart';
 import 'plan_week.dart';
+import 'race_guidance.dart';
 import 'session_type.dart';
 import 'support_session.dart';
 import 'training_session.dart';
+import '../../../strava/domain/models/strava_coaching_profile.dart';
 
 enum TrainingPlanRaceType { fiveK, tenK, halfMarathon, marathon, other }
 
@@ -14,6 +16,10 @@ class TrainingPlan {
     required this.currentWeekNumber,
     required this.sessions,
     this.supportSessions = const [],
+    this.paceZones,
+    this.raceGuidance,
+    this.generatedLocale = 'en',
+    this.stravaCoachingProfileSnapshot,
   });
 
   final String id;
@@ -22,6 +28,10 @@ class TrainingPlan {
   final int currentWeekNumber;
   final List<TrainingSession> sessions;
   final List<SupportSession> supportSessions;
+  final StravaPaceZones? paceZones;
+  final RaceGuidance? raceGuidance;
+  final String generatedLocale;
+  final StravaCoachingProfile? stravaCoachingProfileSnapshot;
 
   /// Sessions belonging to the current ISO week (Mon–Sun).
   List<TrainingSession> get currentWeekSessions {
@@ -29,8 +39,7 @@ class TrainingPlan {
     final weekStart = _mondayOf(now);
     final weekEnd = weekStart.add(const Duration(days: 7));
     return sessions
-        .where((s) =>
-            !s.date.isBefore(weekStart) && s.date.isBefore(weekEnd))
+        .where((s) => !s.date.isBefore(weekStart) && s.date.isBefore(weekEnd))
         .toList()
       ..sort((a, b) => a.date.compareTo(b.date));
   }
@@ -58,14 +67,15 @@ class TrainingPlan {
   TrainingSession? get nextUpcomingSession {
     final now = DateTime.now();
     final todayDay = DateTime(now.year, now.month, now.day);
-    final candidates = sessions
-        .where(
-          (s) =>
-              s.status == SessionStatus.upcoming &&
-              !s.date.isBefore(todayDay),
-        )
-        .toList()
-      ..sort((a, b) => a.date.compareTo(b.date));
+    final candidates =
+        sessions
+            .where(
+              (s) =>
+                  s.status == SessionStatus.upcoming &&
+                  !s.date.isBefore(todayDay),
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
     return candidates.isNotEmpty ? candidates.first : null;
   }
 
@@ -99,22 +109,30 @@ class TrainingPlan {
   static const int schemaVersion = 1;
 
   Map<String, dynamic> toJson() => {
-        'schemaVersion': schemaVersion,
-        'id': id,
-        'raceType': raceType.name,
-        'totalWeeks': totalWeeks,
-        'currentWeekNumber': currentWeekNumber,
-        'sessions': sessions.map((s) => s.toJson()).toList(),
-        'supportSessions': supportSessions.map((s) => s.toJson()).toList(),
-      };
+    'schemaVersion': schemaVersion,
+    'id': id,
+    'raceType': raceType.name,
+    'totalWeeks': totalWeeks,
+    'currentWeekNumber': currentWeekNumber,
+    'sessions': sessions.map((s) => s.toJson()).toList(),
+    'supportSessions': supportSessions.map((s) => s.toJson()).toList(),
+    if (paceZones != null) 'paceZones': paceZones!.toJson(),
+    if (raceGuidance != null) 'raceGuidance': raceGuidance!.toJson(),
+    'generatedLocale': generatedLocale,
+    if (stravaCoachingProfileSnapshot != null)
+      'stravaCoachingProfileSnapshot': stravaCoachingProfileSnapshot!.toJson(),
+  };
 
   static TrainingPlan? fromJson(Map<String, dynamic> json) {
     final id = stringOrNull(json['id']);
     final raceType = _raceTypeFromName(stringOrNull(json['raceType']));
     final totalWeeks = intOrNull(json['totalWeeks']);
     final currentWeekNumber = intOrNull(json['currentWeekNumber']);
-    if (id == null || id.isEmpty || raceType == null ||
-        totalWeeks == null || currentWeekNumber == null) {
+    if (id == null ||
+        id.isEmpty ||
+        raceType == null ||
+        totalWeeks == null ||
+        currentWeekNumber == null) {
       return null;
     }
 
@@ -140,6 +158,41 @@ class TrainingPlan {
       }
     }
 
+    StravaPaceZones? paceZones;
+    final rawPaceZones = json['paceZones'];
+    if (rawPaceZones is Map<String, dynamic>) {
+      paceZones = StravaPaceZones.fromJson(rawPaceZones);
+    } else if (rawPaceZones is Map) {
+      paceZones = StravaPaceZones.fromJson(
+        rawPaceZones.map((key, value) => MapEntry('$key', value)),
+      );
+    }
+
+    RaceGuidance? raceGuidance;
+    final rawRaceGuidance = json['raceGuidance'];
+    if (rawRaceGuidance is Map<String, dynamic>) {
+      raceGuidance = RaceGuidance.fromJson(rawRaceGuidance);
+    } else if (rawRaceGuidance is Map) {
+      raceGuidance = RaceGuidance.fromJson(
+        rawRaceGuidance.map((key, value) => MapEntry('$key', value)),
+      );
+    }
+
+    StravaCoachingProfile? stravaCoachingProfileSnapshot;
+    final rawStravaCoachingProfileSnapshot =
+        json['stravaCoachingProfileSnapshot'];
+    if (rawStravaCoachingProfileSnapshot is Map<String, dynamic>) {
+      stravaCoachingProfileSnapshot = StravaCoachingProfile.fromJson(
+        rawStravaCoachingProfileSnapshot,
+      );
+    } else if (rawStravaCoachingProfileSnapshot is Map) {
+      stravaCoachingProfileSnapshot = StravaCoachingProfile.fromJson(
+        rawStravaCoachingProfileSnapshot.map(
+          (key, value) => MapEntry('$key', value),
+        ),
+      );
+    }
+
     return TrainingPlan(
       id: id,
       raceType: raceType,
@@ -147,6 +200,10 @@ class TrainingPlan {
       currentWeekNumber: currentWeekNumber,
       sessions: sessions,
       supportSessions: supportSessions,
+      paceZones: paceZones,
+      raceGuidance: raceGuidance,
+      generatedLocale: stringOrNull(json['generatedLocale']) ?? 'en',
+      stravaCoachingProfileSnapshot: stravaCoachingProfileSnapshot,
     );
   }
 

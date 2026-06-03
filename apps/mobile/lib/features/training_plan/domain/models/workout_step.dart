@@ -23,6 +23,9 @@ class WorkoutStep {
 
   bool get hasNestedSteps => steps.isNotEmpty;
 
+  bool get hasStructuredPaceTarget =>
+      target?.paceMinSecPerKm != null && target?.paceMaxSecPerKm != null;
+
   bool get isRepeating =>
       kind == WorkoutStepKind.repeat && (repetitions ?? 0) > 1;
 

@@ -73,34 +73,35 @@ class TrainingSession {
   static const int schemaVersion = 1;
 
   Map<String, dynamic> toJson() => {
-        'schemaVersion': schemaVersion,
-        'id': id,
-        'date': dateTimeToJson(date),
-        'type': type.name,
-        'status': status.name,
-        'weekNumber': weekNumber,
-        'phase': phase,
-        'distanceKm': distanceKm,
-        'durationMinutes': durationMinutes,
-        'description': description,
-        'effort': effort?.name,
-        'workoutTarget': workoutTarget?.toJson(),
-        'workoutSteps': workoutSteps.map((s) => s.toJson()).toList(),
-        'supplementalType': supplementalType?.key,
-        'elevationGainMeters': elevationGainMeters,
-        'intervalReps': intervalReps,
-        'intervalRepDistanceMeters': intervalRepDistanceMeters,
-        'intervalRecoverySeconds': intervalRecoverySeconds,
-        'warmUpMinutes': warmUpMinutes,
-        'coolDownMinutes': coolDownMinutes,
-        // phases intentionally excluded — rebuilt from structural fields
-      };
+    'schemaVersion': schemaVersion,
+    'id': id,
+    'date': dateTimeToJson(date),
+    'type': type.name,
+    'status': status.name,
+    'weekNumber': weekNumber,
+    'phase': phase,
+    'distanceKm': distanceKm,
+    'durationMinutes': durationMinutes,
+    'description': description,
+    'effort': effort?.name,
+    'workoutTarget': workoutTarget?.toJson(),
+    'workoutSteps': workoutSteps.map((s) => s.toJson()).toList(),
+    'supplementalType': supplementalType?.key,
+    'elevationGainMeters': elevationGainMeters,
+    'intervalReps': intervalReps,
+    'intervalRepDistanceMeters': intervalRepDistanceMeters,
+    'intervalRecoverySeconds': intervalRecoverySeconds,
+    'warmUpMinutes': warmUpMinutes,
+    'coolDownMinutes': coolDownMinutes,
+    // phases intentionally excluded — rebuilt from structural fields
+  };
 
   static TrainingSession? fromJson(Map<String, dynamic> json) {
     final id = stringOrNull(json['id']);
     final date = dateTimeFromJson(json['date']);
     final type = _sessionTypeFromName(stringOrNull(json['type']));
-    final status = _sessionStatusFromName(stringOrNull(json['status'])) ??
+    final status =
+        _sessionStatusFromName(stringOrNull(json['status'])) ??
         _deriveStatus(date);
     if (id == null || id.isEmpty || date == null || type == null) {
       return null;
@@ -137,7 +138,8 @@ class TrainingSession {
       workoutTarget: workoutTarget,
       workoutSteps: workoutSteps,
       supplementalType: supplementalSessionTypeFromKey(
-          stringOrNull(json['supplementalType'])),
+        stringOrNull(json['supplementalType']),
+      ),
       elevationGainMeters: intOrNull(json['elevationGainMeters']),
       intervalReps: intOrNull(json['intervalReps']),
       intervalRepDistanceMeters: intOrNull(json['intervalRepDistanceMeters']),
@@ -150,6 +152,10 @@ class TrainingSession {
 
   bool get hasStructuredWorkout =>
       workoutTarget != null || workoutSteps.isNotEmpty;
+
+  bool get hasStructuredPaceTarget =>
+      workoutTarget?.paceMinSecPerKm != null &&
+      workoutTarget?.paceMaxSecPerKm != null;
 
   bool get isSupportSession => supplementalType != null;
 
