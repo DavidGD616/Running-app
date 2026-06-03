@@ -270,7 +270,7 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Phase 2 acceptance criteria were met.
 - Phase 3 Task 6 is next.
 
-## Phase 3: Onboarding Replacement [NEXT]
+## Phase 3: Onboarding Replacement [IN PROGRESS]
 
 ### Task 6: Replace Onboarding State With Professional Flow State
 
@@ -301,6 +301,18 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Manual fitness remains available as an alternative.
 - Old flow routes are removed or redirected.
 - Onboarding state stores canonical values only.
+
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `8b805a1` - "feat(onboarding): route Strava users through analysis"
+- Reviewer approved with no findings after fix pass.
+- Verification passed:
+  - `apps/mobile`: `flutter test test/core/router/app_router_test.dart test/features/onboarding/presentation/goal_flow_widget_test.dart test/features/onboarding/presentation/onboarding_provider_test.dart test/features/onboarding/presentation/strava_connect_screen_test.dart test/features/profile/data/runner_profile_repository_test.dart`
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (496 tests passed)
+- Phase 3 remains in progress because Task 7 is next.
 
 ### Task 7: Build Strava Analysis Screen
 

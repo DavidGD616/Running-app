@@ -105,3 +105,13 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Phase 2 is complete because Task 4 and Task 5 are complete.
 - Phase 3 Task 6 is next.
+
+### 2026-06-03 - Phase 3 Task 6 Complete
+
+- Task 6 completed in commit `8b805a1` - "feat(onboarding): route Strava users through analysis"
+- Reviewer approved with no findings after fix pass.
+- Verification passed:
+  - `apps/mobile`: `flutter test test/core/router/app_router_test.dart test/features/onboarding/presentation/goal_flow_widget_test.dart test/features/onboarding/presentation/onboarding_provider_test.dart test/features/onboarding/presentation/strava_connect_screen_test.dart test/features/profile/data/runner_profile_repository_test.dart`
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (496 tests passed)
+- Phase 3 remains in progress because Task 7 is next.
