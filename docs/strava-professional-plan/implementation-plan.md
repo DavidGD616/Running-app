@@ -211,6 +211,17 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Activity names are not sent to UI-facing coaching evidence by default.
 - Tests cover missing optional fields.
 
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `ccd9615` - "feat(strava): enrich synced activity summaries"
+- Reviewer approved with no findings after fix passes.
+- Verification passed:
+  - `supabase/functions/strava-sync`: `deno test --allow-env --allow-net --allow-read index_test.ts` (8 passed)
+  - `apps/mobile`: `flutter test test/features/strava/data/strava_service_test.dart` (13 passed)
+- Phase 2 remains in progress because Task 5 is next.
+
 ### Task 5: Build Coaching Profile Derivation
 
 **Files:**

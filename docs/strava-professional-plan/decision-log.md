@@ -82,3 +82,12 @@ This file records the decisions made during product discovery for the Strava pro
 - Task 3 completed in commit `95abd67` - "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
 - Phase 1 acceptance criteria were met.
 - Tests pass.
+
+### 2026-06-03 - Phase 2 Task 4 Complete
+
+- Task 4 completed in commit `ccd9615` - "feat(strava): enrich synced activity summaries"
+- Reviewer approved with no findings after fix passes.
+- Verification passed:
+  - `supabase/functions/strava-sync`: `deno test --allow-env --allow-net --allow-read index_test.ts` (8 passed)
+  - `apps/mobile`: `flutter test test/features/strava/data/strava_service_test.dart` (13 passed)
+- Phase 2 remains in progress because Task 5 is next.
