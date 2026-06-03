@@ -196,3 +196,21 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Phase 4 is complete because Task 9 and Task 10 are complete.
 - Phase 5 Task 11 is next.
+
+### 2026-06-03 - Phase 5 Task 11 Complete
+
+- Task 11 completed in commit `deb7e37` - "feat(training-plan): show professional plan guidance"
+- Plan ready and full plan now show race guidance and pace zones when present.
+- New reusable `PaceZonesCard` and `RaceGuidanceSection` widgets were added.
+- Full and weekly plan views render support sessions, including backend-style support metadata localized at the UI boundary.
+- Race guidance and race day are not listed as normal session rows.
+- TrainingPlan parsing handles backend-style support sessions and partial Strava snapshots safely.
+- Training plan provider recomposition preserves pace zones, race guidance, generated locale, Strava snapshot, and support sessions.
+- Pace zones are readable in English and Spanish, and support metadata avoids canonical key leakage.
+- Reviewer approved after the support-session localization fix.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: targeted plan ready, full plan, model, and provider tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (528 tests passed)
+- Phase 5 remains in progress because Task 12 is next.
