@@ -451,6 +451,776 @@ function taperRacePhasePolicy(experience: string): WorkoutPolicy {
 
 type CoachNoteLocale = "en" | "es";
 
+type GeneratedSupportSession = {
+  schemaVersion: number;
+  id: string;
+  date: string;
+  weekNumber: number;
+  category: string;
+  load?: string | null;
+  timingGuidance?: string | null;
+  interferenceRule?: string | null;
+  taperAdjustment?: string | null;
+  durationMinutes?: number | null;
+  notes?: string | null;
+};
+
+const STRAVA_SUPPORT_SAFE_CATEGORIES = new Set([
+  "lower_body",
+  "upper_body",
+  "core_mobility",
+  "full_body",
+]);
+const STRAVA_RUNS_PER_WEEK_METRIC = "training_base_runs_per_week";
+const STRAVA_WEEKLY_VOLUME_METRIC = "training_base_weekly_km";
+const STRAVA_LONG_RUN_METRIC = "endurance_long_run_km";
+const STRAVA_WEEKLY_VOLUME_UNIT = "km_per_week";
+const STRAVA_RUNS_PER_WEEK_UNIT = "runs_per_week";
+const STRAVA_LONG_RUN_UNIT = "km";
+const STRAVA_EVIDENCE_GROUPS = ["trainingBase", "endurance"] as const;
+
+const GUARDRAIL_BLOCKING_VOLUME_RAMP = new Set([
+  "recovery_detraining",
+  "recovery_long_layoff",
+  "recovery_sparse_data",
+  "recovery_data_collection",
+]);
+const GUARDRAIL_BLOCKING_PEAK_LONG_RUN = new Set([
+  ...GUARDRAIL_BLOCKING_VOLUME_RAMP,
+  "recovery_load_spike",
+  "recovery_pace_uncertainty",
+]);
+const WEEKLY_VOLUME_RAMP_HIGH_RISK_FACTOR = 1.0;
+const WEEKLY_VOLUME_RAMP_DEFAULT_FACTOR = 1.1;
+const SUPPORT_SESSION_CATEGORIES = new Set([
+  "lower_body",
+  "upper_body",
+  "core_mobility",
+  "full_body",
+]);
+const SUPPORT_SESSION_ORDER: string[] = [
+  "day_sun",
+  "day_mon",
+  "day_tue",
+  "day_wed",
+  "day_thu",
+  "day_fri",
+  "day_sat",
+];
+
+type StravaEvidence = {
+  metric: string;
+  value: number;
+  unit: string;
+  date?: string;
+};
+
+type StrengthPreferenceOrder =
+  | "run_first"
+  | "lift_first"
+  | "separate_sessions"
+  | "it_depends";
+
+type StrengthPreferences = {
+  weeklyFrequency: number;
+  categories: string[];
+  preferredDays: string[];
+  sameDayOrder: StrengthPreferenceOrder;
+};
+
+function stravaCoachingProfile(profileData: Record<string, unknown>):
+  | Record<
+    string,
+    unknown
+  >
+  | null {
+  const fitness = objectOrNull(profileData.fitness);
+  const direct = objectOrNull(profileData.stravaCoachingProfile);
+  const nested = objectOrNull(fitness?.stravaCoachingProfile);
+  return direct ?? nested ?? null;
+}
+
+function dataConfidence(profileData: Record<string, unknown>): string | null {
+  const profile = stravaCoachingProfile(profileData);
+  if (profile == null) return null;
+  const confidence = profile.dataConfidence;
+  return typeof confidence === "string" ? confidence : null;
+}
+
+function hasHighConfidence(profileData: Record<string, unknown>): boolean {
+  const confidence = dataConfidence(profileData);
+  return confidence === "high" || confidence === "medium";
+}
+
+function recoveryGuardrails(profileData: Record<string, unknown>): string[] {
+  const profile = stravaCoachingProfile(profileData);
+  const list = objectOrNull(profile?.recoveryGuardrails);
+  if (list == null || !Array.isArray(list)) return [];
+  return list.map((entry) => {
+    if (!entry || typeof entry !== "object") return "";
+    const record = entry as Record<string, unknown>;
+    return typeof record.category === "string" ? record.category : "";
+  }).filter((category): category is string => category.length > 0);
+}
+
+function evidenceCategoryBlocked(
+  category: string,
+  blocked: Set<string>,
+): boolean {
+  const normalized = category.toLowerCase();
+  if (blocked.has(normalized)) return true;
+  for (const block of blocked) {
+    if (
+      normalized === block ||
+      normalized.includes(block.replace("recovery_", "")) ||
+      normalized.includes(block.replace(/_/g, " "))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasBlockingGuardrail(
+  profileData: Record<string, unknown>,
+  bucket: Set<string>,
+): boolean {
+  return recoveryGuardrails(profileData).some((category) =>
+    evidenceCategoryBlocked(category, bucket)
+  );
+}
+
+function evidencePoints(
+  profileData: Record<string, unknown>,
+): StravaEvidence[] {
+  const profile = stravaCoachingProfile(profileData);
+  if (profile == null) return [];
+
+  return STRAVA_EVIDENCE_GROUPS
+    .flatMap((key) => {
+      const raw = profile[key];
+      if (!Array.isArray(raw)) return [];
+
+      return raw
+        .flatMap((item) => {
+          if (item == null || typeof item !== "object") return [];
+          const record = item as Record<string, unknown>;
+          const metric = typeof record.metric === "string"
+            ? record.metric
+            : null;
+          const unit = typeof record.unit === "string" ? record.unit : null;
+          const value =
+            typeof record.value === "number" && Number.isFinite(record.value)
+              ? record.value
+              : null;
+          if (metric == null || unit == null || value == null) return [];
+
+          const base = {
+            metric,
+            unit,
+            value,
+          };
+          const dated = typeof record.date === "string"
+            ? { ...base, date: record.date }
+            : base;
+          return [dated as StravaEvidence];
+        });
+    });
+}
+
+function evidenceDateSort(a: StravaEvidence, b: StravaEvidence): number {
+  const aDate = a.date == null ? 0 : Date.parse(a.date);
+  const bDate = b.date == null ? 0 : Date.parse(b.date);
+  return (Number.isFinite(bDate) ? bDate : 0) -
+    (Number.isFinite(aDate) ? aDate : 0);
+}
+
+function latestEvidenceValue(
+  profileData: Record<string, unknown>,
+  metric: string,
+  unit: string,
+): number | null {
+  const points = evidencePoints(profileData)
+    .filter((point) => point.metric === metric && point.unit === unit)
+    .sort(evidenceDateSort);
+  return points.length > 0 ? points[0].value : null;
+}
+
+function stravaRunsPerWeek(
+  profileData: Record<string, unknown>,
+): number | null {
+  return latestEvidenceValue(
+    profileData,
+    STRAVA_RUNS_PER_WEEK_METRIC,
+    STRAVA_RUNS_PER_WEEK_UNIT,
+  );
+}
+
+function stravaWeeklyVolume(
+  profileData: Record<string, unknown>,
+): number | null {
+  return latestEvidenceValue(
+    profileData,
+    STRAVA_WEEKLY_VOLUME_METRIC,
+    STRAVA_WEEKLY_VOLUME_UNIT,
+  );
+}
+
+function stravaLongRun(profileData: Record<string, unknown>): number | null {
+  return latestEvidenceValue(
+    profileData,
+    STRAVA_LONG_RUN_METRIC,
+    STRAVA_LONG_RUN_UNIT,
+  );
+}
+
+function acceptedRaceTargetDistance(
+  profileData: Record<string, unknown>,
+): number | null {
+  const target = objectOrNull(profileData.acceptedRaceTarget);
+  const distance = target?.distanceKm;
+  return typeof distance === "number" && Number.isFinite(distance) &&
+      distance > 0
+    ? distance
+    : null;
+}
+
+function baselineWeeklyVolumeProfile(
+  profileData: Record<string, unknown>,
+): { anchor: number; rampFactor: number } | null {
+  if (
+    hasStrongEvidenceConfidence(profileData) &&
+    !hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_VOLUME_RAMP)
+  ) {
+    const byStrava = stravaWeeklyVolume(profileData);
+    if (byStrava != null) {
+      return {
+        anchor: byStrava,
+        rampFactor: weeklyVolumeRampFactor(profileData),
+      };
+    }
+  }
+
+  const athleteSummary = athleteSummaryWeeklyVolumeKm(profileData);
+  if (athleteSummary == null) return null;
+
+  return {
+    anchor: athleteSummary,
+    rampFactor: WEEKLY_VOLUME_RAMP_FACTOR,
+  };
+}
+
+function hasStrongEvidenceConfidence(
+  profileData: Record<string, unknown>,
+): boolean {
+  const confidence = dataConfidence(profileData);
+  return confidence === "high" || confidence === "medium";
+}
+
+function weeklyVolumeRampFactor(profileData: Record<string, unknown>): number {
+  if (
+    hasStrongEvidenceConfidence(profileData) &&
+    !hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_VOLUME_RAMP)
+  ) {
+    return WEEKLY_VOLUME_RAMP_DEFAULT_FACTOR;
+  }
+  return WEEKLY_VOLUME_RAMP_FACTOR;
+}
+
+function longRunHistoryFloor(
+  profileData: Record<string, unknown>,
+): number | null {
+  if (hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_PEAK_LONG_RUN)) {
+    return null;
+  }
+
+  const acceptedConfidence = dataConfidence(profileData);
+  if (
+    acceptedConfidence != null &&
+    acceptedConfidence !== "high" &&
+    acceptedConfidence !== "medium"
+  ) {
+    return null;
+  }
+
+  const stravaEvidence = stravaLongRun(profileData);
+  if (stravaEvidence != null) return stravaEvidence * 0.9;
+
+  return athleteSummaryLongestRecentRunKm(profileData);
+}
+
+function strengthPreferences(
+  profileData: Record<string, unknown>,
+): StrengthPreferences {
+  const fallback: StrengthPreferences = {
+    weeklyFrequency: 0,
+    categories: [],
+    preferredDays: [],
+    sameDayOrder: "it_depends",
+  };
+  const profile = objectOrNull(profileData.strengthPreferences);
+  if (profile == null) return fallback;
+
+  const rawFrequency = typeof profile.weeklyFrequency === "number"
+    ? Math.floor(profile.weeklyFrequency)
+    : typeof profile.weeklyFrequency === "string"
+    ? Number.parseInt(profile.weeklyFrequency, 10)
+    : null;
+  const weeklyFrequency = rawFrequency == null || Number.isNaN(rawFrequency)
+    ? 0
+    : Math.max(0, rawFrequency);
+
+  const rawCategories = Array.isArray(profile.categories)
+    ? profile.categories
+    : [];
+  const categories = rawCategories
+    .filter((category): category is string =>
+      typeof category === "string" &&
+      SUPPORT_SESSION_CATEGORIES.has(category) &&
+      category.length > 0
+    );
+
+  const rawPreferredDays = Array.isArray(profile.preferredDays)
+    ? profile.preferredDays
+    : [];
+  const preferredDays = rawPreferredDays.filter((day): day is string =>
+    typeof day === "string" && day.startsWith("day_")
+  );
+
+  const rawSameDayOrder = typeof profile.sameDayOrder === "string"
+    ? profile.sameDayOrder
+    : null;
+  const sameDayOrder = (
+      rawSameDayOrder === "run_first" ||
+      rawSameDayOrder === "lift_first" ||
+      rawSameDayOrder === "separate_sessions" ||
+      rawSameDayOrder === "it_depends"
+    )
+    ? rawSameDayOrder
+    : "it_depends";
+
+  return {
+    weeklyFrequency,
+    categories: Array.from(new Set(categories)),
+    preferredDays,
+    sameDayOrder,
+  };
+}
+
+function preferredWeekdayMap(
+  sessions: GeneratedSession[],
+): Map<string, string> {
+  return new Map(
+    sessions.map((session) => [dayKeyForDate(session.date), session.date]),
+  );
+}
+
+function nextWeekdayDate(
+  runDates: Map<string, string>,
+  day: string,
+): string | null {
+  return runDates.get(day) ?? null;
+}
+
+function isKeyWorkoutSession(session: GeneratedSession): boolean {
+  return [
+    "longRun",
+    "tempoRun",
+    "fartlek",
+    "progressionRun",
+    "intervals",
+    "hillRepeats",
+    "thresholdRun",
+    "racePaceRun",
+  ].includes(session.type);
+}
+
+function isAfterKeyWorkout(
+  date: string,
+  sessions: GeneratedSession[],
+): boolean {
+  return sessions.some((session) =>
+    isKeyWorkoutSession(session) &&
+    dateDifferenceDays(date, session.date) === 1
+  );
+}
+
+function isDayBeforeLongRunForDate(
+  date: string,
+  sessions: GeneratedSession[],
+): boolean {
+  return sessions.some((session) =>
+    session.type === "longRun" &&
+    dateDifferenceDays(date, session.date) === 1
+  );
+}
+
+function isDayBeforeKeyWorkoutForDate(
+  date: string,
+  sessions: GeneratedSession[],
+): boolean {
+  return sessions.some((session) =>
+    isKeyWorkoutSession(session) &&
+    dateDifferenceDays(date, session.date) === 1
+  );
+}
+
+function hasKeyWorkoutOnDate(
+  date: string,
+  sessions: GeneratedSession[],
+): boolean {
+  return sessions.some((session) =>
+    isKeyWorkoutSession(session) &&
+    session.date.slice(0, 10) === date.slice(0, 10)
+  );
+}
+
+function isLowerBodyCategory(category: string): boolean {
+  return category === "lower_body" || category === "full_body";
+}
+
+function supportSessionFromTemplate(
+  template: GeneratedSession | GeneratedSupportSession | null,
+  category: string,
+  weekNumber: number,
+  date: string,
+  idSeed: string,
+  locale: CoachNoteLocale,
+): GeneratedSupportSession {
+  const typedTemplate = template == null
+    ? null
+    : (template as unknown as GeneratedSupportSession);
+  const sanitizedGuidance = supportSessionGuidance(
+    category,
+    locale,
+    typedTemplate?.load,
+  );
+
+  return {
+    schemaVersion: typedTemplate?.schemaVersion ?? 1,
+    id: idSeed,
+    date,
+    weekNumber,
+    category,
+    load: sanitizedGuidance.load,
+    timingGuidance: sanitizedGuidance.timingGuidance,
+    interferenceRule: sanitizedGuidance.interferenceRule,
+    taperAdjustment: sanitizedGuidance.taperAdjustment,
+    durationMinutes: typedTemplate?.durationMinutes ?? null,
+    notes: sanitizedGuidance.notes,
+  };
+}
+
+function supportSessionGuidance(
+  category: string,
+  locale: CoachNoteLocale,
+  templateLoad: string | undefined | null,
+): {
+  load: string;
+  timingGuidance: string;
+  interferenceRule: string;
+  taperAdjustment: string;
+  notes: string;
+} {
+  const normalizedTemplateLoad = typeof templateLoad === "string"
+    ? templateLoad.trim().toLowerCase()
+    : "";
+  const canonicalLoadValues = new Map([
+    ["light", { en: "light", es: "ligera" }],
+    ["moderate", { en: "moderate", es: "moderada" }],
+    ["heavy", { en: "heavy", es: "pesada" }],
+    ["easy", { en: "easy", es: "fácil" }],
+  ]);
+  const load = canonicalLoadValues.get(normalizedTemplateLoad)?.[locale] ??
+    (locale === "es" ? "moderada" : "moderate");
+
+  const enLowerBody = {
+    load,
+    timingGuidance:
+      "Prefer easy or recovery days and avoid the day before long runs or key sessions.",
+    interferenceRule:
+      "Keep this short and technically focused; stop if legs feel overly fatigued.",
+    taperAdjustment:
+      "Keep sessions in the early phase at this frequency; reduce volume in taper weeks.",
+    notes: "Lower-body support session.",
+  };
+
+  const esLowerBody = {
+    load,
+    timingGuidance:
+      "Prioriza días fáciles o de recuperación y evita el día anterior a tiradas largas o sesiones clave.",
+    interferenceRule:
+      "Mantén la sesión corta y con foco técnico; detente si las piernas se sienten demasiado cansadas.",
+    taperAdjustment:
+      "Mantén la frecuencia baja al inicio y reduce el volumen en la semana de puesta a punto.",
+    notes: "Sesión de apoyo de tren inferior.",
+  };
+
+  const enFullBody = {
+    load,
+    timingGuidance:
+      "Prefer easy or recovery days and avoid the day before long runs or key sessions.",
+    interferenceRule:
+      "Prioritize quality over volume; stop if any run performance is reduced.",
+    taperAdjustment: "Reduce frequency and effort in the taper block.",
+    notes: "Full-body support session.",
+  };
+
+  const esFullBody = {
+    load,
+    timingGuidance:
+      "Prioriza días fáciles o de recuperación y evita el día anterior a tiradas largas o sesiones clave.",
+    interferenceRule:
+      "Prioriza la calidad sobre el volumen; detente si cualquier sesión de carrera se ve afectada.",
+    taperAdjustment:
+      "Reduce la frecuencia y la intensidad en la fase de puesta a punto.",
+    notes: "Sesión de apoyo de cuerpo completo.",
+  };
+
+  const enUpperBody = {
+    load,
+    timingGuidance: "Place on non-key run days when possible.",
+    interferenceRule: "Avoid pairing with high-fatigue run sessions.",
+    taperAdjustment: "Reduce volume in taper weeks.",
+    notes: "Upper-body support session.",
+  };
+
+  const esUpperBody = {
+    load,
+    timingGuidance:
+      "Ubícala en días de carrera que no sean sesiones clave, si es posible.",
+    interferenceRule:
+      "Evita combinarla con sesiones de carrera de alta fatiga.",
+    taperAdjustment: "Reduce el volumen en semanas de puesta a punto.",
+    notes: "Sesión de apoyo de tren superior.",
+  };
+
+  const enCoreMobility = {
+    load,
+    timingGuidance:
+      "Keep on easy days; avoid high-stress run days when possible.",
+    interferenceRule:
+      "Keep movement quality high and leave enough recovery around hard sessions.",
+    taperAdjustment:
+      "Keep frequency lower if fatigue accumulates in taper phase.",
+    notes: "Core and mobility support session.",
+  };
+
+  const esCoreMobility = {
+    load,
+    timingGuidance:
+      "Márcalas en días fáciles; evita días de sesiones de alta exigencia cuando sea posible.",
+    interferenceRule:
+      "Mantén alta la calidad de ejecución y deja suficiente recuperación alrededor de sesiones duras.",
+    taperAdjustment:
+      "Reduce la frecuencia si la fatiga se acumula durante la puesta a punto.",
+    notes: "Sesión de apoyo de core y movilidad.",
+  };
+
+  if (category === "lower_body") {
+    return locale === "es" ? esLowerBody : enLowerBody;
+  }
+
+  if (category === "full_body") {
+    return locale === "es" ? esFullBody : enFullBody;
+  }
+
+  if (category === "upper_body") {
+    return locale === "es" ? esUpperBody : enUpperBody;
+  }
+
+  return locale === "es" ? esCoreMobility : enCoreMobility;
+}
+
+export function normalizeSupportSessions(
+  supportSessions: GeneratedSupportSession[] | undefined,
+  runSessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+  locale: CoachNoteLocale = "en",
+): GeneratedSupportSession[] {
+  if (!Number.isFinite(totalWeeks) || totalWeeks < 1) return [];
+
+  const prefs = strengthPreferences(profileData);
+  if (prefs.weeklyFrequency <= 0 || prefs.categories.length === 0) {
+    return [];
+  }
+
+  const rawTemplates = Array.isArray(supportSessions) ? supportSessions : [];
+  const templatesByCategory = new Map<string, GeneratedSupportSession>();
+
+  for (const session of rawTemplates) {
+    const category = typeof session?.category === "string"
+      ? session.category
+      : null;
+    if (category == null || !SUPPORT_SESSION_CATEGORIES.has(category)) {
+      continue;
+    }
+
+    if (!templatesByCategory.has(category)) {
+      templatesByCategory.set(
+        category,
+        session as unknown as GeneratedSupportSession,
+      );
+    }
+  }
+
+  const sessionsByWeek = new Map<number, GeneratedSession[]>();
+  for (const session of runSessions) {
+    if (session.weekNumber < 1 || session.weekNumber > totalWeeks) continue;
+    const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
+    weekSessions.push({ ...session });
+    sessionsByWeek.set(session.weekNumber, weekSessions);
+  }
+
+  const scheduleHardDays = hardDaySetFor(profileData);
+  const raceDate = goalRaceDate(profileData);
+  const preferredDays = new Set(prefs.preferredDays);
+  const sameDayOrder = prefs.sameDayOrder;
+  const maxPerWeek = Math.min(
+    prefs.weeklyFrequency,
+    SUPPORT_SESSION_ORDER.length,
+  );
+  const result: GeneratedSupportSession[] = [];
+
+  for (
+    const weekNumber of Array.from(sessionsByWeek.keys()).sort((a, b) => a - b)
+  ) {
+    const weekRunSessions = sessionsByWeek.get(weekNumber) ?? [];
+    if (weekRunSessions.length === 0) continue;
+
+    const taperedWeek =
+      phaseForWeek(weekNumber, totalWeeks, profileData) === "taperRace";
+    const weekSessionLookup = new Map<string, GeneratedSession>();
+    for (const session of weekRunSessions) {
+      weekSessionLookup.set(session.date.slice(0, 10), session);
+    }
+
+    const usedDates = new Set<string>();
+
+    const weekDates = [...weekSessionLookup.keys()].sort().filter((date) =>
+      date !== raceDate &&
+      isDateInWeek(weekSessionLookup.get(date)!, weekNumber)
+    );
+    if (weekDates.length === 0) continue;
+
+    for (let i = 0; i < maxPerWeek; i += 1) {
+      const category = prefs.categories[i % prefs.categories.length];
+      if (!SUPPORT_SESSION_CATEGORIES.has(category)) continue;
+
+      if (taperedWeek && isLowerBodyCategory(category)) {
+        continue;
+      }
+
+      const candidateDate = pickSupportDate(
+        weekDates,
+        weekSessionLookup,
+        category,
+        preferredDays,
+        scheduleHardDays,
+        sameDayOrder,
+        usedDates,
+        weekRunSessions,
+      );
+
+      if (candidateDate == null) continue;
+
+      usedDates.add(candidateDate);
+      const template = templatesByCategory.get(category) ?? null;
+      const idSeed = `w${weekNumber}-${candidateDate}-${category}-${i + 1}`;
+      result.push(supportSessionFromTemplate(
+        template,
+        category,
+        weekNumber,
+        candidateDate,
+        idSeed,
+        locale,
+      ));
+    }
+  }
+
+  return result.sort((a, b) => {
+    const week = a.weekNumber - b.weekNumber;
+    if (week !== 0) return week;
+    return a.date.localeCompare(b.date);
+  });
+}
+
+function pickSupportDate(
+  weekDates: string[],
+  weekSessionLookup: Map<string, GeneratedSession>,
+  category: string,
+  preferredDays: Set<string>,
+  hardDays: Set<string>,
+  sameDayOrder: StrengthPreferenceOrder,
+  usedDates: Set<string>,
+  runSessions: GeneratedSession[],
+): string | null {
+  const lowerBody = isLowerBodyCategory(category);
+
+  let candidates = weekDates
+    .map((date) => weekSessionLookup.get(date))
+    .filter((session): session is GeneratedSession =>
+      session != null && session.date.slice(0, 10) !== ""
+    );
+
+  candidates = candidates.filter((session) =>
+    !isDayBeforeLongRunForDate(session.date, runSessions) || !lowerBody
+  );
+
+  if (lowerBody) {
+    candidates = candidates.filter((session) =>
+      !isDayBeforeKeyWorkoutForDate(session.date, runSessions)
+    );
+  }
+
+  if (lowerBody && sameDayOrder !== "run_first") {
+    candidates = candidates.filter((session) =>
+      !hasKeyWorkoutOnDate(session.date, runSessions)
+    );
+  }
+
+  if (sameDayOrder === "separate_sessions") {
+    const restDayCandidates = candidates.filter((session) =>
+      session.type === "restDay"
+    );
+    if (restDayCandidates.length > 0) {
+      candidates = restDayCandidates;
+    }
+  }
+
+  const scored = candidates
+    .map((session) => {
+      const dayKey = dayKeyForDate(session.date);
+      const used = usedDates.has(session.date.slice(0, 10)) ? 20 : 0;
+      const hard = hardDays.has(dayKey) ? 12 : 0;
+      const pref = preferredDays.has(dayKey) ? -8 : 0;
+      const restBoost = session.type === "restDay" ? -3 : 0;
+      const keyBoost = hasKeyWorkoutOnDate(session.date, runSessions)
+        ? (sameDayOrder === "run_first"
+          ? -6
+          : sameDayOrder === "separate_sessions"
+          ? 8
+          : 0)
+        : 0;
+
+      return {
+        date: session.date,
+        score: used + hard + restBoost + pref + keyBoost,
+      };
+    })
+    .sort((a, b) => {
+      if (a.score !== b.score) return a.score - b.score;
+      return a.date.localeCompare(b.date);
+    });
+
+  return scored.length > 0 ? scored[0].date.slice(0, 10) : null;
+}
+
+function isDateInWeek(session: GeneratedSession, weekNumber: number): boolean {
+  return session.weekNumber === weekNumber;
+}
+
 export function normalizeTrainingDayCount(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
@@ -1970,12 +2740,10 @@ export function normalizePeakLongRun(
   locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const range = peakLongRunRangeKm(profileData);
-  const measuredLongestRecentRunKm = athleteSummaryLongestRecentRunKm(
-    profileData,
-  );
+  const measuredLongestRecentRunKm = longRunHistoryFloor(profileData);
   const historyFloorKm = measuredLongestRecentRunKm == null
     ? null
-    : measuredLongestRecentRunKm * 0.9;
+    : Math.min(measuredLongestRecentRunKm, range.maxKm);
   const normalizedRange = {
     minKm: Math.max(range.minKm, historyFloorKm ?? range.minKm),
     targetKm: Math.max(range.targetKm, historyFloorKm ?? range.targetKm),
@@ -2007,9 +2775,15 @@ export function normalizePeakLongRun(
 
   const targetDistance = normalizedRange.targetKm;
   const currentDistance = bestPeakLongRun.distanceKm;
+  const normalizedTargetDistance = hasBlockingGuardrail(
+      profileData,
+      GUARDRAIL_BLOCKING_PEAK_LONG_RUN,
+    )
+    ? range.targetKm
+    : targetDistance;
   const finalDistance = Math.max(
     normalizedRange.minKm,
-    Math.min(normalizedRange.maxKm, targetDistance),
+    Math.min(normalizedRange.maxKm, normalizedTargetDistance),
   );
 
   if (Math.abs(finalDistance - currentDistance) > 0.01) {
@@ -2173,8 +2947,11 @@ export function normalizeWeeklyVolumeRamp(
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
-  const anchorVolumeKm = athleteSummaryWeeklyVolumeKm(profileData);
-  if (anchorVolumeKm == null) return sessions;
+  const baseline = baselineWeeklyVolumeProfile(profileData);
+  if (baseline == null) return sessions;
+
+  const anchorVolumeKm = baseline.anchor;
+  const rampFactor = baseline.rampFactor;
 
   const adjusted = sessions.map((s) => ({ ...s }));
 
@@ -2207,8 +2984,8 @@ export function normalizeWeeklyVolumeRamp(
     }
 
     const cap = previousCappedVolumeKm == null
-      ? anchorVolumeKm * WEEKLY_VOLUME_RAMP_FACTOR
-      : previousCappedVolumeKm * WEEKLY_VOLUME_RAMP_FACTOR;
+      ? anchorVolumeKm * rampFactor
+      : previousCappedVolumeKm * rampFactor;
 
     if (
       weekVolumeKm <= cap * (1 + WEEKLY_VOLUME_TOLERANCE) || weekVolumeKm <= 0

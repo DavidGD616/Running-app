@@ -15,6 +15,7 @@ import {
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
+  normalizeSupportSessions,
   normalizeTaper,
   normalizeTrainingDayCount,
   normalizeWeeklyVolumeRamp,
@@ -253,8 +254,14 @@ Deno.serve(async (req) => {
     safeGeneratedPlan.totalWeeks,
     locale,
   );
-  const taperNormalizedSessions = normalizeTaper(
+  const volumeStabilizedSessions = normalizeWeeklyVolumeRamp(
     progressionSmoothedSessions,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
+    locale,
+  );
+  const taperNormalizedSessions = normalizeTaper(
+    volumeStabilizedSessions,
     generationProfile,
     safeGeneratedPlan.totalWeeks,
     locale,
@@ -297,8 +304,15 @@ Deno.serve(async (req) => {
     generationProfile,
     locale,
   );
-  const filteredSupportSessions = removeSessionsOnRaceDate(
+  const normalizedSupportSessions = normalizeSupportSessions(
     safeGeneratedPlan.supportSessions,
+    preRaceTaperedSessions,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
+    locale,
+  );
+  const filteredSupportSessions = removeSessionsOnRaceDate(
+    normalizedSupportSessions,
     raceDate,
   );
   const idNormalizedSessions = normalizeSessionIds(preRaceTaperedSessions);

@@ -81,6 +81,43 @@ function profileWithSummary(weeklyVolumeKm: number): Record<string, unknown> {
   };
 }
 
+function profileWithStravaWeeklyVolume(
+  weeklyVolumeKm: number,
+  options: {
+    confidence?: "high" | "medium" | "limited";
+    guardrails?: Array<{ category: string }>;
+    fallbackSummaryKm?: number | null;
+  } = {},
+): Record<string, unknown> {
+  const confidence = options.confidence ?? "high";
+  const fallbackSummaryKm = options.fallbackSummaryKm;
+
+  return {
+    goal: { race: "race_half_marathon", raceDate: null },
+    fitness: {
+      experience: "experience_intermediate",
+      ...(fallbackSummaryKm == null ? {} : {
+        athleteSummary: {
+          weeklyVolumeKm: fallbackSummaryKm,
+        },
+      }),
+    },
+    stravaCoachingProfile: {
+      dataConfidence: confidence,
+      trainingBase: [
+        {
+          metric: "training_base_weekly_km",
+          value: weeklyVolumeKm,
+          unit: "km_per_week",
+          date: "2026-05-01T00:00:00Z",
+        },
+      ],
+      recoveryGuardrails: options.guardrails,
+    },
+    schedule: { hardDays: [], longRunDay: null, trainingDays: 2 },
+  };
+}
+
 Deno.test("normalizeWeeklyVolumeRamp clamps a too-aggressive week-over-week ramp", () => {
   // Anchor history ~20 km/week. Week 1 = 20 km (within ~10% of anchor).
   // Week 2 jumps to 40 km (a 100% ramp) which must be clamped to ~22 km.
@@ -122,6 +159,99 @@ Deno.test("normalizeWeeklyVolumeRamp clamps a too-aggressive week-over-week ramp
   assert.ok(
     (w2Long!.durationMinutes ?? 0) > 0,
     "week 2 long run duration should be recomputed",
+  );
+});
+
+Deno.test("normalizeWeeklyVolumeRamp clamps using strong Strava weekly-volume evidence", () => {
+  const sessions = [
+    ...week(1, 8, 12),
+    ...week(2, 16, 24),
+  ];
+
+  const result = normalizeWeeklyVolumeRamp(
+    sessions,
+    profileWithStravaWeeklyVolume(20, { confidence: "high" }),
+    8,
+    "en",
+  );
+
+  const w1 = weekVolume(result, 1);
+  const w2 = weekVolume(result, 2);
+
+  assert.ok(
+    w1 <= 20 + 0.5,
+    `anchor week should stay close to Strava weekly volume, got ${w1}`,
+  );
+  assert.ok(
+    w2 <= w1 * 1.1 + 0.5,
+    `week 2 should be clamped by Strava safety, got ${w2}`,
+  );
+});
+
+Deno.test("normalizeWeeklyVolumeRamp ignores acceptedRaceTarget for volume baseline", () => {
+  const sessions = [
+    ...week(1, 8, 12),
+    ...week(2, 25, 45),
+  ];
+
+  const result = normalizeWeeklyVolumeRamp(
+    sessions,
+    {
+      goal: { race: "race_half_marathon", raceDate: null },
+      acceptedRaceTarget: {
+        distanceKm: 42.2,
+        primaryTimeMs: 1200000,
+        stretchTimeMs: 1180000,
+      },
+      fitness: {
+        experience: "experience_intermediate",
+        athleteSummary: {
+          weeklyVolumeKm: 20,
+          longestRecentRunKm: 14,
+          acuteChronicRatio: 1.0,
+        },
+      },
+      schedule: { hardDays: [], longRunDay: null, trainingDays: 2 },
+    },
+    8,
+    "en",
+  );
+
+  const w1 = weekVolume(result, 1);
+  const w2 = weekVolume(result, 2);
+
+  assert.ok(
+    w1 >= 20,
+    `week 1 should remain around athleteSummary, got ${w1}`,
+  );
+  assert.ok(
+    w2 <= 22 + 0.5,
+    `acceptedRaceTarget must not raise weekly volume above safety cap, got ${w2}`,
+  );
+});
+
+Deno.test("normalizeWeeklyVolumeRamp falls back when Strava weekly-volume has high-risk guardrails", () => {
+  const sessions = [
+    ...week(1, 8, 12),
+    ...week(2, 16, 24),
+  ];
+
+  const result = normalizeWeeklyVolumeRamp(
+    sessions,
+    profileWithStravaWeeklyVolume(20, {
+      confidence: "high",
+      guardrails: [{ category: "recovery_sparse_data" }],
+      fallbackSummaryKm: 20,
+    }),
+    8,
+    "en",
+  );
+
+  assert.ok(
+    weekVolume(result, 2) <= 22 + 0.01,
+    `guardrailed inputs must still cap near athlete summary, got ${
+      weekVolume(result, 2)
+    }`,
   );
 });
 
