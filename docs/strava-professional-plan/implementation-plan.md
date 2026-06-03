@@ -312,7 +312,6 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
   - `apps/mobile`: `flutter test test/core/router/app_router_test.dart test/features/onboarding/presentation/goal_flow_widget_test.dart test/features/onboarding/presentation/onboarding_provider_test.dart test/features/onboarding/presentation/strava_connect_screen_test.dart test/features/profile/data/runner_profile_repository_test.dart`
   - `apps/mobile`: `flutter analyze` (No issues found)
   - `apps/mobile`: `flutter test` (496 tests passed)
-- Phase 3 remains in progress because Task 7 is next.
 
 ### Task 7: Build Strava Analysis Screen
 
@@ -342,6 +341,26 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Shows dates, not activity names.
 - Shows "Use Strava Analysis" as primary action for strong data.
 - Shows "Continue With Manual Details" for weak data.
+
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `89be6df` - "feat(onboarding): build Strava analysis screen"
+- Full localized Strava Analysis screen was added after Strava connect.
+- The screen shows training base, endurance, pace zones, terrain, recovery guardrails, race target, plan focus, confidence, evidence, and actions.
+- Strong confidence continues through the Strava-derived plan path.
+- Medium and limited confidence route to manual/simple details and clear Strava-derived assumptions.
+- Disconnect success and failure are handled with localized UI and no raw errors.
+- Privacy and localization safeguards were preserved: no raw activity names, raw metric/category keys, guardrail messages, plan focus summaries, or tokens are displayed.
+- Distance, date, and pace formatting are locale-aware, including metric/imperial units and Spanish decimal formatting.
+- Reviewer approved with no findings.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: focused onboarding tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test`
+- Phase 3 remains in progress because Task 8 is next.
 
 ### Task 8: Add Strength Preference Screen
 
