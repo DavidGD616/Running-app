@@ -89,6 +89,63 @@ function parseJsonObject(raw: unknown): Record<string, unknown> {
   return map;
 }
 
+function parseFiniteInt(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && Number.isInteger(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && Number.isInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseFiniteNonNegativeNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseFinitePositiveNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseActivityId(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || !/^\d+$/.test(trimmed)) return null;
+    return trimmed;
+  }
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value >= 0 ? value.toString() : null;
+  }
+  return null;
+}
+
 function getBearerToken(authorizationHeader: string | null): string | null {
   if (!authorizationHeader) return null;
   if (!authorizationHeader.startsWith("Bearer ")) return null;
@@ -315,7 +372,7 @@ function throwStravaError(message: string, result: StravaHttpResult): never {
 function normalizeActivity(
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  return {
+  const normalized: Record<string, unknown> = {
     distance: raw.distance,
     moving_time: raw.moving_time,
     average_speed: raw.average_speed,
@@ -324,6 +381,45 @@ function normalizeActivity(
     type: raw.type,
     sport_type: raw.sport_type,
   };
+
+  const activityId = parseActivityId(raw.id);
+  if (activityId !== null) {
+    normalized.id = activityId;
+  }
+
+  const elapsedTime = parseFiniteInt(raw.elapsed_time);
+  if (elapsedTime !== null && elapsedTime >= 0) {
+    normalized.elapsed_time = elapsedTime;
+  }
+
+  const maxSpeed = parseFiniteNonNegativeNumber(raw.max_speed);
+  if (maxSpeed !== null) {
+    normalized.max_speed = maxSpeed;
+  }
+
+  const maxHeartrate = parseFinitePositiveNumber(raw.max_heartrate);
+  if (maxHeartrate !== null) {
+    normalized.max_heartrate = maxHeartrate;
+  }
+
+  const totalElevationGain = parseFiniteNonNegativeNumber(
+    raw.total_elevation_gain,
+  );
+  if (totalElevationGain !== null) {
+    normalized.total_elevation_gain = totalElevationGain;
+  }
+
+  const workoutType = parseFiniteInt(raw.workout_type);
+  if (workoutType !== null && workoutType >= 0) {
+    normalized.workout_type = workoutType;
+  }
+
+  const sufferScore = parseFiniteInt(raw.suffer_score);
+  if (sufferScore !== null && sufferScore >= 0) {
+    normalized.suffer_score = sufferScore;
+  }
+
+  return normalized;
 }
 
 async function fetchAthleteStats(
@@ -531,4 +627,4 @@ export function mapSyncError(error: unknown): SyncErrorMapping {
   };
 }
 
-export { StravaReauthRequiredError };
+export { normalizeActivity, StravaReauthRequiredError };

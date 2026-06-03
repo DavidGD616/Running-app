@@ -216,6 +216,13 @@ class StravaSummaryActivity {
     required this.movingTimeSeconds,
     required this.averageSpeedMetersPerSecond,
     this.averageHeartrate,
+    this.activityId,
+    this.elapsedTimeSeconds,
+    this.maxSpeedMetersPerSecond,
+    this.maxHeartrate,
+    this.totalElevationGainMeters,
+    this.workoutType,
+    this.sufferScore,
     required this.startDate,
     required this.type,
     this.sportType,
@@ -225,6 +232,13 @@ class StravaSummaryActivity {
   final int movingTimeSeconds;
   final double averageSpeedMetersPerSecond;
   final double? averageHeartrate;
+  final String? activityId;
+  final int? elapsedTimeSeconds;
+  final double? maxSpeedMetersPerSecond;
+  final double? maxHeartrate;
+  final double? totalElevationGainMeters;
+  final int? workoutType;
+  final int? sufferScore;
   final DateTime startDate;
   final String type;
   final String? sportType;
@@ -250,6 +264,15 @@ class StravaSummaryActivity {
     final movingTimeSeconds = _intFromJson(json['moving_time']);
     final averageSpeedMetersPerSecond = _doubleFromJson(json['average_speed']);
     final averageHeartrate = _doubleFromJson(json['average_heartrate']);
+    final activityId = _activityIdFromJson(json['id']);
+    final elapsedTimeSeconds = _strictIntFromJson(json['elapsed_time']);
+    final maxSpeedMetersPerSecond = _doubleFromJson(json['max_speed']);
+    final maxHeartrate = _doubleFromJson(json['max_heartrate']);
+    final totalElevationGainMeters = _doubleFromJson(
+      json['total_elevation_gain'],
+    );
+    final workoutType = _strictIntFromJson(json['workout_type']);
+    final sufferScore = _strictIntFromJson(json['suffer_score']);
     final startDate = DateTime.tryParse(
       _stringFromJson(json['start_date']) ?? '',
     );
@@ -285,6 +308,23 @@ class StravaSummaryActivity {
       movingTimeSeconds: movingTimeSeconds,
       averageSpeedMetersPerSecond: averageSpeedMetersPerSecond,
       averageHeartrate: averageHeartrate,
+      activityId: activityId,
+      elapsedTimeSeconds: elapsedTimeSeconds != null && elapsedTimeSeconds >= 0
+          ? elapsedTimeSeconds
+          : null,
+      maxSpeedMetersPerSecond:
+          maxSpeedMetersPerSecond != null && maxSpeedMetersPerSecond >= 0
+          ? maxSpeedMetersPerSecond
+          : null,
+      maxHeartrate: maxHeartrate != null && maxHeartrate > 0
+          ? maxHeartrate
+          : null,
+      totalElevationGainMeters:
+          totalElevationGainMeters != null && totalElevationGainMeters >= 0
+          ? totalElevationGainMeters
+          : null,
+      workoutType: workoutType != null && workoutType >= 0 ? workoutType : null,
+      sufferScore: sufferScore != null && sufferScore >= 0 ? sufferScore : null,
       startDate: startDate,
       type: type,
       sportType: _stringFromJson(json['sport_type']),
@@ -294,10 +334,37 @@ class StravaSummaryActivity {
 
 String? _stringFromJson(Object? value) => value is String ? value : null;
 
+String? _activityIdFromJson(Object? value) {
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty || !RegExp(r"^\d+$").hasMatch(trimmed)
+        ? null
+        : trimmed;
+  }
+  if (value is int) return value.toString();
+  if (value is double) {
+    if (!value.isFinite || value.roundToDouble() != value) return null;
+    return value.toInt().toString();
+  }
+  return null;
+}
+
 int? _intFromJson(Object? value) {
   if (value is int) return value;
   if (value is double) return value.round();
   if (value is String) return int.tryParse(value);
+  return null;
+}
+
+int? _strictIntFromJson(Object? value) {
+  if (value is int) return value;
+  if (value is double) {
+    return value == value.truncateToDouble() ? value.toInt() : null;
+  }
+  if (value is String) {
+    final trimmed = value.trim();
+    return trimmed.isEmpty ? null : int.tryParse(trimmed);
+  }
   return null;
 }
 
