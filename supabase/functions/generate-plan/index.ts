@@ -1,11 +1,16 @@
 import { createClient } from "@supabase/supabase-js";
-import { generatePlanFromProfile } from "./openai.ts";
+import {
+  type GeneratePlanRequest,
+  GeneratePlanRequestSchema,
+  removeSessionsOnRaceDate,
+  StravaCoachingProfileSnapshotSchema,
+} from "./schema.ts";
+import { generatePlanFromProfile, sanitizeProfileForOpenAi } from "./openai.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
-  ensureGoalRaceSession,
   expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
@@ -25,6 +30,14 @@ import {
 } from "./plan-rules.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
 
+type CoachLocale = "en" | "es";
+type JsonObject = Record<string, unknown>;
+type ProfileShape = JsonObject & {
+  fitness?: JsonObject;
+  manualFitness?: JsonObject;
+  stravaCoachingProfile?: JsonObject;
+};
+
 Deno.serve(async (req) => {
   const authHeader = req.headers.get("Authorization");
   if (!authHeader) {
@@ -34,9 +47,6 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Use SB_PUBLISHABLE_KEY + getClaims() for asymmetric ES256 JWT verification.
-  // verify_jwt = false in config.toml disables the platform-level check so we
-  // handle auth here instead.
   const supabasePublic = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SB_PUBLISHABLE_KEY")!,
@@ -54,35 +64,86 @@ Deno.serve(async (req) => {
     });
   }
 
-  // User-scoped client for RLS-respecting reads (runner_profiles)
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_ANON_KEY")!,
     { global: { headers: { Authorization: authHeader } } },
   );
 
-  const body = await req.json().catch(() => ({}));
-  const requestedBy: string = body.requestedBy ?? "onboarding";
-  const locale = normalizeLocale(body.locale);
-
-  // 1. Fetch runner profile for the authenticated user
-  const { data: profileRow, error: profileError } = await supabase
-    .from("runner_profiles")
-    .select("data")
-    .eq("user_id", userId)
-    .maybeSingle();
-
-  if (profileError || !profileRow) {
+  const body = await req.json().catch(() => ({} as Record<string, unknown>));
+  const parsedBody = GeneratePlanRequestSchema.safeParse(body);
+  if (!parsedBody.success) {
     return new Response(
-      JSON.stringify({ error: "Runner profile not found" }),
+      JSON.stringify({
+        error: "Invalid request",
+        detail: parsedBody.error.format(),
+      }),
+      { status: 400, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const requestedBy = parsedBody.data.requestedBy;
+  const storedLocale = normalizeLocale(parsedBody.data.locale);
+  const professionalInput = parsedBody.data.professionalPlanInput;
+  const locale = normalizeLocale(
+    professionalInput?.locale ?? storedLocale,
+  );
+
+  let storedProfile: ProfileShape | null = null;
+  if (professionalInput == null) {
+    const { data: profileRow, error: profileError } = await supabase
+      .from("runner_profiles")
+      .select("data")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (profileError || !profileRow) {
+      return new Response(
+        JSON.stringify({ error: "Runner profile not found" }),
+        { status: 404, headers: { "Content-Type": "application/json" } },
+      );
+    }
+
+    if (isRecord(profileRow.data)) {
+      storedProfile = profileRow.data;
+    }
+  } else {
+    const { data: profileRow, error: profileError } = await supabase
+      .from("runner_profiles")
+      .select("data")
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (
+      !profileError && profileRow?.data != null && isRecord(profileRow.data)
+    ) {
+      storedProfile = profileRow.data;
+    }
+  }
+
+  const generationProfile = buildGenerationProfile(
+    storedProfile,
+    professionalInput,
+  );
+  const sanitizedGenerationProfile = sanitizeProfileForOpenAi(
+    generationProfile,
+  ) as ProfileShape;
+  if (Object.keys(generationProfile).length === 0) {
+    return new Response(
+      JSON.stringify({
+        error: "Runner profile not found",
+        detail:
+          "No profile data available. Send professionalPlanInput or create a runner profile first.",
+      }),
       { status: 404, headers: { "Content-Type": "application/json" } },
     );
   }
 
-  const profileData = profileRow.data as Record<string, unknown>;
-
   const generationStartedAt = new Date();
-  const expectedWeeks = expectedTotalWeeks(profileData, generationStartedAt);
+  const expectedWeeks = expectedTotalWeeks(
+    generationProfile,
+    generationStartedAt,
+  );
   if (expectedWeeks != null && expectedWeeks < 3) {
     return new Response(
       JSON.stringify({
@@ -93,11 +154,10 @@ Deno.serve(async (req) => {
     );
   }
 
-  // 2. Call OpenAI with structured output
   let generatedPlan;
   try {
     generatedPlan = await generatePlanFromProfile(
-      profileData,
+      sanitizedGenerationProfile,
       locale,
       expectedWeeks,
     );
@@ -109,26 +169,51 @@ Deno.serve(async (req) => {
     );
   }
 
-  if (expectedWeeks != null) {
-    generatedPlan.totalWeeks = expectedWeeks;
+  const plannedWeeks = expectedWeeks ?? generatedPlan.totalWeeks;
+  const supportedSnapshot = pickStravaSnapshot(
+    professionalInput?.stravaCoachingProfile ??
+      (isRecord(sanitizedGenerationProfile.fitness?.stravaCoachingProfile)
+        ? sanitizedGenerationProfile.fitness.stravaCoachingProfile
+        : undefined),
+  );
+  const parsedSnapshot = supportedSnapshot
+    ? sanitizeStravaSnapshot(supportedSnapshot)
+    : null;
+  if (
+    parsedSnapshot == null &&
+    generatedPlan.stravaCoachingProfileSnapshot == null
+  ) {
+    return new Response(
+      JSON.stringify({
+        error: "Plan generation failed",
+        detail: "Invalid stravaCoachingProfile snapshot payload.",
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
   }
 
-  // 3. Build phone-first workout steps deterministically for each session.
-  // Schedule constraints and strides are plan rules, not only model suggestions:
-  // if OpenAI ignores hard days or omits strides, enforce conservative defaults.
+  const safeGeneratedPlan = {
+    ...generatedPlan,
+    totalWeeks: plannedWeeks,
+    currentWeekNumber: generatedPlan.currentWeekNumber ?? 1,
+    generatedLocale: locale,
+    stravaCoachingProfileSnapshot: parsedSnapshot ??
+      generatedPlan.stravaCoachingProfileSnapshot,
+  };
+
   const scheduleNormalizedSessions = normalizeTrainingDayCount(
-    generatedPlan.sessions,
-    profileData,
+    safeGeneratedPlan.sessions,
+    generationProfile,
     locale,
   );
   const longRunPlacedSessions = placeLongRunsOnPreferredDay(
     scheduleNormalizedSessions,
-    profileData,
+    generationProfile,
     locale,
   );
   const stressSpacedSessions = spaceStressfulSessions(
     longRunPlacedSessions,
-    profileData,
+    generationProfile,
     locale,
   );
   const fullCalendarSessions = ensureFullCalendarWeeks(
@@ -137,56 +222,52 @@ Deno.serve(async (req) => {
   );
   const fullCalendarLongRunPlacedSessions = placeLongRunsOnPreferredDay(
     fullCalendarSessions,
-    profileData,
+    generationProfile,
     locale,
   );
   const hardDayRestedSessions = preferRestOnHardDays(
     fullCalendarLongRunPlacedSessions,
-    profileData,
+    generationProfile,
     locale,
   );
   const scheduleAdjustedSessions = avoidHardDayTraining(
     hardDayRestedSessions,
-    profileData,
+    generationProfile,
     locale,
   );
-  // Clamp week-over-week total volume ramp against measured Strava history
-  // before the long-run rules, so peak/progression normalization can still
-  // re-anchor long runs to their history-aware ranges afterward. No-op when
-  // athleteSummary is absent (manual-profile generation is unaffected).
   const volumeRampedSessions = normalizeWeeklyVolumeRamp(
     scheduleAdjustedSessions,
-    profileData,
-    generatedPlan.totalWeeks,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
     locale,
   );
   const peakNormalizedSessions = normalizePeakLongRun(
     volumeRampedSessions,
-    profileData,
-    generatedPlan.totalWeeks,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
     locale,
   );
   const progressionSmoothedSessions = smoothLongRunProgression(
     peakNormalizedSessions,
-    profileData,
-    generatedPlan.totalWeeks,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
     locale,
   );
   const taperNormalizedSessions = normalizeTaper(
     progressionSmoothedSessions,
-    profileData,
-    generatedPlan.totalWeeks,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
     locale,
   );
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
     taperNormalizedSessions,
-    profileData,
-    generatedPlan.totalWeeks,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
     locale,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
-    profileData,
+    generationProfile,
     locale,
   );
   const phaseStampedSessions = firstSessionNormalizedSessions.map((
@@ -195,33 +276,42 @@ Deno.serve(async (req) => {
     ...session,
     phase: phaseForWeek(
       session.weekNumber,
-      generatedPlan.totalWeeks,
-      profileData,
+      safeGeneratedPlan.totalWeeks,
+      generationProfile,
     ),
   }));
-  const raceFinalizedSessions = ensureGoalRaceSession(
-    phaseStampedSessions,
-    profileData,
-    locale,
-  );
   const truncatedSessions = truncateAfterRaceDate(
-    raceFinalizedSessions,
-    profileData,
+    phaseStampedSessions,
+    generationProfile,
+  );
+  const goal = isRecord(generationProfile.goal) ? generationProfile.goal : {};
+  const raceDate = typeof goal.raceDate === "string"
+    ? goal.raceDate
+    : undefined;
+  const sessionsWithoutRaceDate = removeSessionsOnRaceDate(
+    truncatedSessions,
+    raceDate,
   );
   const preRaceTaperedSessions = enforcePreRaceTaper(
-    truncatedSessions,
-    profileData,
+    sessionsWithoutRaceDate,
+    generationProfile,
     locale,
   );
+  const filteredSupportSessions = removeSessionsOnRaceDate(
+    safeGeneratedPlan.supportSessions,
+    raceDate,
+  );
   const idNormalizedSessions = normalizeSessionIds(preRaceTaperedSessions);
+
+  const sanitizedForValidation = withoutGoalDate(generationProfile);
   const finalViolations = [
     ...validateGeneratedPlanShape(
       idNormalizedSessions,
-      generatedPlan.totalWeeks,
-      profileData,
+      safeGeneratedPlan.totalWeeks,
+      sanitizedForValidation,
       generationStartedAt,
     ),
-    ...validateGeneratedSchedule(idNormalizedSessions, profileData),
+    ...validateGeneratedSchedule(idNormalizedSessions, sanitizedForValidation),
   ];
   if (finalViolations.length > 0) {
     console.error(
@@ -236,10 +326,11 @@ Deno.serve(async (req) => {
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
+
   const sessionsWithSteps = addStrideDefaults(
     idNormalizedSessions,
-    profileData,
-    generatedPlan.totalWeeks,
+    generationProfile,
+    safeGeneratedPlan.totalWeeks,
     locale,
   ).map((session) => ({
     ...session,
@@ -248,28 +339,26 @@ Deno.serve(async (req) => {
     workoutSteps: buildWorkoutSteps(session),
   }));
 
-  // 4-5. Service-role client — bypasses RLS for writes
   const adminClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Deactivate previous active plans
   await adminClient
     .from("plan_versions")
     .update({ is_active: false })
     .eq("user_id", userId)
     .eq("is_active", true);
 
-  // 7. Insert new active plan version
   const versionId = crypto.randomUUID();
-
   const planJson = {
-    ...generatedPlan,
+    ...safeGeneratedPlan,
     id: versionId,
-    currentWeekNumber: 1,
+    currentWeekNumber: safeGeneratedPlan.currentWeekNumber ?? 1,
+    supportSessions: filteredSupportSessions,
     sessions: sessionsWithSteps,
   };
+
   const { error: insertError } = await adminClient.from("plan_versions").insert(
     {
       id: versionId,
@@ -298,6 +387,143 @@ Deno.serve(async (req) => {
   });
 });
 
-function normalizeLocale(value: unknown): "en" | "es" {
-  return value === "es" ? "es" : "en";
+function normalizeLocale(value: unknown): CoachLocale {
+  if (typeof value === "string") {
+    return value.toLowerCase() === "es" ? "es" : "en";
+  }
+  return "en";
+}
+
+function isRecord(value: unknown): value is ProfileShape {
+  return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function buildGenerationProfile(
+  storedProfile: ProfileShape | null,
+  input: GeneratePlanRequest["professionalPlanInput"],
+): ProfileShape {
+  const baseProfile: ProfileShape = storedProfile ? { ...storedProfile } : {};
+  if (input == null) {
+    return baseProfile;
+  }
+
+  const profile: ProfileShape = {
+    ...baseProfile,
+    goal: input.goal,
+    schedule: input.schedule,
+    health: input.health,
+    strengthPreferences: input.strengthPreferences,
+    planIntensity: input.planIntensity,
+    acceptedRaceTarget: input.acceptedRaceTarget,
+    unitPreference: input.unitPreference,
+    locale: input.locale,
+    raceCourseTerrain: input.raceCourseTerrain,
+    fitnessSource: input.fitnessSource,
+    currentWeekNumber: 1,
+  };
+
+  const priorFitness = isRecord(profile.fitness) ? { ...profile.fitness } : {};
+  const sanitizeFitnessSource = (value: unknown): JsonObject => {
+    if (!isRecord(value)) return {};
+
+    const cleaned = { ...value };
+    delete cleaned.stravaCoachingProfile;
+    delete cleaned.athleteSummary;
+    delete cleaned.activities;
+    delete cleaned.activityNames;
+    delete cleaned.activityStreams;
+    delete cleaned.tokens;
+    delete cleaned.stravaError;
+    delete cleaned.upstreamError;
+    delete cleaned.upstreamErrorBodies;
+    return cleaned;
+  };
+
+  const priorFitnessClean = sanitizeFitnessSource(priorFitness);
+  const stravaPayload = sanitizeFitnessSource(input.stravaCoachingProfile);
+
+  if (input.fitnessSource === "manual") {
+    const manualFitness: JsonObject = {
+      ...priorFitnessClean,
+      fitnessSource: "manual",
+      experience: input.manualFitness?.experience,
+      weeklyVolume: input.manualFitness?.weeklyVolume,
+      longestRun: input.manualFitness?.longestRun,
+      canCompleteGoalDistance: input.manualFitness?.canCompleteGoalDistance,
+      raceDistanceBefore: input.manualFitness?.raceDistanceBefore,
+      benchmark: input.manualFitness?.benchmark,
+      benchmarkTimeMs: input.manualFitness?.benchmarkTimeMs,
+    };
+    delete manualFitness.stravaCoachingProfile;
+
+    profile.fitness = manualFitness;
+    profile.manualFitness = input.manualFitness;
+    delete profile.stravaCoachingProfile;
+    return profile;
+  }
+
+  const stravaFitness: JsonObject = {
+    ...priorFitnessClean,
+    fitnessSource: "strava",
+    stravaCoachingProfile: stravaPayload,
+  };
+  profile.fitness = stravaFitness;
+  if (input.stravaCoachingProfile != null) {
+    profile.stravaCoachingProfile = stravaPayload;
+  } else {
+    delete profile.stravaCoachingProfile;
+  }
+  if (input.manualFitness != null) {
+    profile.manualFitness = input.manualFitness;
+  } else {
+    delete profile.manualFitness;
+  }
+
+  return profile;
+}
+
+function pickStravaSnapshot(
+  source: unknown,
+): ProfileShape | undefined {
+  if (!isRecord(source)) {
+    return undefined;
+  }
+
+  const allowedKeys = [
+    "dataConfidence",
+    "terrain",
+    "provenance",
+    "trainingBase",
+    "endurance",
+    "speedMarkers",
+    "paceZones",
+    "recoveryGuardrails",
+    "raceTargets",
+    "planFocus",
+  ];
+
+  const snapshot: ProfileShape = {};
+  for (const key of allowedKeys) {
+    if (key in source) {
+      snapshot[key] = source[key];
+    }
+  }
+
+  return snapshot;
+}
+
+function withoutGoalDate(profile: ProfileShape): ProfileShape {
+  const goal = isRecord(profile.goal) ? { ...profile.goal } : {};
+  delete goal.raceDate;
+
+  return {
+    ...profile,
+    goal,
+  };
+}
+
+function sanitizeStravaSnapshot(source: unknown): ProfileShape | null {
+  const snapshot = pickStravaSnapshot(source);
+  const parsed = StravaCoachingProfileSnapshotSchema.safeParse(snapshot);
+  return parsed.success ? parsed.data : null;
 }
