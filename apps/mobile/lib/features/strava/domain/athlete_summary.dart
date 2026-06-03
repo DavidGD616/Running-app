@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import '../../profile/domain/models/runner_profile.dart';
 import 'models/strava_athlete.dart';
+export 'models/strava_coaching_profile.dart';
 
 const int _distanceScale = 10000;
 const int _oneKmScaled = _distanceScale; // 1 km in fixed-point distance units.
