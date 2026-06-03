@@ -1,4 +1,5 @@
 import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../strava/domain/models/strava_coaching_profile.dart';
 
 abstract interface class CanonicalKeyed {
   String get key;
@@ -341,6 +342,302 @@ enum PlanPreferenceChoice implements CanonicalKeyed {
       _enumByKey(key, values, (value) => value.key);
 }
 
+enum FitnessSource implements CanonicalKeyed {
+  strava('strava'),
+  manual('manual');
+
+  const FitnessSource(this.key);
+
+  @override
+  final String key;
+
+  static FitnessSource? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum PlanIntensity implements CanonicalKeyed {
+  conservative('conservative'),
+  balanced('balanced'),
+  ambitious('ambitious');
+
+  const PlanIntensity(this.key);
+
+  @override
+  final String key;
+
+  static PlanIntensity? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum StrengthCategory implements CanonicalKeyed {
+  lowerBody('lower_body'),
+  upperBody('upper_body'),
+  coreMobility('core_mobility'),
+  fullBody('full_body');
+
+  const StrengthCategory(this.key);
+
+  @override
+  final String key;
+
+  static StrengthCategory? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum SameDayOrderPreference implements CanonicalKeyed {
+  runFirst('run_first'),
+  liftFirst('lift_first'),
+  separateSessions('separate_sessions'),
+  itDepends('it_depends');
+
+  const SameDayOrderPreference(this.key);
+
+  @override
+  final String key;
+
+  static SameDayOrderPreference? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum RaceCourseTerrain implements CanonicalKeyed {
+  flat('flat'),
+  rolling('rolling'),
+  hilly('hilly'),
+  notSure('not_sure');
+
+  const RaceCourseTerrain(this.key);
+
+  @override
+  final String key;
+
+  static RaceCourseTerrain? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+class StrengthPreferences {
+  const StrengthPreferences({
+    required this.lifts,
+    this.weeklyFrequency,
+    this.categories = const {},
+    this.preferredDays = const {},
+    this.sameDayOrder,
+  });
+
+  final bool lifts;
+  final int? weeklyFrequency;
+  final Set<StrengthCategory> categories;
+  final Set<WeekdayChoice> preferredDays;
+  final SameDayOrderPreference? sameDayOrder;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'lifts': lifts,
+      'weeklyFrequency': weeklyFrequency,
+      'categories': _sortedCanonicalKeys(categories),
+      'preferredDays': _sortedCanonicalKeys(preferredDays),
+      'sameDayOrder': sameDayOrder?.key,
+    };
+  }
+
+  factory StrengthPreferences.fromJson(Map<String, dynamic> json) {
+    final lifts = _boolOrNull(json['lifts']);
+    if (lifts == null) {
+      throw const FormatException(
+        'Invalid strength preferences: lifts must be a bool.',
+      );
+    }
+
+    final weeklyFrequency = _intOrNull(json['weeklyFrequency']);
+    final hasInvalidWeeklyFrequency =
+        json.containsKey('weeklyFrequency') &&
+        json['weeklyFrequency'] != null &&
+        weeklyFrequency == null;
+    if (hasInvalidWeeklyFrequency) {
+      throw const FormatException(
+        'Invalid strength preferences: weeklyFrequency must be an int.',
+      );
+    }
+    if (weeklyFrequency != null && weeklyFrequency <= 0) {
+      throw const FormatException(
+        'Invalid strength preferences: weeklyFrequency must be > 0.',
+      );
+    }
+
+    final categories = <StrengthCategory>{};
+    final rawCategories = json['categories'];
+    if (rawCategories != null && rawCategories is! List) {
+      throw const FormatException(
+        'Invalid strength preferences: categories must be a list.',
+      );
+    }
+    if (rawCategories is List) {
+      for (final value in rawCategories) {
+        if (value is! String) {
+          throw const FormatException(
+            'Invalid strength preferences: category must be a string key.',
+          );
+        }
+        final parsed = StrengthCategory.fromKey(value);
+        if (parsed == null) {
+          throw FormatException(
+            'Invalid strength preferences: unsupported category "$value".',
+          );
+        }
+        categories.add(parsed);
+      }
+    }
+
+    final preferredDays = <WeekdayChoice>{};
+    final rawPreferredDays = json['preferredDays'];
+    if (rawPreferredDays != null && rawPreferredDays is! List) {
+      throw const FormatException(
+        'Invalid strength preferences: preferredDays must be a list.',
+      );
+    }
+    if (rawPreferredDays is List) {
+      for (final value in rawPreferredDays) {
+        if (value is! String) {
+          throw const FormatException(
+            'Invalid strength preferences: preferred day must be a string key.',
+          );
+        }
+        final parsed = WeekdayChoice.fromKey(value);
+        if (parsed == null) {
+          throw FormatException(
+            'Invalid strength preferences: unsupported preferred day "$value".',
+          );
+        }
+        preferredDays.add(parsed);
+      }
+    }
+
+    SameDayOrderPreference? sameDayOrder;
+    final rawSameDayOrder = json['sameDayOrder'];
+    if (rawSameDayOrder != null) {
+      if (rawSameDayOrder is! String) {
+        throw const FormatException(
+          'Invalid strength preferences: sameDayOrder must be a string key.',
+        );
+      }
+      sameDayOrder = SameDayOrderPreference.fromKey(rawSameDayOrder);
+      if (sameDayOrder == null) {
+        throw FormatException(
+          'Invalid strength preferences: unsupported sameDayOrder "$rawSameDayOrder".',
+        );
+      }
+    }
+
+    return StrengthPreferences(
+      lifts: lifts,
+      weeklyFrequency: weeklyFrequency,
+      categories: categories,
+      preferredDays: preferredDays,
+      sameDayOrder: sameDayOrder,
+    );
+  }
+}
+
+class AcceptedRaceTarget {
+  const AcceptedRaceTarget({
+    required this.distanceKm,
+    required this.primaryTime,
+    this.stretchTime,
+    this.confidence,
+    this.evidence = const [],
+  });
+
+  final double distanceKm;
+  final Duration primaryTime;
+  final Duration? stretchTime;
+  final StravaDataConfidence? confidence;
+  final List<StravaEvidencePoint> evidence;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'distanceKm': distanceKm,
+      'primaryTimeMs': primaryTime.inMilliseconds,
+      'stretchTimeMs': _durationToJson(stretchTime),
+      'confidence': confidence?.key,
+      'evidence': evidence
+          .map((point) => point.toJson())
+          .toList(growable: false),
+    };
+  }
+
+  factory AcceptedRaceTarget.fromJson(Map<String, dynamic> json) {
+    final distanceKm = _doubleFromJson(json['distanceKm']);
+    if (distanceKm == null || !distanceKm.isFinite || distanceKm <= 0) {
+      throw const FormatException(
+        'Invalid accepted race target: distanceKm must be a finite number > 0.',
+      );
+    }
+
+    final primaryTime = _durationFromJson(json['primaryTimeMs']);
+    if (primaryTime == null || primaryTime <= Duration.zero) {
+      throw const FormatException(
+        'Invalid accepted race target: primaryTimeMs must be > 0.',
+      );
+    }
+
+    final stretchTime = _durationFromJson(json['stretchTimeMs']);
+    final hasInvalidStretchTime =
+        json.containsKey('stretchTimeMs') &&
+        json['stretchTimeMs'] != null &&
+        stretchTime == null;
+    if (hasInvalidStretchTime) {
+      throw const FormatException(
+        'Invalid accepted race target: stretchTimeMs must be an int duration.',
+      );
+    }
+    if (stretchTime != null && stretchTime <= Duration.zero) {
+      throw const FormatException(
+        'Invalid accepted race target: stretchTimeMs must be > 0 when present.',
+      );
+    }
+
+    StravaDataConfidence? confidence;
+    final rawConfidence = json['confidence'];
+    if (rawConfidence != null) {
+      if (rawConfidence is! String) {
+        throw const FormatException(
+          'Invalid accepted race target: confidence must be a string key.',
+        );
+      }
+      confidence = StravaDataConfidence.fromKey(rawConfidence);
+      if (confidence == null) {
+        throw FormatException(
+          'Invalid accepted race target: unsupported confidence "$rawConfidence".',
+        );
+      }
+    }
+
+    final rawEvidence = json['evidence'];
+    if (rawEvidence is! List) {
+      throw const FormatException(
+        'Invalid accepted race target: evidence must be a list.',
+      );
+    }
+    final evidence = rawEvidence
+        .map((entry) {
+          if (entry is! Map) {
+            throw const FormatException(
+              'Invalid accepted race target: evidence entries must be objects.',
+            );
+          }
+          return StravaEvidencePoint.fromJson(entry.cast<String, dynamic>());
+        })
+        .toList(growable: false);
+
+    return AcceptedRaceTarget(
+      distanceKm: distanceKm,
+      primaryTime: primaryTime,
+      stretchTime: stretchTime,
+      confidence: confidence,
+      evidence: evidence,
+    );
+  }
+}
+
 enum WatchDeviceType implements CanonicalKeyed {
   garmin('device_garmin'),
   appleWatch('device_apple_watch'),
@@ -651,7 +948,8 @@ class FitnessProfileDraft {
           ? null
           : benchmarkTime,
       fitnessSource: fitnessSource,
-      athleteSummary: athleteSummary ??
+      athleteSummary:
+          athleteSummary ??
           _athleteSummaryFromLegacyStravaFields(
             weeklyVolumeKm: stravaWeeklyVolumeKm,
             longestRecentRunKm: stravaLongestRecentRunKm,
