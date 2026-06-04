@@ -266,7 +266,7 @@ This file records the decisions made during product discovery for the Strava pro
   - `cd apps/mobile && flutter test` (555 tests passed)
   - `cd supabase/functions/strava-sync && deno test --allow-env --allow-net --allow-read` (8 tests passed)
   - `cd supabase/functions/generate-plan && deno test --allow-env --allow-net --allow-read` (182 tests passed)
-- Final reviewer approval is still pending.
+- Final reviewer approval is no longer pending after post-remediation signoff.
 
 ### 2026-06-03 - Final-Review Remediations Completed
 
@@ -283,4 +283,22 @@ This file records the decisions made during product discovery for the Strava pro
   - Sensitive payload and stack-trace logs were removed from plan-generation provider flow.
 - Operational note:
   - `supabase/functions/strava-sync/deno.lock` is treated as an untracked generated verification artifact and is not committed.
-- A final re-review and final verification sweep are still pending; approval is not final yet.
+- A final re-review and final verification sweep completed.
+
+### 2026-06-03 - Final Remediation Review Approved
+
+- Final reviewer found no findings and approved.
+- Final verification passed:
+  - `cd apps/mobile && flutter gen-l10n`
+  - `cd apps/mobile && flutter analyze`
+  - `cd apps/mobile && flutter test` (556 tests passed)
+  - `cd supabase/functions/strava-sync && deno test --allow-env --allow-net --allow-read` (8 tests passed)
+  - `cd supabase/functions/generate-plan && deno test --allow-env --allow-net --allow-read` (184 tests passed)
+- Security/privacy final assessment:
+  - No raw sensitive logs found.
+  - Strava/OpenAI sanitization checked.
+  - No new sensitive-data exposure regressions found.
+- Localization/canonical-key final assessment:
+  - `terrain`, `support metadata`, and `end-run copy` are aligned/localized.
+  - Machine fields remain canonical.
+- Final review status: approved.

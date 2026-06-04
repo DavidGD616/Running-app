@@ -663,7 +663,7 @@ flutter gen-l10n
 
 **Completion Notes (2026-06-03):**
 
-- Final reviewer approval is still pending before signoff.
+- Final reviewer approval is now complete after post-remediation review.
 - Verification passed:
   - `cd apps/mobile && flutter gen-l10n`
 
@@ -736,13 +736,31 @@ deno test --allow-env --allow-net --allow-read
   - Raw plan-generation request/response and stack-trace logging were removed from provider code.
 - Operational note:
   - `supabase/functions/strava-sync/deno.lock` is treated as an untracked generated verification artifact and is not committed; working tree is clean.
-- Post-fix verification and a final re-review are still pending.
+- Post-fix verification has completed and passed.
+
+### 2026-06-03 - Final Post-Remediation Review Approved
+
+- Final reviewer found no findings and approved.
+- Final verification passed:
+  - `cd apps/mobile && flutter gen-l10n`
+  - `cd apps/mobile && flutter analyze`
+  - `cd apps/mobile && flutter test` (556 tests passed)
+  - `cd supabase/functions/strava-sync && deno test --allow-env --allow-net --allow-read` (8 tests passed)
+  - `cd supabase/functions/generate-plan && deno test --allow-env --allow-net --allow-read` (184 tests passed)
+- Security/privacy final assessment:
+  - No raw sensitive logs found.
+  - Strava/OpenAI sanitization checked.
+  - No new sensitive-data exposure regressions found.
+- Localization/canonical-key final assessment:
+  - `terrain`, support metadata, and end-run copy are aligned/localized.
+  - Machine fields remain canonical.
+- Integration/final review status: approved.
 
 ### Phase 7 Verification Complete
 
 - Phase 7 is complete because Task 14, Task 15, and Task 16 are complete.
-- Final reviewer approval is still pending.
-- A final re-review and final verification are still pending after remediation.
+- Final reviewer approval is complete.
+- A final re-review and final verification are complete after remediation.
 
 ## Recommended Implementation Order
 
