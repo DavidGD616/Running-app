@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import {
   GeneratedPlanSchema,
   GeneratePlanRequestSchema,
+  StravaCoachingProfileSnapshotSchema,
   removeSessionsOnRaceDate,
 } from "./schema.ts";
 
@@ -247,6 +248,15 @@ Deno.test("GeneratedPlanSchema rejects pace minima above maxima", () => {
   assert.throws(() => {
     GeneratedPlanSchema.parse(invalid);
   }, /paceMinSecPerKm must be <=/);
+});
+
+Deno.test("StravaCoachingProfileSnapshotSchema accepts terrain notSure", () => {
+  const parsed = StravaCoachingProfileSnapshotSchema.parse({
+    dataConfidence: "medium",
+    terrain: "notSure",
+  });
+
+  assert.equal(parsed.terrain, "notSure");
 });
 
 Deno.test("GeneratedPlanSchema rejects race guidance-only session types", () => {

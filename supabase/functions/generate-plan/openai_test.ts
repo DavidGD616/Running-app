@@ -301,6 +301,36 @@ Deno.test("trainingPlanResponseJsonSchema has no additionalProperties:true flags
   assert.equal(violation, "");
 });
 
+Deno.test(
+  "sanitizeProfileForOpenAi and prompt builder retain notSure terrain",
+  () => {
+    const profileWithNotSureTerrain = {
+      ...messageProfile,
+      stravaCoachingProfile: {
+        ...messageProfile.stravaCoachingProfile,
+        terrain: "notSure",
+      },
+    };
+
+    const sanitized = sanitizeProfileForOpenAi(profileWithNotSureTerrain);
+    assert.equal(
+      (sanitized.stravaCoachingProfile as Record<string, unknown> | undefined)
+        ?.terrain,
+      "notSure",
+    );
+
+    const [, userPromptMessage] = buildGeneratePlanMessages(
+      profileWithNotSureTerrain,
+      "en",
+      8,
+    );
+    const userPrompt = JSON.parse(
+      userPromptMessage.content.replace("Runner profile:\n", ""),
+    );
+    assert.equal(userPrompt.stravaCoachingProfile.terrain, "notSure");
+  },
+);
+
 Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
   const unsafeProfile = {
     activities: [{ id: "run-1" }],

@@ -553,7 +553,7 @@ export const SupportSessionSchema = z.object({
 
 export const StravaCoachingProfileSnapshotSchema = z.object({
   dataConfidence: AcceptedConfidenceSchema,
-  terrain: RaceCourseTerrainSchema.optional(),
+  terrain: StravaTerrainSchema.optional(),
   provenance: StravaProvenanceSchema.optional(),
   trainingBase: EvidenceListSchema.optional(),
   endurance: EvidenceListSchema.optional(),
@@ -897,7 +897,7 @@ export const trainingPlanResponseJsonSchema = {
         dataConfidence: { type: "string", enum: ["high", "medium", "limited"] },
         terrain: {
           type: "string",
-          enum: ["flat", "rolling", "hilly", "not_sure"],
+          enum: ["flat", "rolling", "hilly", "notSure"],
         },
         provenance: {
           type: "object",
