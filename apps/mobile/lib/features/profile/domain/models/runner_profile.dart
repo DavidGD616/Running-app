@@ -609,15 +609,16 @@ class AcceptedRaceTarget {
   final List<StravaEvidencePoint> evidence;
 
   Map<String, dynamic> toJson() {
-    return {
-      'distanceKm': distanceKm,
-      'primaryTimeMs': primaryTime.inMilliseconds,
-      'stretchTimeMs': _durationToJson(stretchTime),
-      'confidence': confidence?.key,
-      'evidence': evidence
-          .map((point) => point.toJson())
-          .toList(growable: false),
-    };
+    return removeNullValues({
+          'distanceKm': distanceKm,
+          'primaryTimeMs': primaryTime.inMilliseconds,
+          'stretchTimeMs': _durationToJson(stretchTime),
+          'confidence': confidence?.key,
+          'evidence': evidence
+              .map((point) => point.toJson())
+              .toList(growable: false),
+        })
+        as Map<String, dynamic>;
   }
 
   factory AcceptedRaceTarget.fromJson(Map<String, dynamic> json) {

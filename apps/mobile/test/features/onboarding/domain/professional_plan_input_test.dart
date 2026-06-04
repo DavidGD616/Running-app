@@ -110,6 +110,68 @@ void main() {
       );
     });
 
+    test('Strava professional payload omits nullable optional fields', () {
+      final draft = _nonTimeStravaDraftWithoutTargets();
+      final input = buildProfessionalPlanInputFromOnboardingDraft(
+        draft: draft,
+        preferences: const UserPreferences(unitSystem: UnitSystem.km),
+        locale: 'en',
+      )!.toJson();
+
+      expect(input['fitnessSource'], FitnessSource.strava.key);
+      expect(input.containsKey('stravaCoachingProfile'), isTrue);
+      expect(input.containsKey('manualFitness'), isFalse);
+
+      final acceptedRaceTarget =
+          input['acceptedRaceTarget'] as Map<String, dynamic>;
+      expect(acceptedRaceTarget.containsKey('stretchTimeMs'), isFalse);
+      expect(acceptedRaceTarget.containsKey('confidence'), isFalse);
+
+      final coaching =
+          _baseInput(
+                fitnessSource: FitnessSource.strava,
+                stravaCoachingProfile: _stravaProfile(
+                  confidence: StravaDataConfidence.high,
+                ),
+                manualFitness: null,
+              ).toJson()['stravaCoachingProfile']
+              as Map<String, dynamic>;
+      final firstTarget = (coaching['raceTargets'] as List).first as Map;
+      expect(firstTarget.containsKey('stretchTimeSec'), isFalse);
+
+      expect(input.containsKey('goal'), isTrue);
+      expect(input.containsKey('schedule'), isTrue);
+      expect(input.containsKey('health'), isTrue);
+      expect(input.containsKey('strengthPreferences'), isTrue);
+      expect(input.containsKey('planIntensity'), isTrue);
+      expect(input.containsKey('locale'), isTrue);
+      expect(input['locale'], 'en');
+    });
+
+    test('manual professional payload omits optional race terrain', () {
+      final input = _baseInput(
+        fitnessSource: FitnessSource.manual,
+        stravaCoachingProfile: null,
+        manualFitness: const ManualFitnessInput(
+          experience: RunnerExperience.beginner,
+          weeklyVolume: WeeklyVolumeRange.volume2,
+          longestRun: LongestRunRange.run2,
+          canCompleteGoalDistance: TernaryChoice.yes,
+          raceDistanceBefore: RaceDistanceExperience.once,
+          benchmark: BenchmarkType.oneKmRun,
+          benchmarkTime: Duration(minutes: 6, seconds: 2),
+        ),
+        raceCourseTerrain: null,
+      ).toJson();
+
+      expect(input.containsKey('raceCourseTerrain'), isFalse);
+      expect(input.containsKey('stravaCoachingProfile'), isFalse);
+      expect(input['manualFitness'], isNotNull);
+      final manualFitness = input['manualFitness'] as Map<String, dynamic>;
+      expect(manualFitness.containsKey('benchmarkTimeMs'), isTrue);
+      expect(manualFitness['experience'], RunnerExperience.beginner.key);
+    });
+
     test('invalid JSON throws FormatException', () {
       final json = _baseInput(
         fitnessSource: FitnessSource.strava,
@@ -242,6 +304,7 @@ ProfessionalPlanInput _baseInput({
   required FitnessSource fitnessSource,
   required StravaCoachingProfile? stravaCoachingProfile,
   required ManualFitnessInput? manualFitness,
+  RaceCourseTerrain? raceCourseTerrain = RaceCourseTerrain.rolling,
 }) {
   return ProfessionalPlanInput(
     goal: GoalProfile(
@@ -292,7 +355,7 @@ ProfessionalPlanInput _baseInput({
     planIntensity: PlanIntensity.balanced,
     unitPreference: 'metric',
     locale: 'en',
-    raceCourseTerrain: RaceCourseTerrain.rolling,
+    raceCourseTerrain: raceCourseTerrain,
   );
 }
 

@@ -28,6 +28,31 @@ DateTime? dateTimeFromJson(Object? value) {
 
 String? dateTimeToJson(DateTime? value) => value?.toIso8601String();
 
+Object? removeNullValues(Object? value) {
+  if (value == null) return null;
+
+  if (value is Map) {
+    final filtered = <String, dynamic>{};
+    for (final entry in value.entries) {
+      final key = entry.key.toString();
+      final nested = removeNullValues(entry.value);
+      if (nested != null) {
+        filtered[key] = nested;
+      }
+    }
+    return filtered;
+  }
+
+  if (value is List) {
+    return value
+        .map(removeNullValues)
+        .where((element) => element != null)
+        .toList(growable: false);
+  }
+
+  return value;
+}
+
 List<String> stringListOrEmpty(Object? value) {
   if (value is! List) return const [];
   return value

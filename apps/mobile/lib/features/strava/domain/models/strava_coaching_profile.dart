@@ -167,10 +167,11 @@ class StravaPaceZone {
   final int? paceMaxSecPerKm;
 
   Map<String, dynamic> toJson() {
-    return {
-      'paceMinSecPerKm': paceMinSecPerKm,
-      'paceMaxSecPerKm': paceMaxSecPerKm,
-    };
+    return removeNullValues({
+          'paceMinSecPerKm': paceMinSecPerKm,
+          'paceMaxSecPerKm': paceMaxSecPerKm,
+        })
+        as Map<String, dynamic>;
   }
 
   factory StravaPaceZone.fromJson(
@@ -353,15 +354,16 @@ class StravaRaceTargetEstimate {
   final List<StravaEvidencePoint> evidence;
 
   Map<String, dynamic> toJson() {
-    return {
-      'distanceKm': distanceKm,
-      'primaryTimeSec': primaryTime.inSeconds,
-      'stretchTimeSec': stretchTime?.inSeconds,
-      'confidence': confidence.key,
-      'evidence': evidence
-          .map((point) => point.toJson())
-          .toList(growable: false),
-    };
+    return removeNullValues({
+          'distanceKm': distanceKm,
+          'primaryTimeSec': primaryTime.inSeconds,
+          'stretchTimeSec': stretchTime?.inSeconds,
+          'confidence': confidence.key,
+          'evidence': evidence
+              .map((point) => point.toJson())
+              .toList(growable: false),
+        })
+        as Map<String, dynamic>;
   }
 
   factory StravaRaceTargetEstimate.fromJson(Map<String, dynamic> json) {
@@ -465,28 +467,29 @@ class StravaCoachingProfile {
   final StravaPlanFocus planFocus;
 
   Map<String, dynamic> toJson() {
-    return {
-      'provenance': provenance.toJson(),
-      'dataConfidence': dataConfidence.key,
-      'trainingBase': trainingBase
-          .map((point) => point.toJson())
-          .toList(growable: false),
-      'endurance': endurance
-          .map((point) => point.toJson())
-          .toList(growable: false),
-      'speedMarkers': speedMarkers
-          .map((point) => point.toJson())
-          .toList(growable: false),
-      'paceZones': paceZones.toJson(),
-      'terrain': terrain.key,
-      'recoveryGuardrails': recoveryGuardrails
-          .map((guardrail) => guardrail.toJson())
-          .toList(growable: false),
-      'raceTargets': raceTargets
-          .map((targetEstimate) => targetEstimate.toJson())
-          .toList(growable: false),
-      'planFocus': planFocus.toJson(),
-    };
+    return removeNullValues({
+          'provenance': provenance.toJson(),
+          'dataConfidence': dataConfidence.key,
+          'trainingBase': trainingBase
+              .map((point) => point.toJson())
+              .toList(growable: false),
+          'endurance': endurance
+              .map((point) => point.toJson())
+              .toList(growable: false),
+          'speedMarkers': speedMarkers
+              .map((point) => point.toJson())
+              .toList(growable: false),
+          'paceZones': paceZones.toJson(),
+          'terrain': terrain.key,
+          'recoveryGuardrails': recoveryGuardrails
+              .map((guardrail) => guardrail.toJson())
+              .toList(growable: false),
+          'raceTargets': raceTargets
+              .map((targetEstimate) => targetEstimate.toJson())
+              .toList(growable: false),
+          'planFocus': planFocus.toJson(),
+        })
+        as Map<String, dynamic>;
   }
 
   factory StravaCoachingProfile.fromJson(Map<String, dynamic> json) {

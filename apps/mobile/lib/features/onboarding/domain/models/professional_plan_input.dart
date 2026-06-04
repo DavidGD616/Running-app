@@ -247,15 +247,16 @@ class ManualFitnessInput {
   final Duration? benchmarkTime;
 
   Map<String, dynamic> toJson() {
-    return {
-      'experience': experience.key,
-      'weeklyVolume': weeklyVolume?.key,
-      'longestRun': longestRun?.key,
-      'canCompleteGoalDistance': canCompleteGoalDistance?.key,
-      'raceDistanceBefore': raceDistanceBefore?.key,
-      'benchmark': benchmark?.key,
-      'benchmarkTimeMs': benchmarkTime?.inMilliseconds,
-    };
+    return removeNullValues({
+          'experience': experience.key,
+          'weeklyVolume': weeklyVolume?.key,
+          'longestRun': longestRun?.key,
+          'canCompleteGoalDistance': canCompleteGoalDistance?.key,
+          'raceDistanceBefore': raceDistanceBefore?.key,
+          'benchmark': benchmark?.key,
+          'benchmarkTimeMs': benchmarkTime?.inMilliseconds,
+        })
+        as Map<String, dynamic>;
   }
 
   factory ManualFitnessInput.fromJson(Map<String, dynamic> json) {
@@ -371,20 +372,21 @@ class ProfessionalPlanInput {
   final RaceCourseTerrain? raceCourseTerrain;
 
   Map<String, dynamic> toJson() {
-    return {
-      'goal': _goalProfileToJson(goal),
-      'fitnessSource': fitnessSource.key,
-      'stravaCoachingProfile': stravaCoachingProfile?.toJson(),
-      'manualFitness': manualFitness?.toJson(),
-      'acceptedRaceTarget': acceptedRaceTarget.toJson(),
-      'schedule': _scheduleProfileToJson(schedule),
-      'health': _healthProfileToJson(health),
-      'strengthPreferences': strengthPreferences.toJson(),
-      'planIntensity': planIntensity.key,
-      'unitPreference': unitPreference,
-      'locale': locale,
-      'raceCourseTerrain': raceCourseTerrain?.key,
-    };
+    return removeNullValues({
+          'goal': _goalProfileToJson(goal),
+          'fitnessSource': fitnessSource.key,
+          'stravaCoachingProfile': stravaCoachingProfile?.toJson(),
+          'manualFitness': manualFitness?.toJson(),
+          'acceptedRaceTarget': acceptedRaceTarget.toJson(),
+          'schedule': _scheduleProfileToJson(schedule),
+          'health': _healthProfileToJson(health),
+          'strengthPreferences': strengthPreferences.toJson(),
+          'planIntensity': planIntensity.key,
+          'unitPreference': unitPreference,
+          'locale': locale,
+          'raceCourseTerrain': raceCourseTerrain?.key,
+        })
+        as Map<String, dynamic>;
   }
 
   factory ProfessionalPlanInput.fromJson(Map<String, dynamic> json) {
@@ -695,25 +697,27 @@ HealthProfile _requiredHealthProfile(
 }
 
 Map<String, dynamic> _goalProfileToJson(GoalProfile value) {
-  return {
-    'race': value.race.key,
-    'hasRaceDate': value.hasRaceDate,
-    'raceDate': value.raceDate?.toIso8601String(),
-    'priority': value.priority.key,
-    'currentTimeMs': value.currentTime?.inMilliseconds,
-    'targetTimeMs': value.targetTime?.inMilliseconds,
-  };
+  return removeNullValues({
+        'race': value.race.key,
+        'hasRaceDate': value.hasRaceDate,
+        'raceDate': value.raceDate?.toIso8601String(),
+        'priority': value.priority.key,
+        'currentTimeMs': value.currentTime?.inMilliseconds,
+        'targetTimeMs': value.targetTime?.inMilliseconds,
+      })
+      as Map<String, dynamic>;
 }
 
 Map<String, dynamic> _scheduleProfileToJson(ScheduleProfile value) {
-  return {
-    'trainingDays': value.trainingDays,
-    'longRunDay': value.longRunDay.key,
-    'weekdayTime': value.weekdayTime.key,
-    'weekendTime': value.weekendTime.key,
-    'hardDays': sortedCanonicalKeys(value.hardDays),
-    'preferredTimeOfDay': value.preferredTimeOfDay?.key,
-  };
+  return removeNullValues({
+        'trainingDays': value.trainingDays,
+        'longRunDay': value.longRunDay.key,
+        'weekdayTime': value.weekdayTime.key,
+        'weekendTime': value.weekendTime.key,
+        'hardDays': sortedCanonicalKeys(value.hardDays),
+        'preferredTimeOfDay': value.preferredTimeOfDay?.key,
+      })
+      as Map<String, dynamic>;
 }
 
 Map<String, dynamic> _healthProfileToJson(HealthProfile value) {
