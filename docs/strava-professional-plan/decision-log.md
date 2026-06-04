@@ -70,7 +70,6 @@ This file records the decisions made during product discovery for the Strava pro
 - Exact confidence thresholds.
 - Exact guardrail thresholds.
 - Whether support sessions are stored in the same list as run/rest sessions or separately.
-- Whether active run live pace guidance ships with initial professional generation or a later milestone.
 - Whether post-run target adherence recaps are included later.
 
 ## Implementation Updates
@@ -235,3 +234,25 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Phase 5 is complete because Task 11 and Task 12 are complete.
 - Phase 6 Task 13 is next.
+
+### 2026-06-03 - Phase 6 Task 13 Complete
+
+- Task 13 completed in commit `41b5c12` - "feat(active-run): add low-noise pace guidance"
+- Added pure live pace guidance evaluator with rolling samples, sustained deviation detection, tolerance windows, cooldowns, and block reset behavior.
+- Guidance is disabled for paused, timer-only, GPS-not-ready, zero-pace, early-run, and early-block states.
+- Easy, long, and recovery too-fast warnings are firmer than too-slow guidance.
+- Intervals and race-pace use narrower tolerances than easy and long runs.
+- Active run live activity sync holds guidance state and includes guidance/status changes in update signatures to avoid stale guidance and repeated spam.
+- Firm and gentle ease-off guidance are user-visible and payload-distinct through localized status labels.
+- Fallback target paces are used when the current block target lacks a numeric pace range.
+- Reviewer approved after integration fixes.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: active-run domain, mapper, and sync tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (555 tests passed)
+
+### 2026-06-03 - Phase 6 Active Run Pace Guidance Complete
+
+- Phase 6 is complete because Task 13 is complete.
+- Phase 7 verification is next.

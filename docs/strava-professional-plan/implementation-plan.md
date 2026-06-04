@@ -619,6 +619,30 @@ Continue through fixes until reviewer approval when the task is feasible. Stop a
 - Easy/long runs warn more strongly about going too fast than too slow.
 - Intervals/race-pace runs use narrower tolerances than easy runs.
 
+**Status:** Complete
+
+**Completion Notes (2026-06-03):**
+
+- Commit: `41b5c12` - "feat(active-run): add low-noise pace guidance"
+- Added pure live pace guidance evaluator with rolling samples, sustained deviation detection, tolerance windows, cooldowns, and block reset behavior.
+- Guidance is disabled for paused, timer-only, GPS-not-ready, zero-pace, early-run, and early-block states.
+- Easy, long, and recovery too-fast warnings are firmer than too-slow guidance.
+- Intervals and race-pace use narrower tolerances than easy and long runs.
+- Active run live activity sync holds guidance state and includes guidance/status changes in update signatures to avoid stale guidance and repeated spam.
+- Firm and gentle ease-off guidance are user-visible and payload-distinct through localized status labels.
+- Fallback target paces are used when the current block target lacks a numeric pace range.
+- Reviewer approved after integration fixes.
+- Verification passed:
+  - `apps/mobile`: `flutter gen-l10n`
+  - `apps/mobile`: active-run domain, mapper, and sync tests
+  - `apps/mobile`: `flutter analyze` (No issues found)
+  - `apps/mobile`: `flutter test` (555 tests passed)
+
+### Phase 6 Active Run Pace Guidance Complete
+
+- Phase 6 is complete because Task 13 is complete.
+- Phase 7 verification is next.
+
 ## Phase 7: Verification
 
 ### Task 14: Run Localization Generation
