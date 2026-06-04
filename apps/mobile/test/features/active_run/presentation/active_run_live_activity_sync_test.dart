@@ -1,9 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:running_app/features/active_run/domain/live_pace_guidance.dart';
 import 'package:running_app/features/active_run/domain/models/gps_state.dart';
 import 'package:running_app/features/active_run/domain/run_live_activity_data.dart';
 import 'package:running_app/features/active_run/presentation/active_run_live_activity_sync.dart';
 import 'package:running_app/features/active_run/presentation/run_live_activity_bridge.dart';
 import 'package:running_app/features/active_run/presentation/run_live_activity_background_service.dart';
+import 'package:running_app/features/training_plan/domain/models/workout_target.dart';
 
 FakeBridge createFakeBridge() => FakeBridge();
 FakeBackgroundService createFakeService() => FakeBackgroundService();
@@ -16,6 +18,7 @@ RunLiveActivityData createPayload({
   String? repLabel,
   bool isPaused = false,
   double blockProgressFraction = 0.0,
+  String statusLabel = '',
   List<RunLiveActivityTimelineBlock>? timeline,
 }) {
   return RunLiveActivityData(
@@ -30,6 +33,7 @@ RunLiveActivityData createPayload({
     currentBlockLabel: currentBlockLabel,
     nextBlockLabel: nextBlockLabel,
     repLabel: repLabel,
+    statusLabel: statusLabel,
     isPaused: isPaused,
     distanceKm: distanceKm,
     paceSecondsPerKm: paceSecondsPerKm,
@@ -43,6 +47,16 @@ RunLiveActivityData createPayload({
 
 RunLiveActivityTimelineBlock timelineBlock(String label) =>
     RunLiveActivityTimelineBlock(blockLabel: label);
+
+WorkoutTarget target({
+  TargetZone zone = TargetZone.easy,
+  int paceMin = 300,
+  int paceMax = 360,
+}) => WorkoutTarget.pace(
+  zone,
+  paceMinSecPerKm: paceMin,
+  paceMaxSecPerKm: paceMax,
+);
 
 class FakeBridge implements RunLiveActivityBridgePort {
   final List<RunLiveActivityData> startCalls = [];
@@ -569,6 +583,433 @@ void main() {
 
       expect(bridge.updateCalls.length, 1);
       expect(service.updateCalls.length, 1);
+    });
+
+    test(
+      'guidance status label change alone triggers a live-activity update',
+      () async {
+        sync = createSync();
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Tracking'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: null,
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.none,
+        );
+
+        bridge.reset();
+        service.reset();
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Pick it up'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: null,
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.none,
+        );
+
+        expect(bridge.updateCalls.length, 1);
+        expect(service.updateCalls.length, 1);
+      },
+    );
+
+    test(
+      'same guidance status does not spam updates during cooldown window',
+      () async {
+        var clockTime = DateTime(2026, 4, 25, 10, 0, 0);
+        sync = createSync(clock: () => clockTime);
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Pick it up'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: 'activeRunPickUp',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.gentle,
+        );
+
+        bridge.reset();
+        service.reset();
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Pick it up'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: 'activeRunPickUp',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.gentle,
+        );
+
+        expect(bridge.updateCalls.length, 0);
+        expect(service.updateCalls.length, 0);
+
+        clockTime = DateTime(2026, 4, 25, 10, 0, 5);
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Pick it up'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: 'activeRunPickUp',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.gentle,
+        );
+
+        expect(bridge.updateCalls.length, 0);
+        expect(service.updateCalls.length, 0);
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Pick it up'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: 'activeRunPickUp',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.firm,
+        );
+
+        expect(bridge.updateCalls.length, 1);
+        expect(service.updateCalls.length, 1);
+      },
+    );
+
+    test(
+      'firm and gentle ease-off statuses remain distinct in payload',
+      () async {
+        sync = createSync();
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Ease off'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: 'activeRunEaseOff',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.gentle,
+        );
+
+        expect(bridge.startCalls.length, 1);
+        expect(bridge.startCalls[0].statusLabel, 'Ease off');
+        expect(service.startCalls.length, 1);
+        expect(service.startCalls[0].statusLabel, 'Ease off');
+
+        bridge.reset();
+        service.reset();
+
+        await sync.sync(
+          data: createPayload(statusLabel: 'Ease off now'),
+          timelineIndex: 0,
+          paceGuidanceMessageKey: 'activeRunEaseOffFirm',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.firm,
+        );
+
+        expect(bridge.updateCalls.length, 1);
+        expect(bridge.updateCalls[0].statusLabel, 'Ease off now');
+        expect(service.updateCalls.length, 1);
+        expect(service.updateCalls[0].statusLabel, 'Ease off now');
+      },
+    );
+
+    test('resolves sustained low-noise fast guidance key', () async {
+      var clockTime = DateTime(2026, 4, 25, 10, 0, 0);
+      sync = createSync(clock: () => clockTime);
+
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 300,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 50),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 1, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 60),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 2, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 70),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 3, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 80),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        'activeRunEaseOffFirm',
+      );
+    });
+
+    test('suppresses repeated guidance prompts during cooldown', () async {
+      var clockTime = DateTime(2026, 4, 25, 10, 0, 0);
+      sync = createSync(clock: () => clockTime);
+
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 300,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 50),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 1, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 60),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 2, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 70),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 3, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 80),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        'activeRunEaseOffFirm',
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 5, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 200),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 6, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 210),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 6, 30);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 215),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        'activeRunEaseOffFirm',
+      );
+    });
+
+    test('respects guidance state reset when timeline index changes', () async {
+      var clockTime = DateTime(2026, 4, 25, 10, 0, 0);
+      sync = createSync(clock: () => clockTime);
+
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 300,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 50),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 0, 30);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 60),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 1, 0);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 70),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 1, 10);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 80),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 0,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        'activeRunEaseOffFirm',
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 1, 20);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 130),
+          blockElapsed: const Duration(seconds: 2),
+          timelineIndex: 1,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 3, 20);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 200),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 1,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 3, 30);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 210),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 1,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        isNull,
+      );
+
+      clockTime = DateTime(2026, 4, 25, 10, 3, 40);
+      expect(
+        sync.resolvePaceGuidanceMessageKey(
+          currentPaceSecondsPerKm: 255,
+          currentBlockTarget: target(zone: TargetZone.easy),
+          runElapsed: const Duration(seconds: 220),
+          blockElapsed: const Duration(seconds: 20),
+          timelineIndex: 1,
+          isPaused: false,
+          isTimerOnlyMode: false,
+          isGpsReady: true,
+          now: clockTime,
+        ),
+        'activeRunEaseOffFirm',
+      );
     });
   });
 }

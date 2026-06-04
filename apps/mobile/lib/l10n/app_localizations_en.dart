@@ -2789,6 +2789,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeRunEaseOff => 'Ease off';
 
   @override
+  String get activeRunEaseOffFirm => 'Ease off now';
+
+  @override
   String get activeRunPickUp => 'Pick it up';
 
   @override

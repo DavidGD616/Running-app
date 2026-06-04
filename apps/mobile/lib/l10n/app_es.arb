@@ -1067,6 +1067,7 @@
   "activeRunGuidanceRacePace": "Entra en ritmo objetivo y mantén el esfuerzo estable.",
   "activeRunGuidanceRecovery": "Debe sentirse lo bastante suave para terminar mejor.",
   "activeRunEaseOff": "Baja ritmo",
+  "activeRunEaseOffFirm": "Baja ritmo ahora",
   "activeRunPickUp": "Acelera",
   "activeRunOnTarget": "En objetivo",
   "activeRunPush": "Empuja",

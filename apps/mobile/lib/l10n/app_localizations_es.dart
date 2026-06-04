@@ -2809,6 +2809,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get activeRunEaseOff => 'Baja ritmo';
 
   @override
+  String get activeRunEaseOffFirm => 'Baja ritmo ahora';
+
+  @override
   String get activeRunPickUp => 'Acelera';
 
   @override

@@ -2661,6 +2661,8 @@
   "@activeRunGuidanceRecovery": { "description": "Active run guidance for recovery runs" },
   "activeRunEaseOff": "Ease off",
   "@activeRunEaseOff": { "description": "Active run status when user is going too fast" },
+  "activeRunEaseOffFirm": "Ease off now",
+  "@activeRunEaseOffFirm": { "description": "Active run status when user is going too fast in an easy/long run" },
   "activeRunPickUp": "Pick it up",
   "@activeRunPickUp": { "description": "Active run status when user is going too slow" },
   "activeRunOnTarget": "On target",

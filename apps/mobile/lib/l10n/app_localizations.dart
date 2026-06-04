@@ -5084,6 +5084,12 @@ abstract class AppLocalizations {
   /// **'Ease off'**
   String get activeRunEaseOff;
 
+  /// Active run status when user is going too fast in an easy/long run
+  ///
+  /// In en, this message translates to:
+  /// **'Ease off now'**
+  String get activeRunEaseOffFirm;
+
   /// Active run status when user is going too slow
   ///
   /// In en, this message translates to:
