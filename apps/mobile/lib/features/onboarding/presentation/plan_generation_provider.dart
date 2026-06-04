@@ -66,8 +66,6 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
           )
           .timeout(const Duration(seconds: 130));
 
-      // ignore: avoid_print
-      print('[PlanGeneration] response status=${res.status} data=${res.data}');
       final data = res.data as Map<String, dynamic>?;
       if (data == null || data['versionId'] == null) {
         state = const PlanGenerationFailure('generation_no_data');
@@ -76,8 +74,6 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
 
       final rawPlan = data['plan'];
       if (rawPlan is! Map<String, dynamic>) {
-        // ignore: avoid_print
-        print('[PlanGeneration] rawPlan is not a map: ${rawPlan.runtimeType}');
         state = const PlanGenerationFailure('generation_parse_error');
         return;
       }
@@ -100,9 +96,7 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
       state = PlanGenerationSuccess(data['versionId'] as String);
     } on TimeoutException {
       state = const PlanGenerationFailure('generation_timeout');
-    } catch (e, st) {
-      // ignore: avoid_print
-      print('[PlanGeneration] ERROR: $e\n$st');
+    } catch (_) {
       state = const PlanGenerationFailure('generation_error');
     }
   }
