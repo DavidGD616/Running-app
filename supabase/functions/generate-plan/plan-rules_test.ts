@@ -743,202 +743,204 @@ Deno.test("normalizeSupportSessions avoids day-before key workouts for lower-bod
   assert.equal(result[0].date.slice(0, 10), "2026-04-30");
 });
 
-Deno.test("normalizeSupportSessions strips prescription text from support guidance fields", () => {
-  const runSessions = [
-    session({
-      id: "w1-sat",
-      date: "2026-04-25",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-  ];
-
-  const result = normalizeSupportSessions(
-    [
-      {
-        schemaVersion: 1,
-        id: "s-lower",
-        date: "2026-04-27",
+Deno.test(
+  "normalizeSupportSessions emits canonical support guidance keys and strips prescription text",
+  () => {
+    const runSessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
         weekNumber: 1,
-        category: "lower_body",
-        load: "moderate",
-        timingGuidance: "Run first, then do 4 sets of 12 split squats.",
-        interferenceRule: "Avoid heavy deadlift and knee drive overload.",
-        taperAdjustment: "Drop to 3x8 and keep reps under 15 before race week.",
-        notes: "Full-strength session: 3 sets of 5 goblet squats, 12 reps.",
-      },
-    ],
-    runSessions,
-    {
-      goal: { race: "race_half_marathon", raceDate: null },
-      schedule: { hardDays: [] },
-      strengthPreferences: {
-        weeklyFrequency: 1,
-        categories: ["lower_body"],
-        preferredDays: ["day_sat"],
-        sameDayOrder: "run_first",
-      },
-    },
-    8,
-  );
+        type: "easyRun",
+      }),
+    ];
 
-  assert.equal(result.length, 1);
-  const supportSession = result[0];
-  assert.equal(supportSession.load, "moderate");
-  assert.equal(
-    supportSession.timingGuidance,
-    "Prefer easy or recovery days and avoid the day before long runs or key sessions.",
-  );
-  assert.equal(
-    supportSession.interferenceRule,
-    "Keep this short and technically focused; stop if legs feel overly fatigued.",
-  );
-  assert.equal(
-    supportSession.taperAdjustment,
-    "Keep sessions in the early phase at this frequency; reduce volume in taper weeks.",
-  );
-  assert.equal(supportSession.notes, "Lower-body support session.");
-
-  const prescriptionTerms = [
-    /squat/i,
-    /deadlift/i,
-    /split squat/i,
-    /goblet/i,
-    /\d+\s*[xX]\s*\d+/, // rep x set style
-  ];
-  for (const term of prescriptionTerms) {
-    assert.equal(
-      term.test(supportSession.load ?? ""),
-      false,
-      `should remove prescription terms from load: ${term}`,
-    );
-    assert.equal(
-      term.test(supportSession.timingGuidance ?? ""),
-      false,
-      `should remove prescription terms from timingGuidance: ${term}`,
-    );
-    assert.equal(
-      term.test(supportSession.interferenceRule ?? ""),
-      false,
-      `should remove prescription terms from interferenceRule: ${term}`,
-    );
-    assert.equal(
-      term.test(supportSession.taperAdjustment ?? ""),
-      false,
-      `should remove prescription terms from taperAdjustment: ${term}`,
-    );
-    assert.equal(
-      term.test(supportSession.notes ?? ""),
-      false,
-      `should remove prescription terms from notes: ${term}`,
-    );
-  }
-});
-
-Deno.test("normalizeSupportSessions localizes support guidance and blocks prescription text", () => {
-  const runSessions = [
-    session({
-      id: "w1-sat",
-      date: "2026-04-25",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-  ];
-
-  const result = normalizeSupportSessions(
-    [
+    const result = normalizeSupportSessions(
+      [
+        {
+          schemaVersion: 1,
+          id: "s-lower",
+          date: "2026-04-27",
+          weekNumber: 1,
+          category: "lower_body",
+          load: "moderate",
+          timingGuidance: "Run first, then do 4 sets of 12 split squats.",
+          interferenceRule: "Avoid heavy deadlift and knee drive overload.",
+          taperAdjustment:
+            "Drop to 3x8 and keep reps under 15 before race week.",
+          notes: "Full-strength session: 3 sets of 5 goblet squats, 12 reps.",
+        },
+      ],
+      runSessions,
       {
-        schemaVersion: 1,
-        id: "s-upper",
-        date: "2026-04-27",
+        goal: { race: "race_half_marathon", raceDate: null },
+        schedule: { hardDays: [] },
+        strengthPreferences: {
+          weeklyFrequency: 1,
+          categories: ["lower_body"],
+          preferredDays: ["day_sat"],
+          sameDayOrder: "run_first",
+        },
+      },
+      8,
+    );
+
+    assert.equal(result.length, 1);
+    const supportSession = result[0];
+    assert.equal(supportSession.load, "moderate");
+    assert.equal(
+      supportSession.timingGuidance,
+      "on_off_days",
+    );
+    assert.equal(
+      supportSession.interferenceRule,
+      "avoid_day_before_long_run",
+    );
+    assert.equal(
+      supportSession.taperAdjustment,
+      "reduce_load",
+    );
+    assert.equal(supportSession.notes, "Lower-body support session.");
+
+    const prescriptionTerms = [
+      /squat/i,
+      /deadlift/i,
+      /split squat/i,
+      /goblet/i,
+      /\d+\s*[xX]\s*\d+/,
+    ];
+    for (const term of prescriptionTerms) {
+      assert.equal(
+        term.test(supportSession.load ?? ""),
+        false,
+        `should remove prescription terms from load: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.timingGuidance ?? ""),
+        false,
+        `should remove prescription terms from timingGuidance: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.interferenceRule ?? ""),
+        false,
+        `should remove prescription terms from interferenceRule: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.taperAdjustment ?? ""),
+        false,
+        `should remove prescription terms from taperAdjustment: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.notes ?? ""),
+        false,
+        `should remove prescription terms from notes: ${term}`,
+      );
+    }
+  },
+);
+
+Deno.test(
+  "normalizeSupportSessions localizes notes while preserving canonical support guidance keys",
+  () => {
+    const runSessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
         weekNumber: 1,
-        category: "upper_body",
-        load: "4x8 pull-ups",
-        timingGuidance: "Run first, then do bench and rows.",
-        interferenceRule: "Avoid deadlift overlap and squat overload.",
-        taperAdjustment: "Drop to 2x6 before race week and avoid heavy reps.",
-        notes: "Upper-body session: 4x8 pull-ups and press.",
-      },
-    ],
-    runSessions,
-    {
-      goal: { race: "race_half_marathon", raceDate: null },
-      schedule: { hardDays: [] },
-      strengthPreferences: {
-        weeklyFrequency: 1,
-        categories: ["upper_body"],
-        preferredDays: ["day_sat"],
-        sameDayOrder: "run_first",
-      },
-    },
-    8,
-    "es",
-  );
+        type: "easyRun",
+      }),
+    ];
 
-  assert.equal(result.length, 1);
-  const supportSession = result[0];
-  assert.equal(supportSession.load, "moderada");
-  assert.equal(
-    supportSession.timingGuidance,
-    "Ubícala en días de carrera que no sean sesiones clave, si es posible.",
-  );
-  assert.equal(
-    supportSession.interferenceRule,
-    "Evita combinarla con sesiones de carrera de alta fatiga.",
-  );
-  assert.equal(
-    supportSession.taperAdjustment,
-    "Reduce el volumen en semanas de puesta a punto.",
-  );
-  assert.equal(supportSession.notes, "Sesión de apoyo de tren superior.");
+    const result = normalizeSupportSessions(
+      [
+        {
+          schemaVersion: 1,
+          id: "s-upper",
+          date: "2026-04-27",
+          weekNumber: 1,
+          category: "upper_body",
+          load: "moderada",
+          timingGuidance: "Run first, then do bench and rows.",
+          interferenceRule: "Avoid deadlift overlap and squat overload.",
+          taperAdjustment: "Drop to 2x6 before race week and avoid heavy reps.",
+          notes: "Upper-body session: 4x8 pull-ups and press.",
+        },
+      ],
+      runSessions,
+      {
+        goal: { race: "race_half_marathon", raceDate: null },
+        schedule: { hardDays: [] },
+        strengthPreferences: {
+          weeklyFrequency: 1,
+          categories: ["upper_body"],
+          preferredDays: ["day_sat"],
+          sameDayOrder: "run_first",
+        },
+      },
+      8,
+      "es",
+    );
 
-  const forbiddenEnglish = [/run/i, /easy/i, /sessions/i, /bench/i, /press/i];
-  const forbiddenLocaleLeak = [
-    /taper/i,
-    /moderate/i,
-    /light/i,
-    /heavy/i,
-  ];
-  const forbiddenPrescriptions = [
-    /squat/i,
-    /deadlift/i,
-    /pull[-\s]?ups?/i,
-    /\d+\s*[xX]\s*\d+/, // rep/set style
-  ];
-  for (
-    const term of [
-      ...forbiddenEnglish,
-      ...forbiddenLocaleLeak,
-      ...forbiddenPrescriptions,
-    ]
-  ) {
+    assert.equal(result.length, 1);
+    const supportSession = result[0];
+    assert.equal(supportSession.load, "moderate");
     assert.equal(
-      term.test(supportSession.load ?? ""),
-      false,
-      `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      supportSession.timingGuidance,
+      "on_off_days",
     );
     assert.equal(
-      term.test(supportSession.timingGuidance ?? ""),
-      false,
-      `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      supportSession.interferenceRule,
+      "avoid_day_before_key_workout",
     );
     assert.equal(
-      term.test(supportSession.interferenceRule ?? ""),
-      false,
-      `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      supportSession.taperAdjustment,
+      "reduce_load",
     );
-    assert.equal(
-      term.test(supportSession.taperAdjustment ?? ""),
-      false,
-      `es guidance should be localized and not include mixed-language phrase: ${term}`,
-    );
-    assert.equal(
-      term.test(supportSession.notes ?? ""),
-      false,
-      `es guidance should be localized and not include mixed-language phrase: ${term}`,
-    );
-  }
-});
+    assert.equal(supportSession.notes, "Sesión de apoyo de tren superior.");
+
+    const forbiddenEnglish = [/run/i, /easy/i, /sessions/i, /bench/i, /press/i];
+    const forbiddenSpanishLeak = [/ligera/i, /moderada/i, /pesada/i];
+    const forbiddenPrescriptions = [
+      /squat/i,
+      /deadlift/i,
+      /pull[-\s]?ups?/i,
+      /\d+\s*[xX]\s*\d+/, // rep/set style
+    ];
+    for (
+      const term of [
+        ...forbiddenEnglish,
+        ...forbiddenSpanishLeak,
+        ...forbiddenPrescriptions,
+      ]
+    ) {
+      assert.equal(
+        term.test(supportSession.load ?? ""),
+        false,
+        `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.timingGuidance ?? ""),
+        false,
+        `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.interferenceRule ?? ""),
+        false,
+        `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.taperAdjustment ?? ""),
+        false,
+        `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      );
+      assert.equal(
+        term.test(supportSession.notes ?? ""),
+        false,
+        `es guidance should be localized and not include mixed-language phrase: ${term}`,
+      );
+    }
+  },
+);
 
 Deno.test("normalizeSupportSessions allows run_first lower-body on key workout days", () => {
   const runSessions = [

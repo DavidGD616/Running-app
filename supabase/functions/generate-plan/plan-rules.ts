@@ -925,95 +925,96 @@ function supportSessionGuidance(
   const normalizedTemplateLoad = typeof templateLoad === "string"
     ? templateLoad.trim().toLowerCase()
     : "";
-  const canonicalLoadValues = new Map([
-    ["light", { en: "light", es: "ligera" }],
-    ["moderate", { en: "moderate", es: "moderada" }],
-    ["heavy", { en: "heavy", es: "pesada" }],
-    ["easy", { en: "easy", es: "fácil" }],
+  const canonicalLoadValues = new Map<string, string>([
+    ["light", "light"],
+    ["easy", "light"],
+    ["ligera", "light"],
+    ["lightly", "light"],
+    ["moderate", "moderate"],
+    ["moderada", "moderate"],
+    ["medium", "moderate"],
+    ["heavy", "heavy"],
+    ["pesada", "heavy"],
+    ["high", "heavy"],
   ]);
-  const load = canonicalLoadValues.get(normalizedTemplateLoad)?.[locale] ??
-    (locale === "es" ? "moderada" : "moderate");
+  const load = canonicalLoadValues.get(normalizedTemplateLoad) ??
+    (normalizedTemplateLoad.includes("moder") ||
+        normalizedTemplateLoad.includes("medium")
+      ? "moderate"
+      : normalizedTemplateLoad.includes("heavy") ||
+          normalizedTemplateLoad.includes("high") ||
+          normalizedTemplateLoad.includes("pesad")
+      ? "heavy"
+      : normalizedTemplateLoad.includes("light") ||
+          normalizedTemplateLoad.includes("easy") ||
+          normalizedTemplateLoad.includes("liger")
+      ? "light"
+      : "moderate");
+
+  const timingGuidanceKey = "on_off_days";
+  const taperAdjustmentKey = "reduce_load";
 
   const enLowerBody = {
     load,
-    timingGuidance:
-      "Prefer easy or recovery days and avoid the day before long runs or key sessions.",
-    interferenceRule:
-      "Keep this short and technically focused; stop if legs feel overly fatigued.",
-    taperAdjustment:
-      "Keep sessions in the early phase at this frequency; reduce volume in taper weeks.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_long_run",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Lower-body support session.",
   };
 
   const esLowerBody = {
     load,
-    timingGuidance:
-      "Prioriza días fáciles o de recuperación y evita el día anterior a tiradas largas o sesiones clave.",
-    interferenceRule:
-      "Mantén la sesión corta y con foco técnico; detente si las piernas se sienten demasiado cansadas.",
-    taperAdjustment:
-      "Mantén la frecuencia baja al inicio y reduce el volumen en la semana de puesta a punto.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_long_run",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Sesión de apoyo de tren inferior.",
   };
 
   const enFullBody = {
     load,
-    timingGuidance:
-      "Prefer easy or recovery days and avoid the day before long runs or key sessions.",
-    interferenceRule:
-      "Prioritize quality over volume; stop if any run performance is reduced.",
-    taperAdjustment: "Reduce frequency and effort in the taper block.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_key_workout",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Full-body support session.",
   };
 
   const esFullBody = {
     load,
-    timingGuidance:
-      "Prioriza días fáciles o de recuperación y evita el día anterior a tiradas largas o sesiones clave.",
-    interferenceRule:
-      "Prioriza la calidad sobre el volumen; detente si cualquier sesión de carrera se ve afectada.",
-    taperAdjustment:
-      "Reduce la frecuencia y la intensidad en la fase de puesta a punto.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_key_workout",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Sesión de apoyo de cuerpo completo.",
   };
 
   const enUpperBody = {
     load,
-    timingGuidance: "Place on non-key run days when possible.",
-    interferenceRule: "Avoid pairing with high-fatigue run sessions.",
-    taperAdjustment: "Reduce volume in taper weeks.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_key_workout",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Upper-body support session.",
   };
 
   const esUpperBody = {
     load,
-    timingGuidance:
-      "Ubícala en días de carrera que no sean sesiones clave, si es posible.",
-    interferenceRule:
-      "Evita combinarla con sesiones de carrera de alta fatiga.",
-    taperAdjustment: "Reduce el volumen en semanas de puesta a punto.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_key_workout",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Sesión de apoyo de tren superior.",
   };
 
   const enCoreMobility = {
     load,
-    timingGuidance:
-      "Keep on easy days; avoid high-stress run days when possible.",
-    interferenceRule:
-      "Keep movement quality high and leave enough recovery around hard sessions.",
-    taperAdjustment:
-      "Keep frequency lower if fatigue accumulates in taper phase.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_key_workout",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Core and mobility support session.",
   };
 
   const esCoreMobility = {
     load,
-    timingGuidance:
-      "Márcalas en días fáciles; evita días de sesiones de alta exigencia cuando sea posible.",
-    interferenceRule:
-      "Mantén alta la calidad de ejecución y deja suficiente recuperación alrededor de sesiones duras.",
-    taperAdjustment:
-      "Reduce la frecuencia si la fatiga se acumula durante la puesta a punto.",
+    timingGuidance: timingGuidanceKey,
+    interferenceRule: "avoid_day_before_key_workout",
+    taperAdjustment: taperAdjustmentKey,
     notes: "Sesión de apoyo de core y movilidad.",
   };
 

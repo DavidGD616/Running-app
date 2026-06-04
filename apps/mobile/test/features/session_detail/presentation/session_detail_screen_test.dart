@@ -279,6 +279,8 @@ void main() {
       durationMinutes: 25,
       load: 'moderate',
       timingGuidance: 'on_off_days',
+      interferenceRule: 'avoid_day_before_long_run',
+      taperAdjustment: 'reduce_load',
       notes: 'seed_strength_session',
     );
 
@@ -322,6 +324,18 @@ void main() {
     expect(
       find.textContaining(
         '${l10n.planSupportSessionTimingLabel}: ${l10n.supportSessionTimingOnOffDays}',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        '${l10n.planSupportSessionInterferenceLabel}: ${l10n.supportSessionInterferenceAvoidDayBeforeLongRun}',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        '${l10n.planSupportSessionTaperLabel}: ${l10n.supportSessionTaperReduceLoad}',
       ),
       findsOneWidget,
     );
