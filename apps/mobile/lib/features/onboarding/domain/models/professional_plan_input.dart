@@ -1,6 +1,231 @@
 import '../../../profile/domain/models/runner_profile.dart';
 import '../../../strava/domain/models/strava_coaching_profile.dart';
 import '../../../training_plan/domain/models/model_json_utils.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import 'dart:math' as math;
+
+/// Builds a [ProfessionalPlanInput] from the current onboarding draft and user
+/// profile values. Returns `null` when required canonical values are missing.
+ProfessionalPlanInput? buildProfessionalPlanInputFromOnboardingDraft({
+  required RunnerProfileDraft draft,
+  required UserPreferences preferences,
+  required String locale,
+}) {
+  final goal = draft.goal.toProfileOrNull();
+  final schedule = draft.schedule.toProfileOrNull();
+  final health = draft.health.toProfileOrNull();
+  final strengthPreferences = draft.strength.toProfileOrNull();
+  final planIntensity = _planIntensityFromPreference(
+    draft.trainingPreferences.planPreference,
+  );
+  final fitnessSource = FitnessSource.fromKey(draft.fitness.fitnessSource);
+
+  if (goal == null ||
+      schedule == null ||
+      health == null ||
+      strengthPreferences == null ||
+      planIntensity == null ||
+      fitnessSource == null) {
+    return null;
+  }
+
+  final acceptedRaceTarget = _acceptedRaceTargetFromDraft(draft);
+  if (acceptedRaceTarget == null) {
+    return null;
+  }
+
+  final ManualFitnessInput? manualFitness;
+  final StravaCoachingProfile? stravaCoachingProfile;
+
+  switch (fitnessSource) {
+    case FitnessSource.manual:
+      manualFitness = _manualFitnessFromDraft(draft.fitness);
+      stravaCoachingProfile = null;
+      if (manualFitness == null) return null;
+    case FitnessSource.strava:
+      stravaCoachingProfile = draft.fitness.stravaCoachingProfile;
+      if (stravaCoachingProfile == null) return null;
+      manualFitness = null;
+  }
+
+  return ProfessionalPlanInput(
+    goal: goal,
+    fitnessSource: fitnessSource,
+    acceptedRaceTarget: acceptedRaceTarget,
+    schedule: schedule,
+    health: health,
+    strengthPreferences: strengthPreferences,
+    planIntensity: planIntensity,
+    stravaCoachingProfile: stravaCoachingProfile,
+    manualFitness: manualFitness,
+    unitPreference: _unitPreferenceFrom(preferences.unitSystem),
+    locale: locale,
+    raceCourseTerrain: _raceCourseTerrainFrom(
+      draft.fitness.stravaCoachingProfile,
+    ),
+  );
+}
+
+PlanIntensity? _planIntensityFromPreference(PlanPreferenceChoice? preference) {
+  return switch (preference) {
+    PlanPreferenceChoice.safest => PlanIntensity.conservative,
+    PlanPreferenceChoice.balanced => PlanIntensity.balanced,
+    PlanPreferenceChoice.performance => PlanIntensity.ambitious,
+    _ => null,
+  };
+}
+
+AcceptedRaceTarget? _acceptedRaceTargetFromDraft(RunnerProfileDraft draft) {
+  final profileTargets = draft.fitness.stravaCoachingProfile?.raceTargets;
+  if (profileTargets != null && profileTargets.isNotEmpty) {
+    final first = profileTargets.first;
+    return AcceptedRaceTarget(
+      distanceKm: first.distanceKm,
+      primaryTime: first.primaryTime,
+      stretchTime: first.stretchTime,
+      confidence: first.confidence,
+      evidence: first.evidence,
+    );
+  }
+
+  final goal = draft.goal;
+  final goalDistance = _goalDistanceKm(goal.race);
+  if (goalDistance == null) return null;
+
+  final fallbackRaceTargetTime = _fallbackRaceTargetTimeFromDraft(
+    draft,
+    goalDistance,
+  );
+  if (fallbackRaceTargetTime == null) return null;
+
+  return AcceptedRaceTarget(
+    distanceKm: goalDistance,
+    primaryTime: fallbackRaceTargetTime,
+    stretchTime: null,
+    confidence: null,
+    evidence: const [],
+  );
+}
+
+Duration? _fallbackRaceTargetTimeFromDraft(
+  RunnerProfileDraft draft,
+  double goalDistance,
+) {
+  if (draft.goal.targetTime != null) return draft.goal.targetTime;
+  if (draft.goal.currentTime != null) return draft.goal.currentTime;
+
+  final benchmarkTime = _projectedBenchmarkTimeForGoal(
+    goalDistanceKm: goalDistance,
+    benchmarkType: draft.fitness.benchmark,
+    benchmarkTime: draft.fitness.benchmarkTime,
+  );
+  if (benchmarkTime != null) return benchmarkTime;
+
+  return _conservativeFallbackTime(goalDistance);
+}
+
+Duration? _projectedBenchmarkTimeForGoal({
+  required double goalDistanceKm,
+  required BenchmarkType? benchmarkType,
+  required Duration? benchmarkTime,
+}) {
+  if (benchmarkType == null ||
+      benchmarkType == BenchmarkType.skip ||
+      benchmarkTime == null ||
+      benchmarkTime <= Duration.zero) {
+    return null;
+  }
+
+  final benchmarkDistanceKm = _benchmarkDistanceKmFromType(benchmarkType);
+  return _projectDurationToDistance(
+    sourceTime: benchmarkTime,
+    sourceDistanceKm: benchmarkDistanceKm,
+    targetDistanceKm: goalDistanceKm,
+  );
+}
+
+Duration _conservativeFallbackTime(double goalDistanceKm) {
+  // Deterministic conservative fallback used when no authoritative target time is
+  // available in the draft (e.g. no goal target/current time and no usable
+  // benchmark). This keeps professional input deterministic and avoids legacy
+  // onboarding fallback behavior.
+  const fallbackPaceSecondsPerKm = 450.0; // 7:30/km
+  return Duration(seconds: (goalDistanceKm * fallbackPaceSecondsPerKm).round());
+}
+
+double _benchmarkDistanceKmFromType(BenchmarkType type) {
+  return switch (type) {
+    BenchmarkType.oneKmRun => 1.0,
+    BenchmarkType.oneKmWalk => 1.0,
+    BenchmarkType.oneMiRun => 1.60934,
+    BenchmarkType.oneMiWalk => 1.60934,
+    BenchmarkType.fiveK => 5.0,
+    BenchmarkType.tenK => 10.0,
+    BenchmarkType.halfMarathon => 21.0975,
+    BenchmarkType.skip => 1.0,
+  };
+}
+
+Duration? _projectDurationToDistance({
+  required Duration sourceTime,
+  required double sourceDistanceKm,
+  required double targetDistanceKm,
+}) {
+  if (sourceDistanceKm <= 0 || targetDistanceKm <= 0) {
+    return null;
+  }
+  if (sourceTime <= Duration.zero) {
+    return null;
+  }
+
+  // Riegel exponent for endurance fade.
+  const riegelExponent = 1.06;
+  final projectedSeconds =
+      sourceTime.inSeconds *
+      math.pow(targetDistanceKm / sourceDistanceKm, riegelExponent);
+  return Duration(seconds: projectedSeconds.round());
+}
+
+double? _goalDistanceKm(RunnerGoalRace? race) {
+  return switch (race) {
+    RunnerGoalRace.fiveK => 5,
+    RunnerGoalRace.tenK => 10,
+    RunnerGoalRace.halfMarathon => 21.097,
+    RunnerGoalRace.marathon => 42.195,
+    RunnerGoalRace.other || null => null,
+  };
+}
+
+ManualFitnessInput? _manualFitnessFromDraft(FitnessProfileDraft draft) {
+  if (draft.experience == null) return null;
+
+  return ManualFitnessInput(
+    experience: draft.experience!,
+    weeklyVolume: draft.weeklyVolume,
+    longestRun: draft.longestRun,
+    canCompleteGoalDistance: draft.canCompleteGoalDistance,
+    raceDistanceBefore: draft.raceDistanceBefore,
+    benchmark: draft.benchmark,
+    benchmarkTime: draft.benchmarkTime,
+  );
+}
+
+RaceCourseTerrain? _raceCourseTerrainFrom(StravaCoachingProfile? profile) {
+  return switch (profile?.terrain) {
+    StravaTerrainProfile.flat => RaceCourseTerrain.flat,
+    StravaTerrainProfile.rolling => RaceCourseTerrain.rolling,
+    StravaTerrainProfile.hilly => RaceCourseTerrain.hilly,
+    StravaTerrainProfile.notSure => RaceCourseTerrain.notSure,
+    _ => null,
+  };
+}
+
+String _unitPreferenceFrom(UnitSystem unitSystem) {
+  return switch (unitSystem) {
+    UnitSystem.miles => 'imperial',
+    _ => 'metric',
+  };
+}
 
 class ManualFitnessInput {
   const ManualFitnessInput({

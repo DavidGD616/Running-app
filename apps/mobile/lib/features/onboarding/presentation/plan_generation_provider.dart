@@ -1,12 +1,23 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_client_provider.dart';
-import '../../../features/localization/presentation/locale_provider.dart';
+import '../../localization/presentation/locale_provider.dart';
 import '../../training_plan/data/supabase_plan_version_repository.dart';
 import '../../training_plan/domain/models/plan_version.dart';
 import '../../training_plan/domain/models/training_plan.dart';
+import '../domain/models/professional_plan_input.dart';
+
+typedef PlanGenerationFunctionClient =
+    Future<FunctionResponse> Function(String name, {Object? body});
+
+final planGenerationFunctionClientProvider =
+    Provider<PlanGenerationFunctionClient>((ref) {
+      final client = ref.read(supabaseClientProvider);
+      return (name, {body}) => client.functions.invoke(name, body: body);
+    });
 
 // ---------------------------------------------------------------------------
 // State
@@ -35,7 +46,7 @@ class PlanGenerationFailure extends PlanGenerationState {
   /// Canonical failure key — localized at the UI layer.
   ///
   /// Possible values: 'generation_no_data', 'generation_parse_error',
-  /// 'generation_timeout', 'generation_error'
+  /// 'generation_timeout', 'generation_error', 'generation_input_missing'
   final String reason;
 }
 
@@ -52,19 +63,34 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
   ///
   /// [requestedBy] is a canonical source key:
   ///   'onboarding' | 'settings_update' | 'retry'
-  Future<void> generate({required String requestedBy}) async {
+  Future<void> generate({
+    required String requestedBy,
+    ProfessionalPlanInput? professionalPlanInput,
+  }) async {
+    if (requestedBy == _onboardingRequestedBy &&
+        professionalPlanInput == null) {
+      state = const PlanGenerationFailure('generation_input_missing');
+      return;
+    }
+
     state = const PlanGenerationLoading();
     try {
-      final client = ref.read(supabaseClientProvider);
+      final functionClient = ref.read(planGenerationFunctionClientProvider);
       final locale = ref.read(localeProvider).value;
       final localeCode = locale?.languageCode ?? 'en';
 
-      final res = await client.functions
-          .invoke(
-            'generate-plan',
-            body: {'requestedBy': requestedBy, 'locale': localeCode},
-          )
-          .timeout(const Duration(seconds: 130));
+      final requestBody = <String, dynamic>{
+        'requestedBy': requestedBy,
+        'locale': localeCode,
+      };
+      if (professionalPlanInput != null) {
+        requestBody['professionalPlanInput'] = professionalPlanInput.toJson();
+      }
+
+      final res = await functionClient(
+        'generate-plan',
+        body: requestBody,
+      ).timeout(const Duration(seconds: 130));
 
       final data = res.data as Map<String, dynamic>?;
       if (data == null || data['versionId'] == null) {
@@ -104,7 +130,12 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
   /// Resets back to idle (used when the user dismisses the error state
   /// without retrying, or before a retry attempt).
   void reset() => state = const PlanGenerationIdle();
+
+  void emitInputMissingFailure() =>
+      state = const PlanGenerationFailure('generation_input_missing');
 }
+
+const String _onboardingRequestedBy = 'onboarding';
 
 // ---------------------------------------------------------------------------
 // Provider

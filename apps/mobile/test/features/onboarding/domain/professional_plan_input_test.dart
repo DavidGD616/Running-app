@@ -1,7 +1,12 @@
+import 'dart:math' as math;
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:running_app/features/onboarding/domain/models/professional_plan_input.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
+import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
+
+import '../../../helpers/runner_profile_fixtures.dart';
 
 void main() {
   group('ProfessionalPlanInput', () {
@@ -204,6 +209,32 @@ void main() {
         );
       },
     );
+
+    test(
+      'builds acceptedRaceTarget for non-time Strava onboarding draft without race targets',
+      () {
+        final draft = _nonTimeStravaDraftWithoutTargets();
+        final input = buildProfessionalPlanInputFromOnboardingDraft(
+          draft: draft,
+          preferences: const UserPreferences(unitSystem: UnitSystem.km),
+          locale: 'en',
+        );
+
+        expect(input, isNotNull);
+        final acceptedRaceTarget = input!.acceptedRaceTarget;
+        expect(acceptedRaceTarget.distanceKm, 21.097);
+        expect(
+          acceptedRaceTarget.primaryTime,
+          _projectDuration(
+            sourceSeconds: 1572, // 26:12 benchmark.
+            sourceDistanceKm: 5.0,
+            targetDistanceKm: acceptedRaceTarget.distanceKm,
+          ),
+        );
+        expect(acceptedRaceTarget.stretchTime, isNull);
+        expect(acceptedRaceTarget.confidence, isNull);
+      },
+    );
   });
 }
 
@@ -267,6 +298,7 @@ ProfessionalPlanInput _baseInput({
 
 StravaCoachingProfile _stravaProfile({
   required StravaDataConfidence confidence,
+  bool includeRaceTargets = true,
 }) {
   final evidence = StravaEvidencePoint(
     metric: 'training_base_weekly_km',
@@ -323,17 +355,64 @@ StravaCoachingProfile _stravaProfile({
         message: 'Keep at least one easy day between hard sessions.',
       ),
     ],
-    raceTargets: [
-      StravaRaceTargetEstimate(
-        distanceKm: 21.097,
-        primaryTime: const Duration(hours: 1, minutes: 55),
-        confidence: confidence,
-        evidence: [evidence],
-      ),
-    ],
+    raceTargets: includeRaceTargets
+        ? [
+            StravaRaceTargetEstimate(
+              distanceKm: 21.097,
+              primaryTime: const Duration(hours: 1, minutes: 55),
+              confidence: confidence,
+              evidence: [evidence],
+            ),
+          ]
+        : const [],
     planFocus: const StravaPlanFocus(
       category: 'focus_consistency',
       summary: 'Build consistent volume and threshold durability.',
     ),
   );
+}
+
+RunnerProfileDraft _nonTimeStravaDraftWithoutTargets() {
+  final base = buildRunnerProfileDraft();
+  final baseFitness = base.fitness;
+  final baseGoal = base.goal;
+
+  return base.copyWith(
+    goal: GoalProfileDraft(
+      race: baseGoal.race,
+      hasRaceDate: baseGoal.hasRaceDate,
+      raceDate: baseGoal.raceDate,
+      priority: GoalPriority.finishStrong,
+      currentTime: null,
+      targetTime: null,
+    ),
+    fitness: FitnessProfileDraft(
+      experience: baseFitness.experience,
+      canRun10Min: baseFitness.canRun10Min,
+      runningDays: baseFitness.runningDays,
+      weeklyVolume: baseFitness.weeklyVolume,
+      longestRun: baseFitness.longestRun,
+      canCompleteGoalDistance: baseFitness.canCompleteGoalDistance,
+      raceDistanceBefore: baseFitness.raceDistanceBefore,
+      benchmark: baseFitness.benchmark,
+      benchmarkTime: baseFitness.benchmarkTime,
+      fitnessSource: 'strava',
+      stravaCoachingProfile: _stravaProfile(
+        confidence: StravaDataConfidence.medium,
+        includeRaceTargets: false,
+      ),
+    ),
+  );
+}
+
+Duration _projectDuration({
+  required int sourceSeconds,
+  required double sourceDistanceKm,
+  required double targetDistanceKm,
+}) {
+  const riegelExponent = 1.06;
+  final projected =
+      sourceSeconds *
+      math.pow(targetDistanceKm / sourceDistanceKm, riegelExponent);
+  return Duration(seconds: projected.round());
 }

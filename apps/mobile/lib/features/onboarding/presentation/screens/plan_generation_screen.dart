@@ -10,7 +10,10 @@ import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../../features/user_preferences/presentation/user_preferences_provider.dart';
+import '../../../../features/localization/presentation/locale_provider.dart';
 import '../onboarding_provider.dart';
+import '../../domain/models/professional_plan_input.dart';
 import '../plan_generation_provider.dart';
 
 enum PlanGenerationFlowMode { onboarding, editGoal, newGoal }
@@ -64,8 +67,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
     PlanGenerationFlowMode.onboarding => RouteNames.planReady,
     PlanGenerationFlowMode.editGoal =>
       RouteNames.settingsUpdatePlanEditGoalReady,
-    PlanGenerationFlowMode.newGoal =>
-      RouteNames.settingsUpdatePlanNewGoalReady,
+    PlanGenerationFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalReady,
   };
 
   @override
@@ -88,11 +90,34 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
           .read(onboardingProvider.notifier)
           .saveProfile(markOnboardingComplete: false);
       if (!mounted) return;
-      ref
-          .read(planGenerationProvider.notifier)
-          .generate(requestedBy: _requestedBy);
+      await _generatePlan();
       _startAnimation();
     });
+  }
+
+  Future<void> _generatePlan() async {
+    final localeCode = (await ref.read(localeProvider.future)).languageCode;
+    final onboardingDraft = await ref.read(onboardingProvider.future);
+    final preferences = await ref.read(userPreferencesProvider.future);
+    final professionalPlanInput = buildProfessionalPlanInputFromOnboardingDraft(
+      draft: onboardingDraft,
+      preferences: preferences,
+      locale: localeCode,
+    );
+
+    if (!mounted) return;
+    if (widget.mode == PlanGenerationFlowMode.onboarding &&
+        professionalPlanInput == null) {
+      ref.read(planGenerationProvider.notifier).emitInputMissingFailure();
+      return;
+    }
+
+    ref
+        .read(planGenerationProvider.notifier)
+        .generate(
+          requestedBy: _requestedBy,
+          professionalPlanInput: professionalPlanInput,
+        );
   }
 
   void _startAnimation() {
@@ -138,9 +163,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
       _messageIndex = 0;
       _progress = 0.0;
     });
-    ref
-        .read(planGenerationProvider.notifier)
-        .generate(requestedBy: _requestedBy);
+    _generatePlan();
     _startAnimation();
     _pulseController.repeat(reverse: true);
   }
@@ -203,10 +226,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         AnimatedBuilder(
           animation: _pulseAnimation,
           builder: (context, child) {
-            return Transform.scale(
-              scale: _pulseAnimation.value,
-              child: child,
-            );
+            return Transform.scale(scale: _pulseAnimation.value, child: child);
           },
           child: Container(
             width: 220,
@@ -214,10 +234,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
             decoration: BoxDecoration(
               color: AppColors.backgroundPrimary,
               borderRadius: AppRadius.borderLg,
-              border: Border.all(
-                color: AppColors.accentPrimary,
-                width: 2.5,
-              ),
+              border: Border.all(color: AppColors.accentPrimary, width: 2.5),
               boxShadow: [
                 BoxShadow(
                   color: AppColors.accentPrimary.withValues(alpha: 0.25),
@@ -306,10 +323,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
           decoration: BoxDecoration(
             color: AppColors.backgroundPrimary,
             shape: BoxShape.circle,
-            border: Border.all(
-              color: AppColors.error,
-              width: 2.5,
-            ),
+            border: Border.all(color: AppColors.error, width: 2.5),
           ),
           child: const Center(
             child: Icon(
@@ -337,10 +351,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
         ),
         const SizedBox(height: AppSpacing.xxl),
 
-        AppButton(
-          label: l10n.planGenerationRetry,
-          onPressed: _retry,
-        ),
+        AppButton(label: l10n.planGenerationRetry, onPressed: _retry),
         const SizedBox(height: AppSpacing.md),
 
         AppButton(
