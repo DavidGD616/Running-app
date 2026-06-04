@@ -721,10 +721,28 @@ deno test --allow-env --allow-net --allow-read
   - `cd supabase/functions/strava-sync && deno test --allow-env --allow-net --allow-read` (8 tests passed)
   - `cd supabase/functions/generate-plan && deno test --allow-env --allow-net --allow-read` (182 tests passed)
 
+### 2026-06-03 - Final Review Remediation
+
+- Final review identified additional issues after Phase 7 verification:
+  - `b802738` - `fix(generate-plan): align Strava terrain key`
+  - `97367ea` - `fix(active-run): use end-run confirmation copy`
+  - `da4d18e` - `fix(generate-plan): canonicalize support metadata`
+  - `4a292ea` - `fix(onboarding): remove plan generation payload logs`
+- All four fixes were applied and reviewed.
+- Fix details:
+  - Strava analysis/plan generation now uses the aligned terrain canonical key (resolves `terrain: notSure` mismatch).
+  - End Run dialog now uses the intended end-run confirmation copy instead of GPS auto-pause body copy.
+  - Support session metadata for `load`, `timingGuidance`, `interferenceRule`, and `taperAdjustment` is canonicalized in backend-generated output while UI keeps localized display values.
+  - Raw plan-generation request/response and stack-trace logging were removed from provider code.
+- Operational note:
+  - `supabase/functions/strava-sync/deno.lock` is treated as an untracked generated verification artifact and is not committed; working tree is clean.
+- Post-fix verification and a final re-review are still pending.
+
 ### Phase 7 Verification Complete
 
 - Phase 7 is complete because Task 14, Task 15, and Task 16 are complete.
 - Final reviewer approval is still pending.
+- A final re-review and final verification are still pending after remediation.
 
 ## Recommended Implementation Order
 

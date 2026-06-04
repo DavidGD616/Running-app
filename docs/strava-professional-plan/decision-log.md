@@ -267,3 +267,20 @@ This file records the decisions made during product discovery for the Strava pro
   - `cd supabase/functions/strava-sync && deno test --allow-env --allow-net --allow-read` (8 tests passed)
   - `cd supabase/functions/generate-plan && deno test --allow-env --allow-net --allow-read` (182 tests passed)
 - Final reviewer approval is still pending.
+
+### 2026-06-03 - Final-Review Remediations Completed
+
+- Final review initially identified issues after verification.
+- Follow-up fixes were applied and reviewed:
+  - `b802738` - `fix(generate-plan): align Strava terrain key`
+  - `97367ea` - `fix(active-run): use end-run confirmation copy`
+  - `da4d18e` - `fix(generate-plan): canonicalize support metadata`
+  - `4a292ea` - `fix(onboarding): remove plan generation payload logs`
+- Fix outcomes:
+  - `StravaCoachingProfile`/generated plan terrain key alignment now normalizes `terrain: notSure`.
+  - Active run end confirmation now uses dedicated end-run confirmation body copy.
+  - Support metadata canonicalization now covers `load`, `timingGuidance`, `interferenceRule`, and `taperAdjustment` while UI renders localized strings.
+  - Sensitive payload and stack-trace logs were removed from plan-generation provider flow.
+- Operational note:
+  - `supabase/functions/strava-sync/deno.lock` is treated as an untracked generated verification artifact and is not committed.
+- A final re-review and final verification sweep are still pending; approval is not final yet.
