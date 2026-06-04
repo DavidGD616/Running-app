@@ -1232,6 +1232,10 @@
 
   "activeRunEndRun": "Terminar Carrera",
   "@activeRunEndRun": { "description": "CTA button to end the active run" },
+  "activeRunEndRunConfirmBody": "Terminar tu carrera guardará la sesión y te llevará a la pantalla de resumen.",
+  "@activeRunEndRunConfirmBody": {
+    "description": "Body text for confirmation before ending an active run"
+  },
 
   "activeRunTimerOnlyLabel": "Solo temporizador",
   "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },

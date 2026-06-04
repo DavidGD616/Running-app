@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/core/theme/app_theme.dart';
+import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/features/active_run/domain/models/gps_state.dart';
 import 'package:running_app/features/active_run/presentation/screens/active_run_screen.dart';
+import 'package:running_app/features/pre_run/presentation/run_flow_context.dart';
+import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
 import 'package:running_app/l10n/app_localizations.dart';
 
 Widget buildGpsStatusCard({
@@ -49,13 +52,42 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  Widget buildActiveRunScreen({
+    required SharedPreferences prefs,
+    ActiveRunArgs? args,
+  }) {
+    return ProviderScope(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        userPreferencesRepositoryProvider.overrideWithValue(
+          SharedPreferencesUserPreferencesRepository(prefs),
+        ),
+      ],
+      child: MaterialApp(
+        theme: AppTheme.dark,
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('es')],
+        home: ActiveRunScreen(args: args),
+      ),
+    );
+  }
+
   group('_GpsStatusHeroPaceCard GPS status chips', () {
-    testWidgets('acquiring shows acquiring chip and wait guidance',
-        (tester) async {
-      await tester.pumpWidget(buildGpsStatusCard(
-        gpsStatus: GpsStatus.acquiring,
-        timerOnlyMode: false,
-      ));
+    testWidgets('acquiring shows acquiring chip and wait guidance', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildGpsStatusCard(
+          gpsStatus: GpsStatus.acquiring,
+          timerOnlyMode: false,
+        ),
+      );
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(tester.element(find.byType(Scaffold)))!;
@@ -65,13 +97,16 @@ void main() {
       expect(find.text('--:--'), findsOneWidget);
     });
 
-    testWidgets('weak shows weak signal chip and actual guidance',
-        (tester) async {
-      await tester.pumpWidget(buildGpsStatusCard(
-        gpsStatus: GpsStatus.weak,
-        timerOnlyMode: false,
-        guidance: 'Run easy',
-      ));
+    testWidgets('weak shows weak signal chip and actual guidance', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildGpsStatusCard(
+          gpsStatus: GpsStatus.weak,
+          timerOnlyMode: false,
+          guidance: 'Run easy',
+        ),
+      );
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(tester.element(find.byType(Scaffold)))!;
@@ -80,12 +115,12 @@ void main() {
       expect(find.text('Run easy'), findsOneWidget);
     });
 
-    testWidgets('lost shows signal lost chip and wait guidance',
-        (tester) async {
-      await tester.pumpWidget(buildGpsStatusCard(
-        gpsStatus: GpsStatus.lost,
-        timerOnlyMode: false,
-      ));
+    testWidgets('lost shows signal lost chip and wait guidance', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildGpsStatusCard(gpsStatus: GpsStatus.lost, timerOnlyMode: false),
+      );
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(tester.element(find.byType(Scaffold)))!;
@@ -96,11 +131,13 @@ void main() {
     });
 
     testWidgets('ready shows no chip and displays pace value', (tester) async {
-      await tester.pumpWidget(buildGpsStatusCard(
-        gpsStatus: GpsStatus.ready,
-        timerOnlyMode: false,
-        value: '5:30',
-      ));
+      await tester.pumpWidget(
+        buildGpsStatusCard(
+          gpsStatus: GpsStatus.ready,
+          timerOnlyMode: false,
+          value: '5:30',
+        ),
+      );
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(tester.element(find.byType(Scaffold)))!;
@@ -111,12 +148,12 @@ void main() {
       expect(find.text('5:30'), findsOneWidget);
     });
 
-    testWidgets('timerOnlyMode shows timer only label chip and wait guidance',
-        (tester) async {
-      await tester.pumpWidget(buildGpsStatusCard(
-        gpsStatus: GpsStatus.disabled,
-        timerOnlyMode: true,
-      ));
+    testWidgets('timerOnlyMode shows timer only label chip and wait guidance', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        buildGpsStatusCard(gpsStatus: GpsStatus.disabled, timerOnlyMode: true),
+      );
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(tester.element(find.byType(Scaffold)))!;
@@ -126,18 +163,22 @@ void main() {
       expect(find.text('--:--'), findsOneWidget);
     });
 
-    testWidgets('timerOnlyMode pace is always --:-- regardless of value param',
-        (tester) async {
-      await tester.pumpWidget(buildGpsStatusCard(
-        gpsStatus: GpsStatus.disabled,
-        timerOnlyMode: true,
-        value: '5:30',
-      ));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'timerOnlyMode pace is always --:-- regardless of value param',
+      (tester) async {
+        await tester.pumpWidget(
+          buildGpsStatusCard(
+            gpsStatus: GpsStatus.disabled,
+            timerOnlyMode: true,
+            value: '5:30',
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.text('--:--'), findsOneWidget);
-      expect(find.text('5:30'), findsNothing);
-    });
+        expect(find.text('--:--'), findsOneWidget);
+        expect(find.text('5:30'), findsNothing);
+      },
+    );
   });
 
   group('_GpsStatusChip', () {
@@ -145,16 +186,36 @@ void main() {
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
-            body: GpsStatusChip(
-              text: 'Weak Signal',
-              color: Colors.orange,
-            ),
+            body: GpsStatusChip(text: 'Weak Signal', color: Colors.orange),
           ),
         ),
       );
       await tester.pumpAndSettle();
 
       expect(find.text('Weak Signal'), findsOneWidget);
+    });
+  });
+
+  group('_showEndRunConfirmDialog', () {
+    testWidgets('uses the dedicated end-run confirmation body text', (
+      tester,
+    ) async {
+      final prefs = await SharedPreferences.getInstance();
+      await tester.pumpWidget(
+        buildActiveRunScreen(
+          prefs: prefs,
+          args: const ActiveRunArgs(session: null),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(ActiveRunScreen)),
+      )!;
+
+      expect(find.byType(AlertDialog), findsOneWidget);
+      expect(find.text(l10n.activeRunEndRunConfirmBody), findsOneWidget);
+      expect(find.text(l10n.activeRunGpsLostAutoPauseBody), findsNothing);
     });
   });
 }

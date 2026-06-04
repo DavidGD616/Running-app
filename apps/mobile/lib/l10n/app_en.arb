@@ -3007,6 +3007,10 @@
 
   "activeRunEndRun": "End Run",
   "@activeRunEndRun": { "description": "CTA button to end the active run" },
+  "activeRunEndRunConfirmBody": "Ending your run will save the session and take you to the summary screen.",
+  "@activeRunEndRunConfirmBody": {
+    "description": "Body text for confirmation before ending an active run"
+  },
 
   "activeRunTimerOnlyLabel": "Timer only",
   "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },

@@ -5766,6 +5766,12 @@ abstract class AppLocalizations {
   /// **'End Run'**
   String get activeRunEndRun;
 
+  /// Body text for confirmation before ending an active run
+  ///
+  /// In en, this message translates to:
+  /// **'Ending your run will save the session and take you to the summary screen.'**
+  String get activeRunEndRunConfirmBody;
+
   /// Status label shown when the active run is in timer-only mode without GPS
   ///
   /// In en, this message translates to:

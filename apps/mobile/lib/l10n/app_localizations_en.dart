@@ -3163,6 +3163,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeRunEndRun => 'End Run';
 
   @override
+  String get activeRunEndRunConfirmBody =>
+      'Ending your run will save the session and take you to the summary screen.';
+
+  @override
   String get activeRunTimerOnlyLabel => 'Timer only';
 
   @override

@@ -263,7 +263,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.activeRunEndRun),
-        content: Text(l10n.activeRunGpsLostAutoPauseBody),
+        content: Text(l10n.activeRunEndRunConfirmBody),
         actions: [
           TextButton(
             onPressed: () {

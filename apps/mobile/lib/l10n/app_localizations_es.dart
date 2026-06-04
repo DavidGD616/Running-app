@@ -3184,6 +3184,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get activeRunEndRun => 'Terminar Carrera';
 
   @override
+  String get activeRunEndRunConfirmBody =>
+      'Terminar tu carrera guardará la sesión y te llevará a la pantalla de resumen.';
+
+  @override
   String get activeRunTimerOnlyLabel => 'Solo temporizador';
 
   @override
