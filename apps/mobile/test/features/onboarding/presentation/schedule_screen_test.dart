@@ -108,7 +108,7 @@ void main() {
     );
   }
 
-  Color _dateOptionCardColor(WidgetTester tester, String label) {
+  Color dateOptionCardColor(WidgetTester tester, String label) {
     final finder = find.ancestor(
       of: find.text(label),
       matching: find.byType(AnimatedContainer),
@@ -297,11 +297,11 @@ void main() {
       await tester.tap(find.text(tomorrowLabel));
       await tester.pumpAndSettle();
       expect(
-        _dateOptionCardColor(tester, tomorrowLabel),
+        dateOptionCardColor(tester, tomorrowLabel),
         AppColors.accentPrimary,
       );
       expect(
-        _dateOptionCardColor(tester, nextMondayLabel),
+        dateOptionCardColor(tester, nextMondayLabel),
         AppColors.backgroundCard,
       );
 
@@ -313,11 +313,11 @@ void main() {
       await tester.tap(find.text(nextMondayLabel));
       await tester.pumpAndSettle();
       expect(
-        _dateOptionCardColor(tester, tomorrowLabel),
+        dateOptionCardColor(tester, tomorrowLabel),
         isNot(AppColors.accentPrimary),
       );
       expect(
-        _dateOptionCardColor(tester, nextMondayLabel),
+        dateOptionCardColor(tester, nextMondayLabel),
         AppColors.accentPrimary,
       );
 
