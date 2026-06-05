@@ -199,6 +199,50 @@ Deno.test("buildGeneratePlanMessages guides race-day as guidance-only", () => {
   assert.ok(!systemMessage.content.includes("goal race is the final session"));
 });
 
+Deno.test("parseGeneratedPlanContent accepts nullable optional race guidance fields", () => {
+  const planWithNullGuidanceFields = {
+    ...parseProfile,
+    raceGuidance: {
+      ...parseProfile.raceGuidance,
+      warmup: null,
+      primaryTargetSec: null,
+      stretchTargetSec: null,
+      splitPlan: null,
+      whenToPress: null,
+      whatToAvoid: null,
+      coachingNotes: null,
+      sleepNotes: null,
+      fuelingNotes: null,
+      hydrationNotes: null,
+      taperReminders: null,
+      weatherCourseNotes: null,
+    },
+  };
+
+  const parsed = parseGeneratedPlanContent(
+    JSON.stringify(planWithNullGuidanceFields),
+  );
+
+  assert.equal(parsed.raceGuidance.warmup, null);
+  assert.equal(parsed.raceGuidance.primaryTargetSec, null);
+  assert.equal(parsed.raceGuidance.stretchTargetSec, null);
+  assert.equal(parsed.raceGuidance.weatherCourseNotes, null);
+});
+
+Deno.test("parseGeneratedPlanContent rejects non-positive primaryTargetSec", () => {
+  const planWithInvalidPrimaryTarget = {
+    ...parseProfile,
+    raceGuidance: {
+      ...parseProfile.raceGuidance,
+      primaryTargetSec: 0,
+    },
+  };
+
+  assert.throws(() => {
+    parseGeneratedPlanContent(JSON.stringify(planWithInvalidPrimaryTarget));
+  }, /Number must be greater than 0/i);
+});
+
 Deno.test("trainingPlanResponseJsonSchema requires new generated output fields", () => {
   const requiredFields = trainingPlanResponseJsonSchema.required as string[];
   assert.ok(requiredFields.includes("generatedLocale"));
@@ -206,6 +250,20 @@ Deno.test("trainingPlanResponseJsonSchema requires new generated output fields",
   assert.ok(requiredFields.includes("paceZones"));
   assert.ok(requiredFields.includes("raceGuidance"));
   assert.ok(requiredFields.includes("stravaCoachingProfileSnapshot"));
+});
+
+Deno.test("trainingPlanResponseJsonSchema keeps raceDayExecution non-nullable", () => {
+  const raceGuidanceSchema = (
+    trainingPlanResponseJsonSchema.properties as {
+      raceGuidance: { properties: Record<string, { type: unknown }> };
+    }
+  ).raceGuidance;
+
+  assert.equal(raceGuidanceSchema.properties.raceDayExecution.type, "string");
+  assert.deepEqual(
+    raceGuidanceSchema.properties.stretchTargetSec.type,
+    ["integer", "null"],
+  );
 });
 
 Deno.test("trainingPlanResponseJsonSchema requires numeric pace fields", () => {
@@ -257,7 +315,9 @@ Deno.test("trainingPlanResponseJsonSchema requires all object properties", () =>
         : [];
       for (const propName of propertyNames) {
         if (!required.includes(propName)) {
-          violations.push(`${path} object missing required property "${propName}"`);
+          violations.push(
+            `${path} object missing required property "${propName}"`,
+          );
         }
       }
     }
@@ -428,7 +488,10 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
   assert.equal(userPrompt.manualFitness.privateData, undefined);
   assert.equal(userPrompt.stravaCoachingProfile.dataConfidence, "high");
   assert.equal(userPrompt.stravaCoachingProfile.terrain, "rolling");
-  assert.equal(Array.isArray(userPrompt.stravaCoachingProfile.trainingBase), true);
+  assert.equal(
+    Array.isArray(userPrompt.stravaCoachingProfile.trainingBase),
+    true,
+  );
   assert.equal(
     JSON.stringify(userPrompt).includes("tokens"),
     false,
@@ -454,7 +517,9 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
     false,
   );
 
-  const sanitized = sanitizeProfileForOpenAi(unsafeProfile as Record<string, unknown>);
+  const sanitized = sanitizeProfileForOpenAi(
+    unsafeProfile as Record<string, unknown>,
+  );
   assert.equal(sanitized.activities, undefined);
   assert.equal(
     (sanitized.fitness as Record<string, unknown> | undefined)
@@ -465,7 +530,8 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
     | Record<string, unknown>
     | undefined;
   if (sanitizedFitnessStrava != null) {
-    const sanitizedFitnessSnapshot = sanitizedFitnessStrava.stravaCoachingProfile;
+    const sanitizedFitnessSnapshot =
+      sanitizedFitnessStrava.stravaCoachingProfile;
     if (sanitizedFitnessSnapshot != null) {
       const inner = sanitizedFitnessSnapshot as Record<string, unknown>;
       assert.equal(inner.activityNames, undefined);
@@ -486,7 +552,9 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
     assert.equal(sanitizedTopStrava.stravaError, undefined);
     assert.equal(sanitizedTopStrava.tokens, undefined);
   }
-  const sanitizedFitness = sanitized.fitness as Record<string, unknown> | undefined;
+  const sanitizedFitness = sanitized.fitness as
+    | Record<string, unknown>
+    | undefined;
   if (sanitizedFitness != null) {
     assert.equal(sanitizedFitness.accessToken, undefined);
     assert.equal(sanitizedFitness.privateData, undefined);

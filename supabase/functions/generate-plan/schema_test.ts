@@ -2,8 +2,8 @@ import { strict as assert } from "node:assert";
 import {
   GeneratedPlanSchema,
   GeneratePlanRequestSchema,
-  StravaCoachingProfileSnapshotSchema,
   removeSessionsOnRaceDate,
+  StravaCoachingProfileSnapshotSchema,
 } from "./schema.ts";
 
 const professionalPlanInputStrava = {
@@ -223,6 +223,49 @@ Deno.test("GeneratedPlanSchema accepts new required fields and support sessions"
   assert.equal(parsed.raceGuidance.raceDayExecution, "Evening race plan.");
   assert.equal(parsed.supportSessions.length, 1);
   assert.equal(parsed.paceZones.recovery.paceMinSecPerKm, 360);
+});
+
+Deno.test("GeneratedPlanSchema accepts nullable optional race guidance fields", () => {
+  const withNullGuidanceFields = {
+    ...generatedPlan,
+    generatedLocale: "en",
+    raceGuidance: {
+      ...generatedPlan.raceGuidance,
+      warmup: null,
+      primaryTargetSec: null,
+      stretchTargetSec: null,
+      splitPlan: null,
+      whenToPress: null,
+      whatToAvoid: null,
+      coachingNotes: null,
+      sleepNotes: null,
+      fuelingNotes: null,
+      hydrationNotes: null,
+      taperReminders: null,
+      weatherCourseNotes: null,
+    },
+  };
+
+  const parsed = GeneratedPlanSchema.parse(withNullGuidanceFields);
+  assert.equal(parsed.raceGuidance.warmup, null);
+  assert.equal(parsed.raceGuidance.primaryTargetSec, null);
+  assert.equal(parsed.raceGuidance.stretchTargetSec, null);
+  assert.equal(parsed.raceGuidance.weatherCourseNotes, null);
+});
+
+Deno.test("GeneratedPlanSchema rejects zero or negative target seconds", () => {
+  const withZeroPrimaryTarget = {
+    ...generatedPlan,
+    generatedLocale: "en",
+    raceGuidance: {
+      ...generatedPlan.raceGuidance,
+      primaryTargetSec: 0,
+    },
+  };
+
+  assert.throws(() => {
+    GeneratedPlanSchema.parse(withZeroPrimaryTarget);
+  }, /greater than 0|greater than or equal/i);
 });
 
 Deno.test("GeneratedPlanSchema rejects pace zones with prose-only pace values", () => {
