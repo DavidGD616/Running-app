@@ -23,6 +23,7 @@ import {
   phaseForWeek,
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
+  resolvePlanStartDate,
   smoothLongRunProgression,
   spaceStressfulSessions,
   truncateAfterRaceDate,
@@ -126,8 +127,19 @@ Deno.serve(async (req) => {
     storedProfile,
     professionalInput,
   );
-  const sanitizedGenerationProfile = sanitizeProfileForOpenAi(
+  const generationStartedAt = new Date();
+  const resolvedPlanStartDate = resolvePlanStartDate(
     generationProfile,
+    generationStartedAt,
+  );
+  const generationProfileWithPlanStartDate = {
+    ...generationProfile,
+    schedule: isRecord(generationProfile.schedule)
+      ? { ...generationProfile.schedule, planStartDate: resolvedPlanStartDate }
+      : { planStartDate: resolvedPlanStartDate },
+  } as ProfileShape;
+  const sanitizedGenerationProfile = sanitizeProfileForOpenAi(
+    generationProfileWithPlanStartDate,
   ) as ProfileShape;
   if (Object.keys(generationProfile).length === 0) {
     return new Response(
@@ -140,10 +152,10 @@ Deno.serve(async (req) => {
     );
   }
 
-  const generationStartedAt = new Date();
   const expectedWeeks = expectedTotalWeeks(
-    generationProfile,
+    generationProfileWithPlanStartDate,
     generationStartedAt,
+    resolvedPlanStartDate,
   );
   if (expectedWeeks != null && expectedWeeks < 3) {
     return new Response(
@@ -204,77 +216,79 @@ Deno.serve(async (req) => {
 
   const scheduleNormalizedSessions = normalizeTrainingDayCount(
     safeGeneratedPlan.sessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
+    resolvedPlanStartDate,
   );
   const longRunPlacedSessions = placeLongRunsOnPreferredDay(
     scheduleNormalizedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const stressSpacedSessions = spaceStressfulSessions(
     longRunPlacedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const fullCalendarSessions = ensureFullCalendarWeeks(
     stressSpacedSessions,
     locale,
+    resolvedPlanStartDate,
   );
   const fullCalendarLongRunPlacedSessions = placeLongRunsOnPreferredDay(
     fullCalendarSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const hardDayRestedSessions = preferRestOnHardDays(
     fullCalendarLongRunPlacedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const scheduleAdjustedSessions = avoidHardDayTraining(
     hardDayRestedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const volumeRampedSessions = normalizeWeeklyVolumeRamp(
     scheduleAdjustedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   );
   const peakNormalizedSessions = normalizePeakLongRun(
     volumeRampedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   );
   const progressionSmoothedSessions = smoothLongRunProgression(
     peakNormalizedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   );
   const volumeStabilizedSessions = normalizeWeeklyVolumeRamp(
     progressionSmoothedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   );
   const taperNormalizedSessions = normalizeTaper(
     volumeStabilizedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   );
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
     taperNormalizedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const phaseStampedSessions = firstSessionNormalizedSessions.map((
@@ -284,14 +298,16 @@ Deno.serve(async (req) => {
     phase: phaseForWeek(
       session.weekNumber,
       safeGeneratedPlan.totalWeeks,
-      generationProfile,
+      generationProfileWithPlanStartDate,
     ),
   }));
   const truncatedSessions = truncateAfterRaceDate(
     phaseStampedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
   );
-  const goal = isRecord(generationProfile.goal) ? generationProfile.goal : {};
+  const goal = isRecord(generationProfileWithPlanStartDate.goal)
+    ? generationProfileWithPlanStartDate.goal
+    : {};
   const raceDate = typeof goal.raceDate === "string"
     ? goal.raceDate
     : undefined;
@@ -301,15 +317,16 @@ Deno.serve(async (req) => {
   );
   const preRaceTaperedSessions = enforcePreRaceTaper(
     sessionsWithoutRaceDate,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     locale,
   );
   const normalizedSupportSessions = normalizeSupportSessions(
     safeGeneratedPlan.supportSessions,
     preRaceTaperedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    resolvedPlanStartDate,
   );
   const filteredSupportSessions = removeSessionsOnRaceDate(
     normalizedSupportSessions,
@@ -317,13 +334,16 @@ Deno.serve(async (req) => {
   );
   const idNormalizedSessions = normalizeSessionIds(preRaceTaperedSessions);
 
-  const sanitizedForValidation = withoutGoalDate(generationProfile);
+  const sanitizedForValidation = withoutGoalDate(
+    generationProfileWithPlanStartDate,
+  );
   const finalViolations = [
     ...validateGeneratedPlanShape(
       idNormalizedSessions,
       safeGeneratedPlan.totalWeeks,
       sanitizedForValidation,
       generationStartedAt,
+      resolvedPlanStartDate,
     ),
     ...validateGeneratedSchedule(idNormalizedSessions, sanitizedForValidation),
   ];
@@ -343,7 +363,7 @@ Deno.serve(async (req) => {
 
   const sessionsWithSteps = addStrideDefaults(
     idNormalizedSessions,
-    generationProfile,
+    generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
   ).map((session) => ({

@@ -18,6 +18,7 @@ import {
   phasePlanFor,
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
+  resolvePlanStartDate,
   smoothLongRunProgression,
   spaceStressfulSessions,
   truncateAfterRaceDate,
@@ -574,6 +575,34 @@ Deno.test("normalizeTrainingDayCount adds missing easy days when week has no res
   assert.ok(sessions.some((item) => item.id.includes("2026-04-30-added")));
 });
 
+Deno.test("normalizeTrainingDayCount does not add sessions before planStartDate", () => {
+  const sessions = normalizeTrainingDayCount(
+    [
+      session({
+        id: "w1-wed-intervals",
+        date: "2026-06-10",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-thu-easy",
+        date: "2026-06-11",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-fri-easy",
+        date: "2026-06-12",
+        type: "easyRun",
+      }),
+    ],
+    profile({ trainingDays: 4, planStartDate: "2026-06-10" }),
+    "en",
+  );
+
+  assert.ok(!sessions.some((session) => session.date < "2026-06-10"));
+  assert.equal(trainingDayCount(sessions), 4);
+  assert.ok(sessions.some((item) => item.date === "2026-06-13"));
+});
+
 Deno.test("normalizeTrainingDayCount uses user trainingDays over Strava runs-per-week", () => {
   const result = normalizeTrainingDayCount(
     [
@@ -685,6 +714,59 @@ Deno.test("normalizeSupportSessions places lower-body support with user preferen
     "lower-body support should avoid day-before long run and key workout without run_first",
   );
   assert.equal(supportDate, "2026-05-01");
+});
+
+Deno.test("normalizeSupportSessions removes support sessions before plan start date", () => {
+  const runSessions = [
+    session({
+      id: "w1-mon",
+      date: "2026-06-08",
+      weekNumber: 1,
+      type: "easyRun",
+    }),
+    session({
+      id: "w1-tue",
+      date: "2026-06-09",
+      weekNumber: 1,
+      type: "easyRun",
+    }),
+    session({
+      id: "w1-wed",
+      date: "2026-06-10",
+      weekNumber: 1,
+      type: "easyRun",
+    }),
+  ];
+
+  const result = normalizeSupportSessions(
+    [
+      {
+        schemaVersion: 1,
+        id: "s-lower",
+        date: "2026-06-08",
+        weekNumber: 1,
+        category: "lower_body",
+      },
+    ],
+    runSessions,
+    profile({
+      race: "race_half_marathon",
+      raceDate: null,
+      hardDays: [],
+      planStartDate: "2026-06-10",
+      trainingDays: 3,
+      // Keep a concrete preference so a support date is generated before filtering.
+      strengthPreferences: {
+        weeklyFrequency: 1,
+        categories: ["lower_body"],
+        preferredDays: ["day_mon"],
+        sameDayOrder: "lift_first",
+      },
+    }),
+    1,
+    "en",
+  );
+  assert.deepEqual(result, []);
 });
 
 Deno.test("normalizeSupportSessions avoids day-before key workouts for lower-body", () => {
@@ -1116,6 +1198,30 @@ Deno.test("ensureFullCalendarWeeks fills missing dates with rest days", () => {
   assert.equal(thursday.type, "restDay");
   assert.match(tuesday.coachNote ?? "", /Día de descanso/i);
 });
+
+Deno.test(
+  "ensureFullCalendarWeeks with midweek planStartDate does not add pre-start dates",
+  () => {
+    const sessions = ensureFullCalendarWeeks(
+      [
+        session({ id: "w1-wed-run", date: "2026-06-10", type: "easyRun" }),
+        session({ id: "w1-thu-run", date: "2026-06-11", type: "easyRun" }),
+        session({ id: "w1-fri-run", date: "2026-06-12", type: "easyRun" }),
+      ],
+      "en",
+      "2026-06-10",
+    );
+
+    assert.ok(!sessions.some((item) => item.date === "2026-06-08"));
+    assert.ok(!sessions.some((item) => item.date === "2026-06-09"));
+    assert.equal(sessions.length, 5);
+    assert.equal(findByDate(sessions, "2026-06-10").type, "easyRun");
+    assert.equal(findByDate(sessions, "2026-06-11").type, "easyRun");
+    assert.equal(findByDate(sessions, "2026-06-12").type, "easyRun");
+    assert.equal(findByDate(sessions, "2026-06-13").type, "restDay");
+    assert.equal(findByDate(sessions, "2026-06-14").type, "restDay");
+  },
+);
 
 Deno.test("ensureGoalRaceSession makes no-date 5K plan finish with full 5K race", () => {
   const sessions = ensureGoalRaceSession(
@@ -3207,6 +3313,48 @@ Deno.test("production rule pipeline repairs partial-week hard-day training after
   assert.ok(result.every((item) => item.id.includes(item.date.slice(0, 10))));
 });
 
+Deno.test(
+  "production rule pipeline with midweek planStartDate keeps week 1 partial",
+  () => {
+    const profileData = profile({
+      race: "race_10k",
+      raceDate: "2026-06-21T00:00:00.000",
+      experience: "experience_intermediate",
+      trainingDays: 4,
+      hardDays: ["day_tue", "day_thu", "day_sun"],
+      longRunDay: "day_sat",
+      planStartDate: "2026-06-10",
+    });
+    const totalWeeks = 8;
+    const input = [
+      session({
+        id: "w1-2026-06-10-intervals",
+        date: "2026-06-10",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-12-easyRun",
+        date: "2026-06-12",
+        type: "easyRun",
+      }),
+    ];
+
+    const result = runProductionRulePipeline(input, profileData, totalWeeks);
+    const hasPreStartSession = result.some((session) =>
+      session.date < "2026-06-10"
+    );
+    assert.ok(!hasPreStartSession);
+    assert.equal(trainingCountForTest(result), 4);
+    assert.equal(findByDate(result, "2026-06-10").date, "2026-06-10");
+    assert.ok(result.some((session) => session.date === "2026-06-13"));
+  },
+);
+
 Deno.test("production rule pipeline moves partial-week long run onto preferred day after calendar fill", () => {
   const profileData = profile({
     race: "race_10k",
@@ -3254,7 +3402,76 @@ Deno.test("expectedTotalWeeks anchors Sunday to current week's Monday", () => {
     profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
     new Date(Date.UTC(2026, 4, 31, 12)),
   );
-  assert.equal(weeks, 4);
+  assert.equal(weeks, 3);
+});
+
+Deno.test("expectedTotalWeeks resolves missing planStartDate to next future Monday", () => {
+  const withMissingPlanStart = expectedTotalWeeks(
+    profile({ race: "race_5k", raceDate: "2026-06-22T00:00:00.000" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(withMissingPlanStart, 3);
+
+  const withResolvedPlanStart = expectedTotalWeeks(
+    profile({
+      race: "race_5k",
+      raceDate: "2026-06-22T00:00:00.000",
+      planStartDate: "2026-06-03",
+    }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(withResolvedPlanStart, 4);
+});
+
+Deno.test("resolvePlanStartDate falls back to next Monday when profile date is missing", () => {
+  const cases: Array<
+    { label: string; generationDate: Date; expected: string }
+  > = [
+    {
+      label: "Monday",
+      generationDate: new Date(Date.UTC(2026, 5, 1, 12)),
+      expected: "2026-06-08",
+    },
+    {
+      label: "Tuesday",
+      generationDate: new Date(Date.UTC(2026, 5, 2, 12)),
+      expected: "2026-06-08",
+    },
+    {
+      label: "Wednesday",
+      generationDate: new Date(Date.UTC(2026, 5, 3, 12)),
+      expected: "2026-06-08",
+    },
+    {
+      label: "Sunday",
+      generationDate: new Date(Date.UTC(2026, 5, 7, 12)),
+      expected: "2026-06-08",
+    },
+  ];
+
+  for (const testCase of cases) {
+    const resolved = resolvePlanStartDate({}, testCase.generationDate);
+    assert.equal(resolved, testCase.expected, `${testCase.label} fallback`);
+  }
+});
+
+Deno.test(
+  "resolvePlanStartDate ignores ISO datetime planStartDate and uses fallback Monday",
+  () => {
+    const resolved = resolvePlanStartDate(
+      profile({ planStartDate: "2026-06-03T10:00:00Z" }),
+      new Date(Date.UTC(2026, 5, 2, 12)),
+    );
+    assert.equal(resolved, "2026-06-08");
+  },
+);
+
+Deno.test("resolvePlanStartDate keeps explicit schedule planStartDate", () => {
+  const resolved = resolvePlanStartDate(
+    profile({ planStartDate: "2026-06-03" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(resolved, "2026-06-03");
 });
 
 Deno.test("expectedTotalWeeks computes exact 3-week minimum window", () => {
@@ -3262,7 +3479,7 @@ Deno.test("expectedTotalWeeks computes exact 3-week minimum window", () => {
     profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
     new Date(Date.UTC(2026, 5, 1, 12)),
   );
-  assert.equal(weeks, 3);
+  assert.equal(weeks, 2);
 });
 
 Deno.test("expectedTotalWeeks returns exact unsupported short window", () => {
@@ -3270,8 +3487,20 @@ Deno.test("expectedTotalWeeks returns exact unsupported short window", () => {
     profile({ race: "race_5k", raceDate: "2026-06-01T00:00:00.000" }),
     new Date(Date.UTC(2026, 5, 1, 12)),
   );
-  assert.equal(weeks, 1);
+  assert.equal(weeks, 0);
 });
+
+Deno.test(
+  "expectedTotalWeeks returns 0 when explicit planStartDate is after fixed race date",
+  () => {
+    const weeks = expectedTotalWeeks(
+      profile({ race: "race_5k", raceDate: "2026-06-07T00:00:00.000" }),
+      new Date(Date.UTC(2026, 5, 1, 12)),
+      "2026-06-10",
+    );
+    assert.equal(weeks, 0);
+  },
+);
 
 Deno.test("expectedTotalWeeks returns null when no fixed race date", () => {
   const weeks = expectedTotalWeeks(
@@ -3590,7 +3819,7 @@ Deno.test("expectedTotalWeeks returns null when race date is in the past", () =>
   const weeks = expectedTotalWeeks(
     profile({ race: "race_10k", raceDate: pastRaceDate }),
   );
-  assert.equal(weeks, null);
+  assert.equal(weeks, 0);
 });
 
 Deno.test("validateGeneratedSchedule does not flag goal race as stressful_session_before_race", () => {
@@ -3881,7 +4110,11 @@ Deno.test("validateGeneratedPlanShape accepts fixed custom race session", () => 
       }),
     ],
     3,
-    profile({ race: "race_other", raceDate: "2026-06-15" }),
+    profile({
+      race: "race_other",
+      raceDate: "2026-06-15",
+      planStartDate: "2026-06-01",
+    }),
     new Date(Date.UTC(2026, 5, 1, 12)),
   );
   assert.deepEqual(violations, []);
@@ -3906,6 +4139,7 @@ Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () =>
     2,
     profile({ race: "race_5k", raceDate: "2026-06-15" }),
     new Date(Date.UTC(2026, 5, 1, 12)),
+    "2026-06-01",
   );
   assert.ok(
     violations.some((v) =>
@@ -3913,6 +4147,64 @@ Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () =>
       v.sessionId === "w2-2026-06-15-racePaceRun"
     ),
   );
+});
+
+Deno.test("validateGeneratedPlanShape rejects sessions before explicit planStartDate", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        weekNumber: 1,
+      }),
+    ],
+    1,
+    profile({
+      race: "race_5k",
+      raceDate: null,
+      planStartDate: "2026-06-10",
+    }),
+    new Date(Date.UTC(2026, 5, 12, 12)),
+    "2026-06-10",
+  );
+  assert.ok(
+    violations.some((v) =>
+      v.rule === "session_before_plan_start" &&
+      v.sessionId === "w1-2026-06-08-easyRun"
+    ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape maps week labels from selected planStartDate anchor", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w1-2026-06-14-easyRun",
+        date: "2026-06-14",
+        weekNumber: 1,
+      }),
+    ],
+    1,
+    profile({
+      race: "race_5k",
+      raceDate: null,
+      planStartDate: "2026-06-10",
+    }),
+    new Date(Date.UTC(2026, 5, 12, 12)),
+    "2026-06-10",
+  );
+  assert.ok(!violations.some((v) => v.rule === "session_date_week_mismatch"));
+  assert.ok(!violations.some((v) => v.rule === "session_before_plan_start"));
 });
 
 Deno.test("validateGeneratedPlanShape flags duplicate fixed race date sessions", () => {
@@ -3963,6 +4255,8 @@ function profile({
   race = "race_5k",
   raceDate = null,
   trainingDays = null,
+  planStartDate = null,
+  strengthPreferences = null,
 }: {
   experience?: string;
   hardDays?: string[];
@@ -3970,11 +4264,19 @@ function profile({
   race?: string;
   raceDate?: string | null;
   trainingDays?: number | null;
+  planStartDate?: string | null;
+  strengthPreferences?: Record<string, unknown> | null;
 } = {}): Record<string, unknown> {
   return {
     goal: { race, raceDate },
     fitness: { experience },
-    schedule: { hardDays, longRunDay, trainingDays },
+    schedule: {
+      hardDays,
+      longRunDay,
+      trainingDays,
+      ...(planStartDate == null ? {} : { planStartDate }),
+    },
+    ...(strengthPreferences == null ? {} : { strengthPreferences }),
   };
 }
 
@@ -4029,9 +4331,20 @@ function runProductionRulePipeline(
   profileData: Record<string, unknown>,
   totalWeeks: number,
 ): GeneratedSession[] {
+  const scheduleCandidate = profileData.schedule;
+  const schedule = typeof scheduleCandidate === "object" &&
+      scheduleCandidate != null &&
+      !Array.isArray(scheduleCandidate)
+    ? scheduleCandidate as Record<string, unknown>
+    : undefined;
   const scheduleNormalizedSessions = normalizeTrainingDayCount(
     input,
     profileData,
+    "en",
+    typeof schedule?.planStartDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(schedule.planStartDate)
+      ? schedule.planStartDate
+      : undefined,
   );
   const longRunPlacedSessions = placeLongRunsOnPreferredDay(
     scheduleNormalizedSessions,
@@ -4041,7 +4354,15 @@ function runProductionRulePipeline(
     longRunPlacedSessions,
     profileData,
   );
-  const fullCalendarSessions = ensureFullCalendarWeeks(stressSpacedSessions);
+  const planStartDate = typeof schedule?.planStartDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(schedule.planStartDate)
+    ? schedule.planStartDate
+    : undefined;
+  const fullCalendarSessions = ensureFullCalendarWeeks(
+    stressSpacedSessions,
+    "en",
+    planStartDate,
+  );
   const fullCalendarLongRunPlacedSessions = placeLongRunsOnPreferredDay(
     fullCalendarSessions,
     profileData,

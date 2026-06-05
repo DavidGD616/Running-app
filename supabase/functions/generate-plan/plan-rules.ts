@@ -1039,8 +1039,17 @@ export function normalizeSupportSessions(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
+  planStartDate?: string | null,
 ): GeneratedSupportSession[] {
   if (!Number.isFinite(totalWeeks) || totalWeeks < 1) return [];
+  const resolvedPlanStartDate = planStartDate != null
+    ? parsePlanStartDateValue(planStartDate)
+    : parsePlanStartDateValue(
+      objectOrNull(profileData.schedule)?.planStartDate,
+    );
+  const planStartDateValue = resolvedPlanStartDate == null
+    ? null
+    : resolvedPlanStartDate.slice(0, 10);
 
   const prefs = strengthPreferences(profileData);
   if (prefs.weeklyFrequency <= 0 || prefs.categories.length === 0) {
@@ -1140,7 +1149,13 @@ export function normalizeSupportSessions(
     }
   }
 
-  return result.sort((a, b) => {
+  const withStartDateFiltering = planStartDateValue == null
+    ? result
+    : result.filter((supportSession) =>
+      supportSession.date >= planStartDateValue
+    );
+
+  return withStartDateFiltering.sort((a, b) => {
     const week = a.weekNumber - b.weekNumber;
     if (week !== 0) return week;
     return a.date.localeCompare(b.date);
@@ -1226,11 +1241,17 @@ export function normalizeTrainingDayCount(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   locale: CoachNoteLocale = "en",
+  planStartDate?: string | null,
 ): GeneratedSession[] {
   const targetTrainingDays = targetTrainingDaysFor(profileData);
   if (targetTrainingDays == null) return sessions;
 
   const hardDays = hardDaySetFor(profileData);
+  const minimumDate = planStartDate != null
+    ? parsePlanStartDateValue(planStartDate)
+    : parsePlanStartDateValue(
+      objectOrNull(profileData.schedule)?.planStartDate,
+    );
   const sessionsByWeek = new Map<number, GeneratedSession[]>();
   for (const session of sessions) {
     const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
@@ -1247,6 +1268,7 @@ export function normalizeTrainingDayCount(
         hardDays,
         profileData,
         locale,
+        minimumDate,
       )
     )
     .sort(compareSessionsByDate);
@@ -1255,6 +1277,7 @@ export function normalizeTrainingDayCount(
 export function ensureFullCalendarWeeks(
   sessions: GeneratedSession[],
   locale: CoachNoteLocale = "en",
+  planStartDate?: string | null,
 ): GeneratedSession[] {
   const sessionsByWeek = new Map<number, GeneratedSession[]>();
   for (const session of sessions) {
@@ -1262,11 +1285,16 @@ export function ensureFullCalendarWeeks(
     weekSessions.push({ ...session });
     sessionsByWeek.set(session.weekNumber, weekSessions);
   }
+  const resolvedPlanStartDate = parsePlanStartDateValue(planStartDate);
 
   return Array.from(sessionsByWeek.keys())
     .sort((a, b) => a - b)
     .flatMap((weekNumber) =>
-      fillWeekRestDays(sessionsByWeek.get(weekNumber) ?? [], locale)
+      fillWeekRestDays(
+        sessionsByWeek.get(weekNumber) ?? [],
+        locale,
+        resolvedPlanStartDate,
+      )
     )
     .sort(compareSessionsByDate);
 }
@@ -1323,6 +1351,7 @@ export function ensureGoalRaceSession(
 export function expectedTotalWeeks(
   profileData: Record<string, unknown>,
   today: Date = new Date(),
+  planStartDate?: string | null,
 ): number | null {
   const raceDate = goalRaceDate(profileData);
   if (raceDate == null) return null;
@@ -1330,14 +1359,20 @@ export function expectedTotalWeeks(
   const raceDateParsed = parseDateOnly(raceDate);
   if (raceDateParsed == null) return null;
 
-  const anchorMonday = anchorMondayFor(today);
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    profileData,
+    today,
+    planStartDate,
+  );
+  const anchorMonday = planStartAnchorMonday(resolvedPlanStartDate) ??
+    anchorMondayFor(today);
 
   const raceDayIndex = raceDateParsed.getUTCDay();
   const raceMondayOffset = raceDayIndex === 0 ? -6 : 1 - raceDayIndex;
   const raceMonday = new Date(raceDateParsed);
   raceMonday.setUTCDate(raceDateParsed.getUTCDate() + raceMondayOffset);
 
-  if (raceMonday.getTime() < anchorMonday.getTime()) return null;
+  if (raceMonday.getTime() < anchorMonday.getTime()) return 0;
 
   const weeks = Math.ceil(
     (raceMonday.getTime() - anchorMonday.getTime()) /
@@ -1423,6 +1458,7 @@ function firstStrideProtectedSessionId(
 function fillWeekRestDays(
   sessions: GeneratedSession[],
   locale: CoachNoteLocale,
+  planStartDate?: string | null,
 ): GeneratedSession[] {
   if (sessions.length === 0) return sessions;
 
@@ -1435,12 +1471,19 @@ function fillWeekRestDays(
   const existingDates = new Set(
     adjusted.map((session) => session.date.slice(0, 10)),
   );
+  const normalizedPlanStartDate = parsePlanStartDateValue(planStartDate);
   const template = adjusted[0];
 
   for (let dayOffset = 0; dayOffset < 7; dayOffset += 1) {
     const date = new Date(weekStart);
     date.setUTCDate(weekStart.getUTCDate() + dayOffset);
     const dateKey = date.toISOString().slice(0, 10);
+    if (
+      normalizedPlanStartDate != null &&
+      dateKey < normalizedPlanStartDate
+    ) {
+      continue;
+    }
     if (existingDates.has(dateKey)) continue;
 
     adjusted.push(createRestDay(template, dateKey, locale));
@@ -1542,6 +1585,7 @@ function normalizeWeekTrainingDays(
   hardDays: Set<string>,
   profileData: Record<string, unknown>,
   locale: CoachNoteLocale,
+  minimumDate?: string | null,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => ({ ...session })).sort(
     compareSessionsByDate,
@@ -1564,7 +1608,7 @@ function normalizeWeekTrainingDays(
       continue;
     }
 
-    const date = findMissingWeekDate(adjusted, hardDays);
+    const date = findMissingWeekDate(adjusted, hardDays, minimumDate);
     if (date == null) break;
     adjusted.push(createEasyTrainingDay(adjusted[0], date, hardDays, locale));
     adjusted.sort(compareSessionsByDate);
@@ -2189,6 +2233,7 @@ function goalRaceCoolDownMinutes(distanceKm: number): number | null {
 function findMissingWeekDate(
   sessions: GeneratedSession[],
   hardDays: Set<string>,
+  minimumDate?: string | null,
 ): string | null {
   const weekStart = weekStartDateFor(sessions);
   if (weekStart == null) return null;
@@ -2200,7 +2245,9 @@ function findMissingWeekDate(
     const date = new Date(weekStart);
     date.setUTCDate(weekStart.getUTCDate() + dayOffset);
     return date.toISOString().slice(0, 10);
-  }).filter((date) => !existingDates.has(date));
+  })
+    .filter((date) => !existingDates.has(date))
+    .filter((date) => minimumDate == null || date >= minimumDate);
 
   return candidates.find((date) => !hardDays.has(dayKeyForDate(date))) ??
     candidates[0] ??
@@ -3474,6 +3521,7 @@ export type ScheduleValidationViolation = {
     | "stressful_session_on_hard_day"
     | "avoidable_training_on_hard_day"
     | "first_session_is_stressful"
+    | "session_before_plan_start"
     | "session_id_date_mismatch"
     | "long_run_not_on_preferred_day"
     | "session_after_race_date"
@@ -3494,10 +3542,18 @@ export function validateGeneratedPlanShape(
   totalWeeks: number,
   profileData: Record<string, unknown>,
   today: Date = new Date(),
+  planStartDate?: string | null,
 ): ScheduleValidationViolation[] {
   const violations: ScheduleValidationViolation[] = [];
   const sorted = [...sessions].sort(compareSessionsByDate);
-  const anchorMonday = anchorMondayFor(today);
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    profileData,
+    today,
+    planStartDate,
+  );
+  const anchorMonday = planStartAnchorMonday(resolvedPlanStartDate) ??
+    anchorMondayFor(today);
+  const resolvedPlanStartDateValue = parseDateOnly(resolvedPlanStartDate);
 
   if (Number.isFinite(totalWeeks) && totalWeeks >= 1) {
     const weekNumbers = new Set(sorted.map((session) => session.weekNumber));
@@ -3523,6 +3579,21 @@ export function validateGeneratedPlanShape(
     }
 
     for (const session of sorted) {
+      const sessionDate = parseDateOnly(session.date);
+      if (
+        sessionDate != null &&
+        resolvedPlanStartDateValue != null &&
+        sessionDate.getTime() < resolvedPlanStartDateValue.getTime()
+      ) {
+        violations.push({
+          rule: "session_before_plan_start",
+          sessionId: session.id,
+          date: session.date,
+          message:
+            `Session is before resolved plan start date ${resolvedPlanStartDate}.`,
+        });
+      }
+
       const expectedWeekNumber = weekNumberFromAnchor(
         session.date,
         anchorMonday,
@@ -3533,6 +3604,7 @@ export function validateGeneratedPlanShape(
       ) {
         continue;
       }
+
       violations.push({
         rule: "session_date_week_mismatch",
         sessionId: session.id,
@@ -3599,6 +3671,50 @@ export function validateGeneratedPlanShape(
   }
 
   return violations;
+}
+
+export function resolvePlanStartDate(
+  profileData: Record<string, unknown> | null | undefined,
+  generationDate: Date = new Date(),
+  planStartDate?: string | null,
+): string {
+  const rawPlanStartDate = planStartDate != null
+    ? parsePlanStartDateValue(planStartDate)
+    : null;
+  if (rawPlanStartDate != null) return rawPlanStartDate;
+
+  const schedule = objectOrNull(profileData?.schedule);
+  const planStartFromProfile = parsePlanStartDateValue(schedule?.planStartDate);
+  if (planStartFromProfile != null) return planStartFromProfile;
+
+  return nextFutureMonday(generationDate);
+}
+
+export function planStartAnchorMonday(planStartDate: string): Date | null {
+  const parsedPlanStartDate = parseDateOnly(planStartDate);
+  if (parsedPlanStartDate == null) return null;
+  return anchorMondayFor(parsedPlanStartDate);
+}
+
+function nextFutureMonday(date: Date): string {
+  const normalizedDate = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+  const dayIndex = normalizedDate.getUTCDay();
+  const daysUntilNextMonday = dayIndex === 0 ? 1 : 8 - dayIndex;
+  normalizedDate.setUTCDate(normalizedDate.getUTCDate() + daysUntilNextMonday);
+  return normalizedDate.toISOString().slice(0, 10);
+}
+
+function parsePlanStartDateValue(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const candidate = value;
+  const parsedDate = parseDateOnly(candidate);
+  if (parsedDate == null) return null;
+  const normalized = parsedDate.toISOString().slice(0, 10);
+  if (normalized !== candidate) return null;
+  return candidate;
 }
 
 export function validateGeneratedSchedule(
