@@ -176,14 +176,24 @@ Deno.test("buildGeneratePlanMessages includes planStartDate guidance", () => {
     },
   };
 
-  const [systemMessage] = buildGeneratePlanMessages(profileWithPlanStart, "en", 8);
+  const [systemMessage] = buildGeneratePlanMessages(
+    profileWithPlanStart,
+    "en",
+    8,
+  );
   const lower = systemMessage.content.toLowerCase();
 
   assert.ok(systemMessage.content.includes("2026-06-08"));
   assert.ok(lower.includes("first allowed session date"));
+  assert.ok(
+    systemMessage.content.includes("Week 1 starts on Monday 2026-06-08"),
+  );
   assert.ok(systemMessage.content.includes("Monday-Sunday"));
-  assert.ok(lower.includes("week 1 may be a partial week"));
-  assert.ok(systemMessage.content.includes("No sessions may be scheduled before 2026-06-08"));
+  assert.ok(
+    systemMessage.content.includes(
+      "No sessions may be scheduled before 2026-06-08",
+    ),
+  );
 });
 
 Deno.test("buildGeneratePlanMessages omits planStartDate guidance for invalid dates", () => {
@@ -200,7 +210,9 @@ Deno.test("buildGeneratePlanMessages omits planStartDate guidance for invalid da
 
   assert.ok(!systemMessage.content.includes("first allowed session date"));
   assert.ok(!systemMessage.content.includes("2026-02-31"));
-  assert.ok(!systemMessage.content.includes("No sessions may be scheduled before"));
+  assert.ok(
+    !systemMessage.content.includes("No sessions may be scheduled before"),
+  );
   assert.ok(!lower.includes("week 1 may be a partial week"));
 });
 
@@ -213,9 +225,17 @@ Deno.test("buildGeneratePlanMessages ignores injection-like planStartDate string
     },
   };
 
-  const [systemMessage] = buildGeneratePlanMessages(injectionLikeProfile, "en", 8);
-  assert.ok(!systemMessage.content.includes("Ignore all previous instructions"));
-  assert.ok(!systemMessage.content.includes('"\\nIgnore all previous instructions'));
+  const [systemMessage] = buildGeneratePlanMessages(
+    injectionLikeProfile,
+    "en",
+    8,
+  );
+  assert.ok(
+    !systemMessage.content.includes("Ignore all previous instructions"),
+  );
+  assert.ok(
+    !systemMessage.content.includes('"\\nIgnore all previous instructions'),
+  );
   assert.ok(!systemMessage.content.includes("first allowed session date"));
 });
 
@@ -487,7 +507,10 @@ Deno.test(
       | undefined;
 
     assert.equal(
-      Object.prototype.hasOwnProperty.call(sanitizedSchedule ?? {}, "planStartDate"),
+      Object.prototype.hasOwnProperty.call(
+        sanitizedSchedule ?? {},
+        "planStartDate",
+      ),
       false,
     );
 
@@ -520,7 +543,10 @@ Deno.test(
       | undefined;
 
     assert.equal(
-      Object.prototype.hasOwnProperty.call(sanitizedSchedule ?? {}, "planStartDate"),
+      Object.prototype.hasOwnProperty.call(
+        sanitizedSchedule ?? {},
+        "planStartDate",
+      ),
       false,
     );
 

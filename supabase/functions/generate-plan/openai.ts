@@ -105,7 +105,9 @@ export function sanitizeStravaCoachingProfileForPrompt(
   return sanitized.success ? sanitized.data : undefined;
 }
 
-function sanitizeTopLevelProfileForOpenAi(profileData: ProfileForPlan): ProfileForPlan {
+function sanitizeTopLevelProfileForOpenAi(
+  profileData: ProfileForPlan,
+): ProfileForPlan {
   const sanitized: ProfileForPlan = {};
   for (const key of SAFE_TOP_LEVEL_PROFILE_KEYS) {
     if (key in profileData) {
@@ -130,7 +132,9 @@ function sanitizeScheduleForOpenAi(value: unknown): ProfileForPlan | undefined {
     }
   }
 
-  const parsedPlanStartDate = parsePlanStartDate(sanitizedSchedule.planStartDate);
+  const parsedPlanStartDate = parsePlanStartDate(
+    sanitizedSchedule.planStartDate,
+  );
   if (parsedPlanStartDate == null) {
     delete sanitizedSchedule.planStartDate;
   } else {
@@ -162,7 +166,9 @@ function sanitizeFitnessForOpenAi(value: unknown): ProfileForPlan {
   return sanitizedFitness;
 }
 
-function sanitizeManualFitnessForOpenAi(value: unknown): ProfileForPlan | undefined {
+function sanitizeManualFitnessForOpenAi(
+  value: unknown,
+): ProfileForPlan | undefined {
   if (!isRecord(value)) return undefined;
 
   const sanitizedManualFitness: ProfileForPlan = {};
@@ -203,7 +209,9 @@ export function sanitizeProfileForOpenAi(
     }
   }
 
-  const sanitizedManual = sanitizeManualFitnessForOpenAi(profileData.manualFitness);
+  const sanitizedManual = sanitizeManualFitnessForOpenAi(
+    profileData.manualFitness,
+  );
   if (sanitizedManual == null) {
     delete sanitized.manualFitness;
   } else {
@@ -270,7 +278,27 @@ function parsePlanStartDate(value: unknown): string | undefined {
   return value;
 }
 
-function planStartDateFromProfile(profileData: ProfileForPlan): string | undefined {
+function weekStartMondayForDateOnly(dateOnly: string): string | undefined {
+  if (typeof dateOnly !== "string" || !DATE_ONLY_REGEX.test(dateOnly)) {
+    return undefined;
+  }
+
+  const [year, month, day] = dateOnly
+    .split("-")
+    .map((part) => Number.parseInt(part, 10));
+  const date = new Date(Date.UTC(year, month - 1, day));
+  const weekday = date.getUTCDay();
+  const daysSinceMonday = (weekday + 6) % 7;
+  date.setUTCDate(date.getUTCDate() - daysSinceMonday);
+
+  const isoMonth = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const isoDay = String(date.getUTCDate()).padStart(2, "0");
+  return `${date.getUTCFullYear()}-${isoMonth}-${isoDay}`;
+}
+
+function planStartDateFromProfile(
+  profileData: ProfileForPlan,
+): string | undefined {
   const schedule =
     typeof profileData.schedule === "object" && profileData.schedule != null
       ? profileData.schedule as Record<string, unknown>
@@ -284,7 +312,10 @@ function planStartDateGuidance(profileData: ProfileForPlan): string {
     return "";
   }
 
-  return `If provided, use planStartDate (${planStartDate}) as the first allowed session date. No sessions may be scheduled before ${planStartDate}. Use Monday-Sunday week numbering. Week 1 may be a partial week and can start on any day, as long as week 1 is the same Monday-Sunday containing the planStartDate.`;
+  const weekOneMonday = weekStartMondayForDateOnly(planStartDate) ??
+    planStartDate;
+
+  return `If provided, use planStartDate (${planStartDate}) as the first allowed session date. No sessions may be scheduled before ${planStartDate}. Week 1 starts on Monday ${weekOneMonday} (the Monday-Sunday containing planStartDate), and week numbering should use that Monday as the fixed week-1 anchor.`;
 }
 
 function buildPrompt(

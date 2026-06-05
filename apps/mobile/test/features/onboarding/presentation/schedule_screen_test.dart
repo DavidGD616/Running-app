@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/intl.dart';
+import 'package:running_app/core/theme/app_colors.dart';
 import 'package:running_app/core/widgets/app_button.dart';
 import 'package:running_app/core/utils/time_source.dart';
 import 'package:running_app/core/router/route_names.dart';
@@ -41,6 +42,7 @@ class _TestOnboardingNotifier extends OnboardingNotifier {
     required List<String> hardDays,
     String? preferredTimeOfDay,
     DateTime? planStartDate,
+    bool clearPlanStartDate = false,
   }) {
     lastPlanStartDate = planStartDate;
     super.setSchedule(
@@ -51,6 +53,7 @@ class _TestOnboardingNotifier extends OnboardingNotifier {
       hardDays: hardDays,
       preferredTimeOfDay: preferredTimeOfDay,
       planStartDate: planStartDate,
+      clearPlanStartDate: clearPlanStartDate,
     );
   }
 }
@@ -67,8 +70,15 @@ void main() {
     final router = GoRouter(
       routes: [
         GoRoute(
-          path: '/onboarding/schedule',
-          builder: (context, state) => ScheduleScreen(mode: mode),
+          path: '/onboarding',
+          builder: (context, state) =>
+              const Scaffold(body: Center(child: Text('Onboarding home'))),
+          routes: [
+            GoRoute(
+              path: 'schedule',
+              builder: (context, state) => ScheduleScreen(mode: mode),
+            ),
+          ],
         ),
         GoRoute(
           path: RouteNames.health,
@@ -96,6 +106,16 @@ void main() {
         supportedLocales: const [Locale('en'), Locale('es')],
       ),
     );
+  }
+
+  Color _dateOptionCardColor(WidgetTester tester, String label) {
+    final finder = find.ancestor(
+      of: find.text(label),
+      matching: find.byType(AnimatedContainer),
+    );
+    final card = tester.firstWidget<AnimatedContainer>(finder);
+    final decoration = card.decoration as BoxDecoration;
+    return decoration.color ?? AppColors.backgroundPrimary;
   }
 
   test('buildPlanStartDateCandidates resolves Monday logic correctly', () {
@@ -238,6 +258,76 @@ void main() {
     expect(notifier.lastPlanStartDate, DateTime(2026, 6, 1));
   });
 
+  testWidgets(
+    'next Monday option remains selected when it shares the same date as tomorrow',
+    (tester) async {
+      final fixedNow = DateTime(2026, 6, 7, 9, 30);
+      final draft = buildRunnerProfileDraft().copyWith(
+        schedule: const ScheduleProfileDraft(),
+      );
+      final notifier = _TestOnboardingNotifier(draft);
+      await tester.pumpWidget(
+        buildApp(
+          notifier: notifier,
+          mode: ScheduleFlowMode.onboarding,
+          now: fixedNow,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(ScheduleScreen));
+      final l10n = AppLocalizations.of(context)!;
+
+      await tester.tap(find.text('4'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Mon'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.time45min));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l10n.time90min));
+      await tester.pumpAndSettle();
+
+      final tomorrowLabel = l10n.scheduleStartDateTomorrow;
+      final nextMondayLabel = l10n.scheduleStartDateNextMonday;
+      await tester.scrollUntilVisible(
+        find.text(tomorrowLabel),
+        100,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.text(tomorrowLabel));
+      await tester.pumpAndSettle();
+      expect(
+        _dateOptionCardColor(tester, tomorrowLabel),
+        AppColors.accentPrimary,
+      );
+      expect(
+        _dateOptionCardColor(tester, nextMondayLabel),
+        AppColors.backgroundCard,
+      );
+
+      await tester.scrollUntilVisible(
+        find.text(nextMondayLabel),
+        100,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.text(nextMondayLabel));
+      await tester.pumpAndSettle();
+      expect(
+        _dateOptionCardColor(tester, tomorrowLabel),
+        isNot(AppColors.accentPrimary),
+      );
+      expect(
+        _dateOptionCardColor(tester, nextMondayLabel),
+        AppColors.accentPrimary,
+      );
+
+      await tester.tap(find.widgetWithText(AppButton, l10n.continueButton));
+      await tester.pumpAndSettle();
+
+      expect(notifier.lastPlanStartDate, DateTime(2026, 6, 8));
+    },
+  );
+
   testWidgets('non-onboarding schedule mode hides start date controls', (
     tester,
   ) async {
@@ -265,6 +355,15 @@ void main() {
     final l10n = AppLocalizations.of(context)!;
 
     expect(find.text(l10n.scheduleStartDateLabel), findsNothing);
+    await tester.tap(find.text('4'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mon'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time45min));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time90min));
+    await tester.pumpAndSettle();
+
     expect(
       tester
           .widget<AppButton>(
@@ -273,6 +372,11 @@ void main() {
           .onPressed,
       isNotNull,
     );
+
+    await tester.tap(find.widgetWithText(AppButton, l10n.saveChangesButton));
+    await tester.pumpAndSettle();
+
+    expect(notifier.lastPlanStartDate, isNull);
   });
 
   testWidgets(

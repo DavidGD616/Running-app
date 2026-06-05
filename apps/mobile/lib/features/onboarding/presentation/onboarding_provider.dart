@@ -300,8 +300,12 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     required List<String> hardDays,
     String? preferredTimeOfDay,
     DateTime? planStartDate,
+    bool clearPlanStartDate = false,
   }) {
     final currentDraft = state.value ?? const RunnerProfileDraft();
+    final nextPlanStartDate = clearPlanStartDate
+        ? null
+        : planStartDate ?? currentDraft.schedule.planStartDate;
 
     _setState(
       currentDraft.copyWith(
@@ -312,7 +316,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           weekendTime: weekendTime,
           hardDays: hardDays,
           preferredTimeOfDay: preferredTimeOfDay,
-          planStartDate: planStartDate ?? currentDraft.schedule.planStartDate,
+          planStartDate: nextPlanStartDate,
         ),
       ),
     );

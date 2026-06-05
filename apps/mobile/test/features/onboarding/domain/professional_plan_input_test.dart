@@ -199,6 +199,36 @@ void main() {
       expect(input.schedule.planStartDate, DateTime(2026, 6, 13));
     });
 
+    test(
+      'non-onboarding generation can omit planStartDate while keeping schedule draft',
+      () {
+        final draft = _nonTimeStravaDraftWithoutTargets().copyWith(
+          schedule: ScheduleProfileDraft(
+            trainingDays: 4,
+            longRunDay: WeekdayChoice.sunday,
+            weekdayTime: TimeSlot.min45,
+            weekendTime: TimeSlot.min90,
+            hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+            preferredTimeOfDay: PreferredTimeOfDay.morning,
+            planStartDate: DateTime(2026, 6, 13, 8, 15),
+          ),
+        );
+
+        final input = buildProfessionalPlanInputFromOnboardingDraft(
+          draft: draft,
+          preferences: const UserPreferences(unitSystem: UnitSystem.km),
+          locale: 'en',
+          includePlanStartDate: false,
+        )!;
+
+        final scheduleJson = Map<String, dynamic>.from(
+          input.toJson()['schedule'] as Map,
+        );
+        expect(scheduleJson.containsKey('planStartDate'), isFalse);
+        expect(input.schedule.planStartDate, isNull);
+      },
+    );
+
     test('Strava professional payload omits nullable optional fields', () {
       final draft = _nonTimeStravaDraftWithoutTargets();
       final input = buildProfessionalPlanInputFromOnboardingDraft(

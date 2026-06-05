@@ -10,9 +10,9 @@ ProfessionalPlanInput? buildProfessionalPlanInputFromOnboardingDraft({
   required RunnerProfileDraft draft,
   required UserPreferences preferences,
   required String locale,
+  bool includePlanStartDate = true,
 }) {
   final goal = draft.goal.toProfileOrNull();
-  final schedule = draft.schedule.toProfileOrNull();
   final health = draft.health.toProfileOrNull();
   final strengthPreferences = draft.strength.toProfileOrNull();
   final planIntensity = _planIntensityFromPreference(
@@ -21,7 +21,6 @@ ProfessionalPlanInput? buildProfessionalPlanInputFromOnboardingDraft({
   final fitnessSource = FitnessSource.fromKey(draft.fitness.fitnessSource);
 
   if (goal == null ||
-      schedule == null ||
       health == null ||
       strengthPreferences == null ||
       planIntensity == null ||
@@ -36,6 +35,12 @@ ProfessionalPlanInput? buildProfessionalPlanInputFromOnboardingDraft({
 
   final ManualFitnessInput? manualFitness;
   final StravaCoachingProfile? stravaCoachingProfile;
+  final ScheduleProfile? schedule = _scheduleForProfessionalInput(
+    draft.schedule,
+    includePlanStartDate: includePlanStartDate,
+  );
+
+  if (schedule == null) return null;
 
   switch (fitnessSource) {
     case FitnessSource.manual:
@@ -486,6 +491,30 @@ class ProfessionalPlanInput {
       raceCourseTerrain: raceCourseTerrain,
     );
   }
+}
+
+ScheduleProfile? _scheduleForProfessionalInput(
+  ScheduleProfileDraft draftSchedule, {
+  required bool includePlanStartDate,
+}) {
+  final schedule = draftSchedule.toProfileOrNull();
+  if (schedule == null) {
+    return null;
+  }
+
+  if (includePlanStartDate) {
+    return schedule;
+  }
+
+  return ScheduleProfile(
+    trainingDays: schedule.trainingDays,
+    longRunDay: schedule.longRunDay,
+    weekdayTime: schedule.weekdayTime,
+    weekendTime: schedule.weekendTime,
+    hardDays: schedule.hardDays,
+    preferredTimeOfDay: schedule.preferredTimeOfDay,
+    planStartDate: null,
+  );
 }
 
 void _validateFitnessInputContract({

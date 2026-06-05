@@ -103,6 +103,7 @@ class _PlanGenerationScreenState extends ConsumerState<PlanGenerationScreen>
       draft: onboardingDraft,
       preferences: preferences,
       locale: localeCode,
+      includePlanStartDate: widget.mode == PlanGenerationFlowMode.onboarding,
     );
 
     if (!mounted) return;

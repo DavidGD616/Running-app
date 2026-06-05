@@ -73,7 +73,7 @@ String _startDateOptionLocalizedLabel({
   };
 }
 
-String? _selectedStartDateKey({
+String? _selectedStartDateKeyFromDate({
   required DateTime? selectedDate,
   required List<PlanStartDateCandidate> candidates,
 }) {
@@ -107,6 +107,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   String? _weekdayTime;
   String? _weekendTime;
   DateTime? _planStartDate;
+  String? _selectedStartDateKey;
   final Set<String> _hardDays = {};
 
   final _scrollController = ScrollController();
@@ -129,6 +130,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     _planStartDate = draft.schedule.planStartDate == null
         ? null
         : planStartDateOnly(draft.schedule.planStartDate!);
+    _selectedStartDateKey = null;
     _hardDays
       ..clear()
       ..addAll(draft.schedule.hardDayKeys);
@@ -193,10 +195,13 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     final dateFormat = DateFormat.yMMMd(localeTag);
     final planStartDateCandidates = buildPlanStartDateCandidates(now);
-    final selectedStartDateKey = _selectedStartDateKey(
-      selectedDate: _planStartDate,
-      candidates: planStartDateCandidates,
-    );
+    final selectedStartDateKey = isOnboardingMode
+        ? (_selectedStartDateKey ??
+              _selectedStartDateKeyFromDate(
+                selectedDate: _planStartDate,
+                candidates: planStartDateCandidates,
+              ))
+        : null;
     final hasPlanDate = isOnboardingMode;
     final isComplete = _isComplete(
       requirePlanStartDate: hasPlanDate,
@@ -344,6 +349,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                             onTap: () {
                               setState(() {
                                 _planStartDate = option.date;
+                                _selectedStartDateKey = option.key;
                               });
                               _scrollToBottom();
                             },
@@ -541,6 +547,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                               planStartDate: isOnboardingMode
                                   ? _planStartDate
                                   : null,
+                              clearPlanStartDate: !isOnboardingMode,
                             );
                         if (isChangeSchedule) {
                           context.pop();
