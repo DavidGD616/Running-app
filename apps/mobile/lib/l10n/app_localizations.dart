@@ -1561,6 +1561,30 @@ abstract class AppLocalizations {
   /// **'Tell us when you can realistically train.'**
   String get scheduleSubtitle;
 
+  /// Label for the onboarding plan start date section
+  ///
+  /// In en, this message translates to:
+  /// **'Plan start date'**
+  String get scheduleStartDateLabel;
+
+  /// Onboarding plan start date option
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get scheduleStartDateToday;
+
+  /// Onboarding plan start date option
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get scheduleStartDateTomorrow;
+
+  /// Onboarding plan start date option
+  ///
+  /// In en, this message translates to:
+  /// **'Next Monday'**
+  String get scheduleStartDateNextMonday;
+
   /// Section label on schedule screen
   ///
   /// In en, this message translates to:

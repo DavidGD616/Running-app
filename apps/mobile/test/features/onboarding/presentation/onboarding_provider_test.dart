@@ -233,6 +233,64 @@ void main() {
   });
 
   test(
+    'setSchedule stores an explicit date for plan start when provided',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setSchedule(
+        trainingDays: '4',
+        longRunDay: WeekdayChoice.sunday.key,
+        weekdayTime: TimeSlot.min45.key,
+        weekendTime: TimeSlot.min90.key,
+        hardDays: [WeekdayChoice.tuesday.key],
+        planStartDate: DateTime(2026, 6, 1),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(
+        container.read(onboardingProvider).value?.schedule.planStartDate,
+        DateTime(2026, 6, 1),
+      );
+    },
+  );
+
+  test(
+    'setSchedule retains a previously saved plan start date when no new date is passed',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      final notifier = container.read(onboardingProvider.notifier);
+      notifier.setSchedule(
+        trainingDays: '4',
+        longRunDay: WeekdayChoice.sunday.key,
+        weekdayTime: TimeSlot.min45.key,
+        weekendTime: TimeSlot.min90.key,
+        hardDays: [WeekdayChoice.tuesday.key],
+        planStartDate: DateTime(2026, 5, 31),
+      );
+      notifier.setSchedule(
+        trainingDays: '5',
+        longRunDay: WeekdayChoice.wednesday.key,
+        weekdayTime: TimeSlot.min60.key,
+        weekendTime: TimeSlot.min90.key,
+        hardDays: [WeekdayChoice.thursday.key],
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      final restored = container.read(onboardingProvider).value!;
+      expect(restored.schedule.trainingDays, 5);
+      expect(restored.schedule.planStartDate, DateTime(2026, 5, 31));
+    },
+  );
+
+  test(
     'setting Strava coaching profile stores canonical source and curated profile only',
     () async {
       final prefs = await SharedPreferences.getInstance();

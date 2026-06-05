@@ -265,6 +265,10 @@
 
   "scheduleTitle": "Tu Horario",
   "scheduleSubtitle": "Cuéntanos cuándo puedes entrenar de forma realista.",
+  "scheduleStartDateLabel": "Inicio del plan",
+  "scheduleStartDateToday": "Hoy",
+  "scheduleStartDateTomorrow": "Mañana",
+  "scheduleStartDateNextMonday": "Próximo lunes",
   "trainingDaysLabel": "Días de entrenamiento por semana",
   "longRunDayLabel": "Día preferido para la carrera larga",
   "longRunDayHelper": "Este es el pilar de tu plan semanal",

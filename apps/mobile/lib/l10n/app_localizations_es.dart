@@ -836,6 +836,18 @@ class AppLocalizationsEs extends AppLocalizations {
       'Cuéntanos cuándo puedes entrenar de forma realista.';
 
   @override
+  String get scheduleStartDateLabel => 'Inicio del plan';
+
+  @override
+  String get scheduleStartDateToday => 'Hoy';
+
+  @override
+  String get scheduleStartDateTomorrow => 'Mañana';
+
+  @override
+  String get scheduleStartDateNextMonday => 'Próximo lunes';
+
+  @override
   String get trainingDaysLabel => 'Días de entrenamiento por semana';
 
   @override

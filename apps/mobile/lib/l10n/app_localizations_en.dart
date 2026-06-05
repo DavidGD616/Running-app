@@ -831,6 +831,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleSubtitle => 'Tell us when you can realistically train.';
 
   @override
+  String get scheduleStartDateLabel => 'Plan start date';
+
+  @override
+  String get scheduleStartDateToday => 'Today';
+
+  @override
+  String get scheduleStartDateTomorrow => 'Tomorrow';
+
+  @override
+  String get scheduleStartDateNextMonday => 'Next Monday';
+
+  @override
   String get trainingDaysLabel => 'Training days per week';
 
   @override

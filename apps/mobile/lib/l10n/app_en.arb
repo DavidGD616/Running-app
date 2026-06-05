@@ -653,6 +653,18 @@
   "scheduleSubtitle": "Tell us when you can realistically train.",
   "@scheduleSubtitle": { "description": "Subtitle on the schedule screen" },
 
+  "scheduleStartDateLabel": "Plan start date",
+  "@scheduleStartDateLabel": { "description": "Label for the onboarding plan start date section" },
+
+  "scheduleStartDateToday": "Today",
+  "@scheduleStartDateToday": { "description": "Onboarding plan start date option" },
+
+  "scheduleStartDateTomorrow": "Tomorrow",
+  "@scheduleStartDateTomorrow": { "description": "Onboarding plan start date option" },
+
+  "scheduleStartDateNextMonday": "Next Monday",
+  "@scheduleStartDateNextMonday": { "description": "Onboarding plan start date option" },
+
   "trainingDaysLabel": "Training days per week",
   "@trainingDaysLabel": { "description": "Section label on schedule screen" },
 

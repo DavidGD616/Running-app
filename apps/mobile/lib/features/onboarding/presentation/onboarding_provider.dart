@@ -299,9 +299,12 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     required String weekendTime,
     required List<String> hardDays,
     String? preferredTimeOfDay,
+    DateTime? planStartDate,
   }) {
+    final currentDraft = state.value ?? const RunnerProfileDraft();
+
     _setState(
-      (state.value ?? const RunnerProfileDraft()).copyWith(
+      currentDraft.copyWith(
         schedule: RunnerProfileDraft.scheduleFromInput(
           trainingDays: trainingDays,
           longRunDay: longRunDay,
@@ -309,6 +312,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           weekendTime: weekendTime,
           hardDays: hardDays,
           preferredTimeOfDay: preferredTimeOfDay,
+          planStartDate: planStartDate ?? currentDraft.schedule.planStartDate,
         ),
       ),
     );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
@@ -10,10 +11,83 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
+import '../../../../core/utils/time_source.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../profile/domain/models/runner_profile.dart';
 import '../../../../l10n/app_localizations.dart';
+
+const _startDateOptionToday = 'planStartToday';
+const _startDateOptionTomorrow = 'planStartTomorrow';
+const _startDateOptionNextMonday = 'planStartNextMonday';
+
+class PlanStartDateCandidate {
+  const PlanStartDateCandidate({required this.key, required this.date});
+
+  final String key;
+  final DateTime date;
+}
+
+DateTime planStartDateOnly(DateTime date) {
+  return DateTime(date.year, date.month, date.day);
+}
+
+DateTime addDaysDateOnly(DateTime date, int days) {
+  final dateOnly = planStartDateOnly(date);
+  return DateTime(dateOnly.year, dateOnly.month, dateOnly.day + days);
+}
+
+DateTime resolveNextMondayDate(DateTime date) {
+  final dateOnly = planStartDateOnly(date);
+  var daysUntilMonday = (DateTime.monday - dateOnly.weekday + 7) % 7;
+  if (daysUntilMonday == 0) {
+    daysUntilMonday = 7;
+  }
+  return addDaysDateOnly(dateOnly, daysUntilMonday);
+}
+
+List<PlanStartDateCandidate> buildPlanStartDateCandidates(DateTime date) {
+  final today = planStartDateOnly(date);
+
+  return [
+    PlanStartDateCandidate(key: _startDateOptionToday, date: today),
+    PlanStartDateCandidate(
+      key: _startDateOptionTomorrow,
+      date: addDaysDateOnly(today, 1),
+    ),
+    PlanStartDateCandidate(
+      key: _startDateOptionNextMonday,
+      date: resolveNextMondayDate(today),
+    ),
+  ];
+}
+
+String _startDateOptionLocalizedLabel({
+  required String key,
+  required AppLocalizations l10n,
+}) {
+  return switch (key) {
+    _startDateOptionToday => l10n.scheduleStartDateToday,
+    _startDateOptionTomorrow => l10n.scheduleStartDateTomorrow,
+    _ => l10n.scheduleStartDateNextMonday,
+  };
+}
+
+String? _selectedStartDateKey({
+  required DateTime? selectedDate,
+  required List<PlanStartDateCandidate> candidates,
+}) {
+  if (selectedDate == null) {
+    return null;
+  }
+
+  for (final candidate in candidates) {
+    if (candidate.date == selectedDate) {
+      return candidate.key;
+    }
+  }
+  return null;
+}
 
 enum ScheduleFlowMode { onboarding, changeSchedule, editGoal, newGoal }
 
@@ -32,6 +106,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
   String? _longRunDay;
   String? _weekdayTime;
   String? _weekendTime;
+  DateTime? _planStartDate;
   final Set<String> _hardDays = {};
 
   final _scrollController = ScrollController();
@@ -51,16 +126,23 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     _longRunDay = draft.schedule.longRunDayKey;
     _weekdayTime = draft.schedule.weekdayTimeKey;
     _weekendTime = draft.schedule.weekendTimeKey;
+    _planStartDate = draft.schedule.planStartDate == null
+        ? null
+        : planStartDateOnly(draft.schedule.planStartDate!);
     _hardDays
       ..clear()
       ..addAll(draft.schedule.hardDayKeys);
   }
 
-  bool get _isComplete =>
+  bool _isComplete({
+    required bool requirePlanStartDate,
+    String? selectedStartDateKey,
+  }) =>
       _trainingDays != null &&
       _longRunDay != null &&
       _weekdayTime != null &&
-      _weekendTime != null;
+      _weekendTime != null &&
+      (!requirePlanStartDate || selectedStartDateKey != null);
 
   void _scrollToBottom() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -98,6 +180,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final l10n = AppLocalizations.of(context)!;
     final isSettingsFlow = widget.mode != ScheduleFlowMode.onboarding;
     final isChangeSchedule = widget.mode == ScheduleFlowMode.changeSchedule;
+    final isOnboardingMode = widget.mode == ScheduleFlowMode.onboarding;
     final nextRoute = switch (widget.mode) {
       ScheduleFlowMode.onboarding => RouteNames.health,
       ScheduleFlowMode.changeSchedule => null,
@@ -105,6 +188,20 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
         RouteNames.settingsUpdatePlanEditGoalTraining,
       ScheduleFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalTraining,
     };
+
+    final now = planStartDateOnly(ref.read(timeSourceProvider).now());
+    final localeTag = Localizations.localeOf(context).toLanguageTag();
+    final dateFormat = DateFormat.yMMMd(localeTag);
+    final planStartDateCandidates = buildPlanStartDateCandidates(now);
+    final selectedStartDateKey = _selectedStartDateKey(
+      selectedDate: _planStartDate,
+      candidates: planStartDateCandidates,
+    );
+    final hasPlanDate = isOnboardingMode;
+    final isComplete = _isComplete(
+      requirePlanStartDate: hasPlanDate,
+      selectedStartDateKey: selectedStartDateKey,
+    );
 
     final days = [
       OnboardingValues.dayMon,
@@ -227,7 +324,36 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                       const SizedBox(height: AppSpacing.xl),
                     ],
 
-                    // ── 1. Training days per week ─────────────────────────────
+                    if (isOnboardingMode) ...[
+                      // ── 1. Plan start date (onboarding only) ─────────
+                      Text(
+                        l10n.scheduleStartDateLabel,
+                        style: AppTypography.labelLarge,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      ...planStartDateCandidates.map(
+                        (option) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _DateOptionCard(
+                            label: _startDateOptionLocalizedLabel(
+                              key: option.key,
+                              l10n: l10n,
+                            ),
+                            date: dateFormat.format(option.date),
+                            isSelected: selectedStartDateKey == option.key,
+                            onTap: () {
+                              setState(() {
+                                _planStartDate = option.date;
+                              });
+                              _scrollToBottom();
+                            },
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+
+                    // ── 2. Training days per week ─────────────────────────────
                     Text(
                       l10n.trainingDaysLabel,
                       style: AppTypography.labelLarge,
@@ -248,7 +374,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                       },
                     ),
 
-                    // ── 2. Preferred long run day ─────────────────────────────
+                    // ── 3. Preferred long run day ─────────────────────────────
                     if (_trainingDays != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
@@ -286,7 +412,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                       ),
                     ],
 
-                    // ── 3. Weekday time available ─────────────────────────────
+                    // ── 4. Weekday time available ─────────────────────────────
                     if (_longRunDay != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
@@ -319,7 +445,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                       ),
                     ],
 
-                    // ── 4. Weekend time available ─────────────────────────────
+                    // ── 5. Weekend time available ─────────────────────────────
                     if (_weekdayTime != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
@@ -351,7 +477,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                       ),
                     ],
 
-                    // ── 5. Days that are hard to train (optional, multi-select)
+                    // ── 6. Days that are hard to train (optional, multi-select)
                     if (_weekendTime != null) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(l10n.hardDaysLabel, style: AppTypography.labelLarge),
@@ -402,7 +528,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                 label: isChangeSchedule
                     ? l10n.saveChangesButton
                     : l10n.continueButton,
-                onPressed: _isComplete
+                onPressed: isComplete
                     ? () {
                         ref
                             .read(onboardingProvider.notifier)
@@ -412,6 +538,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                               weekdayTime: _weekdayTime!,
                               weekendTime: _weekendTime!,
                               hardDays: _hardDays.toList(),
+                              planStartDate: isOnboardingMode
+                                  ? _planStartDate
+                                  : null,
                             );
                         if (isChangeSchedule) {
                           context.pop();
@@ -420,6 +549,70 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                         }
                       }
                     : null,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _DateOptionCard extends StatelessWidget {
+  const _DateOptionCard({
+    required this.label,
+    required this.date,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String date;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.base,
+          vertical: AppSpacing.md,
+        ),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.accentPrimary
+              : AppColors.backgroundCard,
+          borderRadius: AppRadius.borderMd,
+          border: Border.all(
+            color: isSelected
+                ? AppColors.accentPrimary
+                : AppColors.borderDefault,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              softWrap: true,
+              style: AppTypography.labelMedium.copyWith(
+                color: isSelected
+                    ? AppColors.backgroundPrimary
+                    : AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              date,
+              softWrap: true,
+              style: AppTypography.caption.copyWith(
+                color: isSelected
+                    ? AppColors.backgroundPrimary
+                    : AppColors.textSecondary,
               ),
             ),
           ],
