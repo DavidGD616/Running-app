@@ -63,6 +63,7 @@ This file records the decisions made during product discovery for the Strava pro
 57. Use one Codex coder sub-agent per implementation task, with GPT-5.3 Codex as the coder model.
 58. Commit every completed task separately after reviewer approval.
 59. Update the implementation plan after each task with status, commit hash, and verification notes.
+60. Plan start date is a user-owned schedule input captured during onboarding and sent as `schedule.planStartDate`.
 
 ## Deferred Decisions
 
@@ -302,3 +303,15 @@ This file records the decisions made during product discovery for the Strava pro
   - `terrain`, `support metadata`, and `end-run copy` are aligned/localized.
   - Machine fields remain canonical.
 - Final review status: approved.
+
+### 2026-06-04 - Plan Start Date Selection and Anchoring
+
+- Users now choose their plan start as `Today`, `Tomorrow`, or `Next Monday`; mobile sends a concrete `YYYY-MM-DD` `schedule.planStartDate`.
+- Midweek starts create a partial Monday-Sunday week 1, with no generated run/rest/support sessions before the selected date.
+- Missing backend `planStartDate` now defaults to the next future Monday.
+- Race day remains guidance only; it is not generated as a training session.
+- Commit history:
+  - `63c8670` `feat(onboarding): add plan start date contract`
+  - `ee4bbc3` `feat(onboarding): ask for plan start date`
+  - `bf126b9` `feat(generate-plan): accept plan start date input`
+  - `94c1e45` `feat(generate-plan): anchor plans to start date`

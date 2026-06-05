@@ -756,6 +756,20 @@ deno test --allow-env --allow-net --allow-read
   - Machine fields remain canonical.
 - Integration/final review status: approved.
 
+### 2026-06-04 - Plan Start Date Input and Anchoring
+
+- User-selected start date is now part of plan scheduling:
+  - Onboarding asks for `Today`, `Tomorrow`, or `Next Monday`.
+  - Mobile sends a concrete `YYYY-MM-DD` `schedule.planStartDate` in generation input.
+  - Midweek starts create partial week-1 (Monday-Sunday) plans with no generated run/rest/support sessions before `planStartDate`.
+  - Missing backend `schedule.planStartDate` defaults to the next future Monday.
+  - Race day remains guidance only.
+- Relevant commits:
+  - `63c8670` `feat(onboarding): add plan start date contract`
+  - `ee4bbc3` `feat(onboarding): ask for plan start date`
+  - `bf126b9` `feat(generate-plan): accept plan start date input`
+  - `94c1e45` `feat(generate-plan): anchor plans to start date`
+
 ### Phase 7 Verification Complete
 
 - Phase 7 is complete because Task 14, Task 15, and Task 16 are complete.
