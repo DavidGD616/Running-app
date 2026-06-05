@@ -1274,6 +1274,36 @@ export function normalizeTrainingDayCount(
     .sort(compareSessionsByDate);
 }
 
+export function normalizeWeekNumbersFromDates(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  today: Date = new Date(),
+  planStartDate?: string | null,
+): GeneratedSession[] {
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    profileData,
+    today,
+    planStartDate,
+  );
+  const anchorMonday = planStartAnchorMonday(resolvedPlanStartDate);
+  if (anchorMonday == null) return sessions.map((session) => ({ ...session }))
+    .sort(compareSessionsByDate);
+
+  return sessions
+    .map((session) => {
+      const expectedWeekNumber = weekNumberFromAnchor(session.date, anchorMonday);
+      if (expectedWeekNumber == null || expectedWeekNumber < 1) {
+        return { ...session };
+      }
+
+      return {
+        ...session,
+        weekNumber: expectedWeekNumber,
+      };
+    })
+    .sort(compareSessionsByDate);
+}
+
 export function ensureFullCalendarWeeks(
   sessions: GeneratedSession[],
   locale: CoachNoteLocale = "en",
@@ -1286,6 +1316,39 @@ export function ensureFullCalendarWeeks(
     sessionsByWeek.set(session.weekNumber, weekSessions);
   }
   const resolvedPlanStartDate = parsePlanStartDateValue(planStartDate);
+
+  const hasLaterWeek = [...sessionsByWeek.keys()].some((weekNumber) =>
+    weekNumber > 1
+  );
+  if (
+    resolvedPlanStartDate != null &&
+    hasLaterWeek &&
+    !sessionsByWeek.has(1)
+  ) {
+    const syntheticWeekOneTemplate: GeneratedSession = {
+      id: `w1-${resolvedPlanStartDate}-restDay`,
+      date: resolvedPlanStartDate,
+      weekNumber: 1,
+      type: "restDay",
+      distanceKm: null,
+      durationMinutes: null,
+      coachNote: null,
+      targetZone: null,
+      warmUpMinutes: null,
+      coolDownMinutes: null,
+      intervalReps: null,
+      intervalRepDistanceMeters: null,
+      intervalRecoverySeconds: null,
+      strideReps: null,
+      strideSeconds: null,
+      strideRecoverySeconds: null,
+    };
+
+    sessionsByWeek.set(
+      1,
+      fillWeekRestDays([syntheticWeekOneTemplate], locale, resolvedPlanStartDate),
+    );
+  }
 
   return Array.from(sessionsByWeek.keys())
     .sort((a, b) => a - b)

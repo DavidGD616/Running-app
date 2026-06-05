@@ -13,6 +13,7 @@ import {
   normalizeTaper,
   normalizeTrainingDayCount,
   normalizeWorkoutTypesByPhase,
+  normalizeWeekNumbersFromDates,
   peakLongRunRangeKm,
   phaseForWeek,
   phasePlanFor,
@@ -1198,6 +1199,196 @@ Deno.test("ensureFullCalendarWeeks fills missing dates with rest days", () => {
   assert.equal(thursday.type, "restDay");
   assert.match(tuesday.coachNote ?? "", /Día de descanso/i);
 });
+
+Deno.test("normalizeWeekNumbersFromDates corrects week labels from planStartDate anchor", () => {
+  const normalized = normalizeWeekNumbersFromDates(
+    [
+      session({
+        id: "w1-2026-06-09-easyRun",
+        date: "2026-06-09",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+      session({
+        id: "w2-2026-06-16-longRun",
+        date: "2026-06-16",
+        weekNumber: 2,
+        type: "longRun",
+      }),
+      session({
+        id: "w2-2026-06-18-restDay",
+        date: "2026-06-18",
+        weekNumber: 2,
+        type: "restDay",
+      }),
+    ],
+    profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+    new Date(Date.UTC(2026, 5, 4, 12)),
+    "2026-06-04",
+  );
+
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-09")?.weekNumber,
+    2,
+  );
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-11")?.weekNumber,
+    2,
+  );
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-16")?.weekNumber,
+    3,
+  );
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-18")?.weekNumber,
+    3,
+  );
+});
+
+Deno.test("normalizeWeekNumbersFromDates does not create invalid pre-anchor week numbers", () => {
+  const normalized = normalizeWeekNumbersFromDates(
+    [
+      session({
+        id: "w1-2026-05-31-easyRun",
+        date: "2026-05-31",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+    ],
+    profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+    new Date(Date.UTC(2026, 5, 4, 12)),
+    "2026-06-04",
+  );
+
+  assert.equal(normalized[0].weekNumber, 1);
+});
+
+Deno.test(
+  "ensureFullCalendarWeeks adds partial first week from midweek planStartDate",
+  () => {
+    const normalized = normalizeWeekNumbersFromDates(
+      [
+        session({
+          id: "w1-2026-06-09-easyRun",
+          date: "2026-06-09",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w1-2026-06-11-easyRun",
+          date: "2026-06-11",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w2-2026-06-16-longRun",
+          date: "2026-06-16",
+          weekNumber: 2,
+          type: "longRun",
+        }),
+        session({
+          id: "w2-2026-06-18-restDay",
+          date: "2026-06-18",
+          weekNumber: 2,
+          type: "restDay",
+        }),
+      ],
+      profile({
+        race: "race_half_marathon",
+        planStartDate: "2026-06-04",
+      }),
+      new Date(Date.UTC(2026, 5, 4, 12)),
+      "2026-06-04",
+    );
+    const withCalendar = ensureFullCalendarWeeks(
+      normalized,
+      "en",
+      "2026-06-04",
+    );
+
+    assert.equal(withCalendar.filter((session) => session.weekNumber === 1).length, 4);
+    assert.ok(!withCalendar.some((session) => session.date < "2026-06-04"));
+    assert.equal(
+      withCalendar.filter((session) =>
+        session.weekNumber === 1 && session.type !== "restDay"
+      ).length,
+      0,
+    );
+    assert.equal(
+      withCalendar.filter((session) =>
+        session.weekNumber === 1 &&
+        ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07"].includes(
+          session.date,
+        )
+      ).length,
+      4,
+    );
+  },
+);
+
+Deno.test(
+  "date-based week normalization with session id regeneration removes week mismatch violations",
+  () => {
+    const normalized = normalizeWeekNumbersFromDates(
+      [
+        session({
+          id: "w1-2026-06-09-easyRun",
+          date: "2026-06-09",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w1-2026-06-11-easyRun",
+          date: "2026-06-11",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w2-2026-06-16-longRun",
+          date: "2026-06-16",
+          weekNumber: 2,
+          type: "longRun",
+        }),
+        session({
+          id: "w2-2026-06-18-restDay",
+          date: "2026-06-18",
+          weekNumber: 2,
+          type: "restDay",
+        }),
+      ],
+      profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+      new Date(Date.UTC(2026, 5, 4, 12)),
+      "2026-06-04",
+    );
+    const withCalendar = ensureFullCalendarWeeks(
+      normalized,
+      "en",
+      "2026-06-04",
+    );
+    const withIds = normalizeSessionIds(withCalendar);
+
+    const violations = validateGeneratedPlanShape(
+      withIds,
+      3,
+      profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+      new Date(Date.UTC(2026, 5, 12, 12)),
+      "2026-06-04",
+    );
+    assert.ok(!violations.some((violation) =>
+      violation.rule === "session_date_week_mismatch"
+    ));
+    assert.equal(
+      withIds.find((session) => session.date === "2026-06-09")?.id,
+      "w2-2026-06-09-easyRun",
+    );
+  },
+);
 
 Deno.test(
   "ensureFullCalendarWeeks with midweek planStartDate does not add pre-start dates",
@@ -4146,6 +4337,59 @@ Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () =>
       v.rule === "session_date_week_mismatch" &&
       v.sessionId === "w2-2026-06-15-racePaceRun"
     ),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape keeps fixed-race totalWeeks strict after date normalization", () => {
+  const sessions = normalizeSessionIds(
+    ensureFullCalendarWeeks(
+      normalizeWeekNumbersFromDates(
+        [
+          session({
+            id: "w1-2026-06-11-racePaceRun",
+            date: "2026-06-11",
+            weekNumber: 1,
+            type: "racePaceRun",
+            distanceKm: 5,
+          }),
+          session({
+            id: "w1-2026-06-09-easyRun",
+            date: "2026-06-09",
+            weekNumber: 1,
+            type: "easyRun",
+          }),
+          session({
+            id: "w2-2026-06-16-longRun",
+            date: "2026-06-16",
+            weekNumber: 2,
+            type: "longRun",
+          }),
+        ],
+        profile({
+          race: "race_10k",
+          raceDate: "2026-06-11",
+          planStartDate: "2026-06-04",
+        }),
+        new Date(Date.UTC(2026, 5, 4, 12)),
+        "2026-06-04",
+      ),
+      "en",
+      "2026-06-04",
+    ),
+  );
+  const violations = validateGeneratedPlanShape(
+    sessions,
+    2,
+    profile({
+      race: "race_10k",
+      raceDate: "2026-06-11",
+      planStartDate: "2026-06-04",
+    }),
+    new Date(Date.UTC(2026, 5, 12, 12)),
+    "2026-06-04",
+  );
+  assert.ok(
+    violations.some((v) => v.rule === "session_week_after_total_weeks"),
   );
 });
 

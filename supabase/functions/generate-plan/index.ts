@@ -16,6 +16,7 @@ import {
   normalizePeakLongRun,
   normalizeSessionIds,
   normalizeSupportSessions,
+  normalizeWeekNumbersFromDates,
   normalizeTaper,
   normalizeTrainingDayCount,
   normalizeWeeklyVolumeRamp,
@@ -182,7 +183,7 @@ Deno.serve(async (req) => {
     );
   }
 
-  const plannedWeeks = expectedWeeks ?? generatedPlan.totalWeeks;
+  const plannedWeeksCandidate = expectedWeeks ?? generatedPlan.totalWeeks;
   const supportedSnapshot = pickStravaSnapshot(
     professionalInput?.stravaCoachingProfile ??
       (isRecord(sanitizedGenerationProfile.fitness?.stravaCoachingProfile)
@@ -205,9 +206,24 @@ Deno.serve(async (req) => {
     );
   }
 
+  const dateNormalizedSessions = normalizeWeekNumbersFromDates(
+    generatedPlan.sessions,
+    generationProfileWithPlanStartDate,
+    generationStartedAt,
+    resolvedPlanStartDate,
+  );
+  const normalizedMaxWeek = dateNormalizedSessions.reduce(
+    (maximum, session) => Math.max(maximum, session.weekNumber),
+    0,
+  );
+
+  const plannedWeeks = expectedWeeks == null
+    ? Math.max(plannedWeeksCandidate, normalizedMaxWeek)
+    : expectedWeeks;
   const safeGeneratedPlan = {
     ...generatedPlan,
     totalWeeks: plannedWeeks,
+    sessions: dateNormalizedSessions,
     currentWeekNumber: generatedPlan.currentWeekNumber ?? 1,
     generatedLocale: locale,
     stravaCoachingProfileSnapshot: parsedSnapshot ??
