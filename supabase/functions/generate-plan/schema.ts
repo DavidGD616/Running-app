@@ -137,6 +137,25 @@ const RaceCourseTerrainSchema = z.enum([
 
 const StravaTerrainSchema = z.enum(["flat", "rolling", "hilly", "notSure"]);
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const isCalendarDateOnly = (value: string): boolean => {
+  if (!DATE_ONLY_REGEX.test(value)) {
+    return false;
+  }
+
+  const [year, month, day] = value
+    .split("-")
+    .map((part) => Number.parseInt(part, 10));
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  return (
+    parsed.getUTCFullYear() === year &&
+    parsed.getUTCMonth() === month - 1 &&
+    parsed.getUTCDate() === day
+  );
+};
+
 const EvidencePointSchema = z.object({
   metric: z.string(),
   date: z.string(),
@@ -290,6 +309,9 @@ const ScheduleProfileSchema = z.object({
   weekendTime: TimeSlotSchema,
   hardDays: z.array(WeekdaySchema),
   preferredTimeOfDay: PreferredTimeOfDaySchema.optional(),
+  planStartDate: z.string().refine(isCalendarDateOnly, {
+    message: "schedule.planStartDate must be a valid YYYY-MM-DD date.",
+  }).optional(),
 });
 
 const HealthProfileSchema = z.object({

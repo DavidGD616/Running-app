@@ -77,6 +77,16 @@ const SAFE_MANUAL_FITNESS_KEYS = [
   "benchmarkTimeMs",
 ] as const;
 
+const SAFE_SCHEDULE_KEYS = [
+  "trainingDays",
+  "longRunDay",
+  "weekdayTime",
+  "weekendTime",
+  "hardDays",
+  "preferredTimeOfDay",
+  "planStartDate",
+] as const;
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value);
 }
@@ -108,6 +118,26 @@ function sanitizeTopLevelProfileForOpenAi(profileData: ProfileForPlan): ProfileF
   }
 
   return sanitized;
+}
+
+function sanitizeScheduleForOpenAi(value: unknown): ProfileForPlan | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const sanitizedSchedule: ProfileForPlan = {};
+  for (const key of SAFE_SCHEDULE_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      sanitizedSchedule[key] = value[key];
+    }
+  }
+
+  const parsedPlanStartDate = parsePlanStartDate(sanitizedSchedule.planStartDate);
+  if (parsedPlanStartDate == null) {
+    delete sanitizedSchedule.planStartDate;
+  } else {
+    sanitizedSchedule.planStartDate = parsedPlanStartDate;
+  }
+
+  return sanitizedSchedule;
 }
 
 function sanitizeFitnessForOpenAi(value: unknown): ProfileForPlan {
@@ -164,6 +194,15 @@ export function sanitizeProfileForOpenAi(
     sanitized.fitness = sanitizedFitness;
   }
 
+  if (isRecord(sanitized.schedule)) {
+    const sanitizedSchedule = sanitizeScheduleForOpenAi(sanitized.schedule);
+    if (sanitizedSchedule == null) {
+      delete sanitized.schedule;
+    } else {
+      sanitized.schedule = sanitizedSchedule;
+    }
+  }
+
   const sanitizedManual = sanitizeManualFitnessForOpenAi(profileData.manualFitness);
   if (sanitizedManual == null) {
     delete sanitized.manualFitness;
@@ -208,6 +247,46 @@ function coachLanguageInstruction(locale: SupportedLocale): string {
     : "AI-written coaching text in English, including coachNote, race guidance fields, and support session notes.";
 }
 
+const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+function parsePlanStartDate(value: unknown): string | undefined {
+  if (typeof value !== "string" || !DATE_ONLY_REGEX.test(value)) {
+    return undefined;
+  }
+
+  const [year, month, day] = value
+    .split("-")
+    .map((part) => Number.parseInt(part, 10));
+  const parsed = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    parsed.getUTCFullYear() !== year ||
+    parsed.getUTCMonth() !== month - 1 ||
+    parsed.getUTCDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return value;
+}
+
+function planStartDateFromProfile(profileData: ProfileForPlan): string | undefined {
+  const schedule =
+    typeof profileData.schedule === "object" && profileData.schedule != null
+      ? profileData.schedule as Record<string, unknown>
+      : undefined;
+  return parsePlanStartDate(schedule?.planStartDate);
+}
+
+function planStartDateGuidance(profileData: ProfileForPlan): string {
+  const planStartDate = planStartDateFromProfile(profileData);
+  if (planStartDate == null) {
+    return "";
+  }
+
+  return `If provided, use planStartDate (${planStartDate}) as the first allowed session date. No sessions may be scheduled before ${planStartDate}. Use Monday-Sunday week numbering. Week 1 may be a partial week and can start on any day, as long as week 1 is the same Monday-Sunday containing the planStartDate.`;
+}
+
 function buildPrompt(
   profileData: ProfileForPlan,
   locale: SupportedLocale,
@@ -231,6 +310,8 @@ If stravaCoachingProfile is present, use its structured signal (pace zones, trai
 
 IMPORTANT: Do not create raceDay or dedicated goal-race sessions. The goal race is guidance-only, represented in raceGuidance and race guidance notes.
 ${raceDateGuidance}
+
+${planStartDateGuidance(profileData)}
 
 All session workoutTarget and zone pace values must be numeric seconds-per-kilometre integers (e.g., 360, not strings like "6:00/km").
 

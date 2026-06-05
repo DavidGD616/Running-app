@@ -173,6 +173,49 @@ Deno.test("GeneratePlanRequestSchema accepts manual source with manualFitness", 
   assert.ok(parsed.professionalPlanInput?.manualFitness != null);
 });
 
+Deno.test("GeneratePlanRequestSchema accepts schedule.planStartDate in YYYY-MM-DD", () => {
+  const parsed = GeneratePlanRequestSchema.parse({
+    professionalPlanInput: {
+      ...professionalPlanInputStrava,
+      schedule: {
+        ...professionalPlanInputStrava.schedule,
+        planStartDate: "2026-06-08",
+      },
+    },
+  });
+
+  assert.equal(
+    parsed.professionalPlanInput?.schedule?.planStartDate,
+    "2026-06-08",
+  );
+});
+
+Deno.test("GeneratePlanRequestSchema rejects malformed or non-calendar planStartDate", () => {
+  assert.throws(() => {
+    GeneratePlanRequestSchema.parse({
+      professionalPlanInput: {
+        ...professionalPlanInputStrava,
+        schedule: {
+          ...professionalPlanInputStrava.schedule,
+          planStartDate: "2026-06-8",
+        },
+      },
+    });
+  }, /schedule\.planStartDate/);
+
+  assert.throws(() => {
+    GeneratePlanRequestSchema.parse({
+      professionalPlanInput: {
+        ...professionalPlanInputStrava,
+        schedule: {
+          ...professionalPlanInputStrava.schedule,
+          planStartDate: "2026-02-31",
+        },
+      },
+    });
+  }, /schedule\.planStartDate/);
+});
+
 Deno.test("GeneratePlanRequestSchema rejects manual source with strava profile", () => {
   assert.throws(() => {
     GeneratePlanRequestSchema.parse({
