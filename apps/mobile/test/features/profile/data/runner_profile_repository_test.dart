@@ -32,6 +32,50 @@ void main() {
     expect(restored.device.metrics, {WatchMetric.heartRate, WatchMetric.pace});
   });
 
+  test('runner profile draft schedule planStartDate uses date-only format', () {
+    final draft = buildRunnerProfileDraft().copyWith(
+      schedule: ScheduleProfileDraft(
+        trainingDays: 4,
+        longRunDay: WeekdayChoice.sunday,
+        weekdayTime: TimeSlot.min45,
+        weekendTime: TimeSlot.min90,
+        hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+        preferredTimeOfDay: PreferredTimeOfDay.morning,
+        planStartDate: DateTime(2026, 6, 7, 8, 30),
+      ),
+    );
+
+    final json = draft.toJson();
+    final scheduleJson = Map<String, dynamic>.from(json['schedule'] as Map);
+
+    expect(scheduleJson['planStartDate'], '2026-06-07');
+
+    final restored = RunnerProfileDraft.fromJson(json);
+    expect(restored.schedule.planStartDate, DateTime(2026, 6, 7));
+  });
+
+  test('runner profile draft does not parse ISO datetime as planStartDate', () {
+    final draft = buildRunnerProfileDraft()
+        .copyWith(
+          schedule: ScheduleProfileDraft(
+            trainingDays: 4,
+            longRunDay: WeekdayChoice.sunday,
+            weekdayTime: TimeSlot.min45,
+            weekendTime: TimeSlot.min90,
+            hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+            preferredTimeOfDay: PreferredTimeOfDay.morning,
+            planStartDate: DateTime(2026, 6, 7, 8, 30),
+          ),
+        )
+        .toJson();
+
+    (draft['schedule'] as Map<String, dynamic>)['planStartDate'] =
+        '2026-06-07T08:30:00Z';
+
+    final restored = RunnerProfileDraft.fromJson(draft);
+    expect(restored.schedule.planStartDate, isNull);
+  });
+
   test('runner profile JSON round-trips persisted metadata', () {
     final profile = buildRunnerProfile(
       gender: ProfileGender.other,

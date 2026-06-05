@@ -110,6 +110,95 @@ void main() {
       );
     });
 
+    test(
+      'planStartDate uses date-only serialization when included in schedule',
+      () {
+        final expectedPlanStartDate = DateTime(2026, 6, 11, 17, 42);
+        final input = _baseInput(
+          fitnessSource: FitnessSource.strava,
+          stravaCoachingProfile: _stravaProfile(
+            confidence: StravaDataConfidence.high,
+          ),
+          manualFitness: null,
+          planStartDate: expectedPlanStartDate,
+        );
+
+        final json = input.toJson();
+        final scheduleJson = Map<String, dynamic>.from(json['schedule'] as Map);
+        expect(scheduleJson['planStartDate'], '2026-06-11');
+
+        final restored = ProfessionalPlanInput.fromJson(json);
+        expect(restored.schedule.planStartDate, DateTime(2026, 6, 11));
+      },
+    );
+
+    test(
+      'professional payload accepts date-only schedule.planStartDate when present',
+      () {
+        final input = _baseInput(
+          fitnessSource: FitnessSource.strava,
+          stravaCoachingProfile: _stravaProfile(
+            confidence: StravaDataConfidence.medium,
+          ),
+          manualFitness: null,
+        );
+        final json = input.toJson();
+        final scheduleJson = Map<String, dynamic>.from(json['schedule'] as Map)
+          ..['planStartDate'] = '2026-06-25';
+
+        json['schedule'] = scheduleJson;
+
+        final restored = ProfessionalPlanInput.fromJson(json);
+        expect(restored.schedule.planStartDate, DateTime(2026, 6, 25));
+      },
+    );
+
+    test('professional payload rejects non-date-only planStartDate values', () {
+      final input =
+          _baseInput(
+            fitnessSource: FitnessSource.strava,
+            stravaCoachingProfile: _stravaProfile(
+              confidence: StravaDataConfidence.medium,
+            ),
+            manualFitness: null,
+          ).toJson()..update('schedule', (value) {
+            final schedule = Map<String, dynamic>.from(value as Map);
+            schedule['planStartDate'] = '2026-06-25T10:00:00Z';
+            return schedule;
+          }, ifAbsent: () => {'planStartDate': '2026-06-25T10:00:00Z'});
+
+      expect(
+        () => ProfessionalPlanInput.fromJson(input),
+        throwsA(isA<FormatException>()),
+      );
+    });
+
+    test('onboarding draft schedule planStartDate is forwarded to input', () {
+      final draft = _nonTimeStravaDraftWithoutTargets().copyWith(
+        schedule: ScheduleProfileDraft(
+          trainingDays: 4,
+          longRunDay: WeekdayChoice.sunday,
+          weekdayTime: TimeSlot.min45,
+          weekendTime: TimeSlot.min90,
+          hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+          preferredTimeOfDay: PreferredTimeOfDay.morning,
+          planStartDate: DateTime(2026, 6, 13, 8, 15),
+        ),
+      );
+
+      final input = buildProfessionalPlanInputFromOnboardingDraft(
+        draft: draft,
+        preferences: const UserPreferences(unitSystem: UnitSystem.km),
+        locale: 'en',
+      )!;
+
+      final json = input.toJson();
+      final scheduleJson = Map<String, dynamic>.from(json['schedule'] as Map);
+
+      expect(scheduleJson['planStartDate'], '2026-06-13');
+      expect(input.schedule.planStartDate, DateTime(2026, 6, 13));
+    });
+
     test('Strava professional payload omits nullable optional fields', () {
       final draft = _nonTimeStravaDraftWithoutTargets();
       final input = buildProfessionalPlanInputFromOnboardingDraft(
@@ -305,6 +394,7 @@ ProfessionalPlanInput _baseInput({
   required StravaCoachingProfile? stravaCoachingProfile,
   required ManualFitnessInput? manualFitness,
   RaceCourseTerrain? raceCourseTerrain = RaceCourseTerrain.rolling,
+  DateTime? planStartDate,
 }) {
   return ProfessionalPlanInput(
     goal: GoalProfile(
@@ -332,13 +422,14 @@ ProfessionalPlanInput _baseInput({
         ),
       ],
     ),
-    schedule: const ScheduleProfile(
+    schedule: ScheduleProfile(
       trainingDays: 4,
       longRunDay: WeekdayChoice.sunday,
       weekdayTime: TimeSlot.min45,
       weekendTime: TimeSlot.min90,
       hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
       preferredTimeOfDay: PreferredTimeOfDay.morning,
+      planStartDate: planStartDate,
     ),
     health: const HealthProfile(
       painLevel: PainLevelChoice.none,

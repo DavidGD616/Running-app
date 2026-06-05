@@ -66,6 +66,30 @@ DateTime? _dateTimeFromJson(Object? value) {
   return DateTime.tryParse(raw);
 }
 
+String? _dateOnlyToJson(DateTime? value) {
+  if (value == null) return null;
+  final year = value.year.toString().padLeft(4, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}
+
+DateTime? _dateOnlyFromJson(Object? value) {
+  final raw = _stringOrNull(value);
+  if (raw == null || raw.isEmpty) return null;
+  final dateOnlyMatch = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(raw);
+  if (dateOnlyMatch == null) return null;
+
+  final year = int.parse(dateOnlyMatch.group(1)!);
+  final month = int.parse(dateOnlyMatch.group(2)!);
+  final day = int.parse(dateOnlyMatch.group(3)!);
+  final parsed = DateTime(year, month, day);
+  if (parsed.year != year || parsed.month != month || parsed.day != day) {
+    return null;
+  }
+  return parsed;
+}
+
 int? _durationToJson(Duration? value) => value?.inMilliseconds;
 
 Duration? _durationFromJson(Object? value) {
@@ -1035,6 +1059,7 @@ class ScheduleProfile {
     required this.weekendTime,
     this.hardDays = const {},
     this.preferredTimeOfDay,
+    this.planStartDate,
   });
 
   final int trainingDays;
@@ -1043,6 +1068,7 @@ class ScheduleProfile {
   final TimeSlot weekendTime;
   final Set<WeekdayChoice> hardDays;
   final PreferredTimeOfDay? preferredTimeOfDay;
+  final DateTime? planStartDate;
 }
 
 class ScheduleProfileDraft {
@@ -1053,6 +1079,7 @@ class ScheduleProfileDraft {
     this.weekendTime,
     this.hardDays = const {},
     this.preferredTimeOfDay,
+    this.planStartDate,
   });
 
   final int? trainingDays;
@@ -1061,6 +1088,7 @@ class ScheduleProfileDraft {
   final TimeSlot? weekendTime;
   final Set<WeekdayChoice> hardDays;
   final PreferredTimeOfDay? preferredTimeOfDay;
+  final DateTime? planStartDate;
 
   String? get trainingDaysKey => trainingDays?.toString();
   String? get longRunDayKey => longRunDay?.key;
@@ -1085,6 +1113,13 @@ class ScheduleProfileDraft {
       weekendTime: weekendTime!,
       hardDays: hardDays,
       preferredTimeOfDay: preferredTimeOfDay,
+      planStartDate: planStartDate == null
+          ? null
+          : DateTime(
+              planStartDate!.year,
+              planStartDate!.month,
+              planStartDate!.day,
+            ),
     );
   }
 }
@@ -1514,6 +1549,7 @@ class RunnerProfileDraft {
         weekendTime: profile.schedule.weekendTime,
         hardDays: profile.schedule.hardDays,
         preferredTimeOfDay: profile.schedule.preferredTimeOfDay,
+        planStartDate: profile.schedule.planStartDate,
       ),
       health: HealthProfileDraft(
         painLevel: profile.health.painLevel,
@@ -1615,6 +1651,7 @@ class RunnerProfileDraft {
     required String weekendTime,
     required List<String> hardDays,
     String? preferredTimeOfDay,
+    DateTime? planStartDate,
   }) {
     return ScheduleProfileDraft(
       trainingDays: _intFromString(trainingDays),
@@ -1627,6 +1664,7 @@ class RunnerProfileDraft {
         (value) => value.key,
       ),
       preferredTimeOfDay: PreferredTimeOfDay.fromKey(preferredTimeOfDay),
+      planStartDate: planStartDate,
     );
   }
 
@@ -1954,6 +1992,8 @@ Map<String, dynamic> _scheduleProfileDraftToJson(ScheduleProfileDraft value) {
     'weekendTime': value.weekendTimeKey,
     'hardDays': value.hardDayKeys,
     'preferredTimeOfDay': value.preferredTimeOfDayKey,
+    if (value.planStartDate != null)
+      'planStartDate': _dateOnlyToJson(value.planStartDate),
   };
 }
 
@@ -1971,6 +2011,7 @@ ScheduleProfileDraft _scheduleProfileDraftFromJson(Map<String, dynamic> json) {
     preferredTimeOfDay: PreferredTimeOfDay.fromKey(
       _stringOrNull(json['preferredTimeOfDay']),
     ),
+    planStartDate: _dateOnlyFromJson(json['planStartDate']),
   );
 }
 
@@ -1982,6 +2023,8 @@ Map<String, dynamic> _scheduleProfileToJson(ScheduleProfile value) {
     'weekendTime': value.weekendTime.key,
     'hardDays': _sortedCanonicalKeys(value.hardDays),
     'preferredTimeOfDay': value.preferredTimeOfDay?.key,
+    if (value.planStartDate != null)
+      'planStartDate': _dateOnlyToJson(value.planStartDate),
   };
 }
 

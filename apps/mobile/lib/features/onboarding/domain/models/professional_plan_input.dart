@@ -651,6 +651,11 @@ ScheduleProfile _requiredScheduleProfile(
     parse: PreferredTimeOfDay.fromKey,
     fieldLabel: 'preferredTimeOfDay',
   );
+  final parsedPlanStartDate = _parseDateOnly(
+    value,
+    'planStartDate',
+    context: nestedContext,
+  );
 
   return ScheduleProfile(
     trainingDays: trainingDays,
@@ -659,6 +664,7 @@ ScheduleProfile _requiredScheduleProfile(
     weekendTime: weekendTime,
     hardDays: hardDays,
     preferredTimeOfDay: preferredTimeOfDay,
+    planStartDate: parsedPlanStartDate,
   );
 }
 
@@ -716,8 +722,51 @@ Map<String, dynamic> _scheduleProfileToJson(ScheduleProfile value) {
         'weekendTime': value.weekendTime.key,
         'hardDays': sortedCanonicalKeys(value.hardDays),
         'preferredTimeOfDay': value.preferredTimeOfDay?.key,
+        'planStartDate': _dateToDateOnlyString(value.planStartDate),
       })
       as Map<String, dynamic>;
+}
+
+String? _dateToDateOnlyString(DateTime? value) {
+  if (value == null) return null;
+  final year = value.year.toString().padLeft(4, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}
+
+DateTime? _parseDateOnly(
+  Map<String, dynamic> json,
+  String key, {
+  required String context,
+}) {
+  if (!json.containsKey(key)) return null;
+
+  final raw = json[key];
+  if (raw == null) return null;
+  if (raw is! String || raw.isEmpty) {
+    throw FormatException('Invalid $context: $key must be an ISO date string.');
+  }
+
+  final dateOnlyMatch = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(raw);
+  if (dateOnlyMatch == null) {
+    throw FormatException(
+      'Invalid $context: $key must be in YYYY-MM-DD format.',
+    );
+  }
+
+  final year = int.parse(dateOnlyMatch.group(1)!);
+  final month = int.parse(dateOnlyMatch.group(2)!);
+  final day = int.parse(dateOnlyMatch.group(3)!);
+  final parsed = DateTime(year, month, day);
+
+  if (parsed.year != year || parsed.month != month || parsed.day != day) {
+    throw FormatException(
+      'Invalid $context: $key must be a valid date in YYYY-MM-DD format.',
+    );
+  }
+
+  return parsed;
 }
 
 Map<String, dynamic> _healthProfileToJson(HealthProfile value) {
