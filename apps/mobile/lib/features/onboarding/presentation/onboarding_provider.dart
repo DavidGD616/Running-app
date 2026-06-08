@@ -64,7 +64,11 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
         await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
       }
       if (ref.mounted) {
-        state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+        if (markOnboardingComplete) {
+          state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+        } else {
+          state = AsyncData(draft);
+        }
       }
       return true;
     } catch (_) {

@@ -495,6 +495,36 @@ void main() {
   );
 
   test(
+    'saveProfile(markOnboardingComplete: false) preserves acceptedRaceTarget in draft state',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final completeDraft = buildRunnerProfileDraft();
+      await prefs.setString(
+        SharedPreferencesRunnerProfileRepository.draftStorageKey,
+        jsonEncode(completeDraft.toJson()),
+      );
+
+      final container = _testContainer(prefs);
+      addTearDown(container.dispose);
+      await container.read(onboardingProvider.future);
+
+      final notifier = container.read(onboardingProvider.notifier);
+      final saved = await notifier.saveProfile(
+        markOnboardingComplete: false,
+        clock: DateTime(2026, 4, 7, 10, 15),
+      );
+
+      expect(saved, isTrue);
+      final restored = container.read(onboardingProvider).value!;
+      expect(restored.acceptedRaceTarget, isNotNull);
+      expect(
+        restored.acceptedRaceTarget!.toJson(),
+        equals(completeDraft.acceptedRaceTarget!.toJson()),
+      );
+    },
+  );
+
+  test(
     'markCompleted returns false and leaves onboarding incomplete when profile save fails',
     () async {
       final prefs = await SharedPreferences.getInstance();
