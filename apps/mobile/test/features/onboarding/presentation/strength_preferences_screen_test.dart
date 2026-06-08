@@ -119,7 +119,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Strength Preferences'), findsOneWidget);
-    expect(find.text('Do you lift or do strength training?'), findsOneWidget);
+    expect(
+      find.text('Do you do lower-body strength or leg day?'),
+      findsOneWidget,
+    );
     expect(find.text('6 / 9'), findsOneWidget);
   });
 
@@ -133,7 +136,7 @@ void main() {
 
     expect(find.text('Preferencias de Fuerza'), findsOneWidget);
     expect(
-      find.text('¿Levantas pesas o haces entrenamiento de fuerza?'),
+      find.text('¿Haces fuerza de tren inferior o día de pierna?'),
       findsOneWidget,
     );
   });
@@ -149,14 +152,7 @@ void main() {
     expect(_continueButton(tester).onPressed, isNull);
 
     await _tapText(tester, 'Yes');
-    expect(find.text('1 day'), findsOneWidget);
-    expect(find.text('1 days'), findsNothing);
-    expect(_continueButton(tester).onPressed, isNull);
-
-    await _tapText(tester, '2 days');
-    expect(_continueButton(tester).onPressed, isNull);
-
-    await _tapText(tester, 'Lower body');
+    expect(find.text('Leg days'), findsOneWidget);
     expect(_continueButton(tester).onPressed, isNull);
 
     await _tapText(tester, 'Mon');
@@ -197,9 +193,6 @@ void main() {
       await tester.pumpAndSettle();
 
       await _tapText(tester, 'Yes');
-      await _tapText(tester, '2 days');
-      await _tapText(tester, 'Lower body');
-      await _tapText(tester, 'Core / mobility');
       await _tapText(tester, 'Mon');
       await _tapText(tester, 'Thu');
       await _tapText(tester, 'Run first');
@@ -210,10 +203,7 @@ void main() {
       expect(notifier.savedStrength?.weeklyFrequency, '2');
       expect(
         notifier.savedStrength?.categories,
-        unorderedEquals([
-          StrengthCategory.lowerBody.key,
-          StrengthCategory.coreMobility.key,
-        ]),
+        unorderedEquals([StrengthCategory.lowerBody.key]),
       );
       expect(
         notifier.savedStrength?.preferredDays,

@@ -27,8 +27,6 @@ class _StrengthPreferencesScreenState
     extends ConsumerState<StrengthPreferencesScreen> {
   bool _initialized = false;
   bool? _lifts;
-  String? _weeklyFrequency;
-  final Set<String> _categories = {};
   final Set<String> _preferredDays = {};
   String? _sameDayOrder;
 
@@ -46,10 +44,6 @@ class _StrengthPreferencesScreenState
 
   void _initFromDraft(RunnerProfileDraft draft) {
     _lifts = draft.strength.lifts;
-    _weeklyFrequency = draft.strength.weeklyFrequency?.toString();
-    _categories
-      ..clear()
-      ..addAll(draft.strength.categories.map((category) => category.key));
     _preferredDays
       ..clear()
       ..addAll(draft.strength.preferredDays.map((day) => day.key));
@@ -59,10 +53,7 @@ class _StrengthPreferencesScreenState
   bool get _isComplete {
     if (_lifts == null) return false;
     if (_lifts == false) return true;
-    return _weeklyFrequency != null &&
-        _categories.isNotEmpty &&
-        _preferredDays.isNotEmpty &&
-        _sameDayOrder != null;
+    return _preferredDays.isNotEmpty && _sameDayOrder != null;
   }
 
   void _scrollToBottom() {
@@ -80,23 +71,11 @@ class _StrengthPreferencesScreenState
     setState(() {
       _lifts = lifts;
       if (!lifts) {
-        _weeklyFrequency = null;
-        _categories.clear();
         _preferredDays.clear();
         _sameDayOrder = null;
       }
     });
     _scrollToBottom();
-  }
-
-  void _toggleCategory(String key) {
-    setState(() {
-      if (_categories.contains(key)) {
-        _categories.remove(key);
-      } else {
-        _categories.add(key);
-      }
-    });
   }
 
   void _togglePreferredDay(String key) {
@@ -133,13 +112,6 @@ class _StrengthPreferencesScreenState
     }
 
     final l10n = AppLocalizations.of(context)!;
-    final frequencyOptions = const ['1', '2', '3', '4'];
-    final categoryOptions = [
-      StrengthCategory.lowerBody,
-      StrengthCategory.upperBody,
-      StrengthCategory.coreMobility,
-      StrengthCategory.fullBody,
-    ];
     final days = [
       OnboardingValues.dayMon,
       OnboardingValues.dayTue,
@@ -275,55 +247,6 @@ class _StrengthPreferencesScreenState
                     if (_lifts == true) ...[
                       const SizedBox(height: AppSpacing.xl),
                       Text(
-                        l10n.strengthFrequencyLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _SegmentedControl(
-                        options: frequencyOptions
-                            .map(
-                              (frequency) => (
-                                key: frequency,
-                                label: l10n.strengthFrequencyOption(
-                                  int.parse(frequency),
-                                ),
-                              ),
-                            )
-                            .toList(growable: false),
-                        selected: _weeklyFrequency,
-                        onSelect: (value) {
-                          setState(() => _weeklyFrequency = value);
-                          _scrollToBottom();
-                        },
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
-                        l10n.strengthCategoriesLabel,
-                        style: AppTypography.labelLarge,
-                      ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        l10n.strengthCategoriesHelper,
-                        style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      Wrap(
-                        spacing: AppSpacing.sm,
-                        runSpacing: AppSpacing.sm,
-                        children: categoryOptions
-                            .map(
-                              (category) => _Chip(
-                                label: _localizeCategory(category, l10n),
-                                isSelected: _categories.contains(category.key),
-                                onTap: () => _toggleCategory(category.key),
-                              ),
-                            )
-                            .toList(growable: false),
-                      ),
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(
                         l10n.strengthPreferredDaysLabel,
                         style: AppTypography.labelLarge,
                       ),
@@ -398,8 +321,12 @@ class _StrengthPreferencesScreenState
                             .read(onboardingProvider.notifier)
                             .setStrength(
                               lifts: _lifts!,
-                              weeklyFrequency: _weeklyFrequency,
-                              categories: _categories.toList(growable: false),
+                              weeklyFrequency: _lifts == true
+                                  ? _preferredDays.length.toString()
+                                  : null,
+                              categories: _lifts == true
+                                  ? [StrengthCategory.lowerBody.key]
+                                  : const [],
                               preferredDays: _preferredDays.toList(
                                 growable: false,
                               ),
@@ -414,15 +341,6 @@ class _StrengthPreferencesScreenState
         ),
       ),
     );
-  }
-
-  String _localizeCategory(StrengthCategory category, AppLocalizations l10n) {
-    return switch (category) {
-      StrengthCategory.lowerBody => l10n.strengthCategoryLowerBody,
-      StrengthCategory.upperBody => l10n.strengthCategoryUpperBody,
-      StrengthCategory.coreMobility => l10n.strengthCategoryCoreMobility,
-      StrengthCategory.fullBody => l10n.strengthCategoryFullBody,
-    };
   }
 }
 
@@ -464,62 +382,6 @@ class _ToggleButton extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _SegmentedControl extends StatelessWidget {
-  const _SegmentedControl({
-    required this.options,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final List<({String key, String label})> options;
-  final String? selected;
-  final void Function(String) onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.backgroundCard,
-        borderRadius: AppRadius.borderLg,
-      ),
-      child: Row(
-        children: options
-            .map((option) {
-              final isSelected = selected == option.key;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () => onSelect(option.key),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 200),
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? AppColors.accentPrimary
-                          : Colors.transparent,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        option.label,
-                        style: AppTypography.labelMedium.copyWith(
-                          color: isSelected
-                              ? AppColors.backgroundPrimary
-                              : AppColors.textSecondary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            })
-            .toList(growable: false),
       ),
     );
   }
