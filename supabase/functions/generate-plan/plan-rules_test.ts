@@ -4,16 +4,14 @@ import {
   avoidHardDayTraining,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
-  ensureGoalRaceSession,
   expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
-  normalizeSupportSessions,
   normalizeTaper,
   normalizeTrainingDayCount,
-  normalizeWorkoutTypesByPhase,
   normalizeWeekNumbersFromDates,
+  normalizeWorkoutTypesByPhase,
   peakLongRunRangeKm,
   phaseForWeek,
   phasePlanFor,
@@ -638,543 +636,70 @@ Deno.test("normalizeTrainingDayCount uses user trainingDays over Strava runs-per
   assert.equal(trainingCountForTest(result), 3);
 });
 
-Deno.test("normalizeSupportSessions places lower-body support with user preference and avoids key-workout/day-before-long constraints", () => {
-  const runSessions = [
-    session({
-      id: "w1-mon",
-      date: "2026-04-27",
-      weekNumber: 1,
-      type: "intervals",
-    }),
-    session({
-      id: "w1-tue",
-      date: "2026-04-28",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-wed",
-      date: "2026-04-29",
-      weekNumber: 1,
-      type: "fartlek",
-    }),
-    session({
-      id: "w1-thu",
-      date: "2026-04-30",
-      weekNumber: 1,
-      type: "longRun",
-    }),
-    session({
-      id: "w1-fri",
-      date: "2026-05-01",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-sat",
-      date: "2026-05-02",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-sun",
-      date: "2026-05-03",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-  ];
-
-  const result = normalizeSupportSessions(
+Deno.test("avoidHardDayTraining treats leg strength preferred days as hard days", () => {
+  const result = avoidHardDayTraining(
     [
-      {
-        schemaVersion: 1,
-        id: "s-lower",
+      session({
+        id: "w1-mon-intervals",
         date: "2026-04-27",
         weekNumber: 1,
-        category: "lower_body",
-      },
-    ],
-    runSessions,
-    {
-      goal: { race: "race_half_marathon", raceDate: null },
-      schedule: { hardDays: [] },
-      strengthPreferences: {
-        weeklyFrequency: 1,
-        categories: ["lower_body"],
-        preferredDays: ["day_tue"],
-        sameDayOrder: "lift_first",
-      },
-    },
-    8,
-  );
-
-  assert.equal(result.length, 1);
-  const supportDate = result[0].date.slice(0, 10);
-  assert.ok(
-    ["2026-05-01", "2026-05-02", "2026-05-03"].includes(supportDate),
-    "lower-body support should avoid day-before long run and key workout without run_first",
-  );
-  assert.equal(supportDate, "2026-05-01");
-});
-
-Deno.test("normalizeSupportSessions removes support sessions before plan start date", () => {
-  const runSessions = [
-    session({
-      id: "w1-mon",
-      date: "2026-06-08",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-tue",
-      date: "2026-06-09",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-wed",
-      date: "2026-06-10",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-  ];
-
-  const result = normalizeSupportSessions(
-    [
-      {
-        schemaVersion: 1,
-        id: "s-lower",
-        date: "2026-06-08",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-tue-easy",
+        date: "2026-04-28",
         weekNumber: 1,
-        category: "lower_body",
-      },
+        type: "easyRun",
+      }),
     ],
-    runSessions,
     profile({
-      race: "race_half_marathon",
-      raceDate: null,
+      trainingDays: 2,
       hardDays: [],
-      planStartDate: "2026-06-10",
-      trainingDays: 3,
-      // Keep a concrete preference so a support date is generated before filtering.
-      strengthPreferences: {
-        weeklyFrequency: 1,
-        categories: ["lower_body"],
-        preferredDays: ["day_mon"],
-        sameDayOrder: "lift_first",
-      },
-    }),
-    1,
-    "en",
-  );
-  assert.deepEqual(result, []);
-});
-
-Deno.test("normalizeSupportSessions avoids day-before key workouts for lower-body", () => {
-  const runSessions = [
-    session({
-      id: "w1-mon",
-      date: "2026-04-27",
-      weekNumber: 1,
-      type: "intervals",
-    }),
-    session({
-      id: "w1-tue",
-      date: "2026-04-28",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-wed",
-      date: "2026-04-29",
-      weekNumber: 1,
-      type: "fartlek",
-    }),
-    session({
-      id: "w1-thu",
-      date: "2026-04-30",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-  ];
-
-  const result = normalizeSupportSessions(
-    [
-      {
-        schemaVersion: 1,
-        id: "s-lower",
-        date: "2026-04-27",
-        weekNumber: 1,
-        category: "lower_body",
-      },
-    ],
-    runSessions,
-    {
-      goal: { race: "race_half_marathon", raceDate: null },
-      schedule: { hardDays: [] },
-      strengthPreferences: {
-        weeklyFrequency: 1,
-        categories: ["lower_body"],
-        preferredDays: ["day_tue"],
-        sameDayOrder: "lift_first",
-      },
-    },
-    8,
-  );
-
-  assert.equal(result.length, 1);
-  assert.equal(result[0].date.slice(0, 10), "2026-04-30");
-});
-
-Deno.test(
-  "normalizeSupportSessions emits canonical support guidance keys and strips prescription text",
-  () => {
-    const runSessions = [
-      session({
-        id: "w1-sat",
-        date: "2026-04-25",
-        weekNumber: 1,
-        type: "easyRun",
-      }),
-    ];
-
-    const result = normalizeSupportSessions(
-      [
-        {
-          schemaVersion: 1,
-          id: "s-lower",
-          date: "2026-04-27",
-          weekNumber: 1,
-          category: "lower_body",
-          load: "moderate",
-          timingGuidance: "Run first, then do 4 sets of 12 split squats.",
-          interferenceRule: "Avoid heavy deadlift and knee drive overload.",
-          taperAdjustment:
-            "Drop to 3x8 and keep reps under 15 before race week.",
-          notes: "Full-strength session: 3 sets of 5 goblet squats, 12 reps.",
-        },
-      ],
-      runSessions,
-      {
-        goal: { race: "race_half_marathon", raceDate: null },
-        schedule: { hardDays: [] },
-        strengthPreferences: {
-          weeklyFrequency: 1,
-          categories: ["lower_body"],
-          preferredDays: ["day_sat"],
-          sameDayOrder: "run_first",
-        },
-      },
-      8,
-    );
-
-    assert.equal(result.length, 1);
-    const supportSession = result[0];
-    assert.equal(supportSession.load, "moderate");
-    assert.equal(
-      supportSession.timingGuidance,
-      "on_off_days",
-    );
-    assert.equal(
-      supportSession.interferenceRule,
-      "avoid_day_before_long_run",
-    );
-    assert.equal(
-      supportSession.taperAdjustment,
-      "reduce_load",
-    );
-    assert.equal(supportSession.notes, "Lower-body support session.");
-
-    const prescriptionTerms = [
-      /squat/i,
-      /deadlift/i,
-      /split squat/i,
-      /goblet/i,
-      /\d+\s*[xX]\s*\d+/,
-    ];
-    for (const term of prescriptionTerms) {
-      assert.equal(
-        term.test(supportSession.load ?? ""),
-        false,
-        `should remove prescription terms from load: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.timingGuidance ?? ""),
-        false,
-        `should remove prescription terms from timingGuidance: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.interferenceRule ?? ""),
-        false,
-        `should remove prescription terms from interferenceRule: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.taperAdjustment ?? ""),
-        false,
-        `should remove prescription terms from taperAdjustment: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.notes ?? ""),
-        false,
-        `should remove prescription terms from notes: ${term}`,
-      );
-    }
-  },
-);
-
-Deno.test(
-  "normalizeSupportSessions localizes notes while preserving canonical support guidance keys",
-  () => {
-    const runSessions = [
-      session({
-        id: "w1-sat",
-        date: "2026-04-25",
-        weekNumber: 1,
-        type: "easyRun",
-      }),
-    ];
-
-    const result = normalizeSupportSessions(
-      [
-        {
-          schemaVersion: 1,
-          id: "s-upper",
-          date: "2026-04-27",
-          weekNumber: 1,
-          category: "upper_body",
-          load: "moderada",
-          timingGuidance: "Run first, then do bench and rows.",
-          interferenceRule: "Avoid deadlift overlap and squat overload.",
-          taperAdjustment: "Drop to 2x6 before race week and avoid heavy reps.",
-          notes: "Upper-body session: 4x8 pull-ups and press.",
-        },
-      ],
-      runSessions,
-      {
-        goal: { race: "race_half_marathon", raceDate: null },
-        schedule: { hardDays: [] },
-        strengthPreferences: {
-          weeklyFrequency: 1,
-          categories: ["upper_body"],
-          preferredDays: ["day_sat"],
-          sameDayOrder: "run_first",
-        },
-      },
-      8,
-      "es",
-    );
-
-    assert.equal(result.length, 1);
-    const supportSession = result[0];
-    assert.equal(supportSession.load, "moderate");
-    assert.equal(
-      supportSession.timingGuidance,
-      "on_off_days",
-    );
-    assert.equal(
-      supportSession.interferenceRule,
-      "avoid_day_before_key_workout",
-    );
-    assert.equal(
-      supportSession.taperAdjustment,
-      "reduce_load",
-    );
-    assert.equal(supportSession.notes, "Sesión de apoyo de tren superior.");
-
-    const forbiddenEnglish = [/run/i, /easy/i, /sessions/i, /bench/i, /press/i];
-    const forbiddenSpanishLeak = [/ligera/i, /moderada/i, /pesada/i];
-    const forbiddenPrescriptions = [
-      /squat/i,
-      /deadlift/i,
-      /pull[-\s]?ups?/i,
-      /\d+\s*[xX]\s*\d+/, // rep/set style
-    ];
-    for (
-      const term of [
-        ...forbiddenEnglish,
-        ...forbiddenSpanishLeak,
-        ...forbiddenPrescriptions,
-      ]
-    ) {
-      assert.equal(
-        term.test(supportSession.load ?? ""),
-        false,
-        `es guidance should be localized and not include mixed-language phrase: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.timingGuidance ?? ""),
-        false,
-        `es guidance should be localized and not include mixed-language phrase: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.interferenceRule ?? ""),
-        false,
-        `es guidance should be localized and not include mixed-language phrase: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.taperAdjustment ?? ""),
-        false,
-        `es guidance should be localized and not include mixed-language phrase: ${term}`,
-      );
-      assert.equal(
-        term.test(supportSession.notes ?? ""),
-        false,
-        `es guidance should be localized and not include mixed-language phrase: ${term}`,
-      );
-    }
-  },
-);
-
-Deno.test("normalizeSupportSessions allows run_first lower-body on key workout days", () => {
-  const runSessions = [
-    session({
-      id: "w1-mon",
-      date: "2026-04-27",
-      weekNumber: 1,
-      type: "intervals",
-    }),
-    session({
-      id: "w1-tue",
-      date: "2026-04-28",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-wed",
-      date: "2026-04-29",
-      weekNumber: 1,
-      type: "fartlek",
-    }),
-    session({
-      id: "w1-thu",
-      date: "2026-04-30",
-      weekNumber: 1,
-      type: "longRun",
-    }),
-    session({
-      id: "w1-fri",
-      date: "2026-05-01",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-sat",
-      date: "2026-05-02",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-    session({
-      id: "w1-sun",
-      date: "2026-05-03",
-      weekNumber: 1,
-      type: "easyRun",
-    }),
-  ];
-
-  const result = normalizeSupportSessions(
-    [
-      {
-        schemaVersion: 1,
-        id: "s-lower",
-        date: "2026-04-27",
-        weekNumber: 1,
-        category: "lower_body",
-      },
-    ],
-    runSessions,
-    {
-      goal: { race: "race_half_marathon", raceDate: null },
-      schedule: { hardDays: [] },
       strengthPreferences: {
         weeklyFrequency: 1,
         categories: ["lower_body"],
         preferredDays: ["day_mon"],
         sameDayOrder: "run_first",
       },
-    },
-    8,
+    }),
   );
 
-  assert.equal(result.length, 1);
-  assert.equal(result[0].date.slice(0, 10), "2026-04-27");
+  const monday = result.find((item) => item.date === "2026-04-27");
+  assert.equal(monday?.type, "easyRun");
+  const hardSession = result.find((item) => item.type === "intervals");
+  assert.notEqual(hardSession?.date, "2026-04-27");
 });
 
-Deno.test("normalizeSupportSessions omits lower-body support in taper weeks", () => {
-  const runSessions = [
-    ...[
-      session({
-        id: "w7-mon",
-        date: "2026-04-27",
-        weekNumber: 7,
-        type: "easyRun",
-      }),
-      ...[
-        { date: "2026-05-01", weekNumber: 7, type: "easyRun" },
-        { date: "2026-05-02", weekNumber: 7, type: "easyRun" },
-        { date: "2026-05-03", weekNumber: 7, type: "easyRun" },
-        { date: "2026-05-04", weekNumber: 7, type: "easyRun" },
-        { date: "2026-05-05", weekNumber: 7, type: "easyRun" },
-      ].map((entry, index) =>
-        session({
-          id: `w7-extra-${index}`,
-          date: entry.date,
-          weekNumber: entry.weekNumber,
-          type: "easyRun",
-        })
-      ),
-    ],
-    ...[
-      session({
-        id: "w8-mon",
-        date: "2026-05-04",
-        weekNumber: 8,
-        type: "easyRun",
-      }),
-      ...[
-        { date: "2026-05-05", weekNumber: 8, type: "easyRun" },
-        { date: "2026-05-06", weekNumber: 8, type: "easyRun" },
-        { date: "2026-05-07", weekNumber: 8, type: "easyRun" },
-        { date: "2026-05-08", weekNumber: 8, type: "easyRun" },
-        { date: "2026-05-09", weekNumber: 8, type: "easyRun" },
-      ].map((entry, index) =>
-        session({
-          id: `w8-extra-${index}`,
-          date: entry.date,
-          weekNumber: entry.weekNumber,
-          type: "easyRun",
-        })
-      ),
-    ],
-  ];
-
-  const result = normalizeSupportSessions(
+Deno.test("avoidHardDayTraining ignores upper-body-only strength days", () => {
+  const result = avoidHardDayTraining(
     [
-      {
-        schemaVersion: 1,
-        id: "s-lower",
+      session({
+        id: "w1-mon-intervals",
         date: "2026-04-27",
         weekNumber: 1,
-        category: "lower_body",
-      },
+        type: "intervals",
+      }),
+      session({
+        id: "w1-tue-easy",
+        date: "2026-04-28",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
     ],
-    runSessions,
-    {
-      goal: { race: "race_half_marathon", raceDate: "2026-05-09" },
-      schedule: { hardDays: [] },
+    profile({
+      trainingDays: 2,
+      hardDays: [],
       strengthPreferences: {
         weeklyFrequency: 1,
-        categories: ["lower_body"],
+        categories: ["upper_body"],
         preferredDays: ["day_mon"],
         sameDayOrder: "run_first",
       },
-    },
-    8,
+    }),
   );
 
-  const taperSessions = result.filter((item) => item.weekNumber === 8);
-  const midplanSessions = result.filter((item) => item.weekNumber === 7);
-  assert.equal(taperSessions.length, 0);
-  assert.equal(midplanSessions.length, 1);
+  const monday = result.find((item) => item.date === "2026-04-27");
+  assert.equal(monday?.type, "intervals");
 });
 
 Deno.test("ensureFullCalendarWeeks fills missing dates with rest days", () => {
@@ -1312,7 +837,10 @@ Deno.test(
       "2026-06-04",
     );
 
-    assert.equal(withCalendar.filter((session) => session.weekNumber === 1).length, 4);
+    assert.equal(
+      withCalendar.filter((session) => session.weekNumber === 1).length,
+      4,
+    );
     assert.ok(!withCalendar.some((session) => session.date < "2026-06-04"));
     assert.equal(
       withCalendar.filter((session) =>
@@ -1380,9 +908,11 @@ Deno.test(
       new Date(Date.UTC(2026, 5, 12, 12)),
       "2026-06-04",
     );
-    assert.ok(!violations.some((violation) =>
-      violation.rule === "session_date_week_mismatch"
-    ));
+    assert.ok(
+      !violations.some((violation) =>
+        violation.rule === "session_date_week_mismatch"
+      ),
+    );
     assert.equal(
       withIds.find((session) => session.date === "2026-06-09")?.id,
       "w2-2026-06-09-easyRun",
@@ -1414,77 +944,60 @@ Deno.test(
   },
 );
 
-Deno.test("ensureGoalRaceSession makes no-date 5K plan finish with full 5K race", () => {
-  const sessions = ensureGoalRaceSession(
+Deno.test("validateGeneratedPlanShape does not require generated race workout on fixed race date", () => {
+  const violations = validateGeneratedPlanShape(
     [
       session({
-        id: "w8-mon",
-        date: "2026-06-15",
-        weekNumber: 8,
-        type: "easyRun",
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
       }),
       session({
-        id: "w8-fri",
-        date: "2026-06-19",
-        weekNumber: 8,
-        type: "racePaceRun",
-        distanceKm: 3,
-        durationMinutes: 20,
-        warmUpMinutes: 8,
-        coolDownMinutes: 6,
+        id: "w2-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 2,
       }),
       session({
-        id: "w8-sat",
+        id: "w3-2026-06-20-easyRun",
         date: "2026-06-20",
-        weekNumber: 8,
-        type: "restDay",
+        weekNumber: 3,
+      }),
+    ],
+    3,
+    profile({ race: "race_5k", raceDate: "2026-06-21" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+    "2026-06-01",
+  );
+
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("enforcePreRaceTaper uses fixed race date without generated race workout", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w3-2026-06-13-tempoRun",
+        date: "2026-06-13",
+        weekNumber: 3,
+        type: "tempoRun",
+        durationMinutes: 45,
+      }),
+      session({
+        id: "w3-2026-06-12-easyRun",
+        date: "2026-06-12",
+        weekNumber: 3,
+        type: "easyRun",
       }),
     ],
     profile({
       race: "race_5k",
-      raceDate: null,
-      longRunDay: "day_sat",
-    }),
-    "en",
-  );
-
-  const race = findSession(sessions, "w8-sat");
-  assert.equal(race.type, "racePaceRun");
-  assert.equal(race.distanceKm, 5);
-  assert.equal(race.durationMinutes, null);
-  assert.equal(race.targetZone, "racePace");
-  assert.equal(race.warmUpMinutes, 10);
-  assert.equal(race.coolDownMinutes, 5);
-  assert.match(race.coachNote ?? "", /Goal race day/i);
-});
-
-Deno.test("ensureGoalRaceSession preserves fixed race date and sets goal distance", () => {
-  const sessions = ensureGoalRaceSession(
-    [
-      session({
-        id: "w9-fri",
-        date: "2026-06-19",
-        weekNumber: 9,
-        type: "easyRun",
-      }),
-      session({
-        id: "race",
-        date: "2026-06-21",
-        weekNumber: 9,
-        type: "racePaceRun",
-        distanceKm: 6,
-      }),
-    ],
-    profile({
-      race: "race_10k",
-      raceDate: "2026-06-21T00:00:00.000",
+      raceDate: "2026-06-15",
     }),
   );
 
-  const race = findSession(sessions, "race");
-  assert.equal(race.date, "2026-06-21");
-  assert.equal(race.distanceKm, 10);
-  assert.equal(race.type, "racePaceRun");
+  const tapered = findSession(sessions, "w3-2026-06-13-tempoRun");
+  assert.equal(tapered.type, "recoveryRun");
+  assert.equal(tapered.targetZone, "recovery");
 });
 
 Deno.test("spaceStressfulSessions swaps adjacent hard sessions apart", () => {
@@ -4186,131 +3699,6 @@ Deno.test("validateGeneratedPlanShape flags sessions after totalWeeks", () => {
   );
 });
 
-Deno.test("validateGeneratedPlanShape flags missing fixed race session", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-14-easyRun",
-        date: "2026-06-14",
-        weekNumber: 3,
-      }),
-    ],
-    3,
-    profile({ race: "race_5k", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "missing_fixed_goal_race_session" && v.date === "2026-06-15"
-    ),
-  );
-});
-
-Deno.test("validateGeneratedPlanShape flags fixed race outside final week", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-racePaceRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-        type: "racePaceRun",
-        distanceKm: 5,
-      }),
-      session({
-        id: "w3-2026-06-15-easyRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-      }),
-    ],
-    3,
-    profile({ race: "race_5k", raceDate: "2026-06-08" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "fixed_goal_race_not_final_week" &&
-      v.sessionId === "w2-2026-06-08-racePaceRun"
-    ),
-  );
-});
-
-Deno.test("validateGeneratedPlanShape requires fixed race session for custom race distance", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-15-easyRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-      }),
-    ],
-    3,
-    profile({ race: "race_other", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "missing_fixed_goal_race_session" && v.date === "2026-06-15"
-    ),
-  );
-});
-
-Deno.test("validateGeneratedPlanShape accepts fixed custom race session", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-15-racePaceRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-        type: "racePaceRun",
-        distanceKm: null,
-      }),
-    ],
-    3,
-    profile({
-      race: "race_other",
-      raceDate: "2026-06-15",
-      planStartDate: "2026-06-01",
-    }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.deepEqual(violations, []);
-});
-
 Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () => {
   const violations = validateGeneratedPlanShape(
     [
@@ -4449,47 +3837,6 @@ Deno.test("validateGeneratedPlanShape maps week labels from selected planStartDa
   );
   assert.ok(!violations.some((v) => v.rule === "session_date_week_mismatch"));
   assert.ok(!violations.some((v) => v.rule === "session_before_plan_start"));
-});
-
-Deno.test("validateGeneratedPlanShape flags duplicate fixed race date sessions", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-15-racePaceRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-        type: "racePaceRun",
-        distanceKm: 5,
-      }),
-      session({
-        id: "w3-2026-06-15-restDay",
-        date: "2026-06-15",
-        weekNumber: 3,
-        type: "restDay",
-        distanceKm: null,
-        durationMinutes: null,
-      }),
-    ],
-    3,
-    profile({ race: "race_5k", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "duplicate_fixed_race_date_session" &&
-      v.date === "2026-06-15"
-    ),
-  );
 });
 
 function profile({
@@ -4649,12 +3996,8 @@ function runProductionRulePipeline(
     ...session,
     phase: phaseForWeek(session.weekNumber, totalWeeks, profileData),
   }));
-  const raceFinalizedSessions = ensureGoalRaceSession(
-    phaseStampedSessions,
-    profileData,
-  );
   const truncatedSessions = truncateAfterRaceDate(
-    raceFinalizedSessions,
+    phaseStampedSessions,
     profileData,
   );
   const preRaceTaperedSessions = enforcePreRaceTaper(

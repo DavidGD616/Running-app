@@ -77,6 +77,20 @@ const SAFE_MANUAL_FITNESS_KEYS = [
   "benchmarkTimeMs",
 ] as const;
 
+const SAFE_GOAL_KEYS = [
+  "race",
+  "hasRaceDate",
+  "raceDate",
+] as const;
+
+const SAFE_ACCEPTED_RACE_TARGET_KEYS = [
+  "distanceKm",
+  "primaryTimeMs",
+  "stretchTimeMs",
+  "confidence",
+  "evidence",
+] as const;
+
 const SAFE_SCHEDULE_KEYS = [
   "trainingDays",
   "longRunDay",
@@ -181,10 +195,54 @@ function sanitizeManualFitnessForOpenAi(
   return sanitizedManualFitness;
 }
 
+function sanitizeGoalForOpenAi(value: unknown): ProfileForPlan | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const sanitizedGoal: ProfileForPlan = {};
+  for (const key of SAFE_GOAL_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      sanitizedGoal[key] = value[key];
+    }
+  }
+
+  return sanitizedGoal;
+}
+
+function sanitizeAcceptedRaceTargetForOpenAi(
+  value: unknown,
+): ProfileForPlan | undefined {
+  if (!isRecord(value)) return undefined;
+
+  const sanitizedTarget: ProfileForPlan = {};
+  for (const key of SAFE_ACCEPTED_RACE_TARGET_KEYS) {
+    if (Object.prototype.hasOwnProperty.call(value, key)) {
+      sanitizedTarget[key] = value[key];
+    }
+  }
+
+  return sanitizedTarget;
+}
+
 export function sanitizeProfileForOpenAi(
   profileData: ProfileForPlan,
 ): ProfileForPlan {
   const sanitized = sanitizeTopLevelProfileForOpenAi(profileData);
+
+  const sanitizedGoal = sanitizeGoalForOpenAi(sanitized.goal);
+  if (sanitizedGoal == null) {
+    delete sanitized.goal;
+  } else {
+    sanitized.goal = sanitizedGoal;
+  }
+
+  const sanitizedAcceptedTarget = sanitizeAcceptedRaceTargetForOpenAi(
+    sanitized.acceptedRaceTarget,
+  );
+  if (sanitizedAcceptedTarget == null) {
+    delete sanitized.acceptedRaceTarget;
+  } else {
+    sanitized.acceptedRaceTarget = sanitizedAcceptedTarget;
+  }
 
   const directProfile = sanitizeStravaCoachingProfileForPrompt(
     sanitized.stravaCoachingProfile,
@@ -251,8 +309,8 @@ export function resolveOpenAiModel(modelFromEnv: string | undefined): string {
 
 function coachLanguageInstruction(locale: SupportedLocale): string {
   return locale === "es"
-    ? "AI-written coaching text in Spanish, including coachNote, race guidance fields, and support session notes."
-    : "AI-written coaching text in English, including coachNote, race guidance fields, and support session notes.";
+    ? "AI-written coaching text in Spanish, including coachNote and race guidance fields."
+    : "AI-written coaching text in English, including coachNote and race guidance fields.";
 }
 
 const DATE_ONLY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
@@ -339,7 +397,7 @@ This app is phone-first. Use effort-based guidance, duration, distance, and mobi
 Apply profile constraints directly from the input object fields. If fitness has stravaCoachingProfile, prioritize its calibrated inputs over self-reported fields.
 If stravaCoachingProfile is present, use its structured signal (pace zones, training indicators, and race target estimates) as the stronger source. If no Strava profile exists, use self-reported fields.
 
-IMPORTANT: Do not create raceDay or dedicated goal-race sessions. The goal race is guidance-only, represented in raceGuidance and race guidance notes.
+IMPORTANT: Do not create strength, mobility, support, raceDay, or dedicated goal-race sessions. The goal race is guidance-only in raceGuidance; the backend will add one info-only Race Day item after validation.
 ${raceDateGuidance}
 
 ${planStartDateGuidance(profileData)}
@@ -350,7 +408,6 @@ ${coachLanguageInstruction(locale)}
 
 Return one complete training plan object matching the JSON schema exactly. Include:
 - sessions (run and rest sessions only).
-- supportSessions for strength/mobility support work.
 - paceZones with all required zone keys.
 - raceGuidance with race day execution guidance.
 - stravaCoachingProfileSnapshot as a curated Strava coaching summary.

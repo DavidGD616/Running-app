@@ -38,14 +38,6 @@ const GoalRaceSchema = z.enum([
   "race_other",
 ]);
 
-const GoalPrioritySchema = z.enum([
-  "priority_just_finish",
-  "priority_finish_strong",
-  "priority_improve_time",
-  "priority_consistency",
-  "priority_general_fitness",
-]);
-
 const ExperienceSchema = z.enum([
   "experience_brand_new",
   "experience_beginner",
@@ -263,7 +255,7 @@ const AcceptedRaceTargetSchema = z.object({
   stretchTimeMs: z.number().int().positive().optional(),
   confidence: AcceptedConfidenceSchema.optional(),
   evidence: EvidenceListSchema.default([]),
-}).superRefine((value, ctx) => {
+}).strict().superRefine((value, ctx) => {
   if (value.stretchTimeMs != null && value.stretchTimeMs <= 0) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
@@ -277,27 +269,12 @@ const GoalProfileSchema = z.object({
   race: GoalRaceSchema,
   hasRaceDate: z.boolean(),
   raceDate: z.string().optional(),
-  priority: GoalPrioritySchema,
-  currentTimeMs: z.number().int().positive().optional(),
-  targetTimeMs: z.number().int().positive().optional(),
-}).superRefine((value, ctx) => {
+}).strict().superRefine((value, ctx) => {
   if (value.hasRaceDate && !value.raceDate) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: "goal.raceDate is required when goal.hasRaceDate is true.",
       path: ["raceDate"],
-    });
-  }
-
-  if (
-    value.priority === "priority_improve_time" &&
-    (value.currentTimeMs == null || value.targetTimeMs == null)
-  ) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message:
-        "goal.currentTimeMs and goal.targetTimeMs are required for priority_improve_time.",
-      path: ["priority"],
     });
   }
 });
@@ -373,7 +350,7 @@ export const ProfessionalPlanInputSchema = z.object({
   unitPreference: z.string().optional(),
   locale: LocaleSchema,
   raceCourseTerrain: RaceCourseTerrainSchema.optional(),
-}).superRefine((input, ctx) => {
+}).strict().superRefine((input, ctx) => {
   if (input.fitnessSource === "manual") {
     if (input.manualFitness == null) {
       ctx.addIssue({
@@ -418,7 +395,7 @@ export const GeneratePlanRequestSchema = z.object({
   requestedBy: z.string().default("onboarding"),
   locale: LocaleSchema.default("en"),
   professionalPlanInput: ProfessionalPlanInputSchema.optional(),
-});
+}).strict();
 
 export function removeSessionsOnRaceDate<T extends { date: string }>(
   sessions: readonly T[],
@@ -447,6 +424,7 @@ export const SessionTypeSchema = z.enum([
   "recoveryRun",
   "crossTraining",
   "restDay",
+  "raceDay",
 ]);
 
 export const TargetZoneSchema = z.enum([
@@ -517,7 +495,11 @@ export const GeneratedSessionSchema = z.object({
   strideRecoverySeconds: z.number().int().nullable(),
   workoutTarget: WorkoutTargetSchema.nullable().optional(),
 }).superRefine((session, ctx) => {
-  if (session.type === "crossTraining" || session.type === "restDay") {
+  if (
+    session.type === "crossTraining" ||
+    session.type === "restDay" ||
+    session.type === "raceDay"
+  ) {
     return;
   }
   if (session.workoutTarget == null) {
@@ -559,20 +541,6 @@ export const RaceGuidanceSchema = z.object({
   weatherCourseNotes: z.string().nullable().optional(),
 });
 
-export const SupportSessionSchema = z.object({
-  schemaVersion: z.number().int().positive(),
-  id: z.string(),
-  date: z.string(),
-  weekNumber: z.number().int().min(1),
-  category: StrengthCategorySchema,
-  load: z.string().nullable().optional(),
-  timingGuidance: z.string().nullable().optional(),
-  interferenceRule: z.string().nullable().optional(),
-  taperAdjustment: z.string().nullable().optional(),
-  durationMinutes: z.number().int().positive().nullable().optional(),
-  notes: z.string().nullable().optional(),
-});
-
 export const StravaCoachingProfileSnapshotSchema = z.object({
   dataConfidence: AcceptedConfidenceSchema,
   terrain: StravaTerrainSchema.optional(),
@@ -600,11 +568,10 @@ export const GeneratedPlanSchema = z.object({
   ]),
   generatedLocale: LocaleSchema,
   sessions: z.array(GeneratedSessionSchema),
-  supportSessions: z.array(SupportSessionSchema).default([]),
   paceZones: StravaPaceZonesSchema,
   raceGuidance: RaceGuidanceSchema,
   stravaCoachingProfileSnapshot: StravaCoachingProfileSnapshotSchema,
-});
+}).strict();
 
 export const trainingPlanResponseJsonSchema = {
   type: "object",
@@ -641,6 +608,7 @@ export const trainingPlanResponseJsonSchema = {
               "recoveryRun",
               "crossTraining",
               "restDay",
+              "raceDay",
             ],
           },
           phase: {
@@ -727,42 +695,6 @@ export const trainingPlanResponseJsonSchema = {
           "strideSeconds",
           "strideRecoverySeconds",
           "workoutTarget",
-        ],
-        additionalProperties: false,
-      },
-    },
-    supportSessions: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          schemaVersion: { type: "integer", minimum: 1 },
-          id: { type: "string" },
-          date: { type: "string" },
-          weekNumber: { type: "integer", minimum: 1 },
-          category: {
-            type: "string",
-            enum: ["lower_body", "upper_body", "core_mobility", "full_body"],
-          },
-          load: { type: ["string", "null"] },
-          timingGuidance: { type: ["string", "null"] },
-          interferenceRule: { type: ["string", "null"] },
-          taperAdjustment: { type: ["string", "null"] },
-          durationMinutes: { type: ["integer", "null"], minimum: 1 },
-          notes: { type: ["string", "null"] },
-        },
-        required: [
-          "schemaVersion",
-          "id",
-          "date",
-          "weekNumber",
-          "category",
-          "load",
-          "timingGuidance",
-          "interferenceRule",
-          "taperAdjustment",
-          "durationMinutes",
-          "notes",
         ],
         additionalProperties: false,
       },
@@ -1159,7 +1091,6 @@ export const trainingPlanResponseJsonSchema = {
     "raceType",
     "generatedLocale",
     "sessions",
-    "supportSessions",
     "paceZones",
     "raceGuidance",
     "stravaCoachingProfileSnapshot",

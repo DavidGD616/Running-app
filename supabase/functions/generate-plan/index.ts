@@ -15,11 +15,10 @@ import {
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
-  normalizeSupportSessions,
-  normalizeWeekNumbersFromDates,
   normalizeTaper,
   normalizeTrainingDayCount,
   normalizeWeeklyVolumeRamp,
+  normalizeWeekNumbersFromDates,
   normalizeWorkoutTypesByPhase,
   phaseForWeek,
   placeLongRunsOnPreferredDay,
@@ -336,19 +335,11 @@ Deno.serve(async (req) => {
     generationProfileWithPlanStartDate,
     locale,
   );
-  const normalizedSupportSessions = normalizeSupportSessions(
-    safeGeneratedPlan.supportSessions,
-    preRaceTaperedSessions,
-    generationProfileWithPlanStartDate,
-    safeGeneratedPlan.totalWeeks,
-    locale,
-    resolvedPlanStartDate,
-  );
-  const filteredSupportSessions = removeSessionsOnRaceDate(
-    normalizedSupportSessions,
-    raceDate,
-  );
-  const idNormalizedSessions = normalizeSessionIds(preRaceTaperedSessions);
+  const raceDayDate = raceDate ?? lastSessionDate(preRaceTaperedSessions);
+  const sessionsBeforeRaceDayInfo = raceDayDate == null
+    ? preRaceTaperedSessions
+    : removeSessionsOnRaceDate(preRaceTaperedSessions, raceDayDate);
+  const idNormalizedSessions = normalizeSessionIds(sessionsBeforeRaceDayInfo);
 
   const sanitizedForValidation = withoutGoalDate(
     generationProfileWithPlanStartDate,
@@ -388,6 +379,14 @@ Deno.serve(async (req) => {
     status: "upcoming",
     workoutSteps: buildWorkoutSteps(session),
   }));
+  const sessionsWithRaceDayInfo = raceDayDate == null ? sessionsWithSteps : [
+    ...sessionsWithSteps,
+    buildRaceDayInfoSession(
+      raceDayDate,
+      safeGeneratedPlan.totalWeeks,
+      locale,
+    ),
+  ];
 
   const adminClient = createClient(
     Deno.env.get("SUPABASE_URL")!,
@@ -405,8 +404,7 @@ Deno.serve(async (req) => {
     ...safeGeneratedPlan,
     id: versionId,
     currentWeekNumber: safeGeneratedPlan.currentWeekNumber ?? 1,
-    supportSessions: filteredSupportSessions,
-    sessions: sessionsWithSteps,
+    sessions: sessionsWithRaceDayInfo,
   };
 
   const { error: insertError } = await adminClient.from("plan_versions").insert(
@@ -436,6 +434,50 @@ Deno.serve(async (req) => {
     headers: { "Content-Type": "application/json" },
   });
 });
+
+function lastSessionDate(sessions: { date: string }[]): string | null {
+  const sorted = sessions
+    .map((session) => session.date?.slice(0, 10))
+    .filter((date): date is string =>
+      typeof date === "string" && date.length > 0
+    )
+    .sort();
+  return sorted.length === 0 ? null : sorted[sorted.length - 1];
+}
+
+function buildRaceDayInfoSession(
+  date: string,
+  totalWeeks: number,
+  locale: CoachLocale,
+) {
+  return {
+    id: "race-day-info",
+    date: date.slice(0, 10),
+    weekNumber: Math.max(1, totalWeeks),
+    type: "raceDay",
+    phase: "taperRace",
+    distanceKm: null,
+    durationMinutes: null,
+    coachNote: locale === "es"
+      ? "Revisa tu estrategia de carrera. Esta es una guía, no una sesión para iniciar."
+      : "Review your race strategy. This is guidance, not a workout to start.",
+    targetZone: null,
+    warmUpMinutes: null,
+    coolDownMinutes: null,
+    intervalReps: null,
+    intervalRepDistanceMeters: null,
+    intervalRecoverySeconds: null,
+    strideReps: null,
+    strideSeconds: null,
+    strideRecoverySeconds: null,
+    workoutTarget: null,
+    description: locale === "es"
+      ? "Estrategia de carrera y recordatorios finales."
+      : "Race strategy and final reminders.",
+    status: "upcoming",
+    workoutSteps: [],
+  };
+}
 
 function normalizeLocale(value: unknown): CoachLocale {
   if (typeof value === "string") {

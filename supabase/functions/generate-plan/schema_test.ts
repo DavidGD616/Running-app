@@ -11,9 +11,6 @@ const professionalPlanInputStrava = {
     race: "race_half_marathon",
     hasRaceDate: true,
     raceDate: "2026-10-18T00:00:00.000Z",
-    priority: "priority_improve_time",
-    currentTimeMs: 7260000,
-    targetTimeMs: 6900000,
   },
   fitnessSource: "strava",
   stravaCoachingProfile: {
@@ -114,20 +111,25 @@ const generatedPlan = {
         effortCue: "Easy effort",
       },
     },
-  ],
-  supportSessions: [
     {
-      schemaVersion: 1,
-      id: "s1",
-      date: "2026-10-02",
-      weekNumber: 1,
-      category: "lower_body",
-      durationMinutes: 40,
-      load: "moderate",
-      timingGuidance: "before long run",
-      interferenceRule: "keep low intensity",
-      taperAdjustment: null,
-      notes: "Tempo work",
+      id: "race-day-info",
+      date: "2026-10-18",
+      weekNumber: 8,
+      type: "raceDay",
+      phase: "taperRace",
+      distanceKm: null,
+      durationMinutes: null,
+      coachNote: "Open race guidance.",
+      targetZone: null,
+      warmUpMinutes: null,
+      coolDownMinutes: null,
+      intervalReps: null,
+      intervalRepDistanceMeters: null,
+      intervalRecoverySeconds: null,
+      strideReps: null,
+      strideSeconds: null,
+      strideRecoverySeconds: null,
+      workoutTarget: null,
     },
   ],
   paceZones: {
@@ -257,15 +259,84 @@ Deno.test("GeneratePlanRequestSchema rejects high-confidence strava plus manualF
   }, /high-confidence Strava data cannot include manualFitness/);
 });
 
-Deno.test("GeneratedPlanSchema accepts new required fields and support sessions", () => {
+Deno.test("GeneratePlanRequestSchema rejects removed goal priority field", () => {
+  assert.throws(() => {
+    GeneratePlanRequestSchema.parse({
+      professionalPlanInput: {
+        ...professionalPlanInputStrava,
+        goal: {
+          ...professionalPlanInputStrava.goal,
+          priority: "priority_improve_time",
+        },
+      },
+    });
+  }, /priority|unrecognized/i);
+});
+
+Deno.test("GeneratePlanRequestSchema rejects removed race target time fields", () => {
+  assert.throws(() => {
+    GeneratePlanRequestSchema.parse({
+      professionalPlanInput: {
+        ...professionalPlanInputStrava,
+        acceptedRaceTarget: {
+          ...professionalPlanInputStrava.acceptedRaceTarget,
+          currentTimeMs: 7200000,
+          targetTimeMs: 6900000,
+        },
+      },
+    });
+  }, /currentTimeMs|targetTimeMs|unrecognized/i);
+});
+
+Deno.test("GeneratePlanRequestSchema rejects removed top-level timing fields", () => {
+  assert.throws(() => {
+    GeneratePlanRequestSchema.parse({
+      professionalPlanInput: {
+        ...professionalPlanInputStrava,
+        goalPriority: "priority_improve_time",
+        currentTimeMs: 7200000,
+        targetTimeMs: 6900000,
+      },
+    });
+  }, /goalPriority|currentTimeMs|targetTimeMs|unrecognized/i);
+});
+
+Deno.test("GeneratePlanRequestSchema rejects removed request-level timing fields", () => {
+  assert.throws(() => {
+    GeneratePlanRequestSchema.parse({
+      requestedBy: "onboarding",
+      locale: "en",
+      currentTimeMs: 7200000,
+      targetTimeMs: 6900000,
+    });
+  }, /currentTimeMs|targetTimeMs|unrecognized/i);
+});
+
+Deno.test("GeneratedPlanSchema accepts new required fields and race day info session", () => {
   const parsed = GeneratedPlanSchema.parse({
     ...generatedPlan,
     generatedLocale: "en",
   });
   assert.equal(parsed.generatedLocale, "en");
   assert.equal(parsed.raceGuidance.raceDayExecution, "Evening race plan.");
-  assert.equal(parsed.supportSessions.length, 1);
+  assert.equal(parsed.sessions.at(-1)?.type, "raceDay");
   assert.equal(parsed.paceZones.recovery.paceMinSecPerKm, 360);
+});
+
+Deno.test("GeneratedPlanSchema rejects generated supportSessions output", () => {
+  assert.throws(() => {
+    GeneratedPlanSchema.parse({
+      ...generatedPlan,
+      supportSessions: [
+        {
+          id: "support-1",
+          date: "2026-10-02",
+          weekNumber: 1,
+          category: "lower_body",
+        },
+      ],
+    });
+  }, /supportSessions|unrecognized/i);
 });
 
 Deno.test("GeneratedPlanSchema accepts nullable optional race guidance fields", () => {

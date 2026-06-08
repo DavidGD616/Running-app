@@ -12,9 +12,6 @@ const messageProfile = {
     race: "race_half_marathon",
     hasRaceDate: true,
     raceDate: "2026-10-18T00:00:00.000Z",
-    priority: "priority_improve_time",
-    currentTimeMs: 7260000,
-    targetTimeMs: 6900000,
   },
   acceptedRaceTarget: {
     distanceKm: 21.097,
@@ -90,16 +87,25 @@ const parseProfile = {
         effortCue: "easy effort",
       },
     },
-  ],
-  supportSessions: [
     {
-      schemaVersion: 1,
-      id: "s1",
-      date: "2026-10-02",
-      weekNumber: 1,
-      category: "lower_body",
-      durationMinutes: 40,
-      notes: "Mobility + strength",
+      id: "race-day-info",
+      date: "2026-10-18",
+      weekNumber: 8,
+      type: "raceDay",
+      phase: "taperRace",
+      distanceKm: null,
+      durationMinutes: null,
+      coachNote: "Open race guidance.",
+      targetZone: null,
+      warmUpMinutes: null,
+      coolDownMinutes: null,
+      intervalReps: null,
+      intervalRepDistanceMeters: null,
+      intervalRecoverySeconds: null,
+      strideReps: null,
+      strideSeconds: null,
+      strideRecoverySeconds: null,
+      workoutTarget: null,
     },
   ],
   paceZones: {
@@ -271,6 +277,13 @@ Deno.test("buildGeneratePlanMessages guides race-day as guidance-only", () => {
   assert.ok(!systemMessage.content.includes("goal race is the final session"));
 });
 
+Deno.test("buildGeneratePlanMessages excludes support session generation", () => {
+  const [systemMessage] = buildGeneratePlanMessages(messageProfile, "en", 8);
+  assert.ok(systemMessage.content.includes("Do not create strength"));
+  assert.ok(systemMessage.content.includes("support"));
+  assert.ok(!systemMessage.content.includes("support session notes"));
+});
+
 Deno.test("parseGeneratedPlanContent accepts nullable optional race guidance fields", () => {
   const planWithNullGuidanceFields = {
     ...parseProfile,
@@ -315,10 +328,27 @@ Deno.test("parseGeneratedPlanContent rejects non-positive primaryTargetSec", () 
   }, /Number must be greater than 0/i);
 });
 
+Deno.test("parseGeneratedPlanContent rejects generated supportSessions output", () => {
+  const planWithSupportSessions = {
+    ...parseProfile,
+    supportSessions: [
+      {
+        id: "support-1",
+        date: "2026-10-02",
+        weekNumber: 1,
+        category: "lower_body",
+      },
+    ],
+  };
+
+  assert.throws(() => {
+    parseGeneratedPlanContent(JSON.stringify(planWithSupportSessions));
+  }, /supportSessions|unrecognized/i);
+});
+
 Deno.test("trainingPlanResponseJsonSchema requires new generated output fields", () => {
   const requiredFields = trainingPlanResponseJsonSchema.required as string[];
   assert.ok(requiredFields.includes("generatedLocale"));
-  assert.ok(requiredFields.includes("supportSessions"));
   assert.ok(requiredFields.includes("paceZones"));
   assert.ok(requiredFields.includes("raceGuidance"));
   assert.ok(requiredFields.includes("stravaCoachingProfileSnapshot"));
@@ -569,6 +599,18 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
     activityStreams: [{ stream: "bad" }],
     upstreamErrorBodies: [{ body: "bad" }],
     ...messageProfile,
+    goal: {
+      ...messageProfile.goal,
+      priority: "priority_improve_time",
+    },
+    acceptedRaceTarget: {
+      ...messageProfile.acceptedRaceTarget,
+      currentTimeMs: 7200000,
+      targetTimeMs: 6900000,
+    },
+    goalPriority: "priority_improve_time",
+    currentTimeMs: 7200000,
+    targetTimeMs: 6900000,
     manualFitness: {
       experience: "experience_intermediate",
       weeklyVolume: "weekly_volume_3",
@@ -627,6 +669,12 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
   );
   assert.equal(userPrompt.activities, undefined);
   assert.equal(userPrompt.tokens, undefined);
+  assert.equal(userPrompt.goal.priority, undefined);
+  assert.equal(userPrompt.acceptedRaceTarget.currentTimeMs, undefined);
+  assert.equal(userPrompt.acceptedRaceTarget.targetTimeMs, undefined);
+  assert.equal(userPrompt.goalPriority, undefined);
+  assert.equal(userPrompt.currentTimeMs, undefined);
+  assert.equal(userPrompt.targetTimeMs, undefined);
   assert.equal(userPrompt.activityStreams, undefined);
   assert.equal(userPrompt.upstreamErrorBodies, undefined);
   assert.equal(
@@ -668,6 +716,18 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
     false,
   );
   assert.equal(
+    JSON.stringify(userPrompt).includes("priority_improve_time"),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(userPrompt).includes("currentTimeMs"),
+    false,
+  );
+  assert.equal(
+    JSON.stringify(userPrompt).includes("targetTimeMs"),
+    false,
+  );
+  assert.equal(
     JSON.stringify(userPrompt).includes("accessToken"),
     false,
   );
@@ -692,6 +752,21 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
     unsafeProfile as Record<string, unknown>,
   );
   assert.equal(sanitized.activities, undefined);
+  assert.equal(
+    (sanitized.goal as Record<string, unknown>)?.priority,
+    undefined,
+  );
+  assert.equal(
+    (sanitized.acceptedRaceTarget as Record<string, unknown>)?.currentTimeMs,
+    undefined,
+  );
+  assert.equal(
+    (sanitized.acceptedRaceTarget as Record<string, unknown>)?.targetTimeMs,
+    undefined,
+  );
+  assert.equal(sanitized.goalPriority, undefined);
+  assert.equal(sanitized.currentTimeMs, undefined);
+  assert.equal(sanitized.targetTimeMs, undefined);
   assert.equal(
     (sanitized.fitness as Record<string, unknown> | undefined)
       ?.stravaCoachingProfile,
