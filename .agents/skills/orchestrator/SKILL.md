@@ -28,6 +28,10 @@ When this skill triggers:
 
 ## Default Workflow
 
+For RunFlow implementation work, use a sequential sub-agent workflow by default.
+Do not run multiple implementation tasks in parallel unless the user explicitly
+asks for parallel orchestration in that turn.
+
 Use this sequence unless the task is small enough for fewer roles:
 
 1. **Explorer**: read-only codebase inspection.
@@ -39,11 +43,16 @@ Use this sequence unless the task is small enough for fewer roles:
 5. **Main Codex**: integrate, resolve findings, run tests, commit, and deploy
    only when needed or explicitly requested.
 
+Finish one implementation task completely before starting the next one:
+worker result, local verification, reviewer pass, fixes if needed, re-review,
+final verification, and task-sized commit.
+
 For full role guidance, read `references/roles.md`.
 
 ## Rules
 
 - Use one coder per task.
+- Keep only one active implementation worker at a time by default.
 - Give every coder an explicit write scope.
 - Tell coders they are not alone in the codebase and must not revert unrelated
   or user-made changes.
@@ -59,6 +68,13 @@ For full role guidance, read `references/roles.md`.
 - The main Codex orchestrator owns final integration judgment, final
   verification, and commit/deploy decisions. Sub-agent checks can inform those
   decisions, but they do not replace them.
+- In orchestrated implementation, the main Codex agent should not directly edit
+  implementation files unless the user explicitly allows it or a tiny
+  integration/cleanup change is faster and lower risk than another worker pass.
+  The main agent may inspect diffs, run tests, remove generated artifacts,
+  manage commits, and route fixes through workers.
+- Close completed agents before spawning new ones when the active-agent limit
+  could be reached.
 - Deploy only when the task changes deployed backend code or the user asks for a
   deployment.
 - Never commit or deploy if verification has known blocking failures, unless the
@@ -68,11 +84,16 @@ For full role guidance, read `references/roles.md`.
 
 When the user asks for orchestration and implementation:
 
-1. Run relevant tests/checks.
-2. Run reviewer pass.
-3. Fix blocking findings.
-4. Commit the task after verification passes.
-5. If backend Edge Functions changed and the user has asked to fix the live
+1. Assign exactly one bounded implementation task to one coder.
+2. Run relevant tests/checks after the coder returns.
+3. Run reviewer pass.
+4. Fix blocking findings through a follow-up worker pass when the fix is more
+   than tiny cleanup.
+5. Re-run verification and re-review until there are no blocking findings.
+6. Commit the task after verification passes.
+7. Do not start the next implementation task until the current task is
+   committed.
+8. If backend Edge Functions changed and the user has asked to fix the live
    issue, deploy the affected function after commit.
 
 ## References
