@@ -30,6 +30,10 @@ Rules:
 
 Use for one bounded implementation task.
 
+Model:
+- Use `gpt-5.3-codex-spark` for coder agents unless the user explicitly asks
+  for a different coder model.
+
 Coder prompt must include:
 - repository path
 - branch/context if relevant
