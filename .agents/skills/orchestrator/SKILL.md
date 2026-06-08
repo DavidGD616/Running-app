@@ -52,7 +52,13 @@ For full role guidance, read `references/roles.md`.
 - Do not delegate the immediate critical-path task if the main agent can do it
   faster and the sub-agent would block progress.
 - Do meaningful non-overlapping local work while sub-agents run.
+- Treat every implementation plan as review-gated unless the user explicitly
+  asks for a lighter workflow. Scope each task, implement it, review it, verify
+  it, and commit it independently when commits are part of the requested work.
 - Keep commits task-sized.
+- The main Codex orchestrator owns final integration judgment, final
+  verification, and commit/deploy decisions. Sub-agent checks can inform those
+  decisions, but they do not replace them.
 - Deploy only when the task changes deployed backend code or the user asks for a
   deployment.
 - Never commit or deploy if verification has known blocking failures, unless the

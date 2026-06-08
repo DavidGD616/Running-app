@@ -12,8 +12,10 @@
 8. Spawn reviewer for correctness/security/regression review.
 9. Fix reviewer findings.
 10. Re-run tests and re-review if findings were blocking.
-11. Commit the completed task.
-12. Deploy only when appropriate.
+11. Commit the completed task only after reviewer approval and passing relevant
+    verification.
+12. Update the plan/status notes when the task is tracked in a plan document.
+13. Deploy only when appropriate.
 
 ## Debugging Template
 
