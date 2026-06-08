@@ -1,7 +1,25 @@
 import type { GeneratedPlan, GeneratedSession } from "./schema.ts";
-import type { CoachingBrief } from "./coaching-brief.ts";
+import type {
+  CoachingBrief,
+  CoachingRaceType,
+  ReadinessLevel,
+} from "./coaching-brief.ts";
 
 type RacePrepPhase = "base" | "build" | "specific" | "peak" | "taperRace";
+type PlanRaceKey =
+  | "race_5k"
+  | "race_10k"
+  | "race_half_marathon"
+  | "race_marathon";
+type ExperienceKey =
+  | "experience_brand_new"
+  | "experience_beginner"
+  | "experience_intermediate"
+  | "experience_experienced";
+type RuleContext = {
+  race: PlanRaceKey | string;
+  experience: ExperienceKey | string;
+};
 
 type PeakLongRunRange = {
   minKm: number;
@@ -12,12 +30,14 @@ type PeakLongRunRange = {
 export function peakLongRunRangeKm(
   profileData: Record<string, unknown>,
 ): PeakLongRunRange {
-  const race = raceFromProfile(profileData);
-  const experience = experienceFromProfile(profileData);
+  return peakLongRunRangeFor(ruleContextFor(profileData));
+}
 
-  switch (race) {
+function peakLongRunRangeFor(context: RuleContext): PeakLongRunRange {
+  switch (context.race) {
     case "race_5k":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 3, targetKm: 5, maxKm: 7 };
         case "experience_intermediate":
@@ -27,7 +47,8 @@ export function peakLongRunRangeKm(
       }
       break;
     case "race_10k":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 6, targetKm: 8, maxKm: 10 };
         case "experience_intermediate":
@@ -37,7 +58,8 @@ export function peakLongRunRangeKm(
       }
       break;
     case "race_half_marathon":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 11, targetKm: 13, maxKm: 16 };
         case "experience_intermediate":
@@ -47,7 +69,8 @@ export function peakLongRunRangeKm(
       }
       break;
     case "race_marathon":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 24, targetKm: 26, maxKm: 30 };
         case "experience_intermediate":
@@ -59,6 +82,64 @@ export function peakLongRunRangeKm(
   }
 
   return { minKm: 5, targetKm: 10, maxKm: 15 };
+}
+
+function ruleContextFor(
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null | undefined = null,
+): RuleContext {
+  return {
+    race: raceKeyFromCoachingBrief(coachingBrief) ?? raceFromProfile(profileData),
+    experience: experienceKeyFromCoachingBrief(coachingBrief) ??
+      experienceFromProfile(profileData),
+  };
+}
+
+function raceKeyFromCoachingBrief(
+  coachingBrief: CoachingBrief | null | undefined,
+): PlanRaceKey | null {
+  if (coachingBrief == null) return null;
+  return raceKeyFromCoachingRaceType(coachingBrief.raceType);
+}
+
+function raceKeyFromCoachingRaceType(
+  raceType: CoachingRaceType,
+): PlanRaceKey | null {
+  switch (raceType) {
+    case "fiveK":
+      return "race_5k";
+    case "tenK":
+      return "race_10k";
+    case "halfMarathon":
+      return "race_half_marathon";
+    case "marathon":
+      return "race_marathon";
+    case "other":
+      return null;
+  }
+}
+
+function experienceKeyFromCoachingBrief(
+  coachingBrief: CoachingBrief | null | undefined,
+): ExperienceKey | null {
+  if (coachingBrief == null) return null;
+  return experienceKeyFromReadinessLevel(coachingBrief.readinessLevel);
+}
+
+function experienceKeyFromReadinessLevel(
+  readinessLevel: ReadinessLevel,
+): ExperienceKey {
+  switch (readinessLevel) {
+    case "raceReady":
+      return "experience_experienced";
+    case "prepared":
+      return "experience_intermediate";
+    case "developing":
+      return "experience_beginner";
+    case "underprepared":
+    case "unsupported":
+      return "experience_brand_new";
+  }
 }
 
 function raceFromProfile(profileData: Record<string, unknown>): string {
@@ -282,8 +363,7 @@ export function normalizeWorkoutTypesByPhase(
   locale: CoachNoteLocale = "en",
   coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const race = raceFromProfile(profileData);
-  const experience = experienceFromProfile(profileData);
+  const context = ruleContextFor(profileData, coachingBrief);
   const _raceDate = goalRaceDate(profileData);
 
   return sessions.map((session) => {
@@ -296,7 +376,11 @@ export function normalizeWorkoutTypesByPhase(
       profileData,
       coachingBrief,
     );
-    const policy = workoutPolicyForPhase(phase, race, experience);
+    const policy = workoutPolicyForPhase(
+      phase,
+      context.race,
+      context.experience,
+    );
 
     if (policy.allowedTypes.includes(session.type)) return session;
 
@@ -376,7 +460,10 @@ function basePhasePolicy(experience: string): WorkoutPolicy {
 }
 
 function buildPhasePolicy(experience: string): WorkoutPolicy {
-  if (experience === "experience_beginner") {
+  if (
+    experience === "experience_brand_new" ||
+    experience === "experience_beginner"
+  ) {
     return {
       allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay", "fartlek"],
       maxStressDays: 2,
@@ -448,6 +535,20 @@ function specificPhasePolicy(
 }
 
 function peakPhasePolicy(experience: string): WorkoutPolicy {
+  if (experience === "experience_brand_new") {
+    return {
+      allowedTypes: [
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+        "fartlek",
+        "progressionRun",
+      ],
+      maxStressDays: 2,
+    };
+  }
+
   const allowed: string[] = [
     "easyRun",
     "recoveryRun",
@@ -2289,7 +2390,7 @@ export function normalizePeakLongRun(
   locale: CoachNoteLocale = "en",
   coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const range = peakLongRunRangeKm(profileData);
+  const range = peakLongRunRangeFor(ruleContextFor(profileData, coachingBrief));
   const measuredLongestRecentRunKm = longRunHistoryFloor(profileData);
   const historyFloorKm = measuredLongestRecentRunKm == null
     ? null

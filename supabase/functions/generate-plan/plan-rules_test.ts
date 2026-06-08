@@ -2229,6 +2229,199 @@ Deno.test("normalizePeakLongRun ignores limited evidence when guardrails are wea
   );
 });
 
+Deno.test(
+  "normalizeWorkoutTypesByPhase uses coaching brief readiness over missing profile experience",
+  () => {
+    const sessions = [
+      session({
+        id: "w3-progress",
+        date: "2026-04-16",
+        type: "progressionRun",
+        weekNumber: 3,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_10k", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    };
+
+    const withoutBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      8,
+      "en",
+    );
+    assert.equal(
+      findSession(withoutBrief, "w3-progress").type,
+      "fartlek",
+      "missing profile experience should use beginner-only workout policy",
+    );
+
+    const withPreparedBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      8,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        planLengthWeeks: 8,
+      }),
+    );
+    assert.equal(
+      findSession(withPreparedBrief, "w3-progress").type,
+      "progressionRun",
+      "prepared brief should map to intermediate and allow progression in build",
+    );
+  },
+);
+
+Deno.test(
+  "normalizeWorkoutTypesByPhase race-ready brief unlocks peak threshold training",
+  () => {
+    const sessions = [
+      session({
+        id: "w10-threshold",
+        date: "2026-05-02",
+        type: "thresholdRun",
+        weekNumber: 10,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    };
+
+    const withoutBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      12,
+      "en",
+    );
+    assert.equal(
+      findSession(withoutBrief, "w10-threshold").type,
+      "tempoRun",
+      "missing profile experience should not keep threshold in peak",
+    );
+
+    const withRaceReadyBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "raceReady",
+        planLengthWeeks: 12,
+      }),
+    );
+    assert.equal(
+      findSession(withRaceReadyBrief, "w10-threshold").type,
+      "thresholdRun",
+      "race-ready brief should map to experienced and keep threshold in peak",
+    );
+  },
+);
+
+Deno.test("normalizeWorkoutTypesByPhase keeps brand-new brief sessions conservative", () => {
+  const sessions = [
+    session({
+      id: "w5-racepace",
+      date: "2026-04-22",
+      type: "racePaceRun",
+      weekNumber: 5,
+    }),
+  ];
+
+  const result = normalizeWorkoutTypesByPhase(
+    sessions,
+    {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    },
+    8,
+    "en",
+    coachingBriefFixture({
+      raceType: "marathon",
+      readinessLevel: "underprepared",
+      planLengthWeeks: 8,
+    }),
+  );
+
+  assert.equal(
+    findSession(result, "w5-racepace").type,
+    "fartlek",
+    "underprepared/brand-new should remain conservative in specific phase",
+  );
+});
+
+Deno.test(
+  "normalizePeakLongRun uses coaching brief readiness when profile is missing experience",
+  () => {
+    const createSessions = (): GeneratedSession[] => [
+      session({
+        id: "w10-long",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 10,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-race",
+        date: "2026-05-16",
+        type: "racePaceRun",
+        distanceKm: 42.2,
+        weekNumber: 12,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    };
+
+    const prepared = normalizePeakLongRun(
+      createSessions(),
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "prepared",
+        planLengthWeeks: 12,
+      }),
+    );
+    assert.equal(
+      findSession(prepared, "w10-long").distanceKm,
+      30,
+      "prepared brief should resolve to intermediate peak long-run target",
+    );
+
+    const raceReady = normalizePeakLongRun(
+      createSessions(),
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "raceReady",
+        planLengthWeeks: 12,
+      }),
+    );
+    assert.equal(
+      findSession(raceReady, "w10-long").distanceKm,
+      32,
+      "race-ready brief should resolve to experienced peak long-run target",
+    );
+  },
+);
+
 Deno.test("normalizePeakLongRun does not update duration when distance unchanged", () => {
   const sessions = [
     session({
