@@ -4,7 +4,7 @@ description: >
   Use when the user asks to implement or investigate work "with orchestration",
   "with sub agents", "using specialists", "use the orchestrator", "don't stop
   until reviewer approves", or mentions explorer, researcher, coder, scribe, or
-  reviewer agents. Coordinates scoped sub-agents for RunFlow work while the main
+  reviewer agents. Coordinates scoped sub-agents while the main
   Codex agent owns integration, verification, commits, and deployment decisions.
 ---
 
@@ -28,7 +28,7 @@ When this skill triggers:
 
 ## Default Workflow
 
-For RunFlow implementation work, use a sequential sub-agent workflow by default.
+For implementation work, use a sequential sub-agent workflow by default.
 Do not run multiple implementation tasks in parallel unless the user explicitly
 asks for parallel orchestration in that turn.
 
