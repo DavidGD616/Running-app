@@ -12,6 +12,8 @@ import '../../../goals/domain/models/goal.dart';
 import '../../../goals/presentation/goal_presenter.dart';
 import '../../../goals/presentation/goal_provider.dart';
 import '../../../profile/domain/models/runner_profile.dart';
+import '../../../training_plan/presentation/professional_plan_metadata_presenter.dart';
+import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -90,6 +92,10 @@ class PlanReadyScreen extends ConsumerWidget {
     }
     final answers = onboardingAsync.value ?? const RunnerProfileDraft();
     final goal = ref.watch(onboardingGoalProvider);
+    final plan = ref.watch(trainingPlanProvider).value;
+    final metadataRows = plan == null
+        ? const <ProfessionalPlanMetadataRow>[]
+        : professionalPlanMetadataRows(plan: plan, l10n: l10n);
     final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
     final primaryLabel = switch (mode) {
       PlanReadyFlowMode.onboarding => l10n.planReadyStartPlan,
@@ -194,6 +200,11 @@ class PlanReadyScreen extends ConsumerWidget {
 
                     const SizedBox(height: AppSpacing.xl),
 
+                    if (metadataRows.isNotEmpty) ...[
+                      _PlanMetadataCard(rows: metadataRows),
+                      const SizedBox(height: AppSpacing.xl),
+                    ],
+
                     // Description paragraph
                     Text(
                       l10n.planReadyDescription,
@@ -248,6 +259,49 @@ class PlanReadyScreen extends ConsumerWidget {
 
 // ── Private widget ────────────────────────────────────────────────────────────
 
+class _PlanMetadataCard extends StatelessWidget {
+  const _PlanMetadataCard({required this.rows});
+
+  final List<ProfessionalPlanMetadataRow> rows;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundSecondary,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.planMetadataTitle,
+            style: AppTypography.labelLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.base),
+          ...rows.asMap().entries.map((entry) {
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: entry.key == rows.length - 1 ? 0 : AppSpacing.base,
+              ),
+              child: _PlanDetailRow(
+                iconAsset: 'assets/icons/activity.svg',
+                label: entry.value.label,
+                value: entry.value.value,
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
 class _PlanDetailRow extends StatelessWidget {
   const _PlanDetailRow({
     required this.iconAsset,
@@ -284,18 +338,20 @@ class _PlanDetailRow extends StatelessWidget {
           ),
         ),
         const SizedBox(width: AppSpacing.base),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: AppTypography.caption.copyWith(
-                color: AppColors.textSecondary,
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppTypography.caption.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            Text(value, style: AppTypography.titleMedium),
-          ],
+              const SizedBox(height: 2),
+              Text(value, style: AppTypography.titleMedium),
+            ],
+          ),
         ),
       ],
     );

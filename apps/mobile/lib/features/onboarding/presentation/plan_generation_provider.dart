@@ -8,6 +8,7 @@ import '../../localization/presentation/locale_provider.dart';
 import '../../training_plan/data/supabase_plan_version_repository.dart';
 import '../../training_plan/domain/models/plan_version.dart';
 import '../../training_plan/domain/models/training_plan.dart';
+import '../../training_plan/presentation/training_plan_provider.dart';
 import '../domain/models/professional_plan_input.dart';
 
 typedef PlanGenerationFunctionClient =
@@ -118,6 +119,7 @@ class PlanGenerationNotifier extends Notifier<PlanGenerationState> {
         plan: plan,
       );
       await ref.read(planVersionRepositoryProvider).saveActivePlan(version);
+      ref.invalidate(trainingPlanProvider);
 
       state = PlanGenerationSuccess(data['versionId'] as String);
     } on TimeoutException {

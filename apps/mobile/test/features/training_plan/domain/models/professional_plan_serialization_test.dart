@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
+import 'package:running_app/features/training_plan/domain/models/professional_plan_metadata.dart';
 import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/support_plan_session.dart';
@@ -27,6 +28,32 @@ void main() {
         ],
         generatedLocale: 'es',
         paceZones: _paceZones(),
+        coachingBriefSnapshot: _coachingBriefSnapshot(),
+        planRationale: const ['Used measured training evidence.'],
+        evidenceTarget: const CoachingTarget(
+          distanceKm: 21.097,
+          time: Duration(hours: 1, minutes: 38),
+          paceSecPerKm: 279,
+          confidence: CoachingConfidence.high,
+          source: CoachingSource.strava,
+          supported: true,
+          reason: 'Backed by recent long-run and threshold evidence.',
+        ),
+        ambitiousTarget: const CoachingTarget(
+          distanceKm: 21.097,
+          time: Duration(hours: 1, minutes: 34),
+          paceSecPerKm: 267,
+          confidence: CoachingConfidence.limited,
+          source: CoachingSource.strava,
+          supported: false,
+          reason: 'Too aggressive for current evidence.',
+        ),
+        confidence: CoachingConfidence.high,
+        phaseStrategy: const [
+          PhaseStrategy(phase: CoachingPhase.base, weeks: 2),
+          PhaseStrategy(phase: CoachingPhase.build, weeks: 4),
+          PhaseStrategy(phase: CoachingPhase.taperRace, weeks: 2),
+        ],
         raceGuidance: const RaceGuidance(
           raceDayExecution: 'Start controlled, finish strong.',
           warmup: '10 min jog + strides',
@@ -50,6 +77,16 @@ void main() {
       expect(restored, isNotNull);
       expect(restored!.toJson(), plan.toJson());
       expect(restored.generatedLocale, 'es');
+      expect(restored.coachingBriefSnapshot, isNotNull);
+      expect(
+        restored.coachingBriefSnapshot!.readinessLevel,
+        CoachingReadinessLevel.prepared,
+      );
+      expect(restored.planRationale, ['Used measured training evidence.']);
+      expect(restored.evidenceTarget?.supported, isTrue);
+      expect(restored.ambitiousTarget?.supported, isFalse);
+      expect(restored.confidence, CoachingConfidence.high);
+      expect(restored.phaseStrategy.last.phase, CoachingPhase.taperRace);
       expect(restored.paceZones, isNotNull);
       expect(restored.paceZones!.tempo.paceMinSecPerKm, 270);
       expect(restored.raceGuidance, isNotNull);
@@ -92,6 +129,12 @@ void main() {
         expect(restored, isNotNull);
         expect(restored!.id, 'legacy-plan-1');
         expect(restored.generatedLocale, 'en');
+        expect(restored.coachingBriefSnapshot, isNull);
+        expect(restored.planRationale, isEmpty);
+        expect(restored.evidenceTarget, isNull);
+        expect(restored.ambitiousTarget, isNull);
+        expect(restored.confidence, isNull);
+        expect(restored.phaseStrategy, isEmpty);
         expect(restored.paceZones, isNull);
         expect(restored.raceGuidance, isNull);
         expect(restored.stravaCoachingProfileSnapshot, isNull);
@@ -264,7 +307,80 @@ void main() {
         expect(restored!.stravaCoachingProfileSnapshot, isNull);
       },
     );
+
+    test(
+      'CoachingTarget ignores non-positive numeric values without rejecting metadata',
+      () {
+        final target = coachingTargetOrNull({
+          'distanceKm': 0,
+          'timeSec': -30,
+          'paceSecPerKm': 0,
+          'confidence': 'high',
+          'source': 'strava',
+          'supported': true,
+          'reason': 'Target is unavailable.',
+        });
+
+        expect(target, isNotNull);
+        expect(target!.distanceKm, isNull);
+        expect(target.time, isNull);
+        expect(target.paceSecPerKm, isNull);
+        expect(target.confidence, CoachingConfidence.high);
+        expect(target.source, CoachingSource.strava);
+        expect(target.supported, isTrue);
+        expect(target.reason, 'Target is unavailable.');
+      },
+    );
   });
+}
+
+CoachingBriefSnapshot _coachingBriefSnapshot() {
+  const evidenceTarget = CoachingTarget(
+    distanceKm: 21.097,
+    time: Duration(hours: 1, minutes: 38),
+    paceSecPerKm: 279,
+    confidence: CoachingConfidence.high,
+    source: CoachingSource.strava,
+    supported: true,
+    reason: 'Backed by recent long-run and threshold evidence.',
+  );
+  const ambitiousTarget = CoachingTarget(
+    distanceKm: 21.097,
+    time: Duration(hours: 1, minutes: 34),
+    paceSecPerKm: 267,
+    confidence: CoachingConfidence.limited,
+    source: CoachingSource.strava,
+    supported: false,
+    reason: 'Too aggressive for current evidence.',
+  );
+  return const CoachingBriefSnapshot(
+    raceType: 'halfMarathon',
+    readinessLevel: CoachingReadinessLevel.prepared,
+    confidence: CoachingConfidence.high,
+    source: CoachingSource.strava,
+    currentVolumeKmPerWeek: 42,
+    currentRunsPerWeek: 4,
+    recentLongRunKm: 18,
+    planLengthWeeks: 12,
+    phaseStrategy: [
+      PhaseStrategy(phase: CoachingPhase.base, weeks: 2),
+      PhaseStrategy(phase: CoachingPhase.build, weeks: 4),
+      PhaseStrategy(phase: CoachingPhase.taperRace, weeks: 2),
+    ],
+    maxWeeklyVolumeKm: 55,
+    longRunCeilingKm: 23,
+    weeklyRunDays: 4,
+    taper: CoachingTaper(
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: 'Fresh legs.',
+    ),
+    workoutEmphasis: ['aerobic volume', 'threshold'],
+    evidenceTarget: evidenceTarget,
+    ambitiousTarget: ambitiousTarget,
+    constraints: ['Do not prescribe unsupported race-pace workouts.'],
+    rationale: ['Used measured training evidence.'],
+  );
 }
 
 StravaPaceZones _paceZones() {

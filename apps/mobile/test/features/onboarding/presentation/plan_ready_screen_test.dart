@@ -8,6 +8,7 @@ import 'package:running_app/features/goals/presentation/goal_provider.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/onboarding/presentation/screens/plan_ready_screen.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
+import 'package:running_app/features/training_plan/domain/models/professional_plan_metadata.dart';
 import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
@@ -163,6 +164,89 @@ void main() {
     },
   );
 
+  testWidgets('plan ready renders compact professional metadata', (
+    tester,
+  ) async {
+    final goal = buildHalfMarathonTimeGoal();
+    final draft = buildRunnerProfileDraft();
+    final plan = TrainingPlan(
+      id: 'plan-ready-metadata',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 1,
+      sessions: [
+        TrainingSession(
+          id: 'run-1',
+          date: DateTime(2026, 6, 1),
+          type: SessionType.easyRun,
+          status: SessionStatus.upcoming,
+          weekNumber: 1,
+        ),
+      ],
+      coachingBriefSnapshot: const CoachingBriefSnapshot(
+        readinessLevel: CoachingReadinessLevel.prepared,
+        confidence: CoachingConfidence.high,
+        source: CoachingSource.strava,
+        currentVolumeKmPerWeek: 42,
+        currentRunsPerWeek: 4,
+        phaseStrategy: [
+          PhaseStrategy(phase: CoachingPhase.base, weeks: 2),
+          PhaseStrategy(phase: CoachingPhase.build, weeks: 4),
+          PhaseStrategy(phase: CoachingPhase.taperRace, weeks: 2),
+        ],
+      ),
+      planRationale: const ['Used measured Strava evidence.'],
+      evidenceTarget: const CoachingTarget(
+        time: Duration(hours: 1, minutes: 55),
+        supported: true,
+      ),
+      ambitiousTarget: const CoachingTarget(
+        time: Duration(hours: 1, minutes: 50),
+        supported: false,
+      ),
+      confidence: CoachingConfidence.high,
+    );
+
+    await tester.pumpWidget(wrap(plan: plan, draft: draft, goal: goal));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(PlanReadyScreen));
+    final l10n = AppLocalizations.of(context)!;
+
+    expect(find.text(l10n.planMetadataTitle), findsOneWidget);
+    expect(find.text(l10n.planMetadataReadinessLabel), findsOneWidget);
+    expect(find.text(l10n.planMetadataReadinessPrepared), findsOneWidget);
+    expect(find.text(l10n.planMetadataConfidenceLabel), findsOneWidget);
+    expect(
+      find.text(
+        '${l10n.planMetadataConfidenceHigh} · ${l10n.planMetadataSourceStrava}',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.planMetadataCurrentVolumeLabel), findsOneWidget);
+    expect(
+      find.text(
+        '${l10n.planMetadataVolumeValue('42')} · ${l10n.planMetadataRunsValue('4')}',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.planMetadataTargetsLabel), findsOneWidget);
+    expect(
+      find.text(
+        '${l10n.planMetadataEvidenceTargetValue('1:55:00')} · ${l10n.planMetadataAmbitiousTargetValue(l10n.planMetadataUnsupportedTarget)}',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text(l10n.planMetadataPhaseStrategyLabel), findsOneWidget);
+    expect(
+      find.text(
+        '${l10n.planMetadataPhaseWeeks(l10n.planMetadataPhaseBase, 2)} · ${l10n.planMetadataPhaseWeeks(l10n.planMetadataPhaseBuild, 4)} · ${l10n.planMetadataPhaseWeeks(l10n.planMetadataPhaseTaperRace, 2)}',
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Used measured Strava evidence.'), findsOneWidget);
+  });
+
   testWidgets('plan ready details read in Spanish without guidance sections', (
     tester,
   ) async {
@@ -185,6 +269,10 @@ void main() {
       raceGuidance: const RaceGuidance(
         raceDayExecution: 'Mantén ritmo controlado en el primer tramo.',
       ),
+      coachingBriefSnapshot: const CoachingBriefSnapshot(
+        currentVolumeKmPerWeek: 42.5,
+        currentRunsPerWeek: 4.5,
+      ),
     );
 
     await tester.pumpWidget(
@@ -206,6 +294,12 @@ void main() {
     expect(
       find.text('Mantén ritmo controlado en el primer tramo.'),
       findsNothing,
+    );
+    expect(
+      find.text(
+        '${l10n.planMetadataVolumeValue('42,5')} · ${l10n.planMetadataRunsValue('4,5')}',
+      ),
+      findsOneWidget,
     );
     expect(find.text(l10n.planReadyStartPlan), findsOneWidget);
   });

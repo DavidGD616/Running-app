@@ -1714,6 +1714,117 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planReadyViewFullWeek => 'View Full Week';
 
   @override
+  String get planMetadataTitle => 'Professional rationale';
+
+  @override
+  String get planMetadataReadinessLabel => 'Readiness';
+
+  @override
+  String get planMetadataConfidenceLabel => 'Confidence';
+
+  @override
+  String get planMetadataCurrentVolumeLabel => 'Current volume';
+
+  @override
+  String get planMetadataTargetsLabel => 'Targets';
+
+  @override
+  String get planMetadataPhaseStrategyLabel => 'Phase strategy';
+
+  @override
+  String get planMetadataRationaleLabel => 'Rationale';
+
+  @override
+  String get planMetadataReadinessRaceReady => 'Race ready';
+
+  @override
+  String get planMetadataReadinessPrepared => 'Prepared';
+
+  @override
+  String get planMetadataReadinessDeveloping => 'Developing';
+
+  @override
+  String get planMetadataReadinessUnderprepared => 'Underprepared';
+
+  @override
+  String get planMetadataReadinessUnsupported => 'Unsupported';
+
+  @override
+  String get planMetadataConfidenceHigh => 'High confidence';
+
+  @override
+  String get planMetadataConfidenceMedium => 'Medium confidence';
+
+  @override
+  String get planMetadataConfidenceLimited => 'Limited confidence';
+
+  @override
+  String get planMetadataSourceStrava => 'Strava source';
+
+  @override
+  String get planMetadataSourceManual => 'Manual source';
+
+  @override
+  String get planMetadataSourceMixed => 'Mixed source';
+
+  @override
+  String get planMetadataSourceUnknown => 'Unknown source';
+
+  @override
+  String planMetadataVolumeValue(String value) {
+    return '$value km/week';
+  }
+
+  @override
+  String planMetadataRunsValue(String value) {
+    return '$value runs/week';
+  }
+
+  @override
+  String planMetadataEvidenceTargetValue(String target) {
+    return 'Evidence $target';
+  }
+
+  @override
+  String planMetadataAmbitiousTargetValue(String target) {
+    return 'Ambitious $target';
+  }
+
+  @override
+  String get planMetadataUnsupportedTarget => 'not supported';
+
+  @override
+  String planMetadataPaceValue(String pace) {
+    return '$pace/km';
+  }
+
+  @override
+  String planMetadataPhaseWeeks(String phase, int weeks) {
+    return '$phase ${weeks}w';
+  }
+
+  @override
+  String get planMetadataPhaseBase => 'Base';
+
+  @override
+  String get planMetadataPhaseBuild => 'Build';
+
+  @override
+  String get planMetadataPhaseSpecific => 'Specific';
+
+  @override
+  String get planMetadataPhasePeak => 'Peak';
+
+  @override
+  String get planMetadataPhaseTaperRace => 'Taper';
+
+  @override
+  String get planMetadataPhaseSafeBuild => 'Safe build';
+
+  @override
+  String get planMetadataPhaseUnsupportedFallback => 'Fallback';
+
+  @override
   String get planGuidancePaceZonesTitle => 'Pace Zones';
 
   @override

@@ -3199,6 +3199,204 @@ abstract class AppLocalizations {
   /// **'View Full Week'**
   String get planReadyViewFullWeek;
 
+  /// Title for compact professional plan metadata shown on plan-ready/full-plan surfaces
+  ///
+  /// In en, this message translates to:
+  /// **'Professional rationale'**
+  String get planMetadataTitle;
+
+  /// Label for coaching readiness metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness'**
+  String get planMetadataReadinessLabel;
+
+  /// Label for coaching confidence and source metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence'**
+  String get planMetadataConfidenceLabel;
+
+  /// Label for current volume anchor metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Current volume'**
+  String get planMetadataCurrentVolumeLabel;
+
+  /// Label for evidence and ambitious race target metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Targets'**
+  String get planMetadataTargetsLabel;
+
+  /// Label for plan phase strategy metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Phase strategy'**
+  String get planMetadataPhaseStrategyLabel;
+
+  /// Label for generated professional plan rationale
+  ///
+  /// In en, this message translates to:
+  /// **'Rationale'**
+  String get planMetadataRationaleLabel;
+
+  /// Readiness level label: race ready
+  ///
+  /// In en, this message translates to:
+  /// **'Race ready'**
+  String get planMetadataReadinessRaceReady;
+
+  /// Readiness level label: prepared
+  ///
+  /// In en, this message translates to:
+  /// **'Prepared'**
+  String get planMetadataReadinessPrepared;
+
+  /// Readiness level label: developing
+  ///
+  /// In en, this message translates to:
+  /// **'Developing'**
+  String get planMetadataReadinessDeveloping;
+
+  /// Readiness level label: underprepared
+  ///
+  /// In en, this message translates to:
+  /// **'Underprepared'**
+  String get planMetadataReadinessUnderprepared;
+
+  /// Readiness level label: unsupported
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported'**
+  String get planMetadataReadinessUnsupported;
+
+  /// Plan metadata confidence label: high
+  ///
+  /// In en, this message translates to:
+  /// **'High confidence'**
+  String get planMetadataConfidenceHigh;
+
+  /// Plan metadata confidence label: medium
+  ///
+  /// In en, this message translates to:
+  /// **'Medium confidence'**
+  String get planMetadataConfidenceMedium;
+
+  /// Plan metadata confidence label: limited
+  ///
+  /// In en, this message translates to:
+  /// **'Limited confidence'**
+  String get planMetadataConfidenceLimited;
+
+  /// Plan metadata source label: Strava
+  ///
+  /// In en, this message translates to:
+  /// **'Strava source'**
+  String get planMetadataSourceStrava;
+
+  /// Plan metadata source label: manual
+  ///
+  /// In en, this message translates to:
+  /// **'Manual source'**
+  String get planMetadataSourceManual;
+
+  /// Plan metadata source label: mixed
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed source'**
+  String get planMetadataSourceMixed;
+
+  /// Plan metadata source label: unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown source'**
+  String get planMetadataSourceUnknown;
+
+  /// Plan metadata current weekly volume value
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km/week'**
+  String planMetadataVolumeValue(String value);
+
+  /// Plan metadata current runs-per-week value
+  ///
+  /// In en, this message translates to:
+  /// **'{value} runs/week'**
+  String planMetadataRunsValue(String value);
+
+  /// Evidence-backed target value in plan metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence {target}'**
+  String planMetadataEvidenceTargetValue(String target);
+
+  /// Ambitious target value in plan metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Ambitious {target}'**
+  String planMetadataAmbitiousTargetValue(String target);
+
+  /// Target value when the ambitious target is unsupported
+  ///
+  /// In en, this message translates to:
+  /// **'not supported'**
+  String get planMetadataUnsupportedTarget;
+
+  /// Pace target value in plan metadata
+  ///
+  /// In en, this message translates to:
+  /// **'{pace}/km'**
+  String planMetadataPaceValue(String pace);
+
+  /// Compact phase strategy segment
+  ///
+  /// In en, this message translates to:
+  /// **'{phase} {weeks}w'**
+  String planMetadataPhaseWeeks(String phase, int weeks);
+
+  /// Plan phase label: base
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get planMetadataPhaseBase;
+
+  /// Plan phase label: build
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get planMetadataPhaseBuild;
+
+  /// Plan phase label: specific
+  ///
+  /// In en, this message translates to:
+  /// **'Specific'**
+  String get planMetadataPhaseSpecific;
+
+  /// Plan phase label: peak
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get planMetadataPhasePeak;
+
+  /// Plan phase label: taper race
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get planMetadataPhaseTaperRace;
+
+  /// Plan phase label: safe build
+  ///
+  /// In en, this message translates to:
+  /// **'Safe build'**
+  String get planMetadataPhaseSafeBuild;
+
+  /// Plan phase label: unsupported fallback
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback'**
+  String get planMetadataPhaseUnsupportedFallback;
+
   /// Heading for pace zones section in plan guidance
   ///
   /// In en, this message translates to:

@@ -1520,6 +1520,126 @@
   "planReadyViewFullWeek": "View Full Week",
   "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" },
 
+  "planMetadataTitle": "Professional rationale",
+  "@planMetadataTitle": { "description": "Title for compact professional plan metadata shown on plan-ready/full-plan surfaces" },
+
+  "planMetadataReadinessLabel": "Readiness",
+  "@planMetadataReadinessLabel": { "description": "Label for coaching readiness metadata" },
+
+  "planMetadataConfidenceLabel": "Confidence",
+  "@planMetadataConfidenceLabel": { "description": "Label for coaching confidence and source metadata" },
+
+  "planMetadataCurrentVolumeLabel": "Current volume",
+  "@planMetadataCurrentVolumeLabel": { "description": "Label for current volume anchor metadata" },
+
+  "planMetadataTargetsLabel": "Targets",
+  "@planMetadataTargetsLabel": { "description": "Label for evidence and ambitious race target metadata" },
+
+  "planMetadataPhaseStrategyLabel": "Phase strategy",
+  "@planMetadataPhaseStrategyLabel": { "description": "Label for plan phase strategy metadata" },
+
+  "planMetadataRationaleLabel": "Rationale",
+  "@planMetadataRationaleLabel": { "description": "Label for generated professional plan rationale" },
+
+  "planMetadataReadinessRaceReady": "Race ready",
+  "@planMetadataReadinessRaceReady": { "description": "Readiness level label: race ready" },
+
+  "planMetadataReadinessPrepared": "Prepared",
+  "@planMetadataReadinessPrepared": { "description": "Readiness level label: prepared" },
+
+  "planMetadataReadinessDeveloping": "Developing",
+  "@planMetadataReadinessDeveloping": { "description": "Readiness level label: developing" },
+
+  "planMetadataReadinessUnderprepared": "Underprepared",
+  "@planMetadataReadinessUnderprepared": { "description": "Readiness level label: underprepared" },
+
+  "planMetadataReadinessUnsupported": "Unsupported",
+  "@planMetadataReadinessUnsupported": { "description": "Readiness level label: unsupported" },
+
+  "planMetadataConfidenceHigh": "High confidence",
+  "@planMetadataConfidenceHigh": { "description": "Plan metadata confidence label: high" },
+
+  "planMetadataConfidenceMedium": "Medium confidence",
+  "@planMetadataConfidenceMedium": { "description": "Plan metadata confidence label: medium" },
+
+  "planMetadataConfidenceLimited": "Limited confidence",
+  "@planMetadataConfidenceLimited": { "description": "Plan metadata confidence label: limited" },
+
+  "planMetadataSourceStrava": "Strava source",
+  "@planMetadataSourceStrava": { "description": "Plan metadata source label: Strava" },
+
+  "planMetadataSourceManual": "Manual source",
+  "@planMetadataSourceManual": { "description": "Plan metadata source label: manual" },
+
+  "planMetadataSourceMixed": "Mixed source",
+  "@planMetadataSourceMixed": { "description": "Plan metadata source label: mixed" },
+
+  "planMetadataSourceUnknown": "Unknown source",
+  "@planMetadataSourceUnknown": { "description": "Plan metadata source label: unknown" },
+
+  "planMetadataVolumeValue": "{value} km/week",
+  "@planMetadataVolumeValue": {
+    "description": "Plan metadata current weekly volume value",
+    "placeholders": { "value": { "type": "String" } }
+  },
+
+  "planMetadataRunsValue": "{value} runs/week",
+  "@planMetadataRunsValue": {
+    "description": "Plan metadata current runs-per-week value",
+    "placeholders": { "value": { "type": "String" } }
+  },
+
+  "planMetadataEvidenceTargetValue": "Evidence {target}",
+  "@planMetadataEvidenceTargetValue": {
+    "description": "Evidence-backed target value in plan metadata",
+    "placeholders": { "target": { "type": "String" } }
+  },
+
+  "planMetadataAmbitiousTargetValue": "Ambitious {target}",
+  "@planMetadataAmbitiousTargetValue": {
+    "description": "Ambitious target value in plan metadata",
+    "placeholders": { "target": { "type": "String" } }
+  },
+
+  "planMetadataUnsupportedTarget": "not supported",
+  "@planMetadataUnsupportedTarget": { "description": "Target value when the ambitious target is unsupported" },
+
+  "planMetadataPaceValue": "{pace}/km",
+  "@planMetadataPaceValue": {
+    "description": "Pace target value in plan metadata",
+    "placeholders": { "pace": { "type": "String" } }
+  },
+
+  "planMetadataPhaseWeeks": "{phase} {weeks}w",
+  "@planMetadataPhaseWeeks": {
+    "description": "Compact phase strategy segment",
+    "placeholders": {
+      "phase": { "type": "String" },
+      "weeks": { "type": "int" }
+    }
+  },
+
+  "planMetadataPhaseBase": "Base",
+  "@planMetadataPhaseBase": { "description": "Plan phase label: base" },
+
+  "planMetadataPhaseBuild": "Build",
+  "@planMetadataPhaseBuild": { "description": "Plan phase label: build" },
+
+  "planMetadataPhaseSpecific": "Specific",
+  "@planMetadataPhaseSpecific": { "description": "Plan phase label: specific" },
+
+  "planMetadataPhasePeak": "Peak",
+  "@planMetadataPhasePeak": { "description": "Plan phase label: peak" },
+
+  "planMetadataPhaseTaperRace": "Taper",
+  "@planMetadataPhaseTaperRace": { "description": "Plan phase label: taper race" },
+
+  "planMetadataPhaseSafeBuild": "Safe build",
+  "@planMetadataPhaseSafeBuild": { "description": "Plan phase label: safe build" },
+
+  "planMetadataPhaseUnsupportedFallback": "Fallback",
+  "@planMetadataPhaseUnsupportedFallback": { "description": "Plan phase label: unsupported fallback" },
+
   "planGuidancePaceZonesTitle": "Pace Zones",
   "@planGuidancePaceZonesTitle": {
     "description": "Heading for pace zones section in plan guidance"

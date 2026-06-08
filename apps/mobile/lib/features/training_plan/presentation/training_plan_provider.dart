@@ -225,6 +225,12 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
       paceZones: plan.paceZones,
       raceGuidance: plan.raceGuidance,
       generatedLocale: plan.generatedLocale,
+      coachingBriefSnapshot: plan.coachingBriefSnapshot,
+      planRationale: plan.planRationale,
+      evidenceTarget: plan.evidenceTarget,
+      ambitiousTarget: plan.ambitiousTarget,
+      confidence: plan.confidence,
+      phaseStrategy: plan.phaseStrategy,
       stravaCoachingProfileSnapshot: plan.stravaCoachingProfileSnapshot,
     );
   }
@@ -286,6 +292,12 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
       paceZones: plan.paceZones,
       raceGuidance: plan.raceGuidance,
       generatedLocale: plan.generatedLocale,
+      coachingBriefSnapshot: plan.coachingBriefSnapshot,
+      planRationale: plan.planRationale,
+      evidenceTarget: plan.evidenceTarget,
+      ambitiousTarget: plan.ambitiousTarget,
+      confidence: plan.confidence,
+      phaseStrategy: plan.phaseStrategy,
       stravaCoachingProfileSnapshot: plan.stravaCoachingProfileSnapshot,
     );
   }

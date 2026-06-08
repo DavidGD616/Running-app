@@ -45,7 +45,7 @@ ProfessionalPlanInput? buildProfessionalPlanInputFromOnboardingDraft({
 
   switch (fitnessSource) {
     case FitnessSource.manual:
-      manualFitness = _manualFitnessFromDraft(draft.fitness);
+      manualFitness = _manualFitnessFromDraft(draft.fitness, health);
       stravaCoachingProfile = null;
       if (manualFitness == null) return null;
     case FitnessSource.strava:
@@ -213,7 +213,10 @@ bool _raceTargetMatchesGoal(AcceptedRaceTarget target, RunnerGoalRace race) {
 
 const _raceDistanceToleranceKm = 0.05;
 
-ManualFitnessInput? _manualFitnessFromDraft(FitnessProfileDraft draft) {
+ManualFitnessInput? _manualFitnessFromDraft(
+  FitnessProfileDraft draft,
+  HealthProfile health,
+) {
   if (draft.experience == null) return null;
 
   return ManualFitnessInput(
@@ -224,6 +227,16 @@ ManualFitnessInput? _manualFitnessFromDraft(FitnessProfileDraft draft) {
     raceDistanceBefore: draft.raceDistanceBefore,
     benchmark: draft.benchmark,
     benchmarkTime: draft.benchmarkTime,
+    trainingSnapshot: ManualTrainingSnapshotInput(
+      estimatedWeeklyVolume: draft.weeklyVolume,
+      estimatedLongestRun: draft.longestRun,
+      runsPerWeek: draft.runningDays,
+      benchmark: draft.benchmark,
+      benchmarkTime: draft.benchmarkTime,
+      painLevel: health.painLevel,
+      injuryHistory: health.injuryHistory,
+      hasHealthConditions: health.hasHealthConditions,
+    ),
   );
 }
 
@@ -253,6 +266,7 @@ class ManualFitnessInput {
     this.raceDistanceBefore,
     this.benchmark,
     this.benchmarkTime,
+    this.trainingSnapshot,
   });
 
   final RunnerExperience experience;
@@ -262,6 +276,7 @@ class ManualFitnessInput {
   final RaceDistanceExperience? raceDistanceBefore;
   final BenchmarkType? benchmark;
   final Duration? benchmarkTime;
+  final ManualTrainingSnapshotInput? trainingSnapshot;
 
   Map<String, dynamic> toJson() {
     return removeNullValues({
@@ -272,6 +287,7 @@ class ManualFitnessInput {
           'raceDistanceBefore': raceDistanceBefore?.key,
           'benchmark': benchmark?.key,
           'benchmarkTimeMs': benchmarkTime?.inMilliseconds,
+          'trainingSnapshot': trainingSnapshot?.toJson(),
         })
         as Map<String, dynamic>;
   }
@@ -326,6 +342,12 @@ class ManualFitnessInput {
       'benchmarkTimeMs',
       context: context,
     );
+    final trainingSnapshot = optionalNested(
+      json,
+      'trainingSnapshot',
+      context: context,
+      parse: ManualTrainingSnapshotInput.fromJson,
+    );
 
     if (benchmarkTime != null && benchmarkTime <= Duration.zero) {
       throw FormatException(
@@ -355,6 +377,163 @@ class ManualFitnessInput {
       raceDistanceBefore: raceDistanceBefore,
       benchmark: benchmark,
       benchmarkTime: benchmarkTime,
+      trainingSnapshot: trainingSnapshot,
+    );
+  }
+}
+
+class ManualTrainingSnapshotInput {
+  const ManualTrainingSnapshotInput({
+    this.exactWeeklyMileageKm,
+    this.estimatedWeeklyVolume,
+    this.longestRecentRunKm,
+    this.estimatedLongestRun,
+    this.runsPerWeek,
+    this.benchmark,
+    this.benchmarkTime,
+    this.longestLayoffDays,
+    this.painLevel,
+    this.injuryHistory,
+    this.hasHealthConditions,
+    this.fatigueLimited,
+    this.easyPaceSecPerKm,
+    this.hardPaceSecPerKm,
+  });
+
+  final double? exactWeeklyMileageKm;
+  final WeeklyVolumeRange? estimatedWeeklyVolume;
+  final double? longestRecentRunKm;
+  final LongestRunRange? estimatedLongestRun;
+  final int? runsPerWeek;
+  final BenchmarkType? benchmark;
+  final Duration? benchmarkTime;
+  final int? longestLayoffDays;
+  final PainLevelChoice? painLevel;
+  final InjuryHistoryChoice? injuryHistory;
+  final BinaryChoice? hasHealthConditions;
+  final bool? fatigueLimited;
+  final int? easyPaceSecPerKm;
+  final int? hardPaceSecPerKm;
+
+  Map<String, dynamic> toJson() {
+    return removeNullValues({
+          'exactWeeklyMileageKm': exactWeeklyMileageKm,
+          'estimatedWeeklyVolume': estimatedWeeklyVolume?.key,
+          'longestRecentRunKm': longestRecentRunKm,
+          'estimatedLongestRun': estimatedLongestRun?.key,
+          'runsPerWeek': runsPerWeek,
+          'benchmark': benchmark?.key,
+          'benchmarkTimeMs': benchmarkTime?.inMilliseconds,
+          'longestLayoffDays': longestLayoffDays,
+          'painLevel': painLevel?.key,
+          'injuryHistory': injuryHistory?.key,
+          'hasHealthConditions': hasHealthConditions?.key,
+          'fatigueLimited': fatigueLimited,
+          'easyPaceSecPerKm': easyPaceSecPerKm,
+          'hardPaceSecPerKm': hardPaceSecPerKm,
+        })
+        as Map<String, dynamic>;
+  }
+
+  factory ManualTrainingSnapshotInput.fromJson(Map<String, dynamic> json) {
+    final context = 'manual training snapshot input';
+    final benchmark = optionalEnumFromKey(
+      json,
+      'benchmark',
+      context: context,
+      parse: BenchmarkType.fromKey,
+      fieldLabel: 'benchmark',
+    );
+    final benchmarkTime = optionalDurationMs(
+      json,
+      'benchmarkTimeMs',
+      context: context,
+    );
+    final exactWeeklyMileageKm = optionalDouble(json['exactWeeklyMileageKm']);
+    final longestRecentRunKm = optionalDouble(json['longestRecentRunKm']);
+    final runsPerWeek = optionalInt(json['runsPerWeek']);
+    final longestLayoffDays = optionalInt(json['longestLayoffDays']);
+    final easyPaceSecPerKm = optionalInt(json['easyPaceSecPerKm']);
+    final hardPaceSecPerKm = optionalInt(json['hardPaceSecPerKm']);
+
+    if (exactWeeklyMileageKm != null && exactWeeklyMileageKm < 0) {
+      throw const FormatException(
+        'Invalid manual training snapshot input: exactWeeklyMileageKm must be >= 0.',
+      );
+    }
+    if (longestRecentRunKm != null && longestRecentRunKm < 0) {
+      throw const FormatException(
+        'Invalid manual training snapshot input: longestRecentRunKm must be >= 0.',
+      );
+    }
+    if (runsPerWeek != null && (runsPerWeek < 0 || runsPerWeek > 7)) {
+      throw const FormatException(
+        'Invalid manual training snapshot input: runsPerWeek must be between 0 and 7.',
+      );
+    }
+    if (longestLayoffDays != null && longestLayoffDays < 0) {
+      throw const FormatException(
+        'Invalid manual training snapshot input: longestLayoffDays must be >= 0.',
+      );
+    }
+    if (easyPaceSecPerKm != null && easyPaceSecPerKm <= 0) {
+      throw const FormatException(
+        'Invalid manual training snapshot input: easyPaceSecPerKm must be > 0.',
+      );
+    }
+    if (hardPaceSecPerKm != null && hardPaceSecPerKm <= 0) {
+      throw const FormatException(
+        'Invalid manual training snapshot input: hardPaceSecPerKm must be > 0.',
+      );
+    }
+
+    return ManualTrainingSnapshotInput(
+      exactWeeklyMileageKm: exactWeeklyMileageKm,
+      estimatedWeeklyVolume: optionalEnumFromKey(
+        json,
+        'estimatedWeeklyVolume',
+        context: context,
+        parse: WeeklyVolumeRange.fromKey,
+        fieldLabel: 'estimatedWeeklyVolume',
+      ),
+      longestRecentRunKm: longestRecentRunKm,
+      estimatedLongestRun: optionalEnumFromKey(
+        json,
+        'estimatedLongestRun',
+        context: context,
+        parse: LongestRunRange.fromKey,
+        fieldLabel: 'estimatedLongestRun',
+      ),
+      runsPerWeek: runsPerWeek,
+      benchmark: benchmark,
+      benchmarkTime: benchmarkTime,
+      longestLayoffDays: longestLayoffDays,
+      painLevel: optionalEnumFromKey(
+        json,
+        'painLevel',
+        context: context,
+        parse: PainLevelChoice.fromKey,
+        fieldLabel: 'painLevel',
+      ),
+      injuryHistory: optionalEnumFromKey(
+        json,
+        'injuryHistory',
+        context: context,
+        parse: InjuryHistoryChoice.fromKey,
+        fieldLabel: 'injuryHistory',
+      ),
+      hasHealthConditions: optionalEnumFromKey(
+        json,
+        'hasHealthConditions',
+        context: context,
+        parse: BinaryChoice.fromKey,
+        fieldLabel: 'hasHealthConditions',
+      ),
+      fatigueLimited: json['fatigueLimited'] is bool
+          ? json['fatigueLimited'] as bool
+          : null,
+      easyPaceSecPerKm: easyPaceSecPerKm,
+      hardPaceSecPerKm: hardPaceSecPerKm,
     );
   }
 }

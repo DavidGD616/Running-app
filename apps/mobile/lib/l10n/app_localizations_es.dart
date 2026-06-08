@@ -1727,6 +1727,117 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planReadyViewFullWeek => 'Ver semana completa';
 
   @override
+  String get planMetadataTitle => 'Fundamento profesional';
+
+  @override
+  String get planMetadataReadinessLabel => 'Preparación';
+
+  @override
+  String get planMetadataConfidenceLabel => 'Confianza';
+
+  @override
+  String get planMetadataCurrentVolumeLabel => 'Volumen actual';
+
+  @override
+  String get planMetadataTargetsLabel => 'Objetivos';
+
+  @override
+  String get planMetadataPhaseStrategyLabel => 'Estrategia por fases';
+
+  @override
+  String get planMetadataRationaleLabel => 'Razonamiento';
+
+  @override
+  String get planMetadataReadinessRaceReady => 'Listo para competir';
+
+  @override
+  String get planMetadataReadinessPrepared => 'Preparado';
+
+  @override
+  String get planMetadataReadinessDeveloping => 'En desarrollo';
+
+  @override
+  String get planMetadataReadinessUnderprepared => 'Poco preparado';
+
+  @override
+  String get planMetadataReadinessUnsupported => 'No compatible';
+
+  @override
+  String get planMetadataConfidenceHigh => 'Confianza alta';
+
+  @override
+  String get planMetadataConfidenceMedium => 'Confianza media';
+
+  @override
+  String get planMetadataConfidenceLimited => 'Confianza limitada';
+
+  @override
+  String get planMetadataSourceStrava => 'Fuente Strava';
+
+  @override
+  String get planMetadataSourceManual => 'Fuente manual';
+
+  @override
+  String get planMetadataSourceMixed => 'Fuente mixta';
+
+  @override
+  String get planMetadataSourceUnknown => 'Fuente desconocida';
+
+  @override
+  String planMetadataVolumeValue(String value) {
+    return '$value km/semana';
+  }
+
+  @override
+  String planMetadataRunsValue(String value) {
+    return '$value carreras/semana';
+  }
+
+  @override
+  String planMetadataEvidenceTargetValue(String target) {
+    return 'Evidencia $target';
+  }
+
+  @override
+  String planMetadataAmbitiousTargetValue(String target) {
+    return 'Ambicioso $target';
+  }
+
+  @override
+  String get planMetadataUnsupportedTarget => 'no respaldado';
+
+  @override
+  String planMetadataPaceValue(String pace) {
+    return '$pace/km';
+  }
+
+  @override
+  String planMetadataPhaseWeeks(String phase, int weeks) {
+    return '$phase $weeks sem';
+  }
+
+  @override
+  String get planMetadataPhaseBase => 'Base';
+
+  @override
+  String get planMetadataPhaseBuild => 'Construcción';
+
+  @override
+  String get planMetadataPhaseSpecific => 'Específica';
+
+  @override
+  String get planMetadataPhasePeak => 'Pico';
+
+  @override
+  String get planMetadataPhaseTaperRace => 'Descarga';
+
+  @override
+  String get planMetadataPhaseSafeBuild => 'Construcción segura';
+
+  @override
+  String get planMetadataPhaseUnsupportedFallback => 'Alternativa';
+
+  @override
   String get planGuidancePaceZonesTitle => 'Zonas de ritmo';
 
   @override

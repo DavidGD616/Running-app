@@ -10,6 +10,7 @@ import 'package:running_app/features/training_plan/data/adaptation_repository.da
 import 'package:running_app/features/training_plan/data/supabase_plan_version_repository.dart';
 import 'package:running_app/features/training_plan/domain/models/plan_adjustment.dart';
 import 'package:running_app/features/training_plan/domain/models/plan_revision.dart';
+import 'package:running_app/features/training_plan/domain/models/professional_plan_metadata.dart';
 import 'package:running_app/features/training_plan/domain/models/support_session.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
@@ -70,6 +71,21 @@ TrainingPlan _planWithGuidanceFields() {
       raceDayExecution: 'Start controlled, finish strong.',
     ),
     generatedLocale: 'es',
+    coachingBriefSnapshot: const CoachingBriefSnapshot(
+      readinessLevel: CoachingReadinessLevel.prepared,
+      currentVolumeKmPerWeek: 42,
+    ),
+    planRationale: const ['Used measured training evidence.'],
+    evidenceTarget: const CoachingTarget(
+      time: Duration(hours: 1, minutes: 38),
+      supported: true,
+    ),
+    ambitiousTarget: const CoachingTarget(
+      time: Duration(hours: 1, minutes: 34),
+      supported: false,
+    ),
+    confidence: CoachingConfidence.high,
+    phaseStrategy: const [PhaseStrategy(phase: CoachingPhase.base, weeks: 2)],
     stravaCoachingProfileSnapshot: _stravaSnapshot(),
   );
 }
@@ -156,6 +172,16 @@ void main() {
       fixturePlan.raceGuidance?.raceDayExecution,
     );
     expect(loaded.generatedLocale, fixturePlan.generatedLocale);
+    expect(loaded.coachingBriefSnapshot, isNotNull);
+    expect(
+      loaded.coachingBriefSnapshot!.readinessLevel,
+      CoachingReadinessLevel.prepared,
+    );
+    expect(loaded.planRationale, fixturePlan.planRationale);
+    expect(loaded.evidenceTarget?.time, fixturePlan.evidenceTarget?.time);
+    expect(loaded.ambitiousTarget?.supported, isFalse);
+    expect(loaded.confidence, CoachingConfidence.high);
+    expect(loaded.phaseStrategy.single.phase, CoachingPhase.base);
     expect(loaded.stravaCoachingProfileSnapshot, isNotNull);
     expect(
       loaded.stravaCoachingProfileSnapshot!.provenance.source,
@@ -189,6 +215,12 @@ void main() {
       expect(skipped?.paceZones, isNotNull);
       expect(skipped?.raceGuidance, isNotNull);
       expect(skipped?.generatedLocale, fixturePlan.generatedLocale);
+      expect(skipped?.coachingBriefSnapshot, isNotNull);
+      expect(skipped?.planRationale, fixturePlan.planRationale);
+      expect(skipped?.evidenceTarget?.time, fixturePlan.evidenceTarget?.time);
+      expect(skipped?.ambitiousTarget?.supported, isFalse);
+      expect(skipped?.confidence, CoachingConfidence.high);
+      expect(skipped?.phaseStrategy.single.phase, CoachingPhase.base);
       expect(skipped?.stravaCoachingProfileSnapshot, isNotNull);
 
       notifier.restoreSession('run-1');
@@ -198,6 +230,12 @@ void main() {
       expect(restored?.paceZones, isNotNull);
       expect(restored?.raceGuidance, isNotNull);
       expect(restored?.generatedLocale, fixturePlan.generatedLocale);
+      expect(restored?.coachingBriefSnapshot, isNotNull);
+      expect(restored?.planRationale, fixturePlan.planRationale);
+      expect(restored?.evidenceTarget?.time, fixturePlan.evidenceTarget?.time);
+      expect(restored?.ambitiousTarget?.supported, isFalse);
+      expect(restored?.confidence, CoachingConfidence.high);
+      expect(restored?.phaseStrategy.single.phase, CoachingPhase.base);
       expect(restored?.stravaCoachingProfileSnapshot, isNotNull);
       expect(restored?.sessions.first.status, isNot(SessionStatus.skipped));
     },

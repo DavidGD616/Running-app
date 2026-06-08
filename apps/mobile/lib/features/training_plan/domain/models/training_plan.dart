@@ -1,5 +1,6 @@
 import 'model_json_utils.dart';
 import 'plan_week.dart';
+import 'professional_plan_metadata.dart';
 import 'race_guidance.dart';
 import 'session_type.dart';
 import 'support_session.dart';
@@ -19,6 +20,12 @@ class TrainingPlan {
     this.paceZones,
     this.raceGuidance,
     this.generatedLocale = 'en',
+    this.coachingBriefSnapshot,
+    this.planRationale = const [],
+    this.evidenceTarget,
+    this.ambitiousTarget,
+    this.confidence,
+    this.phaseStrategy = const [],
     this.stravaCoachingProfileSnapshot,
   });
 
@@ -31,6 +38,12 @@ class TrainingPlan {
   final StravaPaceZones? paceZones;
   final RaceGuidance? raceGuidance;
   final String generatedLocale;
+  final CoachingBriefSnapshot? coachingBriefSnapshot;
+  final List<String> planRationale;
+  final CoachingTarget? evidenceTarget;
+  final CoachingTarget? ambitiousTarget;
+  final CoachingConfidence? confidence;
+  final List<PhaseStrategy> phaseStrategy;
   final StravaCoachingProfile? stravaCoachingProfileSnapshot;
 
   /// Sessions belonging to the current ISO week (Mon–Sun).
@@ -97,6 +110,14 @@ class TrainingPlan {
     if (paceZones != null) 'paceZones': paceZones!.toJson(),
     if (raceGuidance != null) 'raceGuidance': raceGuidance!.toJson(),
     'generatedLocale': generatedLocale,
+    if (coachingBriefSnapshot != null)
+      'coachingBriefSnapshot': coachingBriefSnapshot!.toJson(),
+    if (planRationale.isNotEmpty) 'planRationale': planRationale,
+    if (evidenceTarget != null) 'evidenceTarget': evidenceTarget!.toJson(),
+    if (ambitiousTarget != null) 'ambitiousTarget': ambitiousTarget!.toJson(),
+    if (confidence != null) 'confidence': confidence!.key,
+    if (phaseStrategy.isNotEmpty)
+      'phaseStrategy': phaseStrategy.map((phase) => phase.toJson()).toList(),
     if (stravaCoachingProfileSnapshot != null)
       'stravaCoachingProfileSnapshot': stravaCoachingProfileSnapshot!.toJson(),
   };
@@ -178,6 +199,14 @@ class TrainingPlan {
       paceZones: paceZones,
       raceGuidance: raceGuidance,
       generatedLocale: stringOrNull(json['generatedLocale']) ?? 'en',
+      coachingBriefSnapshot: coachingBriefSnapshotOrNull(
+        json['coachingBriefSnapshot'],
+      ),
+      planRationale: stringListOrEmpty(json['planRationale']),
+      evidenceTarget: coachingTargetOrNull(json['evidenceTarget']),
+      ambitiousTarget: coachingTargetOrNull(json['ambitiousTarget']),
+      confidence: CoachingConfidence.fromKey(stringOrNull(json['confidence'])),
+      phaseStrategy: phaseStrategyListOrEmpty(json['phaseStrategy']),
       stravaCoachingProfileSnapshot: stravaCoachingProfileSnapshot,
     );
   }

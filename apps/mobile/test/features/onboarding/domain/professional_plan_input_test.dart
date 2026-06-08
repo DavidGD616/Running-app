@@ -299,6 +299,60 @@ void main() {
       expect(manualFitness['experience'], RunnerExperience.beginner.key);
     });
 
+    test('manual onboarding payload includes richer training snapshot', () {
+      final base = buildRunnerProfileDraft();
+      final fitness = base.fitness;
+      final draft = base.copyWith(
+        fitness: FitnessProfileDraft(
+          experience: fitness.experience,
+          canRun10Min: fitness.canRun10Min,
+          runningDays: fitness.runningDays,
+          weeklyVolume: fitness.weeklyVolume,
+          longestRun: fitness.longestRun,
+          canCompleteGoalDistance: fitness.canCompleteGoalDistance,
+          raceDistanceBefore: fitness.raceDistanceBefore,
+          benchmark: fitness.benchmark,
+          benchmarkTime: fitness.benchmarkTime,
+          fitnessSource: FitnessSource.manual.key,
+        ),
+      );
+
+      final input = buildProfessionalPlanInputFromOnboardingDraft(
+        draft: draft,
+        preferences: const UserPreferences(unitSystem: UnitSystem.km),
+        locale: 'en',
+      )!;
+      final json = input.toJson();
+
+      expect(json['fitnessSource'], FitnessSource.manual.key);
+      expect(json.containsKey('stravaCoachingProfile'), isFalse);
+      final manualFitness = json['manualFitness'] as Map<String, dynamic>;
+      expect(manualFitness['weeklyVolume'], fitness.weeklyVolume!.key);
+      expect(manualFitness['longestRun'], fitness.longestRun!.key);
+      expect(manualFitness['benchmark'], fitness.benchmark!.key);
+      expect(
+        manualFitness['benchmarkTimeMs'],
+        fitness.benchmarkTime!.inMilliseconds,
+      );
+
+      final snapshot =
+          manualFitness['trainingSnapshot'] as Map<String, dynamic>;
+      expect(snapshot['estimatedWeeklyVolume'], fitness.weeklyVolume!.key);
+      expect(snapshot['estimatedLongestRun'], fitness.longestRun!.key);
+      expect(snapshot['runsPerWeek'], fitness.runningDays);
+      expect(snapshot['benchmark'], fitness.benchmark!.key);
+      expect(
+        snapshot['benchmarkTimeMs'],
+        fitness.benchmarkTime!.inMilliseconds,
+      );
+      expect(snapshot['painLevel'], base.health.painLevel!.key);
+      expect(snapshot['injuryHistory'], base.health.injuryHistory!.key);
+      expect(
+        snapshot['hasHealthConditions'],
+        base.health.hasHealthConditions!.key,
+      );
+    });
+
     test('invalid JSON throws FormatException', () {
       final json = _baseInput(
         fitnessSource: FitnessSource.strava,
