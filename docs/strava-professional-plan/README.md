@@ -11,7 +11,7 @@ The app is not live, so this work may replace the current onboarding and plan-ge
 - Build plans from measured athlete history when Strava data is available.
 - Show the user what the app learned from Strava before plan creation.
 - Keep user-owned choices separate from Strava-derived coaching evidence.
-- Generate more professional plans with personalized pace targets, race targets, support sessions, and race guidance.
+- Generate more professional plans with personalized pace targets, race targets, leg-day constraints, and race guidance.
 - Preserve safety limits from recent training load even when users choose aggressive goals.
 - Support English and Spanish in the first implementation.
 
@@ -19,7 +19,8 @@ The app is not live, so this work may replace the current onboarding and plan-ge
 
 - Do not build a full strength-training app.
 - Do not prescribe exact gym exercises in the first version.
-- Do not make race day a normal training session.
+- Do not make race day a startable training session.
+- Do not create strength, lifting, mobility, or support sessions in v1.
 - Do not persist raw Strava activity history long-term for this feature.
 - Do not use HR as a primary workout target in the first version.
 - Do not show non-running activity context on the Strava Analysis screen.
@@ -70,7 +71,7 @@ The onboarding flow should be redesigned around professional plan creation:
 5. Confirm or edit race target.
 6. Schedule.
 7. Health.
-8. Strength.
+8. Strength constraints.
 9. Preferences and intensity.
 10. Generate plan.
 
@@ -111,7 +112,7 @@ When Strava has no useful recent running data:
 
 The Strava Analysis screen is mandatory after connecting Strava. The user should not skip directly from Strava connection to plan generation.
 
-The screen is read-only for analysis and evidence. Users can still edit user-owned inputs such as target, schedule, health, strength, unit preference, and plan intensity.
+The screen is read-only for analysis and evidence. Users can still edit user-owned inputs such as target, schedule, health, leg-day constraints, unit preference, and plan intensity.
 
 ### Required Sections
 
@@ -221,7 +222,7 @@ These should stay user-owned and should not be overridden by Strava:
 - Preferred long-run day.
 - Hard-to-train days.
 - Health and injury constraints.
-- Strength habits.
+- Lower-body/leg-day constraints and same-day run/lift order.
 - Unit preference.
 - Plan intensity.
 - Accepted primary race target.
@@ -247,7 +248,7 @@ Strava controls safe progression.
 
 ## Race Targets
 
-For race goals, the Strava Analysis screen should show:
+For race goals, Strava/manual evidence should produce a target-confirmation step after analysis/manual fitness. This step should show:
 
 - Primary training target.
 - Stretch target.
@@ -255,6 +256,8 @@ For race goals, the Strava Analysis screen should show:
 - Evidence explanation.
 
 Users may accept or adjust the primary target. If the user picks an aggressive target, the plan should respect the target but keep training load and progression within Strava-derived safety limits.
+
+Goal onboarding should capture race distance and race date only. Do not store or transmit a goal priority field, current time, or target time from the goal step. Race target acceptance belongs only to the explicit target-confirmation step.
 
 Preferred framing:
 
@@ -331,50 +334,36 @@ Ease up slightly
 You have been faster than target for 45 seconds.
 ```
 
-## Strength Support
+## Strength Constraints
 
-Strength should be included as scheduled support sessions, not just notes, but this is not a lifting app.
+Strength is constraint-only in v1. This is a running app, so strength should not appear as a session, support row, or prescribed workout.
 
 Do include:
 
-- Category.
-- Load.
-- Timing guidance.
-- Interference rule.
-- Taper adjustment.
+- Whether the user does lower-body/leg-day work.
+- Selected leg days.
+- Same-day run/lift order.
+- Deterministic scheduling constraints so key runs and long runs are protected.
 
 Do not include in the first version:
 
+- Strength/support sessions.
 - Exact exercises.
 - Sets.
 - Reps.
 - Progressive gym programming.
 
-Support categories:
-
-- Lower body.
-- Upper body.
-- Core/mobility.
-- Full body.
-
 Strength onboarding should ask:
 
-- Whether the user lifts.
-- Lifting frequency.
-- Lower-body or preferred lifting days.
+- Whether the user does lower-body/leg-day work.
+- Leg days.
 - Same-day order preference:
   - Run first.
   - Lift first.
   - Separate sessions.
   - It depends.
 
-Guidance should be conditional and respect the user's order preference.
-
-Example:
-
-```text
-Quality run takes priority today. Run first if possible, or separate sessions by 6+ hours. If lifting first, keep the run easy.
-```
+The generated plan may use this information to avoid placing hard runs in bad positions around leg days. It should not show a separate strength item to the user.
 
 ## Terrain
 
@@ -442,7 +431,7 @@ Non-running activities should not appear on the Strava Analysis screen in the fi
 
 ## Race Guidance
 
-Generated plans should include race execution guidance for race goals, but race day should not be a normal session.
+Generated plans should include race execution guidance for race goals. Race Day should appear as an info-only calendar item, not a startable run session.
 
 Guidance should include:
 
@@ -460,16 +449,16 @@ Guidance should include:
 - Taper reminders.
 - Weather/course notes where useful.
 
-Race guidance should appear in the plan-ready/summary experience and remain accessible later from plan/full-plan views. It should resemble the demo structure with sections like:
+Plan Ready and Full Plan should stay compact. Race guidance should be accessible from the Race Day info item only. It should resemble the demo structure with sections like:
 
 - Race-day execution.
 - Coaching notes.
 
 ## Pace Zones After Generation
 
-The generated plan should include a plan-level pace zones card or screen that users can revisit later.
+Pace-zone data remains available behind the scenes, but v1 should not show a full plan-level pace-zone table on Plan Ready or Full Plan.
 
-This should be separate from individual session targets.
+Only the specific target pace/effort for the selected session should be shown in session detail and active-run surfaces.
 
 Example:
 
@@ -573,7 +562,7 @@ Future plan input should include:
 - Accepted race target.
 - Schedule preferences.
 - Health constraints.
-- Strength preferences.
+- Lower-body/leg-day strength constraints.
 - Plan intensity.
 - Unit preference.
 - Locale.
@@ -587,19 +576,18 @@ Future plan output should include:
 - Sessions.
 - Structured workout targets.
 - Structured pace ranges.
-- Support sessions.
 - Race guidance.
 - Pace zones.
 - Coaching profile snapshot.
 - Generated locale.
+
+Future plan output should not include `supportSessions` in v1. Legacy support-session JSON may be tolerated by readers, but it should not be generated or rendered.
 
 ## Open Decisions For Later
 
 These decisions were intentionally left for later refinement:
 
 - Exact shape of the new Dart and TypeScript schema.
-- Whether plan-ready and full-plan share the same race guidance component.
 - Exact thresholds for high, medium, and limited data confidence.
 - Exact thresholds for load spike, layoff, low consistency, and pace uncertainty flags.
-- Whether support sessions are stored in the same session list or a separate list.
 - Whether active run live pace guidance ships in the same milestone as plan generation.

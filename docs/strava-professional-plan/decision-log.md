@@ -14,10 +14,10 @@ This file records the decisions made during product discovery for the Strava pro
 8. Show primary and stretch race targets before plan creation.
 9. Let the user adjust the primary target, but preserve Strava-derived safety limits.
 10. Show 0 to 3 calm training guardrails when data suggests risk.
-11. Include strength support, but ask onboarding for strength habits instead of relying on Strava.
+11. Superseded 2026-06-07: originally included strength support, but v1 now uses strength only as a leg-day scheduling constraint.
 12. Ask same-day run/lift order preference.
-13. Strength should be scheduled support sessions, not only notes.
-14. Strength support categories are lower body, upper body, core/mobility, and full body.
+13. Superseded 2026-06-07: strength should no longer be scheduled support sessions in v1.
+14. Superseded 2026-06-07: strength categories were removed from onboarding; only lower-body/leg-day work is captured.
 15. Do not prescribe exact strength exercises in the first version.
 16. Strong Strava data should replace most manual fitness questions.
 17. Weak Strava data should show limited analysis and ask targeted manual fitness questions.
@@ -51,10 +51,10 @@ This file records the decisions made during product discovery for the Strava pro
 45. Redesign onboarding around professional plan creation.
 46. Replace the old onboarding completely because the app is not live.
 47. Change the plan schema/model as part of this work.
-48. Include race execution guidance, but do not include race day as a session.
-49. Make race guidance accessible later from plan/full-plan views.
+48. Supersedes earlier race-session direction as of 2026-06-07: include race execution guidance through an info-only Race Day item, not a startable session.
+49. Supersedes earlier dense summary direction as of 2026-06-07: race guidance should be accessible from the Race Day info item, not Plan Ready or Full Plan blocks.
 50. Race guidance should resemble the demo with "Race-day execution" and "Coaching notes."
-51. Add a post-generation pace zones card/screen.
+51. Supersedes earlier pace-zone screen direction as of 2026-06-07: do not add a full post-generation pace-zones card/screen in v1; show only session-specific target pace/effort.
 52. Session detail should show structured pace targets; live fast/slow guidance belongs to active run.
 53. Live pace guidance should be calm, coach-like, and low-noise.
 54. Spanish support is required in the first implementation.
@@ -64,13 +64,21 @@ This file records the decisions made during product discovery for the Strava pro
 58. Commit every completed task separately after reviewer approval.
 59. Update the implementation plan after each task with status, commit hash, and verification notes.
 60. Plan start date is a user-owned schedule input captured during onboarding and sent as `schedule.planStartDate`.
+61. Remove `goal.priority`, `currentTimeMs`, and `targetTimeMs` everywhere; goal onboarding captures race distance/date only.
+62. Race target confirmation is explicit. The app can suggest a target from Strava/manual evidence, but generation requires an accepted or custom primary target.
+63. Strength onboarding asks only whether the user has lower-body/leg days, which days they happen, and same-day run/lift order.
+64. Supabase generation must not emit `supportSessions`; mobile must ignore legacy support-session JSON and render no support rows.
+65. Leg days influence run placement as hard-day constraints, especially around key runs and long runs.
+66. Race Day is an info-only calendar item. It opens guidance and has no Start Run, pre-run, log, skip, or completion controls.
+67. Plan Ready remains a compact confirmation screen with only the primary Start Plan action.
+68. Full Plan shows the note, stats, and calendar only; no pace-zone table or race-guidance prose block.
+69. Pace-zone data remains available behind the scenes and appears only as the specific target pace/effort for a session.
 
 ## Deferred Decisions
 
 - Exact generated plan schema names.
 - Exact confidence thresholds.
 - Exact guardrail thresholds.
-- Whether support sessions are stored in the same list as run/rest sessions or separately.
 - Whether post-run target adherence recaps are included later.
 
 ## Implementation Updates
@@ -79,7 +87,7 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Task 1 completed in commit `c687652` - "feat(strava): add StravaCoachingProfile data contract models"
 - Task 2 completed in commit `7605629` - "feat(onboarding): add ProfessionalPlanInput data contract"
-- Task 3 completed in commit `95abd67` - "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions"
+- Task 3 completed in commit `95abd67` - "feat(training_plan): add professional plan schema with pace targets, race guidance, support sessions" (support-session portion superseded by 2026-06-07 simplified UX)
 - Phase 1 acceptance criteria were met.
 - Tests pass.
 
@@ -137,10 +145,9 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Task 8 completed in commit `e35077d` - "feat(onboarding): add strength preferences step"
 - New localized Strength Preferences onboarding screen was added at `/onboarding/strength`.
-- The screen captures whether the user lifts.
-- No-lifting path stores canonical `lifts: false` and does not require lift-specific fields.
-- Lifting path stores canonical weekly frequency, strength categories, preferred/lower-body lifting days, and same-day order preference.
-- Scope remains running-focused with strength categories only and no exercise prescription.
+- Superseded by 2026-06-07 simplified UX: broad lifting frequency/categories are no longer v1 behavior.
+- Current v1 behavior captures only lower-body/leg-day constraints and same-day run/lift order.
+- Scope remains running-focused with strength used only for scheduling constraints and no exercise prescription.
 - `RunnerProfile` and `RunnerProfileDraft` now persist strength preferences with backward-compatible JSON for older profiles missing strength.
 - Onboarding progress was updated coherently to 9 steps across Strava and manual branches.
 - English and Spanish strings were added, including plural-safe frequency labels and 9-section intro copy.
@@ -160,9 +167,10 @@ This file records the decisions made during product discovery for the Strava pro
 
 - Task 9 completed in commit `de5517c` - "feat(generate-plan): accept professional plan input"
 - Generate-plan now validates and accepts `professionalPlanInput` while preserving authenticated user ownership from the JWT/user claim.
-- Generated plan output now includes generated locale, numeric pace zones, workout targets, race guidance, support sessions, and a curated Strava coaching profile snapshot.
+- Historical generated plan output included generated locale, numeric pace zones, workout targets, race guidance, support sessions, and a curated Strava coaching profile snapshot.
+- Superseded by 2026-06-07 simplified UX: v1 output no longer includes generated support sessions.
 - AI prompting requests coaching text in the requested locale and keeps structured output fields canonical.
-- Race day is guidance only. Run and support sessions on the race date are filtered before persistence.
+- Race day is guidance only and is not a startable training session.
 - Structured paces are numeric seconds per kilometer. Schema validation rejects prose, null, omitted, and `min > max` pace ranges.
 - OpenAI receives only an allowlist-sanitized Strava/profile payload, excluding raw activities, names, tokens, streams, upstream errors, and unsafe nested fields.
 - Strict OpenAI JSON schema compatibility with `strict: true` was fixed, including recursive required-property coverage.
@@ -182,9 +190,8 @@ This file records the decisions made during product discovery for the Strava pro
 - Final safety prevents later long-run normalization from bypassing Strava caps.
 - Aggressive accepted race targets cannot bypass volume or long-run safety caps.
 - Limited, sparse, and recovery guardrails prevent older efforts from raising long-run targets.
-- Support sessions are normalized from strength preferences: weekly frequency, categories, preferred days, and same-day order.
-- Lower-body and full-body support avoids race date, taper week, race week, day-before long runs, and day-before key workouts unless explicit run-first same-day stacking after quality work.
-- Support guidance is categories-only, strips model exercise prescription text, and is locale-aware for English and Spanish.
+- Superseded by 2026-06-07 simplified UX: support sessions are no longer normalized or emitted.
+- Current v1 rules use lower-body/leg-day constraints to avoid poor placement around key runs, long runs, taper, and race day.
 - Reviewer approved.
 - Verification passed:
   - `supabase/functions/generate-plan`: `deno check index.ts plan-rules.ts schema.ts openai.ts`
@@ -200,13 +207,11 @@ This file records the decisions made during product discovery for the Strava pro
 ### 2026-06-03 - Phase 5 Task 11 Complete
 
 - Task 11 completed in commit `deb7e37` - "feat(training-plan): show professional plan guidance"
-- Plan ready and full plan now show race guidance and pace zones when present.
-- New reusable `PaceZonesCard` and `RaceGuidanceSection` widgets were added.
-- Full and weekly plan views render support sessions, including backend-style support metadata localized at the UI boundary.
-- Race guidance and race day are not listed as normal session rows.
-- TrainingPlan parsing handles backend-style support sessions and partial Strava snapshots safely.
-- Training plan provider recomposition preserves pace zones, race guidance, generated locale, Strava snapshot, and support sessions.
-- Pace zones are readable in English and Spanish, and support metadata avoids canonical key leakage.
+- Historical implementation showed race guidance and pace zones on Plan Ready/Full Plan and rendered support sessions.
+- Superseded by 2026-06-07 simplified UX: Plan Ready and Full Plan no longer show dense pace-zone tables or race-guidance blocks.
+- Superseded by 2026-06-07 simplified UX: plan surfaces no longer render support rows.
+- Race Day guidance is accessed from the Race Day info-only item.
+- TrainingPlan parsing may tolerate legacy support-session data, but v1 does not render it.
 - Reviewer approved after the support-session localization fix.
 - Verification passed:
   - `apps/mobile`: `flutter gen-l10n`
@@ -221,8 +226,7 @@ This file records the decisions made during product discovery for the Strava pro
 - Session detail now shows structured target pace ranges from `WorkoutTarget` and `WorkoutStep` numeric data only.
 - Effort cues are displayed when present, with localized effort fallback.
 - Pre-run guidance avoids promising live pace feedback before active run.
-- Support session details are reachable from full and weekly plan support rows and render localized metadata/details without canonical key leakage.
-- Unknown support metadata is hidden instead of humanized.
+- Superseded by 2026-06-07 simplified UX: support session details are not reachable because support rows are not rendered in v1.
 - Race/run navigation remains safe.
 - Reviewer approved after the support metadata leak fix.
 - Verification passed:
@@ -307,7 +311,7 @@ This file records the decisions made during product discovery for the Strava pro
 ### 2026-06-04 - Plan Start Date Selection and Anchoring
 
 - Users now choose their plan start as `Today`, `Tomorrow`, or `Next Monday`; mobile sends a concrete `YYYY-MM-DD` `schedule.planStartDate`.
-- Midweek starts create a partial Monday-Sunday week 1, with no generated run/rest/support sessions before the selected date.
+- Midweek starts create a partial Monday-Sunday week 1, with no generated plan items before the selected date.
 - Missing backend `planStartDate` now defaults to the next future Monday.
 - Race day remains guidance only; it is not generated as a training session.
 - Commit history:
@@ -315,3 +319,13 @@ This file records the decisions made during product discovery for the Strava pro
   - `ee4bbc3` `feat(onboarding): ask for plan start date`
   - `bf126b9` `feat(generate-plan): accept plan start date input`
   - `94c1e45` `feat(generate-plan): anchor plans to start date`
+
+### 2026-06-07 - Simplified Running Plan UX Remediation
+
+- Superseded the support-session product direction. Strength is now constraint-only and limited to lower-body/leg-day scheduling context.
+- Removed priority/current-time/target-time from the goal contract. Race target confirmation is a separate explicit step.
+- Supabase generation no longer asks OpenAI for support sessions and no longer emits `supportSessions`.
+- Mobile plan surfaces ignore legacy support-session data and do not render support rows.
+- Race Day is represented as an info-only calendar item that opens race guidance and cannot be started, logged, skipped, or completed.
+- Plan Ready and Full Plan no longer show dense pace-zone tables or race-guidance blocks.
+- Session Detail remains the place for the selected session's specific target pace/effort.
