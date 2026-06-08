@@ -1,4 +1,5 @@
-import type { GeneratedSession } from "./schema.ts";
+import type { GeneratedPlan, GeneratedSession } from "./schema.ts";
+import type { CoachingBrief } from "./coaching-brief.ts";
 
 type RacePrepPhase = "base" | "build" | "specific" | "peak" | "taperRace";
 
@@ -137,6 +138,47 @@ export function phaseForWeek(
   return "taperRace";
 }
 
+export function phaseForWeekFromCoachingBrief(
+  weekNumber: number,
+  totalWeeks: number,
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null | undefined,
+): RacePrepPhase {
+  if (coachingBrief == null) {
+    return phaseForWeek(weekNumber, totalWeeks, profileData);
+  }
+  if (weekNumber < 1 || !Number.isFinite(weekNumber)) {
+    return phaseForWeek(weekNumber, totalWeeks, profileData);
+  }
+
+  const taperStartWeek = Math.max(
+    1,
+    coachingBrief.planLengthWeeks - coachingBrief.taper.weeks + 1,
+  );
+  if (weekNumber >= taperStartWeek) return "taperRace";
+
+  let cumulativeWeeks = 0;
+  for (const phase of coachingBrief.phaseStrategy) {
+    cumulativeWeeks += phase.weeks;
+    if (weekNumber > cumulativeWeeks) continue;
+
+    switch (phase.phase) {
+      case "base":
+      case "build":
+      case "specific":
+      case "peak":
+      case "taperRace":
+        return phase.phase;
+      case "safeBuild":
+        return "build";
+      case "unsupportedFallback":
+        return "base";
+    }
+  }
+
+  return phaseForWeek(weekNumber, totalWeeks, profileData);
+}
+
 export function phasePlanFor(
   totalWeeks: number,
   profileData: Record<string, unknown>,
@@ -238,6 +280,7 @@ export function normalizeWorkoutTypesByPhase(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const experience = experienceFromProfile(profileData);
@@ -247,7 +290,12 @@ export function normalizeWorkoutTypesByPhase(
     if (session.type === "restDay") return session;
     if (isGoalRaceSession(session, profileData)) return session;
 
-    const phase = phaseForWeek(session.weekNumber, totalWeeks, profileData);
+    const phase = phaseForWeekFromCoachingBrief(
+      session.weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    );
     const policy = workoutPolicyForPhase(phase, race, experience);
 
     if (policy.allowedTypes.includes(session.type)) return session;
@@ -2239,6 +2287,7 @@ export function normalizePeakLongRun(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
   const range = peakLongRunRangeKm(profileData);
   const measuredLongestRecentRunKm = longRunHistoryFloor(profileData);
@@ -2252,7 +2301,14 @@ export function normalizePeakLongRun(
   };
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "peak"
+      ),
   );
 
   const adjusted = sessions.map((session) => ({ ...session }));
@@ -2447,6 +2503,7 @@ export function normalizeWeeklyVolumeRamp(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
   const baseline = baselineWeeklyVolumeProfile(profileData);
   if (baseline == null) return sessions;
@@ -2463,7 +2520,12 @@ export function normalizeWeeklyVolumeRamp(
   let previousCappedVolumeKm: number | null = null;
 
   for (const weekNumber of weekNumbers) {
-    const phase = phaseForWeek(weekNumber, totalWeeks, profileData);
+    const phase = phaseForWeekFromCoachingBrief(
+      weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    );
     const indices = adjusted
       .map((s, i) => ({ s, i }))
       .filter(({ s }) =>
@@ -2606,11 +2668,19 @@ export function normalizeTaper(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const taperRaceWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "taperRace"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "taperRace"
+      ),
   );
 
   if (taperRaceWeeks.size === 0) return sessions;
@@ -2629,7 +2699,14 @@ export function normalizeTaper(
 
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "peak"
+      ),
   );
 
   const peakLongRuns = adjusted
@@ -2981,11 +3058,239 @@ export type ScheduleValidationViolation = {
     | "stressful_session_before_race"
     | "missing_plan_week"
     | "session_week_after_total_weeks"
-    | "session_date_week_mismatch";
+    | "session_date_week_mismatch"
+    | "coaching_brief_plan_length_mismatch"
+    | "coaching_brief_week_one_below_anchor"
+    | "coaching_brief_weekly_volume_above_max"
+    | "coaching_brief_long_run_above_ceiling"
+    | "coaching_brief_taper_phase_mismatch"
+    | "coaching_brief_unsupported_ambitious_target";
   sessionId: string;
   date: string;
   message: string;
 };
+
+export function unsupportedCoachingBriefReason(
+  coachingBrief: CoachingBrief,
+): string | null {
+  if (
+    coachingBrief.raceType === "other" ||
+    coachingBrief.readinessLevel === "unsupported"
+  ) {
+    return "Custom race distances are not supported. Choose 5K, 10K, half marathon, or marathon.";
+  }
+
+  return null;
+}
+
+export function validateGeneratedPlanAgainstCoachingBrief(
+  plan: Pick<GeneratedPlan, "totalWeeks" | "sessions" | "raceGuidance">,
+  coachingBrief: CoachingBrief,
+): ScheduleValidationViolation[] {
+  const violations: ScheduleValidationViolation[] = [];
+  const sessions = plan.sessions;
+
+  if (plan.totalWeeks !== coachingBrief.planLengthWeeks) {
+    violations.push({
+      rule: "coaching_brief_plan_length_mismatch",
+      sessionId: "plan",
+      date: "",
+      message:
+        `Generated totalWeeks ${plan.totalWeeks} does not match coaching brief planLengthWeeks ${coachingBrief.planLengthWeeks}.`,
+    });
+  }
+
+  const weeklyVolumes = weeklyRunVolumeKm(sessions);
+  for (const [weekNumber, weeklyVolumeKm] of weeklyVolumes) {
+    if (weeklyVolumeKm <= coachingBrief.maxWeeklyVolumeKm + 0.1) continue;
+    violations.push({
+      rule: "coaching_brief_weekly_volume_above_max",
+      sessionId: `week-${weekNumber}`,
+      date: "",
+      message: `Week ${weekNumber} volume ${
+        round1(weeklyVolumeKm)
+      } km exceeds coaching brief maxWeeklyVolumeKm ${coachingBrief.maxWeeklyVolumeKm}.`,
+    });
+  }
+
+  const weekOneVolumeKm = weeklyVolumes.get(1) ?? 0;
+  if (
+    (coachingBrief.source === "strava" || coachingBrief.source === "mixed") &&
+    coachingBrief.confidence === "high" &&
+    coachingBrief.currentVolumeKmPerWeek >= 20 &&
+    weekOneVolumeKm < coachingBrief.currentVolumeKmPerWeek * 0.55 &&
+    coachingBrief.currentVolumeKmPerWeek - weekOneVolumeKm >= 10
+  ) {
+    violations.push({
+      rule: "coaching_brief_week_one_below_anchor",
+      sessionId: "week-1",
+      date: "",
+      message: `Week 1 volume ${
+        round1(weekOneVolumeKm)
+      } km is far below high-confidence Strava currentVolumeKmPerWeek ${coachingBrief.currentVolumeKmPerWeek}.`,
+    });
+  }
+
+  for (const session of sessions) {
+    if (
+      session.type !== "longRun" ||
+      session.distanceKm == null ||
+      session.distanceKm <= coachingBrief.longRunCeilingKm + 0.1
+    ) continue;
+    violations.push({
+      rule: "coaching_brief_long_run_above_ceiling",
+      sessionId: session.id,
+      date: session.date,
+      message:
+        `Long run distance ${session.distanceKm} km exceeds coaching brief longRunCeilingKm ${coachingBrief.longRunCeilingKm}.`,
+    });
+  }
+
+  const taperStartWeek = Math.max(
+    1,
+    coachingBrief.planLengthWeeks - coachingBrief.taper.weeks + 1,
+  );
+  for (const session of sessions) {
+    if (session.weekNumber < taperStartWeek || session.phase == null) continue;
+    if (session.phase === "taperRace") continue;
+    violations.push({
+      rule: "coaching_brief_taper_phase_mismatch",
+      sessionId: session.id,
+      date: session.date,
+      message:
+        `Session in brief taper window has phase ${session.phase}, expected taperRace.`,
+    });
+  }
+
+  if (!coachingBrief.ambitiousTarget.supported) {
+    const unsupportedAmbitiousTargetText = unsupportedAmbitiousTargetPattern(
+      coachingBrief,
+    );
+    for (const session of sessions) {
+      const usesRacePaceTarget = session.type === "racePaceRun" ||
+        session.targetZone === "racePace" ||
+        session.workoutTarget?.zone === "racePace";
+      const drivesFromUnsupportedTarget = usesRacePaceTarget &&
+        !coachingBrief.evidenceTarget.supported;
+      const mentionsUnsupportedTarget =
+        unsupportedAmbitiousTargetText != null &&
+        textMatchesTarget(
+          [session.coachNote, session.workoutTarget?.effortCue],
+          unsupportedAmbitiousTargetText,
+        );
+      if (!drivesFromUnsupportedTarget && !mentionsUnsupportedTarget) {
+        continue;
+      }
+      violations.push({
+        rule: "coaching_brief_unsupported_ambitious_target",
+        sessionId: session.id,
+        date: session.date,
+        message:
+          "Session appears to use an unsupported ambitious target despite coaching brief constraints.",
+      });
+    }
+
+    const raceGuidanceText = Object.values(plan.raceGuidance).filter((
+      value,
+    ): value is string => typeof value === "string");
+    if (
+      unsupportedAmbitiousTargetText != null &&
+      textMatchesTarget(raceGuidanceText, unsupportedAmbitiousTargetText)
+    ) {
+      violations.push({
+        rule: "coaching_brief_unsupported_ambitious_target",
+        sessionId: "raceGuidance",
+        date: "",
+        message:
+          "Race guidance appears to use an unsupported ambitious target despite coaching brief constraints.",
+      });
+    }
+  }
+
+  return violations;
+}
+
+function weeklyRunVolumeKm(
+  sessions: readonly GeneratedSession[],
+): Map<number, number> {
+  const volumes = new Map<number, number>();
+  for (const session of sessions) {
+    if (
+      session.type === "restDay" ||
+      session.type === "crossTraining" ||
+      session.type === "raceDay" ||
+      session.distanceKm == null ||
+      session.distanceKm <= 0
+    ) continue;
+    volumes.set(
+      session.weekNumber,
+      (volumes.get(session.weekNumber) ?? 0) + session.distanceKm,
+    );
+  }
+  return volumes;
+}
+
+function unsupportedAmbitiousTargetPattern(
+  coachingBrief: CoachingBrief,
+): RegExp | null {
+  const target = coachingBrief.ambitiousTarget;
+  const candidates = [
+    target.timeSec == null ? null : formatTimeTarget(target.timeSec),
+    target.timeSec == null ? null : formatShortTimeTarget(target.timeSec),
+    target.paceSecPerKm == null
+      ? null
+      : `${formatPaceTarget(target.paceSecPerKm)}/km`,
+    target.paceSecPerKm == null
+      ? null
+      : `${formatPaceTarget(target.paceSecPerKm)} per km`,
+  ].filter((value): value is string => value != null && value.length > 0);
+
+  if (candidates.length === 0) return null;
+  return new RegExp(
+    candidates.map((value) => escapeRegExp(value)).join("|"),
+    "i",
+  );
+}
+
+function textMatchesTarget(
+  values: readonly (string | null | undefined)[],
+  targetPattern: RegExp,
+): boolean {
+  return values.some((value) =>
+    typeof value === "string" && targetPattern.test(value)
+  );
+}
+
+function formatTimeTarget(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${
+      String(seconds).padStart(2, "0")
+    }`
+    : `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatShortTimeTarget(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.round((totalSeconds % 3600) / 60);
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}` : "";
+}
+
+function formatPaceTarget(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
 
 export function validateGeneratedPlanShape(
   sessions: GeneratedSession[],

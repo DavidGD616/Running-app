@@ -1,6 +1,7 @@
 import { strict as assert } from "node:assert";
 import {
   buildGeneratePlanMessages,
+  deriveBackendEvidenceFromStravaSummaries,
   parseGeneratedPlanContent,
   resolveOpenAiModel,
   sanitizeProfileForOpenAi,
@@ -157,6 +158,78 @@ const parseProfile = {
   },
 };
 
+const coachingBrief = {
+  raceType: "halfMarathon",
+  readinessLevel: "prepared",
+  confidence: "high",
+  source: "strava",
+  currentVolumeKmPerWeek: 52,
+  currentRunsPerWeek: 5,
+  recentLongRunKm: 18,
+  planLengthWeeks: 8,
+  phaseStrategy: [
+    { phase: "base", weeks: 2, focus: "Protect current aerobic base." },
+    { phase: "build", weeks: 2, focus: "Add controlled threshold work." },
+    { phase: "specific", weeks: 2, focus: "Practice half-marathon rhythm." },
+    { phase: "taperRace", weeks: 2, focus: "Reduce volume and freshen up." },
+  ],
+  maxWeeklyVolumeKm: 68,
+  longRunCeilingKm: 23,
+  weeklyRunDays: 5,
+  taper: {
+    weeks: 2,
+    volumeReductionPercent: 35,
+    finalWeekFocus: "Fresh legs and light rhythm only.",
+  },
+  workoutEmphasis: ["aerobic volume", "threshold", "long-run progression"],
+  evidenceTarget: {
+    distanceKm: 21.097,
+    timeSec: 6900,
+    paceSecPerKm: 327,
+    confidence: "high",
+    source: "strava",
+    supported: true,
+    reason: "Backed by recent Strava evidence.",
+  },
+  ambitiousTarget: {
+    distanceKm: 21.097,
+    timeSec: 6600,
+    paceSecPerKm: 313,
+    confidence: "limited",
+    source: "strava",
+    supported: false,
+    reason: "Too aggressive for current evidence.",
+  },
+  constraints: ["Do not prescribe workouts from the unsupported target."],
+  rationale: ["Used measured Strava training evidence."],
+};
+
+function parseUserPromptProfile(content: string): any {
+  return JSON.parse(sectionAfterLabel(content, "Runner profile"));
+}
+
+function parseUserPromptBrief(content: string): any {
+  return JSON.parse(
+    sectionAfterLabel(content, "Backend coaching brief", "Runner profile"),
+  );
+}
+
+function sectionAfterLabel(
+  content: string,
+  label: string,
+  nextLabel?: string,
+): string {
+  const marker = `${label}:\n`;
+  const start = content.indexOf(marker);
+  assert.notEqual(start, -1, `Missing section ${label}`);
+  const valueStart = start + marker.length;
+  const nextStart = nextLabel == null
+    ? -1
+    : content.indexOf(`\n\n${nextLabel}:\n`, valueStart);
+  return content.slice(valueStart, nextStart === -1 ? undefined : nextStart)
+    .trim();
+}
+
 Deno.test("buildGeneratePlanMessages builds locale-specific Spanish copy", () => {
   const [systemMessage] = buildGeneratePlanMessages(messageProfile, "es", 8);
   assert.equal(systemMessage.role, "system");
@@ -199,6 +272,20 @@ Deno.test("buildGeneratePlanMessages includes planStartDate guidance", () => {
     systemMessage.content.includes(
       "No sessions may be scheduled before 2026-06-08",
     ),
+  );
+});
+
+Deno.test("buildGeneratePlanMessages supports one-week expected total", () => {
+  const [systemMessage] = buildGeneratePlanMessages(
+    messageProfile,
+    "en",
+    1,
+    { ...coachingBrief, planLengthWeeks: 1 },
+  );
+
+  assert.ok(systemMessage.content.includes("Return totalWeeks=1"));
+  assert.ok(
+    systemMessage.content.includes("weekNumber values from 1 through 1"),
   );
 });
 
@@ -271,6 +358,71 @@ Deno.test("resolveOpenAiModel fails fast for whitespace in configured model", ()
   );
 });
 
+Deno.test("deriveBackendEvidenceFromStravaSummaries creates privacy-safe aggregate evidence", () => {
+  const rows = [
+    ["2026-06-08T12:00:00Z", 30000],
+    ["2026-06-05T12:00:00Z", 28000],
+    ["2026-06-02T12:00:00Z", 25000],
+    ["2026-05-30T12:00:00Z", 25000],
+    ["2026-05-26T12:00:00Z", 25000],
+    ["2026-05-22T12:00:00Z", 25000],
+    ["2026-05-18T12:00:00Z", 25000],
+    ["2026-05-15T12:00:00Z", 25000],
+  ].map(([recordedAt, distanceMeters]) => ({
+    recorded_at: recordedAt as string,
+    sport_type: "Run",
+    activity_type: "Run",
+    distance_meters: distanceMeters as number,
+    moving_time_seconds: 1800,
+    elapsed_time_seconds: 1810,
+    average_speed_mps: 3.2,
+    elevation_gain_meters: 20,
+    name: "Private activity name",
+    route: "Private route",
+    tokens: "secret",
+    raw: { streams: [1, 2] },
+  }));
+
+  const derived = deriveBackendEvidenceFromStravaSummaries([
+    ...rows,
+    {
+      recorded_at: "2026-06-07T12:00:00Z",
+      sport_type: "Ride",
+      activity_type: "Ride",
+      distance_meters: 40000,
+    },
+  ]);
+
+  assert.ok(derived);
+  assert.equal(derived.dataConfidence, "high");
+  assert.equal(derived.runActivityCount, 8);
+  assert.deepEqual(derived.backendEvidence, [
+    {
+      metric: "training_base_weekly_km",
+      date: "2026-06-08",
+      value: 52,
+      unit: "km/week",
+    },
+    {
+      metric: "training_base_runs_per_week",
+      date: "2026-06-08",
+      value: 2,
+      unit: "runs/week",
+    },
+    {
+      metric: "endurance_long_run_km",
+      date: "2026-06-08",
+      value: 30,
+      unit: "km",
+    },
+  ]);
+  const serialized = JSON.stringify(derived);
+  assert.equal(serialized.includes("Private activity name"), false);
+  assert.equal(serialized.includes("Private route"), false);
+  assert.equal(serialized.includes("secret"), false);
+  assert.equal(serialized.includes("raw"), false);
+});
+
 Deno.test("buildGeneratePlanMessages guides race-day as guidance-only", () => {
   const [systemMessage] = buildGeneratePlanMessages(messageProfile, "es", 8);
   assert.ok(systemMessage.content.includes("guidance-only"));
@@ -282,6 +434,52 @@ Deno.test("buildGeneratePlanMessages excludes support session generation", () =>
   assert.ok(systemMessage.content.includes("Do not create strength"));
   assert.ok(systemMessage.content.includes("support"));
   assert.ok(!systemMessage.content.includes("support session notes"));
+});
+
+Deno.test("buildGeneratePlanMessages includes coaching brief without raw Strava private fields", () => {
+  const profileWithPrivateStravaFields = {
+    ...messageProfile,
+    routeName: "Secret waterfront route",
+    activityNames: ["Private morning run"],
+    activityStreams: [{ latlng: [[1, 2]] }],
+    tokens: { accessToken: "secret" },
+    rawActivities: [{ name: "Private raw activity" }],
+    stravaCoachingProfile: {
+      ...messageProfile.stravaCoachingProfile,
+      dataConfidence: "high",
+      activityNames: ["Private activity name"],
+      activityStreams: [{ watts: [1, 2] }],
+      tokens: { refreshToken: "secret-refresh-token" },
+      rawActivities: [{ id: "raw" }],
+    },
+  };
+
+  const [systemMessage, userMessage] = buildGeneratePlanMessages(
+    profileWithPrivateStravaFields,
+    "en",
+    8,
+    coachingBrief,
+  );
+  const promptText = `${systemMessage.content}\n${userMessage.content}`;
+  const brief = parseUserPromptBrief(userMessage.content);
+  const profile = parseUserPromptProfile(userMessage.content);
+
+  assert.ok(systemMessage.content.includes("backend coaching brief"));
+  assert.ok(systemMessage.content.includes("source of truth"));
+  assert.equal(brief?.planLengthWeeks, 8);
+  assert.equal(brief?.currentVolumeKmPerWeek, 52);
+  assert.equal(
+    (profile.stravaCoachingProfile as Record<string, unknown>)
+      .dataConfidence,
+    "high",
+  );
+  assert.equal(JSON.stringify(profile).includes("activityNames"), false);
+  assert.equal(JSON.stringify(profile).includes("activityStreams"), false);
+  assert.equal(JSON.stringify(profile).includes("rawActivities"), false);
+  assert.equal(JSON.stringify(profile).includes("tokens"), false);
+  assert.equal(promptText.includes("Secret waterfront route"), false);
+  assert.equal(promptText.includes("Private morning run"), false);
+  assert.equal(promptText.includes("secret-refresh-token"), false);
 });
 
 Deno.test("parseGeneratedPlanContent accepts nullable optional race guidance fields", () => {
@@ -312,6 +510,22 @@ Deno.test("parseGeneratedPlanContent accepts nullable optional race guidance fie
   assert.equal(parsed.raceGuidance.primaryTargetSec, null);
   assert.equal(parsed.raceGuidance.stretchTargetSec, null);
   assert.equal(parsed.raceGuidance.weatherCourseNotes, null);
+});
+
+Deno.test("parseGeneratedPlanContent accepts one-week generated plans", () => {
+  const parsed = parseGeneratedPlanContent(
+    JSON.stringify({
+      ...parseProfile,
+      totalWeeks: 1,
+      sessions: parseProfile.sessions.map((session) => ({
+        ...session,
+        weekNumber: 1,
+        phase: "taperRace",
+      })),
+    }),
+  );
+
+  assert.equal(parsed.totalWeeks, 1);
 });
 
 Deno.test("parseGeneratedPlanContent rejects non-positive primaryTargetSec", () => {
@@ -352,6 +566,16 @@ Deno.test("trainingPlanResponseJsonSchema requires new generated output fields",
   assert.ok(requiredFields.includes("paceZones"));
   assert.ok(requiredFields.includes("raceGuidance"));
   assert.ok(requiredFields.includes("stravaCoachingProfileSnapshot"));
+});
+
+Deno.test("trainingPlanResponseJsonSchema allows one-week totalWeeks", () => {
+  const totalWeeksSchema = (
+    trainingPlanResponseJsonSchema.properties as {
+      totalWeeks: { minimum: number };
+    }
+  ).totalWeeks;
+
+  assert.equal(totalWeeksSchema.minimum, 1);
 });
 
 Deno.test("trainingPlanResponseJsonSchema keeps raceDayExecution non-nullable", () => {
@@ -486,9 +710,7 @@ Deno.test(
       "en",
       8,
     );
-    const userPrompt = JSON.parse(
-      userPromptMessage.content.replace("Runner profile:\n", ""),
-    );
+    const userPrompt = parseUserPromptProfile(userPromptMessage.content);
     assert.equal(userPrompt.stravaCoachingProfile.terrain, "notSure");
   },
 );
@@ -514,9 +736,7 @@ Deno.test("sanitizeProfileForOpenAi preserves planStartDate inside schedule", ()
     "en",
     8,
   );
-  const userPrompt = JSON.parse(
-    userPromptMessage.content.replace("Runner profile:\n", ""),
-  );
+  const userPrompt = parseUserPromptProfile(userPromptMessage.content);
   assert.equal(userPrompt.schedule.planStartDate, "2026-06-08");
 });
 
@@ -549,9 +769,7 @@ Deno.test(
       "en",
       8,
     );
-    const userPrompt = JSON.parse(
-      userPromptMessage.content.replace("Runner profile:\n", ""),
-    );
+    const userPrompt = parseUserPromptProfile(userPromptMessage.content);
     assert.equal(userPrompt.schedule?.planStartDate, undefined);
   },
 );
@@ -585,9 +803,7 @@ Deno.test(
       "en",
       8,
     );
-    const userPrompt = JSON.parse(
-      userPromptMessage.content.replace("Runner profile:\n", ""),
-    );
+    const userPrompt = parseUserPromptProfile(userPromptMessage.content);
     assert.equal(userPrompt.schedule?.planStartDate, undefined);
   },
 );
@@ -664,9 +880,7 @@ Deno.test("buildGeneratePlanMessages sends sanitized payload fields", () => {
   } as const;
 
   const messages = buildGeneratePlanMessages(unsafeProfile, "en", 8);
-  const userPrompt = JSON.parse(
-    messages[1].content.replace("Runner profile:\n", ""),
-  );
+  const userPrompt = parseUserPromptProfile(messages[1].content);
   assert.equal(userPrompt.activities, undefined);
   assert.equal(userPrompt.tokens, undefined);
   assert.equal(userPrompt.goal.priority, undefined);

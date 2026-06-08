@@ -554,10 +554,79 @@ export const StravaCoachingProfileSnapshotSchema = z.object({
   paceZones: StravaPaceZonesSchema.partial().optional(),
 }).strict();
 
+const CoachingPhaseSchema = z.enum([
+  "base",
+  "build",
+  "specific",
+  "peak",
+  "taperRace",
+  "safeBuild",
+  "unsupportedFallback",
+]);
+
+const ReadinessLevelSchema = z.enum([
+  "raceReady",
+  "prepared",
+  "developing",
+  "underprepared",
+  "unsupported",
+]);
+
+const CoachingSourceSchema = z.enum(["strava", "manual", "mixed", "unknown"]);
+
+const PhaseStrategySchema = z.object({
+  phase: CoachingPhaseSchema,
+  weeks: z.number().int().nonnegative(),
+  focus: z.string(),
+}).strict();
+
+const CoachingTargetSchema = z.object({
+  distanceKm: z.number().positive().nullable(),
+  timeSec: z.number().int().positive().nullable(),
+  paceSecPerKm: z.number().int().positive().nullable(),
+  confidence: AcceptedConfidenceSchema,
+  source: CoachingSourceSchema,
+  supported: z.boolean(),
+  reason: z.string(),
+}).strict();
+
+const CoachingTaperSchema = z.object({
+  weeks: z.number().int().min(1),
+  volumeReductionPercent: z.number().nonnegative(),
+  finalWeekFocus: z.string(),
+}).strict();
+
+export const CoachingBriefSnapshotSchema = z.object({
+  raceType: z.enum([
+    "fiveK",
+    "tenK",
+    "halfMarathon",
+    "marathon",
+    "other",
+  ]),
+  readinessLevel: ReadinessLevelSchema,
+  confidence: AcceptedConfidenceSchema,
+  source: CoachingSourceSchema,
+  currentVolumeKmPerWeek: z.number().nonnegative(),
+  currentRunsPerWeek: z.number().int().min(1).max(7),
+  recentLongRunKm: z.number().nonnegative(),
+  planLengthWeeks: z.number().int().min(1).max(26),
+  phaseStrategy: z.array(PhaseStrategySchema),
+  maxWeeklyVolumeKm: z.number().nonnegative(),
+  longRunCeilingKm: z.number().nonnegative(),
+  weeklyRunDays: z.number().int().min(1).max(7),
+  taper: CoachingTaperSchema,
+  workoutEmphasis: z.array(z.string()),
+  evidenceTarget: CoachingTargetSchema,
+  ambitiousTarget: CoachingTargetSchema,
+  constraints: z.array(z.string()),
+  rationale: z.array(z.string()),
+}).strict();
+
 export const GeneratedPlanSchema = z.object({
   schemaVersion: z.number().int().positive(),
   id: z.string(),
-  totalWeeks: z.number().int().min(3).max(26),
+  totalWeeks: z.number().int().min(1).max(26),
   currentWeekNumber: z.number().int().min(1),
   raceType: z.enum([
     "fiveK",
@@ -571,14 +640,143 @@ export const GeneratedPlanSchema = z.object({
   paceZones: StravaPaceZonesSchema,
   raceGuidance: RaceGuidanceSchema,
   stravaCoachingProfileSnapshot: StravaCoachingProfileSnapshotSchema,
+  coachingBriefSnapshot: CoachingBriefSnapshotSchema.optional(),
+  planRationale: z.array(z.string()).optional(),
+  evidenceTarget: CoachingTargetSchema.optional(),
+  ambitiousTarget: CoachingTargetSchema.optional(),
+  confidence: AcceptedConfidenceSchema.optional(),
+  phaseStrategy: z.array(PhaseStrategySchema).optional(),
 }).strict();
+
+const coachingTargetJsonSchema = {
+  type: "object",
+  properties: {
+    distanceKm: { type: ["number", "null"], minimum: 0 },
+    timeSec: { type: ["integer", "null"], minimum: 1 },
+    paceSecPerKm: { type: ["integer", "null"], minimum: 1 },
+    confidence: { type: "string", enum: ["high", "medium", "limited"] },
+    source: { type: "string", enum: ["strava", "manual", "mixed", "unknown"] },
+    supported: { type: "boolean" },
+    reason: { type: "string" },
+  },
+  required: [
+    "distanceKm",
+    "timeSec",
+    "paceSecPerKm",
+    "confidence",
+    "source",
+    "supported",
+    "reason",
+  ],
+  additionalProperties: false,
+};
+
+const phaseStrategyJsonSchema = {
+  type: "object",
+  properties: {
+    phase: {
+      type: "string",
+      enum: [
+        "base",
+        "build",
+        "specific",
+        "peak",
+        "taperRace",
+        "safeBuild",
+        "unsupportedFallback",
+      ],
+    },
+    weeks: { type: "integer", minimum: 0 },
+    focus: { type: "string" },
+  },
+  required: ["phase", "weeks", "focus"],
+  additionalProperties: false,
+};
+
+const coachingBriefSnapshotJsonSchema = {
+  type: "object",
+  properties: {
+    raceType: {
+      type: "string",
+      enum: ["fiveK", "tenK", "halfMarathon", "marathon", "other"],
+    },
+    readinessLevel: {
+      type: "string",
+      enum: [
+        "raceReady",
+        "prepared",
+        "developing",
+        "underprepared",
+        "unsupported",
+      ],
+    },
+    confidence: { type: "string", enum: ["high", "medium", "limited"] },
+    source: { type: "string", enum: ["strava", "manual", "mixed", "unknown"] },
+    currentVolumeKmPerWeek: { type: "number", minimum: 0 },
+    currentRunsPerWeek: { type: "integer", minimum: 1, maximum: 7 },
+    recentLongRunKm: { type: "number", minimum: 0 },
+    planLengthWeeks: { type: "integer", minimum: 1, maximum: 26 },
+    phaseStrategy: {
+      type: "array",
+      items: phaseStrategyJsonSchema,
+    },
+    maxWeeklyVolumeKm: { type: "number", minimum: 0 },
+    longRunCeilingKm: { type: "number", minimum: 0 },
+    weeklyRunDays: { type: "integer", minimum: 1, maximum: 7 },
+    taper: {
+      type: "object",
+      properties: {
+        weeks: { type: "integer", minimum: 1 },
+        volumeReductionPercent: { type: "number", minimum: 0 },
+        finalWeekFocus: { type: "string" },
+      },
+      required: ["weeks", "volumeReductionPercent", "finalWeekFocus"],
+      additionalProperties: false,
+    },
+    workoutEmphasis: {
+      type: "array",
+      items: { type: "string" },
+    },
+    evidenceTarget: coachingTargetJsonSchema,
+    ambitiousTarget: coachingTargetJsonSchema,
+    constraints: {
+      type: "array",
+      items: { type: "string" },
+    },
+    rationale: {
+      type: "array",
+      items: { type: "string" },
+    },
+  },
+  required: [
+    "raceType",
+    "readinessLevel",
+    "confidence",
+    "source",
+    "currentVolumeKmPerWeek",
+    "currentRunsPerWeek",
+    "recentLongRunKm",
+    "planLengthWeeks",
+    "phaseStrategy",
+    "maxWeeklyVolumeKm",
+    "longRunCeilingKm",
+    "weeklyRunDays",
+    "taper",
+    "workoutEmphasis",
+    "evidenceTarget",
+    "ambitiousTarget",
+    "constraints",
+    "rationale",
+  ],
+  additionalProperties: false,
+};
 
 export const trainingPlanResponseJsonSchema = {
   type: "object",
   properties: {
     schemaVersion: { type: "integer", minimum: 1 },
     id: { type: "string" },
-    totalWeeks: { type: "integer", minimum: 3, maximum: 26 },
+    totalWeeks: { type: "integer", minimum: 1, maximum: 26 },
     currentWeekNumber: { type: "integer", minimum: 1 },
     raceType: {
       type: "string",
@@ -832,6 +1030,18 @@ export const trainingPlanResponseJsonSchema = {
         "weatherCourseNotes",
       ],
       additionalProperties: false,
+    },
+    coachingBriefSnapshot: coachingBriefSnapshotJsonSchema,
+    planRationale: {
+      type: "array",
+      items: { type: "string" },
+    },
+    evidenceTarget: coachingTargetJsonSchema,
+    ambitiousTarget: coachingTargetJsonSchema,
+    confidence: { type: "string", enum: ["high", "medium", "limited"] },
+    phaseStrategy: {
+      type: "array",
+      items: phaseStrategyJsonSchema,
     },
     stravaCoachingProfileSnapshot: {
       type: "object",
@@ -1093,6 +1303,12 @@ export const trainingPlanResponseJsonSchema = {
     "sessions",
     "paceZones",
     "raceGuidance",
+    "coachingBriefSnapshot",
+    "planRationale",
+    "evidenceTarget",
+    "ambitiousTarget",
+    "confidence",
+    "phaseStrategy",
     "stravaCoachingProfileSnapshot",
   ],
   additionalProperties: false,

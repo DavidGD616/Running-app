@@ -5,7 +5,12 @@ import {
   removeSessionsOnRaceDate,
   StravaCoachingProfileSnapshotSchema,
 } from "./schema.ts";
-import { generatePlanFromProfile, sanitizeProfileForOpenAi } from "./openai.ts";
+import {
+  deriveBackendEvidenceFromStravaSummaries,
+  generatePlanFromProfile,
+  sanitizeProfileForOpenAi,
+} from "./openai.ts";
+import { buildCoachingBrief } from "./coaching-brief.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
@@ -20,13 +25,15 @@ import {
   normalizeWeeklyVolumeRamp,
   normalizeWeekNumbersFromDates,
   normalizeWorkoutTypesByPhase,
-  phaseForWeek,
+  phaseForWeekFromCoachingBrief,
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
   resolvePlanStartDate,
   smoothLongRunProgression,
   spaceStressfulSessions,
   truncateAfterRaceDate,
+  unsupportedCoachingBriefReason,
+  validateGeneratedPlanAgainstCoachingBrief,
   validateGeneratedPlanShape,
   validateGeneratedSchedule,
 } from "./plan-rules.ts";
@@ -127,20 +134,6 @@ Deno.serve(async (req) => {
     storedProfile,
     professionalInput,
   );
-  const generationStartedAt = new Date();
-  const resolvedPlanStartDate = resolvePlanStartDate(
-    generationProfile,
-    generationStartedAt,
-  );
-  const generationProfileWithPlanStartDate = {
-    ...generationProfile,
-    schedule: isRecord(generationProfile.schedule)
-      ? { ...generationProfile.schedule, planStartDate: resolvedPlanStartDate }
-      : { planStartDate: resolvedPlanStartDate },
-  } as ProfileShape;
-  const sanitizedGenerationProfile = sanitizeProfileForOpenAi(
-    generationProfileWithPlanStartDate,
-  ) as ProfileShape;
   if (Object.keys(generationProfile).length === 0) {
     return new Response(
       JSON.stringify({
@@ -152,16 +145,65 @@ Deno.serve(async (req) => {
     );
   }
 
-  const expectedWeeks = expectedTotalWeeks(
+  const generationStartedAt = new Date();
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    generationProfile,
+    generationStartedAt,
+  );
+  const generationProfileWithPlanStartDate = {
+    ...generationProfile,
+    schedule: isRecord(generationProfile.schedule)
+      ? { ...generationProfile.schedule, planStartDate: resolvedPlanStartDate }
+      : { planStartDate: resolvedPlanStartDate },
+  } as ProfileShape;
+  const adminClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+  const generationProfileWithBackendEvidence =
+    await addBackendEvidenceFromStravaSummaries(
+      generationProfileWithPlanStartDate,
+      adminClient,
+      userId,
+    );
+  const goalForBrief = isRecord(generationProfileWithBackendEvidence.goal)
+    ? generationProfileWithBackendEvidence.goal
+    : {};
+  const coachingBrief = buildCoachingBrief({
+    profileData: generationProfileWithBackendEvidence,
+    startDate: dateOnlyToUtcDate(resolvedPlanStartDate) ?? generationStartedAt,
+    raceDate: parseOptionalDate(goalForBrief.raceDate),
+    requestedRaceType: typeof goalForBrief.race === "string"
+      ? goalForBrief.race
+      : null,
+  });
+  const sanitizedGenerationProfile = sanitizeProfileForOpenAi(
+    generationProfileWithBackendEvidence,
+  ) as ProfileShape;
+
+  const legacyExpectedWeeks = expectedTotalWeeks(
     generationProfileWithPlanStartDate,
     generationStartedAt,
     resolvedPlanStartDate,
   );
-  if (expectedWeeks != null && expectedWeeks < 3) {
+  const expectedWeeks = coachingBrief.planLengthWeeks;
+  const unsupportedBriefReason = unsupportedCoachingBriefReason(coachingBrief);
+  if (unsupportedBriefReason != null) {
+    return new Response(
+      JSON.stringify({
+        error: "Unsupported race type for plan generation",
+        detail: unsupportedBriefReason,
+      }),
+      { status: 422, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  if (legacyExpectedWeeks != null && legacyExpectedWeeks < 1) {
     return new Response(
       JSON.stringify({
         error: "Race date is too soon for plan generation",
-        detail: "Fixed race-date plans require at least 3 calendar weeks.",
+        detail:
+          "Fixed race-date plans require at least one valid planning week.",
       }),
       { status: 422, headers: { "Content-Type": "application/json" } },
     );
@@ -173,11 +215,30 @@ Deno.serve(async (req) => {
       sanitizedGenerationProfile,
       locale,
       expectedWeeks,
+      coachingBrief,
     );
   } catch (err) {
     console.error("OpenAI generation failed:", err);
     return new Response(
       JSON.stringify({ error: "Plan generation failed", detail: String(err) }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const briefViolations = validateGeneratedPlanAgainstCoachingBrief(
+    generatedPlan,
+    coachingBrief,
+  );
+  if (briefViolations.length > 0) {
+    console.error(
+      "Generated plan failed coaching brief validation:",
+      briefViolations,
+    );
+    return new Response(
+      JSON.stringify({
+        error: "Generated plan failed coaching brief validation",
+        violations: briefViolations,
+      }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
@@ -225,6 +286,12 @@ Deno.serve(async (req) => {
     sessions: dateNormalizedSessions,
     currentWeekNumber: generatedPlan.currentWeekNumber ?? 1,
     generatedLocale: locale,
+    coachingBriefSnapshot: coachingBrief,
+    planRationale: coachingBrief.rationale,
+    evidenceTarget: coachingBrief.evidenceTarget,
+    ambitiousTarget: coachingBrief.ambitiousTarget,
+    confidence: coachingBrief.confidence,
+    phaseStrategy: coachingBrief.phaseStrategy,
     stravaCoachingProfileSnapshot: parsedSnapshot ??
       generatedPlan.stravaCoachingProfileSnapshot,
   };
@@ -270,12 +337,14 @@ Deno.serve(async (req) => {
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    coachingBrief,
   );
   const peakNormalizedSessions = normalizePeakLongRun(
     volumeRampedSessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    coachingBrief,
   );
   const progressionSmoothedSessions = smoothLongRunProgression(
     peakNormalizedSessions,
@@ -288,18 +357,21 @@ Deno.serve(async (req) => {
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    coachingBrief,
   );
   const taperNormalizedSessions = normalizeTaper(
     volumeStabilizedSessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    coachingBrief,
   );
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
     taperNormalizedSessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    coachingBrief,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
@@ -310,10 +382,11 @@ Deno.serve(async (req) => {
     session,
   ) => ({
     ...session,
-    phase: phaseForWeek(
+    phase: phaseForWeekFromCoachingBrief(
       session.weekNumber,
       safeGeneratedPlan.totalWeeks,
       generationProfileWithPlanStartDate,
+      coachingBrief,
     ),
   }));
   const truncatedSessions = truncateAfterRaceDate(
@@ -353,6 +426,14 @@ Deno.serve(async (req) => {
       resolvedPlanStartDate,
     ),
     ...validateGeneratedSchedule(idNormalizedSessions, sanitizedForValidation),
+    ...validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: safeGeneratedPlan.totalWeeks,
+        raceGuidance: safeGeneratedPlan.raceGuidance,
+        sessions: idNormalizedSessions,
+      },
+      coachingBrief,
+    ),
   ];
   if (finalViolations.length > 0) {
     console.error(
@@ -387,11 +468,6 @@ Deno.serve(async (req) => {
       locale,
     ),
   ];
-
-  const adminClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
-  );
 
   await adminClient
     .from("plan_versions")
@@ -486,8 +562,94 @@ function normalizeLocale(value: unknown): CoachLocale {
   return "en";
 }
 
+async function addBackendEvidenceFromStravaSummaries(
+  profile: ProfileShape,
+  adminClient: ReturnType<typeof createClient>,
+  userId: string,
+): Promise<ProfileShape> {
+  const { data, error } = await adminClient
+    .from("strava_activity_summaries")
+    .select(
+      [
+        "recorded_at",
+        "activity_type",
+        "sport_type",
+        "distance_meters",
+        "moving_time_seconds",
+        "elapsed_time_seconds",
+        "average_speed_mps",
+        "elevation_gain_meters",
+      ].join(","),
+    )
+    .eq("user_id", userId)
+    .order("recorded_at", { ascending: false })
+    .limit(120);
+
+  if (error) {
+    console.error("Failed to read Strava activity summaries:", error);
+    return profile;
+  }
+
+  const derived = deriveBackendEvidenceFromStravaSummaries(
+    Array.isArray(data) ? data : [],
+  );
+  if (derived == null) return profile;
+
+  const weeklyVolume = evidenceValue(
+    derived.backendEvidence,
+    "training_base_weekly_km",
+  );
+  const runsPerWeek = evidenceValue(
+    derived.backendEvidence,
+    "training_base_runs_per_week",
+  );
+  const recentLongRun = evidenceValue(
+    derived.backendEvidence,
+    "endurance_long_run_km",
+  );
+  const fitness = isRecord(profile.fitness) ? { ...profile.fitness } : {};
+  const evidence = isRecord(profile.evidence) ? { ...profile.evidence } : {};
+
+  return {
+    ...profile,
+    backendEvidence: derived.backendEvidence,
+    evidence: {
+      ...evidence,
+      dataConfidence: derived.dataConfidence,
+    },
+    fitness: {
+      ...fitness,
+      dataConfidence: derived.dataConfidence,
+      currentVolumeKmPerWeek: weeklyVolume,
+      currentRunsPerWeek: runsPerWeek,
+      recentLongRunKm: recentLongRun,
+    },
+  };
+}
+
+function evidenceValue(
+  evidence: readonly { metric: string; value: number }[],
+  metric: string,
+): number | undefined {
+  return evidence.find((point) => point.metric === metric)?.value;
+}
+
 function isRecord(value: unknown): value is ProfileShape {
   return value != null && typeof value === "object" && !Array.isArray(value);
+}
+
+function parseOptionalDate(value: unknown): Date | null {
+  if (typeof value !== "string" || value.trim().length === 0) return null;
+  const ms = Date.parse(value);
+  return Number.isFinite(ms) ? new Date(ms) : null;
+}
+
+function dateOnlyToUtcDate(value: unknown): Date | null {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return null;
+  }
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return Number.isFinite(date.getTime()) ? date : null;
 }
 
 function buildGenerationProfile(

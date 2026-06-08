@@ -14,6 +14,7 @@ import {
   normalizeWorkoutTypesByPhase,
   peakLongRunRangeKm,
   phaseForWeek,
+  phaseForWeekFromCoachingBrief,
   phasePlanFor,
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
@@ -21,10 +22,13 @@ import {
   smoothLongRunProgression,
   spaceStressfulSessions,
   truncateAfterRaceDate,
+  unsupportedCoachingBriefReason,
+  validateGeneratedPlanAgainstCoachingBrief,
   validateGeneratedPlanShape,
   validateGeneratedSchedule,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
+import type { CoachingBrief } from "./coaching-brief.ts";
 import type { GeneratedSession } from "./schema.ts";
 
 Deno.test("phaseForWeek 12-week plan week 1 is base", () => {
@@ -1714,6 +1718,74 @@ Deno.test("normalizePeakLongRun caps experienced half marathon 25km peak at ~21k
     peakLongRun!.distanceKm! <= 23,
     `peak should be capped at 23km, got ${peakLongRun!.distanceKm}`,
   );
+});
+
+Deno.test("normalizePeakLongRun does not raise coaching-brief taper long run treated as legacy peak", () => {
+  const profileData = profile({
+    race: "race_half_marathon",
+    experience: "experience_beginner",
+  });
+  const brief = coachingBriefFixture({
+    raceType: "halfMarathon",
+    planLengthWeeks: 8,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Protect base." },
+      { phase: "build", weeks: 2, focus: "Controlled threshold." },
+      { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+  });
+  const sessions = [
+    session({
+      id: "w6-sat",
+      date: "2026-06-20",
+      type: "longRun",
+      distanceKm: 14,
+      durationMinutes: 96,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w7-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      durationMinutes: 56,
+      weekNumber: 7,
+    }),
+    session({
+      id: "w8-sat",
+      date: "2026-07-04",
+      type: "racePaceRun",
+      distanceKm: 21.1,
+      weekNumber: 8,
+    }),
+  ];
+
+  assert.equal(phaseForWeek(7, 8, profileData), "peak");
+  assert.equal(
+    phaseForWeekFromCoachingBrief(7, 8, profileData, brief),
+    "taperRace",
+  );
+
+  const result = normalizePeakLongRun(
+    sessions,
+    profileData,
+    8,
+    "en",
+    brief,
+  );
+  const taperLongRun = result.find((s) =>
+    s.weekNumber === 7 && s.type === "longRun"
+  );
+
+  assert.ok(taperLongRun, "week 7 taper longRun should exist");
+  assert.equal(taperLongRun!.distanceKm, 8);
+  assert.equal(taperLongRun!.durationMinutes, 56);
 });
 
 Deno.test("normalizePeakLongRun updates duration when raising distance", () => {
@@ -3839,6 +3911,194 @@ Deno.test("validateGeneratedPlanShape maps week labels from selected planStartDa
   assert.ok(!violations.some((v) => v.rule === "session_before_plan_start"));
 });
 
+Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects first week far below high-confidence Strava anchor", () => {
+  const violations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks: 8,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: [
+        session({
+          id: "w1-2026-06-08-easyRun",
+          date: "2026-06-08",
+          weekNumber: 1,
+          distanceKm: 6,
+        }),
+        session({
+          id: "w1-2026-06-10-easyRun",
+          date: "2026-06-10",
+          weekNumber: 1,
+          distanceKm: 6,
+        }),
+        session({
+          id: "w1-2026-06-13-longRun",
+          date: "2026-06-13",
+          weekNumber: 1,
+          type: "longRun",
+          distanceKm: 8,
+        }),
+      ],
+    },
+    coachingBriefFixture({
+      currentVolumeKmPerWeek: 52,
+      maxWeeklyVolumeKm: 68,
+      longRunCeilingKm: 24,
+    }),
+  );
+
+  assert.ok(
+    violations.some((violation) =>
+      violation.rule === "coaching_brief_week_one_below_anchor"
+    ),
+    JSON.stringify(violations),
+  );
+});
+
+Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects long run above brief ceiling", () => {
+  const violations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks: 8,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: [
+        session({
+          id: "w1-2026-06-13-longRun",
+          date: "2026-06-13",
+          weekNumber: 1,
+          type: "longRun",
+          distanceKm: 28,
+        }),
+      ],
+    },
+    coachingBriefFixture({
+      currentVolumeKmPerWeek: 45,
+      maxWeeklyVolumeKm: 68,
+      longRunCeilingKm: 22,
+    }),
+  );
+
+  assert.ok(
+    violations.some((violation) =>
+      violation.rule === "coaching_brief_long_run_above_ceiling"
+    ),
+    JSON.stringify(violations),
+  );
+});
+
+Deno.test("phaseForWeekFromCoachingBrief preserves final two-week taper after legacy phase rewrite", () => {
+  const brief = coachingBriefFixture({
+    planLengthWeeks: 8,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Protect base." },
+      { phase: "build", weeks: 2, focus: "Controlled threshold." },
+      { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+  });
+  const profileData = profile({ race: "race_half_marathon" });
+  const legacyFinalWeekSevenPhase = phaseForWeek(7, 8, profileData);
+  const finalSessions = [
+    session({
+      id: "w7-2026-07-20-easyRun",
+      date: "2026-07-20",
+      weekNumber: 7,
+      phase: phaseForWeekFromCoachingBrief(7, 8, profileData, brief),
+    }),
+    session({
+      id: "w8-2026-07-27-easyRun",
+      date: "2026-07-27",
+      weekNumber: 8,
+      phase: phaseForWeekFromCoachingBrief(8, 8, profileData, brief),
+    }),
+  ];
+
+  assert.equal(legacyFinalWeekSevenPhase, "peak");
+  assert.equal(finalSessions[0].phase, "taperRace");
+  assert.deepEqual(
+    validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: 8,
+        raceGuidance: {
+          schemaVersion: 1,
+          raceDayExecution: "Use the evidence target.",
+        },
+        sessions: finalSessions,
+      },
+      brief,
+    ).filter((violation) =>
+      violation.rule === "coaching_brief_taper_phase_mismatch"
+    ),
+    [],
+  );
+});
+
+Deno.test("validateGeneratedPlanAgainstCoachingBrief catches post-transform taper phase mismatch", () => {
+  const violations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks: 8,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: [
+        session({
+          id: "w7-2026-07-20-easyRun",
+          date: "2026-07-20",
+          weekNumber: 7,
+          phase: "peak",
+        }),
+        session({
+          id: "w8-2026-07-27-easyRun",
+          date: "2026-07-27",
+          weekNumber: 8,
+          phase: "taperRace",
+        }),
+      ],
+    },
+    coachingBriefFixture(),
+  );
+
+  assert.ok(
+    violations.some((violation) =>
+      violation.rule === "coaching_brief_taper_phase_mismatch"
+    ),
+    JSON.stringify(violations),
+  );
+});
+
+Deno.test("unsupportedCoachingBriefReason rejects custom race briefs before generation", () => {
+  const reason = unsupportedCoachingBriefReason(
+    coachingBriefFixture({
+      raceType: "other",
+      readinessLevel: "unsupported",
+      evidenceTarget: {
+        distanceKm: null,
+        timeSec: null,
+        paceSecPerKm: null,
+        confidence: "limited",
+        source: "manual",
+        supported: false,
+        reason: "Custom race distance.",
+      },
+    }),
+  );
+
+  assert.ok(reason?.includes("Custom race distances"));
+});
+
+Deno.test("unsupportedCoachingBriefReason allows supported standard race briefs", () => {
+  assert.equal(unsupportedCoachingBriefReason(coachingBriefFixture()), null);
+});
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
@@ -3868,6 +4128,58 @@ function profile({
       ...(planStartDate == null ? {} : { planStartDate }),
     },
     ...(strengthPreferences == null ? {} : { strengthPreferences }),
+  };
+}
+
+function coachingBriefFixture(
+  overrides: Partial<CoachingBrief> = {},
+): CoachingBrief {
+  const evidenceTarget = {
+    distanceKm: 21.097,
+    timeSec: 6900,
+    paceSecPerKm: 327,
+    confidence: "high" as const,
+    source: "strava" as const,
+    supported: true,
+    reason: "Backed by measured evidence.",
+  };
+
+  return {
+    raceType: "halfMarathon",
+    readinessLevel: "prepared",
+    confidence: "high",
+    source: "strava",
+    currentVolumeKmPerWeek: 52,
+    currentRunsPerWeek: 5,
+    recentLongRunKm: 18,
+    planLengthWeeks: 8,
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Protect base." },
+      { phase: "build", weeks: 2, focus: "Controlled threshold." },
+      { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+    maxWeeklyVolumeKm: 68,
+    longRunCeilingKm: 24,
+    weeklyRunDays: 5,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+    workoutEmphasis: ["aerobic volume", "threshold"],
+    evidenceTarget,
+    ambitiousTarget: {
+      ...evidenceTarget,
+      timeSec: 6600,
+      paceSecPerKm: 313,
+      confidence: "limited",
+      supported: false,
+      reason: "Too aggressive for current evidence.",
+    },
+    constraints: ["Do not prescribe unsupported race-pace workouts."],
+    rationale: ["Used measured Strava evidence."],
+    ...overrides,
   };
 }
 
@@ -3921,6 +4233,7 @@ function runProductionRulePipeline(
   input: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
   const scheduleCandidate = profileData.schedule;
   const schedule = typeof scheduleCandidate === "object" &&
@@ -3970,6 +4283,8 @@ function runProductionRulePipeline(
     scheduleAdjustedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
   );
   const progressionSmoothedSessions = smoothLongRunProgression(
     peakNormalizedSessions,
@@ -3980,11 +4295,15 @@ function runProductionRulePipeline(
     progressionSmoothedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
   );
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
     taperNormalizedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
@@ -3994,7 +4313,12 @@ function runProductionRulePipeline(
     session,
   ) => ({
     ...session,
-    phase: phaseForWeek(session.weekNumber, totalWeeks, profileData),
+    phase: phaseForWeekFromCoachingBrief(
+      session.weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    ),
   }));
   const truncatedSessions = truncateAfterRaceDate(
     phaseStampedSessions,
@@ -4019,6 +4343,7 @@ function session(
     durationMinutes: overrides.durationMinutes ?? 35,
     coachNote: overrides.coachNote ?? null,
     targetZone: overrides.targetZone ?? "easy",
+    phase: overrides.phase,
     warmUpMinutes: overrides.warmUpMinutes ?? null,
     coolDownMinutes: overrides.coolDownMinutes ?? null,
     intervalReps: overrides.intervalReps ?? null,

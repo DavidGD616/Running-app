@@ -323,6 +323,93 @@ Deno.test("GeneratedPlanSchema accepts new required fields and race day info ses
   assert.equal(parsed.paceZones.recovery.paceMinSecPerKm, 360);
 });
 
+Deno.test("GeneratedPlanSchema accepts one- and two-week race-window plans", () => {
+  for (const totalWeeks of [1, 2]) {
+    const parsed = GeneratedPlanSchema.parse({
+      ...generatedPlan,
+      totalWeeks,
+      sessions: generatedPlan.sessions.map((session) => ({
+        ...session,
+        weekNumber: Math.min(session.weekNumber, totalWeeks),
+        phase: "taperRace",
+      })),
+    });
+
+    assert.equal(parsed.totalWeeks, totalWeeks);
+  }
+});
+
+Deno.test("GeneratedPlanSchema accepts coaching brief metadata fields", () => {
+  const coachingTarget = {
+    distanceKm: 21.097,
+    timeSec: 6900,
+    paceSecPerKm: 327,
+    confidence: "high",
+    source: "strava",
+    supported: true,
+    reason: "Backed by evidence.",
+  };
+  const phaseStrategy = [
+    { phase: "base", weeks: 2, focus: "Protect base." },
+    { phase: "build", weeks: 2, focus: "Controlled threshold." },
+    { phase: "specific", weeks: 2, focus: "Half-marathon rhythm." },
+    { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+  ];
+  const parsed = GeneratedPlanSchema.parse({
+    ...generatedPlan,
+    generatedLocale: "en",
+    coachingBriefSnapshot: {
+      raceType: "halfMarathon",
+      readinessLevel: "prepared",
+      confidence: "high",
+      source: "strava",
+      currentVolumeKmPerWeek: 52,
+      currentRunsPerWeek: 5,
+      recentLongRunKm: 18,
+      planLengthWeeks: 8,
+      phaseStrategy,
+      maxWeeklyVolumeKm: 68,
+      longRunCeilingKm: 23,
+      weeklyRunDays: 5,
+      taper: {
+        weeks: 2,
+        volumeReductionPercent: 35,
+        finalWeekFocus: "Fresh legs.",
+      },
+      workoutEmphasis: ["aerobic volume", "threshold"],
+      evidenceTarget: coachingTarget,
+      ambitiousTarget: {
+        ...coachingTarget,
+        timeSec: 6600,
+        paceSecPerKm: 313,
+        confidence: "limited",
+        supported: false,
+        reason: "Too aggressive for current evidence.",
+      },
+      constraints: ["Do not prescribe unsupported race-pace workouts."],
+      rationale: ["Used measured Strava evidence."],
+    },
+    planRationale: ["Used measured Strava evidence."],
+    evidenceTarget: coachingTarget,
+    ambitiousTarget: {
+      ...coachingTarget,
+      timeSec: 6600,
+      paceSecPerKm: 313,
+      confidence: "limited",
+      supported: false,
+      reason: "Too aggressive for current evidence.",
+    },
+    confidence: "high",
+    phaseStrategy,
+  });
+
+  assert.equal(parsed.coachingBriefSnapshot?.planLengthWeeks, 8);
+  assert.equal(parsed.planRationale?.[0], "Used measured Strava evidence.");
+  assert.equal(parsed.ambitiousTarget?.supported, false);
+  assert.equal(parsed.confidence, "high");
+  assert.equal(parsed.phaseStrategy?.at(-1)?.phase, "taperRace");
+});
+
 Deno.test("GeneratedPlanSchema rejects generated supportSessions output", () => {
   assert.throws(() => {
     GeneratedPlanSchema.parse({
