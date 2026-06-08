@@ -17,7 +17,7 @@ void main() {
     expect(restored.eventDate, DateTime(2026, 10, 18));
   });
 
-  test('Goal JSON round-trips kind, priority, and targets', () {
+  test('Goal JSON round-trips kind and event', () {
     final goal = buildHalfMarathonTimeGoal();
 
     final restored = Goal.fromJson(goal.toJson());
@@ -25,14 +25,8 @@ void main() {
     expect(restored, isNotNull);
     expect(restored!.kind, GoalKind.time);
     expect(restored.status, GoalStatus.active);
-    expect(restored.priority, GoalPriorityType.improveTime);
     expect(restored.raceEvent, isNotNull);
     expect(restored.raceEvent!.raceType, GoalRaceType.halfMarathon);
-    expect(
-      restored.currentTime,
-      const Duration(hours: 2, minutes: 1, seconds: 30),
-    );
-    expect(restored.targetTime, const Duration(hours: 1, minutes: 55));
   });
 
   test('Goal.fromJson returns null for invalid payloads', () {
@@ -41,7 +35,6 @@ void main() {
       Goal.fromJson({
         'kind': 'time',
         'status': 'active',
-        'priority': 'priority_improve_time',
         'raceEvent': {'raceType': 'race_not_real'},
       }),
       isNull,

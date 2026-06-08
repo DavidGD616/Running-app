@@ -48,11 +48,10 @@ class SummaryScreen extends ConsumerWidget {
 
   String _goalDetail(Goal? goal, BuildContext context, AppLocalizations l10n) {
     final eventDate = goal?.raceEvent?.eventDate;
-    final localizedPriority = goalPriorityLabel(goal, l10n);
     if (eventDate != null) {
-      return '${_formatDate(eventDate, l10n)} · $localizedPriority';
+      return _formatDate(eventDate, l10n);
     }
-    return localizedPriority;
+    return l10n.no;
   }
 
   String _fitnessValue(RunnerProfileDraft a, AppLocalizations l10n) {

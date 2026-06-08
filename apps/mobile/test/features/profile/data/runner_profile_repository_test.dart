@@ -22,8 +22,11 @@ void main() {
     final restored = RunnerProfileDraft.fromJson(draft.toJson());
 
     expect(restored.goal.race, RunnerGoalRace.halfMarathon);
-    expect(restored.goal.priority, GoalPriority.improveTime);
     expect(restored.goal.raceDate, DateTime(2026, 10, 18));
+    expect(
+      restored.acceptedRaceTarget?.primaryTime,
+      const Duration(hours: 1, minutes: 55),
+    );
     expect(restored.fitness.experience, RunnerExperience.intermediate);
     expect(restored.schedule.hardDays, {
       WeekdayChoice.thursday,
@@ -86,7 +89,7 @@ void main() {
     final restored = RunnerProfile.fromJson(profile.toJson());
 
     expect(restored, isNotNull);
-    expect(restored!.goal.priority, GoalPriority.improveTime);
+    expect(restored!.goal.race, RunnerGoalRace.halfMarathon);
     expect(restored.device.device, WatchDeviceType.garmin);
     expect(restored.strength.lifts, isTrue);
     expect(restored.strength.weeklyFrequency, 2);

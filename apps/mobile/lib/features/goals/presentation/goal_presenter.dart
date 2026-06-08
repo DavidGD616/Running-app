@@ -24,18 +24,6 @@ String goalRaceLabel(Goal? goal, AppLocalizations l10n) {
   };
 }
 
-String goalPriorityLabel(Goal? goal, AppLocalizations l10n) {
-  if (goal == null) return '—';
-
-  return switch (goal.priority) {
-    GoalPriorityType.justFinish => l10n.priorityJustFinish,
-    GoalPriorityType.finishStrong => l10n.priorityFinishStrong,
-    GoalPriorityType.improveTime => l10n.priorityImproveTime,
-    GoalPriorityType.consistency => l10n.priorityConsistency,
-    GoalPriorityType.generalFitness => l10n.priorityGeneralFitness,
-  };
-}
-
 String goalDescription(Goal? goal, AppLocalizations l10n) {
   final race = goalRaceLabel(goal, l10n);
   if (race == '—') return '—';
@@ -55,11 +43,4 @@ String formatGoalDate(BuildContext context, Goal? goal) {
 
   final locale = Localizations.localeOf(context).toLanguageTag();
   return DateFormat.yMMMMd(locale).format(eventDate);
-}
-
-String formatGoalDuration(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$hours:$minutes:$seconds';
 }

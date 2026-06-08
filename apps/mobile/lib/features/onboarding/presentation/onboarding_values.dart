@@ -27,12 +27,6 @@ abstract final class OnboardingValues {
   static const raceMarathon = 'race_marathon';
   static const raceOther = 'race_other';
 
-  static const priorityJustFinish = 'priority_just_finish';
-  static const priorityFinishStrong = 'priority_finish_strong';
-  static const priorityImproveTime = 'priority_improve_time';
-  static const priorityConsistency = 'priority_consistency';
-  static const priorityGeneralFitness = 'priority_general_fitness';
-
   static const experienceBrandNew = 'experience_brand_new';
   static const experienceBeginner = 'experience_beginner';
   static const experienceIntermediate = 'experience_intermediate';
@@ -296,23 +290,6 @@ abstract final class OnboardingValues {
     AppLocalizations l10n,
   ) {
     return '$value+ ${unitSystem == UnitSystem.km ? l10n.unitKm : l10n.unitMi}';
-  }
-
-  static String localizePriority(String key, AppLocalizations l10n) {
-    switch (key) {
-      case priorityJustFinish:
-        return l10n.priorityJustFinish;
-      case priorityFinishStrong:
-        return l10n.priorityFinishStrong;
-      case priorityImproveTime:
-        return l10n.priorityImproveTime;
-      case priorityConsistency:
-        return l10n.priorityConsistency;
-      case priorityGeneralFitness:
-        return l10n.priorityGeneralFitness;
-      default:
-        return key;
-    }
   }
 
   static String localizeExperience(String key, AppLocalizations l10n) {

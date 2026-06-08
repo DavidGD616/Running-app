@@ -11,9 +11,6 @@ Goal buildHalfMarathonTimeGoal({
     ),
     kind: GoalKind.time,
     status: status,
-    priority: GoalPriorityType.improveTime,
-    currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
-    targetTime: const Duration(hours: 1, minutes: 55),
   );
 }
 
@@ -28,6 +25,5 @@ Goal buildFiveKRaceGoal({
     ),
     kind: GoalKind.race,
     status: status,
-    priority: GoalPriorityType.justFinish,
   );
 }
