@@ -6,7 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/features/session_detail/presentation/screens/session_detail_screen.dart';
 import 'package:running_app/features/training_plan/domain/models/training_session.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
-import 'package:running_app/features/training_plan/domain/models/support_session.dart';
+import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
 import 'package:running_app/features/training_plan/domain/models/workout_target.dart';
 import 'package:running_app/features/training_plan/presentation/training_plan_provider.dart';
@@ -48,33 +48,6 @@ void main() {
         ],
         supportedLocales: const [Locale('en'), Locale('es')],
         home: SessionDetailScreen(session: session, showStartWorkout: false),
-      ),
-    );
-  }
-
-  Widget wrapWithPlanAndSupport(
-    TrainingPlan plan,
-    SupportSession supportSession,
-  ) {
-    return ProviderScope(
-      overrides: [
-        trainingPlanProvider.overrideWith(
-          () => _TestTrainingPlanNotifier(plan),
-        ),
-      ],
-      child: MaterialApp(
-        locale: const Locale('en'),
-        localizationsDelegates: const [
-          AppLocalizations.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('en'), Locale('es')],
-        home: SessionDetailScreen(
-          supportSession: supportSession,
-          showStartWorkout: false,
-        ),
       ),
     );
   }
@@ -267,138 +240,36 @@ void main() {
     expect(find.textContaining('once your run is active'), findsOneWidget);
   });
 
-  testWidgets('support session detail localizes fields and hides canonical notes', (
+  testWidgets('race day detail is info-only and hides workout controls', (
     tester,
   ) async {
-    final supportSession = SupportSession(
-      id: 'support-session-id',
-      date: DateTime(2026, 4, 16, 9, 30),
+    final session = TrainingSession(
+      id: 'race-day-info',
+      date: DateTime(2026, 4, 18, 7, 30),
+      type: SessionType.raceDay,
+      status: SessionStatus.today,
       weekNumber: 4,
-      type: SupplementalSessionType.strength,
-      status: SupportSessionStatus.planned,
-      durationMinutes: 25,
-      load: 'moderate',
-      timingGuidance: 'on_off_days',
-      interferenceRule: 'avoid_day_before_long_run',
-      taperAdjustment: 'reduce_load',
-      notes: 'seed_strength_session',
+    );
+    final plan = TrainingPlan(
+      id: 'race-day-plan',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 4,
+      sessions: [session],
+      raceGuidance: const RaceGuidance(
+        raceDayExecution: 'Start controlled, finish strong.',
+      ),
     );
 
-    final plan = buildTestTrainingPlan(sessions: []);
-    final planWithSupport = TrainingPlan(
-      id: plan.id,
-      raceType: plan.raceType,
-      totalWeeks: plan.totalWeeks,
-      currentWeekNumber: plan.currentWeekNumber,
-      sessions: const [],
-      supportSessions: [supportSession],
-    );
-
-    await tester.pumpWidget(
-      wrapWithPlanAndSupport(planWithSupport, supportSession),
-    );
+    await tester.pumpWidget(wrapWithPlan(plan, session));
     await tester.pumpAndSettle();
 
     final context = tester.element(find.byType(SessionDetailScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    expect(find.text(l10n.sessionDetailSupportTitle), findsOneWidget);
-    expect(
-      find.textContaining(
-        '${l10n.sessionDetailSupportTypeLabel}: ${l10n.planSupportStrengthLabel}',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(
-        '${l10n.sessionDetailSupportStatusLabel}: ${l10n.supportSessionStatusPlanned}',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(
-        '${l10n.planSupportSessionLoadLabel}: ${l10n.supportSessionLoadModerate}',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(
-        '${l10n.planSupportSessionTimingLabel}: ${l10n.supportSessionTimingOnOffDays}',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(
-        '${l10n.planSupportSessionInterferenceLabel}: ${l10n.supportSessionInterferenceAvoidDayBeforeLongRun}',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(
-        '${l10n.planSupportSessionTaperLabel}: ${l10n.supportSessionTaperReduceLoad}',
-      ),
-      findsOneWidget,
-    );
-    expect(find.textContaining('seed_strength_session'), findsNothing);
-    expect(
-      find.textContaining(l10n.sessionDetailEstDurationLabel.toUpperCase()),
-      findsOneWidget,
-    );
+    expect(find.text(l10n.raceDayInfoTitle), findsWidgets);
+    expect(find.text('Start controlled, finish strong.'), findsOneWidget);
+    expect(find.text(l10n.sessionDetailStartWorkout), findsNothing);
+    expect(find.byIcon(Icons.more_horiz), findsNothing);
   });
-
-  testWidgets(
-    'support session detail hides unknown metadata values and canonical keys',
-    (tester) async {
-      final supportSession = SupportSession(
-        id: 'support-session-id-2',
-        date: DateTime(2026, 4, 17, 9, 30),
-        weekNumber: 4,
-        type: SupplementalSessionType.strength,
-        status: SupportSessionStatus.planned,
-        durationMinutes: 25,
-        load: 'avoid_race_week',
-        timingGuidance: 'skip_next_session',
-        interferenceRule: 'avoid_race_week',
-        taperAdjustment: 'reduce_when_available',
-        notes: 'seed_strength_session',
-      );
-
-      final plan = buildTestTrainingPlan(sessions: []);
-      final planWithSupport = TrainingPlan(
-        id: plan.id,
-        raceType: plan.raceType,
-        totalWeeks: plan.totalWeeks,
-        currentWeekNumber: plan.currentWeekNumber,
-        sessions: const [],
-        supportSessions: [supportSession],
-      );
-
-      await tester.pumpWidget(
-        wrapWithPlanAndSupport(planWithSupport, supportSession),
-      );
-      await tester.pumpAndSettle();
-
-      final context = tester.element(find.byType(SessionDetailScreen));
-      final l10n = AppLocalizations.of(context)!;
-
-      expect(find.text(l10n.sessionDetailSupportTitle), findsOneWidget);
-      expect(
-        find.textContaining(
-          '${l10n.sessionDetailSupportTypeLabel}: ${l10n.planSupportStrengthLabel}',
-        ),
-        findsOneWidget,
-      );
-      expect(find.textContaining('avoid_race_week'), findsNothing);
-      expect(find.textContaining('Avoid race week'), findsNothing);
-      expect(
-        find.textContaining(l10n.sessionDetailSupportMetadataLabel),
-        findsNothing,
-      );
-      expect(find.textContaining('seed_strength_session'), findsNothing);
-      expect(
-        find.textContaining(l10n.sessionDetailEstDurationLabel.toUpperCase()),
-        findsOneWidget,
-      );
-    },
-  );
 }

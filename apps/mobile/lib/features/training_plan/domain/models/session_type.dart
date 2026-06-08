@@ -49,6 +49,9 @@ enum SessionType {
 
   // Rest
   restDay,
+
+  // Info-only race guidance
+  raceDay,
 }
 
 extension SessionTypeExtension on SessionType {
@@ -67,6 +70,7 @@ extension SessionTypeExtension on SessionType {
         return true;
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return false;
     }
   }
@@ -90,6 +94,7 @@ extension SessionTypeExtension on SessionType {
       case SessionType.crossTraining:
         return SessionCategory.recovery;
       case SessionType.restDay:
+      case SessionType.raceDay:
         return SessionCategory.rest;
     }
   }
@@ -98,6 +103,8 @@ extension SessionTypeExtension on SessionType {
     switch (this) {
       case SessionType.restDay:
         return 'assets/icons/coffee.svg';
+      case SessionType.raceDay:
+        return 'assets/icons/trophy.svg';
       case SessionType.easyRun:
       case SessionType.longRun:
       case SessionType.progressionRun:
@@ -117,6 +124,8 @@ extension SessionTypeExtension on SessionType {
 
   bool get isRest => this == SessionType.restDay;
 
+  bool get isRaceDayInfo => this == SessionType.raceDay;
+
   bool get countsAsRun {
     switch (this) {
       case SessionType.easyRun:
@@ -132,6 +141,7 @@ extension SessionTypeExtension on SessionType {
         return true;
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return false;
     }
   }

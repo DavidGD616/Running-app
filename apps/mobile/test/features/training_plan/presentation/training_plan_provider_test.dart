@@ -47,7 +47,7 @@ TrainingPlan _planWithGuidanceFields() {
     sessions: [
       TrainingSession(
         id: 'run-1',
-        date: DateTime(2026, 6, 4),
+        date: DateTime.now().add(const Duration(days: 7)),
         type: SessionType.easyRun,
         status: SessionStatus.upcoming,
         weekNumber: 1,
@@ -242,7 +242,7 @@ void main() {
     expect(await restarted.read(planRevisionsProvider.future), hasLength(1));
   });
 
-  test('support sessions survive training plan recomposition', () async {
+  test('support sessions are dropped from active plan recomposition', () async {
     final prefs = await SharedPreferences.getInstance();
     final fixturePlan = TrainingPlan(
       id: 'provider-support-recompose',
@@ -286,33 +286,13 @@ void main() {
     addTearDown(container.dispose);
 
     final loaded = await container.read(trainingPlanProvider.future);
-    expect(loaded.supportSessions, hasLength(1));
-    expect(loaded.supportSessions.first.load, 'moderate');
-    expect(loaded.supportSessions.first.timingGuidance, 'on_off_days');
-    expect(
-      loaded.supportSessions.first.interferenceRule,
-      'avoid_day_before_long_run',
-    );
-    expect(
-      loaded.supportSessions.first.taperAdjustment,
-      'reduce_load_week_before_race',
-    );
+    expect(loaded.supportSessions, isEmpty);
 
     container.read(trainingPlanProvider.notifier).skipSession('run-1');
     await Future<void>.delayed(Duration.zero);
 
     final recomposedPlan = container.read(trainingPlanProvider).value;
-    expect(recomposedPlan?.supportSessions ?? [], hasLength(1));
-    expect(recomposedPlan?.supportSessions.first.load, 'moderate');
-    expect(recomposedPlan?.supportSessions.first.timingGuidance, 'on_off_days');
-    expect(
-      recomposedPlan?.supportSessions.first.interferenceRule,
-      'avoid_day_before_long_run',
-    );
-    expect(
-      recomposedPlan?.supportSessions.first.taperAdjustment,
-      'reduce_load_week_before_race',
-    );
+    expect(recomposedPlan?.supportSessions ?? const [], isEmpty);
   });
 
   test(

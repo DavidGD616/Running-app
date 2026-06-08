@@ -37,7 +37,11 @@ class _AppSliderState extends State<AppSlider> {
   }
 
   void _onDragUpdate(DragUpdateDetails details) {
-    if (_dragStartX == null || _dragStartValue == null || _trackDrawWidth == 0) return;
+    if (_dragStartX == null ||
+        _dragStartValue == null ||
+        _trackDrawWidth == 0) {
+      return;
+    }
     final delta = details.globalPosition.dx - _dragStartX!;
     final stepWidth = _trackDrawWidth / _divisions;
     final steps = (delta / stepWidth).round();
@@ -52,8 +56,10 @@ class _AppSliderState extends State<AppSlider> {
         _trackDrawWidth = constraints.maxWidth - (_thumbRadius * 2);
         final fraction = (widget.value - widget.min) / _divisions.toDouble();
         final bubbleCenterX = _thumbRadius + fraction * _trackDrawWidth;
-        final bubbleLeft = (bubbleCenterX - _bubbleSize / 2)
-            .clamp(0.0, constraints.maxWidth - _bubbleSize);
+        final bubbleLeft = (bubbleCenterX - _bubbleSize / 2).clamp(
+          0.0,
+          constraints.maxWidth - _bubbleSize,
+        );
 
         return Column(
           children: [
@@ -63,7 +69,8 @@ class _AppSliderState extends State<AppSlider> {
                 inactiveTrackColor: AppColors.backgroundCard,
                 thumbColor: AppColors.accentPrimary,
                 thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: _thumbRadius),
+                  enabledThumbRadius: _thumbRadius,
+                ),
                 overlayShape: SliderComponentShape.noOverlay,
                 trackHeight: 4,
                 showValueIndicator: ShowValueIndicator.never,

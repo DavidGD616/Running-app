@@ -1,5 +1,4 @@
 import '../domain/models/session_type.dart';
-import '../domain/models/support_session.dart';
 import '../domain/models/training_plan.dart';
 import '../domain/models/training_session.dart';
 import '../domain/models/workout_step.dart';
@@ -66,6 +65,7 @@ TrainingPlan buildSeedTrainingPlan() {
       SessionType.crossTraining => 5,
       SessionType.easyRun => 7,
       SessionType.restDay => 0,
+      SessionType.raceDay => 0,
     };
     return (distance * perKm).round();
   }
@@ -102,15 +102,14 @@ TrainingPlan buildSeedTrainingPlan() {
           SessionType.fartlek => 'assets/icons/activity.svg',
           SessionType.crossTraining => 'assets/icons/activity.svg',
           SessionType.restDay => 'assets/icons/route.svg',
+          SessionType.raceDay => 'assets/icons/trophy.svg',
         },
         title: 'main',
         duration: mainMinutes.toString(),
-        note:
-            intervalReps != null && intervalRepDistanceMeters != null
+        note: intervalReps != null && intervalRepDistanceMeters != null
             ? '${type.name}_${intervalReps}x${intervalRepDistanceMeters}m'
             : '${type.name}_main',
-        recoveryNote:
-            intervalRecoverySeconds != null
+        recoveryNote: intervalRecoverySeconds != null
             ? 'recovery_${intervalRecoverySeconds}s'
             : null,
       ),
@@ -134,14 +133,21 @@ TrainingPlan buildSeedTrainingPlan() {
         TargetZone.threshold,
       ),
       SessionType.racePaceRun => const WorkoutTarget.pace(TargetZone.racePace),
-      SessionType.recoveryRun => const WorkoutTarget.effort(TargetZone.recovery),
-      SessionType.progressionRun => const WorkoutTarget.effort(TargetZone.steady),
-      SessionType.hillRepeats => const WorkoutTarget.effort(TargetZone.interval),
+      SessionType.recoveryRun => const WorkoutTarget.effort(
+        TargetZone.recovery,
+      ),
+      SessionType.progressionRun => const WorkoutTarget.effort(
+        TargetZone.steady,
+      ),
+      SessionType.hillRepeats => const WorkoutTarget.effort(
+        TargetZone.interval,
+      ),
       SessionType.fartlek => const WorkoutTarget.effort(TargetZone.interval),
       SessionType.crossTraining => const WorkoutTarget.heartRate(
         TargetZone.easy,
       ),
       SessionType.restDay => null,
+      SessionType.raceDay => null,
     };
   }
 
@@ -840,34 +846,12 @@ TrainingPlan buildSeedTrainingPlan() {
     ),
   ];
 
-  final supportSessions = <SupportSession>[
-    SupportSession(
-      id: 'support-w4-mon-strength',
-      date: day(4, 0),
-      weekNumber: 4,
-      type: SupplementalSessionType.strength,
-      status: SupportSessionStatus.planned,
-      durationMinutes: 25,
-      notes: 'seed_strength_session',
-    ),
-    SupportSession(
-      id: 'support-w6-fri-mobility',
-      date: day(6, 4),
-      weekNumber: 6,
-      type: SupplementalSessionType.mobility,
-      status: SupportSessionStatus.planned,
-      durationMinutes: 15,
-      notes: 'seed_mobility_session',
-    ),
-  ];
-
   return TrainingPlan(
     id: 'seed-plan',
     raceType: TrainingPlanRaceType.halfMarathon,
     totalWeeks: 12,
     currentWeekNumber: 4,
     sessions: sessions,
-    supportSessions: supportSessions,
   );
 }
 

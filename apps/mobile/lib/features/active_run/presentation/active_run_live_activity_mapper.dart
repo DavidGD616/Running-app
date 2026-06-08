@@ -161,6 +161,7 @@ String _workoutName(SessionType? type, AppLocalizations l10n) {
   if (type == null) return '';
   return switch (type) {
     SessionType.restDay => l10n.sessionTypeRestDay,
+    SessionType.raceDay => l10n.raceDayInfoTitle,
     SessionType.easyRun => l10n.weeklyPlanSessionEasyRun,
     SessionType.longRun => l10n.weeklyPlanSessionLongRun,
     SessionType.progressionRun => l10n.sessionTypeProgressionRun,
@@ -278,6 +279,7 @@ String _targetValue(SessionType type, AppLocalizations l10n) {
     SessionType.easyRun => l10n.activeRunTargetEasy,
     SessionType.crossTraining => l10n.activeRunTargetSteady,
     SessionType.restDay => l10n.activeRunTargetEasy,
+    SessionType.raceDay => l10n.raceDayInfoSubtitle,
   };
 }
 

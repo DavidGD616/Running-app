@@ -13,8 +13,8 @@ import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../training_plan/domain/models/training_session.dart';
-import '../../../training_plan/domain/models/support_session.dart';
 import '../../../training_plan/domain/models/workout_target.dart';
 import '../../../training_plan/domain/models/workout_step.dart';
 import '../../../training_plan/presentation/training_plan_localization.dart';
@@ -26,16 +26,11 @@ import '../../../user_preferences/presentation/user_preferences_provider.dart';
 
 class SessionDetailArgs {
   const SessionDetailArgs({
-    this.session,
-    this.supportSession,
+    required this.session,
     this.showStartWorkout = true,
-  }) : assert(
-         (session == null) != (supportSession == null),
-         'SessionDetailArgs requires exactly one session source.',
-       );
+  });
 
-  final TrainingSession? session;
-  final SupportSession? supportSession;
+  final TrainingSession session;
   final bool showStartWorkout;
 }
 
@@ -44,44 +39,12 @@ class SessionDetailArgs {
 class SessionDetailScreen extends ConsumerWidget {
   const SessionDetailScreen({
     super.key,
-    this.session,
-    this.supportSession,
+    required this.session,
     this.showStartWorkout = true,
-  }) : assert(
-         (session == null) != (supportSession == null),
-         'SessionDetailScreen requires exactly one session source.',
-       );
+  });
 
-  final TrainingSession? session;
-  final SupportSession? supportSession;
+  final TrainingSession session;
   final bool showStartWorkout;
-
-  String _supportSessionTitle(SupportSession session, AppLocalizations l10n) {
-    return switch (session.type) {
-      SupplementalSessionType.strength => l10n.planSupportStrengthLabel,
-      SupplementalSessionType.mobility => l10n.planSupportMobilityLabel,
-      SupplementalSessionType.drills => l10n.planSupportDrillsLabel,
-    };
-  }
-
-  String _supportSessionStatusLabel(
-    SupportSessionStatus status,
-    AppLocalizations l10n,
-  ) {
-    return switch (status) {
-      SupportSessionStatus.planned => l10n.supportSessionStatusPlanned,
-      SupportSessionStatus.completed => l10n.supportSessionStatusCompleted,
-      SupportSessionStatus.skipped => l10n.supportSessionStatusSkipped,
-    };
-  }
-
-  SessionStatus _supportSessionBadgeStatus(SupportSessionStatus status) {
-    return switch (status) {
-      SupportSessionStatus.planned => SessionStatus.upcoming,
-      SupportSessionStatus.completed => SessionStatus.completed,
-      SupportSessionStatus.skipped => SessionStatus.skipped,
-    };
-  }
 
   String? _selectedTargetEffortLabel(
     TrainingSession session,
@@ -193,6 +156,8 @@ class SessionDetailScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
@@ -233,6 +198,8 @@ class SessionDetailScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return '';
+      case SessionType.raceDay:
+        return l10n.raceDayInfoSubtitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.sessionDescEasyRun;
@@ -462,6 +429,7 @@ class SessionDetailScreen extends ConsumerWidget {
         SessionType.crossTraining => 'assets/icons/activity.svg',
         SessionType.progressionRun => 'assets/icons/route.svg',
         SessionType.restDay => 'assets/icons/route.svg',
+        SessionType.raceDay => 'assets/icons/trophy.svg',
       },
       _PT.cool => 'assets/icons/heart_rate.svg',
     };
@@ -598,6 +566,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.fartlek:
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return switch (phaseType) {
           WorkoutPhaseType.warmUp => session.warmUpMinutes?.toString() ?? '—',
           WorkoutPhaseType.main => session.durationMinutes?.toString() ?? '—',
@@ -664,6 +633,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.fartlek:
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return phaseType == WorkoutPhaseType.main
             ? session.description ?? ''
             : '';
@@ -688,82 +658,6 @@ class SessionDetailScreen extends ConsumerWidget {
       session.type.category == SessionCategory.threshold ||
       session.type == SessionType.racePaceRun;
 
-  List<String> _supportSessionMetadata(
-    SupportSession supportSession,
-    AppLocalizations l10n,
-  ) {
-    final metadata = <String>[];
-
-    final loadValue = supportSession.load?.trim().toLowerCase();
-    if (loadValue != null && loadValue.isNotEmpty) {
-      final mappedValue = switch (loadValue) {
-        'light' => l10n.supportSessionLoadLight,
-        'moderate' || 'medium' => l10n.supportSessionLoadModerate,
-        'heavy' || 'high' => l10n.supportSessionLoadHigh,
-        _ => null,
-      };
-      if (mappedValue != null) {
-        metadata.add('${l10n.planSupportSessionLoadLabel}: $mappedValue');
-      }
-    }
-
-    final timingValue = supportSession.timingGuidance?.trim().toLowerCase();
-    if (timingValue != null && timingValue.isNotEmpty) {
-      final mappedValue = switch (timingValue) {
-        'on_off_days' || 'off_days' => l10n.supportSessionTimingOnOffDays,
-        'same_day' ||
-        'same_day_with_workout' => l10n.supportSessionTimingSameDay,
-        'next_day' => l10n.supportSessionTimingNextDay,
-        _ => null,
-      };
-      if (mappedValue != null) {
-        metadata.add('${l10n.planSupportSessionTimingLabel}: $mappedValue');
-      }
-    }
-
-    final interferenceValue = supportSession.interferenceRule
-        ?.trim()
-        .toLowerCase();
-    if (interferenceValue != null && interferenceValue.isNotEmpty) {
-      final mappedValue = switch (interferenceValue) {
-        'avoid_day_before_long_run' =>
-          l10n.supportSessionInterferenceAvoidDayBeforeLongRun,
-        'avoid_day_before_race' =>
-          l10n.supportSessionInterferenceAvoidDayBeforeRace,
-        'avoid_day_before_key_workout' =>
-          l10n.supportSessionInterferenceAvoidDayBeforeKeyWorkout,
-        _ => null,
-      };
-      if (mappedValue != null) {
-        metadata.add(
-          '${l10n.planSupportSessionInterferenceLabel}: $mappedValue',
-        );
-      }
-    }
-
-    final taperValue = supportSession.taperAdjustment?.trim().toLowerCase();
-    if (taperValue != null && taperValue.isNotEmpty) {
-      final mappedValue = switch (taperValue) {
-        'reduce_load_week_before_race' =>
-          l10n.supportSessionTaperReduceLoadWeekBeforeRace,
-        'reduce_load' => l10n.supportSessionTaperReduceLoad,
-        _ => null,
-      };
-      if (mappedValue != null) {
-        metadata.add('${l10n.planSupportSessionTaperLabel}: $mappedValue');
-      }
-    }
-
-    return metadata;
-  }
-
-  bool _shouldDisplaySupportNote(String? note) {
-    final normalized = note?.trim().toLowerCase();
-    if (normalized == null || normalized.isEmpty) return false;
-    if (normalized.startsWith('seed_')) return false;
-    return true;
-  }
-
   bool _canStartWorkout(SessionStatus status, TrainingSession session) {
     if (!showStartWorkout) return false;
     if (status != SessionStatus.today) return false;
@@ -771,23 +665,47 @@ class SessionDetailScreen extends ConsumerWidget {
     return true;
   }
 
-  Widget _buildSupportSessionDetail({
+  Widget _buildRaceDayDetail({
     required BuildContext context,
-    required SupportSession supportSession,
+    required TrainingSession session,
+    required TrainingPlan? plan,
   }) {
     final l10n = AppLocalizations.of(context)!;
-    final status = _supportSessionBadgeStatus(supportSession.status);
-    final statusLabel = _supportSessionStatusLabel(supportSession.status, l10n);
-    final sessionTitle = _supportSessionTitle(supportSession, l10n);
-    final metadata = _supportSessionMetadata(supportSession, l10n);
-    final note = _shouldDisplaySupportNote(supportSession.notes)
-        ? supportSession.notes?.trim()
-        : null;
+    final guidance = plan?.raceGuidance;
+    final entries = <({String label, String value})>[
+      if (guidance?.raceDayExecution.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceExecutionLabel,
+          value: guidance!.raceDayExecution.trim(),
+        ),
+      if (guidance?.warmup?.trim().isNotEmpty == true)
+        (label: l10n.raceGuidanceWarmupLabel, value: guidance!.warmup!.trim()),
+      if (guidance?.splitPlan?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceSplitPlanLabel,
+          value: guidance!.splitPlan!.trim(),
+        ),
+      if (guidance?.whenToPress?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceWhenToPressLabel,
+          value: guidance!.whenToPress!.trim(),
+        ),
+      if (guidance?.whatToAvoid?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceWhatToAvoidLabel,
+          value: guidance!.whatToAvoid!.trim(),
+        ),
+      if (guidance?.coachingNotes?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceCoachingNotesLabel,
+          value: guidance!.coachingNotes!.trim(),
+        ),
+    ];
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppDetailHeaderBar(
-        title: l10n.sessionDetailSupportTitle,
+        title: l10n.raceDayInfoTitle,
         onBack: () => context.pop(),
       ),
       body: SingleChildScrollView(
@@ -800,89 +718,46 @@ class SessionDetailScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _TypeBadge(label: statusLabel.toUpperCase(), status: status),
+            _TypeBadge(
+              label: l10n.raceDayInfoBadge.toUpperCase(),
+              status: null,
+            ),
             const SizedBox(height: AppSpacing.md),
-            Text(sessionTitle, style: AppTypography.headlineLarge),
+            Text(l10n.raceDayInfoTitle, style: AppTypography.headlineLarge),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              '${l10n.sessionDetailSupportTypeLabel}: $sessionTitle',
-              style: AppTypography.bodyLarge.copyWith(
-                color: AppColors.textSecondary,
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text(
-              '${l10n.sessionDetailSupportStatusLabel}: $statusLabel',
+              l10n.raceDayInfoDetailSubtitle,
               style: AppTypography.bodyLarge.copyWith(
                 color: AppColors.textSecondary,
               ),
             ),
             const SizedBox(height: AppSpacing.xl),
-            if (supportSession.durationMinutes != null)
-              _StatTile(
-                iconAsset: 'assets/icons/stopwatch.svg',
-                label: l10n.sessionDetailEstDurationLabel,
-                value: UnitFormatter.formatDuration(
-                  supportSession.durationMinutes!,
-                  l10n,
+            if (entries.isEmpty)
+              Text(
+                l10n.raceDayInfoFallback,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
                 ),
-              ),
-            const SizedBox(height: AppSpacing.md),
-            if (metadata.isNotEmpty)
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.base),
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundCard,
-                  borderRadius: AppRadius.borderLg,
-                  border: Border.all(color: AppColors.borderDefault),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      l10n.sessionDetailSupportMetadataLabel,
-                      style: AppTypography.titleMedium,
-                    ),
-                    const SizedBox(height: AppSpacing.sm),
-                    ...metadata.map(
-                      (entry) => Padding(
-                        padding: const EdgeInsets.only(bottom: AppSpacing.xs),
-                        child: Text(
-                          entry,
-                          style: AppTypography.bodyMedium.copyWith(
-                            color: AppColors.textSecondary,
-                          ),
+              )
+            else
+              ...entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.label, style: AppTypography.titleMedium),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        entry.value,
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
-            if (note != null) ...[
-              const SizedBox(height: AppSpacing.md),
-              Text(
-                l10n.sessionDetailSupportNotesLabel,
-                style: AppTypography.titleMedium,
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: AppColors.backgroundCard,
-                  borderRadius: AppRadius.borderLg,
-                  border: Border.all(color: AppColors.borderDefault),
-                ),
-                padding: const EdgeInsets.all(AppSpacing.base),
-                child: Text(
-                  note,
-                  style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    ],
                   ),
                 ),
               ),
-            ],
-            const SizedBox(height: AppSpacing.xl),
           ],
         ),
       ),
@@ -1041,6 +916,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.racePaceRun:
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return [];
     }
   }
@@ -1066,40 +942,22 @@ class SessionDetailScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = ref.watch(trainingPlanProvider).value;
     final l10n = AppLocalizations.of(context)!;
-    final runSession = session != null
-        ? (plan?.sessions.firstWhere(
-                (s) => s.id == session!.id,
-                orElse: () => session!,
-              ) ??
-              session!)
-        : null;
-    final supportSessionData = supportSession != null
-        ? (plan?.supportSessions.firstWhere(
-                (s) => s.id == supportSession!.id,
-                orElse: () => supportSession!,
-              ) ??
-              supportSession!)
-        : null;
-
-    if (supportSessionData != null) {
-      return _buildSupportSessionDetail(
-        context: context,
-        supportSession: supportSessionData,
-      );
-    }
-
-    if (runSession == null) {
-      return Scaffold(
-        backgroundColor: AppColors.backgroundPrimary,
-        appBar: AppDetailHeaderBar(
-          title: l10n.sessionDetailTitle,
-          onBack: () => context.pop(),
-        ),
-        body: const Center(child: SizedBox.shrink()),
-      );
-    }
+    final runSession =
+        plan?.sessions.firstWhere(
+          (s) => s.id == session.id,
+          orElse: () => session,
+        ) ??
+        session;
 
     final freshSession = runSession;
+    if (freshSession.type.isRaceDayInfo) {
+      return _buildRaceDayDetail(
+        context: context,
+        session: freshSession,
+        plan: plan,
+      );
+    }
+
     final status = freshSession.status;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
@@ -1135,7 +993,7 @@ class SessionDetailScreen extends ConsumerWidget {
             (status == SessionStatus.today ||
                     status == SessionStatus.upcoming ||
                     status == SessionStatus.skipped) &&
-                !freshSession.type.isRest
+                freshSession.isRunSession
             ? () => showSkipWorkoutBottomSheet(
                 context: context,
                 sessionName: title,

@@ -571,6 +571,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     switch (type) {
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
       case SessionType.longRun:
@@ -610,6 +612,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       SessionType.recoveryRun => l10n.activeRunGuidanceRecovery,
       SessionType.crossTraining => l10n.activeRunGuidanceEasy,
       SessionType.restDay => l10n.activeRunGuidanceRecovery,
+      SessionType.raceDay => l10n.raceDayInfoSubtitle,
     };
   }
 
@@ -672,6 +675,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       SessionType.easyRun => l10n.activeRunTargetEasy,
       SessionType.crossTraining => l10n.activeRunTargetSteady,
       SessionType.restDay => l10n.activeRunTargetEasy,
+      SessionType.raceDay => l10n.raceDayInfoSubtitle,
     };
   }
 

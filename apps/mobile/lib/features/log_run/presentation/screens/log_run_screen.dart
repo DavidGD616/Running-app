@@ -200,6 +200,8 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
     switch (type) {
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
       case SessionType.longRun:

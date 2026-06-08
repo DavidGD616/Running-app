@@ -170,7 +170,7 @@ void main() {
     });
 
     test(
-      'TrainingPlan parses backend support sessions without dropping them',
+      'TrainingPlan drops backend support sessions for mobile plan state',
       () {
         final restored = TrainingPlan.fromJson({
           'schemaVersion': 1,
@@ -196,22 +196,7 @@ void main() {
         });
 
         expect(restored, isNotNull);
-        final supportSessions = restored!.supportSessions;
-
-        expect(supportSessions, hasLength(1));
-        expect(supportSessions.first.type, SupplementalSessionType.strength);
-        expect(supportSessions.first.durationMinutes, 45);
-        expect(supportSessions.first.load, 'moderate');
-        expect(supportSessions.first.timingGuidance, 'on_off_days');
-        expect(
-          supportSessions.first.interferenceRule,
-          'avoid_day_before_long_run',
-        );
-        expect(
-          supportSessions.first.taperAdjustment,
-          'reduce_load_week_before_race',
-        );
-        expect(supportSessions.first.notes, 'Leg strength ladder.');
+        expect(restored!.supportSessions, isEmpty);
       },
     );
 

@@ -162,7 +162,7 @@ void main() {
       expect(restored.totalWeeks, plan.totalWeeks);
       expect(restored.currentWeekNumber, plan.currentWeekNumber);
       expect(restored.sessions, hasLength(plan.sessions.length));
-      expect(restored.supportSessions, hasLength(plan.supportSessions.length));
+      expect(restored.supportSessions, isEmpty);
       if (plan.sessions.isNotEmpty) {
         expect(restored.sessions.first.id, plan.sessions.first.id);
       }
@@ -187,8 +187,11 @@ void main() {
         final restored = TrainingPlan.fromJson(plan.toJson());
 
         expect(restored, isNotNull, reason: 'raceType: ${raceType.name}');
-        expect(restored!.raceType, raceType,
-            reason: 'raceType: ${raceType.name}');
+        expect(
+          restored!.raceType,
+          raceType,
+          reason: 'raceType: ${raceType.name}',
+        );
       }
     });
   });

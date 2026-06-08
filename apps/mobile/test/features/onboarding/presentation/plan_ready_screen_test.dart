@@ -8,7 +8,6 @@ import 'package:running_app/features/goals/presentation/goal_provider.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/onboarding/presentation/screens/plan_ready_screen.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
-import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
 import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
@@ -76,7 +75,7 @@ void main() {
     );
   }
 
-  testWidgets('plan ready renders race guidance and pace zones when present', (
+  testWidgets('plan ready hides race guidance and pace zones when present', (
     tester,
   ) async {
     final goal = buildHalfMarathonTimeGoal();
@@ -95,17 +94,6 @@ void main() {
           weekNumber: 1,
         ),
       ],
-      paceZones: const StravaPaceZones(
-        recovery: StravaPaceZone(paceMinSecPerKm: null, paceMaxSecPerKm: 420),
-        easy: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 340),
-        longRun: StravaPaceZone(paceMinSecPerKm: 280, paceMaxSecPerKm: 300),
-        steady: StravaPaceZone(paceMinSecPerKm: 270, paceMaxSecPerKm: 285),
-        tempo: StravaPaceZone(paceMinSecPerKm: 240, paceMaxSecPerKm: 260),
-        threshold: StravaPaceZone(paceMinSecPerKm: 230, paceMaxSecPerKm: 250),
-        racePace: StravaPaceZone(paceMinSecPerKm: 220, paceMaxSecPerKm: 230),
-        intervals: StravaPaceZone(paceMinSecPerKm: 200, paceMaxSecPerKm: 215),
-        strides: StravaPaceZone(paceMinSecPerKm: 180, paceMaxSecPerKm: 190),
-      ),
       raceGuidance: const RaceGuidance(
         raceDayExecution: 'Start controlled, finish strong.',
         warmup: '15-minute warm-up and strides.',
@@ -122,15 +110,15 @@ void main() {
 
     expect(
       find.text(l10n.planGuidancePaceZonesTitle.toUpperCase()),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.textContaining('7:00'), findsOneWidget);
     expect(
       find.text(l10n.planGuidanceRaceGuidanceTitle.toUpperCase()),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.text(plan.raceGuidance!.raceDayExecution), findsOneWidget);
-    expect(find.text(plan.raceGuidance!.coachingNotes!), findsOneWidget);
+    expect(find.text(plan.raceGuidance!.raceDayExecution), findsNothing);
+    expect(find.text(plan.raceGuidance!.coachingNotes!), findsNothing);
+    expect(find.text(l10n.planReadyStartPlan), findsOneWidget);
   });
 
   testWidgets(
@@ -175,7 +163,9 @@ void main() {
     },
   );
 
-  testWidgets('plan ready pace-zone guidance reads in Spanish', (tester) async {
+  testWidgets('plan ready details read in Spanish without guidance sections', (
+    tester,
+  ) async {
     final goal = buildHalfMarathonTimeGoal();
     final draft = buildRunnerProfileDraft();
     final plan = TrainingPlan(
@@ -192,16 +182,8 @@ void main() {
           weekNumber: 1,
         ),
       ],
-      paceZones: const StravaPaceZones(
-        recovery: StravaPaceZone(paceMinSecPerKm: null, paceMaxSecPerKm: 420),
-        easy: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 340),
-        longRun: StravaPaceZone(paceMinSecPerKm: 280, paceMaxSecPerKm: 300),
-        steady: StravaPaceZone(paceMinSecPerKm: 270, paceMaxSecPerKm: 285),
-        tempo: StravaPaceZone(paceMinSecPerKm: 240, paceMaxSecPerKm: 260),
-        threshold: StravaPaceZone(paceMinSecPerKm: 230, paceMaxSecPerKm: 250),
-        racePace: StravaPaceZone(paceMinSecPerKm: 220, paceMaxSecPerKm: 230),
-        intervals: StravaPaceZone(paceMinSecPerKm: 200, paceMaxSecPerKm: 215),
-        strides: StravaPaceZone(paceMinSecPerKm: 180, paceMaxSecPerKm: 190),
+      raceGuidance: const RaceGuidance(
+        raceDayExecution: 'Mantén ritmo controlado en el primer tramo.',
       ),
     );
 
@@ -215,12 +197,16 @@ void main() {
 
     expect(
       find.text(l10n.planGuidancePaceZonesTitle.toUpperCase()),
-      findsOneWidget,
+      findsNothing,
     );
     expect(
-      find.text(l10n.onboardingStravaAnalysisPaceZoneRecovery),
-      findsOneWidget,
+      find.text(l10n.planGuidanceRaceGuidanceTitle.toUpperCase()),
+      findsNothing,
     );
-    expect(find.textContaining('7:00'), findsOneWidget);
+    expect(
+      find.text('Mantén ritmo controlado en el primer tramo.'),
+      findsNothing,
+    );
+    expect(find.text(l10n.planReadyStartPlan), findsOneWidget);
   });
 }
