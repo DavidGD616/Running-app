@@ -1255,54 +1255,6 @@ abstract class AppLocalizations {
   /// **'DD / MM / YYYY'**
   String get tapToSetDate;
 
-  /// Section label for race priority on goal screen
-  ///
-  /// In en, this message translates to:
-  /// **'What\'s your priority?'**
-  String get priorityLabel;
-
-  /// Priority option: finish the race
-  ///
-  /// In en, this message translates to:
-  /// **'Just finish'**
-  String get priorityJustFinish;
-
-  /// Priority option: finish strong
-  ///
-  /// In en, this message translates to:
-  /// **'Finish feeling strong'**
-  String get priorityFinishStrong;
-
-  /// Priority option: improve time
-  ///
-  /// In en, this message translates to:
-  /// **'Improve my time'**
-  String get priorityImproveTime;
-
-  /// Priority option: build consistency
-  ///
-  /// In en, this message translates to:
-  /// **'Build consistency'**
-  String get priorityConsistency;
-
-  /// Priority option: general fitness
-  ///
-  /// In en, this message translates to:
-  /// **'General fitness'**
-  String get priorityGeneralFitness;
-
-  /// Section label for current race time on goal screen
-  ///
-  /// In en, this message translates to:
-  /// **'Current race time'**
-  String get currentRaceTime;
-
-  /// Section label for target race time on goal screen
-  ///
-  /// In en, this message translates to:
-  /// **'Target race time'**
-  String get targetRaceTime;
-
   /// Time picker placeholder
   ///
   /// In en, this message translates to:
@@ -2014,13 +1966,13 @@ abstract class AppLocalizations {
   /// Subtitle on the strength preferences onboarding screen
   ///
   /// In en, this message translates to:
-  /// **'Tell us how lifting fits around your running so your plan can protect key workouts.'**
+  /// **'Tell us when lower-body strength usually happens so your running plan can protect key workouts.'**
   String get strengthPreferencesSubtitle;
 
   /// Question asking whether the user currently lifts
   ///
   /// In en, this message translates to:
-  /// **'Do you lift or do strength training?'**
+  /// **'Do you do lower-body strength or leg day?'**
   String get strengthLiftsLabel;
 
   /// Section label for weekly strength frequency
@@ -2074,13 +2026,13 @@ abstract class AppLocalizations {
   /// Section label for preferred lifting days
   ///
   /// In en, this message translates to:
-  /// **'Preferred lifting days'**
+  /// **'Leg days'**
   String get strengthPreferredDaysLabel;
 
   /// Helper copy for selecting preferred lifting days
   ///
   /// In en, this message translates to:
-  /// **'Pick the days you usually lift or prefer lower-body work.'**
+  /// **'Pick the days you usually do lower-body strength.'**
   String get strengthPreferredDaysHelper;
 
   /// Section label for same-day run and lift order
@@ -2142,6 +2094,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'We\'ll place strength around harder runs and long runs.'**
   String get strengthOrderDependsSub;
+
+  /// Title for race target confirmation onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your race target'**
+  String get raceTargetTitle;
+
+  /// Subtitle when a suggested target exists
+  ///
+  /// In en, this message translates to:
+  /// **'Use this target or adjust it before your plan is created.'**
+  String get raceTargetSuggestedSubtitle;
+
+  /// Subtitle when no suggested race target exists
+  ///
+  /// In en, this message translates to:
+  /// **'Add a target time so the plan can set the right workout paces.'**
+  String get raceTargetCustomSubtitle;
+
+  /// Label for editable primary race target time
+  ///
+  /// In en, this message translates to:
+  /// **'Primary target'**
+  String get raceTargetPrimaryLabel;
+
+  /// Label for suggested primary target
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested target'**
+  String get raceTargetSuggestedPrimaryLabel;
+
+  /// Label for suggested stretch target
+  ///
+  /// In en, this message translates to:
+  /// **'Stretch target'**
+  String get raceTargetSuggestedStretchLabel;
 
   /// Section label on training preferences screen
   ///
@@ -3223,6 +3211,72 @@ abstract class AppLocalizations {
   /// **'Race Day Guidance'**
   String get planGuidanceRaceGuidanceTitle;
 
+  /// Title for info-only race day calendar item
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day'**
+  String get raceDayInfoTitle;
+
+  /// Subtitle for race day info calendar item
+  ///
+  /// In en, this message translates to:
+  /// **'Race strategy and final reminders'**
+  String get raceDayInfoSubtitle;
+
+  /// Badge label for info-only race day detail
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get raceDayInfoBadge;
+
+  /// Subtitle for race day detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review the plan for how to approach the race. This is guidance only, not a run to start in the app.'**
+  String get raceDayInfoDetailSubtitle;
+
+  /// Fallback copy when race guidance is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Start controlled, settle into rhythm, and finish with your strongest sustainable effort.'**
+  String get raceDayInfoFallback;
+
+  /// Label for race day execution guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Race day execution'**
+  String get raceGuidanceExecutionLabel;
+
+  /// Label for race warmup guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Warmup'**
+  String get raceGuidanceWarmupLabel;
+
+  /// Label for race split plan guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Split plan'**
+  String get raceGuidanceSplitPlanLabel;
+
+  /// Label for when to push race guidance
+  ///
+  /// In en, this message translates to:
+  /// **'When to push'**
+  String get raceGuidanceWhenToPressLabel;
+
+  /// Label for race avoidance guidance
+  ///
+  /// In en, this message translates to:
+  /// **'What to avoid'**
+  String get raceGuidanceWhatToAvoidLabel;
+
+  /// Label for race coaching notes
+  ///
+  /// In en, this message translates to:
+  /// **'Coaching notes'**
+  String get raceGuidanceCoachingNotesLabel;
+
   /// Race-day execution guidance heading
   ///
   /// In en, this message translates to:
@@ -4208,13 +4262,13 @@ abstract class AppLocalizations {
   /// Subtitle on the intro screen before editing the current goal
   ///
   /// In en, this message translates to:
-  /// **'You can review your race, date, priority, and time targets before saving the changes.'**
+  /// **'You can review your race and date before saving the changes.'**
   String get settingsEditGoalIntroSubtitle;
 
   /// First explainer item for edit goal intro screen
   ///
   /// In en, this message translates to:
-  /// **'Adjust your race or target distance.'**
+  /// **'Adjust your race distance.'**
   String get settingsEditGoalIntroPointRace;
 
   /// Second explainer item for edit goal intro screen
@@ -4226,7 +4280,7 @@ abstract class AppLocalizations {
   /// Third explainer item for edit goal intro screen
   ///
   /// In en, this message translates to:
-  /// **'Review your priority and pacing targets before saving.'**
+  /// **'Review the race details before saving.'**
   String get settingsEditGoalIntroPointPriority;
 
   /// Training preferences explainer item for edit goal intro screen
@@ -4244,13 +4298,13 @@ abstract class AppLocalizations {
   /// Subtitle on the intro screen before creating a new goal
   ///
   /// In en, this message translates to:
-  /// **'This flow starts fresh so you can choose a different target and save a new goal for your plan.'**
+  /// **'This flow starts fresh so you can choose a different race and save a new goal for your plan.'**
   String get settingsNewGoalIntroSubtitle;
 
   /// First explainer item for new goal intro screen
   ///
   /// In en, this message translates to:
-  /// **'Choose a new race or custom distance.'**
+  /// **'Choose a new race distance.'**
   String get settingsNewGoalIntroPointRace;
 
   /// Second explainer item for new goal intro screen

@@ -15,6 +15,7 @@ import '../../features/onboarding/presentation/screens/onboarding_intro_screen.d
 import '../../features/onboarding/presentation/screens/goal_screen.dart';
 import '../../features/onboarding/presentation/screens/strava_connect_screen.dart';
 import '../../features/onboarding/presentation/screens/strava_analysis_screen.dart';
+import '../../features/onboarding/presentation/screens/race_target_screen.dart';
 import '../../features/onboarding/presentation/screens/current_fitness_screen.dart';
 import '../../features/onboarding/presentation/screens/schedule_screen.dart';
 import '../../features/onboarding/presentation/screens/health_injury_screen.dart';
@@ -256,7 +257,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.raceTarget,
-        redirect: (_, _) => RouteNames.schedule,
+        builder: (context, state) => const RaceTargetScreen(),
       ),
       GoRoute(
         path: RouteNames.schedule,
@@ -425,7 +426,6 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           final args = state.extra as SessionDetailArgs;
           return SessionDetailScreen(
             session: args.session,
-            supportSession: args.supportSession,
             showStartWorkout: args.showStartWorkout,
           );
         },

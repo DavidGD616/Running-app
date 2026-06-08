@@ -479,9 +479,6 @@ void main() {
             race: RunnerGoalRace.halfMarathon.key,
             hasRaceDate: true,
             raceDate: DateTime(2026, 10, 18),
-            priority: GoalPriority.improveTime.key,
-            currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
-            targetTime: const Duration(hours: 1, minutes: 55),
           );
 
       await Future<void>.delayed(Duration.zero);
@@ -529,9 +526,6 @@ void main() {
         race: RunnerGoalRace.halfMarathon.key,
         hasRaceDate: true,
         raceDate: DateTime(2026, 10, 18),
-        priority: GoalPriority.improveTime.key,
-        currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
-        targetTime: const Duration(hours: 1, minutes: 55),
       );
       notifier.setFitness(
         experience: RunnerExperience.intermediate.key,
@@ -604,9 +598,6 @@ void main() {
         race: RunnerGoalRace.halfMarathon.key,
         hasRaceDate: true,
         raceDate: DateTime(2026, 10, 18),
-        priority: GoalPriority.improveTime.key,
-        currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
-        targetTime: const Duration(hours: 1, minutes: 55),
       );
       notifier.setFitness(
         experience: RunnerExperience.intermediate.key,
@@ -666,10 +657,7 @@ void main() {
       expect(restoredDraft.schedule.trainingDays, 4);
       expect(restoredDraft.device.device, WatchDeviceType.garmin);
       expect(restoredProfile, isNotNull);
-      expect(
-        restoredProfile!.goal.targetTime,
-        const Duration(hours: 1, minutes: 55),
-      );
+      expect(restoredProfile!.goal.race, RunnerGoalRace.halfMarathon);
       expect(restoredProfile.gender, ProfileGender.female);
       expect(restoredProfile.dateOfBirth, DateTime(1994, 6, 20));
       expect(
@@ -752,9 +740,6 @@ void main() {
         race: RunnerGoalRace.halfMarathon.key,
         hasRaceDate: true,
         raceDate: DateTime(2026, 10, 18),
-        priority: GoalPriority.improveTime.key,
-        currentTime: const Duration(hours: 2, minutes: 1),
-        targetTime: const Duration(hours: 1, minutes: 55),
       );
       notifier.setFitness(
         experience: RunnerExperience.intermediate.key,

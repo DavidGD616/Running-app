@@ -80,9 +80,6 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     required String race,
     required bool hasRaceDate,
     DateTime? raceDate,
-    required String priority,
-    Duration? currentTime,
-    Duration? targetTime,
   }) {
     _setState(
       (state.value ?? const RunnerProfileDraft()).copyWith(
@@ -90,10 +87,16 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           race: RunnerGoalRace.fromKey(race),
           hasRaceDate: hasRaceDate,
           raceDate: raceDate,
-          priority: GoalPriority.fromKey(priority),
-          currentTime: currentTime,
-          targetTime: targetTime,
         ),
+        clearAcceptedRaceTarget: true,
+      ),
+    );
+  }
+
+  void setAcceptedRaceTarget(AcceptedRaceTarget acceptedRaceTarget) {
+    _setState(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
+        acceptedRaceTarget: acceptedRaceTarget,
       ),
     );
   }

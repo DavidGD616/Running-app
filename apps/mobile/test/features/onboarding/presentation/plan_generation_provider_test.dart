@@ -140,8 +140,17 @@ StravaCoachingProfile _buildStravaCoachingProfile() {
 RunnerProfileDraft _stravaOnboardingDraft() {
   final base = buildRunnerProfileDraft();
   final baseFitness = base.fitness;
+  final coachingProfile = _buildStravaCoachingProfile();
+  final raceTarget = coachingProfile.raceTargets.first;
 
   return base.copyWith(
+    acceptedRaceTarget: AcceptedRaceTarget(
+      distanceKm: raceTarget.distanceKm,
+      primaryTime: raceTarget.primaryTime,
+      stretchTime: raceTarget.stretchTime,
+      confidence: raceTarget.confidence,
+      evidence: raceTarget.evidence,
+    ),
     fitness: RunnerProfileDraft.fitnessFromInput(
       experience: baseFitness.experience!.key,
       runningDays: '${baseFitness.runningDays}',
@@ -152,7 +161,7 @@ RunnerProfileDraft _stravaOnboardingDraft() {
       benchmark: baseFitness.benchmark!.key,
       benchmarkTime: baseFitness.benchmarkTime,
       fitnessSource: 'strava',
-      stravaCoachingProfile: _buildStravaCoachingProfile(),
+      stravaCoachingProfile: coachingProfile,
     ),
   );
 }

@@ -672,30 +672,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapToSetDate => 'DD / MM / YYYY';
 
   @override
-  String get priorityLabel => 'What\'s your priority?';
-
-  @override
-  String get priorityJustFinish => 'Just finish';
-
-  @override
-  String get priorityFinishStrong => 'Finish feeling strong';
-
-  @override
-  String get priorityImproveTime => 'Improve my time';
-
-  @override
-  String get priorityConsistency => 'Build consistency';
-
-  @override
-  String get priorityGeneralFitness => 'General fitness';
-
-  @override
-  String get currentRaceTime => 'Current race time';
-
-  @override
-  String get targetRaceTime => 'Target race time';
-
-  @override
   String get tapToSetTime => 'Tap to set time';
 
   @override
@@ -1059,10 +1035,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strengthPreferencesSubtitle =>
-      'Tell us how lifting fits around your running so your plan can protect key workouts.';
+      'Tell us when lower-body strength usually happens so your running plan can protect key workouts.';
 
   @override
-  String get strengthLiftsLabel => 'Do you lift or do strength training?';
+  String get strengthLiftsLabel => 'Do you do lower-body strength or leg day?';
 
   @override
   String get strengthFrequencyLabel => 'How many days per week?';
@@ -1098,11 +1074,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get strengthCategoryFullBody => 'Full body';
 
   @override
-  String get strengthPreferredDaysLabel => 'Preferred lifting days';
+  String get strengthPreferredDaysLabel => 'Leg days';
 
   @override
   String get strengthPreferredDaysHelper =>
-      'Pick the days you usually lift or prefer lower-body work.';
+      'Pick the days you usually do lower-body strength.';
 
   @override
   String get strengthSameDayOrderLabel =>
@@ -1139,6 +1115,26 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get strengthOrderDependsSub =>
       'We\'ll place strength around harder runs and long runs.';
+
+  @override
+  String get raceTargetTitle => 'Confirm your race target';
+
+  @override
+  String get raceTargetSuggestedSubtitle =>
+      'Use this target or adjust it before your plan is created.';
+
+  @override
+  String get raceTargetCustomSubtitle =>
+      'Add a target time so the plan can set the right workout paces.';
+
+  @override
+  String get raceTargetPrimaryLabel => 'Primary target';
+
+  @override
+  String get raceTargetSuggestedPrimaryLabel => 'Suggested target';
+
+  @override
+  String get raceTargetSuggestedStretchLabel => 'Stretch target';
 
   @override
   String get runSurfaceLabel => 'Where do you run most?';
@@ -1724,6 +1720,41 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planGuidanceRaceGuidanceTitle => 'Race Day Guidance';
 
   @override
+  String get raceDayInfoTitle => 'Race Day';
+
+  @override
+  String get raceDayInfoSubtitle => 'Race strategy and final reminders';
+
+  @override
+  String get raceDayInfoBadge => 'Info';
+
+  @override
+  String get raceDayInfoDetailSubtitle =>
+      'Review the plan for how to approach the race. This is guidance only, not a run to start in the app.';
+
+  @override
+  String get raceDayInfoFallback =>
+      'Start controlled, settle into rhythm, and finish with your strongest sustainable effort.';
+
+  @override
+  String get raceGuidanceExecutionLabel => 'Race day execution';
+
+  @override
+  String get raceGuidanceWarmupLabel => 'Warmup';
+
+  @override
+  String get raceGuidanceSplitPlanLabel => 'Split plan';
+
+  @override
+  String get raceGuidanceWhenToPressLabel => 'When to push';
+
+  @override
+  String get raceGuidanceWhatToAvoidLabel => 'What to avoid';
+
+  @override
+  String get raceGuidanceCoachingNotesLabel => 'Coaching notes';
+
+  @override
   String get planGuidanceRaceDayExecutionLabel => 'Race Day Execution';
 
   @override
@@ -2263,11 +2294,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroSubtitle =>
-      'You can review your race, date, priority, and time targets before saving the changes.';
+      'You can review your race and date before saving the changes.';
 
   @override
-  String get settingsEditGoalIntroPointRace =>
-      'Adjust your race or target distance.';
+  String get settingsEditGoalIntroPointRace => 'Adjust your race distance.';
 
   @override
   String get settingsEditGoalIntroPointDate =>
@@ -2275,7 +2305,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroPointPriority =>
-      'Review your priority and pacing targets before saving.';
+      'Review the race details before saving.';
 
   @override
   String get settingsEditGoalIntroPointTraining =>
@@ -2287,11 +2317,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNewGoalIntroSubtitle =>
-      'This flow starts fresh so you can choose a different target and save a new goal for your plan.';
+      'This flow starts fresh so you can choose a different race and save a new goal for your plan.';
 
   @override
-  String get settingsNewGoalIntroPointRace =>
-      'Choose a new race or custom distance.';
+  String get settingsNewGoalIntroPointRace => 'Choose a new race distance.';
 
   @override
   String get settingsNewGoalIntroPointDate =>

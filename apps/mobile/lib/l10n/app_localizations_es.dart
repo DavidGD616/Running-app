@@ -676,30 +676,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get tapToSetDate => 'DD / MM / AAAA';
 
   @override
-  String get priorityLabel => '¿Cuál es tu prioridad?';
-
-  @override
-  String get priorityJustFinish => 'Solo terminar';
-
-  @override
-  String get priorityFinishStrong => 'Terminar sintiéndome bien';
-
-  @override
-  String get priorityImproveTime => 'Mejorar mi tiempo';
-
-  @override
-  String get priorityConsistency => 'Desarrollar constancia';
-
-  @override
-  String get priorityGeneralFitness => 'Forma física general';
-
-  @override
-  String get currentRaceTime => 'Tiempo actual de carrera';
-
-  @override
-  String get targetRaceTime => 'Tiempo objetivo de carrera';
-
-  @override
   String get tapToSetTime => 'Toca para establecer el tiempo';
 
   @override
@@ -1066,11 +1042,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get strengthPreferencesSubtitle =>
-      'Cuéntanos cómo encaja la fuerza con tu running para que tu plan proteja los entrenamientos clave.';
+      'Cuéntanos cuándo haces fuerza de tren inferior para que tu plan proteja los entrenamientos clave.';
 
   @override
   String get strengthLiftsLabel =>
-      '¿Levantas pesas o haces entrenamiento de fuerza?';
+      '¿Haces fuerza de tren inferior o día de pierna?';
 
   @override
   String get strengthFrequencyLabel => '¿Cuántos días por semana?';
@@ -1106,11 +1082,11 @@ class AppLocalizationsEs extends AppLocalizations {
   String get strengthCategoryFullBody => 'Cuerpo completo';
 
   @override
-  String get strengthPreferredDaysLabel => 'Días preferidos para fuerza';
+  String get strengthPreferredDaysLabel => 'Días de pierna';
 
   @override
   String get strengthPreferredDaysHelper =>
-      'Elige los días en que normalmente levantas o prefieres trabajar tren inferior.';
+      'Elige los días en que normalmente haces fuerza de tren inferior.';
 
   @override
   String get strengthSameDayOrderLabel =>
@@ -1147,6 +1123,26 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get strengthOrderDependsSub =>
       'Ubicaremos la fuerza alrededor de las carreras más duras y tiradas largas.';
+
+  @override
+  String get raceTargetTitle => 'Confirma tu objetivo de carrera';
+
+  @override
+  String get raceTargetSuggestedSubtitle =>
+      'Usa este objetivo o ajústalo antes de crear tu plan.';
+
+  @override
+  String get raceTargetCustomSubtitle =>
+      'Agrega un tiempo objetivo para que el plan ajuste bien los ritmos.';
+
+  @override
+  String get raceTargetPrimaryLabel => 'Objetivo principal';
+
+  @override
+  String get raceTargetSuggestedPrimaryLabel => 'Objetivo sugerido';
+
+  @override
+  String get raceTargetSuggestedStretchLabel => 'Objetivo ambicioso';
 
   @override
   String get runSurfaceLabel => '¿Dónde corres más?';
@@ -1737,6 +1733,42 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planGuidanceRaceGuidanceTitle => 'Guía del día de carrera';
 
   @override
+  String get raceDayInfoTitle => 'Día de carrera';
+
+  @override
+  String get raceDayInfoSubtitle =>
+      'Estrategia de carrera y recordatorios finales';
+
+  @override
+  String get raceDayInfoBadge => 'Info';
+
+  @override
+  String get raceDayInfoDetailSubtitle =>
+      'Revisa el plan para saber cómo afrontar la carrera. Esto es solo guía, no una carrera para iniciar en la app.';
+
+  @override
+  String get raceDayInfoFallback =>
+      'Empieza controlado, encuentra ritmo y termina con tu esfuerzo sostenible más fuerte.';
+
+  @override
+  String get raceGuidanceExecutionLabel => 'Ejecución del día de carrera';
+
+  @override
+  String get raceGuidanceWarmupLabel => 'Calentamiento';
+
+  @override
+  String get raceGuidanceSplitPlanLabel => 'Plan de parciales';
+
+  @override
+  String get raceGuidanceWhenToPressLabel => 'Cuándo apretar';
+
+  @override
+  String get raceGuidanceWhatToAvoidLabel => 'Qué evitar';
+
+  @override
+  String get raceGuidanceCoachingNotesLabel => 'Notas del coach';
+
+  @override
   String get planGuidanceRaceDayExecutionLabel => 'Ejecución de carrera';
 
   @override
@@ -2279,11 +2311,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroSubtitle =>
-      'Podrás revisar tu carrera, fecha, prioridad y tiempos objetivo antes de guardar los cambios.';
+      'Podrás revisar tu carrera y fecha antes de guardar los cambios.';
 
   @override
   String get settingsEditGoalIntroPointRace =>
-      'Ajusta tu carrera o distancia objetivo.';
+      'Ajusta la distancia de tu carrera.';
 
   @override
   String get settingsEditGoalIntroPointDate =>
@@ -2291,7 +2323,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroPointPriority =>
-      'Revisa tu prioridad y tus tiempos antes de guardar.';
+      'Revisa los detalles de la carrera antes de guardar.';
 
   @override
   String get settingsEditGoalIntroPointTraining =>
@@ -2303,11 +2335,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsNewGoalIntroSubtitle =>
-      'Este flujo empieza desde cero para que puedas elegir una meta distinta y guardarla para tu plan.';
+      'Este flujo empieza desde cero para que puedas elegir una carrera distinta y guardarla para tu plan.';
 
   @override
   String get settingsNewGoalIntroPointRace =>
-      'Elige una nueva carrera o una distancia personalizada.';
+      'Elige una nueva distancia de carrera.';
 
   @override
   String get settingsNewGoalIntroPointDate =>

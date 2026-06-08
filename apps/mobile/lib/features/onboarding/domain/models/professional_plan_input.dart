@@ -28,8 +28,9 @@ ProfessionalPlanInput? buildProfessionalPlanInputFromOnboardingDraft({
     return null;
   }
 
-  final acceptedRaceTarget = _acceptedRaceTargetFromDraft(draft);
-  if (acceptedRaceTarget == null) {
+  final acceptedRaceTarget = draft.acceptedRaceTarget;
+  if (acceptedRaceTarget == null ||
+      !_raceTargetMatchesGoal(acceptedRaceTarget, goal.race)) {
     return null;
   }
 
@@ -80,22 +81,24 @@ PlanIntensity? _planIntensityFromPreference(PlanPreferenceChoice? preference) {
   };
 }
 
-AcceptedRaceTarget? _acceptedRaceTargetFromDraft(RunnerProfileDraft draft) {
-  final profileTargets = draft.fitness.stravaCoachingProfile?.raceTargets;
-  if (profileTargets != null && profileTargets.isNotEmpty) {
-    final first = profileTargets.first;
-    return AcceptedRaceTarget(
-      distanceKm: first.distanceKm,
-      primaryTime: first.primaryTime,
-      stretchTime: first.stretchTime,
-      confidence: first.confidence,
-      evidence: first.evidence,
-    );
-  }
-
+AcceptedRaceTarget? suggestedRaceTargetFromDraft(RunnerProfileDraft draft) {
   final goal = draft.goal;
   final goalDistance = _goalDistanceKm(goal.race);
   if (goalDistance == null) return null;
+
+  final profileTargets = draft.fitness.stravaCoachingProfile?.raceTargets;
+  if (profileTargets != null && profileTargets.isNotEmpty) {
+    final matchingTarget = _matchingRaceTarget(profileTargets, goalDistance);
+    if (matchingTarget != null) {
+      return AcceptedRaceTarget(
+        distanceKm: matchingTarget.distanceKm,
+        primaryTime: matchingTarget.primaryTime,
+        stretchTime: matchingTarget.stretchTime,
+        confidence: matchingTarget.confidence,
+        evidence: matchingTarget.evidence,
+      );
+    }
+  }
 
   final fallbackRaceTargetTime = _fallbackRaceTargetTimeFromDraft(
     draft,
@@ -112,13 +115,23 @@ AcceptedRaceTarget? _acceptedRaceTargetFromDraft(RunnerProfileDraft draft) {
   );
 }
 
+StravaRaceTargetEstimate? _matchingRaceTarget(
+  List<StravaRaceTargetEstimate> targets,
+  double goalDistanceKm,
+) {
+  for (final target in targets) {
+    if ((target.distanceKm - goalDistanceKm).abs() <=
+        _raceDistanceToleranceKm) {
+      return target;
+    }
+  }
+  return null;
+}
+
 Duration? _fallbackRaceTargetTimeFromDraft(
   RunnerProfileDraft draft,
   double goalDistance,
 ) {
-  if (draft.goal.targetTime != null) return draft.goal.targetTime;
-  if (draft.goal.currentTime != null) return draft.goal.currentTime;
-
   final benchmarkTime = _projectedBenchmarkTimeForGoal(
     goalDistanceKm: goalDistance,
     benchmarkType: draft.fitness.benchmark,
@@ -126,7 +139,7 @@ Duration? _fallbackRaceTargetTimeFromDraft(
   );
   if (benchmarkTime != null) return benchmarkTime;
 
-  return _conservativeFallbackTime(goalDistance);
+  return null;
 }
 
 Duration? _projectedBenchmarkTimeForGoal({
@@ -147,15 +160,6 @@ Duration? _projectedBenchmarkTimeForGoal({
     sourceDistanceKm: benchmarkDistanceKm,
     targetDistanceKm: goalDistanceKm,
   );
-}
-
-Duration _conservativeFallbackTime(double goalDistanceKm) {
-  // Deterministic conservative fallback used when no authoritative target time is
-  // available in the draft (e.g. no goal target/current time and no usable
-  // benchmark). This keeps professional input deterministic and avoids legacy
-  // onboarding fallback behavior.
-  const fallbackPaceSecondsPerKm = 450.0; // 7:30/km
-  return Duration(seconds: (goalDistanceKm * fallbackPaceSecondsPerKm).round());
 }
 
 double _benchmarkDistanceKmFromType(BenchmarkType type) {
@@ -200,6 +204,14 @@ double? _goalDistanceKm(RunnerGoalRace? race) {
     RunnerGoalRace.other || null => null,
   };
 }
+
+bool _raceTargetMatchesGoal(AcceptedRaceTarget target, RunnerGoalRace race) {
+  final goalDistance = _goalDistanceKm(race);
+  if (goalDistance == null) return false;
+  return (target.distanceKm - goalDistance).abs() <= _raceDistanceToleranceKm;
+}
+
+const _raceDistanceToleranceKm = 0.05;
 
 ManualFitnessInput? _manualFitnessFromDraft(FitnessProfileDraft draft) {
   if (draft.experience == null) return null;
@@ -582,50 +594,10 @@ GoalProfile _requiredGoalProfile(
     );
   }
 
-  final priorityKey = requiredString(value, 'priority', context: nestedContext);
-  final priority = GoalPriority.fromKey(priorityKey);
-  if (priority == null) {
-    throw FormatException(
-      'Invalid $nestedContext: unsupported priority "$priorityKey".',
-    );
-  }
-
-  final currentTime = optionalDurationMs(
-    value,
-    'currentTimeMs',
-    context: nestedContext,
-  );
-  final targetTime = optionalDurationMs(
-    value,
-    'targetTimeMs',
-    context: nestedContext,
-  );
-
-  if (currentTime != null && currentTime <= Duration.zero) {
-    throw const FormatException(
-      'Invalid professional plan input.goal: currentTimeMs must be > 0 when present.',
-    );
-  }
-  if (targetTime != null && targetTime <= Duration.zero) {
-    throw const FormatException(
-      'Invalid professional plan input.goal: targetTimeMs must be > 0 when present.',
-    );
-  }
-
-  final requiresTimes = priority == GoalPriority.improveTime;
-  if (requiresTimes && (currentTime == null || targetTime == null)) {
-    throw const FormatException(
-      'Invalid professional plan input.goal: improve time priority requires currentTimeMs and targetTimeMs.',
-    );
-  }
-
   return GoalProfile(
     race: race,
     hasRaceDate: hasRaceDate,
     raceDate: hasRaceDate ? raceDate : null,
-    priority: priority,
-    currentTime: requiresTimes ? currentTime : null,
-    targetTime: requiresTimes ? targetTime : null,
   );
 }
 
@@ -736,9 +708,6 @@ Map<String, dynamic> _goalProfileToJson(GoalProfile value) {
         'race': value.race.key,
         'hasRaceDate': value.hasRaceDate,
         'raceDate': value.raceDate?.toIso8601String(),
-        'priority': value.priority.key,
-        'currentTimeMs': value.currentTime?.inMilliseconds,
-        'targetTimeMs': value.targetTime?.inMilliseconds,
       })
       as Map<String, dynamic>;
 }

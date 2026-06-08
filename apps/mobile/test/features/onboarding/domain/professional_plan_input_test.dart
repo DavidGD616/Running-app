@@ -174,17 +174,20 @@ void main() {
     });
 
     test('onboarding draft schedule planStartDate is forwarded to input', () {
-      final draft = _nonTimeStravaDraftWithoutTargets().copyWith(
-        schedule: ScheduleProfileDraft(
-          trainingDays: 4,
-          longRunDay: WeekdayChoice.sunday,
-          weekdayTime: TimeSlot.min45,
-          weekendTime: TimeSlot.min90,
-          hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
-          preferredTimeOfDay: PreferredTimeOfDay.morning,
-          planStartDate: DateTime(2026, 6, 13, 8, 15),
-        ),
-      );
+      final draft =
+          _withAcceptedSuggestedRaceTarget(
+            _nonTimeStravaDraftWithoutTargets(),
+          ).copyWith(
+            schedule: ScheduleProfileDraft(
+              trainingDays: 4,
+              longRunDay: WeekdayChoice.sunday,
+              weekdayTime: TimeSlot.min45,
+              weekendTime: TimeSlot.min90,
+              hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+              preferredTimeOfDay: PreferredTimeOfDay.morning,
+              planStartDate: DateTime(2026, 6, 13, 8, 15),
+            ),
+          );
 
       final input = buildProfessionalPlanInputFromOnboardingDraft(
         draft: draft,
@@ -202,17 +205,20 @@ void main() {
     test(
       'non-onboarding generation can omit planStartDate while keeping schedule draft',
       () {
-        final draft = _nonTimeStravaDraftWithoutTargets().copyWith(
-          schedule: ScheduleProfileDraft(
-            trainingDays: 4,
-            longRunDay: WeekdayChoice.sunday,
-            weekdayTime: TimeSlot.min45,
-            weekendTime: TimeSlot.min90,
-            hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
-            preferredTimeOfDay: PreferredTimeOfDay.morning,
-            planStartDate: DateTime(2026, 6, 13, 8, 15),
-          ),
-        );
+        final draft =
+            _withAcceptedSuggestedRaceTarget(
+              _nonTimeStravaDraftWithoutTargets(),
+            ).copyWith(
+              schedule: ScheduleProfileDraft(
+                trainingDays: 4,
+                longRunDay: WeekdayChoice.sunday,
+                weekdayTime: TimeSlot.min45,
+                weekendTime: TimeSlot.min90,
+                hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+                preferredTimeOfDay: PreferredTimeOfDay.morning,
+                planStartDate: DateTime(2026, 6, 13, 8, 15),
+              ),
+            );
 
         final input = buildProfessionalPlanInputFromOnboardingDraft(
           draft: draft,
@@ -230,7 +236,9 @@ void main() {
     );
 
     test('Strava professional payload omits nullable optional fields', () {
-      final draft = _nonTimeStravaDraftWithoutTargets();
+      final draft = _withAcceptedSuggestedRaceTarget(
+        _nonTimeStravaDraftWithoutTargets(),
+      );
       final input = buildProfessionalPlanInputFromOnboardingDraft(
         draft: draft,
         preferences: const UserPreferences(unitSystem: UnitSystem.km),
@@ -358,52 +366,13 @@ void main() {
     });
 
     test(
-      'improveTime priority with missing currentTimeMs or targetTimeMs throws',
-      () {
-        final missingCurrent = _baseInput(
-          fitnessSource: FitnessSource.strava,
-          stravaCoachingProfile: _stravaProfile(
-            confidence: StravaDataConfidence.medium,
-          ),
-          manualFitness: null,
-        ).toJson();
-        (missingCurrent['goal'] as Map<String, dynamic>).remove(
-          'currentTimeMs',
-        );
-
-        final missingTarget = _baseInput(
-          fitnessSource: FitnessSource.strava,
-          stravaCoachingProfile: _stravaProfile(
-            confidence: StravaDataConfidence.medium,
-          ),
-          manualFitness: null,
-        ).toJson();
-        (missingTarget['goal'] as Map<String, dynamic>).remove('targetTimeMs');
-
-        expect(
-          () => ProfessionalPlanInput.fromJson(missingCurrent),
-          throwsA(isA<FormatException>()),
-        );
-        expect(
-          () => ProfessionalPlanInput.fromJson(missingTarget),
-          throwsA(isA<FormatException>()),
-        );
-      },
-    );
-
-    test(
-      'builds acceptedRaceTarget for non-time Strava onboarding draft without race targets',
+      'suggests a race target for Strava onboarding draft without race targets',
       () {
         final draft = _nonTimeStravaDraftWithoutTargets();
-        final input = buildProfessionalPlanInputFromOnboardingDraft(
-          draft: draft,
-          preferences: const UserPreferences(unitSystem: UnitSystem.km),
-          locale: 'en',
-        );
+        final acceptedRaceTarget = suggestedRaceTargetFromDraft(draft);
 
-        expect(input, isNotNull);
-        final acceptedRaceTarget = input!.acceptedRaceTarget;
-        expect(acceptedRaceTarget.distanceKm, 21.097);
+        expect(acceptedRaceTarget, isNotNull);
+        expect(acceptedRaceTarget!.distanceKm, 21.097);
         expect(
           acceptedRaceTarget.primaryTime,
           _projectDuration(
@@ -416,6 +385,86 @@ void main() {
         expect(acceptedRaceTarget.confidence, isNull);
       },
     );
+
+    test('suggested race target matches the selected goal distance', () {
+      final base = buildRunnerProfileDraft();
+      final baseFitness = base.fitness;
+      final draft = buildRunnerProfileDraft().copyWith(
+        clearAcceptedRaceTarget: true,
+        fitness: FitnessProfileDraft(
+          experience: baseFitness.experience,
+          canRun10Min: baseFitness.canRun10Min,
+          runningDays: baseFitness.runningDays,
+          weeklyVolume: baseFitness.weeklyVolume,
+          longestRun: baseFitness.longestRun,
+          canCompleteGoalDistance: baseFitness.canCompleteGoalDistance,
+          raceDistanceBefore: baseFitness.raceDistanceBefore,
+          benchmark: baseFitness.benchmark,
+          benchmarkTime: baseFitness.benchmarkTime,
+          fitnessSource: 'strava',
+          stravaCoachingProfile: _stravaProfile(
+            confidence: StravaDataConfidence.high,
+            raceTargets: const [
+              StravaRaceTargetEstimate(
+                distanceKm: 5,
+                primaryTime: Duration(minutes: 24),
+                confidence: StravaDataConfidence.high,
+                evidence: [],
+              ),
+              StravaRaceTargetEstimate(
+                distanceKm: 21.097,
+                primaryTime: Duration(hours: 1, minutes: 55),
+                confidence: StravaDataConfidence.high,
+                evidence: [],
+              ),
+            ],
+          ),
+        ),
+      );
+
+      final acceptedRaceTarget = suggestedRaceTargetFromDraft(draft);
+
+      expect(acceptedRaceTarget, isNotNull);
+      expect(acceptedRaceTarget!.distanceKm, 21.097);
+      expect(
+        acceptedRaceTarget.primaryTime,
+        const Duration(hours: 1, minutes: 55),
+      );
+    });
+
+    test(
+      'professional input rejects accepted race target distance mismatch',
+      () {
+        final draft = _nonTimeStravaDraftWithoutTargets().copyWith(
+          acceptedRaceTarget: const AcceptedRaceTarget(
+            distanceKm: 5,
+            primaryTime: Duration(minutes: 24),
+            confidence: StravaDataConfidence.high,
+          ),
+        );
+
+        final input = buildProfessionalPlanInputFromOnboardingDraft(
+          draft: draft,
+          preferences: const UserPreferences(unitSystem: UnitSystem.km),
+          locale: 'en',
+        );
+
+        expect(input, isNull);
+      },
+    );
+
+    test('requires an explicitly accepted race target for plan input', () {
+      final draft = _nonTimeStravaDraftWithoutTargets().copyWith(
+        clearAcceptedRaceTarget: true,
+      );
+      final input = buildProfessionalPlanInputFromOnboardingDraft(
+        draft: draft,
+        preferences: const UserPreferences(unitSystem: UnitSystem.km),
+        locale: 'en',
+      );
+
+      expect(input, isNull);
+    });
   });
 }
 
@@ -431,9 +480,6 @@ ProfessionalPlanInput _baseInput({
       race: RunnerGoalRace.halfMarathon,
       hasRaceDate: true,
       raceDate: DateTime.utc(2026, 10, 18),
-      priority: GoalPriority.improveTime,
-      currentTime: const Duration(hours: 2, minutes: 1),
-      targetTime: const Duration(hours: 1, minutes: 55),
     ),
     fitnessSource: fitnessSource,
     stravaCoachingProfile: stravaCoachingProfile,
@@ -483,6 +529,7 @@ ProfessionalPlanInput _baseInput({
 StravaCoachingProfile _stravaProfile({
   required StravaDataConfidence confidence,
   bool includeRaceTargets = true,
+  List<StravaRaceTargetEstimate>? raceTargets,
 }) {
   final evidence = StravaEvidencePoint(
     metric: 'training_base_weekly_km',
@@ -539,20 +586,28 @@ StravaCoachingProfile _stravaProfile({
         message: 'Keep at least one easy day between hard sessions.',
       ),
     ],
-    raceTargets: includeRaceTargets
-        ? [
-            StravaRaceTargetEstimate(
-              distanceKm: 21.097,
-              primaryTime: const Duration(hours: 1, minutes: 55),
-              confidence: confidence,
-              evidence: [evidence],
-            ),
-          ]
-        : const [],
+    raceTargets:
+        raceTargets ??
+        (includeRaceTargets
+            ? [
+                StravaRaceTargetEstimate(
+                  distanceKm: 21.097,
+                  primaryTime: const Duration(hours: 1, minutes: 55),
+                  confidence: confidence,
+                  evidence: [evidence],
+                ),
+              ]
+            : const []),
     planFocus: const StravaPlanFocus(
       category: 'focus_consistency',
       summary: 'Build consistent volume and threshold durability.',
     ),
+  );
+}
+
+RunnerProfileDraft _withAcceptedSuggestedRaceTarget(RunnerProfileDraft draft) {
+  return draft.copyWith(
+    acceptedRaceTarget: suggestedRaceTargetFromDraft(draft),
   );
 }
 
@@ -566,10 +621,8 @@ RunnerProfileDraft _nonTimeStravaDraftWithoutTargets() {
       race: baseGoal.race,
       hasRaceDate: baseGoal.hasRaceDate,
       raceDate: baseGoal.raceDate,
-      priority: GoalPriority.finishStrong,
-      currentTime: null,
-      targetTime: null,
     ),
+    clearAcceptedRaceTarget: true,
     fitness: FitnessProfileDraft(
       experience: baseFitness.experience,
       canRun10Min: baseFitness.canRun10Min,

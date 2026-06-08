@@ -503,30 +503,6 @@
   "tapToSetDate": "DD / MM / YYYY",
   "@tapToSetDate": { "description": "Date picker placeholder text" },
 
-  "priorityLabel": "What's your priority?",
-  "@priorityLabel": { "description": "Section label for race priority on goal screen" },
-
-  "priorityJustFinish": "Just finish",
-  "@priorityJustFinish": { "description": "Priority option: finish the race" },
-
-  "priorityFinishStrong": "Finish feeling strong",
-  "@priorityFinishStrong": { "description": "Priority option: finish strong" },
-
-  "priorityImproveTime": "Improve my time",
-  "@priorityImproveTime": { "description": "Priority option: improve time" },
-
-  "priorityConsistency": "Build consistency",
-  "@priorityConsistency": { "description": "Priority option: build consistency" },
-
-  "priorityGeneralFitness": "General fitness",
-  "@priorityGeneralFitness": { "description": "Priority option: general fitness" },
-
-  "currentRaceTime": "Current race time",
-  "@currentRaceTime": { "description": "Section label for current race time on goal screen" },
-
-  "targetRaceTime": "Target race time",
-  "@targetRaceTime": { "description": "Section label for target race time on goal screen" },
-
   "tapToSetTime": "Tap to set time",
   "@tapToSetTime": { "description": "Time picker placeholder" },
 
@@ -878,10 +854,10 @@
   "strengthPreferencesTitle": "Strength Preferences",
   "@strengthPreferencesTitle": { "description": "Heading on the strength preferences onboarding screen" },
 
-  "strengthPreferencesSubtitle": "Tell us how lifting fits around your running so your plan can protect key workouts.",
+  "strengthPreferencesSubtitle": "Tell us when lower-body strength usually happens so your running plan can protect key workouts.",
   "@strengthPreferencesSubtitle": { "description": "Subtitle on the strength preferences onboarding screen" },
 
-  "strengthLiftsLabel": "Do you lift or do strength training?",
+  "strengthLiftsLabel": "Do you do lower-body strength or leg day?",
   "@strengthLiftsLabel": { "description": "Question asking whether the user currently lifts" },
 
   "strengthFrequencyLabel": "How many days per week?",
@@ -913,10 +889,10 @@
   "strengthCategoryFullBody": "Full body",
   "@strengthCategoryFullBody": { "description": "Strength category option" },
 
-  "strengthPreferredDaysLabel": "Preferred lifting days",
+  "strengthPreferredDaysLabel": "Leg days",
   "@strengthPreferredDaysLabel": { "description": "Section label for preferred lifting days" },
 
-  "strengthPreferredDaysHelper": "Pick the days you usually lift or prefer lower-body work.",
+  "strengthPreferredDaysHelper": "Pick the days you usually do lower-body strength.",
   "@strengthPreferredDaysHelper": { "description": "Helper copy for selecting preferred lifting days" },
 
   "strengthSameDayOrderLabel": "When running and lifting share a day",
@@ -948,6 +924,24 @@
 
   "strengthOrderDependsSub": "We'll place strength around harder runs and long runs.",
   "@strengthOrderDependsSub": { "description": "Guidance copy when the user has no fixed same-day order" },
+
+  "raceTargetTitle": "Confirm your race target",
+  "@raceTargetTitle": { "description": "Title for race target confirmation onboarding screen" },
+
+  "raceTargetSuggestedSubtitle": "Use this target or adjust it before your plan is created.",
+  "@raceTargetSuggestedSubtitle": { "description": "Subtitle when a suggested target exists" },
+
+  "raceTargetCustomSubtitle": "Add a target time so the plan can set the right workout paces.",
+  "@raceTargetCustomSubtitle": { "description": "Subtitle when no suggested race target exists" },
+
+  "raceTargetPrimaryLabel": "Primary target",
+  "@raceTargetPrimaryLabel": { "description": "Label for editable primary race target time" },
+
+  "raceTargetSuggestedPrimaryLabel": "Suggested target",
+  "@raceTargetSuggestedPrimaryLabel": { "description": "Label for suggested primary target" },
+
+  "raceTargetSuggestedStretchLabel": "Stretch target",
+  "@raceTargetSuggestedStretchLabel": { "description": "Label for suggested stretch target" },
 
   "runSurfaceLabel": "Where do you run most?",
   "@runSurfaceLabel": { "description": "Section label on training preferences screen" },
@@ -1535,6 +1529,39 @@
   "@planGuidanceRaceGuidanceTitle": {
     "description": "Heading for the race guidance section"
   },
+
+  "raceDayInfoTitle": "Race Day",
+  "@raceDayInfoTitle": { "description": "Title for info-only race day calendar item" },
+
+  "raceDayInfoSubtitle": "Race strategy and final reminders",
+  "@raceDayInfoSubtitle": { "description": "Subtitle for race day info calendar item" },
+
+  "raceDayInfoBadge": "Info",
+  "@raceDayInfoBadge": { "description": "Badge label for info-only race day detail" },
+
+  "raceDayInfoDetailSubtitle": "Review the plan for how to approach the race. This is guidance only, not a run to start in the app.",
+  "@raceDayInfoDetailSubtitle": { "description": "Subtitle for race day detail screen" },
+
+  "raceDayInfoFallback": "Start controlled, settle into rhythm, and finish with your strongest sustainable effort.",
+  "@raceDayInfoFallback": { "description": "Fallback copy when race guidance is missing" },
+
+  "raceGuidanceExecutionLabel": "Race day execution",
+  "@raceGuidanceExecutionLabel": { "description": "Label for race day execution guidance" },
+
+  "raceGuidanceWarmupLabel": "Warmup",
+  "@raceGuidanceWarmupLabel": { "description": "Label for race warmup guidance" },
+
+  "raceGuidanceSplitPlanLabel": "Split plan",
+  "@raceGuidanceSplitPlanLabel": { "description": "Label for race split plan guidance" },
+
+  "raceGuidanceWhenToPressLabel": "When to push",
+  "@raceGuidanceWhenToPressLabel": { "description": "Label for when to push race guidance" },
+
+  "raceGuidanceWhatToAvoidLabel": "What to avoid",
+  "@raceGuidanceWhatToAvoidLabel": { "description": "Label for race avoidance guidance" },
+
+  "raceGuidanceCoachingNotesLabel": "Coaching notes",
+  "@raceGuidanceCoachingNotesLabel": { "description": "Label for race coaching notes" },
 
   "planGuidanceRaceDayExecutionLabel": "Race Day Execution",
   "@planGuidanceRaceDayExecutionLabel": {
@@ -2163,16 +2190,16 @@
   "settingsEditGoalIntroTitle": "Update the goal you are already training for",
   "@settingsEditGoalIntroTitle": { "description": "Title on the intro screen before editing the current goal" },
 
-  "settingsEditGoalIntroSubtitle": "You can review your race, date, priority, and time targets before saving the changes.",
+  "settingsEditGoalIntroSubtitle": "You can review your race and date before saving the changes.",
   "@settingsEditGoalIntroSubtitle": { "description": "Subtitle on the intro screen before editing the current goal" },
 
-  "settingsEditGoalIntroPointRace": "Adjust your race or target distance.",
+  "settingsEditGoalIntroPointRace": "Adjust your race distance.",
   "@settingsEditGoalIntroPointRace": { "description": "First explainer item for edit goal intro screen" },
 
   "settingsEditGoalIntroPointDate": "Update the race date if your timeline has changed.",
   "@settingsEditGoalIntroPointDate": { "description": "Second explainer item for edit goal intro screen" },
 
-  "settingsEditGoalIntroPointPriority": "Review your priority and pacing targets before saving.",
+  "settingsEditGoalIntroPointPriority": "Review the race details before saving.",
   "@settingsEditGoalIntroPointPriority": { "description": "Third explainer item for edit goal intro screen" },
 
   "settingsEditGoalIntroPointTraining": "Review your training preferences before finishing the update.",
@@ -2181,10 +2208,10 @@
   "settingsNewGoalIntroTitle": "Set a brand-new goal for your training",
   "@settingsNewGoalIntroTitle": { "description": "Title on the intro screen before creating a new goal" },
 
-  "settingsNewGoalIntroSubtitle": "This flow starts fresh so you can choose a different target and save a new goal for your plan.",
+  "settingsNewGoalIntroSubtitle": "This flow starts fresh so you can choose a different race and save a new goal for your plan.",
   "@settingsNewGoalIntroSubtitle": { "description": "Subtitle on the intro screen before creating a new goal" },
 
-  "settingsNewGoalIntroPointRace": "Choose a new race or custom distance.",
+  "settingsNewGoalIntroPointRace": "Choose a new race distance.",
   "@settingsNewGoalIntroPointRace": { "description": "First explainer item for new goal intro screen" },
 
   "settingsNewGoalIntroPointDate": "Set a new date and timeline for the goal.",

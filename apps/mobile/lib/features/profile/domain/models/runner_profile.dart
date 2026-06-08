@@ -176,22 +176,6 @@ enum RunnerGoalRace implements CanonicalKeyed {
       _enumByKey(key, values, (value) => value.key);
 }
 
-enum GoalPriority implements CanonicalKeyed {
-  justFinish('priority_just_finish'),
-  finishStrong('priority_finish_strong'),
-  improveTime('priority_improve_time'),
-  consistency('priority_consistency'),
-  generalFitness('priority_general_fitness');
-
-  const GoalPriority(this.key);
-
-  @override
-  final String key;
-
-  static GoalPriority? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
 enum RunnerExperience implements CanonicalKeyed {
   brandNew('experience_brand_new'),
   beginner('experience_beginner'),
@@ -824,53 +808,31 @@ class GoalProfile {
   const GoalProfile({
     required this.race,
     required this.hasRaceDate,
-    required this.priority,
     this.raceDate,
-    this.currentTime,
-    this.targetTime,
   });
 
   final RunnerGoalRace race;
   final bool hasRaceDate;
   final DateTime? raceDate;
-  final GoalPriority priority;
-  final Duration? currentTime;
-  final Duration? targetTime;
 }
 
 class GoalProfileDraft {
-  const GoalProfileDraft({
-    this.race,
-    this.hasRaceDate,
-    this.raceDate,
-    this.priority,
-    this.currentTime,
-    this.targetTime,
-  });
+  const GoalProfileDraft({this.race, this.hasRaceDate, this.raceDate});
 
   final RunnerGoalRace? race;
   final bool? hasRaceDate;
   final DateTime? raceDate;
-  final GoalPriority? priority;
-  final Duration? currentTime;
-  final Duration? targetTime;
 
   String? get raceKey => race?.key;
-  String? get priorityKey => priority?.key;
 
   GoalProfile? toProfileOrNull() {
-    if (race == null || hasRaceDate == null || priority == null) return null;
+    if (race == null || hasRaceDate == null) return null;
     if (hasRaceDate == true && raceDate == null) return null;
-    final needsTimes = priority == GoalPriority.improveTime;
-    if (needsTimes && (currentTime == null || targetTime == null)) return null;
 
     return GoalProfile(
       race: race!,
       hasRaceDate: hasRaceDate!,
       raceDate: hasRaceDate == true ? raceDate : null,
-      priority: priority!,
-      currentTime: needsTimes ? currentTime : null,
-      targetTime: needsTimes ? targetTime : null,
     );
   }
 }
@@ -1393,6 +1355,7 @@ class RunnerProfileDraft {
     this.strength = const StrengthProfileDraft(),
     this.trainingPreferences = const TrainingPreferencesProfileDraft(),
     this.device = const DeviceProfileDraft(),
+    this.acceptedRaceTarget,
   });
 
   final GoalProfileDraft goal;
@@ -1402,6 +1365,7 @@ class RunnerProfileDraft {
   final StrengthProfileDraft strength;
   final TrainingPreferencesProfileDraft trainingPreferences;
   final DeviceProfileDraft device;
+  final AcceptedRaceTarget? acceptedRaceTarget;
 
   Map<String, dynamic> toJson() {
     return {
@@ -1414,6 +1378,7 @@ class RunnerProfileDraft {
         trainingPreferences,
       ),
       'device': _deviceProfileDraftToJson(device),
+      'acceptedRaceTarget': acceptedRaceTarget?.toJson(),
     };
   }
 
@@ -1425,6 +1390,8 @@ class RunnerProfileDraft {
     StrengthProfileDraft? strength,
     TrainingPreferencesProfileDraft? trainingPreferences,
     DeviceProfileDraft? device,
+    AcceptedRaceTarget? acceptedRaceTarget,
+    bool clearAcceptedRaceTarget = false,
   }) {
     return RunnerProfileDraft(
       goal: goal ?? this.goal,
@@ -1434,10 +1401,31 @@ class RunnerProfileDraft {
       strength: strength ?? this.strength,
       trainingPreferences: trainingPreferences ?? this.trainingPreferences,
       device: device ?? this.device,
+      acceptedRaceTarget: clearAcceptedRaceTarget
+          ? null
+          : acceptedRaceTarget ?? this.acceptedRaceTarget,
     );
   }
 
   static RunnerProfileDraft fromJson(Map<String, dynamic> json) {
+    AcceptedRaceTarget? acceptedRaceTarget;
+    final rawAcceptedTarget = json['acceptedRaceTarget'];
+    if (rawAcceptedTarget is Map<String, dynamic>) {
+      try {
+        acceptedRaceTarget = AcceptedRaceTarget.fromJson(rawAcceptedTarget);
+      } on FormatException {
+        acceptedRaceTarget = null;
+      }
+    } else if (rawAcceptedTarget is Map) {
+      try {
+        acceptedRaceTarget = AcceptedRaceTarget.fromJson(
+          rawAcceptedTarget.map((key, value) => MapEntry('$key', value)),
+        );
+      } on FormatException {
+        acceptedRaceTarget = null;
+      }
+    }
+
     return RunnerProfileDraft(
       goal: _goalProfileDraftFromJson(_mapOrEmpty(json['goal'])),
       fitness: _fitnessProfileDraftFromJson(_mapOrEmpty(json['fitness'])),
@@ -1448,6 +1436,7 @@ class RunnerProfileDraft {
         _mapOrEmpty(json['trainingPreferences']),
       ),
       device: _deviceProfileDraftFromJson(_mapOrEmpty(json['device'])),
+      acceptedRaceTarget: acceptedRaceTarget,
     );
   }
 
@@ -1495,18 +1484,12 @@ class RunnerProfileDraft {
     required String race,
     required bool hasRaceDate,
     DateTime? raceDate,
-    required String priority,
-    Duration? currentTime,
-    Duration? targetTime,
   }) {
     return RunnerProfileDraft(
       goal: GoalProfileDraft(
         race: RunnerGoalRace.fromKey(race),
         hasRaceDate: hasRaceDate,
         raceDate: raceDate,
-        priority: GoalPriority.fromKey(priority),
-        currentTime: currentTime,
-        targetTime: targetTime,
       ),
     );
   }
@@ -1517,9 +1500,6 @@ class RunnerProfileDraft {
         race: profile.goal.race,
         hasRaceDate: profile.goal.hasRaceDate,
         raceDate: profile.goal.raceDate,
-        priority: profile.goal.priority,
-        currentTime: profile.goal.currentTime,
-        targetTime: profile.goal.targetTime,
       ),
       fitness: FitnessProfileDraft(
         experience: profile.fitness.experience,
@@ -1722,9 +1702,6 @@ Map<String, dynamic> _goalProfileDraftToJson(GoalProfileDraft value) {
     'race': value.raceKey,
     'hasRaceDate': value.hasRaceDate,
     'raceDate': value.raceDate?.toIso8601String(),
-    'priority': value.priorityKey,
-    'currentTimeMs': _durationToJson(value.currentTime),
-    'targetTimeMs': _durationToJson(value.targetTime),
   };
 }
 
@@ -1733,9 +1710,6 @@ GoalProfileDraft _goalProfileDraftFromJson(Map<String, dynamic> json) {
     race: RunnerGoalRace.fromKey(_stringOrNull(json['race'])),
     hasRaceDate: _boolOrNull(json['hasRaceDate']),
     raceDate: _dateTimeFromJson(json['raceDate']),
-    priority: GoalPriority.fromKey(_stringOrNull(json['priority'])),
-    currentTime: _durationFromJson(json['currentTimeMs']),
-    targetTime: _durationFromJson(json['targetTimeMs']),
   );
 }
 
@@ -1744,9 +1718,6 @@ Map<String, dynamic> _goalProfileToJson(GoalProfile value) {
     'race': value.race.key,
     'hasRaceDate': value.hasRaceDate,
     'raceDate': value.raceDate?.toIso8601String(),
-    'priority': value.priority.key,
-    'currentTimeMs': _durationToJson(value.currentTime),
-    'targetTimeMs': _durationToJson(value.targetTime),
   };
 }
 
