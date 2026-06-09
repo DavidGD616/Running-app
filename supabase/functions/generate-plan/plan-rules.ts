@@ -89,7 +89,8 @@ function ruleContextFor(
   coachingBrief: CoachingBrief | null | undefined = null,
 ): RuleContext {
   return {
-    race: raceKeyFromCoachingBrief(coachingBrief) ?? raceFromProfile(profileData),
+    race: raceKeyFromCoachingBrief(coachingBrief) ??
+      raceFromProfile(profileData),
     experience: experienceKeyFromCoachingBrief(coachingBrief) ??
       experienceFromProfile(profileData),
   };
@@ -798,7 +799,13 @@ function acceptedRaceTargetDistance(
 
 function baselineWeeklyVolumeProfile(
   profileData: Record<string, unknown>,
-): { anchor: number; rampFactor: number } | null {
+): {
+  anchor: number;
+  rampFactor: number;
+  maxWeeklyVolumeKm: null;
+  weekOneMinimumRatio: number;
+  longRunCeilingKm: null;
+} | null {
   if (
     hasStrongEvidenceConfidence(profileData) &&
     !hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_VOLUME_RAMP)
@@ -808,6 +815,9 @@ function baselineWeeklyVolumeProfile(
       return {
         anchor: byStrava,
         rampFactor: weeklyVolumeRampFactor(profileData),
+        maxWeeklyVolumeKm: null,
+        weekOneMinimumRatio: 0,
+        longRunCeilingKm: null,
       };
     }
   }
@@ -818,6 +828,9 @@ function baselineWeeklyVolumeProfile(
   return {
     anchor: athleteSummary,
     rampFactor: WEEKLY_VOLUME_RAMP_FACTOR,
+    maxWeeklyVolumeKm: null,
+    weekOneMinimumRatio: 0,
+    longRunCeilingKm: null,
   };
 }
 
@@ -2591,14 +2604,109 @@ export function smoothLongRunProgression(
 
 const WEEKLY_VOLUME_RAMP_FACTOR = 1.1; // ~10% week-over-week ceiling.
 const WEEKLY_VOLUME_TOLERANCE = 0.05; // small slack before clamping kicks in.
+const WEEKLY_VOLUME_RAMP_LOW_CONFIDENCE_FACTOR = 1.05;
+const WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_STRONG_EVIDENCE = 0.85;
+const WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_LOW_CONFIDENCE = 0.55;
+const WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_BY_READINESS: Record<
+  ReadinessLevel,
+  number
+> = {
+  raceReady: 0.95,
+  prepared: 0.9,
+  developing: 0.85,
+  underprepared: 0.8,
+  unsupported: 0.75,
+};
+
+type WeeklyVolumeProfile = {
+  anchor: number;
+  rampFactor: number;
+  maxWeeklyVolumeKm: number | null;
+  weekOneMinimumRatio: number;
+  longRunCeilingKm: number | null;
+};
+
+function normalizePositiveNumber(
+  value: unknown,
+  minimum = 0,
+): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= minimum
+    ? value
+    : null;
+}
+
+function weeklyVolumeProfileForBrief(
+  coachingBrief: CoachingBrief | null,
+): WeeklyVolumeProfile | null {
+  if (coachingBrief == null) return null;
+
+  const anchor = normalizePositiveNumber(
+    coachingBrief.currentVolumeKmPerWeek,
+    0,
+  );
+  const hasAnchor = anchor != null && anchor > 0;
+
+  const maxWeeklyVolumeKm = normalizePositiveNumber(
+    coachingBrief.maxWeeklyVolumeKm,
+    0,
+  );
+  if (!hasAnchor && maxWeeklyVolumeKm == null) return null;
+
+  const longRunCeilingKm = normalizePositiveNumber(
+    coachingBrief.longRunCeilingKm,
+    0,
+  );
+  const hasEvidenceSource = coachingBrief.source === "strava" ||
+    coachingBrief.source === "mixed";
+
+  let minimumRatio = WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_LOW_CONFIDENCE;
+  let rampFactor = WEEKLY_VOLUME_RAMP_LOW_CONFIDENCE_FACTOR;
+  if (!hasAnchor) {
+    minimumRatio = 0;
+  }
+
+  if (hasEvidenceSource && coachingBrief.confidence === "high") {
+    rampFactor = WEEKLY_VOLUME_RAMP_FACTOR;
+    minimumRatio = hasAnchor && coachingBrief.currentVolumeKmPerWeek >= 20
+      ? WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_STRONG_EVIDENCE
+      : Math.max(
+        WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_LOW_CONFIDENCE,
+        WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_BY_READINESS[
+          coachingBrief.readinessLevel
+        ],
+      );
+  } else if (coachingBrief.confidence === "medium") {
+    rampFactor = WEEKLY_VOLUME_RAMP_FACTOR;
+    minimumRatio = hasAnchor
+      ? WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_BY_READINESS[
+        coachingBrief.readinessLevel
+      ]
+      : 0;
+  }
+
+  return {
+    anchor: hasAnchor ? anchor : 0,
+    rampFactor,
+    maxWeeklyVolumeKm,
+    weekOneMinimumRatio: Math.min(1, minimumRatio),
+    longRunCeilingKm,
+  };
+}
+
+function weeklyVolumeProfile(
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null = null,
+): WeeklyVolumeProfile | null {
+  return weeklyVolumeProfileForBrief(coachingBrief) ??
+    baselineWeeklyVolumeProfile(profileData);
+}
 
 // FIX B: deterministic acute:chronic ramp guard. The prompt asks the model to
 // cap weekly growth (~<=10%) using athleteSummary.acuteChronicRatio, but that is
-// advisory only. When measured Strava history is present, anchor week-1 total
-// volume near athleteSummary.weeklyVolumeKm and hard-clamp each week's increase
-// to ~10% over the prior week's (post-clamp) volume. Taper/down weeks plan less
-// than the prior week, so they fall under their cap and are left untouched.
-// Absent athleteSummary, the function is a no-op (no regression).
+// advisory only. When source profile is available, anchor week-1 total volume
+// near the current evidence and hard-clamp each week's increase to ~10% over the
+// prior week's (post-clamp) volume. Taper/down weeks plan less than the prior
+// week, so they fall under their cap and are left untouched.
 export function normalizeWeeklyVolumeRamp(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
@@ -2606,11 +2714,13 @@ export function normalizeWeeklyVolumeRamp(
   _locale: CoachNoteLocale = "en",
   coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const baseline = baselineWeeklyVolumeProfile(profileData);
+  const baseline = weeklyVolumeProfile(profileData, coachingBrief);
   if (baseline == null) return sessions;
 
   const anchorVolumeKm = baseline.anchor;
   const rampFactor = baseline.rampFactor;
+  const maxWeeklyVolumeKm = baseline.maxWeeklyVolumeKm;
+  const weekOneMinimumRatio = baseline.weekOneMinimumRatio;
 
   const adjusted = sessions.map((s) => ({ ...s }));
 
@@ -2619,6 +2729,7 @@ export function normalizeWeeklyVolumeRamp(
   ).sort((a, b) => a - b);
 
   let previousCappedVolumeKm: number | null = null;
+  let encounteredActiveWeek = false;
 
   for (const weekNumber of weekNumbers) {
     const phase = phaseForWeekFromCoachingBrief(
@@ -2646,13 +2757,69 @@ export function normalizeWeeklyVolumeRamp(
     if (phase === "taperRace") {
       continue;
     }
+    const isFirstActiveWeek = !encounteredActiveWeek;
+    encounteredActiveWeek = true;
 
-    const cap = previousCappedVolumeKm == null
-      ? anchorVolumeKm * rampFactor
+    const uncappedCap = previousCappedVolumeKm == null
+      ? (
+        anchorVolumeKm <= 0
+          ? Number.POSITIVE_INFINITY
+          : anchorVolumeKm * rampFactor
+      )
       : previousCappedVolumeKm * rampFactor;
+    const cap = maxWeeklyVolumeKm == null
+      ? uncappedCap
+      : Math.min(uncappedCap, maxWeeklyVolumeKm);
 
     if (
-      weekVolumeKm <= cap * (1 + WEEKLY_VOLUME_TOLERANCE) || weekVolumeKm <= 0
+      isFirstActiveWeek &&
+      weekOneMinimumRatio > 0 &&
+      weekVolumeKm > 0
+    ) {
+      const minimumWeekOneVolumeKm = Math.min(
+        anchorVolumeKm * weekOneMinimumRatio,
+        cap,
+      );
+
+      if (weekVolumeKm < minimumWeekOneVolumeKm) {
+        const scale = minimumWeekOneVolumeKm / weekVolumeKm;
+        for (const i of indices) {
+          const session = adjusted[i];
+          const currentDistance = session.distanceKm;
+          if (currentDistance == null || currentDistance <= 0) continue;
+          const scaledDistance = Math.round(currentDistance * scale * 100) /
+            100;
+          const constrainedDistance = constrainedSessionDistanceKm(
+            session,
+            scaledDistance,
+            baseline,
+          );
+          const newDuration = recalculateDurationForDistance(
+            adjusted,
+            i,
+            constrainedDistance,
+            profileData,
+          );
+          adjusted[i] = {
+            ...session,
+            distanceKm: constrainedDistance,
+            durationMinutes: newDuration,
+          };
+        }
+
+        previousCappedVolumeKm = indices.reduce(
+          (sum, i) => sum + estimateSessionVolumeKm(adjusted[i], profileData),
+          0,
+        );
+        continue;
+      }
+    }
+
+    const effectiveTolerance = maxWeeklyVolumeKm == null
+      ? WEEKLY_VOLUME_TOLERANCE
+      : 0;
+    if (
+      weekVolumeKm <= cap * (1 + effectiveTolerance) || weekVolumeKm <= 0
     ) {
       // Within budget (covers down weeks that plan less than the prior week).
       previousCappedVolumeKm = weekVolumeKm;
@@ -2665,15 +2832,20 @@ export function normalizeWeeklyVolumeRamp(
       const currentDistance = session.distanceKm;
       if (currentDistance == null || currentDistance <= 0) continue;
       const scaledDistance = Math.round(currentDistance * scale * 100) / 100;
+      const constrainedDistance = constrainedSessionDistanceKm(
+        session,
+        scaledDistance,
+        baseline,
+      );
       const newDuration = recalculateDurationForDistance(
         adjusted,
         i,
-        scaledDistance,
+        constrainedDistance,
         profileData,
       );
       adjusted[i] = {
         ...session,
-        distanceKm: scaledDistance,
+        distanceKm: constrainedDistance,
         durationMinutes: newDuration,
       };
     }
@@ -2705,6 +2877,22 @@ function estimateSessionVolumeKm(
     if (paceMinPerKm > 0) return session.durationMinutes / paceMinPerKm;
   }
   return 0;
+}
+
+function constrainedSessionDistanceKm(
+  session: GeneratedSession,
+  distanceKm: number,
+  profile: WeeklyVolumeProfile,
+): number {
+  if (
+    !Number.isFinite(distanceKm) ||
+    profile.longRunCeilingKm == null ||
+    session.type !== "longRun"
+  ) {
+    return distanceKm;
+  }
+
+  return Math.min(distanceKm, profile.longRunCeilingKm);
 }
 
 function protectedPeakLongRunIndex(
