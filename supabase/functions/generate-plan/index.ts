@@ -8,15 +8,18 @@ import {
 import {
   deriveBackendEvidenceFromStravaSummaries,
   generatePlanFromProfile,
+  repairTargetedSessionsWithOpenAi,
   sanitizeProfileForOpenAi,
 } from "./openai.ts";
 import { buildCoachingBrief } from "./coaching-brief.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  detectSessionTypePolicyViolations,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
+  mergeTargetedSessionRepairs,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
@@ -367,12 +370,60 @@ Deno.serve(async (req) => {
     locale,
     coachingBrief,
   );
-  const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
+  const policyViolations = detectSessionTypePolicyViolations(
     taperNormalizedSessions,
+    generationProfileWithPlanStartDate,
+    safeGeneratedPlan.totalWeeks,
+    coachingBrief,
+  );
+  const violationSessionIds = new Set(
+    policyViolations.map((violation) => violation.sessionId),
+  );
+  const sessionsNeedingRepair = taperNormalizedSessions.filter((session) =>
+    violationSessionIds.has(session.id)
+  );
+  let repairedSessions = taperNormalizedSessions;
+  let preservedCoachNoteSessionIds: string[] = [];
+
+  if (sessionsNeedingRepair.length > 0 && policyViolations.length > 0) {
+    try {
+      const repairResponse = await repairTargetedSessionsWithOpenAi(
+        generationProfileWithPlanStartDate,
+        safeGeneratedPlan.totalWeeks,
+        sessionsNeedingRepair,
+        policyViolations,
+        locale,
+        coachingBrief,
+      );
+      const mergeResult = mergeTargetedSessionRepairs(
+        taperNormalizedSessions,
+        sessionsNeedingRepair.map((session) => session.id),
+        repairResponse.sessions,
+      );
+      repairedSessions = mergeResult.sessions;
+      preservedCoachNoteSessionIds = mergeResult.preservedCoachNoteSessionIds;
+    } catch (error) {
+      console.error(
+        "Targeted repair failed; using deterministic fallback.",
+        {
+          requestedRepairs: sessionsNeedingRepair.length,
+          violations: policyViolations.length,
+        },
+      );
+    }
+  } else if (policyViolations.length > 0) {
+    console.error(
+      "Policy violations detected but no sessions matched for repair; skipping targeted pass.",
+      { violations: policyViolations.length },
+    );
+  }
+  const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
+    repairedSessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
     coachingBrief,
+    preservedCoachNoteSessionIds,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,

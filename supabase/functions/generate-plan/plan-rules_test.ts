@@ -6,6 +6,7 @@ import {
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
+  mergeTargetedSessionRepairs,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
@@ -30,6 +31,7 @@ import {
   validateGeneratedSchedule,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
+import type { SessionRepairCandidate } from "./plan-rules.ts";
 import type { CoachingBrief } from "./coaching-brief.ts";
 import { removeSessionsOnRaceDate } from "./schema.ts";
 import type { GeneratedSession } from "./schema.ts";
@@ -2983,6 +2985,89 @@ Deno.test(
     assert.equal(violations.length, 0);
   },
 );
+
+Deno.test("mergeTargetedSessionRepairs applies only valid repairs", () => {
+  const originalSessions: GeneratedSession[] = [
+    session({
+      id: "w1-intervals",
+      date: "2026-04-08",
+      type: "intervals",
+      weekNumber: 2,
+      coachNote: "Original coach note",
+    }),
+    session({
+      id: "w2-tempo",
+      date: "2026-04-15",
+      type: "tempoRun",
+      weekNumber: 3,
+    }),
+  ];
+
+  const requestedSessionIds = ["w1-intervals", "w2-tempo"];
+  const repairs: SessionRepairCandidate[] = [
+    {
+      sessionId: "w1-intervals",
+      repairedSession: {
+        ...session({
+          id: "w1-intervals",
+          date: "2026-04-08",
+          type: "easyRun",
+          weekNumber: 2,
+          coachNote: "Repaired with AI note",
+        }),
+        durationMinutes: 55,
+      },
+    },
+    {
+      sessionId: "w2-tempo",
+      repairedSession: {
+        ...session({
+          id: "w2-tempo",
+          date: "2026-04-01",
+          type: "easyRun",
+          weekNumber: 3,
+          coachNote: "Wrong date, should be skipped",
+        }),
+        durationMinutes: 55,
+      },
+    },
+    {
+      sessionId: "w3-missing",
+      repairedSession: {
+        ...session({
+          id: "w3-missing",
+          date: "2026-04-22",
+          type: "easyRun",
+          weekNumber: 4,
+        }),
+      },
+    },
+  ];
+
+  const result = mergeTargetedSessionRepairs(
+    originalSessions,
+    requestedSessionIds,
+    repairs,
+  );
+
+  assert.equal(result.sessions.length, 2);
+  assert.equal(
+    findSession(result.sessions, "w1-intervals").type,
+    "easyRun",
+  );
+  assert.equal(
+    findSession(result.sessions, "w1-intervals").coachNote,
+    "Repaired with AI note",
+  );
+  assert.equal(
+    findSession(result.sessions, "w2-tempo").type,
+    "tempoRun",
+  );
+  assert.deepEqual(
+    result.preservedCoachNoteSessionIds,
+    ["w1-intervals"],
+  );
+});
 
 Deno.test(
   "normalizePeakLongRun uses coaching brief readiness when profile is missing experience",

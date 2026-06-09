@@ -363,9 +363,11 @@ export function normalizeWorkoutTypesByPhase(
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
   coachingBrief: CoachingBrief | null = null,
+  preserveCoachNoteForSessionIds: readonly string[] = [],
 ): GeneratedSession[] {
   const context = ruleContextFor(profileData, coachingBrief);
   const _raceDate = goalRaceDate(profileData);
+  const preservedCoachNotes = new Set(preserveCoachNoteForSessionIds);
 
   return sessions.map((session) => {
     if (session.type === "restDay") return session;
@@ -386,8 +388,63 @@ export function normalizeWorkoutTypesByPhase(
     if (policy.allowedTypes.includes(session.type)) return session;
 
     const replacement = nearestAllowedType(session.type, policy.allowedTypes);
-    return withDowngradedType(session, replacement, locale);
+    const preserveCoachNote = preservedCoachNotes.has(session.id);
+    return withDowngradedType(session, replacement, locale, preserveCoachNote);
   });
+}
+
+export type SessionRepairCandidate = {
+  sessionId: string;
+  repairedSession: GeneratedSession;
+};
+
+export type SessionRepairMergeResult = {
+  sessions: GeneratedSession[];
+  preservedCoachNoteSessionIds: string[];
+};
+
+export function mergeTargetedSessionRepairs(
+  sessions: readonly GeneratedSession[],
+  requestedSessionIds: readonly string[],
+  repairs: readonly SessionRepairCandidate[],
+): SessionRepairMergeResult {
+  const requested = new Set(requestedSessionIds);
+  const originalById = new Map(
+    sessions.map((session) => [session.id, session]),
+  );
+  const repairedById = new Map<string, GeneratedSession>();
+
+  for (const item of repairs) {
+    if (!requested.has(item.sessionId)) {
+      continue;
+    }
+
+    const original = originalById.get(item.sessionId);
+    if (original == null) {
+      continue;
+    }
+
+    const repaired = item.repairedSession;
+    if (
+      repaired.id !== original.id ||
+      repaired.date !== original.date ||
+      repaired.weekNumber !== original.weekNumber
+    ) {
+      continue;
+    }
+
+    if (!repairedById.has(item.sessionId)) {
+      repairedById.set(item.sessionId, repaired);
+    }
+  }
+
+  const repairedIds = [...repairedById.keys()];
+  return {
+    sessions: sessions.map((session) =>
+      repairedById.get(session.id) ?? session
+    ),
+    preservedCoachNoteSessionIds: repairedIds,
+  };
 }
 
 export type SessionTypePolicyViolation = {
@@ -474,6 +531,7 @@ function withDowngradedType(
   session: GeneratedSession,
   newType: string,
   locale: CoachNoteLocale,
+  preserveCoachNote = false,
 ): GeneratedSession {
   const isLongRun = session.type === "longRun";
   return {
@@ -487,7 +545,10 @@ function withDowngradedType(
         ? Math.max(35, session.durationMinutes ?? 45)
         : Math.min(35, Math.max(25, session.durationMinutes ?? 30)))
       : session.durationMinutes,
-    coachNote: trainingDayCue("adjustedForPhase", locale),
+    coachNote: preserveCoachNote ? session.coachNote : trainingDayCue(
+      "adjustedForPhase",
+      locale,
+    ),
     targetZone: newType === "easyRun"
       ? "easy"
       : newType === "recoveryRun"

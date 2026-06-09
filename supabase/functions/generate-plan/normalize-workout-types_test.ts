@@ -319,6 +319,35 @@ Deno.test("normalizeWorkoutTypesByPhase preserves goal race session", () => {
   assert.equal(findSession(result, "w11-thu").type, "fartlek");
 });
 
+Deno.test(
+  "normalizeWorkoutTypesByPhase preserves repaired coach notes when requested",
+  () => {
+    const sessions: GeneratedSession[] = [
+      session({
+        id: "w1-intervals",
+        date: "2026-06-27",
+        weekNumber: 2,
+        type: "intervals",
+        coachNote: "AI-specific session guidance",
+      }),
+    ];
+
+    const result = normalizeWorkoutTypesByPhase(
+      sessions,
+      profile({ experience: "experience_beginner", race: "race_5k" }),
+      12,
+      "en",
+      null,
+      ["w1-intervals"],
+    );
+
+    assert.equal(
+      findSession(result, "w1-intervals").coachNote,
+      "AI-specific session guidance",
+    );
+  },
+);
+
 function profile({
   experience = "experience_beginner",
   hardDays = [],
