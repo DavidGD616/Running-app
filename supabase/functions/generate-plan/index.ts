@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   type GeneratePlanRequest,
   GeneratePlanRequestSchema,
@@ -10,6 +10,7 @@ import {
   generatePlanFromProfile,
   repairTargetedSessionsWithOpenAi,
   sanitizeProfileForOpenAi,
+  type StravaActivitySummaryForEvidence,
 } from "./openai.ts";
 import { buildCoachingBrief } from "./coaching-brief.ts";
 import {
@@ -616,7 +617,7 @@ function normalizeLocale(value: unknown): CoachLocale {
 
 async function addBackendEvidenceFromStravaSummaries(
   profile: ProfileShape,
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: SupabaseClient,
   userId: string,
 ): Promise<ProfileShape> {
   const { data, error } = await adminClient
@@ -643,7 +644,9 @@ async function addBackendEvidenceFromStravaSummaries(
   }
 
   const derived = deriveBackendEvidenceFromStravaSummaries(
-    Array.isArray(data) ? data : [],
+    (Array.isArray(data)
+      ? data
+      : []) as readonly StravaActivitySummaryForEvidence[],
   );
   if (derived == null) return profile;
 
