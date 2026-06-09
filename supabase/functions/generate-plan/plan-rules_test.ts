@@ -1501,8 +1501,8 @@ Deno.test("workoutPolicyForPhase experienced gets full range", () => {
     "experienced specific should allow intervals",
   );
   assert.ok(
-    policy.allowedTypes.includes("thresholdRun"),
-    "experienced specific should allow thresholdRun",
+    policy.allowedTypes.includes("hillRepeats"),
+    "experienced specific should allow hillRepeats",
   );
   assert.ok(
     policy.allowedTypes.includes("racePaceRun"),
@@ -2753,7 +2753,7 @@ Deno.test(
       session({
         id: "w3-progress",
         date: "2026-04-16",
-        type: "progressionRun",
+        type: "tempoRun",
         weekNumber: 3,
       }),
     ];
@@ -2789,8 +2789,8 @@ Deno.test(
     );
     assert.equal(
       findSession(withPreparedBrief, "w3-progress").type,
-      "progressionRun",
-      "prepared brief should map to intermediate and allow progression in build",
+      "tempoRun",
+      "prepared brief should map to intermediate and allow tempo in build",
     );
   },
 );
@@ -2821,7 +2821,7 @@ Deno.test(
     );
     assert.equal(
       findSession(withoutBrief, "w10-threshold").type,
-      "tempoRun",
+      "longRun",
       "missing profile experience should not keep threshold in peak",
     );
 
@@ -2872,10 +2872,116 @@ Deno.test("normalizeWorkoutTypesByPhase keeps brand-new brief sessions conservat
 
   assert.equal(
     findSession(result, "w5-racepace").type,
-    "fartlek",
-    "underprepared/brand-new should remain conservative in specific phase",
+    "progressionRun",
+    "underprepared/brand-new should shift to a conservative replacement",
   );
 });
+
+Deno.test("workoutPolicyForPhase build phase is strict for brand-new", () => {
+  const policy = workoutPolicyForPhase(
+    "build",
+    "fiveK",
+    "experience_brand_new",
+  );
+  assert.ok(
+    !policy.allowedTypes.includes("progressionRun"),
+    "build should not allow progressionRun for brand-new",
+  );
+  assert.ok(
+    policy.allowedTypes.includes("fartlek"),
+    "build should allow fartlek for brand-new",
+  );
+  assert.ok(
+    policy.maxStressDays <= 2,
+    "brand-new build should keep maxStressDays conservative",
+  );
+});
+
+Deno.test(
+  "detectSessionTypePolicyViolations recommends the same replacement as normalization",
+  () => {
+    const sessions = [
+      session({
+        id: "w4-intervals",
+        date: "2026-04-29",
+        type: "intervals",
+        weekNumber: 4,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: { experience: "experience_intermediate" },
+      schedule: { hardDays: [] },
+    };
+
+    const normalized = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      12,
+      "en",
+    );
+
+    const violations = detectSessionTypePolicyViolations(
+      sessions,
+      profileData,
+      12,
+      null,
+    );
+
+    assert.equal(violations.length, 1);
+    const violation = violations[0];
+    const normalizedType = findSession(normalized, "w4-intervals").type;
+    assert.equal(violation.recommendedType, normalizedType);
+    assert.equal(violation.currentType, "intervals");
+    assert.ok(violation.reason.includes("build"));
+    assert.ok(violation.reason.includes("marathon"));
+    assert.ok(violation.reason.includes("intermediate"));
+    assert.ok(violation.reason.includes("recommend"));
+    assert.ok(violation.reason.includes("intervals"));
+  },
+);
+
+Deno.test(
+  "detectSessionTypePolicyViolations recommends the same taper replacement as normalization",
+  () => {
+    const sessions = [
+      session({
+        id: "w11-intervals",
+        date: "2026-07-08",
+        type: "intervals",
+        weekNumber: 11,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_5k", raceDate: null },
+      fitness: { experience: "experience_intermediate" },
+      schedule: { hardDays: [] },
+    };
+
+    const normalized = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      12,
+      "en",
+    );
+
+    const violations = detectSessionTypePolicyViolations(
+      sessions,
+      profileData,
+      12,
+      null,
+    );
+
+    assert.equal(violations.length, 1);
+    const violation = violations[0];
+    const normalizedType = findSession(normalized, "w11-intervals").type;
+    assert.equal(violation.recommendedType, normalizedType);
+    assert.equal(normalizedType, "fartlek");
+    assert.equal(violation.phase, "taperRace");
+  },
+);
 
 Deno.test(
   "detectSessionTypePolicyViolations reports base-phase intervals in intermediate profile",
