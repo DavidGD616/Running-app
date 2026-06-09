@@ -15,6 +15,7 @@ import '../../../../core/widgets/session_row.dart';
 import '../../../../core/widgets/stat_column.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../training_plan/domain/models/week_progress.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
@@ -31,6 +32,8 @@ class WeeklyPlanScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
@@ -90,6 +93,22 @@ class WeeklyPlanScreen extends ConsumerWidget {
     }
   }
 
+  List<_SessionRowData> _buildRows(TrainingPlan? plan) {
+    if (plan == null) return const [];
+
+    final rows = <_SessionRowData>[
+      ...plan.currentWeekSessions.map(
+        (session) => _SessionRowData.run(session),
+      ),
+    ];
+
+    rows.sort((a, b) {
+      return a.date.compareTo(b.date);
+    });
+
+    return rows;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
@@ -97,10 +116,8 @@ class WeeklyPlanScreen extends ConsumerWidget {
     final progress = ref.watch(weekProgressProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final sessions = plan?.currentWeekSessions ?? const [];
-    final weekStart = sessions.isNotEmpty
-        ? sessions.first.date.day.toString()
-        : '';
+    final rows = _buildRows(plan);
+    final weekStart = rows.isNotEmpty ? rows.first.date.day.toString() : '';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -141,36 +158,41 @@ class WeeklyPlanScreen extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
 
               // Session rows
-              ...sessions.map(
-                (s) => Padding(
+              ...rows.map(
+                (row) => Padding(
                   padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                   child: SessionRow(
-                    dayLabel: _dayLabel(s, l10n),
-                    dateNumber: s.date.day.toString(),
-                    sessionDate: s.date,
-                    title: _sessionTitle(s.type, l10n),
-                    subtitle: s.type.isRest
+                    dayLabel: _dayLabel(row.session, l10n),
+                    dateNumber: row.date.day.toString(),
+                    sessionDate: row.date,
+                    title: _sessionTitle(row.session.type, l10n),
+                    subtitle: row.session.type.isRaceDayInfo
+                        ? l10n.raceDayInfoSubtitle
+                        : row.session.type.isRest
                         ? l10n.weeklyPlanRestSubtitle
                         : null,
-                    distance: s.distanceKm != null
+                    distance: row.session.distanceKm != null
                         ? UnitFormatter.formatDistanceLabel(
-                            s.distanceKm!,
+                            row.session.distanceKm!,
                             unitSystem,
                             l10n,
                           )
                         : null,
-                    duration: s.durationMinutes != null
-                        ? UnitFormatter.formatDuration(s.durationMinutes!, l10n)
+                    duration: row.session.durationMinutes != null
+                        ? UnitFormatter.formatDuration(
+                            row.session.durationMinutes!,
+                            l10n,
+                          )
                         : null,
-                    status: s.status,
-                    isRest: s.type.isRest,
-                    trailingIcon: s.type.iconAsset,
+                    status: row.session.status,
+                    isRest: row.session.type.isRest,
+                    trailingIcon: row.session.type.iconAsset,
                     nowLabel: l10n.weeklyPlanNowBadge,
-                    onTap: s.type.isRest
+                    onTap: row.session.type.isRest
                         ? null
                         : () => context.push(
                             RouteNames.sessionDetail,
-                            extra: SessionDetailArgs(session: s),
+                            extra: SessionDetailArgs(session: row.session),
                           ),
                   ),
                 ),
@@ -189,6 +211,13 @@ class WeeklyPlanScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _SessionRowData {
+  _SessionRowData.run(this.session) : date = session.date;
+
+  final TrainingSession session;
+  final DateTime date;
 }
 
 // ── Week stats summary card ───────────────────────────────────────────────────

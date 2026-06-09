@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -9,7 +8,6 @@ import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/app_header_bar.dart';
-import '../../../../core/widgets/app_bottom_sheet.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_progress_bar.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -36,9 +34,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
   String? _selectedRace;
   bool? _hasRaceDate;
   DateTime? _raceDate;
-  String? _priority;
-  Duration? _currentTime;
-  Duration? _targetTime;
   final _scrollController = ScrollController();
 
   @override
@@ -59,9 +54,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
     _selectedRace = draft.goal.raceKey;
     _hasRaceDate = draft.goal.hasRaceDate;
     _raceDate = draft.goal.raceDate;
-    _priority = draft.goal.priorityKey;
-    _currentTime = draft.goal.currentTime;
-    _targetTime = draft.goal.targetTime;
   }
 
   void _scrollToBottom() {
@@ -103,20 +95,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
       OnboardingValues.raceSubtitle(OnboardingValues.raceMarathon, unit, l10n),
       'assets/icons/medal.svg',
     ),
-    _Race(
-      OnboardingValues.raceOther,
-      OnboardingValues.localizeRace(OnboardingValues.raceOther, l10n),
-      OnboardingValues.raceSubtitle(OnboardingValues.raceOther, unit, l10n),
-      'assets/icons/mountain.svg',
-    ),
-  ];
-
-  static const _priorities = [
-    OnboardingValues.priorityJustFinish,
-    OnboardingValues.priorityFinishStrong,
-    OnboardingValues.priorityImproveTime,
-    OnboardingValues.priorityConsistency,
-    OnboardingValues.priorityGeneralFitness,
   ];
 
   String get _raceDateDisplay {
@@ -144,31 +122,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
       ),
     );
     if (picked != null) setState(() => _raceDate = picked);
-  }
-
-  String _formatDuration(Duration d) {
-    final h = d.inHours;
-    final m = d.inMinutes.remainder(60).toString().padLeft(2, '0');
-    final s = d.inSeconds.remainder(60).toString().padLeft(2, '0');
-    return '$h:$m:$s';
-  }
-
-  Future<void> _showTimePicker({
-    required String title,
-    required Duration? initial,
-    required ValueChanged<Duration> onConfirm,
-  }) async {
-    await showAppBottomSheet(
-      context: context,
-      child: _TimePickerSheet(
-        title: title,
-        initial: initial ?? Duration.zero,
-        onConfirm: (d) {
-          onConfirm(d);
-          Navigator.of(context).pop();
-        },
-      ),
-    );
   }
 
   @override
@@ -202,7 +155,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
       GoalFlowMode.newGoal => l10n.settingsNewGoal,
     };
     final nextRoute = switch (widget.mode) {
-      GoalFlowMode.onboarding => RouteNames.stravaConnect,
+      GoalFlowMode.onboarding => RouteNames.fitnessSource,
       GoalFlowMode.editGoal => RouteNames.settingsUpdatePlanEditGoalSchedule,
       GoalFlowMode.newGoal => RouteNames.settingsUpdatePlanNewGoalSchedule,
     };
@@ -212,16 +165,11 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
 
     final showRaceDateQuestion = _selectedRace != null;
     final showRaceDate = _hasRaceDate == true;
-    final showPriority = _selectedRace != null && _hasRaceDate != null;
-    final showTimeFields = _priority == OnboardingValues.priorityImproveTime;
 
     final isComplete =
         _selectedRace != null &&
         _hasRaceDate != null &&
-        (_hasRaceDate == false || _raceDate != null) &&
-        _priority != null &&
-        (_priority != OnboardingValues.priorityImproveTime ||
-            (_currentTime != null && _targetTime != null));
+        (_hasRaceDate == false || _raceDate != null);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -262,7 +210,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                           ),
                         ),
                         Text(
-                          l10n.onboardingStep(1, 8),
+                          l10n.onboardingStep(1, 9),
                           style: AppTypography.textTheme.labelSmall?.copyWith(
                             color: AppColors.textSecondary,
                             fontWeight: FontWeight.w500,
@@ -273,7 +221,7 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                     const SizedBox(height: AppSpacing.sm),
                     const Padding(
                       padding: EdgeInsets.only(left: AppSpacing.sm),
-                      child: AppProgressBar(current: 1, total: 8),
+                      child: AppProgressBar(current: 1, total: 9),
                     ),
                   ],
                 ),
@@ -316,7 +264,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                               _selectedRace = race.name;
                               _hasRaceDate = null;
                               _raceDate = null;
-                              _priority = null;
                             });
                             _scrollToBottom();
                           },
@@ -341,7 +288,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                               onTap: () {
                                 setState(() {
                                   _hasRaceDate = true;
-                                  _priority = null;
                                 });
                                 _scrollToBottom();
                               },
@@ -356,7 +302,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                                 setState(() {
                                   _hasRaceDate = false;
                                   _raceDate = null;
-                                  _priority = null;
                                 });
                                 _scrollToBottom();
                               },
@@ -381,64 +326,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                         ),
                       ),
                     ],
-
-                    // What's your priority? (reveals after answering race date)
-                    if (showPriority) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      Text(l10n.priorityLabel, style: AppTypography.labelLarge),
-                      const SizedBox(height: AppSpacing.md),
-                      ..._priorities.map(
-                        (p) => Padding(
-                          padding: const EdgeInsets.only(bottom: AppSpacing.md),
-                          child: _PriorityCard(
-                            label: OnboardingValues.localizePriority(p, l10n),
-                            isSelected: _priority == p,
-                            onTap: () {
-                              setState(() => _priority = p);
-                              _scrollToBottom();
-                            },
-                          ),
-                        ),
-                      ),
-
-                      // Time pickers (only if Improve my time)
-                      if (showTimeFields) ...[
-                        Text(
-                          l10n.currentRaceTime,
-                          style: AppTypography.labelLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        AppPickerField(
-                          hint: l10n.tapToSetTime,
-                          value: _currentTime != null
-                              ? _formatDuration(_currentTime!)
-                              : null,
-                          onTap: () => _showTimePicker(
-                            title: l10n.currentRaceTime,
-                            initial: _currentTime,
-                            onConfirm: (d) => setState(() => _currentTime = d),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.lg),
-                        Text(
-                          l10n.targetRaceTime,
-                          style: AppTypography.labelLarge,
-                        ),
-                        const SizedBox(height: AppSpacing.sm),
-                        AppPickerField(
-                          hint: l10n.tapToSetTime,
-                          value: _targetTime != null
-                              ? _formatDuration(_targetTime!)
-                              : null,
-                          onTap: () => _showTimePicker(
-                            title: l10n.targetRaceTime,
-                            initial: _targetTime,
-                            onConfirm: (d) => setState(() => _targetTime = d),
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.md),
-                      ],
-                    ],
                   ],
                 ),
               ),
@@ -462,9 +349,6 @@ class _GoalScreenState extends ConsumerState<GoalScreen> {
                               race: _selectedRace!,
                               hasRaceDate: _hasRaceDate!,
                               raceDate: _raceDate,
-                              priority: _priority!,
-                              currentTime: _currentTime,
-                              targetTime: _targetTime,
                             );
                         context.push(nextRoute);
                       }
@@ -608,186 +492,6 @@ class _ToggleButton extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-// ─── Priority card ────────────────────────────────────────────────────────────
-
-class _PriorityCard extends StatelessWidget {
-  const _PriorityCard({
-    required this.label,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        height: 56,
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.accentMuted : AppColors.backgroundCard,
-          borderRadius: AppRadius.borderLg,
-          border: Border.all(
-            color: isSelected
-                ? AppColors.accentPrimary
-                : AppColors.borderDefault,
-          ),
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Text(
-            label,
-            style: AppTypography.textTheme.titleMedium?.copyWith(
-              color: AppColors.textPrimary,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Time picker wheel sheet ──────────────────────────────────────────────────
-
-class _TimePickerSheet extends StatefulWidget {
-  const _TimePickerSheet({
-    required this.title,
-    required this.initial,
-    required this.onConfirm,
-  });
-
-  final String title;
-  final Duration initial;
-  final ValueChanged<Duration> onConfirm;
-
-  @override
-  State<_TimePickerSheet> createState() => _TimePickerSheetState();
-}
-
-class _TimePickerSheetState extends State<_TimePickerSheet> {
-  late int _hours;
-  late int _minutes;
-  late int _seconds;
-
-  @override
-  void initState() {
-    super.initState();
-    _hours = widget.initial.inHours;
-    _minutes = widget.initial.inMinutes.remainder(60);
-    _seconds = widget.initial.inSeconds.remainder(60);
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          widget.title,
-          style: AppTypography.textTheme.titleMedium?.copyWith(
-            color: AppColors.textPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        SizedBox(
-          height: 180,
-          child: Row(
-            children: [
-              _WheelColumn(
-                count: 24,
-                initial: _hours,
-                label: l10n.timePickerHours,
-                onChanged: (v) => setState(() => _hours = v),
-              ),
-              _WheelColumn(
-                count: 60,
-                initial: _minutes,
-                label: l10n.timePickerMinutes,
-                onChanged: (v) => setState(() => _minutes = v),
-              ),
-              _WheelColumn(
-                count: 60,
-                initial: _seconds,
-                label: l10n.timePickerSeconds,
-                onChanged: (v) => setState(() => _seconds = v),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        AppButton(
-          label: l10n.confirm,
-          onPressed: () => widget.onConfirm(
-            Duration(hours: _hours, minutes: _minutes, seconds: _seconds),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _WheelColumn extends StatelessWidget {
-  const _WheelColumn({
-    required this.count,
-    required this.initial,
-    required this.label,
-    required this.onChanged,
-  });
-
-  final int count;
-  final int initial;
-  final String label;
-  final ValueChanged<int> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            label,
-            style: AppTypography.textTheme.labelSmall?.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Expanded(
-            child: CupertinoPicker(
-              scrollController: FixedExtentScrollController(
-                initialItem: initial,
-              ),
-              itemExtent: 40,
-              onSelectedItemChanged: onChanged,
-              selectionOverlay: CupertinoPickerDefaultSelectionOverlay(
-                background: AppColors.accentMuted,
-              ),
-              children: List.generate(
-                count,
-                (i) => Center(
-                  child: Text(
-                    i.toString().padLeft(2, '0'),
-                    style: AppTypography.textTheme.bodyLarge?.copyWith(
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }

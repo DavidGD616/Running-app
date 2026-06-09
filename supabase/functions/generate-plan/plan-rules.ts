@@ -1,6 +1,25 @@
-import type { GeneratedSession } from "./schema.ts";
+import type { GeneratedPlan, GeneratedSession } from "./schema.ts";
+import type {
+  CoachingBrief,
+  CoachingRaceType,
+  ReadinessLevel,
+} from "./coaching-brief.ts";
 
 type RacePrepPhase = "base" | "build" | "specific" | "peak" | "taperRace";
+type PlanRaceKey =
+  | "race_5k"
+  | "race_10k"
+  | "race_half_marathon"
+  | "race_marathon";
+type ExperienceKey =
+  | "experience_brand_new"
+  | "experience_beginner"
+  | "experience_intermediate"
+  | "experience_experienced";
+type RuleContext = {
+  race: PlanRaceKey | string;
+  experience: ExperienceKey | string;
+};
 
 type PeakLongRunRange = {
   minKm: number;
@@ -11,12 +30,14 @@ type PeakLongRunRange = {
 export function peakLongRunRangeKm(
   profileData: Record<string, unknown>,
 ): PeakLongRunRange {
-  const race = raceFromProfile(profileData);
-  const experience = experienceFromProfile(profileData);
+  return peakLongRunRangeFor(ruleContextFor(profileData));
+}
 
-  switch (race) {
+function peakLongRunRangeFor(context: RuleContext): PeakLongRunRange {
+  switch (context.race) {
     case "race_5k":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 3, targetKm: 5, maxKm: 7 };
         case "experience_intermediate":
@@ -26,7 +47,8 @@ export function peakLongRunRangeKm(
       }
       break;
     case "race_10k":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 6, targetKm: 8, maxKm: 10 };
         case "experience_intermediate":
@@ -36,7 +58,8 @@ export function peakLongRunRangeKm(
       }
       break;
     case "race_half_marathon":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 11, targetKm: 13, maxKm: 16 };
         case "experience_intermediate":
@@ -46,7 +69,8 @@ export function peakLongRunRangeKm(
       }
       break;
     case "race_marathon":
-      switch (experience) {
+      switch (context.experience) {
+        case "experience_brand_new":
         case "experience_beginner":
           return { minKm: 24, targetKm: 26, maxKm: 30 };
         case "experience_intermediate":
@@ -58,6 +82,65 @@ export function peakLongRunRangeKm(
   }
 
   return { minKm: 5, targetKm: 10, maxKm: 15 };
+}
+
+function ruleContextFor(
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null | undefined = null,
+): RuleContext {
+  return {
+    race: raceKeyFromCoachingBrief(coachingBrief) ??
+      raceFromProfile(profileData),
+    experience: experienceKeyFromCoachingBrief(coachingBrief) ??
+      experienceFromProfile(profileData),
+  };
+}
+
+function raceKeyFromCoachingBrief(
+  coachingBrief: CoachingBrief | null | undefined,
+): PlanRaceKey | null {
+  if (coachingBrief == null) return null;
+  return raceKeyFromCoachingRaceType(coachingBrief.raceType);
+}
+
+function raceKeyFromCoachingRaceType(
+  raceType: CoachingRaceType,
+): PlanRaceKey | null {
+  switch (raceType) {
+    case "fiveK":
+      return "race_5k";
+    case "tenK":
+      return "race_10k";
+    case "halfMarathon":
+      return "race_half_marathon";
+    case "marathon":
+      return "race_marathon";
+    case "other":
+      return null;
+  }
+}
+
+function experienceKeyFromCoachingBrief(
+  coachingBrief: CoachingBrief | null | undefined,
+): ExperienceKey | null {
+  if (coachingBrief == null) return null;
+  return experienceKeyFromReadinessLevel(coachingBrief.readinessLevel);
+}
+
+function experienceKeyFromReadinessLevel(
+  readinessLevel: ReadinessLevel,
+): ExperienceKey {
+  switch (readinessLevel) {
+    case "raceReady":
+      return "experience_experienced";
+    case "prepared":
+      return "experience_intermediate";
+    case "developing":
+      return "experience_beginner";
+    case "underprepared":
+    case "unsupported":
+      return "experience_brand_new";
+  }
 }
 
 function raceFromProfile(profileData: Record<string, unknown>): string {
@@ -135,6 +218,47 @@ export function phaseForWeek(
   }
 
   return "taperRace";
+}
+
+export function phaseForWeekFromCoachingBrief(
+  weekNumber: number,
+  totalWeeks: number,
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null | undefined,
+): RacePrepPhase {
+  if (coachingBrief == null) {
+    return phaseForWeek(weekNumber, totalWeeks, profileData);
+  }
+  if (weekNumber < 1 || !Number.isFinite(weekNumber)) {
+    return phaseForWeek(weekNumber, totalWeeks, profileData);
+  }
+
+  const taperStartWeek = Math.max(
+    1,
+    coachingBrief.planLengthWeeks - coachingBrief.taper.weeks + 1,
+  );
+  if (weekNumber >= taperStartWeek) return "taperRace";
+
+  let cumulativeWeeks = 0;
+  for (const phase of coachingBrief.phaseStrategy) {
+    cumulativeWeeks += phase.weeks;
+    if (weekNumber > cumulativeWeeks) continue;
+
+    switch (phase.phase) {
+      case "base":
+      case "build":
+      case "specific":
+      case "peak":
+      case "taperRace":
+        return phase.phase;
+      case "safeBuild":
+        return "build";
+      case "unsupportedFallback":
+        return "base";
+    }
+  }
+
+  return phaseForWeek(weekNumber, totalWeeks, profileData);
 }
 
 export function phasePlanFor(
@@ -238,17 +362,26 @@ export function normalizeWorkoutTypesByPhase(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const race = raceFromProfile(profileData);
-  const experience = experienceFromProfile(profileData);
+  const context = ruleContextFor(profileData, coachingBrief);
   const _raceDate = goalRaceDate(profileData);
 
   return sessions.map((session) => {
     if (session.type === "restDay") return session;
     if (isGoalRaceSession(session, profileData)) return session;
 
-    const phase = phaseForWeek(session.weekNumber, totalWeeks, profileData);
-    const policy = workoutPolicyForPhase(phase, race, experience);
+    const phase = phaseForWeekFromCoachingBrief(
+      session.weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      context.race,
+      context.experience,
+    );
 
     if (policy.allowedTypes.includes(session.type)) return session;
 
@@ -328,7 +461,10 @@ function basePhasePolicy(experience: string): WorkoutPolicy {
 }
 
 function buildPhasePolicy(experience: string): WorkoutPolicy {
-  if (experience === "experience_beginner") {
+  if (
+    experience === "experience_brand_new" ||
+    experience === "experience_beginner"
+  ) {
     return {
       allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay", "fartlek"],
       maxStressDays: 2,
@@ -400,6 +536,20 @@ function specificPhasePolicy(
 }
 
 function peakPhasePolicy(experience: string): WorkoutPolicy {
+  if (experience === "experience_brand_new") {
+    return {
+      allowedTypes: [
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+        "fartlek",
+        "progressionRun",
+      ],
+      maxStressDays: 2,
+    };
+  }
+
   const allowed: string[] = [
     "easyRun",
     "recoveryRun",
@@ -451,15 +601,341 @@ function taperRacePhasePolicy(experience: string): WorkoutPolicy {
 
 type CoachNoteLocale = "en" | "es";
 
+const STRAVA_RUNS_PER_WEEK_METRIC = "training_base_runs_per_week";
+const STRAVA_WEEKLY_VOLUME_METRIC = "training_base_weekly_km";
+const STRAVA_LONG_RUN_METRIC = "endurance_long_run_km";
+const STRAVA_WEEKLY_VOLUME_UNIT = "km_per_week";
+const STRAVA_RUNS_PER_WEEK_UNIT = "runs_per_week";
+const STRAVA_LONG_RUN_UNIT = "km";
+const STRAVA_EVIDENCE_GROUPS = ["trainingBase", "endurance"] as const;
+
+const GUARDRAIL_BLOCKING_VOLUME_RAMP = new Set([
+  "recovery_detraining",
+  "recovery_long_layoff",
+  "recovery_sparse_data",
+  "recovery_data_collection",
+]);
+const GUARDRAIL_BLOCKING_PEAK_LONG_RUN = new Set([
+  ...GUARDRAIL_BLOCKING_VOLUME_RAMP,
+  "recovery_load_spike",
+  "recovery_pace_uncertainty",
+]);
+const WEEKLY_VOLUME_RAMP_HIGH_RISK_FACTOR = 1.0;
+const WEEKLY_VOLUME_RAMP_DEFAULT_FACTOR = 1.1;
+const LEG_STRENGTH_CATEGORIES = new Set([
+  "lower_body",
+  "full_body",
+]);
+
+type StravaEvidence = {
+  metric: string;
+  value: number;
+  unit: string;
+  date?: string;
+};
+
+type StrengthPreferences = {
+  weeklyFrequency: number;
+  categories: string[];
+  preferredDays: string[];
+};
+
+function stravaCoachingProfile(profileData: Record<string, unknown>):
+  | Record<
+    string,
+    unknown
+  >
+  | null {
+  const fitness = objectOrNull(profileData.fitness);
+  const direct = objectOrNull(profileData.stravaCoachingProfile);
+  const nested = objectOrNull(fitness?.stravaCoachingProfile);
+  return direct ?? nested ?? null;
+}
+
+function dataConfidence(profileData: Record<string, unknown>): string | null {
+  const profile = stravaCoachingProfile(profileData);
+  if (profile == null) return null;
+  const confidence = profile.dataConfidence;
+  return typeof confidence === "string" ? confidence : null;
+}
+
+function hasHighConfidence(profileData: Record<string, unknown>): boolean {
+  const confidence = dataConfidence(profileData);
+  return confidence === "high" || confidence === "medium";
+}
+
+function recoveryGuardrails(profileData: Record<string, unknown>): string[] {
+  const profile = stravaCoachingProfile(profileData);
+  const list = profile?.recoveryGuardrails;
+  if (!Array.isArray(list)) return [];
+  return list.map((entry) => {
+    if (!entry || typeof entry !== "object") return "";
+    const record = entry as Record<string, unknown>;
+    return typeof record.category === "string" ? record.category : "";
+  }).filter((category): category is string => category.length > 0);
+}
+
+function evidenceCategoryBlocked(
+  category: string,
+  blocked: Set<string>,
+): boolean {
+  const normalized = category.toLowerCase();
+  if (blocked.has(normalized)) return true;
+  for (const block of blocked) {
+    if (
+      normalized === block ||
+      normalized.includes(block.replace("recovery_", "")) ||
+      normalized.includes(block.replace(/_/g, " "))
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasBlockingGuardrail(
+  profileData: Record<string, unknown>,
+  bucket: Set<string>,
+): boolean {
+  return recoveryGuardrails(profileData).some((category) =>
+    evidenceCategoryBlocked(category, bucket)
+  );
+}
+
+function evidencePoints(
+  profileData: Record<string, unknown>,
+): StravaEvidence[] {
+  const profile = stravaCoachingProfile(profileData);
+  if (profile == null) return [];
+
+  return STRAVA_EVIDENCE_GROUPS
+    .flatMap((key) => {
+      const raw = profile[key];
+      if (!Array.isArray(raw)) return [];
+
+      return raw
+        .flatMap((item) => {
+          if (item == null || typeof item !== "object") return [];
+          const record = item as Record<string, unknown>;
+          const metric = typeof record.metric === "string"
+            ? record.metric
+            : null;
+          const unit = typeof record.unit === "string" ? record.unit : null;
+          const value =
+            typeof record.value === "number" && Number.isFinite(record.value)
+              ? record.value
+              : null;
+          if (metric == null || unit == null || value == null) return [];
+
+          const base = {
+            metric,
+            unit,
+            value,
+          };
+          const dated = typeof record.date === "string"
+            ? { ...base, date: record.date }
+            : base;
+          return [dated as StravaEvidence];
+        });
+    });
+}
+
+function evidenceDateSort(a: StravaEvidence, b: StravaEvidence): number {
+  const aDate = a.date == null ? 0 : Date.parse(a.date);
+  const bDate = b.date == null ? 0 : Date.parse(b.date);
+  return (Number.isFinite(bDate) ? bDate : 0) -
+    (Number.isFinite(aDate) ? aDate : 0);
+}
+
+function latestEvidenceValue(
+  profileData: Record<string, unknown>,
+  metric: string,
+  unit: string,
+): number | null {
+  const points = evidencePoints(profileData)
+    .filter((point) => point.metric === metric && point.unit === unit)
+    .sort(evidenceDateSort);
+  return points.length > 0 ? points[0].value : null;
+}
+
+function stravaRunsPerWeek(
+  profileData: Record<string, unknown>,
+): number | null {
+  return latestEvidenceValue(
+    profileData,
+    STRAVA_RUNS_PER_WEEK_METRIC,
+    STRAVA_RUNS_PER_WEEK_UNIT,
+  );
+}
+
+function stravaWeeklyVolume(
+  profileData: Record<string, unknown>,
+): number | null {
+  return latestEvidenceValue(
+    profileData,
+    STRAVA_WEEKLY_VOLUME_METRIC,
+    STRAVA_WEEKLY_VOLUME_UNIT,
+  );
+}
+
+function stravaLongRun(profileData: Record<string, unknown>): number | null {
+  return latestEvidenceValue(
+    profileData,
+    STRAVA_LONG_RUN_METRIC,
+    STRAVA_LONG_RUN_UNIT,
+  );
+}
+
+function acceptedRaceTargetDistance(
+  profileData: Record<string, unknown>,
+): number | null {
+  const target = objectOrNull(profileData.acceptedRaceTarget);
+  const distance = target?.distanceKm;
+  return typeof distance === "number" && Number.isFinite(distance) &&
+      distance > 0
+    ? distance
+    : null;
+}
+
+function baselineWeeklyVolumeProfile(
+  profileData: Record<string, unknown>,
+): {
+  anchor: number;
+  rampFactor: number;
+  maxWeeklyVolumeKm: null;
+  weekOneMinimumRatio: number;
+  longRunCeilingKm: null;
+} | null {
+  if (
+    hasStrongEvidenceConfidence(profileData) &&
+    !hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_VOLUME_RAMP)
+  ) {
+    const byStrava = stravaWeeklyVolume(profileData);
+    if (byStrava != null) {
+      return {
+        anchor: byStrava,
+        rampFactor: weeklyVolumeRampFactor(profileData),
+        maxWeeklyVolumeKm: null,
+        weekOneMinimumRatio: 0,
+        longRunCeilingKm: null,
+      };
+    }
+  }
+
+  const athleteSummary = athleteSummaryWeeklyVolumeKm(profileData);
+  if (athleteSummary == null) return null;
+
+  return {
+    anchor: athleteSummary,
+    rampFactor: WEEKLY_VOLUME_RAMP_FACTOR,
+    maxWeeklyVolumeKm: null,
+    weekOneMinimumRatio: 0,
+    longRunCeilingKm: null,
+  };
+}
+
+function hasStrongEvidenceConfidence(
+  profileData: Record<string, unknown>,
+): boolean {
+  const confidence = dataConfidence(profileData);
+  return confidence === "high" || confidence === "medium";
+}
+
+function weeklyVolumeRampFactor(profileData: Record<string, unknown>): number {
+  if (
+    hasStrongEvidenceConfidence(profileData) &&
+    !hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_VOLUME_RAMP)
+  ) {
+    return WEEKLY_VOLUME_RAMP_DEFAULT_FACTOR;
+  }
+  return WEEKLY_VOLUME_RAMP_FACTOR;
+}
+
+function longRunHistoryFloor(
+  profileData: Record<string, unknown>,
+): number | null {
+  if (hasBlockingGuardrail(profileData, GUARDRAIL_BLOCKING_PEAK_LONG_RUN)) {
+    return null;
+  }
+
+  const acceptedConfidence = dataConfidence(profileData);
+  if (
+    acceptedConfidence != null &&
+    acceptedConfidence !== "high" &&
+    acceptedConfidence !== "medium"
+  ) {
+    return null;
+  }
+
+  const stravaEvidence = stravaLongRun(profileData);
+  if (stravaEvidence != null) return stravaEvidence * 0.9;
+
+  return athleteSummaryLongestRecentRunKm(profileData);
+}
+
+function strengthPreferences(
+  profileData: Record<string, unknown>,
+): StrengthPreferences {
+  const fallback: StrengthPreferences = {
+    weeklyFrequency: 0,
+    categories: [],
+    preferredDays: [],
+  };
+  const profile = objectOrNull(profileData.strengthPreferences);
+  if (profile == null) return fallback;
+
+  const rawFrequency = typeof profile.weeklyFrequency === "number"
+    ? Math.floor(profile.weeklyFrequency)
+    : typeof profile.weeklyFrequency === "string"
+    ? Number.parseInt(profile.weeklyFrequency, 10)
+    : null;
+  const weeklyFrequency = rawFrequency == null || Number.isNaN(rawFrequency)
+    ? 0
+    : Math.max(0, rawFrequency);
+
+  const rawCategories = Array.isArray(profile.categories)
+    ? profile.categories
+    : [];
+  const categories = rawCategories
+    .filter((category): category is string =>
+      typeof category === "string" &&
+      category.length > 0
+    );
+
+  const rawPreferredDays = Array.isArray(profile.preferredDays)
+    ? profile.preferredDays
+    : [];
+  const preferredDays = rawPreferredDays.filter((day): day is string =>
+    typeof day === "string" && day.startsWith("day_")
+  );
+
+  return {
+    weeklyFrequency,
+    categories: Array.from(new Set(categories)),
+    preferredDays,
+  };
+}
+
+function hasLegStrengthPreference(prefs: StrengthPreferences): boolean {
+  return prefs.weeklyFrequency > 0 &&
+    prefs.categories.some((category) => LEG_STRENGTH_CATEGORIES.has(category));
+}
+
 export function normalizeTrainingDayCount(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   locale: CoachNoteLocale = "en",
+  planStartDate?: string | null,
 ): GeneratedSession[] {
   const targetTrainingDays = targetTrainingDaysFor(profileData);
   if (targetTrainingDays == null) return sessions;
 
   const hardDays = hardDaySetFor(profileData);
+  const minimumDate = planStartDate != null
+    ? parsePlanStartDateValue(planStartDate)
+    : parsePlanStartDateValue(
+      objectOrNull(profileData.schedule)?.planStartDate,
+    );
   const sessionsByWeek = new Map<number, GeneratedSession[]>();
   for (const session of sessions) {
     const weekSessions = sessionsByWeek.get(session.weekNumber) ?? [];
@@ -476,14 +952,51 @@ export function normalizeTrainingDayCount(
         hardDays,
         profileData,
         locale,
+        minimumDate,
       )
     )
+    .sort(compareSessionsByDate);
+}
+
+export function normalizeWeekNumbersFromDates(
+  sessions: GeneratedSession[],
+  profileData: Record<string, unknown>,
+  today: Date = new Date(),
+  planStartDate?: string | null,
+): GeneratedSession[] {
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    profileData,
+    today,
+    planStartDate,
+  );
+  const anchorMonday = planStartAnchorMonday(resolvedPlanStartDate);
+  if (anchorMonday == null) {
+    return sessions.map((session) => ({ ...session }))
+      .sort(compareSessionsByDate);
+  }
+
+  return sessions
+    .map((session) => {
+      const expectedWeekNumber = weekNumberFromAnchor(
+        session.date,
+        anchorMonday,
+      );
+      if (expectedWeekNumber == null || expectedWeekNumber < 1) {
+        return { ...session };
+      }
+
+      return {
+        ...session,
+        weekNumber: expectedWeekNumber,
+      };
+    })
     .sort(compareSessionsByDate);
 }
 
 export function ensureFullCalendarWeeks(
   sessions: GeneratedSession[],
   locale: CoachNoteLocale = "en",
+  planStartDate?: string | null,
 ): GeneratedSession[] {
   const sessionsByWeek = new Map<number, GeneratedSession[]>();
   for (const session of sessions) {
@@ -491,67 +1004,61 @@ export function ensureFullCalendarWeeks(
     weekSessions.push({ ...session });
     sessionsByWeek.set(session.weekNumber, weekSessions);
   }
+  const resolvedPlanStartDate = parsePlanStartDateValue(planStartDate);
+
+  const hasLaterWeek = [...sessionsByWeek.keys()].some((weekNumber) =>
+    weekNumber > 1
+  );
+  if (
+    resolvedPlanStartDate != null &&
+    hasLaterWeek &&
+    !sessionsByWeek.has(1)
+  ) {
+    const syntheticWeekOneTemplate: GeneratedSession = {
+      id: `w1-${resolvedPlanStartDate}-restDay`,
+      date: resolvedPlanStartDate,
+      weekNumber: 1,
+      type: "restDay",
+      distanceKm: null,
+      durationMinutes: null,
+      coachNote: null,
+      targetZone: null,
+      warmUpMinutes: null,
+      coolDownMinutes: null,
+      intervalReps: null,
+      intervalRepDistanceMeters: null,
+      intervalRecoverySeconds: null,
+      strideReps: null,
+      strideSeconds: null,
+      strideRecoverySeconds: null,
+    };
+
+    sessionsByWeek.set(
+      1,
+      fillWeekRestDays(
+        [syntheticWeekOneTemplate],
+        locale,
+        resolvedPlanStartDate,
+      ),
+    );
+  }
 
   return Array.from(sessionsByWeek.keys())
     .sort((a, b) => a - b)
     .flatMap((weekNumber) =>
-      fillWeekRestDays(sessionsByWeek.get(weekNumber) ?? [], locale)
+      fillWeekRestDays(
+        sessionsByWeek.get(weekNumber) ?? [],
+        locale,
+        resolvedPlanStartDate,
+      )
     )
     .sort(compareSessionsByDate);
-}
-
-export function ensureGoalRaceSession(
-  sessions: GeneratedSession[],
-  profileData: Record<string, unknown>,
-  locale: CoachNoteLocale = "en",
-): GeneratedSession[] {
-  const distanceKm = goalRaceDistanceKm(profileData);
-  if (distanceKm == null) return sessions;
-
-  const adjusted = sessions.map((session) => ({ ...session })).sort(
-    compareSessionsByDate,
-  );
-  const raceDate = goalRaceDate(profileData);
-  if (raceDate != null) {
-    const raceIndex = adjusted.findIndex((session) =>
-      session.date.slice(0, 10) === raceDate
-    );
-    if (raceIndex < 0) return adjusted;
-    adjusted[raceIndex] = toGoalRaceSession(
-      adjusted[raceIndex],
-      distanceKm,
-      locale,
-    );
-    return adjusted.sort(compareSessionsByDate);
-  }
-
-  const finalWeek = Math.max(...adjusted.map((session) => session.weekNumber));
-  if (!Number.isFinite(finalWeek)) return adjusted;
-
-  const finalWeekSessions = adjusted.filter((session) =>
-    session.weekNumber === finalWeek
-  );
-  if (finalWeekSessions.length === 0) return adjusted;
-
-  const targetDate = preferredGoalRaceDate(finalWeekSessions, profileData);
-  const targetIndex = adjusted.findIndex((session) =>
-    session.weekNumber === finalWeek &&
-    session.date.slice(0, 10) === targetDate
-  );
-  if (targetIndex < 0) return adjusted;
-
-  adjusted[targetIndex] = toGoalRaceSession(
-    adjusted[targetIndex],
-    distanceKm,
-    locale,
-  );
-
-  return adjusted.sort(compareSessionsByDate);
 }
 
 export function expectedTotalWeeks(
   profileData: Record<string, unknown>,
   today: Date = new Date(),
+  planStartDate?: string | null,
 ): number | null {
   const raceDate = goalRaceDate(profileData);
   if (raceDate == null) return null;
@@ -559,14 +1066,20 @@ export function expectedTotalWeeks(
   const raceDateParsed = parseDateOnly(raceDate);
   if (raceDateParsed == null) return null;
 
-  const anchorMonday = anchorMondayFor(today);
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    profileData,
+    today,
+    planStartDate,
+  );
+  const anchorMonday = planStartAnchorMonday(resolvedPlanStartDate) ??
+    anchorMondayFor(today);
 
   const raceDayIndex = raceDateParsed.getUTCDay();
   const raceMondayOffset = raceDayIndex === 0 ? -6 : 1 - raceDayIndex;
   const raceMonday = new Date(raceDateParsed);
   raceMonday.setUTCDate(raceDateParsed.getUTCDate() + raceMondayOffset);
 
-  if (raceMonday.getTime() < anchorMonday.getTime()) return null;
+  if (raceMonday.getTime() < anchorMonday.getTime()) return 0;
 
   const weeks = Math.ceil(
     (raceMonday.getTime() - anchorMonday.getTime()) /
@@ -652,6 +1165,7 @@ function firstStrideProtectedSessionId(
 function fillWeekRestDays(
   sessions: GeneratedSession[],
   locale: CoachNoteLocale,
+  planStartDate?: string | null,
 ): GeneratedSession[] {
   if (sessions.length === 0) return sessions;
 
@@ -664,12 +1178,19 @@ function fillWeekRestDays(
   const existingDates = new Set(
     adjusted.map((session) => session.date.slice(0, 10)),
   );
+  const normalizedPlanStartDate = parsePlanStartDateValue(planStartDate);
   const template = adjusted[0];
 
   for (let dayOffset = 0; dayOffset < 7; dayOffset += 1) {
     const date = new Date(weekStart);
     date.setUTCDate(weekStart.getUTCDate() + dayOffset);
     const dateKey = date.toISOString().slice(0, 10);
+    if (
+      normalizedPlanStartDate != null &&
+      dateKey < normalizedPlanStartDate
+    ) {
+      continue;
+    }
     if (existingDates.has(dateKey)) continue;
 
     adjusted.push(createRestDay(template, dateKey, locale));
@@ -771,6 +1292,7 @@ function normalizeWeekTrainingDays(
   hardDays: Set<string>,
   profileData: Record<string, unknown>,
   locale: CoachNoteLocale,
+  minimumDate?: string | null,
 ): GeneratedSession[] {
   const adjusted = sessions.map((session) => ({ ...session })).sort(
     compareSessionsByDate,
@@ -793,7 +1315,7 @@ function normalizeWeekTrainingDays(
       continue;
     }
 
-    const date = findMissingWeekDate(adjusted, hardDays);
+    const date = findMissingWeekDate(adjusted, hardDays, minimumDate);
     if (date == null) break;
     adjusted.push(createEasyTrainingDay(adjusted[0], date, hardDays, locale));
     adjusted.sort(compareSessionsByDate);
@@ -942,62 +1464,6 @@ function goalRaceDate(profileData: Record<string, unknown>): string | null {
   const goal = objectOrNull(profileData.goal);
   const raceDate = typeof goal?.raceDate === "string" ? goal.raceDate : null;
   return raceDate == null ? null : raceDate.slice(0, 10);
-}
-
-function goalRaceDistanceKm(
-  profileData: Record<string, unknown>,
-): number | null {
-  const goal = objectOrNull(profileData.goal);
-  const race = typeof goal?.race === "string" ? goal.race : null;
-
-  switch (race) {
-    case "race_5k":
-      return 5;
-    case "race_10k":
-      return 10;
-    case "race_half_marathon":
-      return 21.1;
-    case "race_marathon":
-      return 42.2;
-    default:
-      return null;
-  }
-}
-
-function preferredGoalRaceDate(
-  finalWeekSessions: GeneratedSession[],
-  profileData: Record<string, unknown>,
-): string {
-  const preferredDay = preferredLongRunDayFor(profileData);
-  const hardDays = hardDaySetFor(profileData);
-  const sorted = [...finalWeekSessions].sort(compareSessionsByDate);
-
-  if (preferredDay != null && !hardDays.has(preferredDay)) {
-    const preferredSession = sorted.find((session) =>
-      dayKeyForDate(session.date) === preferredDay
-    );
-    if (preferredSession != null) return preferredSession.date.slice(0, 10);
-  }
-
-  const racePaceSession = sorted.findLast((session) =>
-    session.type === "racePaceRun" && !hardDays.has(dayKeyForDate(session.date))
-  );
-  if (racePaceSession != null) return racePaceSession.date.slice(0, 10);
-
-  const longRunSession = sorted.findLast((session) =>
-    session.type === "longRun" && !hardDays.has(dayKeyForDate(session.date))
-  );
-  if (longRunSession != null) return longRunSession.date.slice(0, 10);
-
-  const trainingSession = sorted.findLast((session) =>
-    isTrainingDay(session) && !hardDays.has(dayKeyForDate(session.date))
-  );
-  if (trainingSession != null) return trainingSession.date.slice(0, 10);
-
-  const nonHardDay = sorted.findLast((session) =>
-    !hardDays.has(dayKeyForDate(session.date))
-  );
-  return (nonHardDay ?? sorted[sorted.length - 1]).date.slice(0, 10);
 }
 
 function trainingDayCount(sessions: GeneratedSession[]): number {
@@ -1382,42 +1848,10 @@ function createRestDay(
   };
 }
 
-function toGoalRaceSession(
-  session: GeneratedSession,
-  distanceKm: number,
-  locale: CoachNoteLocale,
-): GeneratedSession {
-  return {
-    ...session,
-    type: "racePaceRun",
-    distanceKm,
-    durationMinutes: null,
-    coachNote: trainingDayCue("goalRace", locale),
-    targetZone: "racePace",
-    warmUpMinutes: goalRaceWarmUpMinutes(distanceKm),
-    coolDownMinutes: goalRaceCoolDownMinutes(distanceKm),
-    intervalReps: null,
-    intervalRepDistanceMeters: null,
-    intervalRecoverySeconds: null,
-    strideReps: null,
-    strideSeconds: null,
-    strideRecoverySeconds: null,
-  };
-}
-
-function goalRaceWarmUpMinutes(distanceKm: number): number | null {
-  if (distanceKm <= 10) return 10;
-  return null;
-}
-
-function goalRaceCoolDownMinutes(distanceKm: number): number | null {
-  if (distanceKm <= 10) return 5;
-  return null;
-}
-
 function findMissingWeekDate(
   sessions: GeneratedSession[],
   hardDays: Set<string>,
+  minimumDate?: string | null,
 ): string | null {
   const weekStart = weekStartDateFor(sessions);
   if (weekStart == null) return null;
@@ -1429,7 +1863,9 @@ function findMissingWeekDate(
     const date = new Date(weekStart);
     date.setUTCDate(weekStart.getUTCDate() + dayOffset);
     return date.toISOString().slice(0, 10);
-  }).filter((date) => !existingDates.has(date));
+  })
+    .filter((date) => !existingDates.has(date))
+    .filter((date) => minimumDate == null || date >= minimumDate);
 
   return candidates.find((date) => !hardDays.has(dayKeyForDate(date))) ??
     candidates[0] ??
@@ -1764,8 +2200,12 @@ function findHardDaySwapIndex(
 function hardDaySetFor(profileData: Record<string, unknown>): Set<string> {
   const schedule = objectOrNull(profileData.schedule);
   const hardDays = Array.isArray(schedule?.hardDays) ? schedule.hardDays : [];
+  const strength = strengthPreferences(profileData);
+  const legDays = hasLegStrengthPreference(strength)
+    ? strength.preferredDays
+    : [];
   return new Set(
-    hardDays.filter((day): day is string =>
+    [...hardDays, ...legDays].filter((day): day is string =>
       typeof day === "string" && day.startsWith("day_")
     ),
   );
@@ -1858,7 +2298,6 @@ function withScheduleNote(
 
 type TrainingDayCueKey =
   | "restDay"
-  | "goalRace"
   | "preferredLongRunDay"
   | "movedForSpacing"
   | "restDayAdded"
@@ -1870,7 +2309,8 @@ type TrainingDayCueKey =
   | "strideAdded"
   | "movedAwayFromHardDay"
   | "hardDayRecoveryFallback"
-  | "firstSessionEasyStart";
+  | "firstSessionEasyStart"
+  | "peakLongRunGuardrailCapped";
 
 function trainingDayCue(
   key: TrainingDayCueKey,
@@ -1881,12 +2321,6 @@ function trainingDayCue(
       en: "Rest day. Keep it easy and let your body absorb the training.",
       es:
         "Día de descanso. Mantén el día suave y deja que tu cuerpo asimile el entrenamiento.",
-    },
-    goalRace: {
-      en:
-        "Goal race day. Run the full target distance by effort: controlled early, steady through the middle, strong at the finish.",
-      es:
-        "Día de carrera objetivo. Corre la distancia completa por esfuerzo: controlado al inicio, constante en la parte media y fuerte al final.",
     },
     preferredLongRunDay: {
       en: "Moved to your preferred long run day.",
@@ -1944,6 +2378,12 @@ function trainingDayCue(
       es:
         "Empieza el plan con una carrera suave y controlada antes de añadir entrenamientos más duros.",
     },
+    peakLongRunGuardrailCapped: {
+      en:
+        "Peak long run was kept at the safety limit; evidence-based increase is currently blocked by guardrails.",
+      es:
+        "La tirada larga máxima se mantuvo por límites de seguridad; la evidencia adicional está bloqueada por guardas de riesgo.",
+    },
   };
   return cues[key][locale];
 }
@@ -1963,27 +2403,140 @@ function objectOrNull(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+const PEAK_LONG_RUN_EVIDENCE_FRACTION = 0.7;
+const PEAK_LONG_RUN_VOLUME_SAFETY_RATIO = 0.33;
+
+function canRaisePeakLongRunFromBriefEvidence(
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null,
+): boolean {
+  if (coachingBrief == null) return false;
+  if (
+    coachingBrief.source !== "strava" &&
+    coachingBrief.source !== "mixed"
+  ) {
+    return false;
+  }
+
+  if (
+    coachingBrief.confidence !== "high" &&
+    coachingBrief.confidence !== "medium"
+  ) {
+    return false;
+  }
+
+  if (
+    !hasStrongEvidenceConfidence(profileData)
+  ) {
+    return false;
+  }
+
+  const currentVolumeKmPerWeek = normalizePositiveNumber(
+    coachingBrief.currentVolumeKmPerWeek,
+    0,
+  );
+  if (currentVolumeKmPerWeek == null || currentVolumeKmPerWeek <= 0) {
+    return false;
+  }
+
+  const recentLongRunKm = normalizePositiveNumber(
+    coachingBrief.recentLongRunKm,
+    0,
+  );
+  return recentLongRunKm != null && recentLongRunKm > 0;
+}
+
+function resolvePeakLongRunRange(
+  range: PeakLongRunRange,
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null,
+): PeakLongRunRange {
+  if (!canRaisePeakLongRunFromBriefEvidence(profileData, coachingBrief)) {
+    return range;
+  }
+  if (coachingBrief == null) return range;
+
+  const recentLongRunKm = normalizePositiveNumber(
+    coachingBrief.recentLongRunKm,
+    0,
+  );
+  if (recentLongRunKm == null) return range;
+
+  const currentVolumeKmPerWeek = normalizePositiveNumber(
+    coachingBrief.currentVolumeKmPerWeek,
+    0,
+  );
+  if (currentVolumeKmPerWeek == null || currentVolumeKmPerWeek <= 0) {
+    return range;
+  }
+  const evidenceTargetKm = recentLongRunKm * PEAK_LONG_RUN_EVIDENCE_FRACTION;
+  const evidenceCapKm = currentVolumeKmPerWeek == null
+    ? evidenceTargetKm
+    : Math.min(
+      evidenceTargetKm,
+      currentVolumeKmPerWeek * PEAK_LONG_RUN_VOLUME_SAFETY_RATIO,
+    );
+
+  if (evidenceCapKm <= range.maxKm) return range;
+
+  return {
+    minKm: range.minKm,
+    targetKm: Math.max(range.targetKm, evidenceCapKm),
+    maxKm: Math.max(range.maxKm, evidenceCapKm),
+  };
+}
+
 export function normalizePeakLongRun(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const range = peakLongRunRangeKm(profileData);
-  const measuredLongestRecentRunKm = athleteSummaryLongestRecentRunKm(
-    profileData,
+  const context = ruleContextFor(profileData, coachingBrief);
+  const range = peakLongRunRangeFor(context);
+  const briefLongRunCeilingKm = normalizePositiveNumber(
+    coachingBrief?.longRunCeilingKm,
+    MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM,
   );
+  const measuredLongestRecentRunKm = longRunHistoryFloor(profileData);
   const historyFloorKm = measuredLongestRecentRunKm == null
     ? null
-    : measuredLongestRecentRunKm * 0.9;
+    : Math.min(measuredLongestRecentRunKm, range.maxKm);
   const normalizedRange = {
     minKm: Math.max(range.minKm, historyFloorKm ?? range.minKm),
     targetKm: Math.max(range.targetKm, historyFloorKm ?? range.targetKm),
     maxKm: Math.max(range.maxKm, historyFloorKm ?? range.maxKm),
   };
+  const evidenceAwareRange = resolvePeakLongRunRange(
+    normalizedRange,
+    profileData,
+    coachingBrief,
+  );
+  const hadEvidenceAwarePotential =
+    evidenceAwareRange.targetKm > normalizedRange.targetKm ||
+    evidenceAwareRange.maxKm > normalizedRange.maxKm;
+  const cappedRange = {
+    maxKm: briefLongRunCeilingKm == null
+      ? evidenceAwareRange.maxKm
+      : Math.min(evidenceAwareRange.maxKm, briefLongRunCeilingKm),
+    targetKm: briefLongRunCeilingKm == null
+      ? evidenceAwareRange.targetKm
+      : Math.min(evidenceAwareRange.targetKm, briefLongRunCeilingKm),
+    minKm: briefLongRunCeilingKm == null
+      ? evidenceAwareRange.minKm
+      : Math.min(evidenceAwareRange.minKm, briefLongRunCeilingKm),
+  };
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "peak"
+      ),
   );
 
   const adjusted = sessions.map((session) => ({ ...session }));
@@ -2005,11 +2558,20 @@ export function normalizePeakLongRun(
 
   if (bestPeakLongRun == null) return sessions;
 
-  const targetDistance = normalizedRange.targetKm;
+  const targetDistance = cappedRange.targetKm;
   const currentDistance = bestPeakLongRun.distanceKm;
+  const hasPeakLongRunGuardrail = hasBlockingGuardrail(
+    profileData,
+    GUARDRAIL_BLOCKING_PEAK_LONG_RUN,
+  );
+  const normalizedTargetDistance = hasPeakLongRunGuardrail
+    ? range.targetKm
+    : targetDistance;
+  const guardrailSuppressedEvidenceLift = hasPeakLongRunGuardrail &&
+    hadEvidenceAwarePotential;
   const finalDistance = Math.max(
-    normalizedRange.minKm,
-    Math.min(normalizedRange.maxKm, targetDistance),
+    cappedRange.minKm,
+    Math.min(cappedRange.maxKm, normalizedTargetDistance),
   );
 
   if (Math.abs(finalDistance - currentDistance) > 0.01) {
@@ -2020,8 +2582,10 @@ export function normalizePeakLongRun(
       profileData,
     );
 
-    const wasRaised = currentDistance < targetDistance;
-    const cue = wasRaised
+    const wasRaised = currentDistance < finalDistance;
+    const cue = guardrailSuppressedEvidenceLift
+      ? trainingDayCue("peakLongRunGuardrailCapped", locale)
+      : wasRaised
       ? locale === "en"
         ? "Peak long run raised to target."
         : "Tirada larga máxima aumentada al objetivo."
@@ -2100,15 +2664,22 @@ export function smoothLongRunProgression(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const race = raceFromProfile(profileData);
+  const context = ruleContextFor(profileData, coachingBrief);
+  const race = context.race;
   const maxJump = maxLongRunJumpKm(race);
+  const longRunCeilingKm = normalizePositiveNumber(
+    coachingBrief?.longRunCeilingKm,
+    MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM,
+  );
 
   const adjusted = sessions.map((s) => ({ ...s }));
   const protectedPeakIndex = protectedPeakLongRunIndex(
     adjusted,
     profileData,
     totalWeeks,
+    coachingBrief,
   );
 
   const longRunIndices: number[] = [];
@@ -2121,35 +2692,52 @@ export function smoothLongRunProgression(
     }
   }
 
-  if (longRunIndices.length < 2) return sessions;
+  if (longRunIndices.length === 0) return sessions;
 
   longRunIndices.sort((a, b) =>
     adjusted[a].weekNumber - adjusted[b].weekNumber
   );
 
-  for (let i = 1; i < longRunIndices.length; i += 1) {
-    const prevIdx = longRunIndices[i - 1];
+  for (let i = 0; i < longRunIndices.length; i += 1) {
     const currIdx = longRunIndices[i];
     if (currIdx === protectedPeakIndex) continue;
 
-    const prevDist = adjusted[prevIdx].distanceKm ?? 0;
     const currDist = adjusted[currIdx].distanceKm ?? 0;
+    let newDistance = currDist;
 
-    if (currDist <= prevDist) continue;
+    if (
+      longRunCeilingKm != null &&
+      currDist > longRunCeilingKm
+    ) {
+      newDistance = longRunCeilingKm;
+    }
 
-    const jump = currDist - prevDist;
-    if (jump <= maxJump) continue;
+    if (i > 0) {
+      const prevIdx = longRunIndices[i - 1];
+      const prevDist = adjusted[prevIdx].distanceKm ?? 0;
+      if (currDist > prevDist) {
+        const maxAllowedFromJump = prevDist + maxJump;
+        const maxAllowed = longRunCeilingKm == null
+          ? maxAllowedFromJump
+          : Math.min(maxAllowedFromJump, longRunCeilingKm);
 
-    const maxAllowed = prevDist + maxJump;
+        if (newDistance > maxAllowed) {
+          newDistance = maxAllowed;
+        }
+      }
+    }
+
+    if (Math.abs(newDistance - currDist) < 0.01) continue;
+
     const newDuration = recalculateDurationForDistance(
       adjusted,
       currIdx,
-      maxAllowed,
+      newDistance,
       profileData,
     );
     adjusted[currIdx] = {
       ...adjusted[currIdx],
-      distanceKm: maxAllowed,
+      distanceKm: newDistance,
       durationMinutes: newDuration,
     };
   }
@@ -2159,22 +2747,125 @@ export function smoothLongRunProgression(
 
 const WEEKLY_VOLUME_RAMP_FACTOR = 1.1; // ~10% week-over-week ceiling.
 const WEEKLY_VOLUME_TOLERANCE = 0.05; // small slack before clamping kicks in.
+const WEEKLY_VOLUME_RAMP_LOW_CONFIDENCE_FACTOR = 1.05;
+const WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_STRONG_EVIDENCE = 0.85;
+const WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_LOW_CONFIDENCE = 0.55;
+const WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_BY_READINESS: Record<
+  ReadinessLevel,
+  number
+> = {
+  raceReady: 0.95,
+  prepared: 0.9,
+  developing: 0.85,
+  underprepared: 0.8,
+  unsupported: 0.75,
+};
+
+type WeeklyVolumeProfile = {
+  anchor: number;
+  rampFactor: number;
+  maxWeeklyVolumeKm: number | null;
+  weekOneMinimumRatio: number;
+  longRunCeilingKm: number | null;
+};
+
+const MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM = 0.01;
+
+function normalizePositiveNumber(
+  value: unknown,
+  minimum = 0,
+): number | null {
+  return typeof value === "number" && Number.isFinite(value) && value >= minimum
+    ? value
+    : null;
+}
+
+function weeklyVolumeProfileForBrief(
+  coachingBrief: CoachingBrief | null,
+): WeeklyVolumeProfile | null {
+  if (coachingBrief == null) return null;
+
+  const anchor = normalizePositiveNumber(
+    coachingBrief.currentVolumeKmPerWeek,
+    0,
+  );
+  const hasAnchor = anchor != null && anchor > 0;
+
+  const maxWeeklyVolumeKm = normalizePositiveNumber(
+    coachingBrief.maxWeeklyVolumeKm,
+    0,
+  );
+  if (!hasAnchor && maxWeeklyVolumeKm == null) return null;
+
+  const longRunCeilingKm = normalizePositiveNumber(
+    coachingBrief.longRunCeilingKm,
+    MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM,
+  );
+  const hasEvidenceSource = coachingBrief.source === "strava" ||
+    coachingBrief.source === "mixed";
+
+  let minimumRatio = WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_LOW_CONFIDENCE;
+  let rampFactor = WEEKLY_VOLUME_RAMP_LOW_CONFIDENCE_FACTOR;
+  if (!hasAnchor) {
+    minimumRatio = 0;
+  }
+
+  if (hasEvidenceSource && coachingBrief.confidence === "high") {
+    rampFactor = WEEKLY_VOLUME_RAMP_FACTOR;
+    minimumRatio = hasAnchor && coachingBrief.currentVolumeKmPerWeek >= 20
+      ? WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_STRONG_EVIDENCE
+      : Math.max(
+        WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_LOW_CONFIDENCE,
+        WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_BY_READINESS[
+          coachingBrief.readinessLevel
+        ],
+      );
+  } else if (coachingBrief.confidence === "medium") {
+    rampFactor = WEEKLY_VOLUME_RAMP_FACTOR;
+    minimumRatio = hasAnchor
+      ? WEEKLY_VOLUME_WEEK_ONE_MIN_RATIO_BY_READINESS[
+        coachingBrief.readinessLevel
+      ]
+      : 0;
+  }
+
+  return {
+    anchor: hasAnchor ? anchor : 0,
+    rampFactor,
+    maxWeeklyVolumeKm,
+    weekOneMinimumRatio: Math.min(1, minimumRatio),
+    longRunCeilingKm,
+  };
+}
+
+function weeklyVolumeProfile(
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null = null,
+): WeeklyVolumeProfile | null {
+  return weeklyVolumeProfileForBrief(coachingBrief) ??
+    baselineWeeklyVolumeProfile(profileData);
+}
 
 // FIX B: deterministic acute:chronic ramp guard. The prompt asks the model to
 // cap weekly growth (~<=10%) using athleteSummary.acuteChronicRatio, but that is
-// advisory only. When measured Strava history is present, anchor week-1 total
-// volume near athleteSummary.weeklyVolumeKm and hard-clamp each week's increase
-// to ~10% over the prior week's (post-clamp) volume. Taper/down weeks plan less
-// than the prior week, so they fall under their cap and are left untouched.
-// Absent athleteSummary, the function is a no-op (no regression).
+// advisory only. When source profile is available, anchor week-1 total volume
+// near the current evidence and hard-clamp each week's increase to ~10% over the
+// prior week's (post-clamp) volume. Taper/down weeks plan less than the prior
+// week, so they fall under their cap and are left untouched.
 export function normalizeWeeklyVolumeRamp(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const anchorVolumeKm = athleteSummaryWeeklyVolumeKm(profileData);
-  if (anchorVolumeKm == null) return sessions;
+  const baseline = weeklyVolumeProfile(profileData, coachingBrief);
+  if (baseline == null) return sessions;
+
+  const anchorVolumeKm = baseline.anchor;
+  const rampFactor = baseline.rampFactor;
+  const maxWeeklyVolumeKm = baseline.maxWeeklyVolumeKm;
+  const weekOneMinimumRatio = baseline.weekOneMinimumRatio;
 
   const adjusted = sessions.map((s) => ({ ...s }));
 
@@ -2183,9 +2874,15 @@ export function normalizeWeeklyVolumeRamp(
   ).sort((a, b) => a - b);
 
   let previousCappedVolumeKm: number | null = null;
+  let encounteredActiveWeek = false;
 
   for (const weekNumber of weekNumbers) {
-    const phase = phaseForWeek(weekNumber, totalWeeks, profileData);
+    const phase = phaseForWeekFromCoachingBrief(
+      weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    );
     const indices = adjusted
       .map((s, i) => ({ s, i }))
       .filter(({ s }) =>
@@ -2205,13 +2902,69 @@ export function normalizeWeeklyVolumeRamp(
     if (phase === "taperRace") {
       continue;
     }
+    const isFirstActiveWeek = !encounteredActiveWeek;
+    encounteredActiveWeek = true;
 
-    const cap = previousCappedVolumeKm == null
-      ? anchorVolumeKm * WEEKLY_VOLUME_RAMP_FACTOR
-      : previousCappedVolumeKm * WEEKLY_VOLUME_RAMP_FACTOR;
+    const uncappedCap = previousCappedVolumeKm == null
+      ? (
+        anchorVolumeKm <= 0
+          ? Number.POSITIVE_INFINITY
+          : anchorVolumeKm * rampFactor
+      )
+      : previousCappedVolumeKm * rampFactor;
+    const cap = maxWeeklyVolumeKm == null
+      ? uncappedCap
+      : Math.min(uncappedCap, maxWeeklyVolumeKm);
 
     if (
-      weekVolumeKm <= cap * (1 + WEEKLY_VOLUME_TOLERANCE) || weekVolumeKm <= 0
+      isFirstActiveWeek &&
+      weekOneMinimumRatio > 0 &&
+      weekVolumeKm > 0
+    ) {
+      const minimumWeekOneVolumeKm = Math.min(
+        anchorVolumeKm * weekOneMinimumRatio,
+        cap,
+      );
+
+      if (weekVolumeKm < minimumWeekOneVolumeKm) {
+        const scale = minimumWeekOneVolumeKm / weekVolumeKm;
+        for (const i of indices) {
+          const session = adjusted[i];
+          const currentDistance = session.distanceKm;
+          if (currentDistance == null || currentDistance <= 0) continue;
+          const scaledDistance = Math.round(currentDistance * scale * 100) /
+            100;
+          const constrainedDistance = constrainedSessionDistanceKm(
+            session,
+            scaledDistance,
+            baseline,
+          );
+          const newDuration = recalculateDurationForDistance(
+            adjusted,
+            i,
+            constrainedDistance,
+            profileData,
+          );
+          adjusted[i] = {
+            ...session,
+            distanceKm: constrainedDistance,
+            durationMinutes: newDuration,
+          };
+        }
+
+        previousCappedVolumeKm = indices.reduce(
+          (sum, i) => sum + estimateSessionVolumeKm(adjusted[i], profileData),
+          0,
+        );
+        continue;
+      }
+    }
+
+    const effectiveTolerance = maxWeeklyVolumeKm == null
+      ? WEEKLY_VOLUME_TOLERANCE
+      : 0;
+    if (
+      weekVolumeKm <= cap * (1 + effectiveTolerance) || weekVolumeKm <= 0
     ) {
       // Within budget (covers down weeks that plan less than the prior week).
       previousCappedVolumeKm = weekVolumeKm;
@@ -2224,15 +2977,20 @@ export function normalizeWeeklyVolumeRamp(
       const currentDistance = session.distanceKm;
       if (currentDistance == null || currentDistance <= 0) continue;
       const scaledDistance = Math.round(currentDistance * scale * 100) / 100;
+      const constrainedDistance = constrainedSessionDistanceKm(
+        session,
+        scaledDistance,
+        baseline,
+      );
       const newDuration = recalculateDurationForDistance(
         adjusted,
         i,
-        scaledDistance,
+        constrainedDistance,
         profileData,
       );
       adjusted[i] = {
         ...session,
-        distanceKm: scaledDistance,
+        distanceKm: constrainedDistance,
         durationMinutes: newDuration,
       };
     }
@@ -2266,14 +3024,38 @@ function estimateSessionVolumeKm(
   return 0;
 }
 
+function constrainedSessionDistanceKm(
+  session: GeneratedSession,
+  distanceKm: number,
+  profile: WeeklyVolumeProfile,
+): number {
+  if (
+    !Number.isFinite(distanceKm) ||
+    profile.longRunCeilingKm == null ||
+    session.type !== "longRun"
+  ) {
+    return distanceKm;
+  }
+
+  return Math.min(distanceKm, profile.longRunCeilingKm);
+}
+
 function protectedPeakLongRunIndex(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
+  coachingBrief: CoachingBrief | null = null,
 ): number | null {
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "peak"
+      ),
   );
 
   let bestPeakLongRun: { index: number; distanceKm: number } | null = null;
@@ -2328,11 +3110,19 @@ export function normalizeTaper(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
   const race = raceFromProfile(profileData);
   const taperRaceWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "taperRace"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "taperRace"
+      ),
   );
 
   if (taperRaceWeeks.size === 0) return sessions;
@@ -2351,7 +3141,14 @@ export function normalizeTaper(
 
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "peak"
+      ),
   );
 
   const peakLongRuns = adjusted
@@ -2416,9 +3213,9 @@ export function enforcePreRaceTaper(
   locale: CoachNoteLocale = "en",
 ): GeneratedSession[] {
   const goalRace = sessions.find((s) => isGoalRaceSession(s, profileData));
-  if (!goalRace) return sessions;
+  const raceDate = goalRaceDate(profileData) ?? goalRace?.date ?? null;
+  if (raceDate == null) return sessions;
 
-  const raceDate = goalRace.date;
   const race = raceFromProfile(profileData);
   const quietWindowDays = quietWindowDaysFor(race);
 
@@ -2696,6 +3493,7 @@ export type ScheduleValidationViolation = {
     | "stressful_session_on_hard_day"
     | "avoidable_training_on_hard_day"
     | "first_session_is_stressful"
+    | "session_before_plan_start"
     | "session_id_date_mismatch"
     | "long_run_not_on_preferred_day"
     | "session_after_race_date"
@@ -2703,23 +3501,256 @@ export type ScheduleValidationViolation = {
     | "missing_plan_week"
     | "session_week_after_total_weeks"
     | "session_date_week_mismatch"
-    | "missing_fixed_goal_race_session"
-    | "fixed_goal_race_not_final_week"
-    | "duplicate_fixed_race_date_session";
+    | "coaching_brief_plan_length_mismatch"
+    | "coaching_brief_week_one_below_anchor"
+    | "coaching_brief_weekly_volume_above_max"
+    | "coaching_brief_long_run_above_ceiling"
+    | "coaching_brief_taper_phase_mismatch"
+    | "coaching_brief_unsupported_ambitious_target";
   sessionId: string;
   date: string;
   message: string;
 };
+
+export function unsupportedCoachingBriefReason(
+  coachingBrief: CoachingBrief,
+): string | null {
+  if (
+    coachingBrief.raceType === "other" ||
+    coachingBrief.readinessLevel === "unsupported"
+  ) {
+    return "Custom race distances are not supported. Choose 5K, 10K, half marathon, or marathon.";
+  }
+
+  return null;
+}
+
+export function validateGeneratedPlanAgainstCoachingBrief(
+  plan: Pick<GeneratedPlan, "totalWeeks" | "sessions" | "raceGuidance">,
+  coachingBrief: CoachingBrief,
+): ScheduleValidationViolation[] {
+  const violations: ScheduleValidationViolation[] = [];
+  const sessions = plan.sessions;
+
+  if (plan.totalWeeks !== coachingBrief.planLengthWeeks) {
+    violations.push({
+      rule: "coaching_brief_plan_length_mismatch",
+      sessionId: "plan",
+      date: "",
+      message:
+        `Generated totalWeeks ${plan.totalWeeks} does not match coaching brief planLengthWeeks ${coachingBrief.planLengthWeeks}.`,
+    });
+  }
+
+  const weeklyVolumes = weeklyRunVolumeKm(sessions);
+  for (const [weekNumber, weeklyVolumeKm] of weeklyVolumes) {
+    if (weeklyVolumeKm <= coachingBrief.maxWeeklyVolumeKm + 0.1) continue;
+    violations.push({
+      rule: "coaching_brief_weekly_volume_above_max",
+      sessionId: `week-${weekNumber}`,
+      date: "",
+      message: `Week ${weekNumber} volume ${
+        round1(weeklyVolumeKm)
+      } km exceeds coaching brief maxWeeklyVolumeKm ${coachingBrief.maxWeeklyVolumeKm}.`,
+    });
+  }
+
+  const weekOneVolumeKm = weeklyVolumes.get(1) ?? 0;
+  if (
+    (coachingBrief.source === "strava" || coachingBrief.source === "mixed") &&
+    coachingBrief.confidence === "high" &&
+    coachingBrief.currentVolumeKmPerWeek >= 20 &&
+    weekOneVolumeKm < coachingBrief.currentVolumeKmPerWeek * 0.55 &&
+    coachingBrief.currentVolumeKmPerWeek - weekOneVolumeKm >= 10
+  ) {
+    violations.push({
+      rule: "coaching_brief_week_one_below_anchor",
+      sessionId: "week-1",
+      date: "",
+      message: `Week 1 volume ${
+        round1(weekOneVolumeKm)
+      } km is far below high-confidence Strava currentVolumeKmPerWeek ${coachingBrief.currentVolumeKmPerWeek}.`,
+    });
+  }
+
+  for (const session of sessions) {
+    if (
+      session.type !== "longRun" ||
+      session.distanceKm == null ||
+      session.distanceKm <= coachingBrief.longRunCeilingKm + 0.1
+    ) continue;
+    violations.push({
+      rule: "coaching_brief_long_run_above_ceiling",
+      sessionId: session.id,
+      date: session.date,
+      message:
+        `Long run distance ${session.distanceKm} km exceeds coaching brief longRunCeilingKm ${coachingBrief.longRunCeilingKm}.`,
+    });
+  }
+
+  const taperStartWeek = Math.max(
+    1,
+    coachingBrief.planLengthWeeks - coachingBrief.taper.weeks + 1,
+  );
+  for (const session of sessions) {
+    if (session.weekNumber < taperStartWeek || session.phase == null) continue;
+    if (session.phase === "taperRace") continue;
+    violations.push({
+      rule: "coaching_brief_taper_phase_mismatch",
+      sessionId: session.id,
+      date: session.date,
+      message:
+        `Session in brief taper window has phase ${session.phase}, expected taperRace.`,
+    });
+  }
+
+  if (!coachingBrief.ambitiousTarget.supported) {
+    const unsupportedAmbitiousTargetText = unsupportedAmbitiousTargetPattern(
+      coachingBrief,
+    );
+    for (const session of sessions) {
+      const usesRacePaceTarget = session.type === "racePaceRun" ||
+        session.targetZone === "racePace" ||
+        session.workoutTarget?.zone === "racePace";
+      const drivesFromUnsupportedTarget = usesRacePaceTarget &&
+        !coachingBrief.evidenceTarget.supported;
+      const mentionsUnsupportedTarget =
+        unsupportedAmbitiousTargetText != null &&
+        textMatchesTarget(
+          [session.coachNote, session.workoutTarget?.effortCue],
+          unsupportedAmbitiousTargetText,
+        );
+      if (!drivesFromUnsupportedTarget && !mentionsUnsupportedTarget) {
+        continue;
+      }
+      violations.push({
+        rule: "coaching_brief_unsupported_ambitious_target",
+        sessionId: session.id,
+        date: session.date,
+        message:
+          "Session appears to use an unsupported ambitious target despite coaching brief constraints.",
+      });
+    }
+
+    const raceGuidanceText = Object.values(plan.raceGuidance).filter((
+      value,
+    ): value is string => typeof value === "string");
+    if (
+      unsupportedAmbitiousTargetText != null &&
+      textMatchesTarget(raceGuidanceText, unsupportedAmbitiousTargetText)
+    ) {
+      violations.push({
+        rule: "coaching_brief_unsupported_ambitious_target",
+        sessionId: "raceGuidance",
+        date: "",
+        message:
+          "Race guidance appears to use an unsupported ambitious target despite coaching brief constraints.",
+      });
+    }
+  }
+
+  return violations;
+}
+
+function weeklyRunVolumeKm(
+  sessions: readonly GeneratedSession[],
+): Map<number, number> {
+  const volumes = new Map<number, number>();
+  for (const session of sessions) {
+    if (
+      session.type === "restDay" ||
+      session.type === "crossTraining" ||
+      session.type === "raceDay" ||
+      session.distanceKm == null ||
+      session.distanceKm <= 0
+    ) continue;
+    volumes.set(
+      session.weekNumber,
+      (volumes.get(session.weekNumber) ?? 0) + session.distanceKm,
+    );
+  }
+  return volumes;
+}
+
+function unsupportedAmbitiousTargetPattern(
+  coachingBrief: CoachingBrief,
+): RegExp | null {
+  const target = coachingBrief.ambitiousTarget;
+  const candidates = [
+    target.timeSec == null ? null : formatTimeTarget(target.timeSec),
+    target.timeSec == null ? null : formatShortTimeTarget(target.timeSec),
+    target.paceSecPerKm == null
+      ? null
+      : `${formatPaceTarget(target.paceSecPerKm)}/km`,
+    target.paceSecPerKm == null
+      ? null
+      : `${formatPaceTarget(target.paceSecPerKm)} per km`,
+  ].filter((value): value is string => value != null && value.length > 0);
+
+  if (candidates.length === 0) return null;
+  return new RegExp(
+    candidates.map((value) => escapeRegExp(value)).join("|"),
+    "i",
+  );
+}
+
+function textMatchesTarget(
+  values: readonly (string | null | undefined)[],
+  targetPattern: RegExp,
+): boolean {
+  return values.some((value) =>
+    typeof value === "string" && targetPattern.test(value)
+  );
+}
+
+function formatTimeTarget(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  return hours > 0
+    ? `${hours}:${String(minutes).padStart(2, "0")}:${
+      String(seconds).padStart(2, "0")
+    }`
+    : `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function formatShortTimeTarget(totalSeconds: number): string {
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.round((totalSeconds % 3600) / 60);
+  return hours > 0 ? `${hours}:${String(minutes).padStart(2, "0")}` : "";
+}
+
+function formatPaceTarget(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function round1(value: number): number {
+  return Math.round(value * 10) / 10;
+}
 
 export function validateGeneratedPlanShape(
   sessions: GeneratedSession[],
   totalWeeks: number,
   profileData: Record<string, unknown>,
   today: Date = new Date(),
+  planStartDate?: string | null,
 ): ScheduleValidationViolation[] {
   const violations: ScheduleValidationViolation[] = [];
   const sorted = [...sessions].sort(compareSessionsByDate);
-  const anchorMonday = anchorMondayFor(today);
+  const resolvedPlanStartDate = resolvePlanStartDate(
+    profileData,
+    today,
+    planStartDate,
+  );
+  const anchorMonday = planStartAnchorMonday(resolvedPlanStartDate) ??
+    anchorMondayFor(today);
+  const resolvedPlanStartDateValue = parseDateOnly(resolvedPlanStartDate);
 
   if (Number.isFinite(totalWeeks) && totalWeeks >= 1) {
     const weekNumbers = new Set(sorted.map((session) => session.weekNumber));
@@ -2745,6 +3776,21 @@ export function validateGeneratedPlanShape(
     }
 
     for (const session of sorted) {
+      const sessionDate = parseDateOnly(session.date);
+      if (
+        sessionDate != null &&
+        resolvedPlanStartDateValue != null &&
+        sessionDate.getTime() < resolvedPlanStartDateValue.getTime()
+      ) {
+        violations.push({
+          rule: "session_before_plan_start",
+          sessionId: session.id,
+          date: session.date,
+          message:
+            `Session is before resolved plan start date ${resolvedPlanStartDate}.`,
+        });
+      }
+
       const expectedWeekNumber = weekNumberFromAnchor(
         session.date,
         anchorMonday,
@@ -2755,6 +3801,7 @@ export function validateGeneratedPlanShape(
       ) {
         continue;
       }
+
       violations.push({
         rule: "session_date_week_mismatch",
         sessionId: session.id,
@@ -2765,62 +3812,51 @@ export function validateGeneratedPlanShape(
     }
   }
 
-  const raceDate = goalRaceDate(profileData);
-  if (raceDate != null) {
-    const raceDaySessions = sorted.filter((session) =>
-      session.date.slice(0, 10) === raceDate
-    );
-    const goalRace = raceDaySessions.find((session) =>
-      isGoalRaceSession(session, profileData)
-    );
-    if (raceDaySessions.length !== 1) {
-      violations.push({
-        rule: "duplicate_fixed_race_date_session",
-        sessionId: "goal-race-date",
-        date: raceDate,
-        message:
-          `Expected exactly one session on fixed goal race date ${raceDate}, got ${raceDaySessions.length}.`,
-      });
-    }
-    if (goalRace == null) {
-      violations.push({
-        rule: "missing_fixed_goal_race_session",
-        sessionId: "goal-race",
-        date: raceDate,
-        message: `Plan is missing the fixed goal race session on ${raceDate}.`,
-      });
-    } else if (
-      Number.isFinite(totalWeeks) &&
-      totalWeeks >= 1 &&
-      goalRace.weekNumber !== totalWeeks
-    ) {
-      violations.push({
-        rule: "fixed_goal_race_not_final_week",
-        sessionId: goalRace.id,
-        date: goalRace.date,
-        message:
-          `Fixed goal race is in week ${goalRace.weekNumber}, expected final week ${totalWeeks}.`,
-      });
-    }
-
-    const raceWeekNumber = weekNumberFromAnchor(raceDate, anchorMonday);
-    if (
-      raceWeekNumber != null &&
-      Number.isFinite(totalWeeks) &&
-      totalWeeks >= 1 &&
-      raceWeekNumber !== totalWeeks
-    ) {
-      violations.push({
-        rule: "fixed_goal_race_not_final_week",
-        sessionId: goalRace?.id ?? "goal-race",
-        date: raceDate,
-        message:
-          `Fixed goal race date maps to week ${raceWeekNumber}, expected final week ${totalWeeks}.`,
-      });
-    }
-  }
-
   return violations;
+}
+
+export function resolvePlanStartDate(
+  profileData: Record<string, unknown> | null | undefined,
+  generationDate: Date = new Date(),
+  planStartDate?: string | null,
+): string {
+  const rawPlanStartDate = planStartDate != null
+    ? parsePlanStartDateValue(planStartDate)
+    : null;
+  if (rawPlanStartDate != null) return rawPlanStartDate;
+
+  const schedule = objectOrNull(profileData?.schedule);
+  const planStartFromProfile = parsePlanStartDateValue(schedule?.planStartDate);
+  if (planStartFromProfile != null) return planStartFromProfile;
+
+  return nextFutureMonday(generationDate);
+}
+
+export function planStartAnchorMonday(planStartDate: string): Date | null {
+  const parsedPlanStartDate = parseDateOnly(planStartDate);
+  if (parsedPlanStartDate == null) return null;
+  return anchorMondayFor(parsedPlanStartDate);
+}
+
+function nextFutureMonday(date: Date): string {
+  const normalizedDate = new Date(
+    Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()),
+  );
+  const dayIndex = normalizedDate.getUTCDay();
+  const daysUntilNextMonday = dayIndex === 0 ? 1 : 8 - dayIndex;
+  normalizedDate.setUTCDate(normalizedDate.getUTCDate() + daysUntilNextMonday);
+  return normalizedDate.toISOString().slice(0, 10);
+}
+
+function parsePlanStartDateValue(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+  const candidate = value;
+  const parsedDate = parseDateOnly(candidate);
+  if (parsedDate == null) return null;
+  const normalized = parsedDate.toISOString().slice(0, 10);
+  if (normalized !== candidate) return null;
+  return candidate;
 }
 
 export function validateGeneratedSchedule(
@@ -2949,12 +3985,13 @@ export function validateGeneratedSchedule(
   }
 
   const goalRace = sorted.find((s) => isGoalRaceSession(s, profileData));
-  if (goalRace != null) {
+  const raceAnchorDate = goalRaceDate(profileData) ?? goalRace?.date ?? null;
+  if (raceAnchorDate != null) {
     const race = raceFromProfile(profileData);
     const quietWindowDays = quietWindowDaysFor(race);
 
     for (const session of sorted) {
-      const daysBeforeRace = dateDifferenceDays(session.date, goalRace.date);
+      const daysBeforeRace = dateDifferenceDays(session.date, raceAnchorDate);
       if (
         daysBeforeRace > 0 &&
         daysBeforeRace <= quietWindowDays &&

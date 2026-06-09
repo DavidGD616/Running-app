@@ -375,7 +375,9 @@ void main() {
             completedOnboardingAt: DateTime(2026, 4, 7),
             clock: DateTime(2026, 4, 7),
           )!;
-      await SharedPreferencesRunnerProfileRepository(prefs).saveProfile(profile);
+      await SharedPreferencesRunnerProfileRepository(
+        prefs,
+      ).saveProfile(profile);
 
       final stravaService = _DisconnectSuccessfulStravaService();
 
@@ -410,7 +412,7 @@ void main() {
 
       expect(
         container.read(runnerProfileProvider).value!.fitness.fitnessSource,
-        OnboardingValues.fitnessSourceStrava,
+        FitnessSource.strava,
       );
 
       final stravaToggle = find.byWidgetPredicate(
@@ -421,9 +423,11 @@ void main() {
       await tester.tap(stravaToggle);
       await tester.pumpAndSettle();
 
-      final clearedFitness =
-          container.read(runnerProfileProvider).value!.fitness;
-      expect(clearedFitness.fitnessSource, OnboardingValues.fitnessSourceManual);
+      final clearedFitness = container
+          .read(runnerProfileProvider)
+          .value!
+          .fitness;
+      expect(clearedFitness.fitnessSource, FitnessSource.manual);
       expect(clearedFitness.athleteSummary, isNull);
 
       debugDefaultTargetPlatformOverride = previousPlatform;

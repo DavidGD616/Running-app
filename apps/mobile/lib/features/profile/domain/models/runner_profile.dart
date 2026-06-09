@@ -1,8 +1,6 @@
 import '../../../user_preferences/domain/user_preferences.dart';
-
-abstract interface class CanonicalKeyed {
-  String get key;
-}
+import '../../../strava/domain/athlete_summary.dart';
+import '../../../training_plan/domain/models/model_json_utils.dart';
 
 T? _enumByKey<T extends Enum>(
   String? key,
@@ -68,6 +66,30 @@ DateTime? _dateTimeFromJson(Object? value) {
   return DateTime.tryParse(raw);
 }
 
+String? _dateOnlyToJson(DateTime? value) {
+  if (value == null) return null;
+  final year = value.year.toString().padLeft(4, '0');
+  final month = value.month.toString().padLeft(2, '0');
+  final day = value.day.toString().padLeft(2, '0');
+  return '$year-$month-$day';
+}
+
+DateTime? _dateOnlyFromJson(Object? value) {
+  final raw = _stringOrNull(value);
+  if (raw == null || raw.isEmpty) return null;
+  final dateOnlyMatch = RegExp(r'^(\d{4})-(\d{2})-(\d{2})$').firstMatch(raw);
+  if (dateOnlyMatch == null) return null;
+
+  final year = int.parse(dateOnlyMatch.group(1)!);
+  final month = int.parse(dateOnlyMatch.group(2)!);
+  final day = int.parse(dateOnlyMatch.group(3)!);
+  final parsed = DateTime(year, month, day);
+  if (parsed.year != year || parsed.month != month || parsed.day != day) {
+    return null;
+  }
+  return parsed;
+}
+
 int? _durationToJson(Duration? value) => value?.inMilliseconds;
 
 Duration? _durationFromJson(Object? value) {
@@ -98,6 +120,15 @@ ProfileGender? _profileGenderFromName(String? value) {
     'male' => ProfileGender.male,
     'female' => ProfileGender.female,
     'other' => ProfileGender.other,
+    _ => null,
+  };
+}
+
+VolumeTrend? _volumeTrendFromKey(String? key) {
+  return switch (key) {
+    'building' => VolumeTrend.building,
+    'steady' => VolumeTrend.steady,
+    'detraining' => VolumeTrend.detraining,
     _ => null,
   };
 }
@@ -142,22 +173,6 @@ enum RunnerGoalRace implements CanonicalKeyed {
   final String key;
 
   static RunnerGoalRace? fromKey(String? key) =>
-      _enumByKey(key, values, (value) => value.key);
-}
-
-enum GoalPriority implements CanonicalKeyed {
-  justFinish('priority_just_finish'),
-  finishStrong('priority_finish_strong'),
-  improveTime('priority_improve_time'),
-  consistency('priority_consistency'),
-  generalFitness('priority_general_fitness');
-
-  const GoalPriority(this.key);
-
-  @override
-  final String key;
-
-  static GoalPriority? fromKey(String? key) =>
       _enumByKey(key, values, (value) => value.key);
 }
 
@@ -341,6 +356,357 @@ enum PlanPreferenceChoice implements CanonicalKeyed {
       _enumByKey(key, values, (value) => value.key);
 }
 
+enum FitnessSource implements CanonicalKeyed {
+  strava('strava'),
+  manual('manual');
+
+  const FitnessSource(this.key);
+
+  @override
+  final String key;
+
+  static FitnessSource? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum PlanIntensity implements CanonicalKeyed {
+  conservative('conservative'),
+  balanced('balanced'),
+  ambitious('ambitious');
+
+  const PlanIntensity(this.key);
+
+  @override
+  final String key;
+
+  static PlanIntensity? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum StrengthCategory implements CanonicalKeyed {
+  lowerBody('lower_body'),
+  upperBody('upper_body'),
+  coreMobility('core_mobility'),
+  fullBody('full_body');
+
+  const StrengthCategory(this.key);
+
+  @override
+  final String key;
+
+  static StrengthCategory? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum SameDayOrderPreference implements CanonicalKeyed {
+  runFirst('run_first'),
+  liftFirst('lift_first'),
+  separateSessions('separate_sessions'),
+  itDepends('it_depends');
+
+  const SameDayOrderPreference(this.key);
+
+  @override
+  final String key;
+
+  static SameDayOrderPreference? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+enum RaceCourseTerrain implements CanonicalKeyed {
+  flat('flat'),
+  rolling('rolling'),
+  hilly('hilly'),
+  notSure('not_sure');
+
+  const RaceCourseTerrain(this.key);
+
+  @override
+  final String key;
+
+  static RaceCourseTerrain? fromKey(String? key) =>
+      _enumByKey(key, values, (value) => value.key);
+}
+
+class StrengthPreferences {
+  const StrengthPreferences({
+    required this.lifts,
+    this.weeklyFrequency,
+    this.categories = const {},
+    this.preferredDays = const {},
+    this.sameDayOrder,
+  });
+
+  final bool lifts;
+  final int? weeklyFrequency;
+  final Set<StrengthCategory> categories;
+  final Set<WeekdayChoice> preferredDays;
+  final SameDayOrderPreference? sameDayOrder;
+
+  Map<String, dynamic> toJson() {
+    return {
+      'lifts': lifts,
+      'weeklyFrequency': weeklyFrequency,
+      'categories': _sortedCanonicalKeys(categories),
+      'preferredDays': _sortedCanonicalKeys(preferredDays),
+      'sameDayOrder': sameDayOrder?.key,
+    };
+  }
+
+  factory StrengthPreferences.fromJson(Map<String, dynamic> json) {
+    final lifts = _boolOrNull(json['lifts']);
+    if (lifts == null) {
+      if (!json.containsKey('lifts')) {
+        return const StrengthPreferences(
+          lifts: false,
+          weeklyFrequency: null,
+          categories: {},
+          preferredDays: {},
+          sameDayOrder: null,
+        );
+      }
+      throw const FormatException(
+        'Invalid strength preferences: lifts must be a bool.',
+      );
+    }
+
+    final weeklyFrequency = _intOrNull(json['weeklyFrequency']);
+    final hasInvalidWeeklyFrequency =
+        json.containsKey('weeklyFrequency') &&
+        json['weeklyFrequency'] != null &&
+        weeklyFrequency == null;
+    if (hasInvalidWeeklyFrequency) {
+      throw const FormatException(
+        'Invalid strength preferences: weeklyFrequency must be an int.',
+      );
+    }
+    if (weeklyFrequency != null && weeklyFrequency <= 0) {
+      throw const FormatException(
+        'Invalid strength preferences: weeklyFrequency must be > 0.',
+      );
+    }
+
+    final categories = <StrengthCategory>{};
+    final rawCategories = json['categories'];
+    if (rawCategories != null && rawCategories is! List) {
+      throw const FormatException(
+        'Invalid strength preferences: categories must be a list.',
+      );
+    }
+    if (rawCategories is List) {
+      for (final value in rawCategories) {
+        if (value is! String) {
+          throw const FormatException(
+            'Invalid strength preferences: category must be a string key.',
+          );
+        }
+        final parsed = StrengthCategory.fromKey(value);
+        if (parsed == null) {
+          throw FormatException(
+            'Invalid strength preferences: unsupported category "$value".',
+          );
+        }
+        categories.add(parsed);
+      }
+    }
+
+    final preferredDays = <WeekdayChoice>{};
+    final rawPreferredDays = json['preferredDays'];
+    if (rawPreferredDays != null && rawPreferredDays is! List) {
+      throw const FormatException(
+        'Invalid strength preferences: preferredDays must be a list.',
+      );
+    }
+    if (rawPreferredDays is List) {
+      for (final value in rawPreferredDays) {
+        if (value is! String) {
+          throw const FormatException(
+            'Invalid strength preferences: preferred day must be a string key.',
+          );
+        }
+        final parsed = WeekdayChoice.fromKey(value);
+        if (parsed == null) {
+          throw FormatException(
+            'Invalid strength preferences: unsupported preferred day "$value".',
+          );
+        }
+        preferredDays.add(parsed);
+      }
+    }
+
+    SameDayOrderPreference? sameDayOrder;
+    final rawSameDayOrder = json['sameDayOrder'];
+    if (rawSameDayOrder != null) {
+      if (rawSameDayOrder is! String) {
+        throw const FormatException(
+          'Invalid strength preferences: sameDayOrder must be a string key.',
+        );
+      }
+      sameDayOrder = SameDayOrderPreference.fromKey(rawSameDayOrder);
+      if (sameDayOrder == null) {
+        throw FormatException(
+          'Invalid strength preferences: unsupported sameDayOrder "$rawSameDayOrder".',
+        );
+      }
+    }
+
+    return StrengthPreferences(
+      lifts: lifts,
+      weeklyFrequency: weeklyFrequency,
+      categories: categories,
+      preferredDays: preferredDays,
+      sameDayOrder: sameDayOrder,
+    );
+  }
+}
+
+class StrengthProfileDraft {
+  const StrengthProfileDraft({
+    this.lifts,
+    this.weeklyFrequency,
+    this.categories = const {},
+    this.preferredDays = const {},
+    this.sameDayOrder,
+  });
+
+  final bool? lifts;
+  final int? weeklyFrequency;
+  final Set<StrengthCategory> categories;
+  final Set<WeekdayChoice> preferredDays;
+  final SameDayOrderPreference? sameDayOrder;
+
+  StrengthPreferences? toProfileOrNull() {
+    if (lifts == null) {
+      return null;
+    }
+    if (lifts == false) {
+      return const StrengthPreferences(lifts: false);
+    }
+
+    if (weeklyFrequency == null ||
+        weeklyFrequency! <= 0 ||
+        categories.isEmpty ||
+        preferredDays.isEmpty ||
+        sameDayOrder == null) {
+      return null;
+    }
+
+    return StrengthPreferences(
+      lifts: true,
+      weeklyFrequency: weeklyFrequency,
+      categories: categories,
+      preferredDays: preferredDays,
+      sameDayOrder: sameDayOrder,
+    );
+  }
+}
+
+class AcceptedRaceTarget {
+  const AcceptedRaceTarget({
+    required this.distanceKm,
+    required this.primaryTime,
+    this.stretchTime,
+    this.confidence,
+    this.evidence = const [],
+  });
+
+  final double distanceKm;
+  final Duration primaryTime;
+  final Duration? stretchTime;
+  final StravaDataConfidence? confidence;
+  final List<StravaEvidencePoint> evidence;
+
+  Map<String, dynamic> toJson() {
+    return removeNullValues({
+          'distanceKm': distanceKm,
+          'primaryTimeMs': primaryTime.inMilliseconds,
+          'stretchTimeMs': _durationToJson(stretchTime),
+          'confidence': confidence?.key,
+          'evidence': evidence
+              .map((point) => point.toJson())
+              .toList(growable: false),
+        })
+        as Map<String, dynamic>;
+  }
+
+  factory AcceptedRaceTarget.fromJson(Map<String, dynamic> json) {
+    final distanceKm = _doubleFromJson(json['distanceKm']);
+    if (distanceKm == null || !distanceKm.isFinite || distanceKm <= 0) {
+      throw const FormatException(
+        'Invalid accepted race target: distanceKm must be a finite number > 0.',
+      );
+    }
+
+    final primaryTime = _durationFromJson(json['primaryTimeMs']);
+    if (primaryTime == null || primaryTime <= Duration.zero) {
+      throw const FormatException(
+        'Invalid accepted race target: primaryTimeMs must be > 0.',
+      );
+    }
+
+    final stretchTime = _durationFromJson(json['stretchTimeMs']);
+    final hasInvalidStretchTime =
+        json.containsKey('stretchTimeMs') &&
+        json['stretchTimeMs'] != null &&
+        stretchTime == null;
+    if (hasInvalidStretchTime) {
+      throw const FormatException(
+        'Invalid accepted race target: stretchTimeMs must be an int duration.',
+      );
+    }
+    if (stretchTime != null && stretchTime <= Duration.zero) {
+      throw const FormatException(
+        'Invalid accepted race target: stretchTimeMs must be > 0 when present.',
+      );
+    }
+
+    StravaDataConfidence? confidence;
+    final rawConfidence = json['confidence'];
+    if (rawConfidence != null) {
+      if (rawConfidence is! String) {
+        throw const FormatException(
+          'Invalid accepted race target: confidence must be a string key.',
+        );
+      }
+      confidence = StravaDataConfidence.fromKey(rawConfidence);
+      if (confidence == null) {
+        throw FormatException(
+          'Invalid accepted race target: unsupported confidence "$rawConfidence".',
+        );
+      }
+    }
+
+    final rawEvidence = json['evidence'];
+    final evidence = switch (rawEvidence) {
+      null => const <StravaEvidencePoint>[],
+      List entries =>
+        entries
+            .map((entry) {
+              if (entry is! Map) {
+                throw const FormatException(
+                  'Invalid accepted race target: evidence entries must be objects.',
+                );
+              }
+              return StravaEvidencePoint.fromJson(
+                entry.cast<String, dynamic>(),
+              );
+            })
+            .toList(growable: false),
+      _ => throw const FormatException(
+        'Invalid accepted race target: evidence must be a list.',
+      ),
+    };
+
+    return AcceptedRaceTarget(
+      distanceKm: distanceKm,
+      primaryTime: primaryTime,
+      stretchTime: stretchTime,
+      confidence: confidence,
+      evidence: evidence,
+    );
+  }
+}
+
 enum WatchDeviceType implements CanonicalKeyed {
   garmin('device_garmin'),
   appleWatch('device_apple_watch'),
@@ -412,7 +778,7 @@ enum WatchMetric implements CanonicalKeyed {
 enum AutoAdjustPreference implements CanonicalKeyed {
   auto('auto_adjust_auto'),
   askFirst('auto_adjust_ask_first'),
-  no('no');
+  no('auto_adjust_no');
 
   const AutoAdjustPreference(this.key);
 
@@ -442,53 +808,31 @@ class GoalProfile {
   const GoalProfile({
     required this.race,
     required this.hasRaceDate,
-    required this.priority,
     this.raceDate,
-    this.currentTime,
-    this.targetTime,
   });
 
   final RunnerGoalRace race;
   final bool hasRaceDate;
   final DateTime? raceDate;
-  final GoalPriority priority;
-  final Duration? currentTime;
-  final Duration? targetTime;
 }
 
 class GoalProfileDraft {
-  const GoalProfileDraft({
-    this.race,
-    this.hasRaceDate,
-    this.raceDate,
-    this.priority,
-    this.currentTime,
-    this.targetTime,
-  });
+  const GoalProfileDraft({this.race, this.hasRaceDate, this.raceDate});
 
   final RunnerGoalRace? race;
   final bool? hasRaceDate;
   final DateTime? raceDate;
-  final GoalPriority? priority;
-  final Duration? currentTime;
-  final Duration? targetTime;
 
   String? get raceKey => race?.key;
-  String? get priorityKey => priority?.key;
 
   GoalProfile? toProfileOrNull() {
-    if (race == null || hasRaceDate == null || priority == null) return null;
+    if (race == null || hasRaceDate == null) return null;
     if (hasRaceDate == true && raceDate == null) return null;
-    final needsTimes = priority == GoalPriority.improveTime;
-    if (needsTimes && (currentTime == null || targetTime == null)) return null;
 
     return GoalProfile(
       race: race!,
       hasRaceDate: hasRaceDate!,
       raceDate: hasRaceDate == true ? raceDate : null,
-      priority: priority!,
-      currentTime: needsTimes ? currentTime : null,
-      targetTime: needsTimes ? targetTime : null,
     );
   }
 }
@@ -511,7 +855,7 @@ class AthleteSummarySnapshot {
   });
 
   final double? weeklyVolumeKm;
-  final String? volumeTrend;
+  final VolumeTrend? volumeTrend;
   final double? acuteChronicRatio;
   final double? longestRecentRunKm;
   final int? typicalEasyPaceSecPerKm;
@@ -553,6 +897,7 @@ class FitnessProfile {
     this.benchmarkTime,
     this.fitnessSource,
     this.athleteSummary,
+    this.stravaCoachingProfile,
   });
 
   final RunnerExperience experience;
@@ -564,8 +909,9 @@ class FitnessProfile {
   final RaceDistanceExperience? raceDistanceBefore;
   final BenchmarkType? benchmark;
   final Duration? benchmarkTime;
-  final String? fitnessSource;
+  final FitnessSource? fitnessSource;
   final AthleteSummarySnapshot? athleteSummary;
+  final StravaCoachingProfile? stravaCoachingProfile;
 }
 
 class FitnessProfileDraft {
@@ -586,6 +932,7 @@ class FitnessProfileDraft {
     this.stravaDataWeeks,
     this.stravaInsufficientData,
     this.athleteSummary,
+    this.stravaCoachingProfile,
   });
 
   final RunnerExperience? experience;
@@ -604,6 +951,7 @@ class FitnessProfileDraft {
   final int? stravaDataWeeks;
   final bool? stravaInsufficientData;
   final AthleteSummarySnapshot? athleteSummary;
+  final StravaCoachingProfile? stravaCoachingProfile;
 
   String? get experienceKey => experience?.key;
   String? get runningDaysKey => runningDays?.toString();
@@ -650,8 +998,9 @@ class FitnessProfileDraft {
       benchmarkTime: benchmark == null || benchmark == BenchmarkType.skip
           ? null
           : benchmarkTime,
-      fitnessSource: fitnessSource,
-      athleteSummary: athleteSummary ??
+      fitnessSource: FitnessSource.fromKey(fitnessSource),
+      athleteSummary:
+          athleteSummary ??
           _athleteSummaryFromLegacyStravaFields(
             weeklyVolumeKm: stravaWeeklyVolumeKm,
             longestRecentRunKm: stravaLongestRecentRunKm,
@@ -659,6 +1008,7 @@ class FitnessProfileDraft {
             dataWeeks: stravaDataWeeks,
             insufficientData: stravaInsufficientData,
           ),
+      stravaCoachingProfile: stravaCoachingProfile,
     );
   }
 }
@@ -671,6 +1021,7 @@ class ScheduleProfile {
     required this.weekendTime,
     this.hardDays = const {},
     this.preferredTimeOfDay,
+    this.planStartDate,
   });
 
   final int trainingDays;
@@ -679,6 +1030,7 @@ class ScheduleProfile {
   final TimeSlot weekendTime;
   final Set<WeekdayChoice> hardDays;
   final PreferredTimeOfDay? preferredTimeOfDay;
+  final DateTime? planStartDate;
 }
 
 class ScheduleProfileDraft {
@@ -689,6 +1041,7 @@ class ScheduleProfileDraft {
     this.weekendTime,
     this.hardDays = const {},
     this.preferredTimeOfDay,
+    this.planStartDate,
   });
 
   final int? trainingDays;
@@ -697,6 +1050,7 @@ class ScheduleProfileDraft {
   final TimeSlot? weekendTime;
   final Set<WeekdayChoice> hardDays;
   final PreferredTimeOfDay? preferredTimeOfDay;
+  final DateTime? planStartDate;
 
   String? get trainingDaysKey => trainingDays?.toString();
   String? get longRunDayKey => longRunDay?.key;
@@ -721,6 +1075,13 @@ class ScheduleProfileDraft {
       weekendTime: weekendTime!,
       hardDays: hardDays,
       preferredTimeOfDay: preferredTimeOfDay,
+      planStartDate: planStartDate == null
+          ? null
+          : DateTime(
+              planStartDate!.year,
+              planStartDate!.month,
+              planStartDate!.day,
+            ),
     );
   }
 }
@@ -868,6 +1229,7 @@ class RunnerProfile {
     required this.fitness,
     required this.schedule,
     required this.health,
+    required this.strength,
     required this.trainingPreferences,
     required this.device,
     required this.schemaVersion,
@@ -881,6 +1243,7 @@ class RunnerProfile {
   final FitnessProfile fitness;
   final ScheduleProfile schedule;
   final HealthProfile health;
+  final StrengthPreferences strength;
   final TrainingPreferencesProfile trainingPreferences;
   final DeviceProfile device;
   final ProfileGender? gender;
@@ -896,6 +1259,7 @@ class RunnerProfile {
     FitnessProfile? fitness,
     ScheduleProfile? schedule,
     HealthProfile? health,
+    StrengthPreferences? strength,
     TrainingPreferencesProfile? trainingPreferences,
     DeviceProfile? device,
     ProfileGender? gender,
@@ -909,6 +1273,7 @@ class RunnerProfile {
       fitness: fitness ?? this.fitness,
       schedule: schedule ?? this.schedule,
       health: health ?? this.health,
+      strength: strength ?? this.strength,
       trainingPreferences: trainingPreferences ?? this.trainingPreferences,
       device: device ?? this.device,
       gender: gender ?? this.gender,
@@ -926,6 +1291,7 @@ class RunnerProfile {
       'fitness': _fitnessProfileToJson(fitness),
       'schedule': _scheduleProfileToJson(schedule),
       'health': _healthProfileToJson(health),
+      'strength': _strengthProfileToJson(strength),
       'trainingPreferences': _trainingPreferencesProfileToJson(
         trainingPreferences,
       ),
@@ -943,6 +1309,7 @@ class RunnerProfile {
     final fitness = _fitnessProfileFromJson(_mapOrEmpty(json['fitness']));
     final schedule = _scheduleProfileFromJson(_mapOrEmpty(json['schedule']));
     final health = _healthProfileFromJson(_mapOrEmpty(json['health']));
+    final strength = _strengthProfileFromJson(_mapOrEmpty(json['strength']));
     final trainingPreferences = _trainingPreferencesProfileFromJson(
       _mapOrEmpty(json['trainingPreferences']),
     );
@@ -954,6 +1321,7 @@ class RunnerProfile {
         fitness == null ||
         schedule == null ||
         health == null ||
+        strength == null ||
         trainingPreferences == null ||
         device == null ||
         updatedAt == null ||
@@ -966,6 +1334,7 @@ class RunnerProfile {
       fitness: fitness,
       schedule: schedule,
       health: health,
+      strength: strength,
       trainingPreferences: trainingPreferences,
       device: device,
       gender: _profileGenderFromName(_stringOrNull(json['gender'])),
@@ -983,16 +1352,20 @@ class RunnerProfileDraft {
     this.fitness = const FitnessProfileDraft(),
     this.schedule = const ScheduleProfileDraft(),
     this.health = const HealthProfileDraft(),
+    this.strength = const StrengthProfileDraft(),
     this.trainingPreferences = const TrainingPreferencesProfileDraft(),
     this.device = const DeviceProfileDraft(),
+    this.acceptedRaceTarget,
   });
 
   final GoalProfileDraft goal;
   final FitnessProfileDraft fitness;
   final ScheduleProfileDraft schedule;
   final HealthProfileDraft health;
+  final StrengthProfileDraft strength;
   final TrainingPreferencesProfileDraft trainingPreferences;
   final DeviceProfileDraft device;
+  final AcceptedRaceTarget? acceptedRaceTarget;
 
   Map<String, dynamic> toJson() {
     return {
@@ -1000,10 +1373,12 @@ class RunnerProfileDraft {
       'fitness': _fitnessProfileDraftToJson(fitness),
       'schedule': _scheduleProfileDraftToJson(schedule),
       'health': _healthProfileDraftToJson(health),
+      'strength': _strengthProfileDraftToJson(strength),
       'trainingPreferences': _trainingPreferencesProfileDraftToJson(
         trainingPreferences,
       ),
       'device': _deviceProfileDraftToJson(device),
+      'acceptedRaceTarget': acceptedRaceTarget?.toJson(),
     };
   }
 
@@ -1012,29 +1387,56 @@ class RunnerProfileDraft {
     FitnessProfileDraft? fitness,
     ScheduleProfileDraft? schedule,
     HealthProfileDraft? health,
+    StrengthProfileDraft? strength,
     TrainingPreferencesProfileDraft? trainingPreferences,
     DeviceProfileDraft? device,
+    AcceptedRaceTarget? acceptedRaceTarget,
+    bool clearAcceptedRaceTarget = false,
   }) {
     return RunnerProfileDraft(
       goal: goal ?? this.goal,
       fitness: fitness ?? this.fitness,
       schedule: schedule ?? this.schedule,
       health: health ?? this.health,
+      strength: strength ?? this.strength,
       trainingPreferences: trainingPreferences ?? this.trainingPreferences,
       device: device ?? this.device,
+      acceptedRaceTarget: clearAcceptedRaceTarget
+          ? null
+          : acceptedRaceTarget ?? this.acceptedRaceTarget,
     );
   }
 
   static RunnerProfileDraft fromJson(Map<String, dynamic> json) {
+    AcceptedRaceTarget? acceptedRaceTarget;
+    final rawAcceptedTarget = json['acceptedRaceTarget'];
+    if (rawAcceptedTarget is Map<String, dynamic>) {
+      try {
+        acceptedRaceTarget = AcceptedRaceTarget.fromJson(rawAcceptedTarget);
+      } on FormatException {
+        acceptedRaceTarget = null;
+      }
+    } else if (rawAcceptedTarget is Map) {
+      try {
+        acceptedRaceTarget = AcceptedRaceTarget.fromJson(
+          rawAcceptedTarget.map((key, value) => MapEntry('$key', value)),
+        );
+      } on FormatException {
+        acceptedRaceTarget = null;
+      }
+    }
+
     return RunnerProfileDraft(
       goal: _goalProfileDraftFromJson(_mapOrEmpty(json['goal'])),
       fitness: _fitnessProfileDraftFromJson(_mapOrEmpty(json['fitness'])),
       schedule: _scheduleProfileDraftFromJson(_mapOrEmpty(json['schedule'])),
       health: _healthProfileDraftFromJson(_mapOrEmpty(json['health'])),
+      strength: _strengthProfileDraftFromJson(_mapOrEmpty(json['strength'])),
       trainingPreferences: _trainingPreferencesProfileDraftFromJson(
         _mapOrEmpty(json['trainingPreferences']),
       ),
       device: _deviceProfileDraftFromJson(_mapOrEmpty(json['device'])),
+      acceptedRaceTarget: acceptedRaceTarget,
     );
   }
 
@@ -1048,6 +1450,7 @@ class RunnerProfileDraft {
     final fitnessProfile = fitness.toProfileOrNull();
     final scheduleProfile = schedule.toProfileOrNull();
     final healthProfile = health.toProfileOrNull();
+    final strengthProfile = strength.toProfileOrNull();
     final trainingPreferencesProfile = trainingPreferences.toProfileOrNull();
     final deviceProfile = device.toProfileOrNull();
 
@@ -1055,6 +1458,7 @@ class RunnerProfileDraft {
         fitnessProfile == null ||
         scheduleProfile == null ||
         healthProfile == null ||
+        strengthProfile == null ||
         trainingPreferencesProfile == null ||
         deviceProfile == null) {
       return null;
@@ -1065,6 +1469,7 @@ class RunnerProfileDraft {
       fitness: fitnessProfile,
       schedule: scheduleProfile,
       health: healthProfile,
+      strength: strengthProfile,
       trainingPreferences: trainingPreferencesProfile,
       device: deviceProfile,
       gender: gender,
@@ -1079,18 +1484,12 @@ class RunnerProfileDraft {
     required String race,
     required bool hasRaceDate,
     DateTime? raceDate,
-    required String priority,
-    Duration? currentTime,
-    Duration? targetTime,
   }) {
     return RunnerProfileDraft(
       goal: GoalProfileDraft(
         race: RunnerGoalRace.fromKey(race),
         hasRaceDate: hasRaceDate,
         raceDate: raceDate,
-        priority: GoalPriority.fromKey(priority),
-        currentTime: currentTime,
-        targetTime: targetTime,
       ),
     );
   }
@@ -1101,9 +1500,6 @@ class RunnerProfileDraft {
         race: profile.goal.race,
         hasRaceDate: profile.goal.hasRaceDate,
         raceDate: profile.goal.raceDate,
-        priority: profile.goal.priority,
-        currentTime: profile.goal.currentTime,
-        targetTime: profile.goal.targetTime,
       ),
       fitness: FitnessProfileDraft(
         experience: profile.fitness.experience,
@@ -1115,7 +1511,7 @@ class RunnerProfileDraft {
         raceDistanceBefore: profile.fitness.raceDistanceBefore,
         benchmark: profile.fitness.benchmark,
         benchmarkTime: profile.fitness.benchmarkTime,
-        fitnessSource: profile.fitness.fitnessSource,
+        fitnessSource: profile.fitness.fitnessSource?.key,
         stravaWeeklyVolumeKm: profile.fitness.athleteSummary?.weeklyVolumeKm,
         stravaLongestRecentRunKm:
             profile.fitness.athleteSummary?.longestRecentRunKm,
@@ -1124,6 +1520,7 @@ class RunnerProfileDraft {
         stravaInsufficientData:
             profile.fitness.athleteSummary?.insufficientData,
         athleteSummary: profile.fitness.athleteSummary,
+        stravaCoachingProfile: profile.fitness.stravaCoachingProfile,
       ),
       schedule: ScheduleProfileDraft(
         trainingDays: profile.schedule.trainingDays,
@@ -1132,11 +1529,19 @@ class RunnerProfileDraft {
         weekendTime: profile.schedule.weekendTime,
         hardDays: profile.schedule.hardDays,
         preferredTimeOfDay: profile.schedule.preferredTimeOfDay,
+        planStartDate: profile.schedule.planStartDate,
       ),
       health: HealthProfileDraft(
         painLevel: profile.health.painLevel,
         injuryHistory: profile.health.injuryHistory,
         hasHealthConditions: profile.health.hasHealthConditions,
+      ),
+      strength: StrengthProfileDraft(
+        lifts: profile.strength.lifts,
+        weeklyFrequency: profile.strength.weeklyFrequency,
+        categories: profile.strength.categories,
+        preferredDays: profile.strength.preferredDays,
+        sameDayOrder: profile.strength.sameDayOrder,
       ),
       trainingPreferences: TrainingPreferencesProfileDraft(
         planPreference: profile.trainingPreferences.planPreference,
@@ -1172,6 +1577,7 @@ class RunnerProfileDraft {
     int? stravaDataWeeks,
     bool? stravaInsufficientData,
     AthleteSummarySnapshot? athleteSummary,
+    StravaCoachingProfile? stravaCoachingProfile,
   }) {
     return FitnessProfileDraft(
       experience: RunnerExperience.fromKey(experience),
@@ -1190,6 +1596,31 @@ class RunnerProfileDraft {
       stravaDataWeeks: stravaDataWeeks,
       stravaInsufficientData: stravaInsufficientData,
       athleteSummary: athleteSummary,
+      stravaCoachingProfile: stravaCoachingProfile,
+    );
+  }
+
+  static StrengthProfileDraft strengthFromInput({
+    required bool lifts,
+    String? weeklyFrequency,
+    List<String>? categories,
+    List<String>? preferredDays,
+    String? sameDayOrder,
+  }) {
+    return StrengthProfileDraft(
+      lifts: lifts,
+      weeklyFrequency: _intFromString(weeklyFrequency),
+      categories: _enumSetByKeys(
+        categories,
+        StrengthCategory.values,
+        (value) => value.key,
+      ),
+      preferredDays: _enumSetByKeys(
+        preferredDays,
+        WeekdayChoice.values,
+        (value) => value.key,
+      ),
+      sameDayOrder: SameDayOrderPreference.fromKey(sameDayOrder),
     );
   }
 
@@ -1200,6 +1631,7 @@ class RunnerProfileDraft {
     required String weekendTime,
     required List<String> hardDays,
     String? preferredTimeOfDay,
+    DateTime? planStartDate,
   }) {
     return ScheduleProfileDraft(
       trainingDays: _intFromString(trainingDays),
@@ -1212,6 +1644,7 @@ class RunnerProfileDraft {
         (value) => value.key,
       ),
       preferredTimeOfDay: PreferredTimeOfDay.fromKey(preferredTimeOfDay),
+      planStartDate: planStartDate,
     );
   }
 
@@ -1269,9 +1702,6 @@ Map<String, dynamic> _goalProfileDraftToJson(GoalProfileDraft value) {
     'race': value.raceKey,
     'hasRaceDate': value.hasRaceDate,
     'raceDate': value.raceDate?.toIso8601String(),
-    'priority': value.priorityKey,
-    'currentTimeMs': _durationToJson(value.currentTime),
-    'targetTimeMs': _durationToJson(value.targetTime),
   };
 }
 
@@ -1280,9 +1710,6 @@ GoalProfileDraft _goalProfileDraftFromJson(Map<String, dynamic> json) {
     race: RunnerGoalRace.fromKey(_stringOrNull(json['race'])),
     hasRaceDate: _boolOrNull(json['hasRaceDate']),
     raceDate: _dateTimeFromJson(json['raceDate']),
-    priority: GoalPriority.fromKey(_stringOrNull(json['priority'])),
-    currentTime: _durationFromJson(json['currentTimeMs']),
-    targetTime: _durationFromJson(json['targetTimeMs']),
   );
 }
 
@@ -1291,9 +1718,6 @@ Map<String, dynamic> _goalProfileToJson(GoalProfile value) {
     'race': value.race.key,
     'hasRaceDate': value.hasRaceDate,
     'raceDate': value.raceDate?.toIso8601String(),
-    'priority': value.priority.key,
-    'currentTimeMs': _durationToJson(value.currentTime),
-    'targetTimeMs': _durationToJson(value.targetTime),
   };
 }
 
@@ -1319,6 +1743,10 @@ Map<String, dynamic> _fitnessProfileDraftToJson(FitnessProfileDraft value) {
     'stravaInsufficientData': value.stravaInsufficientData,
     if (value.athleteSummary?.hasData == true)
       'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
+    if (value.stravaCoachingProfile != null)
+      'stravaCoachingProfile': _stravaCoachingProfilePersistenceJson(
+        value.stravaCoachingProfile!,
+      ),
   };
 }
 
@@ -1354,6 +1782,9 @@ FitnessProfileDraft _fitnessProfileDraftFromJson(Map<String, dynamic> json) {
           dataWeeks: _intOrNull(json['stravaDataWeeks']),
           insufficientData: _boolOrNull(json['stravaInsufficientData']),
         ),
+    stravaCoachingProfile: _stravaCoachingProfileFromJson(
+      _mapOrEmpty(json['stravaCoachingProfile']),
+    ),
   );
 }
 
@@ -1368,16 +1799,95 @@ Map<String, dynamic> _fitnessProfileToJson(FitnessProfile value) {
     'raceDistanceBefore': value.raceDistanceBefore?.key,
     'benchmark': value.benchmark?.key,
     'benchmarkTimeMs': _durationToJson(value.benchmarkTime),
-    'fitnessSource': value.fitnessSource,
+    'fitnessSource': value.fitnessSource?.key,
     if (value.athleteSummary?.hasData == true)
       'athleteSummary': _athleteSummaryToJson(value.athleteSummary!),
+    if (value.stravaCoachingProfile != null)
+      'stravaCoachingProfile': _stravaCoachingProfilePersistenceJson(
+        value.stravaCoachingProfile!,
+      ),
   };
+}
+
+Map<String, dynamic> _stravaCoachingProfilePersistenceJson(
+  StravaCoachingProfile value,
+) {
+  final json = value.toJson();
+  final recoveryGuardrails = json['recoveryGuardrails'];
+  if (recoveryGuardrails is List) {
+    json['recoveryGuardrails'] = recoveryGuardrails
+        .map((entry) {
+          if (entry is! Map) return entry;
+          final guardrail = entry.map(
+            (key, nestedValue) => MapEntry('$key', nestedValue),
+          );
+          guardrail.remove('message');
+          return guardrail;
+        })
+        .toList(growable: false);
+  }
+
+  final planFocus = json['planFocus'];
+  if (planFocus is Map) {
+    final focus = planFocus.map(
+      (key, nestedValue) => MapEntry('$key', nestedValue),
+    );
+    focus.remove('summary');
+    json['planFocus'] = focus;
+  }
+
+  return json;
+}
+
+StravaCoachingProfile? _stravaCoachingProfileFromJson(
+  Map<String, dynamic> json,
+) {
+  if (json.isEmpty) return null;
+  return StravaCoachingProfile.fromJson(
+    _stravaCoachingProfileRuntimeJson(json),
+  );
+}
+
+Map<String, dynamic> _stravaCoachingProfileRuntimeJson(
+  Map<String, dynamic> json,
+) {
+  final hydrated = Map<String, dynamic>.from(json);
+  final recoveryGuardrails = hydrated['recoveryGuardrails'];
+  if (recoveryGuardrails is List) {
+    hydrated['recoveryGuardrails'] = recoveryGuardrails
+        .map((entry) {
+          if (entry is! Map) return entry;
+          final guardrail = entry.map(
+            (key, nestedValue) => MapEntry('$key', nestedValue),
+          );
+          guardrail.putIfAbsent(
+            'message',
+            () => _stringOrNull(guardrail['category']) ?? 'strava_guardrail',
+          );
+          return guardrail;
+        })
+        .toList(growable: false);
+  }
+
+  final planFocus = hydrated['planFocus'];
+  if (planFocus is Map) {
+    final focus = planFocus.map(
+      (key, nestedValue) => MapEntry('$key', nestedValue),
+    );
+    focus.putIfAbsent(
+      'summary',
+      () => _stringOrNull(focus['category']) ?? 'strava_plan_focus',
+    );
+    hydrated['planFocus'] = focus;
+  }
+
+  return hydrated;
 }
 
 Map<String, dynamic> _athleteSummaryToJson(AthleteSummarySnapshot value) {
   return {
     if (value.weeklyVolumeKm != null) 'weeklyVolumeKm': value.weeklyVolumeKm,
-    if (value.volumeTrend != null) 'volumeTrend': value.volumeTrend,
+    if (value.volumeTrend != null) 'volumeTrend': value.volumeTrend!.toKey(),
     if (value.acuteChronicRatio != null)
       'acuteChronicRatio': value.acuteChronicRatio,
     if (value.longestRecentRunKm != null)
@@ -1406,7 +1916,7 @@ AthleteSummarySnapshot? _athleteSummaryFromJson(Map<String, dynamic> json) {
 
   final summary = AthleteSummarySnapshot(
     weeklyVolumeKm: _doubleFromJson(json['weeklyVolumeKm']),
-    volumeTrend: _stringOrNull(json['volumeTrend']),
+    volumeTrend: _volumeTrendFromKey(_stringOrNull(json['volumeTrend'])),
     acuteChronicRatio: _doubleFromJson(json['acuteChronicRatio']),
     longestRecentRunKm: _doubleFromJson(json['longestRecentRunKm']),
     typicalEasyPaceSecPerKm: _intOrNull(json['typicalEasyPaceSecPerKm']),
@@ -1453,6 +1963,8 @@ Map<String, dynamic> _scheduleProfileDraftToJson(ScheduleProfileDraft value) {
     'weekendTime': value.weekendTimeKey,
     'hardDays': value.hardDayKeys,
     'preferredTimeOfDay': value.preferredTimeOfDayKey,
+    if (value.planStartDate != null)
+      'planStartDate': _dateOnlyToJson(value.planStartDate),
   };
 }
 
@@ -1470,6 +1982,7 @@ ScheduleProfileDraft _scheduleProfileDraftFromJson(Map<String, dynamic> json) {
     preferredTimeOfDay: PreferredTimeOfDay.fromKey(
       _stringOrNull(json['preferredTimeOfDay']),
     ),
+    planStartDate: _dateOnlyFromJson(json['planStartDate']),
   );
 }
 
@@ -1481,6 +1994,8 @@ Map<String, dynamic> _scheduleProfileToJson(ScheduleProfile value) {
     'weekendTime': value.weekendTime.key,
     'hardDays': _sortedCanonicalKeys(value.hardDays),
     'preferredTimeOfDay': value.preferredTimeOfDay?.key,
+    if (value.planStartDate != null)
+      'planStartDate': _dateOnlyToJson(value.planStartDate),
   };
 }
 
@@ -1517,6 +2032,48 @@ Map<String, dynamic> _healthProfileToJson(HealthProfile value) {
 
 HealthProfile? _healthProfileFromJson(Map<String, dynamic> json) =>
     _healthProfileDraftFromJson(json).toProfileOrNull();
+
+Map<String, dynamic> _strengthProfileDraftToJson(StrengthProfileDraft value) {
+  return {
+    'lifts': value.lifts,
+    'weeklyFrequency': value.weeklyFrequency,
+    'categories': _sortedCanonicalKeys(value.categories),
+    'preferredDays': _sortedCanonicalKeys(value.preferredDays),
+    'sameDayOrder': value.sameDayOrder?.key,
+  };
+}
+
+StrengthProfileDraft _strengthProfileDraftFromJson(Map<String, dynamic> json) {
+  return StrengthProfileDraft(
+    lifts: _boolOrNull(json['lifts']),
+    weeklyFrequency: _intOrNull(json['weeklyFrequency']),
+    categories: _enumSetByKeys(
+      _stringListOrEmpty(json['categories']),
+      StrengthCategory.values,
+      (value) => value.key,
+    ),
+    preferredDays: _enumSetByKeys(
+      _stringListOrEmpty(json['preferredDays']),
+      WeekdayChoice.values,
+      (value) => value.key,
+    ),
+    sameDayOrder: SameDayOrderPreference.fromKey(
+      _stringOrNull(json['sameDayOrder']),
+    ),
+  );
+}
+
+Map<String, dynamic> _strengthProfileToJson(StrengthPreferences value) {
+  return value.toJson();
+}
+
+StrengthPreferences? _strengthProfileFromJson(Map<String, dynamic> json) {
+  try {
+    return StrengthPreferences.fromJson(json);
+  } on FormatException {
+    return null;
+  }
+}
 
 Map<String, dynamic> _trainingPreferencesProfileDraftToJson(
   TrainingPreferencesProfileDraft value,

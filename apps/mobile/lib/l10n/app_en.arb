@@ -282,7 +282,7 @@
   "onboardingIntroFeature3": "Schedule and preferences",
   "@onboardingIntroFeature3": { "description": "Third bullet on onboarding intro screen" },
 
-  "onboardingIntroFooter": "8 short sections · You can edit answers later",
+  "onboardingIntroFooter": "9 short sections · You can edit answers later",
   "@onboardingIntroFooter": { "description": "Footer note on onboarding intro screen" },
 
   "letsGo": "Let's Go",
@@ -308,6 +308,137 @@
 
   "onboardingStravaPoweredBy": "Powered by Strava",
   "@onboardingStravaPoweredBy": { "description": "Small attribution text shown under Strava connect actions" },
+
+  "onboardingStravaAnalysisTitle": "Strava analysis ready",
+  "@onboardingStravaAnalysisTitle": { "description": "Heading on the temporary Strava analysis onboarding screen" },
+
+  "onboardingStravaAnalysisSubtitle": "We reviewed your recent running data. Next, confirm the race target we'll use for your plan.",
+  "@onboardingStravaAnalysisSubtitle": { "description": "Subtitle on the temporary Strava analysis onboarding screen" },
+
+  "onboardingStravaAnalysisConfidenceLabel": "Confidence",
+  "onboardingStravaAnalysisConfidenceStrong": "Strong data",
+  "onboardingStravaAnalysisConfidenceWeak": "Weak data",
+  "onboardingStravaAnalysisConfidenceNoUsefulData": "No useful data",
+  "onboardingStravaAnalysisConfidenceStrongBody": "Your recent runs give us enough evidence to seed your training plan from Strava.",
+  "onboardingStravaAnalysisConfidenceWeakBody": "Your Strava history gives us a few signals, but manual details will make the plan safer.",
+  "onboardingStravaAnalysisConfidenceNoUsefulDataBody": "We could not find enough reliable recent running data to use Strava for this step.",
+  "onboardingStravaAnalysisWindow": "{fromDate} - {throughDate} · {runCount} runs",
+  "@onboardingStravaAnalysisWindow": {
+    "placeholders": {
+      "fromDate": { "type": "String" },
+      "throughDate": { "type": "String" },
+      "runCount": { "type": "int" }
+    }
+  },
+  "onboardingStravaAnalysisNoDataWindow": "No analysis window available",
+  "onboardingStravaAnalysisTrainingBaseSection": "Training Base",
+  "onboardingStravaAnalysisEnduranceSection": "Endurance",
+  "onboardingStravaAnalysisSpeedSection": "Speed / Pace Zones",
+  "onboardingStravaAnalysisTerrainSection": "Terrain",
+  "onboardingStravaAnalysisRecoverySection": "Recovery / Guardrails",
+  "onboardingStravaAnalysisRaceTargetSection": "Race Target",
+  "onboardingStravaAnalysisPlanFocusSection": "Plan Focus",
+  "onboardingStravaAnalysisNoUsefulDataTitle": "Limited Strava signal",
+  "onboardingStravaAnalysisNoUsefulDataBody": "Continue with manual fitness details so we can build your starting point from answers you control.",
+  "onboardingStravaAnalysisNoSectionData": "No reliable signal found.",
+  "onboardingStravaAnalysisNoGuardrails": "No extra recovery limits detected.",
+  "onboardingStravaAnalysisNoRaceTarget": "Manual race details needed.",
+  "onboardingStravaAnalysisEvidenceValue": "{value} · {date}",
+  "@onboardingStravaAnalysisEvidenceValue": {
+    "placeholders": {
+      "value": { "type": "String" },
+      "date": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisPaceRange": "{minPace}-{maxPace} {unit}",
+  "@onboardingStravaAnalysisPaceRange": {
+    "placeholders": {
+      "minPace": { "type": "String" },
+      "maxPace": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisPaceSingle": "{pace} {unit}",
+  "@onboardingStravaAnalysisPaceSingle": {
+    "placeholders": {
+      "pace": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisPerWeekValue": "{value} {unit}/week",
+  "@onboardingStravaAnalysisPerWeekValue": {
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisRunsPerWeekValue": "{value} runs/week",
+  "@onboardingStravaAnalysisRunsPerWeekValue": {
+    "placeholders": {
+      "value": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisDaysValue": "{days} days",
+  "@onboardingStravaAnalysisDaysValue": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "onboardingStravaAnalysisRaceTargetValue": "{time} · {confidence}",
+  "@onboardingStravaAnalysisRaceTargetValue": {
+    "placeholders": {
+      "time": { "type": "String" },
+      "confidence": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisRaceTargetStretch": "Stretch: {time}",
+  "@onboardingStravaAnalysisRaceTargetStretch": {
+    "placeholders": {
+      "time": { "type": "String" }
+    }
+  },
+  "onboardingStravaAnalysisMetricWeeklyVolume": "Weekly volume",
+  "onboardingStravaAnalysisMetricRunsPerWeek": "Runs per week",
+  "onboardingStravaAnalysisMetricLongRun": "Longest recent run",
+  "onboardingStravaAnalysisMetricLongestLayoff": "Longest layoff",
+  "onboardingStravaAnalysisMetricHardPace": "Hard pace marker",
+  "onboardingStravaAnalysisMetricEasyPace": "Easy pace marker",
+  "onboardingStravaAnalysisMetricThresholdPace": "Threshold pace marker",
+  "onboardingStravaAnalysisMetricRaceReference": "Race target reference",
+  "onboardingStravaAnalysisMetricTrainingSignal": "Training signal",
+  "onboardingStravaAnalysisPaceZoneRecovery": "Recovery",
+  "onboardingStravaAnalysisPaceZoneEasy": "Easy",
+  "onboardingStravaAnalysisPaceZoneLongRun": "Long run",
+  "onboardingStravaAnalysisPaceZoneSteady": "Steady",
+  "onboardingStravaAnalysisPaceZoneTempo": "Tempo",
+  "onboardingStravaAnalysisPaceZoneThreshold": "Threshold",
+  "onboardingStravaAnalysisPaceZoneRace": "Race pace",
+  "onboardingStravaAnalysisPaceZoneIntervals": "Intervals",
+  "onboardingStravaAnalysisPaceZoneStrides": "Strides",
+  "onboardingStravaAnalysisGuardrailLoadSpikeTitle": "Recent load spike",
+  "onboardingStravaAnalysisGuardrailLoadSpikeBody": "Keep recovery days easy and frequent while the plan ramps up.",
+  "onboardingStravaAnalysisGuardrailDetrainingTitle": "Consistency first",
+  "onboardingStravaAnalysisGuardrailDetrainingBody": "Build steady frequency before adding much intensity.",
+  "onboardingStravaAnalysisGuardrailLongLayoffTitle": "Recent layoff",
+  "onboardingStravaAnalysisGuardrailLongLayoffBody": "Increase volume gradually over the next block.",
+  "onboardingStravaAnalysisGuardrailSparseDataTitle": "Sparse recent data",
+  "onboardingStravaAnalysisGuardrailSparseDataBody": "Use effort cues when pace guidance is uncertain.",
+  "onboardingStravaAnalysisGuardrailPaceUncertaintyTitle": "Pace uncertainty",
+  "onboardingStravaAnalysisGuardrailPaceUncertaintyBody": "Treat pace ranges as flexible until more runs support them.",
+  "onboardingStravaAnalysisGuardrailDataCollectionTitle": "More data needed",
+  "onboardingStravaAnalysisGuardrailDataCollectionBody": "Collect more consistent run data before relying on intensity targets.",
+  "onboardingStravaAnalysisGuardrailFallbackTitle": "Recovery caution",
+  "onboardingStravaAnalysisGuardrailFallbackBody": "Use conservative recovery until we have clearer trends.",
+  "onboardingStravaAnalysisPlanFocusDataCollection": "Collect more consistent runs before using Strava for target setting.",
+  "onboardingStravaAnalysisPlanFocusRecoveryConsistency": "Lead with consistency and recovery before increasing training load.",
+  "onboardingStravaAnalysisPlanFocusThresholdEndurance": "Build threshold strength while growing long-run endurance gradually.",
+  "onboardingStravaAnalysisPlanFocusEnduranceSpeed": "Balance endurance consistency with controlled speed development.",
+  "onboardingStravaAnalysisPlanFocusFallback": "Build a steady base while we refine your plan signals.",
+  "onboardingStravaAnalysisUseAction": "Use Strava Analysis",
+  "onboardingStravaAnalysisManualContinueAction": "Continue With Manual Details",
+  "onboardingStravaAnalysisManualAction": "Use Manual Fitness Instead",
+  "onboardingStravaAnalysisDisconnectAction": "Disconnect Strava",
+  "onboardingStravaAnalysisDisconnectError": "We couldn't disconnect Strava right now. Try again or continue with manual details.",
 
   "onboardingStravaConnectError": "We couldn't connect to Strava right now. Try again or continue without Strava.",
   "@onboardingStravaConnectError": { "description": "Error shown when mock Strava connect fails" },
@@ -371,30 +502,6 @@
 
   "tapToSetDate": "DD / MM / YYYY",
   "@tapToSetDate": { "description": "Date picker placeholder text" },
-
-  "priorityLabel": "What's your priority?",
-  "@priorityLabel": { "description": "Section label for race priority on goal screen" },
-
-  "priorityJustFinish": "Just finish",
-  "@priorityJustFinish": { "description": "Priority option: finish the race" },
-
-  "priorityFinishStrong": "Finish feeling strong",
-  "@priorityFinishStrong": { "description": "Priority option: finish strong" },
-
-  "priorityImproveTime": "Improve my time",
-  "@priorityImproveTime": { "description": "Priority option: improve time" },
-
-  "priorityConsistency": "Build consistency",
-  "@priorityConsistency": { "description": "Priority option: build consistency" },
-
-  "priorityGeneralFitness": "General fitness",
-  "@priorityGeneralFitness": { "description": "Priority option: general fitness" },
-
-  "currentRaceTime": "Current race time",
-  "@currentRaceTime": { "description": "Section label for current race time on goal screen" },
-
-  "targetRaceTime": "Target race time",
-  "@targetRaceTime": { "description": "Section label for target race time on goal screen" },
 
   "tapToSetTime": "Tap to set time",
   "@tapToSetTime": { "description": "Time picker placeholder" },
@@ -521,6 +628,18 @@
 
   "scheduleSubtitle": "Tell us when you can realistically train.",
   "@scheduleSubtitle": { "description": "Subtitle on the schedule screen" },
+
+  "scheduleStartDateLabel": "Plan start date",
+  "@scheduleStartDateLabel": { "description": "Label for the onboarding plan start date section" },
+
+  "scheduleStartDateToday": "Today",
+  "@scheduleStartDateToday": { "description": "Onboarding plan start date option" },
+
+  "scheduleStartDateTomorrow": "Tomorrow",
+  "@scheduleStartDateTomorrow": { "description": "Onboarding plan start date option" },
+
+  "scheduleStartDateNextMonday": "Next Monday",
+  "@scheduleStartDateNextMonday": { "description": "Onboarding plan start date option" },
 
   "trainingDaysLabel": "Training days per week",
   "@trainingDaysLabel": { "description": "Section label on schedule screen" },
@@ -731,6 +850,98 @@
 
   "strength3DaysWeek": "3 days/week",
   "@strength3DaysWeek": { "description": "Strength training option: 3 days/week" },
+
+  "strengthPreferencesTitle": "Strength Preferences",
+  "@strengthPreferencesTitle": { "description": "Heading on the strength preferences onboarding screen" },
+
+  "strengthPreferencesSubtitle": "Tell us when lower-body strength usually happens so your running plan can protect key workouts.",
+  "@strengthPreferencesSubtitle": { "description": "Subtitle on the strength preferences onboarding screen" },
+
+  "strengthLiftsLabel": "Do you do lower-body strength or leg day?",
+  "@strengthLiftsLabel": { "description": "Question asking whether the user currently lifts" },
+
+  "strengthFrequencyLabel": "How many days per week?",
+  "@strengthFrequencyLabel": { "description": "Section label for weekly strength frequency" },
+
+  "strengthFrequencyOption": "{days, plural, =1{1 day} other{{days} days}}",
+  "@strengthFrequencyOption": {
+    "description": "Weekly strength frequency option",
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+
+  "strengthCategoriesLabel": "What types of strength work?",
+  "@strengthCategoriesLabel": { "description": "Section label for strength categories" },
+
+  "strengthCategoriesHelper": "Choose categories only. Your running plan will not prescribe exact exercises.",
+  "@strengthCategoriesHelper": { "description": "Helper copy explaining strength categories are not exercise prescriptions" },
+
+  "strengthCategoryLowerBody": "Lower body",
+  "@strengthCategoryLowerBody": { "description": "Strength category option" },
+
+  "strengthCategoryUpperBody": "Upper body",
+  "@strengthCategoryUpperBody": { "description": "Strength category option" },
+
+  "strengthCategoryCoreMobility": "Core / mobility",
+  "@strengthCategoryCoreMobility": { "description": "Strength category option" },
+
+  "strengthCategoryFullBody": "Full body",
+  "@strengthCategoryFullBody": { "description": "Strength category option" },
+
+  "strengthPreferredDaysLabel": "Leg days",
+  "@strengthPreferredDaysLabel": { "description": "Section label for preferred lifting days" },
+
+  "strengthPreferredDaysHelper": "Pick the days you usually do lower-body strength.",
+  "@strengthPreferredDaysHelper": { "description": "Helper copy for selecting preferred lifting days" },
+
+  "strengthSameDayOrderLabel": "When running and lifting share a day",
+  "@strengthSameDayOrderLabel": { "description": "Section label for same-day run and lift order" },
+
+  "strengthSameDayOrderHelper": "This helps us place lower-body strength around hard runs and long runs.",
+  "@strengthSameDayOrderHelper": { "description": "Helper copy for same-day order preference" },
+
+  "strengthOrderRunFirst": "Run first",
+  "@strengthOrderRunFirst": { "description": "Same-day order option" },
+
+  "strengthOrderRunFirstSub": "Best for quality run days. Put lower-body lifting after the run or later in the day.",
+  "@strengthOrderRunFirstSub": { "description": "Guidance copy for running before lifting" },
+
+  "strengthOrderLiftFirst": "Lift first",
+  "@strengthOrderLiftFirst": { "description": "Same-day order option" },
+
+  "strengthOrderLiftFirstSub": "Use when the lift matters more. Keep the run easy or separate it if legs feel heavy.",
+  "@strengthOrderLiftFirstSub": { "description": "Guidance copy for lifting before running" },
+
+  "strengthOrderSeparate": "Separate sessions",
+  "@strengthOrderSeparate": { "description": "Same-day order option" },
+
+  "strengthOrderSeparateSub": "Prefer morning/evening separation when a run and lift share a day.",
+  "@strengthOrderSeparateSub": { "description": "Guidance copy for separating sessions on the same day" },
+
+  "strengthOrderDepends": "It depends",
+  "@strengthOrderDepends": { "description": "Same-day order option" },
+
+  "strengthOrderDependsSub": "We'll place strength around harder runs and long runs.",
+  "@strengthOrderDependsSub": { "description": "Guidance copy when the user has no fixed same-day order" },
+
+  "raceTargetTitle": "Confirm your race target",
+  "@raceTargetTitle": { "description": "Title for race target confirmation onboarding screen" },
+
+  "raceTargetSuggestedSubtitle": "Use this target or adjust it before your plan is created.",
+  "@raceTargetSuggestedSubtitle": { "description": "Subtitle when a suggested target exists" },
+
+  "raceTargetCustomSubtitle": "Add a target time so the plan can set the right workout paces.",
+  "@raceTargetCustomSubtitle": { "description": "Subtitle when no suggested race target exists" },
+
+  "raceTargetPrimaryLabel": "Primary target",
+  "@raceTargetPrimaryLabel": { "description": "Label for editable primary race target time" },
+
+  "raceTargetSuggestedPrimaryLabel": "Suggested target",
+  "@raceTargetSuggestedPrimaryLabel": { "description": "Label for suggested primary target" },
+
+  "raceTargetSuggestedStretchLabel": "Stretch target",
+  "@raceTargetSuggestedStretchLabel": { "description": "Label for suggested stretch target" },
 
   "runSurfaceLabel": "Where do you run most?",
   "@runSurfaceLabel": { "description": "Section label on training preferences screen" },
@@ -1309,6 +1520,344 @@
   "planReadyViewFullWeek": "View Full Week",
   "@planReadyViewFullWeek": { "description": "Secondary CTA button on the plan-ready screen" },
 
+  "planMetadataTitle": "Professional rationale",
+  "@planMetadataTitle": { "description": "Title for compact professional plan metadata shown on plan-ready/full-plan surfaces" },
+
+  "planMetadataReadinessLabel": "Readiness",
+  "@planMetadataReadinessLabel": { "description": "Label for coaching readiness metadata" },
+
+  "planMetadataConfidenceLabel": "Confidence",
+  "@planMetadataConfidenceLabel": { "description": "Label for coaching confidence and source metadata" },
+
+  "planMetadataCurrentVolumeLabel": "Current volume",
+  "@planMetadataCurrentVolumeLabel": { "description": "Label for current volume anchor metadata" },
+
+  "planMetadataTargetsLabel": "Targets",
+  "@planMetadataTargetsLabel": { "description": "Label for evidence and ambitious race target metadata" },
+
+  "planMetadataPhaseStrategyLabel": "Phase strategy",
+  "@planMetadataPhaseStrategyLabel": { "description": "Label for plan phase strategy metadata" },
+
+  "planMetadataRationaleLabel": "Rationale",
+  "@planMetadataRationaleLabel": { "description": "Label for generated professional plan rationale" },
+
+  "planMetadataReadinessRaceReady": "Race ready",
+  "@planMetadataReadinessRaceReady": { "description": "Readiness level label: race ready" },
+
+  "planMetadataReadinessPrepared": "Prepared",
+  "@planMetadataReadinessPrepared": { "description": "Readiness level label: prepared" },
+
+  "planMetadataReadinessDeveloping": "Developing",
+  "@planMetadataReadinessDeveloping": { "description": "Readiness level label: developing" },
+
+  "planMetadataReadinessUnderprepared": "Underprepared",
+  "@planMetadataReadinessUnderprepared": { "description": "Readiness level label: underprepared" },
+
+  "planMetadataReadinessUnsupported": "Unsupported",
+  "@planMetadataReadinessUnsupported": { "description": "Readiness level label: unsupported" },
+
+  "planMetadataConfidenceHigh": "High confidence",
+  "@planMetadataConfidenceHigh": { "description": "Plan metadata confidence label: high" },
+
+  "planMetadataConfidenceMedium": "Medium confidence",
+  "@planMetadataConfidenceMedium": { "description": "Plan metadata confidence label: medium" },
+
+  "planMetadataConfidenceLimited": "Limited confidence",
+  "@planMetadataConfidenceLimited": { "description": "Plan metadata confidence label: limited" },
+
+  "planMetadataSourceStrava": "Strava source",
+  "@planMetadataSourceStrava": { "description": "Plan metadata source label: Strava" },
+
+  "planMetadataSourceManual": "Manual source",
+  "@planMetadataSourceManual": { "description": "Plan metadata source label: manual" },
+
+  "planMetadataSourceMixed": "Mixed source",
+  "@planMetadataSourceMixed": { "description": "Plan metadata source label: mixed" },
+
+  "planMetadataSourceUnknown": "Unknown source",
+  "@planMetadataSourceUnknown": { "description": "Plan metadata source label: unknown" },
+
+  "planMetadataVolumeValue": "{value} km/week",
+  "@planMetadataVolumeValue": {
+    "description": "Plan metadata current weekly volume value",
+    "placeholders": { "value": { "type": "String" } }
+  },
+
+  "planMetadataRunsValue": "{value} runs/week",
+  "@planMetadataRunsValue": {
+    "description": "Plan metadata current runs-per-week value",
+    "placeholders": { "value": { "type": "String" } }
+  },
+
+  "planMetadataEvidenceTargetValue": "Evidence {target}",
+  "@planMetadataEvidenceTargetValue": {
+    "description": "Evidence-backed target value in plan metadata",
+    "placeholders": { "target": { "type": "String" } }
+  },
+
+  "planMetadataAmbitiousTargetValue": "Ambitious {target}",
+  "@planMetadataAmbitiousTargetValue": {
+    "description": "Ambitious target value in plan metadata",
+    "placeholders": { "target": { "type": "String" } }
+  },
+
+  "planMetadataUnsupportedTarget": "not supported",
+  "@planMetadataUnsupportedTarget": { "description": "Target value when the ambitious target is unsupported" },
+
+  "planMetadataPaceValue": "{pace}/km",
+  "@planMetadataPaceValue": {
+    "description": "Pace target value in plan metadata",
+    "placeholders": { "pace": { "type": "String" } }
+  },
+
+  "planMetadataPhaseWeeks": "{phase} {weeks}w",
+  "@planMetadataPhaseWeeks": {
+    "description": "Compact phase strategy segment",
+    "placeholders": {
+      "phase": { "type": "String" },
+      "weeks": { "type": "int" }
+    }
+  },
+
+  "planMetadataPhaseBase": "Base",
+  "@planMetadataPhaseBase": { "description": "Plan phase label: base" },
+
+  "planMetadataPhaseBuild": "Build",
+  "@planMetadataPhaseBuild": { "description": "Plan phase label: build" },
+
+  "planMetadataPhaseSpecific": "Specific",
+  "@planMetadataPhaseSpecific": { "description": "Plan phase label: specific" },
+
+  "planMetadataPhasePeak": "Peak",
+  "@planMetadataPhasePeak": { "description": "Plan phase label: peak" },
+
+  "planMetadataPhaseTaperRace": "Taper",
+  "@planMetadataPhaseTaperRace": { "description": "Plan phase label: taper race" },
+
+  "planMetadataPhaseSafeBuild": "Safe build",
+  "@planMetadataPhaseSafeBuild": { "description": "Plan phase label: safe build" },
+
+  "planMetadataPhaseUnsupportedFallback": "Fallback",
+  "@planMetadataPhaseUnsupportedFallback": { "description": "Plan phase label: unsupported fallback" },
+
+  "planGuidancePaceZonesTitle": "Pace Zones",
+  "@planGuidancePaceZonesTitle": {
+    "description": "Heading for pace zones section in plan guidance"
+  },
+
+  "planGuidanceRaceGuidanceTitle": "Race Day Guidance",
+  "@planGuidanceRaceGuidanceTitle": {
+    "description": "Heading for the race guidance section"
+  },
+
+  "raceDayInfoTitle": "Race Day",
+  "@raceDayInfoTitle": { "description": "Title for info-only race day calendar item" },
+
+  "raceDayInfoSubtitle": "Race strategy and final reminders",
+  "@raceDayInfoSubtitle": { "description": "Subtitle for race day info calendar item" },
+
+  "raceDayInfoBadge": "Info",
+  "@raceDayInfoBadge": { "description": "Badge label for info-only race day detail" },
+
+  "raceDayInfoDetailSubtitle": "Review the plan for how to approach the race. This is guidance only, not a run to start in the app.",
+  "@raceDayInfoDetailSubtitle": { "description": "Subtitle for race day detail screen" },
+
+  "raceDayInfoFallback": "Start controlled, settle into rhythm, and finish with your strongest sustainable effort.",
+  "@raceDayInfoFallback": { "description": "Fallback copy when race guidance is missing" },
+
+  "raceGuidanceExecutionLabel": "Race day execution",
+  "@raceGuidanceExecutionLabel": { "description": "Label for race day execution guidance" },
+
+  "raceGuidanceWarmupLabel": "Warmup",
+  "@raceGuidanceWarmupLabel": { "description": "Label for race warmup guidance" },
+
+  "raceGuidanceSplitPlanLabel": "Split plan",
+  "@raceGuidanceSplitPlanLabel": { "description": "Label for race split plan guidance" },
+
+  "raceGuidanceWhenToPressLabel": "When to push",
+  "@raceGuidanceWhenToPressLabel": { "description": "Label for when to push race guidance" },
+
+  "raceGuidanceWhatToAvoidLabel": "What to avoid",
+  "@raceGuidanceWhatToAvoidLabel": { "description": "Label for race avoidance guidance" },
+
+  "raceGuidanceCoachingNotesLabel": "Coaching notes",
+  "@raceGuidanceCoachingNotesLabel": { "description": "Label for race coaching notes" },
+
+  "planGuidanceRaceDayExecutionLabel": "Race Day Execution",
+  "@planGuidanceRaceDayExecutionLabel": {
+    "description": "Race-day execution guidance heading"
+  },
+
+  "planGuidanceWarmupLabel": "Warmup",
+  "@planGuidanceWarmupLabel": { "description": "Warmup guidance label" },
+
+  "planGuidancePrimaryTargetLabel": "Primary target",
+  "@planGuidancePrimaryTargetLabel": {
+    "description": "Primary target guidance label"
+  },
+
+  "planGuidanceStretchTargetLabel": "Stretch target",
+  "@planGuidanceStretchTargetLabel": {
+    "description": "Stretch target guidance label"
+  },
+
+  "planGuidanceSplitPlanLabel": "Split plan",
+  "@planGuidanceSplitPlanLabel": { "description": "Split plan guidance label" },
+
+  "planGuidanceWhenToPressLabel": "When to push",
+  "@planGuidanceWhenToPressLabel": {
+    "description": "Label for when to push effort guidance"
+  },
+
+  "planGuidanceWhatToAvoidLabel": "What to avoid",
+  "@planGuidanceWhatToAvoidLabel": {
+    "description": "Label for what-to-avoid guidance"
+  },
+
+  "planGuidanceCoachingNotesLabel": "Coaching notes",
+  "@planGuidanceCoachingNotesLabel": {
+    "description": "Label for coaching notes guidance"
+  },
+
+  "planGuidanceSleepNotesLabel": "Sleep",
+  "@planGuidanceSleepNotesLabel": {
+    "description": "Label for sleep guidance notes"
+  },
+
+  "planGuidanceFuelingNotesLabel": "Fueling",
+  "@planGuidanceFuelingNotesLabel": {
+    "description": "Label for fueling guidance notes"
+  },
+
+  "planGuidanceHydrationNotesLabel": "Hydration",
+  "@planGuidanceHydrationNotesLabel": {
+    "description": "Label for hydration guidance notes"
+  },
+
+  "planGuidanceTaperRemindersLabel": "Taper reminders",
+  "@planGuidanceTaperRemindersLabel": {
+    "description": "Label for taper reminders guidance"
+  },
+
+  "planGuidanceWeatherCourseNotesLabel": "Weather and course",
+  "@planGuidanceWeatherCourseNotesLabel": {
+    "description": "Label for weather/course guidance notes"
+  },
+
+  "planGuidanceAtMostPace": "No faster than {zoneValue} {unit}",
+  "@planGuidanceAtMostPace": {
+    "description": "Pace upper bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "planGuidanceAtLeastPace": "No slower than {zoneValue} {unit}",
+  "@planGuidanceAtLeastPace": {
+    "description": "Pace lower bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "planSupportStrengthLabel": "Strength",
+  "@planSupportStrengthLabel": {
+    "description": "Label for strength support session rows"
+  },
+
+  "planSupportMobilityLabel": "Mobility",
+  "@planSupportMobilityLabel": {
+    "description": "Label for mobility support session rows"
+  },
+
+  "planSupportDrillsLabel": "Drills",
+  "@planSupportDrillsLabel": {
+    "description": "Label for drills support session rows"
+  },
+
+  "planSupportSessionLoadLabel": "Load",
+  "@planSupportSessionLoadLabel": {
+    "description": "Label for support session load field in subtitle"
+  },
+
+  "planSupportSessionTimingLabel": "Timing",
+  "@planSupportSessionTimingLabel": {
+    "description": "Label for support session timing guidance field in subtitle"
+  },
+
+  "planSupportSessionInterferenceLabel": "Interference",
+  "@planSupportSessionInterferenceLabel": {
+    "description": "Label for support session interference rule field in subtitle"
+  },
+
+  "planSupportSessionTaperLabel": "Taper",
+  "@planSupportSessionTaperLabel": {
+    "description": "Label for support session taper adjustment field in subtitle"
+  },
+
+  "supportSessionLoadLight": "Light",
+  "@supportSessionLoadLight": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadModerate": "Moderate",
+  "@supportSessionLoadModerate": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadHigh": "High",
+  "@supportSessionLoadHigh": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionTimingOnOffDays": "On off days",
+  "@supportSessionTimingOnOffDays": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingNextDay": "Next day",
+  "@supportSessionTimingNextDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingSameDay": "Same day",
+  "@supportSessionTimingSameDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeLongRun": "Avoid day before long run",
+  "@supportSessionInterferenceAvoidDayBeforeLongRun": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeRace": "Avoid day before race",
+  "@supportSessionInterferenceAvoidDayBeforeRace": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeKeyWorkout": "Avoid day before key workout",
+  "@supportSessionInterferenceAvoidDayBeforeKeyWorkout": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionTaperReduceLoadWeekBeforeRace": "Reduce load week before race",
+  "@supportSessionTaperReduceLoadWeekBeforeRace": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "supportSessionTaperReduceLoad": "Reduce load",
+  "@supportSessionTaperReduceLoad": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "fullPlanRunsValue": "{value} runs",
+  "@fullPlanRunsValue": {
+    "description": "Collapsed weekly run count label in full-plan week card",
+    "placeholders": { "value": { "type": "int" } }
+  },
+
   "homeTitle": "Today",
   "@homeTitle": { "description": "Title of the home/today screen" },
 
@@ -1761,16 +2310,16 @@
   "settingsEditGoalIntroTitle": "Update the goal you are already training for",
   "@settingsEditGoalIntroTitle": { "description": "Title on the intro screen before editing the current goal" },
 
-  "settingsEditGoalIntroSubtitle": "You can review your race, date, priority, and time targets before saving the changes.",
+  "settingsEditGoalIntroSubtitle": "You can review your race and date before saving the changes.",
   "@settingsEditGoalIntroSubtitle": { "description": "Subtitle on the intro screen before editing the current goal" },
 
-  "settingsEditGoalIntroPointRace": "Adjust your race or target distance.",
+  "settingsEditGoalIntroPointRace": "Adjust your race distance.",
   "@settingsEditGoalIntroPointRace": { "description": "First explainer item for edit goal intro screen" },
 
   "settingsEditGoalIntroPointDate": "Update the race date if your timeline has changed.",
   "@settingsEditGoalIntroPointDate": { "description": "Second explainer item for edit goal intro screen" },
 
-  "settingsEditGoalIntroPointPriority": "Review your priority and pacing targets before saving.",
+  "settingsEditGoalIntroPointPriority": "Review the race details before saving.",
   "@settingsEditGoalIntroPointPriority": { "description": "Third explainer item for edit goal intro screen" },
 
   "settingsEditGoalIntroPointTraining": "Review your training preferences before finishing the update.",
@@ -1779,10 +2328,10 @@
   "settingsNewGoalIntroTitle": "Set a brand-new goal for your training",
   "@settingsNewGoalIntroTitle": { "description": "Title on the intro screen before creating a new goal" },
 
-  "settingsNewGoalIntroSubtitle": "This flow starts fresh so you can choose a different target and save a new goal for your plan.",
+  "settingsNewGoalIntroSubtitle": "This flow starts fresh so you can choose a different race and save a new goal for your plan.",
   "@settingsNewGoalIntroSubtitle": { "description": "Subtitle on the intro screen before creating a new goal" },
 
-  "settingsNewGoalIntroPointRace": "Choose a new race or custom distance.",
+  "settingsNewGoalIntroPointRace": "Choose a new race distance.",
   "@settingsNewGoalIntroPointRace": { "description": "First explainer item for new goal intro screen" },
 
   "settingsNewGoalIntroPointDate": "Set a new date and timeline for the goal.",
@@ -1927,6 +2476,76 @@
 
   "sessionDetailStartWorkout": "Start Workout",
   "@sessionDetailStartWorkout": { "description": "Start Workout CTA button label" },
+
+  "sessionDetailSupportTitle": "Support Session",
+  "@sessionDetailSupportTitle": {
+    "description": "Heading for support session detail screen"
+  },
+
+  "sessionDetailSupportTypeLabel": "Type",
+  "@sessionDetailSupportTypeLabel": {
+    "description": "Label for support session type field"
+  },
+
+  "sessionDetailSupportStatusLabel": "Status",
+  "@sessionDetailSupportStatusLabel": {
+    "description": "Label for support session status field"
+  },
+
+  "sessionDetailSupportMetadataLabel": "Session guidance",
+  "@sessionDetailSupportMetadataLabel": {
+    "description": "Header for support session metadata section"
+  },
+
+  "sessionDetailSupportNotesLabel": "Notes",
+  "@sessionDetailSupportNotesLabel": {
+    "description": "Header for support session notes section"
+  },
+
+  "supportSessionStatusPlanned": "Planned",
+  "@supportSessionStatusPlanned": {
+    "description": "Support session status label"
+  },
+
+  "supportSessionStatusCompleted": "Completed",
+  "@supportSessionStatusCompleted": {
+    "description": "Support session status label"
+  },
+
+  "supportSessionStatusSkipped": "Skipped",
+  "@supportSessionStatusSkipped": {
+    "description": "Support session status label"
+  },
+
+  "sessionDetailTargetRangeLabel": "Target pace range",
+  "@sessionDetailTargetRangeLabel": {
+    "description": "Label for target pace range on session detail"
+  },
+
+  "sessionDetailEffortCueLabel": "Effort cue",
+  "@sessionDetailEffortCueLabel": {
+    "description": "Label for effort cue text"
+  },
+
+  "sessionDetailTargetAtLeastValue": "At least {value} {unit}",
+  "@sessionDetailTargetAtLeastValue": {
+    "description": "Formatted minimum pace bound",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "sessionDetailTargetAtMostValue": "At most {value} {unit}",
+  "@sessionDetailTargetAtMostValue": {
+    "description": "Formatted maximum pace bound",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "sessionDetailTargetGuidanceNote": "These pace targets are guidance before the run starts. Live pace feedback and alerts appear once your run is active.",
 
   "sessionPhaseEasyRunWarmDuration": "{minutes} min",
   "@sessionPhaseEasyRunWarmDuration": {
@@ -2201,6 +2820,8 @@
   "@activeRunGuidanceRecovery": { "description": "Active run guidance for recovery runs" },
   "activeRunEaseOff": "Ease off",
   "@activeRunEaseOff": { "description": "Active run status when user is going too fast" },
+  "activeRunEaseOffFirm": "Ease off now",
+  "@activeRunEaseOffFirm": { "description": "Active run status when user is going too fast in an easy/long run" },
   "activeRunPickUp": "Pick it up",
   "@activeRunPickUp": { "description": "Active run status when user is going too slow" },
   "activeRunOnTarget": "On target",
@@ -2545,6 +3166,10 @@
 
   "activeRunEndRun": "End Run",
   "@activeRunEndRun": { "description": "CTA button to end the active run" },
+  "activeRunEndRunConfirmBody": "Ending your run will save the session and take you to the summary screen.",
+  "@activeRunEndRunConfirmBody": {
+    "description": "Body text for confirmation before ending an active run"
+  },
 
   "activeRunTimerOnlyLabel": "Timer only",
   "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },

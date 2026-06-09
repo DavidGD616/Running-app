@@ -629,7 +629,7 @@ abstract class AppLocalizations {
   /// Footer note on onboarding intro screen
   ///
   /// In en, this message translates to:
-  /// **'8 short sections · You can edit answers later'**
+  /// **'9 short sections · You can edit answers later'**
   String get onboardingIntroFooter;
 
   /// CTA button on the onboarding intro screen
@@ -679,6 +679,455 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Powered by Strava'**
   String get onboardingStravaPoweredBy;
+
+  /// Heading on the temporary Strava analysis onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strava analysis ready'**
+  String get onboardingStravaAnalysisTitle;
+
+  /// Subtitle on the temporary Strava analysis onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'We reviewed your recent running data. Next, confirm the race target we\'ll use for your plan.'**
+  String get onboardingStravaAnalysisSubtitle;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence'**
+  String get onboardingStravaAnalysisConfidenceLabel;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceStrong.
+  ///
+  /// In en, this message translates to:
+  /// **'Strong data'**
+  String get onboardingStravaAnalysisConfidenceStrong;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceWeak.
+  ///
+  /// In en, this message translates to:
+  /// **'Weak data'**
+  String get onboardingStravaAnalysisConfidenceWeak;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceNoUsefulData.
+  ///
+  /// In en, this message translates to:
+  /// **'No useful data'**
+  String get onboardingStravaAnalysisConfidenceNoUsefulData;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceStrongBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your recent runs give us enough evidence to seed your training plan from Strava.'**
+  String get onboardingStravaAnalysisConfidenceStrongBody;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceWeakBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Strava history gives us a few signals, but manual details will make the plan safer.'**
+  String get onboardingStravaAnalysisConfidenceWeakBody;
+
+  /// No description provided for @onboardingStravaAnalysisConfidenceNoUsefulDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not find enough reliable recent running data to use Strava for this step.'**
+  String get onboardingStravaAnalysisConfidenceNoUsefulDataBody;
+
+  /// No description provided for @onboardingStravaAnalysisWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'{fromDate} - {throughDate} · {runCount} runs'**
+  String onboardingStravaAnalysisWindow(
+    String fromDate,
+    String throughDate,
+    int runCount,
+  );
+
+  /// No description provided for @onboardingStravaAnalysisNoDataWindow.
+  ///
+  /// In en, this message translates to:
+  /// **'No analysis window available'**
+  String get onboardingStravaAnalysisNoDataWindow;
+
+  /// No description provided for @onboardingStravaAnalysisTrainingBaseSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Training Base'**
+  String get onboardingStravaAnalysisTrainingBaseSection;
+
+  /// No description provided for @onboardingStravaAnalysisEnduranceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Endurance'**
+  String get onboardingStravaAnalysisEnduranceSection;
+
+  /// No description provided for @onboardingStravaAnalysisSpeedSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Speed / Pace Zones'**
+  String get onboardingStravaAnalysisSpeedSection;
+
+  /// No description provided for @onboardingStravaAnalysisTerrainSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Terrain'**
+  String get onboardingStravaAnalysisTerrainSection;
+
+  /// No description provided for @onboardingStravaAnalysisRecoverySection.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery / Guardrails'**
+  String get onboardingStravaAnalysisRecoverySection;
+
+  /// No description provided for @onboardingStravaAnalysisRaceTargetSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Race Target'**
+  String get onboardingStravaAnalysisRaceTargetSection;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan Focus'**
+  String get onboardingStravaAnalysisPlanFocusSection;
+
+  /// No description provided for @onboardingStravaAnalysisNoUsefulDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited Strava signal'**
+  String get onboardingStravaAnalysisNoUsefulDataTitle;
+
+  /// No description provided for @onboardingStravaAnalysisNoUsefulDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with manual fitness details so we can build your starting point from answers you control.'**
+  String get onboardingStravaAnalysisNoUsefulDataBody;
+
+  /// No description provided for @onboardingStravaAnalysisNoSectionData.
+  ///
+  /// In en, this message translates to:
+  /// **'No reliable signal found.'**
+  String get onboardingStravaAnalysisNoSectionData;
+
+  /// No description provided for @onboardingStravaAnalysisNoGuardrails.
+  ///
+  /// In en, this message translates to:
+  /// **'No extra recovery limits detected.'**
+  String get onboardingStravaAnalysisNoGuardrails;
+
+  /// No description provided for @onboardingStravaAnalysisNoRaceTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual race details needed.'**
+  String get onboardingStravaAnalysisNoRaceTarget;
+
+  /// No description provided for @onboardingStravaAnalysisEvidenceValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} · {date}'**
+  String onboardingStravaAnalysisEvidenceValue(String value, String date);
+
+  /// No description provided for @onboardingStravaAnalysisPaceRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{minPace}-{maxPace} {unit}'**
+  String onboardingStravaAnalysisPaceRange(
+    String minPace,
+    String maxPace,
+    String unit,
+  );
+
+  /// No description provided for @onboardingStravaAnalysisPaceSingle.
+  ///
+  /// In en, this message translates to:
+  /// **'{pace} {unit}'**
+  String onboardingStravaAnalysisPaceSingle(String pace, String unit);
+
+  /// No description provided for @onboardingStravaAnalysisPerWeekValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} {unit}/week'**
+  String onboardingStravaAnalysisPerWeekValue(String value, String unit);
+
+  /// No description provided for @onboardingStravaAnalysisRunsPerWeekValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} runs/week'**
+  String onboardingStravaAnalysisRunsPerWeekValue(String value);
+
+  /// No description provided for @onboardingStravaAnalysisDaysValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{days} days'**
+  String onboardingStravaAnalysisDaysValue(int days);
+
+  /// No description provided for @onboardingStravaAnalysisRaceTargetValue.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} · {confidence}'**
+  String onboardingStravaAnalysisRaceTargetValue(
+    String time,
+    String confidence,
+  );
+
+  /// No description provided for @onboardingStravaAnalysisRaceTargetStretch.
+  ///
+  /// In en, this message translates to:
+  /// **'Stretch: {time}'**
+  String onboardingStravaAnalysisRaceTargetStretch(String time);
+
+  /// No description provided for @onboardingStravaAnalysisMetricWeeklyVolume.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly volume'**
+  String get onboardingStravaAnalysisMetricWeeklyVolume;
+
+  /// No description provided for @onboardingStravaAnalysisMetricRunsPerWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs per week'**
+  String get onboardingStravaAnalysisMetricRunsPerWeek;
+
+  /// No description provided for @onboardingStravaAnalysisMetricLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest recent run'**
+  String get onboardingStravaAnalysisMetricLongRun;
+
+  /// No description provided for @onboardingStravaAnalysisMetricLongestLayoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest layoff'**
+  String get onboardingStravaAnalysisMetricLongestLayoff;
+
+  /// No description provided for @onboardingStravaAnalysisMetricHardPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Hard pace marker'**
+  String get onboardingStravaAnalysisMetricHardPace;
+
+  /// No description provided for @onboardingStravaAnalysisMetricEasyPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy pace marker'**
+  String get onboardingStravaAnalysisMetricEasyPace;
+
+  /// No description provided for @onboardingStravaAnalysisMetricThresholdPace.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold pace marker'**
+  String get onboardingStravaAnalysisMetricThresholdPace;
+
+  /// No description provided for @onboardingStravaAnalysisMetricRaceReference.
+  ///
+  /// In en, this message translates to:
+  /// **'Race target reference'**
+  String get onboardingStravaAnalysisMetricRaceReference;
+
+  /// No description provided for @onboardingStravaAnalysisMetricTrainingSignal.
+  ///
+  /// In en, this message translates to:
+  /// **'Training signal'**
+  String get onboardingStravaAnalysisMetricTrainingSignal;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneRecovery.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get onboardingStravaAnalysisPaceZoneRecovery;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneEasy.
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get onboardingStravaAnalysisPaceZoneEasy;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run'**
+  String get onboardingStravaAnalysisPaceZoneLongRun;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneSteady.
+  ///
+  /// In en, this message translates to:
+  /// **'Steady'**
+  String get onboardingStravaAnalysisPaceZoneSteady;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneTempo.
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get onboardingStravaAnalysisPaceZoneTempo;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneThreshold.
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get onboardingStravaAnalysisPaceZoneThreshold;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneRace.
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace'**
+  String get onboardingStravaAnalysisPaceZoneRace;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneIntervals.
+  ///
+  /// In en, this message translates to:
+  /// **'Intervals'**
+  String get onboardingStravaAnalysisPaceZoneIntervals;
+
+  /// No description provided for @onboardingStravaAnalysisPaceZoneStrides.
+  ///
+  /// In en, this message translates to:
+  /// **'Strides'**
+  String get onboardingStravaAnalysisPaceZoneStrides;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLoadSpikeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent load spike'**
+  String get onboardingStravaAnalysisGuardrailLoadSpikeTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLoadSpikeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep recovery days easy and frequent while the plan ramps up.'**
+  String get onboardingStravaAnalysisGuardrailLoadSpikeBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDetrainingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Consistency first'**
+  String get onboardingStravaAnalysisGuardrailDetrainingTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDetrainingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Build steady frequency before adding much intensity.'**
+  String get onboardingStravaAnalysisGuardrailDetrainingBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLongLayoffTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent layoff'**
+  String get onboardingStravaAnalysisGuardrailLongLayoffTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailLongLayoffBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Increase volume gradually over the next block.'**
+  String get onboardingStravaAnalysisGuardrailLongLayoffBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailSparseDataTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sparse recent data'**
+  String get onboardingStravaAnalysisGuardrailSparseDataTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailSparseDataBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use effort cues when pace guidance is uncertain.'**
+  String get onboardingStravaAnalysisGuardrailSparseDataBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailPaceUncertaintyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pace uncertainty'**
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailPaceUncertaintyBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Treat pace ranges as flexible until more runs support them.'**
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDataCollectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'More data needed'**
+  String get onboardingStravaAnalysisGuardrailDataCollectionTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailDataCollectionBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect more consistent run data before relying on intensity targets.'**
+  String get onboardingStravaAnalysisGuardrailDataCollectionBody;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailFallbackTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery caution'**
+  String get onboardingStravaAnalysisGuardrailFallbackTitle;
+
+  /// No description provided for @onboardingStravaAnalysisGuardrailFallbackBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Use conservative recovery until we have clearer trends.'**
+  String get onboardingStravaAnalysisGuardrailFallbackBody;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusDataCollection.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect more consistent runs before using Strava for target setting.'**
+  String get onboardingStravaAnalysisPlanFocusDataCollection;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusRecoveryConsistency.
+  ///
+  /// In en, this message translates to:
+  /// **'Lead with consistency and recovery before increasing training load.'**
+  String get onboardingStravaAnalysisPlanFocusRecoveryConsistency;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusThresholdEndurance.
+  ///
+  /// In en, this message translates to:
+  /// **'Build threshold strength while growing long-run endurance gradually.'**
+  String get onboardingStravaAnalysisPlanFocusThresholdEndurance;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusEnduranceSpeed.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance endurance consistency with controlled speed development.'**
+  String get onboardingStravaAnalysisPlanFocusEnduranceSpeed;
+
+  /// No description provided for @onboardingStravaAnalysisPlanFocusFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Build a steady base while we refine your plan signals.'**
+  String get onboardingStravaAnalysisPlanFocusFallback;
+
+  /// No description provided for @onboardingStravaAnalysisUseAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Strava Analysis'**
+  String get onboardingStravaAnalysisUseAction;
+
+  /// No description provided for @onboardingStravaAnalysisManualContinueAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue With Manual Details'**
+  String get onboardingStravaAnalysisManualContinueAction;
+
+  /// No description provided for @onboardingStravaAnalysisManualAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Use Manual Fitness Instead'**
+  String get onboardingStravaAnalysisManualAction;
+
+  /// No description provided for @onboardingStravaAnalysisDisconnectAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Strava'**
+  String get onboardingStravaAnalysisDisconnectAction;
+
+  /// No description provided for @onboardingStravaAnalysisDisconnectError.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t disconnect Strava right now. Try again or continue with manual details.'**
+  String get onboardingStravaAnalysisDisconnectError;
 
   /// Error shown when mock Strava connect fails
   ///
@@ -805,54 +1254,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DD / MM / YYYY'**
   String get tapToSetDate;
-
-  /// Section label for race priority on goal screen
-  ///
-  /// In en, this message translates to:
-  /// **'What\'s your priority?'**
-  String get priorityLabel;
-
-  /// Priority option: finish the race
-  ///
-  /// In en, this message translates to:
-  /// **'Just finish'**
-  String get priorityJustFinish;
-
-  /// Priority option: finish strong
-  ///
-  /// In en, this message translates to:
-  /// **'Finish feeling strong'**
-  String get priorityFinishStrong;
-
-  /// Priority option: improve time
-  ///
-  /// In en, this message translates to:
-  /// **'Improve my time'**
-  String get priorityImproveTime;
-
-  /// Priority option: build consistency
-  ///
-  /// In en, this message translates to:
-  /// **'Build consistency'**
-  String get priorityConsistency;
-
-  /// Priority option: general fitness
-  ///
-  /// In en, this message translates to:
-  /// **'General fitness'**
-  String get priorityGeneralFitness;
-
-  /// Section label for current race time on goal screen
-  ///
-  /// In en, this message translates to:
-  /// **'Current race time'**
-  String get currentRaceTime;
-
-  /// Section label for target race time on goal screen
-  ///
-  /// In en, this message translates to:
-  /// **'Target race time'**
-  String get targetRaceTime;
 
   /// Time picker placeholder
   ///
@@ -1111,6 +1512,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tell us when you can realistically train.'**
   String get scheduleSubtitle;
+
+  /// Label for the onboarding plan start date section
+  ///
+  /// In en, this message translates to:
+  /// **'Plan start date'**
+  String get scheduleStartDateLabel;
+
+  /// Onboarding plan start date option
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get scheduleStartDateToday;
+
+  /// Onboarding plan start date option
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get scheduleStartDateTomorrow;
+
+  /// Onboarding plan start date option
+  ///
+  /// In en, this message translates to:
+  /// **'Next Monday'**
+  String get scheduleStartDateNextMonday;
 
   /// Section label on schedule screen
   ///
@@ -1531,6 +1956,180 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'3 days/week'**
   String get strength3DaysWeek;
+
+  /// Heading on the strength preferences onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Strength Preferences'**
+  String get strengthPreferencesTitle;
+
+  /// Subtitle on the strength preferences onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us when lower-body strength usually happens so your running plan can protect key workouts.'**
+  String get strengthPreferencesSubtitle;
+
+  /// Question asking whether the user currently lifts
+  ///
+  /// In en, this message translates to:
+  /// **'Do you do lower-body strength or leg day?'**
+  String get strengthLiftsLabel;
+
+  /// Section label for weekly strength frequency
+  ///
+  /// In en, this message translates to:
+  /// **'How many days per week?'**
+  String get strengthFrequencyLabel;
+
+  /// Weekly strength frequency option
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{1 day} other{{days} days}}'**
+  String strengthFrequencyOption(int days);
+
+  /// Section label for strength categories
+  ///
+  /// In en, this message translates to:
+  /// **'What types of strength work?'**
+  String get strengthCategoriesLabel;
+
+  /// Helper copy explaining strength categories are not exercise prescriptions
+  ///
+  /// In en, this message translates to:
+  /// **'Choose categories only. Your running plan will not prescribe exact exercises.'**
+  String get strengthCategoriesHelper;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Lower body'**
+  String get strengthCategoryLowerBody;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Upper body'**
+  String get strengthCategoryUpperBody;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Core / mobility'**
+  String get strengthCategoryCoreMobility;
+
+  /// Strength category option
+  ///
+  /// In en, this message translates to:
+  /// **'Full body'**
+  String get strengthCategoryFullBody;
+
+  /// Section label for preferred lifting days
+  ///
+  /// In en, this message translates to:
+  /// **'Leg days'**
+  String get strengthPreferredDaysLabel;
+
+  /// Helper copy for selecting preferred lifting days
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the days you usually do lower-body strength.'**
+  String get strengthPreferredDaysHelper;
+
+  /// Section label for same-day run and lift order
+  ///
+  /// In en, this message translates to:
+  /// **'When running and lifting share a day'**
+  String get strengthSameDayOrderLabel;
+
+  /// Helper copy for same-day order preference
+  ///
+  /// In en, this message translates to:
+  /// **'This helps us place lower-body strength around hard runs and long runs.'**
+  String get strengthSameDayOrderHelper;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'Run first'**
+  String get strengthOrderRunFirst;
+
+  /// Guidance copy for running before lifting
+  ///
+  /// In en, this message translates to:
+  /// **'Best for quality run days. Put lower-body lifting after the run or later in the day.'**
+  String get strengthOrderRunFirstSub;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'Lift first'**
+  String get strengthOrderLiftFirst;
+
+  /// Guidance copy for lifting before running
+  ///
+  /// In en, this message translates to:
+  /// **'Use when the lift matters more. Keep the run easy or separate it if legs feel heavy.'**
+  String get strengthOrderLiftFirstSub;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'Separate sessions'**
+  String get strengthOrderSeparate;
+
+  /// Guidance copy for separating sessions on the same day
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer morning/evening separation when a run and lift share a day.'**
+  String get strengthOrderSeparateSub;
+
+  /// Same-day order option
+  ///
+  /// In en, this message translates to:
+  /// **'It depends'**
+  String get strengthOrderDepends;
+
+  /// Guidance copy when the user has no fixed same-day order
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll place strength around harder runs and long runs.'**
+  String get strengthOrderDependsSub;
+
+  /// Title for race target confirmation onboarding screen
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm your race target'**
+  String get raceTargetTitle;
+
+  /// Subtitle when a suggested target exists
+  ///
+  /// In en, this message translates to:
+  /// **'Use this target or adjust it before your plan is created.'**
+  String get raceTargetSuggestedSubtitle;
+
+  /// Subtitle when no suggested race target exists
+  ///
+  /// In en, this message translates to:
+  /// **'Add a target time so the plan can set the right workout paces.'**
+  String get raceTargetCustomSubtitle;
+
+  /// Label for editable primary race target time
+  ///
+  /// In en, this message translates to:
+  /// **'Primary target'**
+  String get raceTargetPrimaryLabel;
+
+  /// Label for suggested primary target
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested target'**
+  String get raceTargetSuggestedPrimaryLabel;
+
+  /// Label for suggested stretch target
+  ///
+  /// In en, this message translates to:
+  /// **'Stretch target'**
+  String get raceTargetSuggestedStretchLabel;
 
   /// Section label on training preferences screen
   ///
@@ -2600,6 +3199,486 @@ abstract class AppLocalizations {
   /// **'View Full Week'**
   String get planReadyViewFullWeek;
 
+  /// Title for compact professional plan metadata shown on plan-ready/full-plan surfaces
+  ///
+  /// In en, this message translates to:
+  /// **'Professional rationale'**
+  String get planMetadataTitle;
+
+  /// Label for coaching readiness metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness'**
+  String get planMetadataReadinessLabel;
+
+  /// Label for coaching confidence and source metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence'**
+  String get planMetadataConfidenceLabel;
+
+  /// Label for current volume anchor metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Current volume'**
+  String get planMetadataCurrentVolumeLabel;
+
+  /// Label for evidence and ambitious race target metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Targets'**
+  String get planMetadataTargetsLabel;
+
+  /// Label for plan phase strategy metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Phase strategy'**
+  String get planMetadataPhaseStrategyLabel;
+
+  /// Label for generated professional plan rationale
+  ///
+  /// In en, this message translates to:
+  /// **'Rationale'**
+  String get planMetadataRationaleLabel;
+
+  /// Readiness level label: race ready
+  ///
+  /// In en, this message translates to:
+  /// **'Race ready'**
+  String get planMetadataReadinessRaceReady;
+
+  /// Readiness level label: prepared
+  ///
+  /// In en, this message translates to:
+  /// **'Prepared'**
+  String get planMetadataReadinessPrepared;
+
+  /// Readiness level label: developing
+  ///
+  /// In en, this message translates to:
+  /// **'Developing'**
+  String get planMetadataReadinessDeveloping;
+
+  /// Readiness level label: underprepared
+  ///
+  /// In en, this message translates to:
+  /// **'Underprepared'**
+  String get planMetadataReadinessUnderprepared;
+
+  /// Readiness level label: unsupported
+  ///
+  /// In en, this message translates to:
+  /// **'Unsupported'**
+  String get planMetadataReadinessUnsupported;
+
+  /// Plan metadata confidence label: high
+  ///
+  /// In en, this message translates to:
+  /// **'High confidence'**
+  String get planMetadataConfidenceHigh;
+
+  /// Plan metadata confidence label: medium
+  ///
+  /// In en, this message translates to:
+  /// **'Medium confidence'**
+  String get planMetadataConfidenceMedium;
+
+  /// Plan metadata confidence label: limited
+  ///
+  /// In en, this message translates to:
+  /// **'Limited confidence'**
+  String get planMetadataConfidenceLimited;
+
+  /// Plan metadata source label: Strava
+  ///
+  /// In en, this message translates to:
+  /// **'Strava source'**
+  String get planMetadataSourceStrava;
+
+  /// Plan metadata source label: manual
+  ///
+  /// In en, this message translates to:
+  /// **'Manual source'**
+  String get planMetadataSourceManual;
+
+  /// Plan metadata source label: mixed
+  ///
+  /// In en, this message translates to:
+  /// **'Mixed source'**
+  String get planMetadataSourceMixed;
+
+  /// Plan metadata source label: unknown
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown source'**
+  String get planMetadataSourceUnknown;
+
+  /// Plan metadata current weekly volume value
+  ///
+  /// In en, this message translates to:
+  /// **'{value} km/week'**
+  String planMetadataVolumeValue(String value);
+
+  /// Plan metadata current runs-per-week value
+  ///
+  /// In en, this message translates to:
+  /// **'{value} runs/week'**
+  String planMetadataRunsValue(String value);
+
+  /// Evidence-backed target value in plan metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence {target}'**
+  String planMetadataEvidenceTargetValue(String target);
+
+  /// Ambitious target value in plan metadata
+  ///
+  /// In en, this message translates to:
+  /// **'Ambitious {target}'**
+  String planMetadataAmbitiousTargetValue(String target);
+
+  /// Target value when the ambitious target is unsupported
+  ///
+  /// In en, this message translates to:
+  /// **'not supported'**
+  String get planMetadataUnsupportedTarget;
+
+  /// Pace target value in plan metadata
+  ///
+  /// In en, this message translates to:
+  /// **'{pace}/km'**
+  String planMetadataPaceValue(String pace);
+
+  /// Compact phase strategy segment
+  ///
+  /// In en, this message translates to:
+  /// **'{phase} {weeks}w'**
+  String planMetadataPhaseWeeks(String phase, int weeks);
+
+  /// Plan phase label: base
+  ///
+  /// In en, this message translates to:
+  /// **'Base'**
+  String get planMetadataPhaseBase;
+
+  /// Plan phase label: build
+  ///
+  /// In en, this message translates to:
+  /// **'Build'**
+  String get planMetadataPhaseBuild;
+
+  /// Plan phase label: specific
+  ///
+  /// In en, this message translates to:
+  /// **'Specific'**
+  String get planMetadataPhaseSpecific;
+
+  /// Plan phase label: peak
+  ///
+  /// In en, this message translates to:
+  /// **'Peak'**
+  String get planMetadataPhasePeak;
+
+  /// Plan phase label: taper race
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get planMetadataPhaseTaperRace;
+
+  /// Plan phase label: safe build
+  ///
+  /// In en, this message translates to:
+  /// **'Safe build'**
+  String get planMetadataPhaseSafeBuild;
+
+  /// Plan phase label: unsupported fallback
+  ///
+  /// In en, this message translates to:
+  /// **'Fallback'**
+  String get planMetadataPhaseUnsupportedFallback;
+
+  /// Heading for pace zones section in plan guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Pace Zones'**
+  String get planGuidancePaceZonesTitle;
+
+  /// Heading for the race guidance section
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day Guidance'**
+  String get planGuidanceRaceGuidanceTitle;
+
+  /// Title for info-only race day calendar item
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day'**
+  String get raceDayInfoTitle;
+
+  /// Subtitle for race day info calendar item
+  ///
+  /// In en, this message translates to:
+  /// **'Race strategy and final reminders'**
+  String get raceDayInfoSubtitle;
+
+  /// Badge label for info-only race day detail
+  ///
+  /// In en, this message translates to:
+  /// **'Info'**
+  String get raceDayInfoBadge;
+
+  /// Subtitle for race day detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Review the plan for how to approach the race. This is guidance only, not a run to start in the app.'**
+  String get raceDayInfoDetailSubtitle;
+
+  /// Fallback copy when race guidance is missing
+  ///
+  /// In en, this message translates to:
+  /// **'Start controlled, settle into rhythm, and finish with your strongest sustainable effort.'**
+  String get raceDayInfoFallback;
+
+  /// Label for race day execution guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Race day execution'**
+  String get raceGuidanceExecutionLabel;
+
+  /// Label for race warmup guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Warmup'**
+  String get raceGuidanceWarmupLabel;
+
+  /// Label for race split plan guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Split plan'**
+  String get raceGuidanceSplitPlanLabel;
+
+  /// Label for when to push race guidance
+  ///
+  /// In en, this message translates to:
+  /// **'When to push'**
+  String get raceGuidanceWhenToPressLabel;
+
+  /// Label for race avoidance guidance
+  ///
+  /// In en, this message translates to:
+  /// **'What to avoid'**
+  String get raceGuidanceWhatToAvoidLabel;
+
+  /// Label for race coaching notes
+  ///
+  /// In en, this message translates to:
+  /// **'Coaching notes'**
+  String get raceGuidanceCoachingNotesLabel;
+
+  /// Race-day execution guidance heading
+  ///
+  /// In en, this message translates to:
+  /// **'Race Day Execution'**
+  String get planGuidanceRaceDayExecutionLabel;
+
+  /// Warmup guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Warmup'**
+  String get planGuidanceWarmupLabel;
+
+  /// Primary target guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Primary target'**
+  String get planGuidancePrimaryTargetLabel;
+
+  /// Stretch target guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Stretch target'**
+  String get planGuidanceStretchTargetLabel;
+
+  /// Split plan guidance label
+  ///
+  /// In en, this message translates to:
+  /// **'Split plan'**
+  String get planGuidanceSplitPlanLabel;
+
+  /// Label for when to push effort guidance
+  ///
+  /// In en, this message translates to:
+  /// **'When to push'**
+  String get planGuidanceWhenToPressLabel;
+
+  /// Label for what-to-avoid guidance
+  ///
+  /// In en, this message translates to:
+  /// **'What to avoid'**
+  String get planGuidanceWhatToAvoidLabel;
+
+  /// Label for coaching notes guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Coaching notes'**
+  String get planGuidanceCoachingNotesLabel;
+
+  /// Label for sleep guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep'**
+  String get planGuidanceSleepNotesLabel;
+
+  /// Label for fueling guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Fueling'**
+  String get planGuidanceFuelingNotesLabel;
+
+  /// Label for hydration guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Hydration'**
+  String get planGuidanceHydrationNotesLabel;
+
+  /// Label for taper reminders guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Taper reminders'**
+  String get planGuidanceTaperRemindersLabel;
+
+  /// Label for weather/course guidance notes
+  ///
+  /// In en, this message translates to:
+  /// **'Weather and course'**
+  String get planGuidanceWeatherCourseNotesLabel;
+
+  /// Pace upper bound formatting
+  ///
+  /// In en, this message translates to:
+  /// **'No faster than {zoneValue} {unit}'**
+  String planGuidanceAtMostPace(String zoneValue, String unit);
+
+  /// Pace lower bound formatting
+  ///
+  /// In en, this message translates to:
+  /// **'No slower than {zoneValue} {unit}'**
+  String planGuidanceAtLeastPace(String zoneValue, String unit);
+
+  /// Label for strength support session rows
+  ///
+  /// In en, this message translates to:
+  /// **'Strength'**
+  String get planSupportStrengthLabel;
+
+  /// Label for mobility support session rows
+  ///
+  /// In en, this message translates to:
+  /// **'Mobility'**
+  String get planSupportMobilityLabel;
+
+  /// Label for drills support session rows
+  ///
+  /// In en, this message translates to:
+  /// **'Drills'**
+  String get planSupportDrillsLabel;
+
+  /// Label for support session load field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Load'**
+  String get planSupportSessionLoadLabel;
+
+  /// Label for support session timing guidance field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Timing'**
+  String get planSupportSessionTimingLabel;
+
+  /// Label for support session interference rule field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Interference'**
+  String get planSupportSessionInterferenceLabel;
+
+  /// Label for support session taper adjustment field in subtitle
+  ///
+  /// In en, this message translates to:
+  /// **'Taper'**
+  String get planSupportSessionTaperLabel;
+
+  /// Support session load value label
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get supportSessionLoadLight;
+
+  /// Support session load value label
+  ///
+  /// In en, this message translates to:
+  /// **'Moderate'**
+  String get supportSessionLoadModerate;
+
+  /// Support session load value label
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get supportSessionLoadHigh;
+
+  /// Support session timing value label
+  ///
+  /// In en, this message translates to:
+  /// **'On off days'**
+  String get supportSessionTimingOnOffDays;
+
+  /// Support session timing value label
+  ///
+  /// In en, this message translates to:
+  /// **'Next day'**
+  String get supportSessionTimingNextDay;
+
+  /// Support session timing value label
+  ///
+  /// In en, this message translates to:
+  /// **'Same day'**
+  String get supportSessionTimingSameDay;
+
+  /// Support session interference rule value label
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid day before long run'**
+  String get supportSessionInterferenceAvoidDayBeforeLongRun;
+
+  /// Support session interference rule value label
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid day before race'**
+  String get supportSessionInterferenceAvoidDayBeforeRace;
+
+  /// Support session interference rule value label
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid day before key workout'**
+  String get supportSessionInterferenceAvoidDayBeforeKeyWorkout;
+
+  /// Support session taper adjustment value label
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce load week before race'**
+  String get supportSessionTaperReduceLoadWeekBeforeRace;
+
+  /// Support session taper adjustment value label
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce load'**
+  String get supportSessionTaperReduceLoad;
+
+  /// Collapsed weekly run count label in full-plan week card
+  ///
+  /// In en, this message translates to:
+  /// **'{value} runs'**
+  String fullPlanRunsValue(int value);
+
   /// Title of the home/today screen
   ///
   /// In en, this message translates to:
@@ -3381,13 +4460,13 @@ abstract class AppLocalizations {
   /// Subtitle on the intro screen before editing the current goal
   ///
   /// In en, this message translates to:
-  /// **'You can review your race, date, priority, and time targets before saving the changes.'**
+  /// **'You can review your race and date before saving the changes.'**
   String get settingsEditGoalIntroSubtitle;
 
   /// First explainer item for edit goal intro screen
   ///
   /// In en, this message translates to:
-  /// **'Adjust your race or target distance.'**
+  /// **'Adjust your race distance.'**
   String get settingsEditGoalIntroPointRace;
 
   /// Second explainer item for edit goal intro screen
@@ -3399,7 +4478,7 @@ abstract class AppLocalizations {
   /// Third explainer item for edit goal intro screen
   ///
   /// In en, this message translates to:
-  /// **'Review your priority and pacing targets before saving.'**
+  /// **'Review the race details before saving.'**
   String get settingsEditGoalIntroPointPriority;
 
   /// Training preferences explainer item for edit goal intro screen
@@ -3417,13 +4496,13 @@ abstract class AppLocalizations {
   /// Subtitle on the intro screen before creating a new goal
   ///
   /// In en, this message translates to:
-  /// **'This flow starts fresh so you can choose a different target and save a new goal for your plan.'**
+  /// **'This flow starts fresh so you can choose a different race and save a new goal for your plan.'**
   String get settingsNewGoalIntroSubtitle;
 
   /// First explainer item for new goal intro screen
   ///
   /// In en, this message translates to:
-  /// **'Choose a new race or custom distance.'**
+  /// **'Choose a new race distance.'**
   String get settingsNewGoalIntroPointRace;
 
   /// Second explainer item for new goal intro screen
@@ -3695,6 +4774,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Start Workout'**
   String get sessionDetailStartWorkout;
+
+  /// Heading for support session detail screen
+  ///
+  /// In en, this message translates to:
+  /// **'Support Session'**
+  String get sessionDetailSupportTitle;
+
+  /// Label for support session type field
+  ///
+  /// In en, this message translates to:
+  /// **'Type'**
+  String get sessionDetailSupportTypeLabel;
+
+  /// Label for support session status field
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get sessionDetailSupportStatusLabel;
+
+  /// Header for support session metadata section
+  ///
+  /// In en, this message translates to:
+  /// **'Session guidance'**
+  String get sessionDetailSupportMetadataLabel;
+
+  /// Header for support session notes section
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get sessionDetailSupportNotesLabel;
+
+  /// Support session status label
+  ///
+  /// In en, this message translates to:
+  /// **'Planned'**
+  String get supportSessionStatusPlanned;
+
+  /// Support session status label
+  ///
+  /// In en, this message translates to:
+  /// **'Completed'**
+  String get supportSessionStatusCompleted;
+
+  /// Support session status label
+  ///
+  /// In en, this message translates to:
+  /// **'Skipped'**
+  String get supportSessionStatusSkipped;
+
+  /// Label for target pace range on session detail
+  ///
+  /// In en, this message translates to:
+  /// **'Target pace range'**
+  String get sessionDetailTargetRangeLabel;
+
+  /// Label for effort cue text
+  ///
+  /// In en, this message translates to:
+  /// **'Effort cue'**
+  String get sessionDetailEffortCueLabel;
+
+  /// Formatted minimum pace bound
+  ///
+  /// In en, this message translates to:
+  /// **'At least {value} {unit}'**
+  String sessionDetailTargetAtLeastValue(String value, String unit);
+
+  /// Formatted maximum pace bound
+  ///
+  /// In en, this message translates to:
+  /// **'At most {value} {unit}'**
+  String sessionDetailTargetAtMostValue(String value, String unit);
+
+  /// No description provided for @sessionDetailTargetGuidanceNote.
+  ///
+  /// In en, this message translates to:
+  /// **'These pace targets are guidance before the run starts. Live pace feedback and alerts appear once your run is active.'**
+  String get sessionDetailTargetGuidanceNote;
 
   /// Easy run warm-up duration
   ///
@@ -4202,6 +5359,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ease off'**
   String get activeRunEaseOff;
+
+  /// Active run status when user is going too fast in an easy/long run
+  ///
+  /// In en, this message translates to:
+  /// **'Ease off now'**
+  String get activeRunEaseOffFirm;
 
   /// Active run status when user is going too slow
   ///
@@ -4878,6 +6041,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'End Run'**
   String get activeRunEndRun;
+
+  /// Body text for confirmation before ending an active run
+  ///
+  /// In en, this message translates to:
+  /// **'Ending your run will save the session and take you to the summary screen.'**
+  String get activeRunEndRunConfirmBody;
 
   /// Status label shown when the active run is in timer-only mode without GPS
   ///

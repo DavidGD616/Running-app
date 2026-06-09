@@ -48,11 +48,10 @@ class SummaryScreen extends ConsumerWidget {
 
   String _goalDetail(Goal? goal, BuildContext context, AppLocalizations l10n) {
     final eventDate = goal?.raceEvent?.eventDate;
-    final localizedPriority = goalPriorityLabel(goal, l10n);
     if (eventDate != null) {
-      return '${_formatDate(eventDate, l10n)} · $localizedPriority';
+      return _formatDate(eventDate, l10n);
     }
-    return localizedPriority;
+    return l10n.no;
   }
 
   String _fitnessValue(RunnerProfileDraft a, AppLocalizations l10n) {
@@ -228,7 +227,7 @@ class SummaryScreen extends ConsumerWidget {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(8, 8),
+                        l10n.onboardingStep(9, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -239,7 +238,7 @@ class SummaryScreen extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 8, total: 8),
+                    child: AppProgressBar(current: 9, total: 9),
                   ),
                 ],
               ),
@@ -290,10 +289,10 @@ class SummaryScreen extends ConsumerWidget {
                             OnboardingValues.fitnessSourceStrava) {
                           // Push (not go) so the Strava screen's back button
                           // returns cleanly to Summary instead of orphaning it.
-                          context.push(RouteNames.stravaConnect);
+                          context.push(RouteNames.fitnessSource);
                           return;
                         }
-                        context.go(RouteNames.fitness);
+                        context.go(RouteNames.manualFitness);
                       },
                     ),
                     const SizedBox(height: AppSpacing.md),
@@ -318,7 +317,7 @@ class SummaryScreen extends ConsumerWidget {
                       category: l10n.summaryTraining,
                       value: _trainingValue(answers, l10n),
                       detail: _trainingDetail(answers, l10n),
-                      onEdit: () => context.go(RouteNames.training),
+                      onEdit: () => context.go(RouteNames.preferences),
                     ),
                     const SizedBox(height: AppSpacing.md),
                     _SummaryCard(
@@ -370,7 +369,7 @@ class SummaryScreen extends ConsumerWidget {
                 children: [
                   AppButton(
                     label: l10n.buildMyPlan,
-                    onPressed: () => context.go(RouteNames.planGeneration),
+                    onPressed: () => context.go(RouteNames.generatePlan),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   AppButton(

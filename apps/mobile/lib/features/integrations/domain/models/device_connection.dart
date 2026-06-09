@@ -1,6 +1,4 @@
-abstract interface class CanonicalKeyed {
-  String get key;
-}
+import '../../../training_plan/domain/models/model_json_utils.dart';
 
 T? _enumByKey<T extends Enum>(
   String? key,

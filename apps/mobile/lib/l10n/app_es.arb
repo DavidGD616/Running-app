@@ -104,7 +104,7 @@
   "onboardingIntroFeature1": "Tu objetivo de carrera y cronograma",
   "onboardingIntroFeature2": "Nivel de forma física y experiencia",
   "onboardingIntroFeature3": "Horario y preferencias",
-  "onboardingIntroFooter": "8 secciones cortas · Puedes editar tus respuestas después",
+  "onboardingIntroFooter": "9 secciones cortas · Puedes editar tus respuestas después",
   "letsGo": "¡Empecemos!",
 
   "onboardingStravaConnectTitle": "Conecta Strava",
@@ -114,6 +114,79 @@
   "onboardingStravaAttributionTitle": "Powered by Strava",
   "onboardingStravaAttributionSubtitle": "Solo usamos tus datos recientes de running para estimar tu punto de partida.",
   "onboardingStravaPoweredBy": "Powered by Strava",
+  "onboardingStravaAnalysisTitle": "Análisis de Strava listo",
+  "onboardingStravaAnalysisSubtitle": "Revisamos tus datos recientes de running. A continuación, confirma el objetivo de carrera que usaremos para tu plan.",
+  "onboardingStravaAnalysisConfidenceLabel": "Confianza",
+  "onboardingStravaAnalysisConfidenceStrong": "Datos sólidos",
+  "onboardingStravaAnalysisConfidenceWeak": "Datos débiles",
+  "onboardingStravaAnalysisConfidenceNoUsefulData": "Sin datos útiles",
+  "onboardingStravaAnalysisConfidenceStrongBody": "Tus carreras recientes dan suficiente evidencia para iniciar tu plan desde Strava.",
+  "onboardingStravaAnalysisConfidenceWeakBody": "Tu historial de Strava aporta algunas señales, pero los detalles manuales harán el plan más seguro.",
+  "onboardingStravaAnalysisConfidenceNoUsefulDataBody": "No encontramos suficientes datos recientes de running fiables para usar Strava en este paso.",
+  "onboardingStravaAnalysisWindow": "{fromDate} - {throughDate} · {runCount} carreras",
+  "onboardingStravaAnalysisNoDataWindow": "No hay ventana de análisis disponible",
+  "onboardingStravaAnalysisTrainingBaseSection": "Base de entrenamiento",
+  "onboardingStravaAnalysisEnduranceSection": "Resistencia",
+  "onboardingStravaAnalysisSpeedSection": "Velocidad / Zonas de ritmo",
+  "onboardingStravaAnalysisTerrainSection": "Terreno",
+  "onboardingStravaAnalysisRecoverySection": "Recuperación / Límites",
+  "onboardingStravaAnalysisRaceTargetSection": "Objetivo de carrera",
+  "onboardingStravaAnalysisPlanFocusSection": "Enfoque del plan",
+  "onboardingStravaAnalysisNoUsefulDataTitle": "Señal limitada de Strava",
+  "onboardingStravaAnalysisNoUsefulDataBody": "Continúa con detalles manuales de forma física para construir tu punto de partida desde respuestas que controlas.",
+  "onboardingStravaAnalysisNoSectionData": "No se encontró una señal fiable.",
+  "onboardingStravaAnalysisNoGuardrails": "No se detectaron límites adicionales de recuperación.",
+  "onboardingStravaAnalysisNoRaceTarget": "Se necesitan detalles manuales de carrera.",
+  "onboardingStravaAnalysisEvidenceValue": "{value} · {date}",
+  "onboardingStravaAnalysisPaceRange": "{minPace}-{maxPace} {unit}",
+  "onboardingStravaAnalysisPaceSingle": "{pace} {unit}",
+  "onboardingStravaAnalysisPerWeekValue": "{value} {unit}/semana",
+  "onboardingStravaAnalysisRunsPerWeekValue": "{value} carreras/semana",
+  "onboardingStravaAnalysisDaysValue": "{days} días",
+  "onboardingStravaAnalysisRaceTargetValue": "{time} · {confidence}",
+  "onboardingStravaAnalysisRaceTargetStretch": "Ambicioso: {time}",
+  "onboardingStravaAnalysisMetricWeeklyVolume": "Volumen semanal",
+  "onboardingStravaAnalysisMetricRunsPerWeek": "Carreras por semana",
+  "onboardingStravaAnalysisMetricLongRun": "Carrera larga reciente",
+  "onboardingStravaAnalysisMetricLongestLayoff": "Pausa más larga",
+  "onboardingStravaAnalysisMetricHardPace": "Señal de ritmo intenso",
+  "onboardingStravaAnalysisMetricEasyPace": "Señal de ritmo fácil",
+  "onboardingStravaAnalysisMetricThresholdPace": "Señal de ritmo umbral",
+  "onboardingStravaAnalysisMetricRaceReference": "Referencia del objetivo",
+  "onboardingStravaAnalysisMetricTrainingSignal": "Señal de entrenamiento",
+  "onboardingStravaAnalysisPaceZoneRecovery": "Recuperación",
+  "onboardingStravaAnalysisPaceZoneEasy": "Fácil",
+  "onboardingStravaAnalysisPaceZoneLongRun": "Carrera larga",
+  "onboardingStravaAnalysisPaceZoneSteady": "Constante",
+  "onboardingStravaAnalysisPaceZoneTempo": "Tempo",
+  "onboardingStravaAnalysisPaceZoneThreshold": "Umbral",
+  "onboardingStravaAnalysisPaceZoneRace": "Ritmo de carrera",
+  "onboardingStravaAnalysisPaceZoneIntervals": "Intervalos",
+  "onboardingStravaAnalysisPaceZoneStrides": "Strides",
+  "onboardingStravaAnalysisGuardrailLoadSpikeTitle": "Pico reciente de carga",
+  "onboardingStravaAnalysisGuardrailLoadSpikeBody": "Mantén días de recuperación fáciles y frecuentes mientras sube el plan.",
+  "onboardingStravaAnalysisGuardrailDetrainingTitle": "Primero constancia",
+  "onboardingStravaAnalysisGuardrailDetrainingBody": "Construye una frecuencia estable antes de añadir mucha intensidad.",
+  "onboardingStravaAnalysisGuardrailLongLayoffTitle": "Pausa reciente",
+  "onboardingStravaAnalysisGuardrailLongLayoffBody": "Aumenta el volumen gradualmente durante el próximo bloque.",
+  "onboardingStravaAnalysisGuardrailSparseDataTitle": "Datos recientes escasos",
+  "onboardingStravaAnalysisGuardrailSparseDataBody": "Usa señales de esfuerzo cuando la guía de ritmo sea incierta.",
+  "onboardingStravaAnalysisGuardrailPaceUncertaintyTitle": "Ritmo incierto",
+  "onboardingStravaAnalysisGuardrailPaceUncertaintyBody": "Trata los rangos de ritmo como flexibles hasta que más carreras los respalden.",
+  "onboardingStravaAnalysisGuardrailDataCollectionTitle": "Se necesitan más datos",
+  "onboardingStravaAnalysisGuardrailDataCollectionBody": "Registra carreras más constantes antes de depender de objetivos de intensidad.",
+  "onboardingStravaAnalysisGuardrailFallbackTitle": "Cuidado con la recuperación",
+  "onboardingStravaAnalysisGuardrailFallbackBody": "Usa recuperación conservadora hasta que tengamos tendencias más claras.",
+  "onboardingStravaAnalysisPlanFocusDataCollection": "Registra carreras más constantes antes de usar Strava para definir objetivos.",
+  "onboardingStravaAnalysisPlanFocusRecoveryConsistency": "Prioriza constancia y recuperación antes de aumentar la carga.",
+  "onboardingStravaAnalysisPlanFocusThresholdEndurance": "Desarrolla fuerza de umbral mientras aumentas la resistencia de carrera larga gradualmente.",
+  "onboardingStravaAnalysisPlanFocusEnduranceSpeed": "Equilibra constancia de resistencia con desarrollo controlado de velocidad.",
+  "onboardingStravaAnalysisPlanFocusFallback": "Construye una base estable mientras refinamos las señales del plan.",
+  "onboardingStravaAnalysisUseAction": "Usar análisis de Strava",
+  "onboardingStravaAnalysisManualContinueAction": "Continuar con detalles manuales",
+  "onboardingStravaAnalysisManualAction": "Usar forma física manual",
+  "onboardingStravaAnalysisDisconnectAction": "Desconectar Strava",
+  "onboardingStravaAnalysisDisconnectError": "No pudimos desconectar Strava ahora mismo. Inténtalo de nuevo o continúa con detalles manuales.",
   "onboardingStravaConnectError": "No pudimos conectar con Strava ahora mismo. Inténtalo de nuevo o continúa sin Strava.",
   "onboardingStravaConnectDeniedError": "Se canceló la conexión con Strava. Puedes intentarlo de nuevo o continuar manualmente.",
   "onboardingStravaConnectMissingScopeError": "Faltan permisos requeridos de Strava. Acepta todos los permisos solicitados.",
@@ -136,14 +209,6 @@
   "notSure": "No estoy seguro",
   "raceDateLabel": "Fecha de carrera",
   "tapToSetDate": "DD / MM / AAAA",
-  "priorityLabel": "¿Cuál es tu prioridad?",
-  "priorityJustFinish": "Solo terminar",
-  "priorityFinishStrong": "Terminar sintiéndome bien",
-  "priorityImproveTime": "Mejorar mi tiempo",
-  "priorityConsistency": "Desarrollar constancia",
-  "priorityGeneralFitness": "Forma física general",
-  "currentRaceTime": "Tiempo actual de carrera",
-  "targetRaceTime": "Tiempo objetivo de carrera",
   "tapToSetTime": "Toca para establecer el tiempo",
   "timePickerHours": "h",
   "timePickerMinutes": "min",
@@ -192,6 +257,10 @@
 
   "scheduleTitle": "Tu Horario",
   "scheduleSubtitle": "Cuéntanos cuándo puedes entrenar de forma realista.",
+  "scheduleStartDateLabel": "Inicio del plan",
+  "scheduleStartDateToday": "Hoy",
+  "scheduleStartDateTomorrow": "Mañana",
+  "scheduleStartDateNextMonday": "Próximo lunes",
   "trainingDaysLabel": "Días de entrenamiento por semana",
   "longRunDayLabel": "Día preferido para la carrera larga",
   "longRunDayHelper": "Este es el pilar de tu plan semanal",
@@ -264,6 +333,40 @@
   "strength1DayWeek": "1 día/semana",
   "strength2DaysWeek": "2 días/semana",
   "strength3DaysWeek": "3 días/semana",
+  "strengthPreferencesTitle": "Preferencias de Fuerza",
+  "strengthPreferencesSubtitle": "Cuéntanos cuándo haces fuerza de tren inferior para que tu plan proteja los entrenamientos clave.",
+  "strengthLiftsLabel": "¿Haces fuerza de tren inferior o día de pierna?",
+  "strengthFrequencyLabel": "¿Cuántos días por semana?",
+  "strengthFrequencyOption": "{days, plural, =1{1 día} other{{days} días}}",
+  "@strengthFrequencyOption": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "strengthCategoriesLabel": "¿Qué tipos de trabajo de fuerza?",
+  "strengthCategoriesHelper": "Elige solo categorías. Tu plan de running no recetará ejercicios exactos.",
+  "strengthCategoryLowerBody": "Tren inferior",
+  "strengthCategoryUpperBody": "Tren superior",
+  "strengthCategoryCoreMobility": "Core / movilidad",
+  "strengthCategoryFullBody": "Cuerpo completo",
+  "strengthPreferredDaysLabel": "Días de pierna",
+  "strengthPreferredDaysHelper": "Elige los días en que normalmente haces fuerza de tren inferior.",
+  "strengthSameDayOrderLabel": "Cuando correr y levantar coinciden el mismo día",
+  "strengthSameDayOrderHelper": "Esto nos ayuda a ubicar la fuerza de tren inferior alrededor de carreras duras y tiradas largas.",
+  "strengthOrderRunFirst": "Correr primero",
+  "strengthOrderRunFirstSub": "Mejor para días de running de calidad. Haz tren inferior después de correr o más tarde ese día.",
+  "strengthOrderLiftFirst": "Levantar primero",
+  "strengthOrderLiftFirstSub": "Úsalo cuando la fuerza importe más. Mantén la carrera suave o sepárala si sientes las piernas pesadas.",
+  "strengthOrderSeparate": "Sesiones separadas",
+  "strengthOrderSeparateSub": "Prefiere separar mañana/tarde cuando correr y levantar coincidan en un día.",
+  "strengthOrderDepends": "Depende",
+  "strengthOrderDependsSub": "Ubicaremos la fuerza alrededor de las carreras más duras y tiradas largas.",
+  "raceTargetTitle": "Confirma tu objetivo de carrera",
+  "raceTargetSuggestedSubtitle": "Usa este objetivo o ajústalo antes de crear tu plan.",
+  "raceTargetCustomSubtitle": "Agrega un tiempo objetivo para que el plan ajuste bien los ritmos.",
+  "raceTargetPrimaryLabel": "Objetivo principal",
+  "raceTargetSuggestedPrimaryLabel": "Objetivo sugerido",
+  "raceTargetSuggestedStretchLabel": "Objetivo ambicioso",
   "runSurfaceLabel": "¿Dónde corres más?",
   "surfaceRoad": "Asfalto",
   "surfaceTreadmill": "Cinta",
@@ -454,6 +557,171 @@
   "planReadyStartPlan": "Iniciar plan",
   "planReadyViewFullWeek": "Ver semana completa",
 
+  "planMetadataTitle": "Fundamento profesional",
+  "planMetadataReadinessLabel": "Preparación",
+  "planMetadataConfidenceLabel": "Confianza",
+  "planMetadataCurrentVolumeLabel": "Volumen actual",
+  "planMetadataTargetsLabel": "Objetivos",
+  "planMetadataPhaseStrategyLabel": "Estrategia por fases",
+  "planMetadataRationaleLabel": "Razonamiento",
+  "planMetadataReadinessRaceReady": "Listo para competir",
+  "planMetadataReadinessPrepared": "Preparado",
+  "planMetadataReadinessDeveloping": "En desarrollo",
+  "planMetadataReadinessUnderprepared": "Poco preparado",
+  "planMetadataReadinessUnsupported": "No compatible",
+  "planMetadataConfidenceHigh": "Confianza alta",
+  "planMetadataConfidenceMedium": "Confianza media",
+  "planMetadataConfidenceLimited": "Confianza limitada",
+  "planMetadataSourceStrava": "Fuente Strava",
+  "planMetadataSourceManual": "Fuente manual",
+  "planMetadataSourceMixed": "Fuente mixta",
+  "planMetadataSourceUnknown": "Fuente desconocida",
+  "planMetadataVolumeValue": "{value} km/semana",
+  "planMetadataRunsValue": "{value} carreras/semana",
+  "planMetadataEvidenceTargetValue": "Evidencia {target}",
+  "planMetadataAmbitiousTargetValue": "Ambicioso {target}",
+  "planMetadataUnsupportedTarget": "no respaldado",
+  "planMetadataPaceValue": "{pace}/km",
+  "planMetadataPhaseWeeks": "{phase} {weeks} sem",
+  "planMetadataPhaseBase": "Base",
+  "planMetadataPhaseBuild": "Construcción",
+  "planMetadataPhaseSpecific": "Específica",
+  "planMetadataPhasePeak": "Pico",
+  "planMetadataPhaseTaperRace": "Descarga",
+  "planMetadataPhaseSafeBuild": "Construcción segura",
+  "planMetadataPhaseUnsupportedFallback": "Alternativa",
+
+  "planGuidancePaceZonesTitle": "Zonas de ritmo",
+  "planGuidanceRaceGuidanceTitle": "Guía del día de carrera",
+  "raceDayInfoTitle": "Día de carrera",
+  "raceDayInfoSubtitle": "Estrategia de carrera y recordatorios finales",
+  "raceDayInfoBadge": "Info",
+  "raceDayInfoDetailSubtitle": "Revisa el plan para saber cómo afrontar la carrera. Esto es solo guía, no una carrera para iniciar en la app.",
+  "raceDayInfoFallback": "Empieza controlado, encuentra ritmo y termina con tu esfuerzo sostenible más fuerte.",
+  "raceGuidanceExecutionLabel": "Ejecución del día de carrera",
+  "raceGuidanceWarmupLabel": "Calentamiento",
+  "raceGuidanceSplitPlanLabel": "Plan de parciales",
+  "raceGuidanceWhenToPressLabel": "Cuándo apretar",
+  "raceGuidanceWhatToAvoidLabel": "Qué evitar",
+  "raceGuidanceCoachingNotesLabel": "Notas del coach",
+  "planGuidanceRaceDayExecutionLabel": "Ejecución de carrera",
+  "planGuidanceWarmupLabel": "Calentamiento",
+  "planGuidancePrimaryTargetLabel": "Objetivo principal",
+  "planGuidanceStretchTargetLabel": "Objetivo de estiramiento",
+  "planGuidanceSplitPlanLabel": "Plan de parciales",
+  "planGuidanceWhenToPressLabel": "Cuándo apretar",
+  "planGuidanceWhatToAvoidLabel": "Qué evitar",
+  "planGuidanceCoachingNotesLabel": "Notas del coach",
+  "planGuidanceSleepNotesLabel": "Sueño",
+  "planGuidanceFuelingNotesLabel": "Nutrición",
+  "planGuidanceHydrationNotesLabel": "Hidratación",
+  "planGuidanceTaperRemindersLabel": "Recordatorios de baja de carga",
+  "planGuidanceWeatherCourseNotesLabel": "Clima y recorrido",
+  "planGuidanceAtMostPace": "No más rápido de {zoneValue} {unit}",
+  "@planGuidanceAtMostPace": {
+    "description": "Pace upper bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "planGuidanceAtLeastPace": "No más lento de {zoneValue} {unit}",
+  "@planGuidanceAtLeastPace": {
+    "description": "Pace lower bound formatting",
+    "placeholders": {
+      "zoneValue": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+
+  "planSupportStrengthLabel": "Fuerza",
+  "planSupportMobilityLabel": "Movilidad",
+  "planSupportDrillsLabel": "Ejercicios",
+  "@planSupportDrillsLabel": {
+    "description": "Label for drills support session rows"
+  },
+
+  "planSupportSessionLoadLabel": "Carga",
+  "@planSupportSessionLoadLabel": {
+    "description": "Label for support session load field in subtitle"
+  },
+
+  "planSupportSessionTimingLabel": "Calendario",
+  "@planSupportSessionTimingLabel": {
+    "description": "Label for support session timing guidance field in subtitle"
+  },
+
+  "planSupportSessionInterferenceLabel": "Interferencia",
+  "@planSupportSessionInterferenceLabel": {
+    "description": "Label for support session interference rule field in subtitle"
+  },
+
+  "planSupportSessionTaperLabel": "Disminuir carga",
+  "@planSupportSessionTaperLabel": {
+    "description": "Label for support session taper adjustment field in subtitle"
+  },
+
+  "supportSessionLoadLight": "Ligera",
+  "@supportSessionLoadLight": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadModerate": "Moderada",
+  "@supportSessionLoadModerate": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionLoadHigh": "Alta",
+  "@supportSessionLoadHigh": {
+    "description": "Support session load value label"
+  },
+
+  "supportSessionTimingOnOffDays": "Días de descanso",
+  "@supportSessionTimingOnOffDays": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingNextDay": "Día siguiente",
+  "@supportSessionTimingNextDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionTimingSameDay": "Mismo día",
+  "@supportSessionTimingSameDay": {
+    "description": "Support session timing value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeLongRun": "Evitar el día previo a carrera larga",
+  "@supportSessionInterferenceAvoidDayBeforeLongRun": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeRace": "Evitar el día previo a la carrera",
+  "@supportSessionInterferenceAvoidDayBeforeRace": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionInterferenceAvoidDayBeforeKeyWorkout": "Evitar el día previo al entrenamiento clave",
+  "@supportSessionInterferenceAvoidDayBeforeKeyWorkout": {
+    "description": "Support session interference rule value label"
+  },
+
+  "supportSessionTaperReduceLoadWeekBeforeRace": "Reducir carga la semana previa a la carrera",
+  "@supportSessionTaperReduceLoadWeekBeforeRace": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "supportSessionTaperReduceLoad": "Reducir carga",
+  "@supportSessionTaperReduceLoad": {
+    "description": "Support session taper adjustment value label"
+  },
+
+  "fullPlanRunsValue": "{value} carreras",
+  "@fullPlanRunsValue": {
+    "description": "Collapsed weekly run count label in full-plan week card",
+    "placeholders": { "value": { "type": "int" } }
+  },
+
   "homeTitle": "Hoy",
   "homeSectionTodaysWorkout": "Entrenamiento de Hoy",
   "homeSectionUpNext": "A Continuación",
@@ -642,14 +910,14 @@
   "settingsSummaryGoalSection": "Objetivo",
   "settingsSummaryTrainingSection": "Preferencias de entrenamiento",
   "settingsEditGoalIntroTitle": "Actualiza el objetivo para el que ya estás entrenando",
-  "settingsEditGoalIntroSubtitle": "Podrás revisar tu carrera, fecha, prioridad y tiempos objetivo antes de guardar los cambios.",
-  "settingsEditGoalIntroPointRace": "Ajusta tu carrera o distancia objetivo.",
+  "settingsEditGoalIntroSubtitle": "Podrás revisar tu carrera y fecha antes de guardar los cambios.",
+  "settingsEditGoalIntroPointRace": "Ajusta la distancia de tu carrera.",
   "settingsEditGoalIntroPointDate": "Actualiza la fecha si tu calendario cambió.",
-  "settingsEditGoalIntroPointPriority": "Revisa tu prioridad y tus tiempos antes de guardar.",
+  "settingsEditGoalIntroPointPriority": "Revisa los detalles de la carrera antes de guardar.",
   "settingsEditGoalIntroPointTraining": "Revisa tus preferencias de entrenamiento antes de terminar la actualización.",
   "settingsNewGoalIntroTitle": "Define un objetivo completamente nuevo",
-  "settingsNewGoalIntroSubtitle": "Este flujo empieza desde cero para que puedas elegir una meta distinta y guardarla para tu plan.",
-  "settingsNewGoalIntroPointRace": "Elige una nueva carrera o una distancia personalizada.",
+  "settingsNewGoalIntroSubtitle": "Este flujo empieza desde cero para que puedas elegir una carrera distinta y guardarla para tu plan.",
+  "settingsNewGoalIntroPointRace": "Elige una nueva distancia de carrera.",
   "settingsNewGoalIntroPointDate": "Define una nueva fecha y el nuevo plazo.",
   "settingsNewGoalIntroPointPlan": "Guarda un nuevo objetivo sin cambiar aquí tu horario.",
   "settingsNewGoalIntroPointTraining": "Define las preferencias de entrenamiento que quieres usar con este objetivo.",
@@ -706,6 +974,34 @@
   "sessionDetailCoolDownDuration": "10 min",
   "sessionDetailCoolDownNote": "Ritmo fácil o caminata",
   "sessionDetailStartWorkout": "Iniciar entrenamiento",
+
+  "sessionDetailSupportTitle": "Sesión de soporte",
+  "sessionDetailSupportTypeLabel": "Tipo",
+  "sessionDetailSupportStatusLabel": "Estado",
+  "sessionDetailSupportMetadataLabel": "Guía de la sesión",
+  "sessionDetailSupportNotesLabel": "Notas",
+  "supportSessionStatusPlanned": "Planificada",
+  "supportSessionStatusCompleted": "Completada",
+  "supportSessionStatusSkipped": "Omitida",
+  "sessionDetailTargetRangeLabel": "Rango de ritmo objetivo",
+  "sessionDetailEffortCueLabel": "Referencia de esfuerzo",
+  "sessionDetailTargetAtLeastValue": "Mínimo {value} {unit}",
+  "@sessionDetailTargetAtLeastValue": {
+    "description": "Valor de límite mínimo de ritmo",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "sessionDetailTargetAtMostValue": "Máximo {value} {unit}",
+  "@sessionDetailTargetAtMostValue": {
+    "description": "Valor de límite máximo de ritmo",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
+  "sessionDetailTargetGuidanceNote": "Estos objetivos de ritmo son una guía antes de comenzar. La retroalimentación en tiempo real de ritmo aparece cuando la carrera está activa.",
 
   "sessionPhaseEasyRunWarmDuration": "{minutes} min",
   "sessionPhaseEasyRunWarmNote": "Caminata rápida + estiramientos dinámicos suaves de piernas",
@@ -818,6 +1114,7 @@
   "activeRunGuidanceRacePace": "Entra en ritmo objetivo y mantén el esfuerzo estable.",
   "activeRunGuidanceRecovery": "Debe sentirse lo bastante suave para terminar mejor.",
   "activeRunEaseOff": "Baja ritmo",
+  "activeRunEaseOffFirm": "Baja ritmo ahora",
   "activeRunPickUp": "Acelera",
   "activeRunOnTarget": "En objetivo",
   "activeRunPush": "Empuja",
@@ -982,6 +1279,10 @@
 
   "activeRunEndRun": "Terminar Carrera",
   "@activeRunEndRun": { "description": "CTA button to end the active run" },
+  "activeRunEndRunConfirmBody": "Terminar tu carrera guardará la sesión y te llevará a la pantalla de resumen.",
+  "@activeRunEndRunConfirmBody": {
+    "description": "Body text for confirmation before ending an active run"
+  },
 
   "activeRunTimerOnlyLabel": "Solo temporizador",
   "@activeRunTimerOnlyLabel": { "description": "Status label shown when the active run is in timer-only mode without GPS" },

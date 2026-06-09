@@ -41,7 +41,6 @@ void main() {
             return Column(
               children: [
                 Text(goalRaceLabel(goal, l10n)),
-                Text(goalPriorityLabel(goal, l10n)),
                 Text(goalDescription(goal, l10n)),
                 Text(goalPlanWeeks(goal)),
                 Text(formatGoalDate(context, goal)),
@@ -53,7 +52,6 @@ void main() {
     );
 
     expect(find.text('Half Marathon'), findsOneWidget);
-    expect(find.text('Improve my time'), findsOneWidget);
     expect(find.text('Complete a Half Marathon'), findsOneWidget);
     expect(find.text('12'), findsOneWidget);
     expect(find.text('October 18, 2026'), findsOneWidget);

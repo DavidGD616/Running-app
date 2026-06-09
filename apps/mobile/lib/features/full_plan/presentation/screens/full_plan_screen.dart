@@ -231,6 +231,8 @@ class _WeekCardState extends State<_WeekCard> {
     switch (type) {
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
       case SessionType.longRun:
@@ -263,25 +265,36 @@ class _WeekCardState extends State<_WeekCard> {
         date.day == now.day;
   }
 
-  String _dayLabel(TrainingSession s) {
-    final l10n = widget.l10n;
-    if (_isTodayDate(s.date)) return l10n.weeklyPlanDayToday;
-    switch (s.date.weekday) {
+  String _dayLabel(DateTime date) {
+    if (_isTodayDate(date)) return widget.l10n.weeklyPlanDayToday;
+    switch (date.weekday) {
       case 1:
-        return l10n.weeklyPlanDayMon;
+        return widget.l10n.weeklyPlanDayMon;
       case 2:
-        return l10n.weeklyPlanDayTue;
+        return widget.l10n.weeklyPlanDayTue;
       case 3:
-        return l10n.weeklyPlanDayWed;
+        return widget.l10n.weeklyPlanDayWed;
       case 4:
-        return l10n.weeklyPlanDayThu;
+        return widget.l10n.weeklyPlanDayThu;
       case 5:
-        return l10n.weeklyPlanDayFri;
+        return widget.l10n.weeklyPlanDayFri;
       case 6:
-        return l10n.weeklyPlanDaySat;
+        return widget.l10n.weeklyPlanDaySat;
       default:
-        return l10n.weeklyPlanDaySun;
+        return widget.l10n.weeklyPlanDaySun;
     }
+  }
+
+  List<_SessionRowData> _buildRows() {
+    final rows = <_SessionRowData>[
+      ...widget.week.sessions.map((session) => _SessionRowData.run(session)),
+    ];
+
+    rows.sort((a, b) {
+      return a.date.compareTo(b.date);
+    });
+
+    return rows;
   }
 
   @override
@@ -290,11 +303,11 @@ class _WeekCardState extends State<_WeekCard> {
     final week = widget.week;
     final isCurrent = week.weekNumber == widget.currentWeekNumber;
     final isPast = week.weekNumber < widget.currentWeekNumber;
+    final rows = _buildRows();
 
     final progress = WeekProgress.fromSessions(week.sessions);
     final runCount = week.sessions.where((s) => s.countsAsRun).length;
 
-    // Status badge
     final Color badgeColor;
     final String badgeLabel;
     if (isCurrent) {
@@ -320,7 +333,6 @@ class _WeekCardState extends State<_WeekCard> {
       ),
       child: Column(
         children: [
-          // ── Header (always visible) ──────────────────────────
           GestureDetector(
             onTap: () => setState(() => _expanded = !_expanded),
             behavior: HitTestBehavior.opaque,
@@ -331,7 +343,6 @@ class _WeekCardState extends State<_WeekCard> {
               ),
               child: Row(
                 children: [
-                  // Week title
                   Text(
                     l10n.fullPlanWeekLabel(week.weekNumber),
                     style: AppTypography.titleMedium.copyWith(
@@ -345,12 +356,10 @@ class _WeekCardState extends State<_WeekCard> {
 
                   const SizedBox(width: AppSpacing.sm),
 
-                  // Status badge
                   _StatusBadge(label: badgeLabel, color: badgeColor),
 
                   const Spacer(),
 
-                  // Aggregate stats
                   if (!_expanded) ...[
                     Text(
                       UnitFormatter.formatDistanceLabel(
@@ -365,7 +374,7 @@ class _WeekCardState extends State<_WeekCard> {
                     ),
                     const SizedBox(width: AppSpacing.sm),
                     Text(
-                      '$runCount runs',
+                      l10n.fullPlanRunsValue(runCount),
                       style: AppTypography.caption.copyWith(
                         color: AppColors.textDisabled,
                         fontSize: 12,
@@ -374,7 +383,6 @@ class _WeekCardState extends State<_WeekCard> {
                     const SizedBox(width: AppSpacing.sm),
                   ],
 
-                  // Chevron
                   AnimatedRotation(
                     turns: _expanded ? 0.5 : 0.0,
                     duration: const Duration(milliseconds: 200),
@@ -395,7 +403,6 @@ class _WeekCardState extends State<_WeekCard> {
             ),
           ),
 
-          // ── Expanded session list ────────────────────────────
           if (_expanded) ...[
             Divider(height: 1, color: AppColors.backgroundCard),
             Padding(
@@ -406,43 +413,49 @@ class _WeekCardState extends State<_WeekCard> {
                 AppSpacing.sm,
               ),
               child: Column(
-                children: week.sessions.map((s) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                    child: SessionRow(
-                      dayLabel: _dayLabel(s),
-                      dateNumber: s.date.day.toString(),
-                      sessionDate: s.date,
-                      title: _sessionTitle(s.type),
-                      subtitle: s.type.isRest
-                          ? l10n.weeklyPlanRestSubtitle
-                          : null,
-                      distance: s.distanceKm != null
-                          ? UnitFormatter.formatDistanceLabel(
-                              s.distanceKm!,
-                              widget.unitSystem,
-                              l10n,
-                            )
-                          : null,
-                      duration: s.durationMinutes != null
-                          ? UnitFormatter.formatDuration(
-                              s.durationMinutes!,
-                              l10n,
-                            )
-                          : null,
-                      status: s.status,
-                      isRest: s.type.isRest,
-                      trailingIcon: s.type.iconAsset,
-                      nowLabel: l10n.weeklyPlanNowBadge,
-                      onTap: s.type.isRest
-                          ? null
-                          : () => context.push(
-                              RouteNames.sessionDetail,
-                              extra: SessionDetailArgs(session: s),
-                            ),
-                    ),
-                  );
-                }).toList(),
+                children: rows
+                    .map(
+                      (row) => Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                        child: SessionRow(
+                          dayLabel: _dayLabel(row.date),
+                          dateNumber: row.date.day.toString(),
+                          sessionDate: row.date,
+                          title: _sessionTitle(row.session.type),
+                          subtitle: row.session.type.isRaceDayInfo
+                              ? l10n.raceDayInfoSubtitle
+                              : row.session.type.isRest
+                              ? l10n.weeklyPlanRestSubtitle
+                              : null,
+                          distance: row.session.distanceKm != null
+                              ? UnitFormatter.formatDistanceLabel(
+                                  row.session.distanceKm!,
+                                  widget.unitSystem,
+                                  l10n,
+                                )
+                              : null,
+                          duration: row.session.durationMinutes != null
+                              ? UnitFormatter.formatDuration(
+                                  row.session.durationMinutes!,
+                                  l10n,
+                                )
+                              : null,
+                          status: row.session.status,
+                          isRest: row.session.type.isRest,
+                          trailingIcon: row.session.type.iconAsset,
+                          nowLabel: l10n.weeklyPlanNowBadge,
+                          onTap: row.session.type.isRest
+                              ? null
+                              : () => context.push(
+                                  RouteNames.sessionDetail,
+                                  extra: SessionDetailArgs(
+                                    session: row.session,
+                                  ),
+                                ),
+                        ),
+                      ),
+                    )
+                    .toList(growable: false),
               ),
             ),
           ],
@@ -450,6 +463,15 @@ class _WeekCardState extends State<_WeekCard> {
       ),
     );
   }
+}
+
+// ── Session row shape (run + support) ───────────────────────────────────────
+
+class _SessionRowData {
+  _SessionRowData.run(this.session) : date = session.date;
+
+  final TrainingSession session;
+  final DateTime date;
 }
 
 // ── Status badge ──────────────────────────────────────────────────────────────

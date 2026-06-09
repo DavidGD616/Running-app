@@ -34,7 +34,6 @@ void main() {
           goal: GoalProfileDraft(
             race: RunnerGoalRace.marathon,
             hasRaceDate: false,
-            priority: GoalPriority.justFinish,
           ),
         )
         .toRunnerProfile(
@@ -49,7 +48,6 @@ void main() {
     final raceGoal = goal! as RaceGoal;
     expect(raceGoal.kind, GoalKind.race);
     expect(raceGoal.status, GoalStatus.active);
-    expect(raceGoal.priority, GoalPriorityType.justFinish);
     expect(raceGoal.raceEvent, isNotNull);
     expect(raceGoal.raceEvent!.raceType, GoalRaceType.marathon);
     expect(raceGoal.raceEvent!.eventDate, isNull);
@@ -62,7 +60,6 @@ void main() {
         goal: GoalProfileDraft(
           race: RunnerGoalRace.halfMarathon,
           hasRaceDate: true,
-          priority: GoalPriority.improveTime,
         ),
       );
 
@@ -76,7 +73,6 @@ void main() {
         race: RunnerGoalRace.fiveK,
         hasRaceDate: true,
         raceDate: DateTime(2026, 5, 1),
-        priority: GoalPriority.justFinish,
       ),
     );
     final profile = buildRunnerProfileDraft()
@@ -85,9 +81,6 @@ void main() {
             race: RunnerGoalRace.halfMarathon,
             hasRaceDate: true,
             raceDate: DateTime(2026, 10, 18),
-            priority: GoalPriority.improveTime,
-            currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
-            targetTime: const Duration(hours: 1, minutes: 55),
           ),
         )
         .toRunnerProfile(
@@ -109,12 +102,8 @@ void main() {
     await container.read(runnerProfileProvider.future);
 
     expect(container.read(onboardingGoalProvider), isA<RaceGoal>());
-    expect(
-      container.read(onboardingGoalProvider)!.priority,
-      GoalPriorityType.justFinish,
-    );
-    expect(container.read(activeGoalProvider), isA<TimeGoal>());
-    expect(container.read(activeGoalProvider)!.kind, GoalKind.time);
+    expect(container.read(activeGoalProvider), isA<RaceGoal>());
+    expect(container.read(activeGoalProvider)!.kind, GoalKind.race);
     expect(
       container.read(activeGoalProvider)!.targetRace,
       GoalRaceType.halfMarathon,

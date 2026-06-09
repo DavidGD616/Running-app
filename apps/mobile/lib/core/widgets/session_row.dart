@@ -121,24 +121,35 @@ class SessionRow extends StatelessWidget {
                 borderRadius: AppRadius.borderMd,
               ),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    dayLabel.toUpperCase(),
-                    style: AppTypography.caption.copyWith(
-                      color: dayTextColor,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w600,
-                      letterSpacing: 0.5,
+                  Flexible(
+                    child: Text(
+                      dayLabel.toUpperCase(),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: AppTypography.caption.copyWith(
+                        color: dayTextColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 1),
-                  Text(
-                    dateNumber,
-                    style: AppTypography.titleMedium.copyWith(
-                      color: dateTextColor,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                  Flexible(
+                    child: Text(
+                      dateNumber,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      softWrap: false,
+                      style: AppTypography.titleMedium.copyWith(
+                        color: dateTextColor,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
                   ),
                 ],

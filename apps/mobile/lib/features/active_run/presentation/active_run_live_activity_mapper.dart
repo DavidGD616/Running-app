@@ -1,5 +1,6 @@
 import '../../../core/utils/unit_formatter.dart';
 import '../../../l10n/app_localizations.dart';
+import '../domain/live_pace_guidance.dart';
 import '../domain/models/gps_state.dart';
 import '../domain/run_live_activity_data.dart';
 import 'active_run_timeline.dart';
@@ -13,6 +14,8 @@ RunLiveActivityData buildRunLiveActivityData({
   required RunFlowSessionContext? session,
   required UnitSystem unitSystem,
   required AppLocalizations l10n,
+  String? paceGuidanceMessageKey,
+  LivePaceGuidanceSeverity paceGuidanceSeverity = LivePaceGuidanceSeverity.none,
 }) {
   final isPaused = state.isPaused;
   final elapsedSeconds = state.elapsed.inSeconds;
@@ -77,7 +80,12 @@ RunLiveActivityData buildRunLiveActivityData({
   return RunLiveActivityData(
     workoutName: _workoutName(session?.sessionType, l10n),
     statusTitleLabel: l10n.activeRunStatusTitle,
-    statusLabel: _statusLabel(state, l10n),
+    statusLabel: _statusLabel(
+      state,
+      l10n,
+      guidanceMessageKey: paceGuidanceMessageKey,
+      guidanceSeverity: paceGuidanceSeverity,
+    ),
     elapsedSeconds: elapsedSeconds,
     elapsedLabel: elapsedLabel,
     elapsedUnitLabel: l10n.activeRunTimeUnit,
@@ -107,7 +115,21 @@ RunLiveActivityData buildRunLiveActivityData({
   );
 }
 
-String _statusLabel(ActiveRunState state, AppLocalizations l10n) {
+String _statusLabel(
+  ActiveRunState state,
+  AppLocalizations l10n, {
+  String? guidanceMessageKey,
+  LivePaceGuidanceSeverity guidanceSeverity = LivePaceGuidanceSeverity.none,
+}) {
+  if (guidanceMessageKey != null) {
+    final guidanceLabel = _guidanceStatusLabel(
+      guidanceMessageKey,
+      guidanceSeverity,
+      l10n,
+    );
+    if (guidanceLabel != null) return guidanceLabel;
+  }
+
   if (state.isPaused) return l10n.activeRunPausedStatusLabel;
   if (state.isTimerOnlyMode || state.gpsStatus == GpsStatus.disabled) {
     return l10n.activeRunTimerOnlyLabel;
@@ -121,10 +143,25 @@ String _statusLabel(ActiveRunState state, AppLocalizations l10n) {
   };
 }
 
+String? _guidanceStatusLabel(
+  String messageKey,
+  LivePaceGuidanceSeverity guidanceSeverity,
+  AppLocalizations l10n,
+) {
+  return switch (messageKey) {
+    'activeRunEaseOffFirm' => l10n.activeRunEaseOffFirm,
+    'activeRunEaseOff' => l10n.activeRunEaseOff,
+    'activeRunPickUp' => l10n.activeRunPickUp,
+    'activeRunOnTarget' => l10n.activeRunOnTarget,
+    _ => null,
+  };
+}
+
 String _workoutName(SessionType? type, AppLocalizations l10n) {
   if (type == null) return '';
   return switch (type) {
     SessionType.restDay => l10n.sessionTypeRestDay,
+    SessionType.raceDay => l10n.raceDayInfoTitle,
     SessionType.easyRun => l10n.weeklyPlanSessionEasyRun,
     SessionType.longRun => l10n.weeklyPlanSessionLongRun,
     SessionType.progressionRun => l10n.sessionTypeProgressionRun,
@@ -242,6 +279,7 @@ String _targetValue(SessionType type, AppLocalizations l10n) {
     SessionType.easyRun => l10n.activeRunTargetEasy,
     SessionType.crossTraining => l10n.activeRunTargetSteady,
     SessionType.restDay => l10n.activeRunTargetEasy,
+    SessionType.raceDay => l10n.raceDayInfoSubtitle,
   };
 }
 

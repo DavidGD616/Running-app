@@ -136,7 +136,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(7, 8),
+                        l10n.onboardingStep(8, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -147,7 +147,7 @@ class _WatchDeviceScreenState extends ConsumerState<WatchDeviceScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 7, total: 8),
+                    child: AppProgressBar(current: 8, total: 9),
                   ),
                 ],
               ),

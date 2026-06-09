@@ -290,7 +290,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '8 secciones cortas · Puedes editar tus respuestas después';
+      '9 secciones cortas · Puedes editar tus respuestas después';
 
   @override
   String get letsGo => '¡Empecemos!';
@@ -318,6 +318,292 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get onboardingStravaPoweredBy => 'Powered by Strava';
+
+  @override
+  String get onboardingStravaAnalysisTitle => 'Análisis de Strava listo';
+
+  @override
+  String get onboardingStravaAnalysisSubtitle =>
+      'Revisamos tus datos recientes de running. A continuación, confirma el objetivo de carrera que usaremos para tu plan.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceLabel => 'Confianza';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceStrong => 'Datos sólidos';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceWeak => 'Datos débiles';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceNoUsefulData =>
+      'Sin datos útiles';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceStrongBody =>
+      'Tus carreras recientes dan suficiente evidencia para iniciar tu plan desde Strava.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceWeakBody =>
+      'Tu historial de Strava aporta algunas señales, pero los detalles manuales harán el plan más seguro.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceNoUsefulDataBody =>
+      'No encontramos suficientes datos recientes de running fiables para usar Strava en este paso.';
+
+  @override
+  String onboardingStravaAnalysisWindow(
+    String fromDate,
+    String throughDate,
+    int runCount,
+  ) {
+    return '$fromDate - $throughDate · $runCount carreras';
+  }
+
+  @override
+  String get onboardingStravaAnalysisNoDataWindow =>
+      'No hay ventana de análisis disponible';
+
+  @override
+  String get onboardingStravaAnalysisTrainingBaseSection =>
+      'Base de entrenamiento';
+
+  @override
+  String get onboardingStravaAnalysisEnduranceSection => 'Resistencia';
+
+  @override
+  String get onboardingStravaAnalysisSpeedSection =>
+      'Velocidad / Zonas de ritmo';
+
+  @override
+  String get onboardingStravaAnalysisTerrainSection => 'Terreno';
+
+  @override
+  String get onboardingStravaAnalysisRecoverySection =>
+      'Recuperación / Límites';
+
+  @override
+  String get onboardingStravaAnalysisRaceTargetSection => 'Objetivo de carrera';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusSection => 'Enfoque del plan';
+
+  @override
+  String get onboardingStravaAnalysisNoUsefulDataTitle =>
+      'Señal limitada de Strava';
+
+  @override
+  String get onboardingStravaAnalysisNoUsefulDataBody =>
+      'Continúa con detalles manuales de forma física para construir tu punto de partida desde respuestas que controlas.';
+
+  @override
+  String get onboardingStravaAnalysisNoSectionData =>
+      'No se encontró una señal fiable.';
+
+  @override
+  String get onboardingStravaAnalysisNoGuardrails =>
+      'No se detectaron límites adicionales de recuperación.';
+
+  @override
+  String get onboardingStravaAnalysisNoRaceTarget =>
+      'Se necesitan detalles manuales de carrera.';
+
+  @override
+  String onboardingStravaAnalysisEvidenceValue(String value, String date) {
+    return '$value · $date';
+  }
+
+  @override
+  String onboardingStravaAnalysisPaceRange(
+    String minPace,
+    String maxPace,
+    String unit,
+  ) {
+    return '$minPace-$maxPace $unit';
+  }
+
+  @override
+  String onboardingStravaAnalysisPaceSingle(String pace, String unit) {
+    return '$pace $unit';
+  }
+
+  @override
+  String onboardingStravaAnalysisPerWeekValue(String value, String unit) {
+    return '$value $unit/semana';
+  }
+
+  @override
+  String onboardingStravaAnalysisRunsPerWeekValue(String value) {
+    return '$value carreras/semana';
+  }
+
+  @override
+  String onboardingStravaAnalysisDaysValue(int days) {
+    return '$days días';
+  }
+
+  @override
+  String onboardingStravaAnalysisRaceTargetValue(
+    String time,
+    String confidence,
+  ) {
+    return '$time · $confidence';
+  }
+
+  @override
+  String onboardingStravaAnalysisRaceTargetStretch(String time) {
+    return 'Ambicioso: $time';
+  }
+
+  @override
+  String get onboardingStravaAnalysisMetricWeeklyVolume => 'Volumen semanal';
+
+  @override
+  String get onboardingStravaAnalysisMetricRunsPerWeek => 'Carreras por semana';
+
+  @override
+  String get onboardingStravaAnalysisMetricLongRun => 'Carrera larga reciente';
+
+  @override
+  String get onboardingStravaAnalysisMetricLongestLayoff => 'Pausa más larga';
+
+  @override
+  String get onboardingStravaAnalysisMetricHardPace => 'Señal de ritmo intenso';
+
+  @override
+  String get onboardingStravaAnalysisMetricEasyPace => 'Señal de ritmo fácil';
+
+  @override
+  String get onboardingStravaAnalysisMetricThresholdPace =>
+      'Señal de ritmo umbral';
+
+  @override
+  String get onboardingStravaAnalysisMetricRaceReference =>
+      'Referencia del objetivo';
+
+  @override
+  String get onboardingStravaAnalysisMetricTrainingSignal =>
+      'Señal de entrenamiento';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneRecovery => 'Recuperación';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneEasy => 'Fácil';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneLongRun => 'Carrera larga';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneSteady => 'Constante';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneTempo => 'Tempo';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneThreshold => 'Umbral';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneRace => 'Ritmo de carrera';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneIntervals => 'Intervalos';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneStrides => 'Strides';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLoadSpikeTitle =>
+      'Pico reciente de carga';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLoadSpikeBody =>
+      'Mantén días de recuperación fáciles y frecuentes mientras sube el plan.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDetrainingTitle =>
+      'Primero constancia';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDetrainingBody =>
+      'Construye una frecuencia estable antes de añadir mucha intensidad.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLongLayoffTitle =>
+      'Pausa reciente';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLongLayoffBody =>
+      'Aumenta el volumen gradualmente durante el próximo bloque.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailSparseDataTitle =>
+      'Datos recientes escasos';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailSparseDataBody =>
+      'Usa señales de esfuerzo cuando la guía de ritmo sea incierta.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyTitle =>
+      'Ritmo incierto';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyBody =>
+      'Trata los rangos de ritmo como flexibles hasta que más carreras los respalden.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDataCollectionTitle =>
+      'Se necesitan más datos';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDataCollectionBody =>
+      'Registra carreras más constantes antes de depender de objetivos de intensidad.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailFallbackTitle =>
+      'Cuidado con la recuperación';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailFallbackBody =>
+      'Usa recuperación conservadora hasta que tengamos tendencias más claras.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusDataCollection =>
+      'Registra carreras más constantes antes de usar Strava para definir objetivos.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusRecoveryConsistency =>
+      'Prioriza constancia y recuperación antes de aumentar la carga.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusThresholdEndurance =>
+      'Desarrolla fuerza de umbral mientras aumentas la resistencia de carrera larga gradualmente.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusEnduranceSpeed =>
+      'Equilibra constancia de resistencia con desarrollo controlado de velocidad.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusFallback =>
+      'Construye una base estable mientras refinamos las señales del plan.';
+
+  @override
+  String get onboardingStravaAnalysisUseAction => 'Usar análisis de Strava';
+
+  @override
+  String get onboardingStravaAnalysisManualContinueAction =>
+      'Continuar con detalles manuales';
+
+  @override
+  String get onboardingStravaAnalysisManualAction => 'Usar forma física manual';
+
+  @override
+  String get onboardingStravaAnalysisDisconnectAction => 'Desconectar Strava';
+
+  @override
+  String get onboardingStravaAnalysisDisconnectError =>
+      'No pudimos desconectar Strava ahora mismo. Inténtalo de nuevo o continúa con detalles manuales.';
 
   @override
   String get onboardingStravaConnectError =>
@@ -388,30 +674,6 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get tapToSetDate => 'DD / MM / AAAA';
-
-  @override
-  String get priorityLabel => '¿Cuál es tu prioridad?';
-
-  @override
-  String get priorityJustFinish => 'Solo terminar';
-
-  @override
-  String get priorityFinishStrong => 'Terminar sintiéndome bien';
-
-  @override
-  String get priorityImproveTime => 'Mejorar mi tiempo';
-
-  @override
-  String get priorityConsistency => 'Desarrollar constancia';
-
-  @override
-  String get priorityGeneralFitness => 'Forma física general';
-
-  @override
-  String get currentRaceTime => 'Tiempo actual de carrera';
-
-  @override
-  String get targetRaceTime => 'Tiempo objetivo de carrera';
 
   @override
   String get tapToSetTime => 'Toca para establecer el tiempo';
@@ -548,6 +810,18 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get scheduleSubtitle =>
       'Cuéntanos cuándo puedes entrenar de forma realista.';
+
+  @override
+  String get scheduleStartDateLabel => 'Inicio del plan';
+
+  @override
+  String get scheduleStartDateToday => 'Hoy';
+
+  @override
+  String get scheduleStartDateTomorrow => 'Mañana';
+
+  @override
+  String get scheduleStartDateNextMonday => 'Próximo lunes';
 
   @override
   String get trainingDaysLabel => 'Días de entrenamiento por semana';
@@ -762,6 +1036,113 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get strength3DaysWeek => '3 días/semana';
+
+  @override
+  String get strengthPreferencesTitle => 'Preferencias de Fuerza';
+
+  @override
+  String get strengthPreferencesSubtitle =>
+      'Cuéntanos cuándo haces fuerza de tren inferior para que tu plan proteja los entrenamientos clave.';
+
+  @override
+  String get strengthLiftsLabel =>
+      '¿Haces fuerza de tren inferior o día de pierna?';
+
+  @override
+  String get strengthFrequencyLabel => '¿Cuántos días por semana?';
+
+  @override
+  String strengthFrequencyOption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days días',
+      one: '1 día',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get strengthCategoriesLabel => '¿Qué tipos de trabajo de fuerza?';
+
+  @override
+  String get strengthCategoriesHelper =>
+      'Elige solo categorías. Tu plan de running no recetará ejercicios exactos.';
+
+  @override
+  String get strengthCategoryLowerBody => 'Tren inferior';
+
+  @override
+  String get strengthCategoryUpperBody => 'Tren superior';
+
+  @override
+  String get strengthCategoryCoreMobility => 'Core / movilidad';
+
+  @override
+  String get strengthCategoryFullBody => 'Cuerpo completo';
+
+  @override
+  String get strengthPreferredDaysLabel => 'Días de pierna';
+
+  @override
+  String get strengthPreferredDaysHelper =>
+      'Elige los días en que normalmente haces fuerza de tren inferior.';
+
+  @override
+  String get strengthSameDayOrderLabel =>
+      'Cuando correr y levantar coinciden el mismo día';
+
+  @override
+  String get strengthSameDayOrderHelper =>
+      'Esto nos ayuda a ubicar la fuerza de tren inferior alrededor de carreras duras y tiradas largas.';
+
+  @override
+  String get strengthOrderRunFirst => 'Correr primero';
+
+  @override
+  String get strengthOrderRunFirstSub =>
+      'Mejor para días de running de calidad. Haz tren inferior después de correr o más tarde ese día.';
+
+  @override
+  String get strengthOrderLiftFirst => 'Levantar primero';
+
+  @override
+  String get strengthOrderLiftFirstSub =>
+      'Úsalo cuando la fuerza importe más. Mantén la carrera suave o sepárala si sientes las piernas pesadas.';
+
+  @override
+  String get strengthOrderSeparate => 'Sesiones separadas';
+
+  @override
+  String get strengthOrderSeparateSub =>
+      'Prefiere separar mañana/tarde cuando correr y levantar coincidan en un día.';
+
+  @override
+  String get strengthOrderDepends => 'Depende';
+
+  @override
+  String get strengthOrderDependsSub =>
+      'Ubicaremos la fuerza alrededor de las carreras más duras y tiradas largas.';
+
+  @override
+  String get raceTargetTitle => 'Confirma tu objetivo de carrera';
+
+  @override
+  String get raceTargetSuggestedSubtitle =>
+      'Usa este objetivo o ajústalo antes de crear tu plan.';
+
+  @override
+  String get raceTargetCustomSubtitle =>
+      'Agrega un tiempo objetivo para que el plan ajuste bien los ritmos.';
+
+  @override
+  String get raceTargetPrimaryLabel => 'Objetivo principal';
+
+  @override
+  String get raceTargetSuggestedPrimaryLabel => 'Objetivo sugerido';
+
+  @override
+  String get raceTargetSuggestedStretchLabel => 'Objetivo ambicioso';
 
   @override
   String get runSurfaceLabel => '¿Dónde corres más?';
@@ -1346,6 +1727,272 @@ class AppLocalizationsEs extends AppLocalizations {
   String get planReadyViewFullWeek => 'Ver semana completa';
 
   @override
+  String get planMetadataTitle => 'Fundamento profesional';
+
+  @override
+  String get planMetadataReadinessLabel => 'Preparación';
+
+  @override
+  String get planMetadataConfidenceLabel => 'Confianza';
+
+  @override
+  String get planMetadataCurrentVolumeLabel => 'Volumen actual';
+
+  @override
+  String get planMetadataTargetsLabel => 'Objetivos';
+
+  @override
+  String get planMetadataPhaseStrategyLabel => 'Estrategia por fases';
+
+  @override
+  String get planMetadataRationaleLabel => 'Razonamiento';
+
+  @override
+  String get planMetadataReadinessRaceReady => 'Listo para competir';
+
+  @override
+  String get planMetadataReadinessPrepared => 'Preparado';
+
+  @override
+  String get planMetadataReadinessDeveloping => 'En desarrollo';
+
+  @override
+  String get planMetadataReadinessUnderprepared => 'Poco preparado';
+
+  @override
+  String get planMetadataReadinessUnsupported => 'No compatible';
+
+  @override
+  String get planMetadataConfidenceHigh => 'Confianza alta';
+
+  @override
+  String get planMetadataConfidenceMedium => 'Confianza media';
+
+  @override
+  String get planMetadataConfidenceLimited => 'Confianza limitada';
+
+  @override
+  String get planMetadataSourceStrava => 'Fuente Strava';
+
+  @override
+  String get planMetadataSourceManual => 'Fuente manual';
+
+  @override
+  String get planMetadataSourceMixed => 'Fuente mixta';
+
+  @override
+  String get planMetadataSourceUnknown => 'Fuente desconocida';
+
+  @override
+  String planMetadataVolumeValue(String value) {
+    return '$value km/semana';
+  }
+
+  @override
+  String planMetadataRunsValue(String value) {
+    return '$value carreras/semana';
+  }
+
+  @override
+  String planMetadataEvidenceTargetValue(String target) {
+    return 'Evidencia $target';
+  }
+
+  @override
+  String planMetadataAmbitiousTargetValue(String target) {
+    return 'Ambicioso $target';
+  }
+
+  @override
+  String get planMetadataUnsupportedTarget => 'no respaldado';
+
+  @override
+  String planMetadataPaceValue(String pace) {
+    return '$pace/km';
+  }
+
+  @override
+  String planMetadataPhaseWeeks(String phase, int weeks) {
+    return '$phase $weeks sem';
+  }
+
+  @override
+  String get planMetadataPhaseBase => 'Base';
+
+  @override
+  String get planMetadataPhaseBuild => 'Construcción';
+
+  @override
+  String get planMetadataPhaseSpecific => 'Específica';
+
+  @override
+  String get planMetadataPhasePeak => 'Pico';
+
+  @override
+  String get planMetadataPhaseTaperRace => 'Descarga';
+
+  @override
+  String get planMetadataPhaseSafeBuild => 'Construcción segura';
+
+  @override
+  String get planMetadataPhaseUnsupportedFallback => 'Alternativa';
+
+  @override
+  String get planGuidancePaceZonesTitle => 'Zonas de ritmo';
+
+  @override
+  String get planGuidanceRaceGuidanceTitle => 'Guía del día de carrera';
+
+  @override
+  String get raceDayInfoTitle => 'Día de carrera';
+
+  @override
+  String get raceDayInfoSubtitle =>
+      'Estrategia de carrera y recordatorios finales';
+
+  @override
+  String get raceDayInfoBadge => 'Info';
+
+  @override
+  String get raceDayInfoDetailSubtitle =>
+      'Revisa el plan para saber cómo afrontar la carrera. Esto es solo guía, no una carrera para iniciar en la app.';
+
+  @override
+  String get raceDayInfoFallback =>
+      'Empieza controlado, encuentra ritmo y termina con tu esfuerzo sostenible más fuerte.';
+
+  @override
+  String get raceGuidanceExecutionLabel => 'Ejecución del día de carrera';
+
+  @override
+  String get raceGuidanceWarmupLabel => 'Calentamiento';
+
+  @override
+  String get raceGuidanceSplitPlanLabel => 'Plan de parciales';
+
+  @override
+  String get raceGuidanceWhenToPressLabel => 'Cuándo apretar';
+
+  @override
+  String get raceGuidanceWhatToAvoidLabel => 'Qué evitar';
+
+  @override
+  String get raceGuidanceCoachingNotesLabel => 'Notas del coach';
+
+  @override
+  String get planGuidanceRaceDayExecutionLabel => 'Ejecución de carrera';
+
+  @override
+  String get planGuidanceWarmupLabel => 'Calentamiento';
+
+  @override
+  String get planGuidancePrimaryTargetLabel => 'Objetivo principal';
+
+  @override
+  String get planGuidanceStretchTargetLabel => 'Objetivo de estiramiento';
+
+  @override
+  String get planGuidanceSplitPlanLabel => 'Plan de parciales';
+
+  @override
+  String get planGuidanceWhenToPressLabel => 'Cuándo apretar';
+
+  @override
+  String get planGuidanceWhatToAvoidLabel => 'Qué evitar';
+
+  @override
+  String get planGuidanceCoachingNotesLabel => 'Notas del coach';
+
+  @override
+  String get planGuidanceSleepNotesLabel => 'Sueño';
+
+  @override
+  String get planGuidanceFuelingNotesLabel => 'Nutrición';
+
+  @override
+  String get planGuidanceHydrationNotesLabel => 'Hidratación';
+
+  @override
+  String get planGuidanceTaperRemindersLabel =>
+      'Recordatorios de baja de carga';
+
+  @override
+  String get planGuidanceWeatherCourseNotesLabel => 'Clima y recorrido';
+
+  @override
+  String planGuidanceAtMostPace(String zoneValue, String unit) {
+    return 'No más rápido de $zoneValue $unit';
+  }
+
+  @override
+  String planGuidanceAtLeastPace(String zoneValue, String unit) {
+    return 'No más lento de $zoneValue $unit';
+  }
+
+  @override
+  String get planSupportStrengthLabel => 'Fuerza';
+
+  @override
+  String get planSupportMobilityLabel => 'Movilidad';
+
+  @override
+  String get planSupportDrillsLabel => 'Ejercicios';
+
+  @override
+  String get planSupportSessionLoadLabel => 'Carga';
+
+  @override
+  String get planSupportSessionTimingLabel => 'Calendario';
+
+  @override
+  String get planSupportSessionInterferenceLabel => 'Interferencia';
+
+  @override
+  String get planSupportSessionTaperLabel => 'Disminuir carga';
+
+  @override
+  String get supportSessionLoadLight => 'Ligera';
+
+  @override
+  String get supportSessionLoadModerate => 'Moderada';
+
+  @override
+  String get supportSessionLoadHigh => 'Alta';
+
+  @override
+  String get supportSessionTimingOnOffDays => 'Días de descanso';
+
+  @override
+  String get supportSessionTimingNextDay => 'Día siguiente';
+
+  @override
+  String get supportSessionTimingSameDay => 'Mismo día';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeLongRun =>
+      'Evitar el día previo a carrera larga';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeRace =>
+      'Evitar el día previo a la carrera';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeKeyWorkout =>
+      'Evitar el día previo al entrenamiento clave';
+
+  @override
+  String get supportSessionTaperReduceLoadWeekBeforeRace =>
+      'Reducir carga la semana previa a la carrera';
+
+  @override
+  String get supportSessionTaperReduceLoad => 'Reducir carga';
+
+  @override
+  String fullPlanRunsValue(int value) {
+    return '$value carreras';
+  }
+
+  @override
   String get homeTitle => 'Hoy';
 
   @override
@@ -1775,11 +2422,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroSubtitle =>
-      'Podrás revisar tu carrera, fecha, prioridad y tiempos objetivo antes de guardar los cambios.';
+      'Podrás revisar tu carrera y fecha antes de guardar los cambios.';
 
   @override
   String get settingsEditGoalIntroPointRace =>
-      'Ajusta tu carrera o distancia objetivo.';
+      'Ajusta la distancia de tu carrera.';
 
   @override
   String get settingsEditGoalIntroPointDate =>
@@ -1787,7 +2434,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroPointPriority =>
-      'Revisa tu prioridad y tus tiempos antes de guardar.';
+      'Revisa los detalles de la carrera antes de guardar.';
 
   @override
   String get settingsEditGoalIntroPointTraining =>
@@ -1799,11 +2446,11 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get settingsNewGoalIntroSubtitle =>
-      'Este flujo empieza desde cero para que puedas elegir una meta distinta y guardarla para tu plan.';
+      'Este flujo empieza desde cero para que puedas elegir una carrera distinta y guardarla para tu plan.';
 
   @override
   String get settingsNewGoalIntroPointRace =>
-      'Elige una nueva carrera o una distancia personalizada.';
+      'Elige una nueva distancia de carrera.';
 
   @override
   String get settingsNewGoalIntroPointDate =>
@@ -1946,6 +2593,50 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get sessionDetailStartWorkout => 'Iniciar entrenamiento';
+
+  @override
+  String get sessionDetailSupportTitle => 'Sesión de soporte';
+
+  @override
+  String get sessionDetailSupportTypeLabel => 'Tipo';
+
+  @override
+  String get sessionDetailSupportStatusLabel => 'Estado';
+
+  @override
+  String get sessionDetailSupportMetadataLabel => 'Guía de la sesión';
+
+  @override
+  String get sessionDetailSupportNotesLabel => 'Notas';
+
+  @override
+  String get supportSessionStatusPlanned => 'Planificada';
+
+  @override
+  String get supportSessionStatusCompleted => 'Completada';
+
+  @override
+  String get supportSessionStatusSkipped => 'Omitida';
+
+  @override
+  String get sessionDetailTargetRangeLabel => 'Rango de ritmo objetivo';
+
+  @override
+  String get sessionDetailEffortCueLabel => 'Referencia de esfuerzo';
+
+  @override
+  String sessionDetailTargetAtLeastValue(String value, String unit) {
+    return 'Mínimo $value $unit';
+  }
+
+  @override
+  String sessionDetailTargetAtMostValue(String value, String unit) {
+    return 'Máximo $value $unit';
+  }
+
+  @override
+  String get sessionDetailTargetGuidanceNote =>
+      'Estos objetivos de ritmo son una guía antes de comenzar. La retroalimentación en tiempo real de ritmo aparece cuando la carrera está activa.';
 
   @override
   String sessionPhaseEasyRunWarmDuration(int minutes) {
@@ -2271,6 +2962,9 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activeRunEaseOff => 'Baja ritmo';
+
+  @override
+  String get activeRunEaseOffFirm => 'Baja ritmo ahora';
 
   @override
   String get activeRunPickUp => 'Acelera';
@@ -2643,6 +3337,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activeRunEndRun => 'Terminar Carrera';
+
+  @override
+  String get activeRunEndRunConfirmBody =>
+      'Terminar tu carrera guardará la sesión y te llevará a la pantalla de resumen.';
 
   @override
   String get activeRunTimerOnlyLabel => 'Solo temporizador';

@@ -47,6 +47,11 @@ import '../progress_provider.dart';
       iconColor: AppColors.textDisabled,
       iconBg: AppColors.backgroundCard,
     ),
+    SessionType.raceDay => (
+      iconAsset: 'assets/icons/trophy.svg',
+      iconColor: AppColors.accentPrimary,
+      iconBg: AppColors.accentMuted,
+    ),
   };
 }
 
@@ -54,6 +59,8 @@ String _completedSessionTitle(SessionType type, AppLocalizations l10n) {
   switch (type) {
     case SessionType.restDay:
       return l10n.weeklyPlanRestTitle;
+    case SessionType.raceDay:
+      return l10n.raceDayInfoTitle;
     case SessionType.easyRun:
       return l10n.weeklyPlanSessionEasyRun;
     case SessionType.longRun:

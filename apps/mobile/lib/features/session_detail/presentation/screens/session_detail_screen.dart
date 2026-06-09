@@ -13,8 +13,11 @@ import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../training_plan/domain/models/training_session.dart';
+import '../../../training_plan/domain/models/workout_target.dart';
 import '../../../training_plan/domain/models/workout_step.dart';
+import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
@@ -42,6 +45,82 @@ class SessionDetailScreen extends ConsumerWidget {
 
   final TrainingSession session;
   final bool showStartWorkout;
+
+  String? _selectedTargetEffortLabel(
+    TrainingSession session,
+    WorkoutTarget? target,
+    AppLocalizations l10n,
+  ) {
+    final effortCue = target?.effortCue;
+    if (effortCue != null && effortCue.trim().isNotEmpty) {
+      return effortCue;
+    }
+
+    if (session.effort == null) return null;
+    return localizedTrainingSessionEffort(session.effort!, l10n);
+  }
+
+  WorkoutTarget? _selectedWorkoutTarget(TrainingSession session) {
+    final mainStep =
+        _topLevelStep(session.workoutSteps, WorkoutStepKind.work) ??
+        _topLevelRepeatWithChild(session.workoutSteps, WorkoutStepKind.work);
+
+    if (mainStep != null) {
+      final maybeTarget = mainStep.kind == WorkoutStepKind.repeat
+          ? _childStep(mainStep, WorkoutStepKind.work)?.target
+          : mainStep.target;
+      if (maybeTarget != null) return maybeTarget;
+    }
+
+    return session.workoutTarget;
+  }
+
+  String? _formatPaceValue(int secondsPerKm, UnitSystem unitSystem) {
+    final paceSeconds = unitSystem == UnitSystem.km
+        ? secondsPerKm.toDouble()
+        : secondsPerKm * 1.609344;
+
+    if (paceSeconds <= 0) return null;
+    final rounded = paceSeconds.round();
+    final minutes = rounded ~/ 60;
+    final seconds = rounded % 60;
+    return '${minutes.toString()}:${seconds.toString().padLeft(2, '0')}';
+  }
+
+  String? _formatTargetRange(
+    WorkoutTarget? target,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    if (target == null) return null;
+    final minRaw = target.paceMinSecPerKm;
+    final maxRaw = target.paceMaxSecPerKm;
+    if (minRaw == null && maxRaw == null) return null;
+
+    final min = minRaw != null
+        ? _formatPaceValue(minRaw, unitSystem) ?? '--:--'
+        : null;
+    final max = maxRaw != null
+        ? _formatPaceValue(maxRaw, unitSystem) ?? '--:--'
+        : null;
+
+    final paceUnit = UnitFormatter.paceLabel(unitSystem, l10n);
+    if (min == null) return _formatTargetRangePart(max, true, paceUnit, l10n);
+    if (max == null) return _formatTargetRangePart(min, false, paceUnit, l10n);
+    return '$min - $max $paceUnit';
+  }
+
+  String _formatTargetRangePart(
+    String? value,
+    bool isAtMost,
+    String paceUnit,
+    AppLocalizations l10n,
+  ) {
+    if (value == null) return '—';
+    return isAtMost
+        ? l10n.sessionDetailTargetAtMostValue(value, paceUnit)
+        : l10n.sessionDetailTargetAtLeastValue(value, paceUnit);
+  }
 
   String _intervalRepDistanceLabel(
     TrainingSession session,
@@ -77,6 +156,8 @@ class SessionDetailScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
@@ -117,6 +198,8 @@ class SessionDetailScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return '';
+      case SessionType.raceDay:
+        return l10n.raceDayInfoSubtitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.sessionDescEasyRun;
@@ -346,6 +429,7 @@ class SessionDetailScreen extends ConsumerWidget {
         SessionType.crossTraining => 'assets/icons/activity.svg',
         SessionType.progressionRun => 'assets/icons/route.svg',
         SessionType.restDay => 'assets/icons/route.svg',
+        SessionType.raceDay => 'assets/icons/trophy.svg',
       },
       _PT.cool => 'assets/icons/heart_rate.svg',
     };
@@ -482,6 +566,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.fartlek:
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return switch (phaseType) {
           WorkoutPhaseType.warmUp => session.warmUpMinutes?.toString() ?? '—',
           WorkoutPhaseType.main => session.durationMinutes?.toString() ?? '—',
@@ -548,6 +633,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.fartlek:
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return phaseType == WorkoutPhaseType.main
             ? session.description ?? ''
             : '';
@@ -577,6 +663,105 @@ class SessionDetailScreen extends ConsumerWidget {
     if (status != SessionStatus.today) return false;
     if (session.type.isRest || !session.isRunSession) return false;
     return true;
+  }
+
+  Widget _buildRaceDayDetail({
+    required BuildContext context,
+    required TrainingSession session,
+    required TrainingPlan? plan,
+  }) {
+    final l10n = AppLocalizations.of(context)!;
+    final guidance = plan?.raceGuidance;
+    final entries = <({String label, String value})>[
+      if (guidance?.raceDayExecution.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceExecutionLabel,
+          value: guidance!.raceDayExecution.trim(),
+        ),
+      if (guidance?.warmup?.trim().isNotEmpty == true)
+        (label: l10n.raceGuidanceWarmupLabel, value: guidance!.warmup!.trim()),
+      if (guidance?.splitPlan?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceSplitPlanLabel,
+          value: guidance!.splitPlan!.trim(),
+        ),
+      if (guidance?.whenToPress?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceWhenToPressLabel,
+          value: guidance!.whenToPress!.trim(),
+        ),
+      if (guidance?.whatToAvoid?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceWhatToAvoidLabel,
+          value: guidance!.whatToAvoid!.trim(),
+        ),
+      if (guidance?.coachingNotes?.trim().isNotEmpty == true)
+        (
+          label: l10n.raceGuidanceCoachingNotesLabel,
+          value: guidance!.coachingNotes!.trim(),
+        ),
+    ];
+
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      appBar: AppDetailHeaderBar(
+        title: l10n.raceDayInfoTitle,
+        onBack: () => context.pop(),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.screen,
+          AppSpacing.md,
+          AppSpacing.screen,
+          AppSpacing.xl,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _TypeBadge(
+              label: l10n.raceDayInfoBadge.toUpperCase(),
+              status: null,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(l10n.raceDayInfoTitle, style: AppTypography.headlineLarge),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.raceDayInfoDetailSubtitle,
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xl),
+            if (entries.isEmpty)
+              Text(
+                l10n.raceDayInfoFallback,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              )
+            else
+              ...entries.map(
+                (entry) => Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(entry.label, style: AppTypography.titleMedium),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        entry.value,
+                        style: AppTypography.bodyLarge.copyWith(
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   List<_PhaseData> _phasesFor(
@@ -731,6 +916,7 @@ class SessionDetailScreen extends ConsumerWidget {
       case SessionType.racePaceRun:
       case SessionType.crossTraining:
       case SessionType.restDay:
+      case SessionType.raceDay:
         return [];
     }
   }
@@ -755,17 +941,35 @@ class SessionDetailScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plan = ref.watch(trainingPlanProvider).value;
-    final freshSession =
+    final l10n = AppLocalizations.of(context)!;
+    final runSession =
         plan?.sessions.firstWhere(
           (s) => s.id == session.id,
           orElse: () => session,
         ) ??
         session;
+
+    final freshSession = runSession;
+    if (freshSession.type.isRaceDayInfo) {
+      return _buildRaceDayDetail(
+        context: context,
+        session: freshSession,
+        plan: plan,
+      );
+    }
+
     final status = freshSession.status;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final target = _selectedWorkoutTarget(freshSession);
+    final targetRange = _formatTargetRange(target, unitSystem, l10n);
+    final targetEffortCue = _selectedTargetEffortLabel(
+      freshSession,
+      target,
+      l10n,
+    );
+    final showTargetGuidance = targetRange != null || targetEffortCue != null;
 
-    final l10n = AppLocalizations.of(context)!;
     final title = _sessionTitle(freshSession.type, l10n);
     final categoryLabel = _categoryLabel(freshSession.type.category, l10n);
     final distanceText = freshSession.distanceKm != null
@@ -789,7 +993,7 @@ class SessionDetailScreen extends ConsumerWidget {
             (status == SessionStatus.today ||
                     status == SessionStatus.upcoming ||
                     status == SessionStatus.skipped) &&
-                !freshSession.type.isRest
+                freshSession.isRunSession
             ? () => showSkipWorkoutBottomSheet(
                 context: context,
                 sessionName: title,
@@ -797,13 +1001,13 @@ class SessionDetailScreen extends ConsumerWidget {
                 onSkip: () {
                   ref
                       .read(trainingPlanProvider.notifier)
-                      .skipSession(session.id);
+                      .skipSession(freshSession.id);
                   context.go(RouteNames.plan);
                 },
                 onRestore: () {
                   ref
                       .read(trainingPlanProvider.notifier)
-                      .restoreSession(session.id);
+                      .restoreSession(freshSession.id);
                 },
               )
             : null,
@@ -850,6 +1054,49 @@ class SessionDetailScreen extends ConsumerWidget {
                     ),
                   const SizedBox(height: AppSpacing.xl),
 
+                  if (showTargetGuidance) ...[
+                    Text(
+                      l10n.workoutTargetGuidanceLabel,
+                      style: AppTypography.titleLarge,
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(AppSpacing.base),
+                      decoration: BoxDecoration(
+                        color: AppColors.backgroundCard,
+                        borderRadius: AppRadius.borderLg,
+                        border: Border.all(color: AppColors.borderDefault),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          if (targetRange != null)
+                            Text(
+                              '${l10n.sessionDetailTargetRangeLabel}: $targetRange',
+                              style: AppTypography.bodyLarge,
+                            ),
+                          if (targetEffortCue != null) ...[
+                            if (targetRange != null)
+                              const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              '${l10n.sessionDetailEffortCueLabel}: $targetEffortCue',
+                              style: AppTypography.bodyLarge,
+                            ),
+                          ],
+                          const SizedBox(height: AppSpacing.sm),
+                          Text(
+                            l10n.sessionDetailTargetGuidanceNote,
+                            style: AppTypography.bodyMedium.copyWith(
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xl),
+                  ],
+
                   // ── Stat tiles ─────────────────────────────────
                   Row(
                     children: [
@@ -857,9 +1104,9 @@ class SessionDetailScreen extends ConsumerWidget {
                         child: _StatTile(
                           iconAsset: 'assets/icons/route.svg',
                           label: l10n.sessionDetailTotalDistanceLabel,
-                          value: session.distanceKm != null
+                          value: freshSession.distanceKm != null
                               ? UnitFormatter.formatDistanceLabel(
-                                  session.distanceKm!,
+                                  freshSession.distanceKm!,
                                   unitSystem,
                                   l10n,
                                 )
@@ -871,9 +1118,9 @@ class SessionDetailScreen extends ConsumerWidget {
                         child: _StatTile(
                           iconAsset: 'assets/icons/stopwatch.svg',
                           label: l10n.sessionDetailEstDurationLabel,
-                          value: session.durationMinutes != null
+                          value: freshSession.durationMinutes != null
                               ? UnitFormatter.formatDuration(
-                                  session.durationMinutes!,
+                                  freshSession.durationMinutes!,
                                   l10n,
                                 )
                               : '—',

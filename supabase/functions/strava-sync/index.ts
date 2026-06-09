@@ -46,6 +46,26 @@ type NormalizedStravaSyncResponse = {
   };
 };
 
+type StravaActivitySummaryRow = {
+  user_id: string;
+  strava_activity_id: string;
+  recorded_at: string;
+  activity_type: string | null;
+  sport_type: string | null;
+  distance_meters: number | null;
+  moving_time_seconds: number | null;
+  elapsed_time_seconds: number | null;
+  average_speed_mps: number | null;
+  max_speed_mps: number | null;
+  average_heartrate_bpm: number | null;
+  max_heartrate_bpm: number | null;
+  elevation_gain_meters: number | null;
+  workout_type: number | null;
+  suffer_score: number | null;
+  normalized_data: Record<string, unknown>;
+  synced_at: string;
+};
+
 // Raised when Strava rejects the access token (401) and a forced refresh also
 // fails, meaning the integration can no longer recover without the user
 // reconnecting on Strava's side.
@@ -87,6 +107,73 @@ function parseJsonObject(raw: unknown): Record<string, unknown> {
     map[key] = value;
   }
   return map;
+}
+
+function parseFiniteInt(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && Number.isInteger(value) ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && Number.isInteger(parsed) ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseFiniteNonNegativeNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseFinitePositiveNumber(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value > 0 ? value : null;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+  }
+
+  return null;
+}
+
+function parseActivityId(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed || !/^\d+$/.test(trimmed)) return null;
+    return trimmed;
+  }
+  if (typeof value === "number") {
+    return Number.isSafeInteger(value) && value >= 0 ? value.toString() : null;
+  }
+  return null;
+}
+
+function parseIsoInstant(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const timestamp = Date.parse(trimmed);
+  if (Number.isNaN(timestamp)) return null;
+  return new Date(timestamp).toISOString();
 }
 
 function getBearerToken(authorizationHeader: string | null): string | null {
@@ -315,7 +402,7 @@ function throwStravaError(message: string, result: StravaHttpResult): never {
 function normalizeActivity(
   raw: Record<string, unknown>,
 ): Record<string, unknown> {
-  return {
+  const normalized: Record<string, unknown> = {
     distance: raw.distance,
     moving_time: raw.moving_time,
     average_speed: raw.average_speed,
@@ -324,6 +411,193 @@ function normalizeActivity(
     type: raw.type,
     sport_type: raw.sport_type,
   };
+
+  const activityId = parseActivityId(raw.id);
+  if (activityId !== null) {
+    normalized.id = activityId;
+  }
+
+  const elapsedTime = parseFiniteInt(raw.elapsed_time);
+  if (elapsedTime !== null && elapsedTime >= 0) {
+    normalized.elapsed_time = elapsedTime;
+  }
+
+  const maxSpeed = parseFiniteNonNegativeNumber(raw.max_speed);
+  if (maxSpeed !== null) {
+    normalized.max_speed = maxSpeed;
+  }
+
+  const maxHeartrate = parseFinitePositiveNumber(raw.max_heartrate);
+  if (maxHeartrate !== null) {
+    normalized.max_heartrate = maxHeartrate;
+  }
+
+  const totalElevationGain = parseFiniteNonNegativeNumber(
+    raw.total_elevation_gain,
+  );
+  if (totalElevationGain !== null) {
+    normalized.total_elevation_gain = totalElevationGain;
+  }
+
+  const workoutType = parseFiniteInt(raw.workout_type);
+  if (workoutType !== null && workoutType >= 0) {
+    normalized.workout_type = workoutType;
+  }
+
+  const sufferScore = parseFiniteInt(raw.suffer_score);
+  if (sufferScore !== null && sufferScore >= 0) {
+    normalized.suffer_score = sufferScore;
+  }
+
+  return normalized;
+}
+
+function pickSafeNormalizedActivityData(
+  activity: Record<string, unknown>,
+): Record<string, unknown> {
+  const normalizedData: Record<string, unknown> = {};
+  const activityId = parseActivityId(activity.id);
+  if (activityId !== null) normalizedData.id = activityId;
+
+  const startDate = parseIsoInstant(activity.start_date);
+  if (startDate !== null) normalizedData.start_date = startDate;
+
+  const distance = parseFiniteNonNegativeNumber(activity.distance);
+  if (distance !== null) normalizedData.distance = distance;
+
+  const movingTime = parseFiniteInt(activity.moving_time);
+  if (movingTime !== null && movingTime >= 0) {
+    normalizedData.moving_time = movingTime;
+  }
+
+  const averageSpeed = parseFiniteNonNegativeNumber(activity.average_speed);
+  if (averageSpeed !== null) normalizedData.average_speed = averageSpeed;
+
+  const averageHeartrate = parseFinitePositiveNumber(
+    activity.average_heartrate,
+  );
+  if (averageHeartrate !== null) {
+    normalizedData.average_heartrate = averageHeartrate;
+  }
+
+  if (typeof activity.type === "string" && activity.type.trim().length > 0) {
+    normalizedData.type = activity.type.trim();
+  }
+
+  if (
+    typeof activity.sport_type === "string" &&
+    activity.sport_type.trim().length > 0
+  ) {
+    normalizedData.sport_type = activity.sport_type.trim();
+  }
+
+  const elapsedTime = parseFiniteInt(activity.elapsed_time);
+  if (elapsedTime !== null && elapsedTime >= 0) {
+    normalizedData.elapsed_time = elapsedTime;
+  }
+
+  const maxSpeed = parseFiniteNonNegativeNumber(activity.max_speed);
+  if (maxSpeed !== null) normalizedData.max_speed = maxSpeed;
+
+  const maxHeartrate = parseFinitePositiveNumber(activity.max_heartrate);
+  if (maxHeartrate !== null) normalizedData.max_heartrate = maxHeartrate;
+
+  const totalElevationGain = parseFiniteNonNegativeNumber(
+    activity.total_elevation_gain,
+  );
+  if (totalElevationGain !== null) {
+    normalizedData.total_elevation_gain = totalElevationGain;
+  }
+
+  const workoutType = parseFiniteInt(activity.workout_type);
+  if (workoutType !== null && workoutType >= 0) {
+    normalizedData.workout_type = workoutType;
+  }
+
+  const sufferScore = parseFiniteInt(activity.suffer_score);
+  if (sufferScore !== null && sufferScore >= 0) {
+    normalizedData.suffer_score = sufferScore;
+  }
+
+  return normalizedData;
+}
+
+function mapNormalizedActivityToSummaryRow(
+  userId: string,
+  activity: Record<string, unknown>,
+  syncedAt: string,
+): StravaActivitySummaryRow | null {
+  const normalizedData = pickSafeNormalizedActivityData(activity);
+  const stravaActivityId = parseActivityId(normalizedData.id);
+  const recordedAt = parseIsoInstant(normalizedData.start_date);
+  if (stravaActivityId === null || recordedAt === null) return null;
+
+  return {
+    user_id: userId,
+    strava_activity_id: stravaActivityId,
+    recorded_at: recordedAt,
+    activity_type: typeof normalizedData.type === "string"
+      ? normalizedData.type
+      : null,
+    sport_type: typeof normalizedData.sport_type === "string"
+      ? normalizedData.sport_type
+      : null,
+    distance_meters: parseFiniteNonNegativeNumber(normalizedData.distance),
+    moving_time_seconds: parseFiniteInt(normalizedData.moving_time),
+    elapsed_time_seconds: parseFiniteInt(normalizedData.elapsed_time),
+    average_speed_mps: parseFiniteNonNegativeNumber(
+      normalizedData.average_speed,
+    ),
+    max_speed_mps: parseFiniteNonNegativeNumber(normalizedData.max_speed),
+    average_heartrate_bpm: parseFinitePositiveNumber(
+      normalizedData.average_heartrate,
+    ),
+    max_heartrate_bpm: parseFinitePositiveNumber(
+      normalizedData.max_heartrate,
+    ),
+    elevation_gain_meters: parseFiniteNonNegativeNumber(
+      normalizedData.total_elevation_gain,
+    ),
+    workout_type: parseFiniteInt(normalizedData.workout_type),
+    suffer_score: parseFiniteInt(normalizedData.suffer_score),
+    normalized_data: normalizedData,
+    synced_at: syncedAt,
+  };
+}
+
+function mapNormalizedActivitiesToSummaryRows(
+  userId: string,
+  activities: Array<Record<string, unknown>>,
+  syncedAt: string,
+): StravaActivitySummaryRow[] {
+  return activities.flatMap((activity) => {
+    const row = mapNormalizedActivityToSummaryRow(userId, activity, syncedAt);
+    return row === null ? [] : [row];
+  });
+}
+
+async function persistStravaActivitySummaries(
+  adminClient: any,
+  userId: string,
+  activities: Array<Record<string, unknown>>,
+  syncedAt: string,
+) {
+  const rows = mapNormalizedActivitiesToSummaryRows(
+    userId,
+    activities,
+    syncedAt,
+  );
+  if (rows.length === 0) return;
+
+  const { error } = await adminClient
+    .from("strava_activity_summaries")
+    .upsert(rows, { onConflict: "user_id,strava_activity_id" });
+
+  if (error) {
+    throw new Error(
+      `Failed to persist Strava activity summaries: ${error.message}`,
+    );
+  }
 }
 
 async function fetchAthleteStats(
@@ -483,11 +757,20 @@ async function handleRequest(req: Request): Promise<Response> {
     const stats = await fetchAthleteStats(ctx);
     const activities = await fetchActivities(ctx);
     const zones = await fetchAthleteZones(ctx);
-
-    return jsonResponse(
-      normalizeSyncResponse(ctx.tokenRow, stats, activities, zones),
-      200,
+    const response = normalizeSyncResponse(
+      ctx.tokenRow,
+      stats,
+      activities,
+      zones,
     );
+    await persistStravaActivitySummaries(
+      adminClient,
+      userId,
+      activities,
+      response.meta.syncedAt,
+    );
+
+    return jsonResponse(response, 200);
   } catch (error) {
     const mapped = mapSyncError(error);
     // FIX D: log the full upstream detail server-side; the returned body never
@@ -531,4 +814,10 @@ export function mapSyncError(error: unknown): SyncErrorMapping {
   };
 }
 
-export { StravaReauthRequiredError };
+export {
+  mapNormalizedActivitiesToSummaryRows,
+  mapNormalizedActivityToSummaryRow,
+  normalizeActivity,
+  persistStravaActivitySummaries,
+  StravaReauthRequiredError,
+};

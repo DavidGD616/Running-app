@@ -171,13 +171,14 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   /// statuses are always computed relative to the current date.
   TrainingPlan _applyActivityStatus(TrainingPlan plan) {
     final completedActivities = ref.read(completedActivitiesProvider);
-    final linkedActivities = completedActivities
-        .where((activity) => activity.hasLinkedSession);
-    final linkedSessionIds =
-        linkedActivities.map((a) => a.linkedSessionId!).toSet();
+    final linkedActivities = completedActivities.where(
+      (activity) => activity.hasLinkedSession,
+    );
+    final linkedSessionIds = linkedActivities
+        .map((a) => a.linkedSessionId!)
+        .toSet();
     final actualDistanceBySessionId = {
-      for (final a in linkedActivities)
-        a.linkedSessionId!: a.actualDistanceKm,
+      for (final a in linkedActivities) a.linkedSessionId!: a.actualDistanceKm,
     };
 
     final today = DateTime.now();
@@ -198,7 +199,9 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
           }
           // Derive status from date so it stays accurate across app restarts.
           final sessionDay = DateTime(
-            session.date.year, session.date.month, session.date.day,
+            session.date.year,
+            session.date.month,
+            session.date.day,
           );
           final SessionStatus derived;
           if (sessionDay == todayDay) {
@@ -218,7 +221,17 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
       totalWeeks: plan.totalWeeks,
       currentWeekNumber: plan.currentWeekNumber,
       sessions: updatedSessions,
-      supportSessions: plan.supportSessions,
+      supportSessions: const [],
+      paceZones: plan.paceZones,
+      raceGuidance: plan.raceGuidance,
+      generatedLocale: plan.generatedLocale,
+      coachingBriefSnapshot: plan.coachingBriefSnapshot,
+      planRationale: plan.planRationale,
+      evidenceTarget: plan.evidenceTarget,
+      ambitiousTarget: plan.ambitiousTarget,
+      confidence: plan.confidence,
+      phaseStrategy: plan.phaseStrategy,
+      stravaCoachingProfileSnapshot: plan.stravaCoachingProfileSnapshot,
     );
   }
 
@@ -226,13 +239,14 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
   /// (used by [skipSession] and [restoreSession]).
   TrainingPlan _applyOverrides(TrainingPlan plan) {
     final completedActivities = ref.read(completedActivitiesProvider);
-    final linkedActivities = completedActivities
-        .where((activity) => activity.hasLinkedSession);
-    final linkedSessionIds =
-        linkedActivities.map((a) => a.linkedSessionId!).toSet();
+    final linkedActivities = completedActivities.where(
+      (activity) => activity.hasLinkedSession,
+    );
+    final linkedSessionIds = linkedActivities
+        .map((a) => a.linkedSessionId!)
+        .toSet();
     final actualDistanceBySessionId = {
-      for (final a in linkedActivities)
-        a.linkedSessionId!: a.actualDistanceKm,
+      for (final a in linkedActivities) a.linkedSessionId!: a.actualDistanceKm,
     };
 
     final today = DateTime.now();
@@ -252,7 +266,9 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
             );
           }
           final sessionDay = DateTime(
-            session.date.year, session.date.month, session.date.day,
+            session.date.year,
+            session.date.month,
+            session.date.day,
           );
           final SessionStatus derived;
           if (sessionDay == todayDay) {
@@ -272,10 +288,19 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
       totalWeeks: plan.totalWeeks,
       currentWeekNumber: plan.currentWeekNumber,
       sessions: updatedSessions,
-      supportSessions: plan.supportSessions,
+      supportSessions: const [],
+      paceZones: plan.paceZones,
+      raceGuidance: plan.raceGuidance,
+      generatedLocale: plan.generatedLocale,
+      coachingBriefSnapshot: plan.coachingBriefSnapshot,
+      planRationale: plan.planRationale,
+      evidenceTarget: plan.evidenceTarget,
+      ambitiousTarget: plan.ambitiousTarget,
+      confidence: plan.confidence,
+      phaseStrategy: plan.phaseStrategy,
+      stravaCoachingProfileSnapshot: plan.stravaCoachingProfileSnapshot,
     );
   }
-
 }
 
 SessionFeedbackDifficulty? _difficultyFromEffort(

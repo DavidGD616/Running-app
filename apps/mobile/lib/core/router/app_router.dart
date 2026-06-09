@@ -14,9 +14,12 @@ import '../../features/account_setup/presentation/screens/account_setup_screen.d
 import '../../features/onboarding/presentation/screens/onboarding_intro_screen.dart';
 import '../../features/onboarding/presentation/screens/goal_screen.dart';
 import '../../features/onboarding/presentation/screens/strava_connect_screen.dart';
+import '../../features/onboarding/presentation/screens/strava_analysis_screen.dart';
+import '../../features/onboarding/presentation/screens/race_target_screen.dart';
 import '../../features/onboarding/presentation/screens/current_fitness_screen.dart';
 import '../../features/onboarding/presentation/screens/schedule_screen.dart';
 import '../../features/onboarding/presentation/screens/health_injury_screen.dart';
+import '../../features/onboarding/presentation/screens/strength_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/training_preferences_screen.dart';
 import '../../features/onboarding/presentation/screens/watch_device_screen.dart';
 import '../../features/onboarding/presentation/screens/summary_screen.dart';
@@ -69,13 +72,20 @@ const _profileSetupRoutes = <String>{
   RouteNames.accountSetup,
   RouteNames.onboarding,
   RouteNames.goal,
+  RouteNames.fitnessSource,
+  RouteNames.manualFitness,
+  RouteNames.stravaAnalysis,
+  RouteNames.raceTarget,
   RouteNames.stravaConnect,
   RouteNames.fitness,
   RouteNames.schedule,
   RouteNames.health,
+  RouteNames.strength,
+  RouteNames.preferences,
   RouteNames.training,
   RouteNames.device,
   RouteNames.summary,
+  RouteNames.generatePlan,
   RouteNames.planGeneration,
   RouteNames.planReady,
 };
@@ -116,6 +126,16 @@ bool _isOnboardingComplete(Ref ref, RunnerProfile profile) {
   if (profile.isOnboardingComplete) return true;
   return ref.watch(sharedPreferencesProvider).getBool('onboarding_completed') ??
       false;
+}
+
+String? resolveLegacyOnboardingRedirect(String matchedLocation) {
+  return switch (matchedLocation) {
+    RouteNames.stravaConnect => RouteNames.fitnessSource,
+    RouteNames.fitness => RouteNames.manualFitness,
+    RouteNames.training => RouteNames.preferences,
+    RouteNames.planGeneration => RouteNames.generatePlan,
+    _ => null,
+  };
 }
 
 String? resolveAppRedirect({
@@ -214,12 +234,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const GoalScreen(),
       ),
       GoRoute(
-        path: RouteNames.stravaConnect,
+        path: RouteNames.fitnessSource,
         builder: (context, state) => const StravaConnectScreen(),
       ),
       GoRoute(
-        path: RouteNames.fitness,
+        path: RouteNames.stravaConnect,
+        redirect: (_, state) =>
+            resolveLegacyOnboardingRedirect(state.matchedLocation),
+      ),
+      GoRoute(
+        path: RouteNames.manualFitness,
         builder: (context, state) => const CurrentFitnessScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.fitness,
+        redirect: (_, state) =>
+            resolveLegacyOnboardingRedirect(state.matchedLocation),
+      ),
+      GoRoute(
+        path: RouteNames.stravaAnalysis,
+        builder: (context, state) => const StravaAnalysisScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.raceTarget,
+        builder: (context, state) => const RaceTargetScreen(),
       ),
       GoRoute(
         path: RouteNames.schedule,
@@ -230,8 +268,17 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const HealthInjuryScreen(),
       ),
       GoRoute(
-        path: RouteNames.training,
+        path: RouteNames.strength,
+        builder: (context, state) => const StrengthPreferencesScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.preferences,
         builder: (context, state) => const TrainingPreferencesScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.training,
+        redirect: (_, state) =>
+            resolveLegacyOnboardingRedirect(state.matchedLocation),
       ),
       GoRoute(
         path: RouteNames.device,
@@ -242,8 +289,13 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SummaryScreen(),
       ),
       GoRoute(
-        path: RouteNames.planGeneration,
+        path: RouteNames.generatePlan,
         builder: (context, state) => const PlanGenerationScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.planGeneration,
+        redirect: (_, state) =>
+            resolveLegacyOnboardingRedirect(state.matchedLocation),
       ),
       GoRoute(
         path: RouteNames.planReady,

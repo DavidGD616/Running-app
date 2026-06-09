@@ -97,56 +97,58 @@ class SettingsGoalIntroScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 72,
-                        height: 72,
-                        decoration: BoxDecoration(
-                          color: AppColors.accentMuted,
-                          borderRadius: AppRadius.borderXl,
-                        ),
-                        child: Center(
-                          child: SvgPicture.asset(
-                            'assets/icons/target.svg',
-                            width: 32,
-                            height: 32,
-                            colorFilter: const ColorFilter.mode(
-                              AppColors.accentPrimary,
-                              BlendMode.srcIn,
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: BoxDecoration(
+                            color: AppColors.accentMuted,
+                            borderRadius: AppRadius.borderXl,
+                          ),
+                          child: Center(
+                            child: SvgPicture.asset(
+                              'assets/icons/target.svg',
+                              width: 32,
+                              height: 32,
+                              colorFilter: const ColorFilter.mode(
+                                AppColors.accentPrimary,
+                                BlendMode.srcIn,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xxxl),
-                      Text(headline, style: AppTypography.headlineMedium),
-                      const SizedBox(height: AppSpacing.md),
-                      Text(
-                        subtitle,
-                        style: AppTypography.bodyLarge.copyWith(
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: AppSpacing.xxxl),
+                        Text(headline, style: AppTypography.headlineMedium),
+                        const SizedBox(height: AppSpacing.md),
+                        Text(
+                          subtitle,
+                          style: AppTypography.bodyLarge.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: AppSpacing.xxxl),
-                      ...items.indexed.map((entry) {
-                        final index = entry.$1;
-                        final item = entry.$2;
-                        return Padding(
-                          padding: EdgeInsets.only(
-                            bottom: index == items.length - 1
-                                ? 0
-                                : AppSpacing.lg,
-                          ),
-                          child: _GoalIntroItem(
-                            iconAsset: item.icon,
-                            text: item.text,
-                          ),
-                        );
-                      }),
-                    ],
+                        const SizedBox(height: AppSpacing.xxxl),
+                        ...items.indexed.map((entry) {
+                          final index = entry.$1;
+                          final item = entry.$2;
+                          return Padding(
+                            padding: EdgeInsets.only(
+                              bottom: index == items.length - 1
+                                  ? 0
+                                  : AppSpacing.lg,
+                            ),
+                            child: _GoalIntroItem(
+                              iconAsset: item.icon,
+                              text: item.text,
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
                   ),
                 ),
               ),

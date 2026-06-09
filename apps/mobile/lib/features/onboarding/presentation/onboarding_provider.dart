@@ -64,7 +64,11 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
         await ref.read(sharedPreferencesProvider).setBool(_keyCompleted, true);
       }
       if (ref.mounted) {
-        state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+        if (markOnboardingComplete) {
+          state = AsyncData(RunnerProfileDraft.fromRunnerProfile(profile));
+        } else {
+          state = AsyncData(draft);
+        }
       }
       return true;
     } catch (_) {
@@ -80,9 +84,6 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     required String race,
     required bool hasRaceDate,
     DateTime? raceDate,
-    required String priority,
-    Duration? currentTime,
-    Duration? targetTime,
   }) {
     _setState(
       (state.value ?? const RunnerProfileDraft()).copyWith(
@@ -90,10 +91,16 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           race: RunnerGoalRace.fromKey(race),
           hasRaceDate: hasRaceDate,
           raceDate: raceDate,
-          priority: GoalPriority.fromKey(priority),
-          currentTime: currentTime,
-          targetTime: targetTime,
         ),
+        clearAcceptedRaceTarget: true,
+      ),
+    );
+  }
+
+  void setAcceptedRaceTarget(AcceptedRaceTarget acceptedRaceTarget) {
+    _setState(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
+        acceptedRaceTarget: acceptedRaceTarget,
       ),
     );
   }
@@ -127,9 +134,44 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           stravaRunsPerWeek: null,
           stravaDataWeeks: null,
           stravaInsufficientData: null,
+          athleteSummary: null,
+          stravaCoachingProfile: null,
         ),
       ),
     );
+  }
+
+  void setFitnessSource(String source) {
+    switch (source) {
+      case OnboardingValues.fitnessSourceManual:
+        useManualFitnessInput();
+      case OnboardingValues.fitnessSourceStrava:
+        final draft = state.value ?? const RunnerProfileDraft();
+        final fitness = draft.fitness;
+        _setState(
+          draft.copyWith(
+            fitness: FitnessProfileDraft(
+              experience: fitness.experience,
+              canRun10Min: fitness.canRun10Min,
+              runningDays: fitness.runningDays,
+              weeklyVolume: fitness.weeklyVolume,
+              longestRun: fitness.longestRun,
+              canCompleteGoalDistance: fitness.canCompleteGoalDistance,
+              raceDistanceBefore: fitness.raceDistanceBefore,
+              benchmark: fitness.benchmark,
+              benchmarkTime: fitness.benchmarkTime,
+              fitnessSource: OnboardingValues.fitnessSourceStrava,
+              stravaWeeklyVolumeKm: fitness.stravaWeeklyVolumeKm,
+              stravaLongestRecentRunKm: fitness.stravaLongestRecentRunKm,
+              stravaRunsPerWeek: fitness.stravaRunsPerWeek,
+              stravaDataWeeks: fitness.stravaDataWeeks,
+              stravaInsufficientData: fitness.stravaInsufficientData,
+              athleteSummary: fitness.athleteSummary,
+              stravaCoachingProfile: fitness.stravaCoachingProfile,
+            ),
+          ),
+        );
+    }
   }
 
   void useManualFitnessInput() {
@@ -181,7 +223,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
 
     final profile = ref.read(runnerProfileProvider).value;
     if (profile == null) return;
-    if (profile.fitness.fitnessSource != OnboardingValues.fitnessSourceStrava) {
+    if (profile.fitness.fitnessSource != FitnessSource.strava) {
       return;
     }
 
@@ -195,7 +237,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
       raceDistanceBefore: profile.fitness.raceDistanceBefore,
       benchmark: profile.fitness.benchmark,
       benchmarkTime: profile.fitness.benchmarkTime,
-      fitnessSource: OnboardingValues.fitnessSourceManual,
+      fitnessSource: FitnessSource.manual,
       athleteSummary: null,
     );
     final updatedProfile = profile.copyWith(
@@ -209,7 +251,10 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     }
   }
 
-  void setStrava({required AthleteSummary summary}) {
+  void setStravaCoachingProfile({
+    required AthleteSummary summary,
+    required StravaCoachingProfile coachingProfile,
+  }) {
     final mapping = mapSummaryToOnboarding(summary);
     final canRun10Min = mapping.experience == RunnerExperience.brandNew
         ? true
@@ -234,7 +279,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           stravaInsufficientData: summary.insufficientData,
           athleteSummary: AthleteSummarySnapshot(
             weeklyVolumeKm: summary.weeklyVolumeKm,
-            volumeTrend: summary.volumeTrend.toKey(),
+            volumeTrend: summary.volumeTrend,
             acuteChronicRatio: summary.acuteChronicRatio,
             longestRecentRunKm: summary.longestRecentRunKm,
             typicalEasyPaceSecPerKm: summary.typicalEasyPaceSecPerKm,
@@ -248,6 +293,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
             insufficientData: summary.insufficientData,
             hasHeartRateZones: summary.hasHeartRateZones,
           ),
+          stravaCoachingProfile: coachingProfile,
         ),
       ),
     );
@@ -260,9 +306,16 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
     required String weekendTime,
     required List<String> hardDays,
     String? preferredTimeOfDay,
+    DateTime? planStartDate,
+    bool clearPlanStartDate = false,
   }) {
+    final currentDraft = state.value ?? const RunnerProfileDraft();
+    final nextPlanStartDate = clearPlanStartDate
+        ? null
+        : planStartDate ?? currentDraft.schedule.planStartDate;
+
     _setState(
-      (state.value ?? const RunnerProfileDraft()).copyWith(
+      currentDraft.copyWith(
         schedule: RunnerProfileDraft.scheduleFromInput(
           trainingDays: trainingDays,
           longRunDay: longRunDay,
@@ -270,6 +323,7 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           weekendTime: weekendTime,
           hardDays: hardDays,
           preferredTimeOfDay: preferredTimeOfDay,
+          planStartDate: nextPlanStartDate,
         ),
       ),
     );
@@ -286,6 +340,26 @@ class OnboardingNotifier extends AsyncNotifier<RunnerProfileDraft> {
           painLevel: painLevel,
           injuryHistory: injuryHistory,
           healthConditions: healthConditions,
+        ),
+      ),
+    );
+  }
+
+  void setStrength({
+    required bool lifts,
+    String? weeklyFrequency,
+    List<String>? categories,
+    List<String>? preferredDays,
+    String? sameDayOrder,
+  }) {
+    _setState(
+      (state.value ?? const RunnerProfileDraft()).copyWith(
+        strength: RunnerProfileDraft.strengthFromInput(
+          lifts: lifts,
+          weeklyFrequency: weeklyFrequency,
+          categories: categories,
+          preferredDays: preferredDays,
+          sameDayOrder: sameDayOrder,
         ),
       ),
     );

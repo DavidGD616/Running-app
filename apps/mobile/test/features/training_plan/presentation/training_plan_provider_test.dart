@@ -4,13 +4,143 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/features/activity/activity.dart';
 import 'package:running_app/features/pre_run/presentation/run_flow_context.dart';
+import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
+import 'package:running_app/features/training_plan/data/plan_version_repository.dart';
 import 'package:running_app/features/training_plan/data/adaptation_repository.dart';
+import 'package:running_app/features/training_plan/data/supabase_plan_version_repository.dart';
 import 'package:running_app/features/training_plan/domain/models/plan_adjustment.dart';
 import 'package:running_app/features/training_plan/domain/models/plan_revision.dart';
+import 'package:running_app/features/training_plan/domain/models/professional_plan_metadata.dart';
+import 'package:running_app/features/training_plan/domain/models/support_session.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
+import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
 import 'package:running_app/features/training_plan/domain/models/session_feedback.dart';
+import 'package:running_app/features/training_plan/domain/models/plan_version.dart';
+import 'package:running_app/features/training_plan/domain/models/training_session.dart';
+import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/presentation/adaptation_provider.dart';
 import 'package:running_app/features/training_plan/presentation/training_plan_provider.dart';
+
+class _FixedPlanVersionRepository implements PlanVersionRepository {
+  _FixedPlanVersionRepository(this.plan);
+
+  final TrainingPlan plan;
+
+  @override
+  TrainingPlan? loadActivePlanSync() => plan;
+
+  @override
+  Future<TrainingPlan?> loadActivePlanAsync() async => plan;
+
+  @override
+  Future<void> saveActivePlan(PlanVersion version) async {}
+
+  @override
+  bool hasActivePlan() => true;
+}
+
+TrainingPlan _planWithGuidanceFields() {
+  return TrainingPlan(
+    id: 'provider-level-fields',
+    raceType: TrainingPlanRaceType.halfMarathon,
+    totalWeeks: 12,
+    currentWeekNumber: 1,
+    sessions: [
+      TrainingSession(
+        id: 'run-1',
+        date: DateTime.now().add(const Duration(days: 7)),
+        type: SessionType.easyRun,
+        status: SessionStatus.upcoming,
+        weekNumber: 1,
+        distanceKm: 8,
+        durationMinutes: 42,
+      ),
+    ],
+    paceZones: const StravaPaceZones(
+      recovery: StravaPaceZone(paceMinSecPerKm: 420, paceMaxSecPerKm: 460),
+      easy: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 340),
+      longRun: StravaPaceZone(paceMinSecPerKm: 280, paceMaxSecPerKm: 300),
+      steady: StravaPaceZone(paceMinSecPerKm: 270, paceMaxSecPerKm: 285),
+      tempo: StravaPaceZone(paceMinSecPerKm: 240, paceMaxSecPerKm: 260),
+      threshold: StravaPaceZone(paceMinSecPerKm: 230, paceMaxSecPerKm: 250),
+      racePace: StravaPaceZone(paceMinSecPerKm: 220, paceMaxSecPerKm: 230),
+      intervals: StravaPaceZone(paceMinSecPerKm: 200, paceMaxSecPerKm: 215),
+      strides: StravaPaceZone(paceMinSecPerKm: 180, paceMaxSecPerKm: 190),
+    ),
+    raceGuidance: const RaceGuidance(
+      raceDayExecution: 'Start controlled, finish strong.',
+    ),
+    generatedLocale: 'es',
+    coachingBriefSnapshot: const CoachingBriefSnapshot(
+      readinessLevel: CoachingReadinessLevel.prepared,
+      currentVolumeKmPerWeek: 42,
+    ),
+    planRationale: const ['Used measured training evidence.'],
+    evidenceTarget: const CoachingTarget(
+      time: Duration(hours: 1, minutes: 38),
+      supported: true,
+    ),
+    ambitiousTarget: const CoachingTarget(
+      time: Duration(hours: 1, minutes: 34),
+      supported: false,
+    ),
+    confidence: CoachingConfidence.high,
+    phaseStrategy: const [PhaseStrategy(phase: CoachingPhase.base, weeks: 2)],
+    stravaCoachingProfileSnapshot: _stravaSnapshot(),
+  );
+}
+
+StravaCoachingProfile _stravaSnapshot() {
+  final evidence = StravaEvidencePoint(
+    metric: 'training_base_weekly_km',
+    date: DateTime(2026, 6, 1),
+    value: 42,
+    unit: 'km_per_week',
+  );
+
+  return StravaCoachingProfile(
+    provenance: StravaAnalysisProvenance(
+      source: 'strava_sync',
+      syncedAt: DateTime(2026, 6, 2),
+      dataWindow: 'last12Weeks',
+      dataFromDate: DateTime(2026, 3, 10),
+      dataThroughDate: DateTime(2026, 6, 2),
+      activityCount: 24,
+      runActivityCount: 18,
+      confidence: StravaDataConfidence.medium,
+    ),
+    dataConfidence: StravaDataConfidence.medium,
+    trainingBase: [evidence],
+    endurance: const [],
+    speedMarkers: const [],
+    paceZones: const StravaPaceZones(
+      recovery: StravaPaceZone(paceMinSecPerKm: 420, paceMaxSecPerKm: 460),
+      easy: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 340),
+      longRun: StravaPaceZone(paceMinSecPerKm: 280, paceMaxSecPerKm: 300),
+      steady: StravaPaceZone(paceMinSecPerKm: 270, paceMaxSecPerKm: 285),
+      tempo: StravaPaceZone(paceMinSecPerKm: 240, paceMaxSecPerKm: 260),
+      threshold: StravaPaceZone(paceMinSecPerKm: 230, paceMaxSecPerKm: 250),
+      racePace: StravaPaceZone(paceMinSecPerKm: 220, paceMaxSecPerKm: 230),
+      intervals: StravaPaceZone(paceMinSecPerKm: 200, paceMaxSecPerKm: 215),
+      strides: StravaPaceZone(paceMinSecPerKm: 180, paceMaxSecPerKm: 190),
+    ),
+    terrain: StravaTerrainProfile.flat,
+    recoveryGuardrails: const [],
+    raceTargets: [
+      StravaRaceTargetEstimate(
+        distanceKm: 21.1,
+        primaryTime: const Duration(hours: 1, minutes: 38),
+        stretchTime: const Duration(hours: 1, minutes: 34),
+        confidence: StravaDataConfidence.medium,
+        evidence: [evidence],
+      ),
+    ],
+    planFocus: const StravaPlanFocus(
+      category: 'focus_endurance',
+      summary: 'Protect volume and build aerobic durability.',
+    ),
+  );
+}
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -19,6 +149,98 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test('applyActivityStatus preserves plan-level guidance fields', () async {
+    final prefs = await SharedPreferences.getInstance();
+    final fixturePlan = _planWithGuidanceFields();
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        planVersionRepositoryProvider.overrideWithValue(
+          _FixedPlanVersionRepository(fixturePlan),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    final loaded = await container.read(trainingPlanProvider.future);
+
+    expect(loaded.paceZones, isNotNull);
+    expect(loaded.paceZones!.easy.paceMaxSecPerKm, 340);
+    expect(loaded.raceGuidance, isNotNull);
+    expect(
+      loaded.raceGuidance!.raceDayExecution,
+      fixturePlan.raceGuidance?.raceDayExecution,
+    );
+    expect(loaded.generatedLocale, fixturePlan.generatedLocale);
+    expect(loaded.coachingBriefSnapshot, isNotNull);
+    expect(
+      loaded.coachingBriefSnapshot!.readinessLevel,
+      CoachingReadinessLevel.prepared,
+    );
+    expect(loaded.planRationale, fixturePlan.planRationale);
+    expect(loaded.evidenceTarget?.time, fixturePlan.evidenceTarget?.time);
+    expect(loaded.ambitiousTarget?.supported, isFalse);
+    expect(loaded.confidence, CoachingConfidence.high);
+    expect(loaded.phaseStrategy.single.phase, CoachingPhase.base);
+    expect(loaded.stravaCoachingProfileSnapshot, isNotNull);
+    expect(
+      loaded.stravaCoachingProfileSnapshot!.provenance.source,
+      fixturePlan.stravaCoachingProfileSnapshot!.provenance.source,
+    );
+  });
+
+  test(
+    'skipSession and restoreSession keep plan-level guidance fields',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final fixturePlan = _planWithGuidanceFields();
+      final container = ProviderContainer(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          planVersionRepositoryProvider.overrideWithValue(
+            _FixedPlanVersionRepository(fixturePlan),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      await container.read(trainingPlanProvider.future);
+
+      final notifier = container.read(trainingPlanProvider.notifier);
+      notifier.skipSession('run-1');
+      await Future<void>.delayed(Duration.zero);
+
+      final skipped = container.read(trainingPlanProvider).value;
+      expect(skipped?.sessions.first.status, SessionStatus.skipped);
+      expect(skipped?.paceZones, isNotNull);
+      expect(skipped?.raceGuidance, isNotNull);
+      expect(skipped?.generatedLocale, fixturePlan.generatedLocale);
+      expect(skipped?.coachingBriefSnapshot, isNotNull);
+      expect(skipped?.planRationale, fixturePlan.planRationale);
+      expect(skipped?.evidenceTarget?.time, fixturePlan.evidenceTarget?.time);
+      expect(skipped?.ambitiousTarget?.supported, isFalse);
+      expect(skipped?.confidence, CoachingConfidence.high);
+      expect(skipped?.phaseStrategy.single.phase, CoachingPhase.base);
+      expect(skipped?.stravaCoachingProfileSnapshot, isNotNull);
+
+      notifier.restoreSession('run-1');
+      await Future<void>.delayed(Duration.zero);
+
+      final restored = container.read(trainingPlanProvider).value;
+      expect(restored?.paceZones, isNotNull);
+      expect(restored?.raceGuidance, isNotNull);
+      expect(restored?.generatedLocale, fixturePlan.generatedLocale);
+      expect(restored?.coachingBriefSnapshot, isNotNull);
+      expect(restored?.planRationale, fixturePlan.planRationale);
+      expect(restored?.evidenceTarget?.time, fixturePlan.evidenceTarget?.time);
+      expect(restored?.ambitiousTarget?.supported, isFalse);
+      expect(restored?.confidence, CoachingConfidence.high);
+      expect(restored?.phaseStrategy.single.phase, CoachingPhase.base);
+      expect(restored?.stravaCoachingProfileSnapshot, isNotNull);
+      expect(restored?.sessions.first.status, isNot(SessionStatus.skipped));
+    },
+  );
+
   test('skipSession records a pending adjustment and revision', () async {
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
@@ -26,13 +248,13 @@ void main() {
     );
     addTearDown(container.dispose);
 
-    container.read(trainingPlanProvider.notifier).skipSession('w4-thu');
+    container.read(trainingPlanProvider.notifier).skipSession('run-1');
     await Future<void>.delayed(Duration.zero);
 
     final adjustments = await container.read(planAdjustmentsProvider.future);
     final revisions = await container.read(planRevisionsProvider.future);
     expect(adjustments, hasLength(1));
-    expect(adjustments.single.plannedSessionId, 'w4-thu');
+    expect(adjustments.single.plannedSessionId, 'run-1');
     expect(adjustments.single.trigger, PlanAdjustmentTrigger.skippedSession);
     expect(adjustments.single.reason, PlanAdjustmentReason.skippedByRunner);
     expect(adjustments.single.status, PlanAdjustmentStatus.pending);
@@ -41,7 +263,7 @@ void main() {
     expect(revisions.single.summaryKey, 'revision_skipped_session');
     expect(revisions.single.adjustmentIds, [adjustments.single.id]);
     expect(
-      container.read(sessionAdjustmentRequestsForSessionProvider('w4-thu')),
+      container.read(sessionAdjustmentRequestsForSessionProvider('run-1')),
       hasLength(1),
     );
 
@@ -58,24 +280,57 @@ void main() {
     expect(await restarted.read(planRevisionsProvider.future), hasLength(1));
   });
 
-  test('support sessions survive training plan recomposition', () async {
+  test('support sessions are dropped from active plan recomposition', () async {
     final prefs = await SharedPreferences.getInstance();
+    final fixturePlan = TrainingPlan(
+      id: 'provider-support-recompose',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 1,
+      sessions: [
+        TrainingSession(
+          id: 'run-1',
+          date: DateTime(2026, 6, 4),
+          type: SessionType.easyRun,
+          status: SessionStatus.upcoming,
+          weekNumber: 1,
+          distanceKm: 8,
+          durationMinutes: 42,
+        ),
+      ],
+      supportSessions: [
+        SupportSession(
+          id: 'strength-1',
+          date: DateTime(2026, 6, 4),
+          weekNumber: 1,
+          type: SupplementalSessionType.strength,
+          status: SupportSessionStatus.planned,
+          durationMinutes: 25,
+          load: 'moderate',
+          timingGuidance: 'on_off_days',
+          interferenceRule: 'avoid_day_before_long_run',
+          taperAdjustment: 'reduce_load_week_before_race',
+        ),
+      ],
+    );
     final container = ProviderContainer(
-      overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        planVersionRepositoryProvider.overrideWithValue(
+          _FixedPlanVersionRepository(fixturePlan),
+        ),
+      ],
     );
     addTearDown(container.dispose);
 
-    // Provider is now async — NoPlanFoundException expected when no plan cached.
-    // This test is superseded by T5.3 consumer updates; skip for now.
-    final initialPlanAsync = container.read(trainingPlanProvider);
-    final initialPlan = initialPlanAsync.value;
-    expect(initialPlan?.supportSessions ?? [], isEmpty); // no cached plan
+    final loaded = await container.read(trainingPlanProvider.future);
+    expect(loaded.supportSessions, isEmpty);
 
-    container.read(trainingPlanProvider.notifier).skipSession('w4-thu');
+    container.read(trainingPlanProvider.notifier).skipSession('run-1');
     await Future<void>.delayed(Duration.zero);
 
     final recomposedPlan = container.read(trainingPlanProvider).value;
-    expect(recomposedPlan?.supportSessions ?? [], isEmpty);
+    expect(recomposedPlan?.supportSessions ?? const [], isEmpty);
   });
 
   test(

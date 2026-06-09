@@ -4,26 +4,33 @@ import {
   avoidHardDayTraining,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
-  ensureGoalRaceSession,
   expectedTotalWeeks,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
   normalizeTaper,
   normalizeTrainingDayCount,
+  normalizeWeeklyVolumeRamp,
+  normalizeWeekNumbersFromDates,
   normalizeWorkoutTypesByPhase,
   peakLongRunRangeKm,
   phaseForWeek,
+  phaseForWeekFromCoachingBrief,
   phasePlanFor,
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
+  resolvePlanStartDate,
   smoothLongRunProgression,
   spaceStressfulSessions,
   truncateAfterRaceDate,
+  unsupportedCoachingBriefReason,
+  validateGeneratedPlanAgainstCoachingBrief,
   validateGeneratedPlanShape,
   validateGeneratedSchedule,
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
+import type { CoachingBrief } from "./coaching-brief.ts";
+import { removeSessionsOnRaceDate } from "./schema.ts";
 import type { GeneratedSession } from "./schema.ts";
 
 Deno.test("phaseForWeek 12-week plan week 1 is base", () => {
@@ -573,6 +580,134 @@ Deno.test("normalizeTrainingDayCount adds missing easy days when week has no res
   assert.ok(sessions.some((item) => item.id.includes("2026-04-30-added")));
 });
 
+Deno.test("normalizeTrainingDayCount does not add sessions before planStartDate", () => {
+  const sessions = normalizeTrainingDayCount(
+    [
+      session({
+        id: "w1-wed-intervals",
+        date: "2026-06-10",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-thu-easy",
+        date: "2026-06-11",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-fri-easy",
+        date: "2026-06-12",
+        type: "easyRun",
+      }),
+    ],
+    profile({ trainingDays: 4, planStartDate: "2026-06-10" }),
+    "en",
+  );
+
+  assert.ok(!sessions.some((session) => session.date < "2026-06-10"));
+  assert.equal(trainingDayCount(sessions), 4);
+  assert.ok(sessions.some((item) => item.date === "2026-06-13"));
+});
+
+Deno.test("normalizeTrainingDayCount uses user trainingDays over Strava runs-per-week", () => {
+  const result = normalizeTrainingDayCount(
+    [
+      session({ id: "w1-mon-easy", date: "2026-04-27", type: "easyRun" }),
+      session({ id: "w1-tue-rest", date: "2026-04-28", type: "restDay" }),
+      session({ id: "w1-wed-easy", date: "2026-04-29", type: "easyRun" }),
+      session({ id: "w1-thu-easy", date: "2026-04-30", type: "easyRun" }),
+      session({ id: "w1-fri-easy", date: "2026-05-01", type: "easyRun" }),
+      session({ id: "w1-sat-long", date: "2026-05-02", type: "longRun" }),
+      session({ id: "w1-sun-easy", date: "2026-05-03", type: "easyRun" }),
+    ],
+    {
+      goal: { race: "race_half_marathon", raceDate: null },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: {
+          dataConfidence: "high",
+          trainingBase: [
+            {
+              metric: "training_base_runs_per_week",
+              value: 6,
+              unit: "runs_per_week",
+              date: "2026-04-20T00:00:00Z",
+            },
+          ],
+        },
+      },
+      schedule: { trainingDays: 3, hardDays: [] },
+    },
+  );
+
+  assert.equal(trainingCountForTest(result), 3);
+});
+
+Deno.test("avoidHardDayTraining treats leg strength preferred days as hard days", () => {
+  const result = avoidHardDayTraining(
+    [
+      session({
+        id: "w1-mon-intervals",
+        date: "2026-04-27",
+        weekNumber: 1,
+        type: "intervals",
+      }),
+      session({
+        id: "w1-tue-easy",
+        date: "2026-04-28",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+    ],
+    profile({
+      trainingDays: 2,
+      hardDays: [],
+      strengthPreferences: {
+        weeklyFrequency: 1,
+        categories: ["lower_body"],
+        preferredDays: ["day_mon"],
+        sameDayOrder: "run_first",
+      },
+    }),
+  );
+
+  const monday = result.find((item) => item.date === "2026-04-27");
+  assert.equal(monday?.type, "easyRun");
+  const hardSession = result.find((item) => item.type === "intervals");
+  assert.notEqual(hardSession?.date, "2026-04-27");
+});
+
+Deno.test("avoidHardDayTraining ignores upper-body-only strength days", () => {
+  const result = avoidHardDayTraining(
+    [
+      session({
+        id: "w1-mon-intervals",
+        date: "2026-04-27",
+        weekNumber: 1,
+        type: "intervals",
+      }),
+      session({
+        id: "w1-tue-easy",
+        date: "2026-04-28",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+    ],
+    profile({
+      trainingDays: 2,
+      hardDays: [],
+      strengthPreferences: {
+        weeklyFrequency: 1,
+        categories: ["upper_body"],
+        preferredDays: ["day_mon"],
+        sameDayOrder: "run_first",
+      },
+    }),
+  );
+
+  const monday = result.find((item) => item.date === "2026-04-27");
+  assert.equal(monday?.type, "intervals");
+});
+
 Deno.test("ensureFullCalendarWeeks fills missing dates with rest days", () => {
   const sessions = ensureFullCalendarWeeks(
     [
@@ -596,77 +731,279 @@ Deno.test("ensureFullCalendarWeeks fills missing dates with rest days", () => {
   assert.match(tuesday.coachNote ?? "", /Día de descanso/i);
 });
 
-Deno.test("ensureGoalRaceSession makes no-date 5K plan finish with full 5K race", () => {
-  const sessions = ensureGoalRaceSession(
+Deno.test("normalizeWeekNumbersFromDates corrects week labels from planStartDate anchor", () => {
+  const normalized = normalizeWeekNumbersFromDates(
     [
       session({
-        id: "w8-mon",
-        date: "2026-06-15",
-        weekNumber: 8,
+        id: "w1-2026-06-09-easyRun",
+        date: "2026-06-09",
+        weekNumber: 1,
         type: "easyRun",
       }),
       session({
-        id: "w8-fri",
-        date: "2026-06-19",
-        weekNumber: 8,
-        type: "racePaceRun",
-        distanceKm: 3,
-        durationMinutes: 20,
-        warmUpMinutes: 8,
-        coolDownMinutes: 6,
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        weekNumber: 1,
+        type: "easyRun",
       }),
       session({
-        id: "w8-sat",
-        date: "2026-06-20",
-        weekNumber: 8,
+        id: "w2-2026-06-16-longRun",
+        date: "2026-06-16",
+        weekNumber: 2,
+        type: "longRun",
+      }),
+      session({
+        id: "w2-2026-06-18-restDay",
+        date: "2026-06-18",
+        weekNumber: 2,
         type: "restDay",
+      }),
+    ],
+    profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+    new Date(Date.UTC(2026, 5, 4, 12)),
+    "2026-06-04",
+  );
+
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-09")?.weekNumber,
+    2,
+  );
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-11")?.weekNumber,
+    2,
+  );
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-16")?.weekNumber,
+    3,
+  );
+  assert.equal(
+    normalized.find((session) => session.date === "2026-06-18")?.weekNumber,
+    3,
+  );
+});
+
+Deno.test("normalizeWeekNumbersFromDates does not create invalid pre-anchor week numbers", () => {
+  const normalized = normalizeWeekNumbersFromDates(
+    [
+      session({
+        id: "w1-2026-05-31-easyRun",
+        date: "2026-05-31",
+        weekNumber: 1,
+        type: "easyRun",
+      }),
+    ],
+    profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+    new Date(Date.UTC(2026, 5, 4, 12)),
+    "2026-06-04",
+  );
+
+  assert.equal(normalized[0].weekNumber, 1);
+});
+
+Deno.test(
+  "ensureFullCalendarWeeks adds partial first week from midweek planStartDate",
+  () => {
+    const normalized = normalizeWeekNumbersFromDates(
+      [
+        session({
+          id: "w1-2026-06-09-easyRun",
+          date: "2026-06-09",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w1-2026-06-11-easyRun",
+          date: "2026-06-11",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w2-2026-06-16-longRun",
+          date: "2026-06-16",
+          weekNumber: 2,
+          type: "longRun",
+        }),
+        session({
+          id: "w2-2026-06-18-restDay",
+          date: "2026-06-18",
+          weekNumber: 2,
+          type: "restDay",
+        }),
+      ],
+      profile({
+        race: "race_half_marathon",
+        planStartDate: "2026-06-04",
+      }),
+      new Date(Date.UTC(2026, 5, 4, 12)),
+      "2026-06-04",
+    );
+    const withCalendar = ensureFullCalendarWeeks(
+      normalized,
+      "en",
+      "2026-06-04",
+    );
+
+    assert.equal(
+      withCalendar.filter((session) => session.weekNumber === 1).length,
+      4,
+    );
+    assert.ok(!withCalendar.some((session) => session.date < "2026-06-04"));
+    assert.equal(
+      withCalendar.filter((session) =>
+        session.weekNumber === 1 && session.type !== "restDay"
+      ).length,
+      0,
+    );
+    assert.equal(
+      withCalendar.filter((session) =>
+        session.weekNumber === 1 &&
+        ["2026-06-04", "2026-06-05", "2026-06-06", "2026-06-07"].includes(
+          session.date,
+        )
+      ).length,
+      4,
+    );
+  },
+);
+
+Deno.test(
+  "date-based week normalization with session id regeneration removes week mismatch violations",
+  () => {
+    const normalized = normalizeWeekNumbersFromDates(
+      [
+        session({
+          id: "w1-2026-06-09-easyRun",
+          date: "2026-06-09",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w1-2026-06-11-easyRun",
+          date: "2026-06-11",
+          weekNumber: 1,
+          type: "easyRun",
+        }),
+        session({
+          id: "w2-2026-06-16-longRun",
+          date: "2026-06-16",
+          weekNumber: 2,
+          type: "longRun",
+        }),
+        session({
+          id: "w2-2026-06-18-restDay",
+          date: "2026-06-18",
+          weekNumber: 2,
+          type: "restDay",
+        }),
+      ],
+      profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+      new Date(Date.UTC(2026, 5, 4, 12)),
+      "2026-06-04",
+    );
+    const withCalendar = ensureFullCalendarWeeks(
+      normalized,
+      "en",
+      "2026-06-04",
+    );
+    const withIds = normalizeSessionIds(withCalendar);
+
+    const violations = validateGeneratedPlanShape(
+      withIds,
+      3,
+      profile({ race: "race_half_marathon", planStartDate: "2026-06-04" }),
+      new Date(Date.UTC(2026, 5, 12, 12)),
+      "2026-06-04",
+    );
+    assert.ok(
+      !violations.some((violation) =>
+        violation.rule === "session_date_week_mismatch"
+      ),
+    );
+    assert.equal(
+      withIds.find((session) => session.date === "2026-06-09")?.id,
+      "w2-2026-06-09-easyRun",
+    );
+  },
+);
+
+Deno.test(
+  "ensureFullCalendarWeeks with midweek planStartDate does not add pre-start dates",
+  () => {
+    const sessions = ensureFullCalendarWeeks(
+      [
+        session({ id: "w1-wed-run", date: "2026-06-10", type: "easyRun" }),
+        session({ id: "w1-thu-run", date: "2026-06-11", type: "easyRun" }),
+        session({ id: "w1-fri-run", date: "2026-06-12", type: "easyRun" }),
+      ],
+      "en",
+      "2026-06-10",
+    );
+
+    assert.ok(!sessions.some((item) => item.date === "2026-06-08"));
+    assert.ok(!sessions.some((item) => item.date === "2026-06-09"));
+    assert.equal(sessions.length, 5);
+    assert.equal(findByDate(sessions, "2026-06-10").type, "easyRun");
+    assert.equal(findByDate(sessions, "2026-06-11").type, "easyRun");
+    assert.equal(findByDate(sessions, "2026-06-12").type, "easyRun");
+    assert.equal(findByDate(sessions, "2026-06-13").type, "restDay");
+    assert.equal(findByDate(sessions, "2026-06-14").type, "restDay");
+  },
+);
+
+Deno.test("validateGeneratedPlanShape does not require generated race workout on fixed race date", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-01-easyRun",
+        date: "2026-06-01",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-2026-06-08-easyRun",
+        date: "2026-06-08",
+        weekNumber: 2,
+      }),
+      session({
+        id: "w3-2026-06-20-easyRun",
+        date: "2026-06-20",
+        weekNumber: 3,
+      }),
+    ],
+    3,
+    profile({ race: "race_5k", raceDate: "2026-06-21" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+    "2026-06-01",
+  );
+
+  assert.deepEqual(violations, []);
+});
+
+Deno.test("enforcePreRaceTaper uses fixed race date without generated race workout", () => {
+  const sessions = enforcePreRaceTaper(
+    [
+      session({
+        id: "w3-2026-06-13-tempoRun",
+        date: "2026-06-13",
+        weekNumber: 3,
+        type: "tempoRun",
+        durationMinutes: 45,
+      }),
+      session({
+        id: "w3-2026-06-12-easyRun",
+        date: "2026-06-12",
+        weekNumber: 3,
+        type: "easyRun",
       }),
     ],
     profile({
       race: "race_5k",
-      raceDate: null,
-      longRunDay: "day_sat",
-    }),
-    "en",
-  );
-
-  const race = findSession(sessions, "w8-sat");
-  assert.equal(race.type, "racePaceRun");
-  assert.equal(race.distanceKm, 5);
-  assert.equal(race.durationMinutes, null);
-  assert.equal(race.targetZone, "racePace");
-  assert.equal(race.warmUpMinutes, 10);
-  assert.equal(race.coolDownMinutes, 5);
-  assert.match(race.coachNote ?? "", /Goal race day/i);
-});
-
-Deno.test("ensureGoalRaceSession preserves fixed race date and sets goal distance", () => {
-  const sessions = ensureGoalRaceSession(
-    [
-      session({
-        id: "w9-fri",
-        date: "2026-06-19",
-        weekNumber: 9,
-        type: "easyRun",
-      }),
-      session({
-        id: "race",
-        date: "2026-06-21",
-        weekNumber: 9,
-        type: "racePaceRun",
-        distanceKm: 6,
-      }),
-    ],
-    profile({
-      race: "race_10k",
-      raceDate: "2026-06-21T00:00:00.000",
+      raceDate: "2026-06-15",
     }),
   );
 
-  const race = findSession(sessions, "race");
-  assert.equal(race.date, "2026-06-21");
-  assert.equal(race.distanceKm, 10);
-  assert.equal(race.type, "racePaceRun");
+  const tapered = findSession(sessions, "w3-2026-06-13-tempoRun");
+  assert.equal(tapered.type, "recoveryRun");
+  assert.equal(tapered.targetZone, "recovery");
 });
 
 Deno.test("spaceStressfulSessions swaps adjacent hard sessions apart", () => {
@@ -1327,6 +1664,518 @@ Deno.test("normalizePeakLongRun raises intermediate 10K 8km peak to ~13km", () =
   );
 });
 
+Deno.test("normalizePeakLongRun raises 10K peak long run with strong Strava/mixed evidence above table max", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 5,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w8-sat",
+      date: "2026-06-13",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 8,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 10,
+      weekNumber: 12,
+    }),
+  ];
+  const profileData = {
+    goal: { race: "race_10k" },
+    fitness: {
+      experience: "experience_intermediate",
+      stravaCoachingProfile: { dataConfidence: "high" },
+    },
+    schedule: { hardDays: [] },
+  };
+
+  const briefSources = ["strava", "mixed"] as const;
+  const expectedNormalizedPeak = 14.85;
+  for (const source of briefSources) {
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "high",
+        source,
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, `peak phase longRun should exist for ${source}`);
+    const normalizedPeak = peakLongRun!.distanceKm ?? 0;
+    assert.ok(
+      normalizedPeak > 13 && normalizedPeak < 15,
+      `10K peak long run should be raised above static table max for ${source}, got ${normalizedPeak}`,
+    );
+    assert.ok(
+      Math.abs(normalizedPeak - expectedNormalizedPeak) < 0.01,
+      `expected evidence-aware target around 14.85km for ${source}, got ${normalizedPeak}`,
+    );
+    assert.ok(
+      normalizedPeak <= expectedNormalizedPeak + 0.01,
+      `evidence-aware cap should remain near recent-long-run target for ${source}, got ${normalizedPeak}`,
+    );
+    assert.ok(
+      normalizedPeak <= 15,
+      "result should respect coaching brief ceiling",
+    );
+  }
+});
+
+Deno.test(
+  "normalizePeakLongRun raises 10K peak long run with medium-confidence Strava evidence",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: { dataConfidence: "high" },
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "medium",
+        source: "strava",
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, "peak phase longRun should exist");
+    assert.ok(
+      Math.abs((peakLongRun!.distanceKm ?? 0) - 14.85) < 0.01,
+      `expected medium-confidence evidence-aware target around 14.85km, got ${
+        peakLongRun!.distanceKm
+      }`,
+    );
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun does not raise above static table for low-confidence coaching evidence",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: { dataConfidence: "high" },
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "limited",
+        source: "strava",
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, "peak phase longRun should exist");
+    assert.equal(peakLongRun!.distanceKm, 12);
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun requires usable current volume for evidence lift",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: { dataConfidence: "high" },
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const invalidCurrentVolumeCases = [
+      {
+        label: "missing",
+        currentVolumeKmPerWeek: undefined as unknown as number,
+      },
+      { label: "zero", currentVolumeKmPerWeek: 0 },
+      { label: "negative", currentVolumeKmPerWeek: -10 },
+    ];
+
+    for (const { label, currentVolumeKmPerWeek } of invalidCurrentVolumeCases) {
+      const brief = {
+        ...coachingBriefFixture({
+          raceType: "tenK",
+          readinessLevel: "prepared",
+          confidence: "high",
+          source: "strava",
+          currentVolumeKmPerWeek,
+          recentLongRunKm: 22,
+          longRunCeilingKm: 15,
+          planLengthWeeks: 12,
+          phaseStrategy: [
+            { phase: "base", weeks: 3, focus: "Protect base." },
+            { phase: "build", weeks: 3, focus: "Build quality." },
+            { phase: "specific", weeks: 3, focus: "Build specificity." },
+            { phase: "peak", weeks: 1, focus: "Peak long run." },
+            { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+          ],
+        }),
+      } as CoachingBrief;
+
+      const result = normalizePeakLongRun(
+        sessions,
+        profileData,
+        12,
+        "en",
+        brief,
+      );
+
+      const peakLongRun = result.find((s) =>
+        s.weekNumber === 10 && s.type === "longRun"
+      );
+      assert.ok(
+        peakLongRun,
+        `peak phase longRun should exist for ${label} current volume`,
+      );
+      assert.equal(
+        peakLongRun!.distanceKm,
+        12,
+        `evidence lift should not apply for ${label} current volume`,
+      );
+    }
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun shows guardrail suppression wording when evidence lift is blocked",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: {
+          dataConfidence: "high",
+          recoveryGuardrails: [
+            {
+              category: "recovery_load_spike",
+              priority: 2,
+              message: "Recent load spike",
+            },
+          ],
+        },
+      },
+      stravaCoachingProfile: {
+        dataConfidence: "high",
+        recoveryGuardrails: [
+          {
+            category: "recovery_load_spike",
+            priority: 2,
+            message: "Recent load spike",
+          },
+        ],
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "high",
+        source: "strava",
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, "peak phase longRun should exist");
+    assert.equal(peakLongRun!.distanceKm, 12);
+    assert.match(
+      peakLongRun!.coachNote ?? "",
+      /safety limit.*guardrails/i,
+    );
+    assert.match(
+      peakLongRun!.coachNote ?? "",
+      /evidence-based increase.*blocked/i,
+    );
+  },
+);
+
+Deno.test("normalizePeakLongRun does not raise above static table for manual brief evidence", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 5,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w8-sat",
+      date: "2026-06-13",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 8,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 10,
+      weekNumber: 12,
+    }),
+  ];
+  const profileData = {
+    goal: { race: "race_10k" },
+    fitness: {
+      experience: "experience_intermediate",
+      stravaCoachingProfile: { dataConfidence: "high" },
+    },
+    schedule: { hardDays: [] },
+  };
+
+  const result = normalizePeakLongRun(
+    sessions,
+    profileData,
+    12,
+    "en",
+    coachingBriefFixture({
+      raceType: "tenK",
+      readinessLevel: "prepared",
+      confidence: "high",
+      source: "manual",
+      currentVolumeKmPerWeek: 45,
+      recentLongRunKm: 22,
+      longRunCeilingKm: 15,
+      planLengthWeeks: 12,
+      phaseStrategy: [
+        { phase: "base", weeks: 3, focus: "Protect base." },
+        { phase: "build", weeks: 3, focus: "Build quality." },
+        { phase: "specific", weeks: 3, focus: "Build specificity." },
+        { phase: "peak", weeks: 1, focus: "Peak long run." },
+        { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+      ],
+    }),
+  );
+
+  const peakLongRun = result.find((s) =>
+    s.weekNumber === 10 && s.type === "longRun"
+  );
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.equal(peakLongRun!.distanceKm, 12);
+});
+
 Deno.test("normalizePeakLongRun caps experienced half marathon 25km peak at ~21km", () => {
   const sessions = [
     session({
@@ -1383,6 +2232,74 @@ Deno.test("normalizePeakLongRun caps experienced half marathon 25km peak at ~21k
     peakLongRun!.distanceKm! <= 23,
     `peak should be capped at 23km, got ${peakLongRun!.distanceKm}`,
   );
+});
+
+Deno.test("normalizePeakLongRun does not raise coaching-brief taper long run treated as legacy peak", () => {
+  const profileData = profile({
+    race: "race_half_marathon",
+    experience: "experience_beginner",
+  });
+  const brief = coachingBriefFixture({
+    raceType: "halfMarathon",
+    planLengthWeeks: 8,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Protect base." },
+      { phase: "build", weeks: 2, focus: "Controlled threshold." },
+      { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+  });
+  const sessions = [
+    session({
+      id: "w6-sat",
+      date: "2026-06-20",
+      type: "longRun",
+      distanceKm: 14,
+      durationMinutes: 96,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w7-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      durationMinutes: 56,
+      weekNumber: 7,
+    }),
+    session({
+      id: "w8-sat",
+      date: "2026-07-04",
+      type: "racePaceRun",
+      distanceKm: 21.1,
+      weekNumber: 8,
+    }),
+  ];
+
+  assert.equal(phaseForWeek(7, 8, profileData), "peak");
+  assert.equal(
+    phaseForWeekFromCoachingBrief(7, 8, profileData, brief),
+    "taperRace",
+  );
+
+  const result = normalizePeakLongRun(
+    sessions,
+    profileData,
+    8,
+    "en",
+    brief,
+  );
+  const taperLongRun = result.find((s) =>
+    s.weekNumber === 7 && s.type === "longRun"
+  );
+
+  assert.ok(taperLongRun, "week 7 taper longRun should exist");
+  assert.equal(taperLongRun!.distanceKm, 8);
+  assert.equal(taperLongRun!.durationMinutes, 56);
 });
 
 Deno.test("normalizePeakLongRun updates duration when raising distance", () => {
@@ -1604,6 +2521,423 @@ Deno.test("normalizePeakLongRun respects athleteSummary history floor when prese
   );
 });
 
+Deno.test("normalizePeakLongRun uses fresh Strava endurance evidence over legacy athleteSummary", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 4,
+      durationMinutes: 32,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 4,
+      durationMinutes: 28,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 5,
+      weekNumber: 12,
+    }),
+  ];
+
+  const result = normalizePeakLongRun(
+    sessions,
+    {
+      goal: { race: "race_5k", raceDate: null },
+      fitness: {
+        experience: "experience_beginner",
+        athleteSummary: {
+          longestRecentRunKm: 40,
+        },
+      },
+      stravaCoachingProfile: {
+        dataConfidence: "high",
+        endurance: [
+          {
+            metric: "endurance_long_run_km",
+            value: 6,
+            unit: "km",
+            date: "2026-06-01T00:00:00Z",
+          },
+        ],
+      },
+      schedule: { hardDays: [] },
+    },
+    12,
+    "en",
+  );
+
+  const peakLongRun = result.find((s) =>
+    s.weekNumber === 10 && s.type === "longRun"
+  );
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  const normalizedPeak = peakLongRun!.distanceKm ?? 0;
+  assert.ok(
+    normalizedPeak >= 5.4 && normalizedPeak < 7,
+    `fresh Strava endurance evidence should dominate legacy history, got ${normalizedPeak}`,
+  );
+});
+
+Deno.test("normalizePeakLongRun clamps aggressive acceptedRaceTarget to safety caps", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 8,
+      durationMinutes: 52,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 40,
+      durationMinutes: 240,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 42.2,
+      weekNumber: 12,
+    }),
+  ];
+
+  const result = normalizePeakLongRun(
+    sessions,
+    {
+      goal: { race: "race_half_marathon" },
+      acceptedRaceTarget: {
+        distanceKm: 42.2,
+        primaryTimeMs: 10000,
+        stretchTimeMs: 9000,
+        confidence: "high",
+        evidence: [],
+      },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: {
+          dataConfidence: "high",
+          trainingBase: [
+            {
+              metric: "training_base_weekly_km",
+              value: 20,
+              unit: "km_per_week",
+              date: "2026-06-01T00:00:00Z",
+            },
+          ],
+          endurance: [
+            {
+              metric: "endurance_long_run_km",
+              value: 32,
+              unit: "km",
+              date: "2026-06-01T00:00:00Z",
+            },
+          ],
+        },
+      },
+      schedule: { hardDays: [] },
+    },
+    12,
+    "en",
+  );
+
+  const peakLongRun = result.find((s) =>
+    s.weekNumber === 10 && s.type === "longRun"
+  );
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(
+    peakLongRun!.distanceKm! <= 18,
+    `aggressive target or fast evidence must not push peak long run over safety cap, got ${
+      peakLongRun!.distanceKm
+    }`,
+  );
+});
+
+Deno.test("normalizePeakLongRun ignores limited evidence when guardrails are weak", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 8,
+      durationMinutes: 52,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 40,
+      durationMinutes: 240,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 21.1,
+      weekNumber: 12,
+    }),
+  ];
+
+  const result = normalizePeakLongRun(
+    sessions,
+    {
+      goal: { race: "race_half_marathon" },
+      fitness: {
+        experience: "experience_intermediate",
+        athleteSummary: { longestRecentRunKm: 4 },
+        stravaCoachingProfile: {
+          dataConfidence: "limited",
+          trainingBase: [
+            {
+              metric: "training_base_weekly_km",
+              value: 20,
+              unit: "km_per_week",
+              date: "2026-06-01T00:00:00Z",
+            },
+          ],
+          endurance: [
+            {
+              metric: "endurance_long_run_km",
+              value: 40,
+              unit: "km",
+              date: "2026-06-01T00:00:00Z",
+            },
+          ],
+          recoveryGuardrails: [
+            {
+              category: "recovery_sparse_data",
+              priority: 2,
+              message: "limited history",
+            },
+          ],
+        },
+      },
+      schedule: { hardDays: [] },
+    },
+    12,
+    "en",
+  );
+
+  const peakLongRun = result.find((s) =>
+    s.weekNumber === 10 && s.type === "longRun"
+  );
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.ok(
+    peakLongRun!.distanceKm! <= 18,
+    `limited or sparse evidence should not raise safety cap, got ${
+      peakLongRun!.distanceKm
+    }`,
+  );
+});
+
+Deno.test(
+  "normalizeWorkoutTypesByPhase uses coaching brief readiness over missing profile experience",
+  () => {
+    const sessions = [
+      session({
+        id: "w3-progress",
+        date: "2026-04-16",
+        type: "progressionRun",
+        weekNumber: 3,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_10k", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    };
+
+    const withoutBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      8,
+      "en",
+    );
+    assert.equal(
+      findSession(withoutBrief, "w3-progress").type,
+      "fartlek",
+      "missing profile experience should use beginner-only workout policy",
+    );
+
+    const withPreparedBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      8,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        planLengthWeeks: 8,
+      }),
+    );
+    assert.equal(
+      findSession(withPreparedBrief, "w3-progress").type,
+      "progressionRun",
+      "prepared brief should map to intermediate and allow progression in build",
+    );
+  },
+);
+
+Deno.test(
+  "normalizeWorkoutTypesByPhase race-ready brief unlocks peak threshold training",
+  () => {
+    const sessions = [
+      session({
+        id: "w10-threshold",
+        date: "2026-05-02",
+        type: "thresholdRun",
+        weekNumber: 10,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    };
+
+    const withoutBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      12,
+      "en",
+    );
+    assert.equal(
+      findSession(withoutBrief, "w10-threshold").type,
+      "tempoRun",
+      "missing profile experience should not keep threshold in peak",
+    );
+
+    const withRaceReadyBrief = normalizeWorkoutTypesByPhase(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "raceReady",
+        planLengthWeeks: 12,
+      }),
+    );
+    assert.equal(
+      findSession(withRaceReadyBrief, "w10-threshold").type,
+      "thresholdRun",
+      "race-ready brief should map to experienced and keep threshold in peak",
+    );
+  },
+);
+
+Deno.test("normalizeWorkoutTypesByPhase keeps brand-new brief sessions conservative", () => {
+  const sessions = [
+    session({
+      id: "w5-racepace",
+      date: "2026-04-22",
+      type: "racePaceRun",
+      weekNumber: 5,
+    }),
+  ];
+
+  const result = normalizeWorkoutTypesByPhase(
+    sessions,
+    {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    },
+    8,
+    "en",
+    coachingBriefFixture({
+      raceType: "marathon",
+      readinessLevel: "underprepared",
+      planLengthWeeks: 8,
+    }),
+  );
+
+  assert.equal(
+    findSession(result, "w5-racepace").type,
+    "fartlek",
+    "underprepared/brand-new should remain conservative in specific phase",
+  );
+});
+
+Deno.test(
+  "normalizePeakLongRun uses coaching brief readiness when profile is missing experience",
+  () => {
+    const createSessions = (): GeneratedSession[] => [
+      session({
+        id: "w10-long",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 10,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-race",
+        date: "2026-05-16",
+        type: "racePaceRun",
+        distanceKm: 42.2,
+        weekNumber: 12,
+      }),
+    ];
+
+    const profileData: Record<string, unknown> = {
+      goal: { race: "race_marathon", raceDate: null },
+      fitness: {},
+      schedule: { hardDays: [] },
+    };
+
+    const prepared = normalizePeakLongRun(
+      createSessions(),
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "prepared",
+        planLengthWeeks: 12,
+        longRunCeilingKm: 40,
+      }),
+    );
+    assert.equal(
+      findSession(prepared, "w10-long").distanceKm,
+      30,
+      "prepared brief should resolve to intermediate peak long-run target",
+    );
+
+    const raceReady = normalizePeakLongRun(
+      createSessions(),
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "raceReady",
+        planLengthWeeks: 12,
+        longRunCeilingKm: 40,
+      }),
+    );
+    assert.equal(
+      findSession(raceReady, "w10-long").distanceKm,
+      32,
+      "race-ready brief should resolve to experienced peak long-run target",
+    );
+  },
+);
+
 Deno.test("normalizePeakLongRun does not update duration when distance unchanged", () => {
   const sessions = [
     session({
@@ -1655,6 +2989,100 @@ Deno.test("normalizePeakLongRun does not update duration when distance unchanged
     "duration should not change when distance unchanged",
   );
 });
+
+Deno.test(
+  "normalizePeakLongRun caps peak long-run at coaching brief longRunCeilingKm",
+  () => {
+    const result = normalizePeakLongRun(
+      [
+        session({
+          id: "w8-long",
+          date: "2026-06-13",
+          type: "longRun",
+          distanceKm: 12,
+          durationMinutes: 84,
+          weekNumber: 8,
+        }),
+        session({
+          id: "w10-long",
+          date: "2026-06-27",
+          type: "longRun",
+          distanceKm: 34,
+          durationMinutes: 196,
+          weekNumber: 10,
+        }),
+        session({
+          id: "w12-race",
+          date: "2026-07-11",
+          type: "racePaceRun",
+          distanceKm: 42.2,
+          weekNumber: 12,
+        }),
+      ],
+      profile({ race: "race_marathon", experience: "experience_experienced" }),
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "raceReady",
+        planLengthWeeks: 12,
+        longRunCeilingKm: 24,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Build base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Add race-specific work." },
+          { phase: "peak", weeks: 2, focus: "Peak specific load." },
+          { phase: "taperRace", weeks: 1, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = findSession(result, "w10-long");
+    assert.equal(peakLongRun.distanceKm, 24);
+    assert.ok(
+      peakLongRun.distanceKm <= 24,
+      `peak long run should respect brief longRunCeilingKm, got ${peakLongRun.distanceKm}`,
+    );
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun ignores malformed longRunCeilingKm of 0",
+  () => {
+    const result = normalizePeakLongRun(
+      [
+        session({
+          id: "w10-long",
+          date: "2026-07-11",
+          type: "longRun",
+          distanceKm: 20,
+          durationMinutes: 120,
+          weekNumber: 10,
+        }),
+      ],
+      profile({
+        race: "race_half_marathon",
+        experience: "experience_intermediate",
+      }),
+      12,
+      "en",
+      coachingBriefFixture({
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Increase load." },
+          { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+          { phase: "peak", weeks: 2, focus: "Peak specific load." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+        longRunCeilingKm: 0,
+      }),
+    );
+
+    const peakLongRun = findSession(result, "w10-long");
+    assert.equal(peakLongRun.distanceKm, 16);
+  },
+);
 
 Deno.test("smoothLongRunProgression reduces 5K 4km jump to 2km max", () => {
   const sessions = [
@@ -1790,6 +3218,204 @@ Deno.test("smoothLongRunProgression preserves normalized peak long run target", 
   assert.equal(findSession(result, "w10-sat").distanceKm, 26);
   assert.equal(findSession(result, "w10-sat").durationMinutes, 156);
 });
+
+Deno.test("smoothLongRunProgression uses coaching brief peak weeks", () => {
+  const brief = coachingBriefFixture({
+    raceType: "fiveK",
+    readinessLevel: "prepared",
+    planLengthWeeks: 8,
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Build base." },
+      { phase: "build", weeks: 2, focus: "Add effort." },
+      { phase: "specific", weeks: 2, focus: "Specific pace." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+  });
+
+  const sessions = [
+    session({
+      id: "w6-sat",
+      date: "2026-06-13",
+      type: "longRun",
+      distanceKm: 10,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w7-sat",
+      date: "2026-06-20",
+      type: "longRun",
+      distanceKm: 20,
+      weekNumber: 7,
+    }),
+  ];
+
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_5k", experience: "experience_intermediate" }),
+    8,
+    "en",
+    brief,
+  );
+
+  const week7 = findSession(result, "w7-sat");
+  assert.equal(week7.distanceKm, 12);
+  assert.ok(
+    week7.durationMinutes != null && week7.durationMinutes < 120,
+    "duration should be recalculated for smoothed long run",
+  );
+});
+
+Deno.test(
+  "smoothLongRunProgression caps smoothed long runs at coaching brief ceiling",
+  () => {
+    const brief = coachingBriefFixture({
+      longRunCeilingKm: 9,
+      phaseStrategy: [
+        { phase: "base", weeks: 2, focus: "Build base." },
+        { phase: "build", weeks: 2, focus: "Controlled build." },
+        { phase: "specific", weeks: 2, focus: "Specific work." },
+        { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+      ],
+    });
+
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 8,
+        durationMinutes: 50,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-sat",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 10,
+        durationMinutes: 60,
+        weekNumber: 2,
+      }),
+    ];
+
+    const result = smoothLongRunProgression(
+      sessions,
+      profile({ race: "race_5k", experience: "experience_beginner" }),
+      8,
+      "en",
+      brief,
+    );
+
+    assert.equal(findSession(result, "w2-sat").distanceKm, 9);
+  },
+);
+
+Deno.test("smoothLongRunProgression caps a single long run above coaching brief ceiling", () => {
+  const brief = coachingBriefFixture({
+    longRunCeilingKm: 10,
+    currentVolumeKmPerWeek: 0,
+    maxWeeklyVolumeKm: 100,
+  });
+  const sessions = [
+    session({
+      id: "w3-sat",
+      date: "2026-05-09",
+      type: "longRun",
+      distanceKm: 16,
+      weekNumber: 3,
+    }),
+  ];
+
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_10k", experience: "experience_intermediate" }),
+    8,
+    "en",
+    brief,
+  );
+
+  assert.equal(findSession(result, "w3-sat").distanceKm, 10);
+});
+
+Deno.test(
+  "smoothLongRunProgression caps down-week long run above coaching brief ceiling",
+  () => {
+    const brief = coachingBriefFixture({
+      longRunCeilingKm: 10,
+      currentVolumeKmPerWeek: 0,
+      maxWeeklyVolumeKm: 100,
+    });
+
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 18,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-sat",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 14,
+        weekNumber: 2,
+      }),
+    ];
+
+    const result = smoothLongRunProgression(
+      sessions,
+      profile({ race: "race_10k", experience: "experience_intermediate" }),
+      8,
+      "en",
+      brief,
+    );
+
+    assert.equal(findSession(result, "w2-sat").distanceKm, 10);
+  },
+);
+
+Deno.test(
+  "smoothLongRunProgression does not zero out on malformed longRunCeilingKm of 0",
+  () => {
+    const brief = coachingBriefFixture({
+      raceType: "fiveK",
+      longRunCeilingKm: 0,
+      currentVolumeKmPerWeek: 0,
+      maxWeeklyVolumeKm: 100,
+    });
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 10,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-sat",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 20,
+        weekNumber: 2,
+      }),
+    ];
+
+    const result = smoothLongRunProgression(
+      sessions,
+      profile({ race: "race_5k", experience: "experience_beginner" }),
+      8,
+      "en",
+      brief,
+    );
+
+    assert.equal(findSession(result, "w2-sat").distanceKm, 12);
+  },
+);
 
 Deno.test("smoothLongRunProgression preserves down week lower than previous", () => {
   const sessions = [
@@ -2464,6 +4090,48 @@ Deno.test("production rule pipeline repairs partial-week hard-day training after
   assert.ok(result.every((item) => item.id.includes(item.date.slice(0, 10))));
 });
 
+Deno.test(
+  "production rule pipeline with midweek planStartDate keeps week 1 partial",
+  () => {
+    const profileData = profile({
+      race: "race_10k",
+      raceDate: "2026-06-21T00:00:00.000",
+      experience: "experience_intermediate",
+      trainingDays: 4,
+      hardDays: ["day_tue", "day_thu", "day_sun"],
+      longRunDay: "day_sat",
+      planStartDate: "2026-06-10",
+    });
+    const totalWeeks = 8;
+    const input = [
+      session({
+        id: "w1-2026-06-10-intervals",
+        date: "2026-06-10",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-12-easyRun",
+        date: "2026-06-12",
+        type: "easyRun",
+      }),
+    ];
+
+    const result = runProductionRulePipeline(input, profileData, totalWeeks);
+    const hasPreStartSession = result.some((session) =>
+      session.date < "2026-06-10"
+    );
+    assert.ok(!hasPreStartSession);
+    assert.equal(trainingCountForTest(result), 4);
+    assert.equal(findByDate(result, "2026-06-10").date, "2026-06-10");
+    assert.ok(result.some((session) => session.date === "2026-06-13"));
+  },
+);
+
 Deno.test("production rule pipeline moves partial-week long run onto preferred day after calendar fill", () => {
   const profileData = profile({
     race: "race_10k",
@@ -2506,12 +4174,371 @@ Deno.test("production rule pipeline moves partial-week long run onto preferred d
   assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
 });
 
+Deno.test("production rule pipeline passes coaching brief to long-run smoothing", () => {
+  const profileData = profile({
+    race: "race_5k",
+    raceDate: "2026-06-21T00:00:00.000",
+    experience: "experience_experienced",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu", "day_sun"],
+    longRunDay: "day_sat",
+  });
+  const totalWeeks = 8;
+  const brief = coachingBriefFixture({
+    longRunCeilingKm: 10,
+    currentVolumeKmPerWeek: 0,
+    maxWeeklyVolumeKm: 100,
+  });
+  const input = [
+    session({
+      id: "w2-long",
+      date: "2026-05-02",
+      type: "longRun",
+      distanceKm: 20,
+      weekNumber: 2,
+      durationMinutes: 120,
+    }),
+  ];
+
+  const result = runProductionRulePipeline(
+    input,
+    profileData,
+    totalWeeks,
+    brief,
+  );
+  const weekTwoLongRuns = result.filter((item) =>
+    item.type === "longRun" && item.weekNumber === 2
+  );
+  assert.equal(weekTwoLongRuns.length, 1);
+  assert.equal(weekTwoLongRuns[0].distanceKm, 10);
+});
+
+Deno.test("production rule pipeline fully anchors low week 1 and enforces brief ceilings", () => {
+  const profileData = profile({
+    race: "race_10k",
+    raceDate: "2026-06-21T00:00:00.000",
+    longRunDay: "day_sat",
+  });
+  const totalWeeks = 8;
+  const brief = coachingBriefFixture({
+    source: "mixed",
+    confidence: "high",
+    currentVolumeKmPerWeek: 52,
+    maxWeeklyVolumeKm: 45,
+    longRunCeilingKm: 12,
+    planLengthWeeks: 8,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+  });
+  const input = [
+    session({
+      id: "w1-2026-04-27-easyRun",
+      date: "2026-04-27",
+      type: "easyRun",
+      distanceKm: 12,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w1-2026-04-30-easyRun",
+      date: "2026-04-30",
+      type: "easyRun",
+      distanceKm: 12,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w2-2026-05-04-easyRun",
+      date: "2026-05-04",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 2,
+    }),
+    session({
+      id: "w2-2026-05-06-easyRun",
+      date: "2026-05-06",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 2,
+    }),
+    session({
+      id: "w2-2026-05-07-longRun",
+      date: "2026-05-07",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 2,
+    }),
+    session({
+      id: "w3-2026-05-11-easyRun",
+      date: "2026-05-11",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 3,
+    }),
+    session({
+      id: "w3-2026-05-14-easyRun",
+      date: "2026-05-14",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 3,
+    }),
+    session({
+      id: "w3-2026-05-17-longRun",
+      date: "2026-05-17",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 3,
+    }),
+    session({
+      id: "w4-2026-05-18-easyRun",
+      date: "2026-05-18",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 4,
+    }),
+    session({
+      id: "w4-2026-05-21-easyRun",
+      date: "2026-05-21",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 4,
+    }),
+    session({
+      id: "w4-2026-05-24-longRun",
+      date: "2026-05-24",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 4,
+    }),
+    session({
+      id: "w5-2026-05-25-easyRun",
+      date: "2026-05-25",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 5,
+    }),
+    session({
+      id: "w5-2026-05-28-easyRun",
+      date: "2026-05-28",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 5,
+    }),
+    session({
+      id: "w5-2026-05-31-longRun",
+      date: "2026-05-31",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 5,
+    }),
+    session({
+      id: "w6-2026-06-01-easyRun",
+      date: "2026-06-01",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w6-2026-06-03-easyRun",
+      date: "2026-06-03",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w6-2026-06-06-longRun",
+      date: "2026-06-06",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 6,
+    }),
+  ];
+  const prePipelineWeekOneVolumeKm = input
+    .filter((item) => item.weekNumber === 1 && item.type !== "restDay")
+    .reduce((sum, session) => sum + (session.distanceKm ?? 0), 0);
+
+  const result = runProductionRulePipeline(
+    input,
+    profileData,
+    totalWeeks,
+    brief,
+  );
+
+  const weekOneVolumeKm = result
+    .filter((item) => item.weekNumber === 1 && item.type !== "restDay")
+    .reduce((sum, session) => sum + (session.distanceKm ?? 0), 0);
+  assert.ok(
+    weekOneVolumeKm >= 44,
+    `Expected anchored week 1 volume, got ${weekOneVolumeKm}`,
+  );
+  assert.ok(
+    weekOneVolumeKm > prePipelineWeekOneVolumeKm,
+    `Expected week 1 to be raised from ${prePipelineWeekOneVolumeKm} km`,
+  );
+
+  const taperStartWeek = totalWeeks - brief.taper.weeks + 1;
+  for (let weekNumber = 1; weekNumber < taperStartWeek; weekNumber += 1) {
+    const weeklyVolumeKm = result
+      .filter((item) =>
+        item.weekNumber === weekNumber &&
+        item.type !== "restDay" &&
+        item.type !== "crossTraining" &&
+        item.type !== "raceDay"
+      )
+      .reduce((sum, session) => sum + (session.distanceKm ?? 0), 0);
+    assert.ok(
+      weeklyVolumeKm <= brief.maxWeeklyVolumeKm + 0.01,
+      `Week ${weekNumber} volume ${weeklyVolumeKm} exceeds max ${brief.maxWeeklyVolumeKm}`,
+    );
+  }
+
+  const allLongRuns = result.filter((item) => item.type === "longRun");
+  assert.ok(
+    allLongRuns.every((item) =>
+      (item.distanceKm ?? 0) <= brief.longRunCeilingKm + 0.01
+    ),
+    `Long runs exceeded ceiling: ${
+      JSON.stringify(
+        allLongRuns.map((item) => `${item.date}:${item.distanceKm}`),
+      )
+    }`,
+  );
+
+  const planViolations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: result,
+    },
+    brief,
+  );
+  assert.deepEqual(planViolations, []);
+});
+
+Deno.test("production rule pipeline removes inferred race day when goal raceDate is missing", () => {
+  const profileData = profile({
+    race: "race_5k",
+    longRunDay: "day_sat",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu"],
+    raceDate: null,
+  });
+  const totalWeeks = 2;
+  const input = [
+    session({
+      id: "w1-2026-04-27-easyRun",
+      date: "2026-04-27",
+      weekNumber: 1,
+      type: "easyRun",
+      distanceKm: 6,
+    }),
+    session({
+      id: "w1-2026-05-03-easyRun",
+      date: "2026-05-03",
+      weekNumber: 1,
+      type: "easyRun",
+      distanceKm: 6,
+    }),
+    session({
+      id: "w2-2026-05-10-easyRun",
+      date: "2026-05-10",
+      weekNumber: 2,
+      type: "easyRun",
+      distanceKm: 8,
+    }),
+  ];
+
+  const result = runProductionRulePipeline(input, profileData, totalWeeks);
+  const inferredRaceDate = "2026-05-10";
+  assert.ok(
+    !result.some((item) => item.date === inferredRaceDate),
+    `Expected inferred race day ${inferredRaceDate} to be removed when raceDate is missing.`,
+  );
+  assert.ok(
+    result.some((item) => item.date === "2026-05-03"),
+    "Expected earlier-week session to remain after cleanup.",
+  );
+});
+
 Deno.test("expectedTotalWeeks anchors Sunday to current week's Monday", () => {
   const weeks = expectedTotalWeeks(
     profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
     new Date(Date.UTC(2026, 4, 31, 12)),
   );
-  assert.equal(weeks, 4);
+  assert.equal(weeks, 3);
+});
+
+Deno.test("expectedTotalWeeks resolves missing planStartDate to next future Monday", () => {
+  const withMissingPlanStart = expectedTotalWeeks(
+    profile({ race: "race_5k", raceDate: "2026-06-22T00:00:00.000" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(withMissingPlanStart, 3);
+
+  const withResolvedPlanStart = expectedTotalWeeks(
+    profile({
+      race: "race_5k",
+      raceDate: "2026-06-22T00:00:00.000",
+      planStartDate: "2026-06-03",
+    }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(withResolvedPlanStart, 4);
+});
+
+Deno.test("resolvePlanStartDate falls back to next Monday when profile date is missing", () => {
+  const cases: Array<
+    { label: string; generationDate: Date; expected: string }
+  > = [
+    {
+      label: "Monday",
+      generationDate: new Date(Date.UTC(2026, 5, 1, 12)),
+      expected: "2026-06-08",
+    },
+    {
+      label: "Tuesday",
+      generationDate: new Date(Date.UTC(2026, 5, 2, 12)),
+      expected: "2026-06-08",
+    },
+    {
+      label: "Wednesday",
+      generationDate: new Date(Date.UTC(2026, 5, 3, 12)),
+      expected: "2026-06-08",
+    },
+    {
+      label: "Sunday",
+      generationDate: new Date(Date.UTC(2026, 5, 7, 12)),
+      expected: "2026-06-08",
+    },
+  ];
+
+  for (const testCase of cases) {
+    const resolved = resolvePlanStartDate({}, testCase.generationDate);
+    assert.equal(resolved, testCase.expected, `${testCase.label} fallback`);
+  }
+});
+
+Deno.test(
+  "resolvePlanStartDate ignores ISO datetime planStartDate and uses fallback Monday",
+  () => {
+    const resolved = resolvePlanStartDate(
+      profile({ planStartDate: "2026-06-03T10:00:00Z" }),
+      new Date(Date.UTC(2026, 5, 2, 12)),
+    );
+    assert.equal(resolved, "2026-06-08");
+  },
+);
+
+Deno.test("resolvePlanStartDate keeps explicit schedule planStartDate", () => {
+  const resolved = resolvePlanStartDate(
+    profile({ planStartDate: "2026-06-03" }),
+    new Date(Date.UTC(2026, 5, 1, 12)),
+  );
+  assert.equal(resolved, "2026-06-03");
 });
 
 Deno.test("expectedTotalWeeks computes exact 3-week minimum window", () => {
@@ -2519,7 +4546,7 @@ Deno.test("expectedTotalWeeks computes exact 3-week minimum window", () => {
     profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
     new Date(Date.UTC(2026, 5, 1, 12)),
   );
-  assert.equal(weeks, 3);
+  assert.equal(weeks, 2);
 });
 
 Deno.test("expectedTotalWeeks returns exact unsupported short window", () => {
@@ -2527,8 +4554,20 @@ Deno.test("expectedTotalWeeks returns exact unsupported short window", () => {
     profile({ race: "race_5k", raceDate: "2026-06-01T00:00:00.000" }),
     new Date(Date.UTC(2026, 5, 1, 12)),
   );
-  assert.equal(weeks, 1);
+  assert.equal(weeks, 0);
 });
+
+Deno.test(
+  "expectedTotalWeeks returns 0 when explicit planStartDate is after fixed race date",
+  () => {
+    const weeks = expectedTotalWeeks(
+      profile({ race: "race_5k", raceDate: "2026-06-07T00:00:00.000" }),
+      new Date(Date.UTC(2026, 5, 1, 12)),
+      "2026-06-10",
+    );
+    assert.equal(weeks, 0);
+  },
+);
 
 Deno.test("expectedTotalWeeks returns null when no fixed race date", () => {
   const weeks = expectedTotalWeeks(
@@ -2847,7 +4886,7 @@ Deno.test("expectedTotalWeeks returns null when race date is in the past", () =>
   const weeks = expectedTotalWeeks(
     profile({ race: "race_10k", raceDate: pastRaceDate }),
   );
-  assert.equal(weeks, null);
+  assert.equal(weeks, 0);
 });
 
 Deno.test("validateGeneratedSchedule does not flag goal race as stressful_session_before_race", () => {
@@ -3023,127 +5062,6 @@ Deno.test("validateGeneratedPlanShape flags sessions after totalWeeks", () => {
   );
 });
 
-Deno.test("validateGeneratedPlanShape flags missing fixed race session", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-14-easyRun",
-        date: "2026-06-14",
-        weekNumber: 3,
-      }),
-    ],
-    3,
-    profile({ race: "race_5k", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "missing_fixed_goal_race_session" && v.date === "2026-06-15"
-    ),
-  );
-});
-
-Deno.test("validateGeneratedPlanShape flags fixed race outside final week", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-racePaceRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-        type: "racePaceRun",
-        distanceKm: 5,
-      }),
-      session({
-        id: "w3-2026-06-15-easyRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-      }),
-    ],
-    3,
-    profile({ race: "race_5k", raceDate: "2026-06-08" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "fixed_goal_race_not_final_week" &&
-      v.sessionId === "w2-2026-06-08-racePaceRun"
-    ),
-  );
-});
-
-Deno.test("validateGeneratedPlanShape requires fixed race session for custom race distance", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-15-easyRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-      }),
-    ],
-    3,
-    profile({ race: "race_other", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.ok(
-    violations.some((v) =>
-      v.rule === "missing_fixed_goal_race_session" && v.date === "2026-06-15"
-    ),
-  );
-});
-
-Deno.test("validateGeneratedPlanShape accepts fixed custom race session", () => {
-  const violations = validateGeneratedPlanShape(
-    [
-      session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
-        weekNumber: 1,
-      }),
-      session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-15-racePaceRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-        type: "racePaceRun",
-        distanceKm: null,
-      }),
-    ],
-    3,
-    profile({ race: "race_other", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
-  );
-  assert.deepEqual(violations, []);
-});
-
 Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () => {
   const violations = validateGeneratedPlanShape(
     [
@@ -3163,6 +5081,7 @@ Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () =>
     2,
     profile({ race: "race_5k", raceDate: "2026-06-15" }),
     new Date(Date.UTC(2026, 5, 1, 12)),
+    "2026-06-01",
   );
   assert.ok(
     violations.some((v) =>
@@ -3172,45 +5091,303 @@ Deno.test("validateGeneratedPlanShape flags date and week label mismatch", () =>
   );
 });
 
-Deno.test("validateGeneratedPlanShape flags duplicate fixed race date sessions", () => {
+Deno.test("validateGeneratedPlanShape keeps fixed-race totalWeeks strict after date normalization", () => {
+  const sessions = normalizeSessionIds(
+    ensureFullCalendarWeeks(
+      normalizeWeekNumbersFromDates(
+        [
+          session({
+            id: "w1-2026-06-11-racePaceRun",
+            date: "2026-06-11",
+            weekNumber: 1,
+            type: "racePaceRun",
+            distanceKm: 5,
+          }),
+          session({
+            id: "w1-2026-06-09-easyRun",
+            date: "2026-06-09",
+            weekNumber: 1,
+            type: "easyRun",
+          }),
+          session({
+            id: "w2-2026-06-16-longRun",
+            date: "2026-06-16",
+            weekNumber: 2,
+            type: "longRun",
+          }),
+        ],
+        profile({
+          race: "race_10k",
+          raceDate: "2026-06-11",
+          planStartDate: "2026-06-04",
+        }),
+        new Date(Date.UTC(2026, 5, 4, 12)),
+        "2026-06-04",
+      ),
+      "en",
+      "2026-06-04",
+    ),
+  );
+  const violations = validateGeneratedPlanShape(
+    sessions,
+    2,
+    profile({
+      race: "race_10k",
+      raceDate: "2026-06-11",
+      planStartDate: "2026-06-04",
+    }),
+    new Date(Date.UTC(2026, 5, 12, 12)),
+    "2026-06-04",
+  );
+  assert.ok(
+    violations.some((v) => v.rule === "session_week_after_total_weeks"),
+  );
+});
+
+Deno.test("validateGeneratedPlanShape rejects sessions before explicit planStartDate", () => {
   const violations = validateGeneratedPlanShape(
     [
       session({
-        id: "w1-2026-06-01-easyRun",
-        date: "2026-06-01",
+        id: "w1-2026-06-08-easyRun",
+        date: "2026-06-08",
         weekNumber: 1,
       }),
       session({
-        id: "w2-2026-06-08-easyRun",
-        date: "2026-06-08",
-        weekNumber: 2,
-      }),
-      session({
-        id: "w3-2026-06-15-racePaceRun",
-        date: "2026-06-15",
-        weekNumber: 3,
-        type: "racePaceRun",
-        distanceKm: 5,
-      }),
-      session({
-        id: "w3-2026-06-15-restDay",
-        date: "2026-06-15",
-        weekNumber: 3,
-        type: "restDay",
-        distanceKm: null,
-        durationMinutes: null,
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        weekNumber: 1,
       }),
     ],
-    3,
-    profile({ race: "race_5k", raceDate: "2026-06-15" }),
-    new Date(Date.UTC(2026, 5, 1, 12)),
+    1,
+    profile({
+      race: "race_5k",
+      raceDate: null,
+      planStartDate: "2026-06-10",
+    }),
+    new Date(Date.UTC(2026, 5, 12, 12)),
+    "2026-06-10",
   );
   assert.ok(
     violations.some((v) =>
-      v.rule === "duplicate_fixed_race_date_session" &&
-      v.date === "2026-06-15"
+      v.rule === "session_before_plan_start" &&
+      v.sessionId === "w1-2026-06-08-easyRun"
     ),
   );
+});
+
+Deno.test("validateGeneratedPlanShape maps week labels from selected planStartDate anchor", () => {
+  const violations = validateGeneratedPlanShape(
+    [
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        weekNumber: 1,
+      }),
+      session({
+        id: "w1-2026-06-14-easyRun",
+        date: "2026-06-14",
+        weekNumber: 1,
+      }),
+    ],
+    1,
+    profile({
+      race: "race_5k",
+      raceDate: null,
+      planStartDate: "2026-06-10",
+    }),
+    new Date(Date.UTC(2026, 5, 12, 12)),
+    "2026-06-10",
+  );
+  assert.ok(!violations.some((v) => v.rule === "session_date_week_mismatch"));
+  assert.ok(!violations.some((v) => v.rule === "session_before_plan_start"));
+});
+
+Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects first week far below high-confidence Strava anchor", () => {
+  const violations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks: 8,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: [
+        session({
+          id: "w1-2026-06-08-easyRun",
+          date: "2026-06-08",
+          weekNumber: 1,
+          distanceKm: 6,
+        }),
+        session({
+          id: "w1-2026-06-10-easyRun",
+          date: "2026-06-10",
+          weekNumber: 1,
+          distanceKm: 6,
+        }),
+        session({
+          id: "w1-2026-06-13-longRun",
+          date: "2026-06-13",
+          weekNumber: 1,
+          type: "longRun",
+          distanceKm: 8,
+        }),
+      ],
+    },
+    coachingBriefFixture({
+      currentVolumeKmPerWeek: 52,
+      maxWeeklyVolumeKm: 68,
+      longRunCeilingKm: 24,
+    }),
+  );
+
+  assert.ok(
+    violations.some((violation) =>
+      violation.rule === "coaching_brief_week_one_below_anchor"
+    ),
+    JSON.stringify(violations),
+  );
+});
+
+Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects long run above brief ceiling", () => {
+  const violations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks: 8,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: [
+        session({
+          id: "w1-2026-06-13-longRun",
+          date: "2026-06-13",
+          weekNumber: 1,
+          type: "longRun",
+          distanceKm: 28,
+        }),
+      ],
+    },
+    coachingBriefFixture({
+      currentVolumeKmPerWeek: 45,
+      maxWeeklyVolumeKm: 68,
+      longRunCeilingKm: 22,
+    }),
+  );
+
+  assert.ok(
+    violations.some((violation) =>
+      violation.rule === "coaching_brief_long_run_above_ceiling"
+    ),
+    JSON.stringify(violations),
+  );
+});
+
+Deno.test("phaseForWeekFromCoachingBrief preserves final two-week taper after legacy phase rewrite", () => {
+  const brief = coachingBriefFixture({
+    planLengthWeeks: 8,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Protect base." },
+      { phase: "build", weeks: 2, focus: "Controlled threshold." },
+      { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+  });
+  const profileData = profile({ race: "race_half_marathon" });
+  const legacyFinalWeekSevenPhase = phaseForWeek(7, 8, profileData);
+  const finalSessions = [
+    session({
+      id: "w7-2026-07-20-easyRun",
+      date: "2026-07-20",
+      weekNumber: 7,
+      phase: phaseForWeekFromCoachingBrief(7, 8, profileData, brief),
+    }),
+    session({
+      id: "w8-2026-07-27-easyRun",
+      date: "2026-07-27",
+      weekNumber: 8,
+      phase: phaseForWeekFromCoachingBrief(8, 8, profileData, brief),
+    }),
+  ];
+
+  assert.equal(legacyFinalWeekSevenPhase, "peak");
+  assert.equal(finalSessions[0].phase, "taperRace");
+  assert.deepEqual(
+    validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: 8,
+        raceGuidance: {
+          schemaVersion: 1,
+          raceDayExecution: "Use the evidence target.",
+        },
+        sessions: finalSessions,
+      },
+      brief,
+    ).filter((violation) =>
+      violation.rule === "coaching_brief_taper_phase_mismatch"
+    ),
+    [],
+  );
+});
+
+Deno.test("validateGeneratedPlanAgainstCoachingBrief catches post-transform taper phase mismatch", () => {
+  const violations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks: 8,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: [
+        session({
+          id: "w7-2026-07-20-easyRun",
+          date: "2026-07-20",
+          weekNumber: 7,
+          phase: "peak",
+        }),
+        session({
+          id: "w8-2026-07-27-easyRun",
+          date: "2026-07-27",
+          weekNumber: 8,
+          phase: "taperRace",
+        }),
+      ],
+    },
+    coachingBriefFixture(),
+  );
+
+  assert.ok(
+    violations.some((violation) =>
+      violation.rule === "coaching_brief_taper_phase_mismatch"
+    ),
+    JSON.stringify(violations),
+  );
+});
+
+Deno.test("unsupportedCoachingBriefReason rejects custom race briefs before generation", () => {
+  const reason = unsupportedCoachingBriefReason(
+    coachingBriefFixture({
+      raceType: "other",
+      readinessLevel: "unsupported",
+      evidenceTarget: {
+        distanceKm: null,
+        timeSec: null,
+        paceSecPerKm: null,
+        confidence: "limited",
+        source: "manual",
+        supported: false,
+        reason: "Custom race distance.",
+      },
+    }),
+  );
+
+  assert.ok(reason?.includes("Custom race distances"));
+});
+
+Deno.test("unsupportedCoachingBriefReason allows supported standard race briefs", () => {
+  assert.equal(unsupportedCoachingBriefReason(coachingBriefFixture()), null);
 });
 
 function profile({
@@ -3220,6 +5397,8 @@ function profile({
   race = "race_5k",
   raceDate = null,
   trainingDays = null,
+  planStartDate = null,
+  strengthPreferences = null,
 }: {
   experience?: string;
   hardDays?: string[];
@@ -3227,11 +5406,71 @@ function profile({
   race?: string;
   raceDate?: string | null;
   trainingDays?: number | null;
+  planStartDate?: string | null;
+  strengthPreferences?: Record<string, unknown> | null;
 } = {}): Record<string, unknown> {
   return {
     goal: { race, raceDate },
     fitness: { experience },
-    schedule: { hardDays, longRunDay, trainingDays },
+    schedule: {
+      hardDays,
+      longRunDay,
+      trainingDays,
+      ...(planStartDate == null ? {} : { planStartDate }),
+    },
+    ...(strengthPreferences == null ? {} : { strengthPreferences }),
+  };
+}
+
+function coachingBriefFixture(
+  overrides: Partial<CoachingBrief> = {},
+): CoachingBrief {
+  const evidenceTarget = {
+    distanceKm: 21.097,
+    timeSec: 6900,
+    paceSecPerKm: 327,
+    confidence: "high" as const,
+    source: "strava" as const,
+    supported: true,
+    reason: "Backed by measured evidence.",
+  };
+
+  return {
+    raceType: "halfMarathon",
+    readinessLevel: "prepared",
+    confidence: "high",
+    source: "strava",
+    currentVolumeKmPerWeek: 52,
+    currentRunsPerWeek: 5,
+    recentLongRunKm: 18,
+    planLengthWeeks: 8,
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Protect base." },
+      { phase: "build", weeks: 2, focus: "Controlled threshold." },
+      { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+    maxWeeklyVolumeKm: 68,
+    longRunCeilingKm: 24,
+    weeklyRunDays: 5,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+    workoutEmphasis: ["aerobic volume", "threshold"],
+    evidenceTarget,
+    ambitiousTarget: {
+      ...evidenceTarget,
+      timeSec: 6600,
+      paceSecPerKm: 313,
+      confidence: "limited",
+      supported: false,
+      reason: "Too aggressive for current evidence.",
+    },
+    constraints: ["Do not prescribe unsupported race-pace workouts."],
+    rationale: ["Used measured Strava evidence."],
+    ...overrides,
   };
 }
 
@@ -3285,10 +5524,22 @@ function runProductionRulePipeline(
   input: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
+  const scheduleCandidate = profileData.schedule;
+  const schedule = typeof scheduleCandidate === "object" &&
+      scheduleCandidate != null &&
+      !Array.isArray(scheduleCandidate)
+    ? scheduleCandidate as Record<string, unknown>
+    : undefined;
   const scheduleNormalizedSessions = normalizeTrainingDayCount(
     input,
     profileData,
+    "en",
+    typeof schedule?.planStartDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(schedule.planStartDate)
+      ? schedule.planStartDate
+      : undefined,
   );
   const longRunPlacedSessions = placeLongRunsOnPreferredDay(
     scheduleNormalizedSessions,
@@ -3298,7 +5549,15 @@ function runProductionRulePipeline(
     longRunPlacedSessions,
     profileData,
   );
-  const fullCalendarSessions = ensureFullCalendarWeeks(stressSpacedSessions);
+  const planStartDate = typeof schedule?.planStartDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(schedule.planStartDate)
+    ? schedule.planStartDate
+    : undefined;
+  const fullCalendarSessions = ensureFullCalendarWeeks(
+    stressSpacedSessions,
+    "en",
+    planStartDate,
+  );
   const fullCalendarLongRunPlacedSessions = placeLongRunsOnPreferredDay(
     fullCalendarSessions,
     profileData,
@@ -3311,25 +5570,47 @@ function runProductionRulePipeline(
     hardDayRestedSessions,
     profileData,
   );
-  const peakNormalizedSessions = normalizePeakLongRun(
+  const volumeRampedSessions = normalizeWeeklyVolumeRamp(
     scheduleAdjustedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
+  );
+  const peakNormalizedSessions = normalizePeakLongRun(
+    volumeRampedSessions,
+    profileData,
+    totalWeeks,
+    "en",
+    coachingBrief,
   );
   const progressionSmoothedSessions = smoothLongRunProgression(
     peakNormalizedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
   );
-  const taperNormalizedSessions = normalizeTaper(
+  const volumeStabilizedSessions = normalizeWeeklyVolumeRamp(
     progressionSmoothedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
+  );
+  const taperNormalizedSessions = normalizeTaper(
+    volumeStabilizedSessions,
+    profileData,
+    totalWeeks,
+    "en",
+    coachingBrief,
   );
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
     taperNormalizedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
@@ -3339,21 +5620,49 @@ function runProductionRulePipeline(
     session,
   ) => ({
     ...session,
-    phase: phaseForWeek(session.weekNumber, totalWeeks, profileData),
+    phase: phaseForWeekFromCoachingBrief(
+      session.weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    ),
   }));
-  const raceFinalizedSessions = ensureGoalRaceSession(
+  const truncatedSessions = truncateAfterRaceDate(
     phaseStampedSessions,
     profileData,
   );
-  const truncatedSessions = truncateAfterRaceDate(
-    raceFinalizedSessions,
-    profileData,
-  );
-  const preRaceTaperedSessions = enforcePreRaceTaper(
+  const goal = typeof profileData.goal === "object" &&
+      profileData.goal != null &&
+      !Array.isArray(profileData.goal)
+    ? profileData.goal as Record<string, unknown>
+    : undefined;
+  const sessionsWithoutRaceDate = removeSessionsOnRaceDate(
     truncatedSessions,
+    typeof goal?.raceDate === "string" ? goal.raceDate : undefined,
+  );
+  const raceDate = typeof goal?.raceDate === "string"
+    ? goal.raceDate
+    : undefined;
+  const preRaceTaperedSessions = enforcePreRaceTaper(
+    sessionsWithoutRaceDate,
     profileData,
   );
-  return normalizeSessionIds(preRaceTaperedSessions);
+  const raceDayDate = raceDate == null
+    ? lastSessionDateInString(preRaceTaperedSessions)
+    : raceDate;
+  const sessionsBeforeRaceDayInfo = raceDayDate == null
+    ? preRaceTaperedSessions
+    : removeSessionsOnRaceDate(preRaceTaperedSessions, raceDayDate);
+  return normalizeSessionIds(sessionsBeforeRaceDayInfo);
+}
+
+function lastSessionDateInString(
+  sessions: ReadonlyArray<{ date: string }>,
+): string | null {
+  const sorted = sessions.map((session) => session.date?.slice(0, 10)).filter((
+    date,
+  ): date is string => typeof date === "string" && date.length > 0).sort();
+  return sorted.length === 0 ? null : sorted[sorted.length - 1];
 }
 
 function session(
@@ -3368,6 +5677,7 @@ function session(
     durationMinutes: overrides.durationMinutes ?? 35,
     coachNote: overrides.coachNote ?? null,
     targetZone: overrides.targetZone ?? "easy",
+    phase: overrides.phase,
     warmUpMinutes: overrides.warmUpMinutes ?? null,
     coolDownMinutes: overrides.coolDownMinutes ?? null,
     intervalReps: overrides.intervalReps ?? null,

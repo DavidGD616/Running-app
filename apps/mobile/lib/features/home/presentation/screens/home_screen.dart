@@ -40,6 +40,8 @@ class HomeScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
@@ -79,6 +81,8 @@ class HomeScreen extends ConsumerWidget {
       // Rest
       case SessionType.restDay:
         return null;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoSubtitle;
       // Endurance
       case SessionType.easyRun:
         return l10n.sessionDescEasyRun;

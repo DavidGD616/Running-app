@@ -15,6 +15,7 @@ import '../../../integrations/domain/models/device_connection.dart';
 import '../../../integrations/presentation/device_connection_provider.dart';
 import '../../../strava/data/strava_service.dart';
 import '../../../strava/domain/athlete_summary.dart';
+import '../../../strava/domain/strava_coaching_profile_builder.dart';
 import '../onboarding_provider.dart';
 
 class StravaConnectScreen extends ConsumerStatefulWidget {
@@ -48,35 +49,45 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
       final athlete = await athleteFuture;
       final stats = await statsFuture;
       final activities = await activitiesFuture;
+      final syncedAt = DateTime.now().toUtc();
 
       final summary = deriveAthleteSummary(
         activities,
         stats,
         athlete,
-        DateTime.now().toUtc(),
+        syncedAt,
       );
-      ref.read(onboardingProvider.notifier).setStrava(summary: summary);
-      await ref.read(deviceConnectionsProvider.notifier).upsertServiceConnection(
-        vendor: IntegrationVendor.strava,
-        capabilities: {
-          IntegrationCapability.autoImport,
-          IntegrationCapability.heartRate,
-          IntegrationCapability.heartRateZones,
-          IntegrationCapability.distance,
-          IntegrationCapability.pace,
-          IntegrationCapability.elevation,
-        },
-        lastSyncedAt: DateTime.now(),
+      final coachingProfile = buildStravaCoachingProfile(
+        activities,
+        stats: stats,
+        athlete: athlete,
+        now: syncedAt,
+        syncedAt: syncedAt,
       );
+      ref
+          .read(onboardingProvider.notifier)
+          .setStravaCoachingProfile(
+            summary: summary,
+            coachingProfile: coachingProfile,
+          );
+      await ref
+          .read(deviceConnectionsProvider.notifier)
+          .upsertServiceConnection(
+            vendor: IntegrationVendor.strava,
+            capabilities: {
+              IntegrationCapability.autoImport,
+              IntegrationCapability.heartRate,
+              IntegrationCapability.heartRateZones,
+              IntegrationCapability.distance,
+              IntegrationCapability.pace,
+              IntegrationCapability.elevation,
+            },
+            lastSyncedAt: DateTime.now(),
+          );
 
       if (!mounted) return;
 
-      if (summary.insufficientData) {
-        context.push(RouteNames.fitness);
-        return;
-      }
-
-      context.push(RouteNames.schedule);
+      context.push(RouteNames.stravaAnalysis);
     } on StravaServiceException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -113,7 +124,7 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
 
   void _continueWithoutStrava() {
     ref.read(onboardingProvider.notifier).useManualFitnessInput();
-    context.push(RouteNames.fitness);
+    context.push(RouteNames.manualFitness);
   }
 
   @override
@@ -156,7 +167,7 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
                         ),
                       ),
                       Text(
-                        l10n.onboardingStep(2, 8),
+                        l10n.onboardingStep(2, 9),
                         style: AppTypography.textTheme.labelSmall?.copyWith(
                           color: AppColors.textSecondary,
                           fontWeight: FontWeight.w500,
@@ -167,7 +178,7 @@ class _StravaConnectScreenState extends ConsumerState<StravaConnectScreen> {
                   const SizedBox(height: AppSpacing.sm),
                   const Padding(
                     padding: EdgeInsets.only(left: AppSpacing.sm),
-                    child: AppProgressBar(current: 2, total: 8),
+                    child: AppProgressBar(current: 2, total: 9),
                   ),
                 ],
               ),

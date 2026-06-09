@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 
 import '../domain/models/gps_state.dart';
+import '../domain/live_pace_guidance.dart';
+import '../../training_plan/domain/models/workout_target.dart';
 import '../domain/run_live_activity_data.dart';
 import 'run_live_activity_bridge.dart';
 import 'run_live_activity_background_service.dart';
@@ -19,6 +21,7 @@ class ActiveRunLiveActivitySync {
   final RunLiveActivityBridgePort _bridge;
   final RunLiveActivityBackgroundServicePort _backgroundService;
   final SyncClock _clock;
+  final _paceGuidanceEvaluator = LivePaceGuidanceEvaluator();
 
   bool _started = false;
   bool _ended = false;
@@ -37,6 +40,9 @@ class ActiveRunLiveActivitySync {
     required int timelineIndex,
     GpsStatus gpsStatus = GpsStatus.ready,
     bool isTimerOnlyMode = false,
+    String? paceGuidanceMessageKey,
+    LivePaceGuidanceSeverity paceGuidanceSeverity =
+        LivePaceGuidanceSeverity.none,
   }) async {
     if (_ended) return;
 
@@ -46,6 +52,8 @@ class ActiveRunLiveActivitySync {
       timelineIndex: timelineIndex,
       gpsStatus: gpsStatus,
       isTimerOnlyMode: isTimerOnlyMode,
+      paceGuidanceMessageKey: paceGuidanceMessageKey,
+      paceGuidanceSeverity: paceGuidanceSeverity,
     );
     final immediate = _shouldSendImmediately(signature);
     final throttled = _shouldSendThrottled(signature, now);
@@ -73,6 +81,65 @@ class ActiveRunLiveActivitySync {
     }
   }
 
+  LivePaceGuidanceResult resolvePaceGuidance({
+    required int currentPaceSecondsPerKm,
+    required WorkoutTarget? currentBlockTarget,
+    WorkoutTarget? fallbackTarget,
+    TargetZone? fallbackZone,
+    required Duration runElapsed,
+    required Duration blockElapsed,
+    required int timelineIndex,
+    required bool isPaused,
+    required bool isTimerOnlyMode,
+    required bool isGpsReady,
+    DateTime? now,
+  }) {
+    final guidance = _paceGuidanceEvaluator.evaluate(
+      LivePaceGuidanceInput(
+        currentPaceSecondsPerKm: currentPaceSecondsPerKm,
+        currentBlockTarget: currentBlockTarget,
+        fallbackTarget: fallbackTarget,
+        fallbackZone: fallbackZone,
+        runElapsed: runElapsed,
+        blockElapsed: blockElapsed,
+        timelineIndex: timelineIndex,
+        isPaused: isPaused,
+        isTimerOnlyMode: isTimerOnlyMode,
+        isGpsReady: isGpsReady,
+        now: now ?? _clock(),
+      ),
+    );
+    return guidance;
+  }
+
+  String? resolvePaceGuidanceMessageKey({
+    required int currentPaceSecondsPerKm,
+    required WorkoutTarget? currentBlockTarget,
+    WorkoutTarget? fallbackTarget,
+    TargetZone? fallbackZone,
+    required Duration runElapsed,
+    required Duration blockElapsed,
+    required int timelineIndex,
+    required bool isPaused,
+    required bool isTimerOnlyMode,
+    required bool isGpsReady,
+    DateTime? now,
+  }) {
+    return resolvePaceGuidance(
+      currentPaceSecondsPerKm: currentPaceSecondsPerKm,
+      currentBlockTarget: currentBlockTarget,
+      fallbackTarget: fallbackTarget,
+      fallbackZone: fallbackZone,
+      runElapsed: runElapsed,
+      blockElapsed: blockElapsed,
+      timelineIndex: timelineIndex,
+      isPaused: isPaused,
+      isTimerOnlyMode: isTimerOnlyMode,
+      isGpsReady: isGpsReady,
+      now: now,
+    ).messageKey;
+  }
+
   bool _shouldSendImmediately(_PayloadSignature next) {
     final prev = _lastSignature;
     if (prev == null) return true;
@@ -84,6 +151,9 @@ class ActiveRunLiveActivitySync {
     if (prev.repLabel != next.repLabel) return true;
     if (prev.gpsStatus != next.gpsStatus) return true;
     if (prev.isTimerOnlyMode != next.isTimerOnlyMode) return true;
+    if (prev.statusLabel != next.statusLabel) return true;
+    if (prev.paceGuidanceMessageKey != next.paceGuidanceMessageKey) return true;
+    if (prev.paceGuidanceSeverity != next.paceGuidanceSeverity) return true;
 
     return false;
   }
@@ -143,6 +213,9 @@ class _PayloadSignature {
     required this.timelineIndex,
     required this.gpsStatus,
     required this.isTimerOnlyMode,
+    required this.statusLabel,
+    required this.paceGuidanceMessageKey,
+    required this.paceGuidanceSeverity,
   });
 
   final double distanceKm;
@@ -155,12 +228,18 @@ class _PayloadSignature {
   final int timelineIndex;
   final GpsStatus gpsStatus;
   final bool isTimerOnlyMode;
+  final String statusLabel;
+  final String? paceGuidanceMessageKey;
+  final LivePaceGuidanceSeverity paceGuidanceSeverity;
 
   factory _PayloadSignature.fromData(
     RunLiveActivityData data, {
     required int timelineIndex,
     required GpsStatus gpsStatus,
     required bool isTimerOnlyMode,
+    String? paceGuidanceMessageKey,
+    LivePaceGuidanceSeverity paceGuidanceSeverity =
+        LivePaceGuidanceSeverity.none,
   }) {
     return _PayloadSignature(
       distanceKm: data.distanceKm,
@@ -173,6 +252,9 @@ class _PayloadSignature {
       timelineIndex: timelineIndex,
       gpsStatus: gpsStatus,
       isTimerOnlyMode: isTimerOnlyMode,
+      statusLabel: data.statusLabel,
+      paceGuidanceMessageKey: paceGuidanceMessageKey,
+      paceGuidanceSeverity: paceGuidanceSeverity,
     );
   }
 }

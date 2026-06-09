@@ -146,7 +146,7 @@ void main() {
             builder: (context, state) => const SummaryScreen(),
           ),
           GoRoute(
-            path: RouteNames.stravaConnect,
+            path: RouteNames.fitnessSource,
             builder: (context, state) => Scaffold(
               body: Column(
                 children: [
@@ -216,7 +216,6 @@ void main() {
         race: RunnerGoalRace.fiveK,
         hasRaceDate: true,
         raceDate: DateTime(2026, 5, 1),
-        priority: GoalPriority.justFinish,
       ),
     );
     final goal = buildHalfMarathonTimeGoal();
@@ -228,7 +227,7 @@ void main() {
 
     expect(find.text('Goal Race'), findsOneWidget);
     expect(find.text('Half Marathon'), findsOneWidget);
-    expect(find.text('October 18, 2026 · Improve my time'), findsOneWidget);
+    expect(find.text('October 18, 2026'), findsOneWidget);
     expect(find.text('5K'), findsNothing);
   });
 
@@ -240,7 +239,6 @@ void main() {
         race: RunnerGoalRace.fiveK,
         hasRaceDate: true,
         raceDate: DateTime(2026, 5, 1),
-        priority: GoalPriority.justFinish,
       ),
     );
     final goal = buildHalfMarathonTimeGoal();
@@ -265,7 +263,6 @@ void main() {
         race: RunnerGoalRace.fiveK,
         hasRaceDate: true,
         raceDate: DateTime(2026, 5, 1),
-        priority: GoalPriority.justFinish,
       ),
     );
     final goal = buildHalfMarathonTimeGoal();
@@ -282,7 +279,6 @@ void main() {
     expect(find.text('Review Changes'), findsOneWidget);
     expect(find.text('Half Marathon'), findsOneWidget);
     expect(find.text('October 18, 2026'), findsOneWidget);
-    expect(find.text('Improve my time'), findsOneWidget);
     expect(find.text('5K'), findsNothing);
   });
 
@@ -323,19 +319,16 @@ void main() {
     },
   );
 
-  testWidgets(
-    'plan ready secondary button routes to weekly plan when completion succeeds',
-    (tester) async {
-      final draft = buildRunnerProfileDraft();
-      final goal = buildHalfMarathonTimeGoal();
+  testWidgets('plan ready does not render a secondary weekly-plan button', (
+    tester,
+  ) async {
+    final draft = buildRunnerProfileDraft();
+    final goal = buildHalfMarathonTimeGoal();
 
-      await tester.pumpWidget(wrapWithRouter(draft: draft, goal: goal));
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(wrapWithRouter(draft: draft, goal: goal));
+    await tester.pumpAndSettle();
 
-      await tester.tap(find.text('View Full Week'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Plan'), findsOneWidget);
-    },
-  );
+    expect(find.text('View Full Week'), findsNothing);
+    expect(find.text('Start Plan'), findsOneWidget);
+  });
 }

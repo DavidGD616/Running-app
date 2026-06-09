@@ -7,9 +7,10 @@ RunnerProfileDraft buildRunnerProfileDraft() {
       race: RunnerGoalRace.halfMarathon,
       hasRaceDate: true,
       raceDate: DateTime(2026, 10, 18),
-      priority: GoalPriority.improveTime,
-      currentTime: const Duration(hours: 2, minutes: 1, seconds: 30),
-      targetTime: const Duration(hours: 1, minutes: 55),
+    ),
+    acceptedRaceTarget: AcceptedRaceTarget(
+      distanceKm: 21.097,
+      primaryTime: const Duration(hours: 1, minutes: 55),
     ),
     fitness: const FitnessProfileDraft(
       experience: RunnerExperience.intermediate,
@@ -33,6 +34,13 @@ RunnerProfileDraft buildRunnerProfileDraft() {
       painLevel: PainLevelChoice.none,
       injuryHistory: InjuryHistoryChoice.once,
       hasHealthConditions: BinaryChoice.no,
+    ),
+    strength: const StrengthProfileDraft(
+      lifts: true,
+      weeklyFrequency: 2,
+      categories: {StrengthCategory.lowerBody, StrengthCategory.coreMobility},
+      preferredDays: {WeekdayChoice.monday, WeekdayChoice.thursday},
+      sameDayOrder: SameDayOrderPreference.runFirst,
     ),
     trainingPreferences: const TrainingPreferencesProfileDraft(
       planPreference: PlanPreferenceChoice.balanced,

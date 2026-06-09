@@ -263,7 +263,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.activeRunEndRun),
-        content: Text(l10n.activeRunGpsLostAutoPauseBody),
+        content: Text(l10n.activeRunEndRunConfirmBody),
         actions: [
           TextButton(
             onPressed: () {
@@ -317,17 +317,34 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         final unitSystem =
             ref.read(userPreferencesProvider).value?.unitSystem ??
             UnitSystem.km;
+        final guidance = _syncCoordinator.resolvePaceGuidance(
+          currentPaceSecondsPerKm: next.currentPaceSecondsPerKm,
+          currentBlockTarget: next.currentBlock?.target,
+          fallbackTarget: _session.workoutTarget,
+          fallbackZone:
+              _session.workoutTarget?.zone ?? next.currentBlock?.target?.zone,
+          runElapsed: next.elapsed,
+          blockElapsed: next.blockElapsed,
+          timelineIndex: next.timelineIndex,
+          isPaused: next.isPaused,
+          isTimerOnlyMode: next.isTimerOnlyMode,
+          isGpsReady: next.gpsStatus == GpsStatus.ready,
+        );
         final data = buildRunLiveActivityData(
           state: next,
           session: _session,
           unitSystem: unitSystem,
           l10n: l10n,
+          paceGuidanceMessageKey: guidance.messageKey,
+          paceGuidanceSeverity: guidance.severity,
         );
         _syncCoordinator.sync(
           data: data,
           timelineIndex: next.timelineIndex,
           gpsStatus: next.gpsStatus,
           isTimerOnlyMode: next.isTimerOnlyMode,
+          paceGuidanceMessageKey: guidance.messageKey,
+          paceGuidanceSeverity: guidance.severity,
         );
       }
     });
@@ -554,6 +571,8 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     switch (type) {
       case SessionType.restDay:
         return l10n.sessionTypeRestDay;
+      case SessionType.raceDay:
+        return l10n.raceDayInfoTitle;
       case SessionType.easyRun:
         return l10n.weeklyPlanSessionEasyRun;
       case SessionType.longRun:
@@ -593,6 +612,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       SessionType.recoveryRun => l10n.activeRunGuidanceRecovery,
       SessionType.crossTraining => l10n.activeRunGuidanceEasy,
       SessionType.restDay => l10n.activeRunGuidanceRecovery,
+      SessionType.raceDay => l10n.raceDayInfoSubtitle,
     };
   }
 
@@ -655,6 +675,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
       SessionType.easyRun => l10n.activeRunTargetEasy,
       SessionType.crossTraining => l10n.activeRunTargetSteady,
       SessionType.restDay => l10n.activeRunTargetEasy,
+      SessionType.raceDay => l10n.raceDayInfoSubtitle,
     };
   }
 

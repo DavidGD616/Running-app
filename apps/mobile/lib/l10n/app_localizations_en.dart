@@ -290,7 +290,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingIntroFooter =>
-      '8 short sections · You can edit answers later';
+      '9 short sections · You can edit answers later';
 
   @override
   String get letsGo => 'Let\'s Go';
@@ -318,6 +318,288 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onboardingStravaPoweredBy => 'Powered by Strava';
+
+  @override
+  String get onboardingStravaAnalysisTitle => 'Strava analysis ready';
+
+  @override
+  String get onboardingStravaAnalysisSubtitle =>
+      'We reviewed your recent running data. Next, confirm the race target we\'ll use for your plan.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceLabel => 'Confidence';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceStrong => 'Strong data';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceWeak => 'Weak data';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceNoUsefulData => 'No useful data';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceStrongBody =>
+      'Your recent runs give us enough evidence to seed your training plan from Strava.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceWeakBody =>
+      'Your Strava history gives us a few signals, but manual details will make the plan safer.';
+
+  @override
+  String get onboardingStravaAnalysisConfidenceNoUsefulDataBody =>
+      'We could not find enough reliable recent running data to use Strava for this step.';
+
+  @override
+  String onboardingStravaAnalysisWindow(
+    String fromDate,
+    String throughDate,
+    int runCount,
+  ) {
+    return '$fromDate - $throughDate · $runCount runs';
+  }
+
+  @override
+  String get onboardingStravaAnalysisNoDataWindow =>
+      'No analysis window available';
+
+  @override
+  String get onboardingStravaAnalysisTrainingBaseSection => 'Training Base';
+
+  @override
+  String get onboardingStravaAnalysisEnduranceSection => 'Endurance';
+
+  @override
+  String get onboardingStravaAnalysisSpeedSection => 'Speed / Pace Zones';
+
+  @override
+  String get onboardingStravaAnalysisTerrainSection => 'Terrain';
+
+  @override
+  String get onboardingStravaAnalysisRecoverySection => 'Recovery / Guardrails';
+
+  @override
+  String get onboardingStravaAnalysisRaceTargetSection => 'Race Target';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusSection => 'Plan Focus';
+
+  @override
+  String get onboardingStravaAnalysisNoUsefulDataTitle =>
+      'Limited Strava signal';
+
+  @override
+  String get onboardingStravaAnalysisNoUsefulDataBody =>
+      'Continue with manual fitness details so we can build your starting point from answers you control.';
+
+  @override
+  String get onboardingStravaAnalysisNoSectionData =>
+      'No reliable signal found.';
+
+  @override
+  String get onboardingStravaAnalysisNoGuardrails =>
+      'No extra recovery limits detected.';
+
+  @override
+  String get onboardingStravaAnalysisNoRaceTarget =>
+      'Manual race details needed.';
+
+  @override
+  String onboardingStravaAnalysisEvidenceValue(String value, String date) {
+    return '$value · $date';
+  }
+
+  @override
+  String onboardingStravaAnalysisPaceRange(
+    String minPace,
+    String maxPace,
+    String unit,
+  ) {
+    return '$minPace-$maxPace $unit';
+  }
+
+  @override
+  String onboardingStravaAnalysisPaceSingle(String pace, String unit) {
+    return '$pace $unit';
+  }
+
+  @override
+  String onboardingStravaAnalysisPerWeekValue(String value, String unit) {
+    return '$value $unit/week';
+  }
+
+  @override
+  String onboardingStravaAnalysisRunsPerWeekValue(String value) {
+    return '$value runs/week';
+  }
+
+  @override
+  String onboardingStravaAnalysisDaysValue(int days) {
+    return '$days days';
+  }
+
+  @override
+  String onboardingStravaAnalysisRaceTargetValue(
+    String time,
+    String confidence,
+  ) {
+    return '$time · $confidence';
+  }
+
+  @override
+  String onboardingStravaAnalysisRaceTargetStretch(String time) {
+    return 'Stretch: $time';
+  }
+
+  @override
+  String get onboardingStravaAnalysisMetricWeeklyVolume => 'Weekly volume';
+
+  @override
+  String get onboardingStravaAnalysisMetricRunsPerWeek => 'Runs per week';
+
+  @override
+  String get onboardingStravaAnalysisMetricLongRun => 'Longest recent run';
+
+  @override
+  String get onboardingStravaAnalysisMetricLongestLayoff => 'Longest layoff';
+
+  @override
+  String get onboardingStravaAnalysisMetricHardPace => 'Hard pace marker';
+
+  @override
+  String get onboardingStravaAnalysisMetricEasyPace => 'Easy pace marker';
+
+  @override
+  String get onboardingStravaAnalysisMetricThresholdPace =>
+      'Threshold pace marker';
+
+  @override
+  String get onboardingStravaAnalysisMetricRaceReference =>
+      'Race target reference';
+
+  @override
+  String get onboardingStravaAnalysisMetricTrainingSignal => 'Training signal';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneRecovery => 'Recovery';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneEasy => 'Easy';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneLongRun => 'Long run';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneSteady => 'Steady';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneTempo => 'Tempo';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneThreshold => 'Threshold';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneRace => 'Race pace';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneIntervals => 'Intervals';
+
+  @override
+  String get onboardingStravaAnalysisPaceZoneStrides => 'Strides';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLoadSpikeTitle =>
+      'Recent load spike';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLoadSpikeBody =>
+      'Keep recovery days easy and frequent while the plan ramps up.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDetrainingTitle =>
+      'Consistency first';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDetrainingBody =>
+      'Build steady frequency before adding much intensity.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLongLayoffTitle =>
+      'Recent layoff';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailLongLayoffBody =>
+      'Increase volume gradually over the next block.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailSparseDataTitle =>
+      'Sparse recent data';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailSparseDataBody =>
+      'Use effort cues when pace guidance is uncertain.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyTitle =>
+      'Pace uncertainty';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailPaceUncertaintyBody =>
+      'Treat pace ranges as flexible until more runs support them.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDataCollectionTitle =>
+      'More data needed';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailDataCollectionBody =>
+      'Collect more consistent run data before relying on intensity targets.';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailFallbackTitle =>
+      'Recovery caution';
+
+  @override
+  String get onboardingStravaAnalysisGuardrailFallbackBody =>
+      'Use conservative recovery until we have clearer trends.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusDataCollection =>
+      'Collect more consistent runs before using Strava for target setting.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusRecoveryConsistency =>
+      'Lead with consistency and recovery before increasing training load.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusThresholdEndurance =>
+      'Build threshold strength while growing long-run endurance gradually.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusEnduranceSpeed =>
+      'Balance endurance consistency with controlled speed development.';
+
+  @override
+  String get onboardingStravaAnalysisPlanFocusFallback =>
+      'Build a steady base while we refine your plan signals.';
+
+  @override
+  String get onboardingStravaAnalysisUseAction => 'Use Strava Analysis';
+
+  @override
+  String get onboardingStravaAnalysisManualContinueAction =>
+      'Continue With Manual Details';
+
+  @override
+  String get onboardingStravaAnalysisManualAction =>
+      'Use Manual Fitness Instead';
+
+  @override
+  String get onboardingStravaAnalysisDisconnectAction => 'Disconnect Strava';
+
+  @override
+  String get onboardingStravaAnalysisDisconnectError =>
+      'We couldn\'t disconnect Strava right now. Try again or continue with manual details.';
 
   @override
   String get onboardingStravaConnectError =>
@@ -388,30 +670,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get tapToSetDate => 'DD / MM / YYYY';
-
-  @override
-  String get priorityLabel => 'What\'s your priority?';
-
-  @override
-  String get priorityJustFinish => 'Just finish';
-
-  @override
-  String get priorityFinishStrong => 'Finish feeling strong';
-
-  @override
-  String get priorityImproveTime => 'Improve my time';
-
-  @override
-  String get priorityConsistency => 'Build consistency';
-
-  @override
-  String get priorityGeneralFitness => 'General fitness';
-
-  @override
-  String get currentRaceTime => 'Current race time';
-
-  @override
-  String get targetRaceTime => 'Target race time';
 
   @override
   String get tapToSetTime => 'Tap to set time';
@@ -547,6 +805,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get scheduleSubtitle => 'Tell us when you can realistically train.';
+
+  @override
+  String get scheduleStartDateLabel => 'Plan start date';
+
+  @override
+  String get scheduleStartDateToday => 'Today';
+
+  @override
+  String get scheduleStartDateTomorrow => 'Tomorrow';
+
+  @override
+  String get scheduleStartDateNextMonday => 'Next Monday';
 
   @override
   String get trainingDaysLabel => 'Training days per week';
@@ -759,6 +1029,112 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get strength3DaysWeek => '3 days/week';
+
+  @override
+  String get strengthPreferencesTitle => 'Strength Preferences';
+
+  @override
+  String get strengthPreferencesSubtitle =>
+      'Tell us when lower-body strength usually happens so your running plan can protect key workouts.';
+
+  @override
+  String get strengthLiftsLabel => 'Do you do lower-body strength or leg day?';
+
+  @override
+  String get strengthFrequencyLabel => 'How many days per week?';
+
+  @override
+  String strengthFrequencyOption(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: '$days days',
+      one: '1 day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get strengthCategoriesLabel => 'What types of strength work?';
+
+  @override
+  String get strengthCategoriesHelper =>
+      'Choose categories only. Your running plan will not prescribe exact exercises.';
+
+  @override
+  String get strengthCategoryLowerBody => 'Lower body';
+
+  @override
+  String get strengthCategoryUpperBody => 'Upper body';
+
+  @override
+  String get strengthCategoryCoreMobility => 'Core / mobility';
+
+  @override
+  String get strengthCategoryFullBody => 'Full body';
+
+  @override
+  String get strengthPreferredDaysLabel => 'Leg days';
+
+  @override
+  String get strengthPreferredDaysHelper =>
+      'Pick the days you usually do lower-body strength.';
+
+  @override
+  String get strengthSameDayOrderLabel =>
+      'When running and lifting share a day';
+
+  @override
+  String get strengthSameDayOrderHelper =>
+      'This helps us place lower-body strength around hard runs and long runs.';
+
+  @override
+  String get strengthOrderRunFirst => 'Run first';
+
+  @override
+  String get strengthOrderRunFirstSub =>
+      'Best for quality run days. Put lower-body lifting after the run or later in the day.';
+
+  @override
+  String get strengthOrderLiftFirst => 'Lift first';
+
+  @override
+  String get strengthOrderLiftFirstSub =>
+      'Use when the lift matters more. Keep the run easy or separate it if legs feel heavy.';
+
+  @override
+  String get strengthOrderSeparate => 'Separate sessions';
+
+  @override
+  String get strengthOrderSeparateSub =>
+      'Prefer morning/evening separation when a run and lift share a day.';
+
+  @override
+  String get strengthOrderDepends => 'It depends';
+
+  @override
+  String get strengthOrderDependsSub =>
+      'We\'ll place strength around harder runs and long runs.';
+
+  @override
+  String get raceTargetTitle => 'Confirm your race target';
+
+  @override
+  String get raceTargetSuggestedSubtitle =>
+      'Use this target or adjust it before your plan is created.';
+
+  @override
+  String get raceTargetCustomSubtitle =>
+      'Add a target time so the plan can set the right workout paces.';
+
+  @override
+  String get raceTargetPrimaryLabel => 'Primary target';
+
+  @override
+  String get raceTargetSuggestedPrimaryLabel => 'Suggested target';
+
+  @override
+  String get raceTargetSuggestedStretchLabel => 'Stretch target';
 
   @override
   String get runSurfaceLabel => 'Where do you run most?';
@@ -1338,6 +1714,270 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planReadyViewFullWeek => 'View Full Week';
 
   @override
+  String get planMetadataTitle => 'Professional rationale';
+
+  @override
+  String get planMetadataReadinessLabel => 'Readiness';
+
+  @override
+  String get planMetadataConfidenceLabel => 'Confidence';
+
+  @override
+  String get planMetadataCurrentVolumeLabel => 'Current volume';
+
+  @override
+  String get planMetadataTargetsLabel => 'Targets';
+
+  @override
+  String get planMetadataPhaseStrategyLabel => 'Phase strategy';
+
+  @override
+  String get planMetadataRationaleLabel => 'Rationale';
+
+  @override
+  String get planMetadataReadinessRaceReady => 'Race ready';
+
+  @override
+  String get planMetadataReadinessPrepared => 'Prepared';
+
+  @override
+  String get planMetadataReadinessDeveloping => 'Developing';
+
+  @override
+  String get planMetadataReadinessUnderprepared => 'Underprepared';
+
+  @override
+  String get planMetadataReadinessUnsupported => 'Unsupported';
+
+  @override
+  String get planMetadataConfidenceHigh => 'High confidence';
+
+  @override
+  String get planMetadataConfidenceMedium => 'Medium confidence';
+
+  @override
+  String get planMetadataConfidenceLimited => 'Limited confidence';
+
+  @override
+  String get planMetadataSourceStrava => 'Strava source';
+
+  @override
+  String get planMetadataSourceManual => 'Manual source';
+
+  @override
+  String get planMetadataSourceMixed => 'Mixed source';
+
+  @override
+  String get planMetadataSourceUnknown => 'Unknown source';
+
+  @override
+  String planMetadataVolumeValue(String value) {
+    return '$value km/week';
+  }
+
+  @override
+  String planMetadataRunsValue(String value) {
+    return '$value runs/week';
+  }
+
+  @override
+  String planMetadataEvidenceTargetValue(String target) {
+    return 'Evidence $target';
+  }
+
+  @override
+  String planMetadataAmbitiousTargetValue(String target) {
+    return 'Ambitious $target';
+  }
+
+  @override
+  String get planMetadataUnsupportedTarget => 'not supported';
+
+  @override
+  String planMetadataPaceValue(String pace) {
+    return '$pace/km';
+  }
+
+  @override
+  String planMetadataPhaseWeeks(String phase, int weeks) {
+    return '$phase ${weeks}w';
+  }
+
+  @override
+  String get planMetadataPhaseBase => 'Base';
+
+  @override
+  String get planMetadataPhaseBuild => 'Build';
+
+  @override
+  String get planMetadataPhaseSpecific => 'Specific';
+
+  @override
+  String get planMetadataPhasePeak => 'Peak';
+
+  @override
+  String get planMetadataPhaseTaperRace => 'Taper';
+
+  @override
+  String get planMetadataPhaseSafeBuild => 'Safe build';
+
+  @override
+  String get planMetadataPhaseUnsupportedFallback => 'Fallback';
+
+  @override
+  String get planGuidancePaceZonesTitle => 'Pace Zones';
+
+  @override
+  String get planGuidanceRaceGuidanceTitle => 'Race Day Guidance';
+
+  @override
+  String get raceDayInfoTitle => 'Race Day';
+
+  @override
+  String get raceDayInfoSubtitle => 'Race strategy and final reminders';
+
+  @override
+  String get raceDayInfoBadge => 'Info';
+
+  @override
+  String get raceDayInfoDetailSubtitle =>
+      'Review the plan for how to approach the race. This is guidance only, not a run to start in the app.';
+
+  @override
+  String get raceDayInfoFallback =>
+      'Start controlled, settle into rhythm, and finish with your strongest sustainable effort.';
+
+  @override
+  String get raceGuidanceExecutionLabel => 'Race day execution';
+
+  @override
+  String get raceGuidanceWarmupLabel => 'Warmup';
+
+  @override
+  String get raceGuidanceSplitPlanLabel => 'Split plan';
+
+  @override
+  String get raceGuidanceWhenToPressLabel => 'When to push';
+
+  @override
+  String get raceGuidanceWhatToAvoidLabel => 'What to avoid';
+
+  @override
+  String get raceGuidanceCoachingNotesLabel => 'Coaching notes';
+
+  @override
+  String get planGuidanceRaceDayExecutionLabel => 'Race Day Execution';
+
+  @override
+  String get planGuidanceWarmupLabel => 'Warmup';
+
+  @override
+  String get planGuidancePrimaryTargetLabel => 'Primary target';
+
+  @override
+  String get planGuidanceStretchTargetLabel => 'Stretch target';
+
+  @override
+  String get planGuidanceSplitPlanLabel => 'Split plan';
+
+  @override
+  String get planGuidanceWhenToPressLabel => 'When to push';
+
+  @override
+  String get planGuidanceWhatToAvoidLabel => 'What to avoid';
+
+  @override
+  String get planGuidanceCoachingNotesLabel => 'Coaching notes';
+
+  @override
+  String get planGuidanceSleepNotesLabel => 'Sleep';
+
+  @override
+  String get planGuidanceFuelingNotesLabel => 'Fueling';
+
+  @override
+  String get planGuidanceHydrationNotesLabel => 'Hydration';
+
+  @override
+  String get planGuidanceTaperRemindersLabel => 'Taper reminders';
+
+  @override
+  String get planGuidanceWeatherCourseNotesLabel => 'Weather and course';
+
+  @override
+  String planGuidanceAtMostPace(String zoneValue, String unit) {
+    return 'No faster than $zoneValue $unit';
+  }
+
+  @override
+  String planGuidanceAtLeastPace(String zoneValue, String unit) {
+    return 'No slower than $zoneValue $unit';
+  }
+
+  @override
+  String get planSupportStrengthLabel => 'Strength';
+
+  @override
+  String get planSupportMobilityLabel => 'Mobility';
+
+  @override
+  String get planSupportDrillsLabel => 'Drills';
+
+  @override
+  String get planSupportSessionLoadLabel => 'Load';
+
+  @override
+  String get planSupportSessionTimingLabel => 'Timing';
+
+  @override
+  String get planSupportSessionInterferenceLabel => 'Interference';
+
+  @override
+  String get planSupportSessionTaperLabel => 'Taper';
+
+  @override
+  String get supportSessionLoadLight => 'Light';
+
+  @override
+  String get supportSessionLoadModerate => 'Moderate';
+
+  @override
+  String get supportSessionLoadHigh => 'High';
+
+  @override
+  String get supportSessionTimingOnOffDays => 'On off days';
+
+  @override
+  String get supportSessionTimingNextDay => 'Next day';
+
+  @override
+  String get supportSessionTimingSameDay => 'Same day';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeLongRun =>
+      'Avoid day before long run';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeRace =>
+      'Avoid day before race';
+
+  @override
+  String get supportSessionInterferenceAvoidDayBeforeKeyWorkout =>
+      'Avoid day before key workout';
+
+  @override
+  String get supportSessionTaperReduceLoadWeekBeforeRace =>
+      'Reduce load week before race';
+
+  @override
+  String get supportSessionTaperReduceLoad => 'Reduce load';
+
+  @override
+  String fullPlanRunsValue(int value) {
+    return '$value runs';
+  }
+
+  @override
   String get homeTitle => 'Today';
 
   @override
@@ -1765,11 +2405,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroSubtitle =>
-      'You can review your race, date, priority, and time targets before saving the changes.';
+      'You can review your race and date before saving the changes.';
 
   @override
-  String get settingsEditGoalIntroPointRace =>
-      'Adjust your race or target distance.';
+  String get settingsEditGoalIntroPointRace => 'Adjust your race distance.';
 
   @override
   String get settingsEditGoalIntroPointDate =>
@@ -1777,7 +2416,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsEditGoalIntroPointPriority =>
-      'Review your priority and pacing targets before saving.';
+      'Review the race details before saving.';
 
   @override
   String get settingsEditGoalIntroPointTraining =>
@@ -1789,11 +2428,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsNewGoalIntroSubtitle =>
-      'This flow starts fresh so you can choose a different target and save a new goal for your plan.';
+      'This flow starts fresh so you can choose a different race and save a new goal for your plan.';
 
   @override
-  String get settingsNewGoalIntroPointRace =>
-      'Choose a new race or custom distance.';
+  String get settingsNewGoalIntroPointRace => 'Choose a new race distance.';
 
   @override
   String get settingsNewGoalIntroPointDate =>
@@ -1936,6 +2574,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sessionDetailStartWorkout => 'Start Workout';
+
+  @override
+  String get sessionDetailSupportTitle => 'Support Session';
+
+  @override
+  String get sessionDetailSupportTypeLabel => 'Type';
+
+  @override
+  String get sessionDetailSupportStatusLabel => 'Status';
+
+  @override
+  String get sessionDetailSupportMetadataLabel => 'Session guidance';
+
+  @override
+  String get sessionDetailSupportNotesLabel => 'Notes';
+
+  @override
+  String get supportSessionStatusPlanned => 'Planned';
+
+  @override
+  String get supportSessionStatusCompleted => 'Completed';
+
+  @override
+  String get supportSessionStatusSkipped => 'Skipped';
+
+  @override
+  String get sessionDetailTargetRangeLabel => 'Target pace range';
+
+  @override
+  String get sessionDetailEffortCueLabel => 'Effort cue';
+
+  @override
+  String sessionDetailTargetAtLeastValue(String value, String unit) {
+    return 'At least $value $unit';
+  }
+
+  @override
+  String sessionDetailTargetAtMostValue(String value, String unit) {
+    return 'At most $value $unit';
+  }
+
+  @override
+  String get sessionDetailTargetGuidanceNote =>
+      'These pace targets are guidance before the run starts. Live pace feedback and alerts appear once your run is active.';
 
   @override
   String sessionPhaseEasyRunWarmDuration(int minutes) {
@@ -2257,6 +2939,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunEaseOff => 'Ease off';
+
+  @override
+  String get activeRunEaseOffFirm => 'Ease off now';
 
   @override
   String get activeRunPickUp => 'Pick it up';
@@ -2628,6 +3313,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunEndRun => 'End Run';
+
+  @override
+  String get activeRunEndRunConfirmBody =>
+      'Ending your run will save the session and take you to the summary screen.';
 
   @override
   String get activeRunTimerOnlyLabel => 'Timer only';

@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:running_app/features/active_run/domain/models/gps_state.dart';
+import 'package:running_app/features/active_run/domain/live_pace_guidance.dart';
 import 'package:running_app/features/active_run/presentation/active_run_live_activity_mapper.dart';
 import 'package:running_app/features/active_run/presentation/active_run_timeline.dart';
 import 'package:running_app/features/active_run/presentation/active_run_controller.dart';
@@ -182,6 +183,68 @@ void main() {
         );
 
         expect(result.statusLabel, 'Timer only');
+      });
+
+      test('uses pace guidance message key when provided', () {
+        final state = createRunningState();
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: null,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+          paceGuidanceMessageKey: 'activeRunPickUp',
+        );
+
+        expect(result.statusLabel, 'Pick it up');
+      });
+
+      test('uses firm ease-off guidance key when provided', () {
+        final state = createRunningState();
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: null,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+          paceGuidanceMessageKey: 'activeRunEaseOffFirm',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.firm,
+        );
+
+        expect(result.statusLabel, 'Ease off now');
+      });
+
+      test('uses gentle ease-off guidance key when provided', () {
+        final state = createRunningState();
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: null,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+          paceGuidanceMessageKey: 'activeRunEaseOff',
+          paceGuidanceSeverity: LivePaceGuidanceSeverity.gentle,
+        );
+
+        expect(result.statusLabel, 'Ease off');
+      });
+
+      test('ignores unknown guidance message key', () {
+        final state = createRunningState();
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: null,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+          paceGuidanceMessageKey: 'does-not-exist',
+        );
+
+        expect(result.statusLabel, 'Tracking');
       });
 
       test('distance label formats correctly', () {

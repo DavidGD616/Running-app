@@ -110,20 +110,6 @@ class SettingsGoalReviewScreen extends ConsumerWidget {
                             label: l10n.raceDateLabel,
                             value: formatGoalDate(context, goal),
                           ),
-                          _SummaryRow(
-                            label: l10n.priorityLabel,
-                            value: goalPriorityLabel(goal, l10n),
-                          ),
-                          if (goal?.currentTime != null)
-                            _SummaryRow(
-                              label: l10n.currentRaceTime,
-                              value: formatGoalDuration(goal!.currentTime!),
-                            ),
-                          if (goal?.targetTime != null)
-                            _SummaryRow(
-                              label: l10n.targetRaceTime,
-                              value: formatGoalDuration(goal!.targetTime!),
-                            ),
                         ],
                       ),
                       const SizedBox(height: AppSpacing.xl),
