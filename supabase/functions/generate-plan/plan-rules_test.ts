@@ -2395,6 +2395,7 @@ Deno.test(
         raceType: "marathon",
         readinessLevel: "prepared",
         planLengthWeeks: 12,
+        longRunCeilingKm: 40,
       }),
     );
     assert.equal(
@@ -2412,6 +2413,7 @@ Deno.test(
         raceType: "marathon",
         readinessLevel: "raceReady",
         planLengthWeeks: 12,
+        longRunCeilingKm: 40,
       }),
     );
     assert.equal(
@@ -2473,6 +2475,100 @@ Deno.test("normalizePeakLongRun does not update duration when distance unchanged
     "duration should not change when distance unchanged",
   );
 });
+
+Deno.test(
+  "normalizePeakLongRun caps peak long-run at coaching brief longRunCeilingKm",
+  () => {
+    const result = normalizePeakLongRun(
+      [
+        session({
+          id: "w8-long",
+          date: "2026-06-13",
+          type: "longRun",
+          distanceKm: 12,
+          durationMinutes: 84,
+          weekNumber: 8,
+        }),
+        session({
+          id: "w10-long",
+          date: "2026-06-27",
+          type: "longRun",
+          distanceKm: 34,
+          durationMinutes: 196,
+          weekNumber: 10,
+        }),
+        session({
+          id: "w12-race",
+          date: "2026-07-11",
+          type: "racePaceRun",
+          distanceKm: 42.2,
+          weekNumber: 12,
+        }),
+      ],
+      profile({ race: "race_marathon", experience: "experience_experienced" }),
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "marathon",
+        readinessLevel: "raceReady",
+        planLengthWeeks: 12,
+        longRunCeilingKm: 24,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Build base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Add race-specific work." },
+          { phase: "peak", weeks: 2, focus: "Peak specific load." },
+          { phase: "taperRace", weeks: 1, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = findSession(result, "w10-long");
+    assert.equal(peakLongRun.distanceKm, 24);
+    assert.ok(
+      peakLongRun.distanceKm <= 24,
+      `peak long run should respect brief longRunCeilingKm, got ${peakLongRun.distanceKm}`,
+    );
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun ignores malformed longRunCeilingKm of 0",
+  () => {
+    const result = normalizePeakLongRun(
+      [
+        session({
+          id: "w10-long",
+          date: "2026-07-11",
+          type: "longRun",
+          distanceKm: 20,
+          durationMinutes: 120,
+          weekNumber: 10,
+        }),
+      ],
+      profile({
+        race: "race_half_marathon",
+        experience: "experience_intermediate",
+      }),
+      12,
+      "en",
+      coachingBriefFixture({
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Increase load." },
+          { phase: "specific", weeks: 2, focus: "Race-specific rhythm." },
+          { phase: "peak", weeks: 2, focus: "Peak specific load." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+        longRunCeilingKm: 0,
+      }),
+    );
+
+    const peakLongRun = findSession(result, "w10-long");
+    assert.equal(peakLongRun.distanceKm, 16);
+  },
+);
 
 Deno.test("smoothLongRunProgression reduces 5K 4km jump to 2km max", () => {
   const sessions = [
@@ -2608,6 +2704,204 @@ Deno.test("smoothLongRunProgression preserves normalized peak long run target", 
   assert.equal(findSession(result, "w10-sat").distanceKm, 26);
   assert.equal(findSession(result, "w10-sat").durationMinutes, 156);
 });
+
+Deno.test("smoothLongRunProgression uses coaching brief peak weeks", () => {
+  const brief = coachingBriefFixture({
+    raceType: "fiveK",
+    readinessLevel: "prepared",
+    planLengthWeeks: 8,
+    phaseStrategy: [
+      { phase: "base", weeks: 2, focus: "Build base." },
+      { phase: "build", weeks: 2, focus: "Add effort." },
+      { phase: "specific", weeks: 2, focus: "Specific pace." },
+      { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+    ],
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+  });
+
+  const sessions = [
+    session({
+      id: "w6-sat",
+      date: "2026-06-13",
+      type: "longRun",
+      distanceKm: 10,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w7-sat",
+      date: "2026-06-20",
+      type: "longRun",
+      distanceKm: 20,
+      weekNumber: 7,
+    }),
+  ];
+
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_5k", experience: "experience_intermediate" }),
+    8,
+    "en",
+    brief,
+  );
+
+  const week7 = findSession(result, "w7-sat");
+  assert.equal(week7.distanceKm, 12);
+  assert.ok(
+    week7.durationMinutes != null && week7.durationMinutes < 120,
+    "duration should be recalculated for smoothed long run",
+  );
+});
+
+Deno.test(
+  "smoothLongRunProgression caps smoothed long runs at coaching brief ceiling",
+  () => {
+    const brief = coachingBriefFixture({
+      longRunCeilingKm: 9,
+      phaseStrategy: [
+        { phase: "base", weeks: 2, focus: "Build base." },
+        { phase: "build", weeks: 2, focus: "Controlled build." },
+        { phase: "specific", weeks: 2, focus: "Specific work." },
+        { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+      ],
+    });
+
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 8,
+        durationMinutes: 50,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-sat",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 10,
+        durationMinutes: 60,
+        weekNumber: 2,
+      }),
+    ];
+
+    const result = smoothLongRunProgression(
+      sessions,
+      profile({ race: "race_5k", experience: "experience_beginner" }),
+      8,
+      "en",
+      brief,
+    );
+
+    assert.equal(findSession(result, "w2-sat").distanceKm, 9);
+  },
+);
+
+Deno.test("smoothLongRunProgression caps a single long run above coaching brief ceiling", () => {
+  const brief = coachingBriefFixture({
+    longRunCeilingKm: 10,
+    currentVolumeKmPerWeek: 0,
+    maxWeeklyVolumeKm: 100,
+  });
+  const sessions = [
+    session({
+      id: "w3-sat",
+      date: "2026-05-09",
+      type: "longRun",
+      distanceKm: 16,
+      weekNumber: 3,
+    }),
+  ];
+
+  const result = smoothLongRunProgression(
+    sessions,
+    profile({ race: "race_10k", experience: "experience_intermediate" }),
+    8,
+    "en",
+    brief,
+  );
+
+  assert.equal(findSession(result, "w3-sat").distanceKm, 10);
+});
+
+Deno.test(
+  "smoothLongRunProgression caps down-week long run above coaching brief ceiling",
+  () => {
+    const brief = coachingBriefFixture({
+      longRunCeilingKm: 10,
+      currentVolumeKmPerWeek: 0,
+      maxWeeklyVolumeKm: 100,
+    });
+
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 18,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-sat",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 14,
+        weekNumber: 2,
+      }),
+    ];
+
+    const result = smoothLongRunProgression(
+      sessions,
+      profile({ race: "race_10k", experience: "experience_intermediate" }),
+      8,
+      "en",
+      brief,
+    );
+
+    assert.equal(findSession(result, "w2-sat").distanceKm, 10);
+  },
+);
+
+Deno.test(
+  "smoothLongRunProgression does not zero out on malformed longRunCeilingKm of 0",
+  () => {
+    const brief = coachingBriefFixture({
+      raceType: "fiveK",
+      longRunCeilingKm: 0,
+      currentVolumeKmPerWeek: 0,
+      maxWeeklyVolumeKm: 100,
+    });
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 10,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w2-sat",
+        date: "2026-05-02",
+        type: "longRun",
+        distanceKm: 20,
+        weekNumber: 2,
+      }),
+    ];
+
+    const result = smoothLongRunProgression(
+      sessions,
+      profile({ race: "race_5k", experience: "experience_beginner" }),
+      8,
+      "en",
+      brief,
+    );
+
+    assert.equal(findSession(result, "w2-sat").distanceKm, 12);
+  },
+);
 
 Deno.test("smoothLongRunProgression preserves down week lower than previous", () => {
   const sessions = [
@@ -3364,6 +3658,45 @@ Deno.test("production rule pipeline moves partial-week long run onto preferred d
   assert.equal(findByDate(result, "2026-05-03").type, "restDay");
   assert.equal(trainingCountForTest(result), 4);
   assert.deepEqual(validateGeneratedSchedule(result, profileData), []);
+});
+
+Deno.test("production rule pipeline passes coaching brief to long-run smoothing", () => {
+  const profileData = profile({
+    race: "race_5k",
+    raceDate: "2026-06-21T00:00:00.000",
+    experience: "experience_experienced",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu", "day_sun"],
+    longRunDay: "day_sat",
+  });
+  const totalWeeks = 8;
+  const brief = coachingBriefFixture({
+    longRunCeilingKm: 10,
+    currentVolumeKmPerWeek: 0,
+    maxWeeklyVolumeKm: 100,
+  });
+  const input = [
+    session({
+      id: "w2-long",
+      date: "2026-05-02",
+      type: "longRun",
+      distanceKm: 20,
+      weekNumber: 2,
+      durationMinutes: 120,
+    }),
+  ];
+
+  const result = runProductionRulePipeline(
+    input,
+    profileData,
+    totalWeeks,
+    brief,
+  );
+  const weekTwoLongRuns = result.filter((item) =>
+    item.type === "longRun" && item.weekNumber === 2
+  );
+  assert.equal(weekTwoLongRuns.length, 1);
+  assert.equal(weekTwoLongRuns[0].distanceKm, 10);
 });
 
 Deno.test("expectedTotalWeeks anchors Sunday to current week's Monday", () => {
@@ -4483,6 +4816,8 @@ function runProductionRulePipeline(
     peakNormalizedSessions,
     profileData,
     totalWeeks,
+    "en",
+    coachingBrief,
   );
   const taperNormalizedSessions = normalizeTaper(
     progressionSmoothedSessions,

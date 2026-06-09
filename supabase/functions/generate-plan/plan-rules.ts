@@ -2403,7 +2403,12 @@ export function normalizePeakLongRun(
   locale: CoachNoteLocale = "en",
   coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const range = peakLongRunRangeFor(ruleContextFor(profileData, coachingBrief));
+  const context = ruleContextFor(profileData, coachingBrief);
+  const range = peakLongRunRangeFor(context);
+  const briefLongRunCeilingKm = normalizePositiveNumber(
+    coachingBrief?.longRunCeilingKm,
+    MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM,
+  );
   const measuredLongestRecentRunKm = longRunHistoryFloor(profileData);
   const historyFloorKm = measuredLongestRecentRunKm == null
     ? null
@@ -2412,6 +2417,17 @@ export function normalizePeakLongRun(
     minKm: Math.max(range.minKm, historyFloorKm ?? range.minKm),
     targetKm: Math.max(range.targetKm, historyFloorKm ?? range.targetKm),
     maxKm: Math.max(range.maxKm, historyFloorKm ?? range.maxKm),
+  };
+  const cappedRange = {
+    maxKm: briefLongRunCeilingKm == null
+      ? normalizedRange.maxKm
+      : Math.min(normalizedRange.maxKm, briefLongRunCeilingKm),
+    targetKm: briefLongRunCeilingKm == null
+      ? normalizedRange.targetKm
+      : Math.min(normalizedRange.targetKm, briefLongRunCeilingKm),
+    minKm: briefLongRunCeilingKm == null
+      ? normalizedRange.minKm
+      : Math.min(normalizedRange.minKm, briefLongRunCeilingKm),
   };
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
@@ -2444,7 +2460,7 @@ export function normalizePeakLongRun(
 
   if (bestPeakLongRun == null) return sessions;
 
-  const targetDistance = normalizedRange.targetKm;
+  const targetDistance = cappedRange.targetKm;
   const currentDistance = bestPeakLongRun.distanceKm;
   const normalizedTargetDistance = hasBlockingGuardrail(
       profileData,
@@ -2453,8 +2469,8 @@ export function normalizePeakLongRun(
     ? range.targetKm
     : targetDistance;
   const finalDistance = Math.max(
-    normalizedRange.minKm,
-    Math.min(normalizedRange.maxKm, normalizedTargetDistance),
+    cappedRange.minKm,
+    Math.min(cappedRange.maxKm, normalizedTargetDistance),
   );
 
   if (Math.abs(finalDistance - currentDistance) > 0.01) {
@@ -2545,15 +2561,22 @@ export function smoothLongRunProgression(
   profileData: Record<string, unknown>,
   totalWeeks: number,
   _locale: CoachNoteLocale = "en",
+  coachingBrief: CoachingBrief | null = null,
 ): GeneratedSession[] {
-  const race = raceFromProfile(profileData);
+  const context = ruleContextFor(profileData, coachingBrief);
+  const race = context.race;
   const maxJump = maxLongRunJumpKm(race);
+  const longRunCeilingKm = normalizePositiveNumber(
+    coachingBrief?.longRunCeilingKm,
+    MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM,
+  );
 
   const adjusted = sessions.map((s) => ({ ...s }));
   const protectedPeakIndex = protectedPeakLongRunIndex(
     adjusted,
     profileData,
     totalWeeks,
+    coachingBrief,
   );
 
   const longRunIndices: number[] = [];
@@ -2566,35 +2589,52 @@ export function smoothLongRunProgression(
     }
   }
 
-  if (longRunIndices.length < 2) return sessions;
+  if (longRunIndices.length === 0) return sessions;
 
   longRunIndices.sort((a, b) =>
     adjusted[a].weekNumber - adjusted[b].weekNumber
   );
 
-  for (let i = 1; i < longRunIndices.length; i += 1) {
-    const prevIdx = longRunIndices[i - 1];
+  for (let i = 0; i < longRunIndices.length; i += 1) {
     const currIdx = longRunIndices[i];
     if (currIdx === protectedPeakIndex) continue;
 
-    const prevDist = adjusted[prevIdx].distanceKm ?? 0;
     const currDist = adjusted[currIdx].distanceKm ?? 0;
+    let newDistance = currDist;
 
-    if (currDist <= prevDist) continue;
+    if (
+      longRunCeilingKm != null &&
+      currDist > longRunCeilingKm
+    ) {
+      newDistance = longRunCeilingKm;
+    }
 
-    const jump = currDist - prevDist;
-    if (jump <= maxJump) continue;
+    if (i > 0) {
+      const prevIdx = longRunIndices[i - 1];
+      const prevDist = adjusted[prevIdx].distanceKm ?? 0;
+      if (currDist > prevDist) {
+        const maxAllowedFromJump = prevDist + maxJump;
+        const maxAllowed = longRunCeilingKm == null
+          ? maxAllowedFromJump
+          : Math.min(maxAllowedFromJump, longRunCeilingKm);
 
-    const maxAllowed = prevDist + maxJump;
+        if (newDistance > maxAllowed) {
+          newDistance = maxAllowed;
+        }
+      }
+    }
+
+    if (Math.abs(newDistance - currDist) < 0.01) continue;
+
     const newDuration = recalculateDurationForDistance(
       adjusted,
       currIdx,
-      maxAllowed,
+      newDistance,
       profileData,
     );
     adjusted[currIdx] = {
       ...adjusted[currIdx],
-      distanceKm: maxAllowed,
+      distanceKm: newDistance,
       durationMinutes: newDuration,
     };
   }
@@ -2626,6 +2666,8 @@ type WeeklyVolumeProfile = {
   longRunCeilingKm: number | null;
 };
 
+const MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM = 0.01;
+
 function normalizePositiveNumber(
   value: unknown,
   minimum = 0,
@@ -2654,7 +2696,7 @@ function weeklyVolumeProfileForBrief(
 
   const longRunCeilingKm = normalizePositiveNumber(
     coachingBrief.longRunCeilingKm,
-    0,
+    MIN_COACHING_BRIEF_LONG_RUN_CEILING_KM,
   );
   const hasEvidenceSource = coachingBrief.source === "strava" ||
     coachingBrief.source === "mixed";
@@ -2899,10 +2941,18 @@ function protectedPeakLongRunIndex(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
   totalWeeks: number,
+  coachingBrief: CoachingBrief | null = null,
 ): number | null {
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
-      .filter((w) => phaseForWeek(w, totalWeeks, profileData) === "peak"),
+      .filter((w) =>
+        phaseForWeekFromCoachingBrief(
+          w,
+          totalWeeks,
+          profileData,
+          coachingBrief,
+        ) === "peak"
+      ),
   );
 
   let bestPeakLongRun: { index: number; distanceKm: number } | null = null;

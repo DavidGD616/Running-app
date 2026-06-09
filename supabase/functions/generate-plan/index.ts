@@ -351,6 +351,7 @@ Deno.serve(async (req) => {
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
+    coachingBrief,
   );
   const volumeStabilizedSessions = normalizeWeeklyVolumeRamp(
     progressionSmoothedSessions,
