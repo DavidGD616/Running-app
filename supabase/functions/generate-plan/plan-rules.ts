@@ -666,8 +666,8 @@ function hasHighConfidence(profileData: Record<string, unknown>): boolean {
 
 function recoveryGuardrails(profileData: Record<string, unknown>): string[] {
   const profile = stravaCoachingProfile(profileData);
-  const list = objectOrNull(profile?.recoveryGuardrails);
-  if (list == null || !Array.isArray(list)) return [];
+  const list = profile?.recoveryGuardrails;
+  if (!Array.isArray(list)) return [];
   return list.map((entry) => {
     if (!entry || typeof entry !== "object") return "";
     const record = entry as Record<string, unknown>;
@@ -2309,7 +2309,8 @@ type TrainingDayCueKey =
   | "strideAdded"
   | "movedAwayFromHardDay"
   | "hardDayRecoveryFallback"
-  | "firstSessionEasyStart";
+  | "firstSessionEasyStart"
+  | "peakLongRunGuardrailCapped";
 
 function trainingDayCue(
   key: TrainingDayCueKey,
@@ -2377,6 +2378,12 @@ function trainingDayCue(
       es:
         "Empieza el plan con una carrera suave y controlada antes de añadir entrenamientos más duros.",
     },
+    peakLongRunGuardrailCapped: {
+      en:
+        "Peak long run was kept at the safety limit; evidence-based increase is currently blocked by guardrails.",
+      es:
+        "La tirada larga máxima se mantuvo por límites de seguridad; la evidencia adicional está bloqueada por guardas de riesgo.",
+    },
   };
   return cues[key][locale];
 }
@@ -2394,6 +2401,89 @@ function objectOrNull(value: unknown): Record<string, unknown> | null {
   return value != null && typeof value === "object" && !Array.isArray(value)
     ? value as Record<string, unknown>
     : null;
+}
+
+const PEAK_LONG_RUN_EVIDENCE_FRACTION = 0.7;
+const PEAK_LONG_RUN_VOLUME_SAFETY_RATIO = 0.33;
+
+function canRaisePeakLongRunFromBriefEvidence(
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null,
+): boolean {
+  if (coachingBrief == null) return false;
+  if (
+    coachingBrief.source !== "strava" &&
+    coachingBrief.source !== "mixed"
+  ) {
+    return false;
+  }
+
+  if (
+    coachingBrief.confidence !== "high" &&
+    coachingBrief.confidence !== "medium"
+  ) {
+    return false;
+  }
+
+  if (
+    !hasStrongEvidenceConfidence(profileData)
+  ) {
+    return false;
+  }
+
+  const currentVolumeKmPerWeek = normalizePositiveNumber(
+    coachingBrief.currentVolumeKmPerWeek,
+    0,
+  );
+  if (currentVolumeKmPerWeek == null || currentVolumeKmPerWeek <= 0) {
+    return false;
+  }
+
+  const recentLongRunKm = normalizePositiveNumber(
+    coachingBrief.recentLongRunKm,
+    0,
+  );
+  return recentLongRunKm != null && recentLongRunKm > 0;
+}
+
+function resolvePeakLongRunRange(
+  range: PeakLongRunRange,
+  profileData: Record<string, unknown>,
+  coachingBrief: CoachingBrief | null,
+): PeakLongRunRange {
+  if (!canRaisePeakLongRunFromBriefEvidence(profileData, coachingBrief)) {
+    return range;
+  }
+  if (coachingBrief == null) return range;
+
+  const recentLongRunKm = normalizePositiveNumber(
+    coachingBrief.recentLongRunKm,
+    0,
+  );
+  if (recentLongRunKm == null) return range;
+
+  const currentVolumeKmPerWeek = normalizePositiveNumber(
+    coachingBrief.currentVolumeKmPerWeek,
+    0,
+  );
+  if (currentVolumeKmPerWeek == null || currentVolumeKmPerWeek <= 0) {
+    return range;
+  }
+  const evidenceTargetKm = recentLongRunKm * PEAK_LONG_RUN_EVIDENCE_FRACTION;
+  const evidenceCapKm = currentVolumeKmPerWeek == null
+    ? evidenceTargetKm
+    : Math.min(
+      evidenceTargetKm,
+      currentVolumeKmPerWeek * PEAK_LONG_RUN_VOLUME_SAFETY_RATIO,
+    );
+
+  if (evidenceCapKm <= range.maxKm) return range;
+
+  return {
+    minKm: range.minKm,
+    targetKm: Math.max(range.targetKm, evidenceCapKm),
+    maxKm: Math.max(range.maxKm, evidenceCapKm),
+  };
 }
 
 export function normalizePeakLongRun(
@@ -2418,16 +2508,24 @@ export function normalizePeakLongRun(
     targetKm: Math.max(range.targetKm, historyFloorKm ?? range.targetKm),
     maxKm: Math.max(range.maxKm, historyFloorKm ?? range.maxKm),
   };
+  const evidenceAwareRange = resolvePeakLongRunRange(
+    normalizedRange,
+    profileData,
+    coachingBrief,
+  );
+  const hadEvidenceAwarePotential =
+    evidenceAwareRange.targetKm > normalizedRange.targetKm ||
+    evidenceAwareRange.maxKm > normalizedRange.maxKm;
   const cappedRange = {
     maxKm: briefLongRunCeilingKm == null
-      ? normalizedRange.maxKm
-      : Math.min(normalizedRange.maxKm, briefLongRunCeilingKm),
+      ? evidenceAwareRange.maxKm
+      : Math.min(evidenceAwareRange.maxKm, briefLongRunCeilingKm),
     targetKm: briefLongRunCeilingKm == null
-      ? normalizedRange.targetKm
-      : Math.min(normalizedRange.targetKm, briefLongRunCeilingKm),
+      ? evidenceAwareRange.targetKm
+      : Math.min(evidenceAwareRange.targetKm, briefLongRunCeilingKm),
     minKm: briefLongRunCeilingKm == null
-      ? normalizedRange.minKm
-      : Math.min(normalizedRange.minKm, briefLongRunCeilingKm),
+      ? evidenceAwareRange.minKm
+      : Math.min(evidenceAwareRange.minKm, briefLongRunCeilingKm),
   };
   const peakWeeks = new Set(
     Array.from({ length: totalWeeks }, (_, i) => i + 1)
@@ -2462,12 +2560,15 @@ export function normalizePeakLongRun(
 
   const targetDistance = cappedRange.targetKm;
   const currentDistance = bestPeakLongRun.distanceKm;
-  const normalizedTargetDistance = hasBlockingGuardrail(
-      profileData,
-      GUARDRAIL_BLOCKING_PEAK_LONG_RUN,
-    )
+  const hasPeakLongRunGuardrail = hasBlockingGuardrail(
+    profileData,
+    GUARDRAIL_BLOCKING_PEAK_LONG_RUN,
+  );
+  const normalizedTargetDistance = hasPeakLongRunGuardrail
     ? range.targetKm
     : targetDistance;
+  const guardrailSuppressedEvidenceLift = hasPeakLongRunGuardrail &&
+    hadEvidenceAwarePotential;
   const finalDistance = Math.max(
     cappedRange.minKm,
     Math.min(cappedRange.maxKm, normalizedTargetDistance),
@@ -2481,8 +2582,10 @@ export function normalizePeakLongRun(
       profileData,
     );
 
-    const wasRaised = currentDistance < targetDistance;
-    const cue = wasRaised
+    const wasRaised = currentDistance < finalDistance;
+    const cue = guardrailSuppressedEvidenceLift
+      ? trainingDayCue("peakLongRunGuardrailCapped", locale)
+      : wasRaised
       ? locale === "en"
         ? "Peak long run raised to target."
         : "Tirada larga máxima aumentada al objetivo."

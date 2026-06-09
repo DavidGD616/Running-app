@@ -1664,6 +1664,518 @@ Deno.test("normalizePeakLongRun raises intermediate 10K 8km peak to ~13km", () =
   );
 });
 
+Deno.test("normalizePeakLongRun raises 10K peak long run with strong Strava/mixed evidence above table max", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 5,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w8-sat",
+      date: "2026-06-13",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 8,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 10,
+      weekNumber: 12,
+    }),
+  ];
+  const profileData = {
+    goal: { race: "race_10k" },
+    fitness: {
+      experience: "experience_intermediate",
+      stravaCoachingProfile: { dataConfidence: "high" },
+    },
+    schedule: { hardDays: [] },
+  };
+
+  const briefSources = ["strava", "mixed"] as const;
+  const expectedNormalizedPeak = 14.85;
+  for (const source of briefSources) {
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "high",
+        source,
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, `peak phase longRun should exist for ${source}`);
+    const normalizedPeak = peakLongRun!.distanceKm ?? 0;
+    assert.ok(
+      normalizedPeak > 13 && normalizedPeak < 15,
+      `10K peak long run should be raised above static table max for ${source}, got ${normalizedPeak}`,
+    );
+    assert.ok(
+      Math.abs(normalizedPeak - expectedNormalizedPeak) < 0.01,
+      `expected evidence-aware target around 14.85km for ${source}, got ${normalizedPeak}`,
+    );
+    assert.ok(
+      normalizedPeak <= expectedNormalizedPeak + 0.01,
+      `evidence-aware cap should remain near recent-long-run target for ${source}, got ${normalizedPeak}`,
+    );
+    assert.ok(
+      normalizedPeak <= 15,
+      "result should respect coaching brief ceiling",
+    );
+  }
+});
+
+Deno.test(
+  "normalizePeakLongRun raises 10K peak long run with medium-confidence Strava evidence",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: { dataConfidence: "high" },
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "medium",
+        source: "strava",
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, "peak phase longRun should exist");
+    assert.ok(
+      Math.abs((peakLongRun!.distanceKm ?? 0) - 14.85) < 0.01,
+      `expected medium-confidence evidence-aware target around 14.85km, got ${
+        peakLongRun!.distanceKm
+      }`,
+    );
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun does not raise above static table for low-confidence coaching evidence",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: { dataConfidence: "high" },
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "limited",
+        source: "strava",
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, "peak phase longRun should exist");
+    assert.equal(peakLongRun!.distanceKm, 12);
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun requires usable current volume for evidence lift",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: { dataConfidence: "high" },
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const invalidCurrentVolumeCases = [
+      {
+        label: "missing",
+        currentVolumeKmPerWeek: undefined as unknown as number,
+      },
+      { label: "zero", currentVolumeKmPerWeek: 0 },
+      { label: "negative", currentVolumeKmPerWeek: -10 },
+    ];
+
+    for (const { label, currentVolumeKmPerWeek } of invalidCurrentVolumeCases) {
+      const brief = {
+        ...coachingBriefFixture({
+          raceType: "tenK",
+          readinessLevel: "prepared",
+          confidence: "high",
+          source: "strava",
+          currentVolumeKmPerWeek,
+          recentLongRunKm: 22,
+          longRunCeilingKm: 15,
+          planLengthWeeks: 12,
+          phaseStrategy: [
+            { phase: "base", weeks: 3, focus: "Protect base." },
+            { phase: "build", weeks: 3, focus: "Build quality." },
+            { phase: "specific", weeks: 3, focus: "Build specificity." },
+            { phase: "peak", weeks: 1, focus: "Peak long run." },
+            { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+          ],
+        }),
+      } as CoachingBrief;
+
+      const result = normalizePeakLongRun(
+        sessions,
+        profileData,
+        12,
+        "en",
+        brief,
+      );
+
+      const peakLongRun = result.find((s) =>
+        s.weekNumber === 10 && s.type === "longRun"
+      );
+      assert.ok(
+        peakLongRun,
+        `peak phase longRun should exist for ${label} current volume`,
+      );
+      assert.equal(
+        peakLongRun!.distanceKm,
+        12,
+        `evidence lift should not apply for ${label} current volume`,
+      );
+    }
+  },
+);
+
+Deno.test(
+  "normalizePeakLongRun shows guardrail suppression wording when evidence lift is blocked",
+  () => {
+    const sessions = [
+      session({
+        id: "w1-sat",
+        date: "2026-04-25",
+        type: "longRun",
+        distanceKm: 5,
+        weekNumber: 1,
+      }),
+      session({
+        id: "w8-sat",
+        date: "2026-06-13",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 8,
+      }),
+      session({
+        id: "w10-sat",
+        date: "2026-06-27",
+        type: "longRun",
+        distanceKm: 8,
+        weekNumber: 10,
+      }),
+      session({
+        id: "w12-sat",
+        date: "2026-07-11",
+        type: "racePaceRun",
+        distanceKm: 10,
+        weekNumber: 12,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_10k" },
+      fitness: {
+        experience: "experience_intermediate",
+        stravaCoachingProfile: {
+          dataConfidence: "high",
+          recoveryGuardrails: [
+            {
+              category: "recovery_load_spike",
+              priority: 2,
+              message: "Recent load spike",
+            },
+          ],
+        },
+      },
+      stravaCoachingProfile: {
+        dataConfidence: "high",
+        recoveryGuardrails: [
+          {
+            category: "recovery_load_spike",
+            priority: 2,
+            message: "Recent load spike",
+          },
+        ],
+      },
+      schedule: { hardDays: [] },
+    };
+
+    const result = normalizePeakLongRun(
+      sessions,
+      profileData,
+      12,
+      "en",
+      coachingBriefFixture({
+        raceType: "tenK",
+        readinessLevel: "prepared",
+        confidence: "high",
+        source: "strava",
+        currentVolumeKmPerWeek: 45,
+        recentLongRunKm: 22,
+        longRunCeilingKm: 15,
+        planLengthWeeks: 12,
+        phaseStrategy: [
+          { phase: "base", weeks: 3, focus: "Protect base." },
+          { phase: "build", weeks: 3, focus: "Build quality." },
+          { phase: "specific", weeks: 3, focus: "Build specificity." },
+          { phase: "peak", weeks: 1, focus: "Peak long run." },
+          { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+        ],
+      }),
+    );
+
+    const peakLongRun = result.find((s) =>
+      s.weekNumber === 10 && s.type === "longRun"
+    );
+    assert.ok(peakLongRun, "peak phase longRun should exist");
+    assert.equal(peakLongRun!.distanceKm, 12);
+    assert.match(
+      peakLongRun!.coachNote ?? "",
+      /safety limit.*guardrails/i,
+    );
+    assert.match(
+      peakLongRun!.coachNote ?? "",
+      /evidence-based increase.*blocked/i,
+    );
+  },
+);
+
+Deno.test("normalizePeakLongRun does not raise above static table for manual brief evidence", () => {
+  const sessions = [
+    session({
+      id: "w1-sat",
+      date: "2026-04-25",
+      type: "longRun",
+      distanceKm: 5,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w8-sat",
+      date: "2026-06-13",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 8,
+    }),
+    session({
+      id: "w10-sat",
+      date: "2026-06-27",
+      type: "longRun",
+      distanceKm: 8,
+      weekNumber: 10,
+    }),
+    session({
+      id: "w12-sat",
+      date: "2026-07-11",
+      type: "racePaceRun",
+      distanceKm: 10,
+      weekNumber: 12,
+    }),
+  ];
+  const profileData = {
+    goal: { race: "race_10k" },
+    fitness: {
+      experience: "experience_intermediate",
+      stravaCoachingProfile: { dataConfidence: "high" },
+    },
+    schedule: { hardDays: [] },
+  };
+
+  const result = normalizePeakLongRun(
+    sessions,
+    profileData,
+    12,
+    "en",
+    coachingBriefFixture({
+      raceType: "tenK",
+      readinessLevel: "prepared",
+      confidence: "high",
+      source: "manual",
+      currentVolumeKmPerWeek: 45,
+      recentLongRunKm: 22,
+      longRunCeilingKm: 15,
+      planLengthWeeks: 12,
+      phaseStrategy: [
+        { phase: "base", weeks: 3, focus: "Protect base." },
+        { phase: "build", weeks: 3, focus: "Build quality." },
+        { phase: "specific", weeks: 3, focus: "Build specificity." },
+        { phase: "peak", weeks: 1, focus: "Peak long run." },
+        { phase: "taperRace", weeks: 2, focus: "Freshen up." },
+      ],
+    }),
+  );
+
+  const peakLongRun = result.find((s) =>
+    s.weekNumber === 10 && s.type === "longRun"
+  );
+  assert.ok(peakLongRun, "peak phase longRun should exist");
+  assert.equal(peakLongRun!.distanceKm, 12);
+});
+
 Deno.test("normalizePeakLongRun caps experienced half marathon 25km peak at ~21km", () => {
   const sessions = [
     session({
