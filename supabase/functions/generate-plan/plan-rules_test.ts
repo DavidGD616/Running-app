@@ -3154,6 +3154,11 @@ Deno.test("mergeTargetedSessionRepairs applies only valid repairs", () => {
     originalSessions,
     requestedSessionIds,
     repairs,
+    profile({
+      experience: "experience_beginner",
+      race: "race_half_marathon",
+    }),
+    8,
   );
 
   assert.equal(result.sessions.length, 2);
@@ -3174,6 +3179,114 @@ Deno.test("mergeTargetedSessionRepairs applies only valid repairs", () => {
     ["w1-intervals"],
   );
 });
+
+Deno.test(
+  "mergeTargetedSessionRepairs rejects repairs whose session type violates phase policy",
+  () => {
+    const originalSessions: GeneratedSession[] = [
+      session({
+        id: "w1-repair",
+        date: "2026-04-08",
+        type: "easyRun",
+        weekNumber: 2,
+        coachNote: "Original coach note",
+      }),
+    ];
+
+    const requestedSessionIds = ["w1-repair"];
+    const repairs: SessionRepairCandidate[] = [{
+      sessionId: "w1-repair",
+      repairedSession: {
+        ...session({
+          id: "w1-repair",
+          date: "2026-04-08",
+          type: "thresholdRun",
+          weekNumber: 2,
+          coachNote: "AI note should be dropped",
+        }),
+      },
+    }];
+
+    const result = mergeTargetedSessionRepairs(
+      originalSessions,
+      requestedSessionIds,
+      repairs,
+      profile({
+        experience: "experience_beginner",
+        race: "race_half_marathon",
+      }),
+      8,
+    );
+
+    assert.equal(findSession(result.sessions, "w1-repair").type, "easyRun");
+    assert.deepEqual(
+      result.preservedCoachNoteSessionIds,
+      [],
+    );
+    assert.equal(
+      findSession(result.sessions, "w1-repair").coachNote,
+      "Original coach note",
+    );
+  },
+);
+
+Deno.test(
+  "mergeTargetedSessionRepairs rejection allows deterministic fallback to normalize policy",
+  () => {
+    const originalSessions: GeneratedSession[] = [
+      session({
+        id: "w1-violating",
+        date: "2026-04-08",
+        type: "thresholdRun",
+        weekNumber: 2,
+        coachNote: "Original violating note",
+      }),
+    ];
+    const requestedSessionIds = ["w1-violating"];
+    const repairs: SessionRepairCandidate[] = [{
+      sessionId: "w1-violating",
+      repairedSession: {
+        ...session({
+          id: "w1-violating",
+          date: "2026-04-08",
+          type: "thresholdRun",
+          weekNumber: 2,
+          coachNote: "AI note should not be preserved",
+        }),
+      },
+    }];
+
+    const result = mergeTargetedSessionRepairs(
+      originalSessions,
+      requestedSessionIds,
+      repairs,
+      profile({
+        experience: "experience_beginner",
+        race: "race_half_marathon",
+      }),
+      8,
+    );
+    const normalized = normalizeWorkoutTypesByPhase(
+      result.sessions,
+      profile({
+        experience: "experience_beginner",
+        race: "race_half_marathon",
+      }),
+      8,
+      "en",
+      null,
+      result.preservedCoachNoteSessionIds,
+    );
+
+    const normalizedSession = findSession(normalized, "w1-violating");
+    assert.equal(normalizedSession.type, "easyRun");
+    assert.equal(
+      normalizedSession.coachNote,
+      "Adjusted to match phase-appropriate training.",
+    );
+    assert.deepEqual(result.preservedCoachNoteSessionIds, []);
+  },
+);
 
 Deno.test(
   "normalizePeakLongRun uses coaching brief readiness when profile is missing experience",

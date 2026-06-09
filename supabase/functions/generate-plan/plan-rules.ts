@@ -414,12 +414,22 @@ export function mergeTargetedSessionRepairs(
   sessions: readonly GeneratedSession[],
   requestedSessionIds: readonly string[],
   repairs: readonly SessionRepairCandidate[],
+  profileData: Record<string, unknown> = {},
+  totalWeeks: number | null = null,
+  coachingBrief: CoachingBrief | null = null,
 ): SessionRepairMergeResult {
   const requested = new Set(requestedSessionIds);
   const originalById = new Map(
     sessions.map((session) => [session.id, session]),
   );
   const repairedById = new Map<string, GeneratedSession>();
+  const resolvedTotalWeeks = totalWeeks == null || totalWeeks < 1
+    ? sessions.reduce(
+      (maxWeek, session) => Math.max(maxWeek, session.weekNumber),
+      1,
+    )
+    : totalWeeks;
+  const policyContext = ruleContextFor(profileData, coachingBrief);
 
   for (const item of repairs) {
     if (!requested.has(item.sessionId)) {
@@ -437,6 +447,21 @@ export function mergeTargetedSessionRepairs(
       repaired.date !== original.date ||
       repaired.weekNumber !== original.weekNumber
     ) {
+      continue;
+    }
+
+    const phase = phaseForWeekFromCoachingBrief(
+      repaired.weekNumber,
+      resolvedTotalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      policyContext.race,
+      policyContext.experience,
+    );
+    if (!policy.allowedTypes.includes(repaired.type)) {
       continue;
     }
 

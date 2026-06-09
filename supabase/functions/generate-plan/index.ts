@@ -400,6 +400,9 @@ Deno.serve(async (req) => {
         taperNormalizedSessions,
         sessionsNeedingRepair.map((session) => session.id),
         repairResponse.sessions,
+        generationProfileWithPlanStartDate,
+        safeGeneratedPlan.totalWeeks,
+        coachingBrief,
       );
       repairedSessions = mergeResult.sessions;
       preservedCoachNoteSessionIds = mergeResult.preservedCoachNoteSessionIds;
