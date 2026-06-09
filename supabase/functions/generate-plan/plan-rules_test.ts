@@ -10,6 +10,7 @@ import {
   normalizeSessionIds,
   normalizeTaper,
   normalizeTrainingDayCount,
+  normalizeWeeklyVolumeRamp,
   normalizeWeekNumbersFromDates,
   normalizeWorkoutTypesByPhase,
   peakLongRunRangeKm,
@@ -29,6 +30,7 @@ import {
   workoutPolicyForPhase,
 } from "./plan-rules.ts";
 import type { CoachingBrief } from "./coaching-brief.ts";
+import { removeSessionsOnRaceDate } from "./schema.ts";
 import type { GeneratedSession } from "./schema.ts";
 
 Deno.test("phaseForWeek 12-week plan week 1 is base", () => {
@@ -3699,6 +3701,257 @@ Deno.test("production rule pipeline passes coaching brief to long-run smoothing"
   assert.equal(weekTwoLongRuns[0].distanceKm, 10);
 });
 
+Deno.test("production rule pipeline fully anchors low week 1 and enforces brief ceilings", () => {
+  const profileData = profile({
+    race: "race_10k",
+    raceDate: "2026-06-21T00:00:00.000",
+    longRunDay: "day_sat",
+  });
+  const totalWeeks = 8;
+  const brief = coachingBriefFixture({
+    source: "mixed",
+    confidence: "high",
+    currentVolumeKmPerWeek: 52,
+    maxWeeklyVolumeKm: 45,
+    longRunCeilingKm: 12,
+    planLengthWeeks: 8,
+    taper: {
+      weeks: 2,
+      volumeReductionPercent: 35,
+      finalWeekFocus: "Fresh legs.",
+    },
+  });
+  const input = [
+    session({
+      id: "w1-2026-04-27-easyRun",
+      date: "2026-04-27",
+      type: "easyRun",
+      distanceKm: 12,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w1-2026-04-30-easyRun",
+      date: "2026-04-30",
+      type: "easyRun",
+      distanceKm: 12,
+      weekNumber: 1,
+    }),
+    session({
+      id: "w2-2026-05-04-easyRun",
+      date: "2026-05-04",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 2,
+    }),
+    session({
+      id: "w2-2026-05-06-easyRun",
+      date: "2026-05-06",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 2,
+    }),
+    session({
+      id: "w2-2026-05-07-longRun",
+      date: "2026-05-07",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 2,
+    }),
+    session({
+      id: "w3-2026-05-11-easyRun",
+      date: "2026-05-11",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 3,
+    }),
+    session({
+      id: "w3-2026-05-14-easyRun",
+      date: "2026-05-14",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 3,
+    }),
+    session({
+      id: "w3-2026-05-17-longRun",
+      date: "2026-05-17",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 3,
+    }),
+    session({
+      id: "w4-2026-05-18-easyRun",
+      date: "2026-05-18",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 4,
+    }),
+    session({
+      id: "w4-2026-05-21-easyRun",
+      date: "2026-05-21",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 4,
+    }),
+    session({
+      id: "w4-2026-05-24-longRun",
+      date: "2026-05-24",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 4,
+    }),
+    session({
+      id: "w5-2026-05-25-easyRun",
+      date: "2026-05-25",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 5,
+    }),
+    session({
+      id: "w5-2026-05-28-easyRun",
+      date: "2026-05-28",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 5,
+    }),
+    session({
+      id: "w5-2026-05-31-longRun",
+      date: "2026-05-31",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 5,
+    }),
+    session({
+      id: "w6-2026-06-01-easyRun",
+      date: "2026-06-01",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w6-2026-06-03-easyRun",
+      date: "2026-06-03",
+      type: "easyRun",
+      distanceKm: 20,
+      weekNumber: 6,
+    }),
+    session({
+      id: "w6-2026-06-06-longRun",
+      date: "2026-06-06",
+      type: "longRun",
+      distanceKm: 24,
+      weekNumber: 6,
+    }),
+  ];
+  const prePipelineWeekOneVolumeKm = input
+    .filter((item) => item.weekNumber === 1 && item.type !== "restDay")
+    .reduce((sum, session) => sum + (session.distanceKm ?? 0), 0);
+
+  const result = runProductionRulePipeline(
+    input,
+    profileData,
+    totalWeeks,
+    brief,
+  );
+
+  const weekOneVolumeKm = result
+    .filter((item) => item.weekNumber === 1 && item.type !== "restDay")
+    .reduce((sum, session) => sum + (session.distanceKm ?? 0), 0);
+  assert.ok(
+    weekOneVolumeKm >= 44,
+    `Expected anchored week 1 volume, got ${weekOneVolumeKm}`,
+  );
+  assert.ok(
+    weekOneVolumeKm > prePipelineWeekOneVolumeKm,
+    `Expected week 1 to be raised from ${prePipelineWeekOneVolumeKm} km`,
+  );
+
+  const taperStartWeek = totalWeeks - brief.taper.weeks + 1;
+  for (let weekNumber = 1; weekNumber < taperStartWeek; weekNumber += 1) {
+    const weeklyVolumeKm = result
+      .filter((item) =>
+        item.weekNumber === weekNumber &&
+        item.type !== "restDay" &&
+        item.type !== "crossTraining" &&
+        item.type !== "raceDay"
+      )
+      .reduce((sum, session) => sum + (session.distanceKm ?? 0), 0);
+    assert.ok(
+      weeklyVolumeKm <= brief.maxWeeklyVolumeKm + 0.01,
+      `Week ${weekNumber} volume ${weeklyVolumeKm} exceeds max ${brief.maxWeeklyVolumeKm}`,
+    );
+  }
+
+  const allLongRuns = result.filter((item) => item.type === "longRun");
+  assert.ok(
+    allLongRuns.every((item) =>
+      (item.distanceKm ?? 0) <= brief.longRunCeilingKm + 0.01
+    ),
+    `Long runs exceeded ceiling: ${
+      JSON.stringify(
+        allLongRuns.map((item) => `${item.date}:${item.distanceKm}`),
+      )
+    }`,
+  );
+
+  const planViolations = validateGeneratedPlanAgainstCoachingBrief(
+    {
+      totalWeeks,
+      raceGuidance: {
+        schemaVersion: 1,
+        raceDayExecution: "Use the evidence target.",
+      },
+      sessions: result,
+    },
+    brief,
+  );
+  assert.deepEqual(planViolations, []);
+});
+
+Deno.test("production rule pipeline removes inferred race day when goal raceDate is missing", () => {
+  const profileData = profile({
+    race: "race_5k",
+    longRunDay: "day_sat",
+    trainingDays: 4,
+    hardDays: ["day_tue", "day_thu"],
+    raceDate: null,
+  });
+  const totalWeeks = 2;
+  const input = [
+    session({
+      id: "w1-2026-04-27-easyRun",
+      date: "2026-04-27",
+      weekNumber: 1,
+      type: "easyRun",
+      distanceKm: 6,
+    }),
+    session({
+      id: "w1-2026-05-03-easyRun",
+      date: "2026-05-03",
+      weekNumber: 1,
+      type: "easyRun",
+      distanceKm: 6,
+    }),
+    session({
+      id: "w2-2026-05-10-easyRun",
+      date: "2026-05-10",
+      weekNumber: 2,
+      type: "easyRun",
+      distanceKm: 8,
+    }),
+  ];
+
+  const result = runProductionRulePipeline(input, profileData, totalWeeks);
+  const inferredRaceDate = "2026-05-10";
+  assert.ok(
+    !result.some((item) => item.date === inferredRaceDate),
+    `Expected inferred race day ${inferredRaceDate} to be removed when raceDate is missing.`,
+  );
+  assert.ok(
+    result.some((item) => item.date === "2026-05-03"),
+    "Expected earlier-week session to remain after cleanup.",
+  );
+});
+
 Deno.test("expectedTotalWeeks anchors Sunday to current week's Monday", () => {
   const weeks = expectedTotalWeeks(
     profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
@@ -4805,8 +5058,15 @@ function runProductionRulePipeline(
     hardDayRestedSessions,
     profileData,
   );
-  const peakNormalizedSessions = normalizePeakLongRun(
+  const volumeRampedSessions = normalizeWeeklyVolumeRamp(
     scheduleAdjustedSessions,
+    profileData,
+    totalWeeks,
+    "en",
+    coachingBrief,
+  );
+  const peakNormalizedSessions = normalizePeakLongRun(
+    volumeRampedSessions,
     profileData,
     totalWeeks,
     "en",
@@ -4819,8 +5079,15 @@ function runProductionRulePipeline(
     "en",
     coachingBrief,
   );
-  const taperNormalizedSessions = normalizeTaper(
+  const volumeStabilizedSessions = normalizeWeeklyVolumeRamp(
     progressionSmoothedSessions,
+    profileData,
+    totalWeeks,
+    "en",
+    coachingBrief,
+  );
+  const taperNormalizedSessions = normalizeTaper(
+    volumeStabilizedSessions,
     profileData,
     totalWeeks,
     "en",
@@ -4852,11 +5119,38 @@ function runProductionRulePipeline(
     phaseStampedSessions,
     profileData,
   );
-  const preRaceTaperedSessions = enforcePreRaceTaper(
+  const goal = typeof profileData.goal === "object" &&
+      profileData.goal != null &&
+      !Array.isArray(profileData.goal)
+    ? profileData.goal as Record<string, unknown>
+    : undefined;
+  const sessionsWithoutRaceDate = removeSessionsOnRaceDate(
     truncatedSessions,
+    typeof goal?.raceDate === "string" ? goal.raceDate : undefined,
+  );
+  const raceDate = typeof goal?.raceDate === "string"
+    ? goal.raceDate
+    : undefined;
+  const preRaceTaperedSessions = enforcePreRaceTaper(
+    sessionsWithoutRaceDate,
     profileData,
   );
-  return normalizeSessionIds(preRaceTaperedSessions);
+  const raceDayDate = raceDate == null
+    ? lastSessionDateInString(preRaceTaperedSessions)
+    : raceDate;
+  const sessionsBeforeRaceDayInfo = raceDayDate == null
+    ? preRaceTaperedSessions
+    : removeSessionsOnRaceDate(preRaceTaperedSessions, raceDayDate);
+  return normalizeSessionIds(sessionsBeforeRaceDayInfo);
+}
+
+function lastSessionDateInString(
+  sessions: ReadonlyArray<{ date: string }>,
+): string | null {
+  const sorted = sessions.map((session) => session.date?.slice(0, 10)).filter((
+    date,
+  ): date is string => typeof date === "string" && date.length > 0).sort();
+  return sorted.length === 0 ? null : sorted[sorted.length - 1];
 }
 
 function session(
