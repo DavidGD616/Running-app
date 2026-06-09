@@ -4,6 +4,8 @@ import {
   GeneratePlanRequestSchema,
   removeSessionsOnRaceDate,
   StravaCoachingProfileSnapshotSchema,
+  targetedSessionRepairResponseJsonSchema,
+  TargetedSessionRepairResponseSchema,
 } from "./schema.ts";
 
 const professionalPlanInputStrava = {
@@ -528,5 +530,154 @@ Deno.test(
     assert.ok(
       !filtered.some((session) => session.date.startsWith("2026-10-18")),
     );
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairResponseSchema accepts valid repair response with full repaired session",
+  () => {
+    const repairResponse = {
+      schemaVersion: 1,
+      sessions: [
+        {
+          sessionId: "w1-mon-easy",
+          repairedSession: generatedPlan.sessions[0],
+        },
+      ],
+    };
+
+    const parsed = TargetedSessionRepairResponseSchema.parse(repairResponse);
+    assert.equal(parsed.schemaVersion, 1);
+    assert.equal(parsed.sessions.length, 1);
+    assert.equal(parsed.sessions[0].sessionId, "w1-mon-easy");
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairResponseSchema rejects repaired run session missing workoutTarget",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      sessions: [
+        {
+          sessionId: "w1-mon-easy",
+          repairedSession: {
+            ...generatedPlan.sessions[0],
+            workoutTarget: undefined,
+          },
+        },
+      ],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairResponseSchema.parse(invalid);
+    }, /workoutTarget/);
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairResponseSchema rejects empty sessions",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      sessions: [],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairResponseSchema.parse(invalid);
+    }, /sessions/);
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairResponseJsonSchema is strict with required top-level fields",
+  () => {
+    const required = targetedSessionRepairResponseJsonSchema
+      .required as string[];
+    assert.equal(required.includes("schemaVersion"), true);
+    assert.equal(required.includes("sessions"), true);
+
+    const sessionsItems = (
+      targetedSessionRepairResponseJsonSchema.properties as {
+        sessions: {
+          items: { additionalProperties: boolean; required: string[] };
+        };
+      }
+    ).sessions.items;
+
+    assert.equal(
+      (targetedSessionRepairResponseJsonSchema as {
+        additionalProperties?: boolean;
+      })
+        .additionalProperties,
+      false,
+    );
+    assert.equal(sessionsItems.additionalProperties, false);
+    assert.equal(sessionsItems.required.includes("sessionId"), true);
+    assert.equal(sessionsItems.required.includes("repairedSession"), true);
+    assert.equal(
+      (
+        targetedSessionRepairResponseJsonSchema.properties as {
+          sessions: { minItems?: number };
+        }
+      ).sessions.minItems,
+      1,
+    );
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairResponseJsonSchema requires repairedSession.workoutTarget object",
+  () => {
+    const repairedSession = (
+      targetedSessionRepairResponseJsonSchema.properties as {
+        sessions: {
+          items: {
+            properties: {
+              repairedSession: { properties: { workoutTarget: unknown } };
+            };
+          };
+        };
+      }
+    ).sessions.items.properties.repairedSession;
+    const workoutTargetType = (
+      repairedSession as {
+        properties: { workoutTarget: { type: string | string[] } };
+      }
+    ).properties.workoutTarget.type;
+
+    assert.equal(workoutTargetType, "object");
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairResponseJsonSchema has no additionalProperties:true flags",
+  () => {
+    const schema = targetedSessionRepairResponseJsonSchema as unknown as Record<
+      string,
+      unknown
+    >;
+    let violation = "";
+    const walk = (node: unknown, path = "root") => {
+      if (node == null || typeof node !== "object") return;
+      if (Array.isArray(node)) {
+        node.forEach((child, index) => walk(child, `${path}[${index}]`));
+        return;
+      }
+
+      const objectNode = node as Record<string, unknown>;
+      if (objectNode.additionalProperties === true) {
+        violation = `${path}.additionalProperties=true`;
+        return;
+      }
+
+      for (const [key, child] of Object.entries(objectNode)) {
+        walk(child, `${path}.${key}`);
+        if (violation) return;
+      }
+    };
+
+    walk(schema);
+    assert.equal(violation, "");
   },
 );

@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  detectSessionTypePolicyViolations,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
@@ -2873,6 +2874,115 @@ Deno.test("normalizeWorkoutTypesByPhase keeps brand-new brief sessions conservat
     "underprepared/brand-new should remain conservative in specific phase",
   );
 });
+
+Deno.test(
+  "detectSessionTypePolicyViolations reports base-phase intervals in intermediate profile",
+  () => {
+    const violations = detectSessionTypePolicyViolations(
+      [
+        session({
+          id: "w2-intervals",
+          date: "2026-04-08",
+          type: "intervals",
+          weekNumber: 2,
+        }),
+      ],
+      {
+        goal: { race: "race_half_marathon", raceDate: null },
+        fitness: { experience: "experience_intermediate" },
+      },
+      8,
+      null,
+    );
+
+    assert.equal(violations.length, 1);
+    const violation = violations[0];
+    assert.equal(violation.code, "session_type_not_allowed_for_phase");
+    assert.equal(violation.sessionId, "w2-intervals");
+    assert.equal(violation.phase, "base");
+    assert.equal(violation.currentType, "intervals");
+    assert.deepEqual(
+      violation.allowedTypes,
+      [
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+        "fartlek",
+        "progressionRun",
+      ],
+    );
+    assert.equal(violation.recommendedType, "fartlek");
+  },
+);
+
+Deno.test(
+  "detectSessionTypePolicyViolations uses coachingBrief readiness for policy selection",
+  () => {
+    const sessions = [
+      session({
+        id: "w2-progression",
+        date: "2026-04-08",
+        type: "progressionRun",
+        weekNumber: 2,
+      }),
+    ];
+    const profileData = {
+      goal: { race: "race_half_marathon", raceDate: null },
+      fitness: { experience: "experience_beginner" },
+    };
+
+    const withoutBrief = detectSessionTypePolicyViolations(
+      sessions,
+      profileData,
+      8,
+      null,
+    );
+    const withRaceReadyBrief = detectSessionTypePolicyViolations(
+      sessions,
+      profileData,
+      8,
+      coachingBriefFixture({ readinessLevel: "raceReady" }),
+    );
+
+    assert.equal(withoutBrief.length, 1);
+    assert.equal(
+      withRaceReadyBrief.length,
+      0,
+      "raceReady readiness should raise policy experience for policy selection",
+    );
+  },
+);
+
+Deno.test(
+  "detectSessionTypePolicyViolations skips valid session types and goal-race sessions",
+  () => {
+    const violations = detectSessionTypePolicyViolations(
+      [
+        session({
+          id: "w1-easy",
+          date: "2026-04-01",
+          type: "easyRun",
+          weekNumber: 1,
+        }),
+        session({
+          id: "w2-race",
+          date: "2026-04-15",
+          type: "racePaceRun",
+          weekNumber: 2,
+        }),
+      ],
+      {
+        goal: { race: "race_half_marathon", raceDate: "2026-04-15" },
+        fitness: { experience: "experience_intermediate" },
+      },
+      8,
+      null,
+    );
+
+    assert.equal(violations.length, 0);
+  },
+);
 
 Deno.test(
   "normalizePeakLongRun uses coaching brief readiness when profile is missing experience",

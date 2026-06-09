@@ -390,6 +390,64 @@ export function normalizeWorkoutTypesByPhase(
   });
 }
 
+export type SessionTypePolicyViolation = {
+  code: "session_type_not_allowed_for_phase";
+  sessionId: string;
+  weekNumber: number;
+  date: string;
+  currentType: GeneratedSession["type"];
+  phase: "base" | "build" | "specific" | "peak" | "taperRace";
+  allowedTypes: string[];
+  recommendedType: GeneratedSession["type"];
+  reason: string;
+};
+
+export function detectSessionTypePolicyViolations(
+  sessions: readonly GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+  coachingBrief: CoachingBrief | null = null,
+): SessionTypePolicyViolation[] {
+  const context = ruleContextFor(profileData, coachingBrief);
+
+  return sessions.flatMap((session) => {
+    if (session.type === "restDay") return [];
+    if (isGoalRaceSession(session, profileData)) return [];
+
+    const phase = phaseForWeekFromCoachingBrief(
+      session.weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      context.race,
+      context.experience,
+    );
+
+    if (policy.allowedTypes.includes(session.type)) return [];
+
+    const recommendedType = nearestAllowedType(
+      session.type,
+      policy.allowedTypes,
+    );
+
+    return [{
+      code: "session_type_not_allowed_for_phase",
+      sessionId: session.id,
+      weekNumber: session.weekNumber,
+      date: session.date,
+      currentType: session.type,
+      phase,
+      allowedTypes: [...policy.allowedTypes],
+      recommendedType: recommendedType as GeneratedSession["type"],
+      reason:
+        `${session.type} is not allowed in ${phase}; suggest ${recommendedType}.`,
+    }];
+  });
+}
+
 function nearestAllowedType(
   currentType: string,
   allowedTypes: string[],
