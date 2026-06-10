@@ -541,16 +541,45 @@ const TargetedSessionRepairItemSchema = z.object({
   repairedSession: RepairedGeneratedSessionSchema,
 }).strict();
 
+const TargetedSessionRepairPatchItemSchema = z.object({
+  sessionId: z.string(),
+  type: SessionTypeSchema,
+  coachNote: z.string().trim().min(1),
+  workoutTarget: WorkoutTargetSchema.nullable().optional(),
+  distanceKm: z.number().nullable().optional(),
+  durationMinutes: z.number().int().nullable().optional(),
+  targetZone: TargetZoneSchema.nullable().optional(),
+  warmUpMinutes: z.number().int().nullable().optional(),
+  coolDownMinutes: z.number().int().nullable().optional(),
+  intervalReps: z.number().int().nullable().optional(),
+  intervalRepDistanceMeters: z.number().int().nullable().optional(),
+  intervalRecoverySeconds: z.number().int().nullable().optional(),
+  strideReps: z.number().int().nullable().optional(),
+  strideSeconds: z.number().int().nullable().optional(),
+  strideRecoverySeconds: z.number().int().nullable().optional(),
+}).strict();
+
 export const TargetedSessionRepairResponseSchema = z.object({
   schemaVersion: z.number().int().positive(),
   sessions: z.array(TargetedSessionRepairItemSchema).min(1),
 }).strict();
 
+export const TargetedSessionRepairPatchResponseSchema = z.object({
+  schemaVersion: z.number().int().positive(),
+  repairs: z.array(TargetedSessionRepairPatchItemSchema).min(1),
+}).strict();
+
 export type TargetedSessionRepairItem = z.infer<
   typeof TargetedSessionRepairItemSchema
 >;
+export type TargetedSessionRepairPatchItem = z.infer<
+  typeof TargetedSessionRepairPatchItemSchema
+>;
 export type TargetedSessionRepairResponse = z.infer<
   typeof TargetedSessionRepairResponseSchema
+>;
+export type TargetedSessionRepairPatchResponse = z.infer<
+  typeof TargetedSessionRepairPatchResponseSchema
 >;
 
 export const StravaPaceZonesSchema = z.object({
@@ -1396,6 +1425,70 @@ export const targetedSessionRepairResponseJsonSchema = {
     },
   },
   required: ["schemaVersion", "sessions"],
+  additionalProperties: false,
+};
+
+export const targetedSessionRepairPatchResponseJsonSchema = {
+  type: "object",
+  properties: {
+    schemaVersion: { type: "integer", minimum: 1 },
+    repairs: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        properties: {
+          sessionId: { type: "string" },
+          type: { type: "string", enum: SessionTypeSchema.options },
+          coachNote: { type: "string", minLength: 1 },
+          distanceKm: { type: ["number", "null"] },
+          durationMinutes: { type: ["integer", "null"] },
+          targetZone: {
+            type: ["string", "null"],
+            enum: [...TargetZoneSchema.options, null],
+          },
+          warmUpMinutes: { type: ["integer", "null"] },
+          coolDownMinutes: { type: ["integer", "null"] },
+          intervalReps: { type: ["integer", "null"] },
+          intervalRepDistanceMeters: { type: ["integer", "null"] },
+          intervalRecoverySeconds: { type: ["integer", "null"] },
+          strideReps: { type: ["integer", "null"] },
+          strideSeconds: { type: ["integer", "null"] },
+          strideRecoverySeconds: { type: ["integer", "null"] },
+          workoutTarget: {
+            ...(trainingPlanResponseJsonSchema
+              .properties as {
+                sessions: {
+                  items: {
+                    properties: { workoutTarget: Record<string, unknown> };
+                  };
+                };
+              }).sessions.items.properties.workoutTarget,
+            type: ["object", "null"],
+          },
+        },
+        required: [
+          "sessionId",
+          "type",
+          "coachNote",
+          "distanceKm",
+          "durationMinutes",
+          "targetZone",
+          "warmUpMinutes",
+          "coolDownMinutes",
+          "intervalReps",
+          "intervalRepDistanceMeters",
+          "intervalRecoverySeconds",
+          "strideReps",
+          "strideSeconds",
+          "strideRecoverySeconds",
+          "workoutTarget",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["schemaVersion", "repairs"],
   additionalProperties: false,
 };
 

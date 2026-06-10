@@ -4,7 +4,9 @@ import {
   GeneratePlanRequestSchema,
   removeSessionsOnRaceDate,
   StravaCoachingProfileSnapshotSchema,
+  targetedSessionRepairPatchResponseJsonSchema,
   targetedSessionRepairResponseJsonSchema,
+  TargetedSessionRepairPatchResponseSchema,
   TargetedSessionRepairResponseSchema,
 } from "./schema.ts";
 
@@ -679,5 +681,127 @@ Deno.test(
 
     walk(schema);
     assert.equal(violation, "");
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairPatchResponseSchema accepts a valid targeted patch response",
+  () => {
+    const repairPatchResponse = {
+      schemaVersion: 1,
+      repairs: [
+        {
+          sessionId: "w1-mon-easy",
+          type: "easyRun",
+          coachNote: "Keep this easy and controlled.",
+          distanceKm: 8.0,
+          durationMinutes: 50,
+          targetZone: "easy",
+          warmUpMinutes: 10,
+          coolDownMinutes: 5,
+          intervalReps: null,
+          intervalRepDistanceMeters: null,
+          intervalRecoverySeconds: null,
+          strideReps: 4,
+          strideSeconds: 20,
+          strideRecoverySeconds: 60,
+          workoutTarget: {
+            schemaVersion: 1,
+            type: "pace",
+            zone: "easy",
+            paceMinSecPerKm: 360,
+            paceMaxSecPerKm: 390,
+            effortCue: "easy",
+          },
+        },
+      ],
+    };
+
+    const parsed = TargetedSessionRepairPatchResponseSchema.parse(
+      repairPatchResponse,
+    );
+    assert.equal(parsed.schemaVersion, 1);
+    assert.equal(parsed.repairs.length, 1);
+    assert.equal(parsed.repairs[0].type, "easyRun");
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairPatchResponseSchema rejects empty repairs array",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      repairs: [],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairPatchResponseSchema.parse(invalid);
+    }, /repairs/);
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairPatchResponseSchema rejects blank coachNote",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      repairs: [
+        {
+          sessionId: "w1-mon-easy",
+          type: "easyRun",
+          coachNote: "   ",
+        },
+      ],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairPatchResponseSchema.parse(invalid);
+    }, /coachNote/);
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairPatchResponseJsonSchema requires required top-level and item fields",
+  () => {
+    const required = targetedSessionRepairPatchResponseJsonSchema.required as string[];
+    assert.equal(required.includes("schemaVersion"), true);
+    assert.equal(required.includes("repairs"), true);
+
+    const repairsItems = (
+      targetedSessionRepairPatchResponseJsonSchema.properties as {
+        repairs: {
+          items: { additionalProperties: boolean; required: string[] };
+        };
+      }
+    ).repairs.items;
+
+    const expectedItemRequiredFields = [
+      "sessionId",
+      "type",
+      "coachNote",
+      "distanceKm",
+      "durationMinutes",
+      "targetZone",
+      "warmUpMinutes",
+      "coolDownMinutes",
+      "intervalReps",
+      "intervalRepDistanceMeters",
+      "intervalRecoverySeconds",
+      "strideReps",
+      "strideSeconds",
+      "strideRecoverySeconds",
+      "workoutTarget",
+    ];
+
+    for (const field of expectedItemRequiredFields) {
+      assert.equal(repairsItems.required.includes(field), true);
+    }
+
+    assert.equal(
+      (targetedSessionRepairPatchResponseJsonSchema.properties as {
+        repairs: { minItems?: number };
+      }).repairs.minItems,
+      1,
+    );
   },
 );
