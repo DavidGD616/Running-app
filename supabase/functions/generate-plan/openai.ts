@@ -4,11 +4,11 @@ import {
   GeneratedPlanSchema,
   type GeneratedSession,
   StravaCoachingProfileInputSchema,
-  type TargetedSessionRepairResponse,
   type TargetedSessionRepairPatchResponse,
-  targetedSessionRepairResponseJsonSchema,
-  TargetedSessionRepairPatchResponseSchema,
   targetedSessionRepairPatchResponseJsonSchema,
+  TargetedSessionRepairPatchResponseSchema,
+  type TargetedSessionRepairResponse,
+  targetedSessionRepairResponseJsonSchema,
   TargetedSessionRepairResponseSchema,
   trainingPlanResponseJsonSchema,
 } from "./schema.ts";
@@ -17,7 +17,8 @@ import type { SessionTypePolicyViolation } from "./plan-rules.ts";
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 const TARGETED_SESSION_REPAIR_SCHEMA_NAME = "targeted_session_repair";
-const TARGETED_SESSION_REPAIR_PATCH_SCHEMA_NAME = "targeted_session_repair_patch";
+const TARGETED_SESSION_REPAIR_PATCH_SCHEMA_NAME =
+  "targeted_session_repair_patch";
 
 type SupportedLocale = "en" | "es";
 
@@ -159,7 +160,10 @@ const SAFE_COACHING_BRIEF_KEYS = [
   "rationale",
 ] as const;
 
-export type TargetedSessionRepairPatchPriorFailurePayload = Record<string, string>;
+export type TargetedSessionRepairPatchPriorFailurePayload = Record<
+  string,
+  string
+>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value);
@@ -846,9 +850,7 @@ export function buildTargetedSessionRepairPatchMessages(
     `Sessions needing repair:\n${
       JSON.stringify(sessionsNeedingRepair, null, 2)
     }\n\n` +
-    `Session repairs to apply:\n${
-      JSON.stringify(repairPayload, null, 2)
-    }`;
+    `Session repairs to apply:\n${JSON.stringify(repairPayload, null, 2)}`;
 
   return [
     { role: "system", content: systemPrompt },

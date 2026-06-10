@@ -2,8 +2,8 @@ import { strict as assert } from "node:assert";
 import {
   buildGeneratePlanMessages,
   buildTargetedSessionRepairCompletionOptions,
-  buildTargetedSessionRepairPatchCompletionOptions,
   buildTargetedSessionRepairMessages,
+  buildTargetedSessionRepairPatchCompletionOptions,
   buildTargetedSessionRepairPatchMessages,
   deriveBackendEvidenceFromStravaSummaries,
   parseGeneratedPlanContent,
@@ -1211,21 +1211,24 @@ Deno.test(
       },
     ];
 
-    const [systemMessage, userMessage] = buildTargetedSessionRepairPatchMessages(
-      messageProfile,
-      8,
-      repairSessions,
-      violations,
-      "en",
-      coachingBrief,
-      { "w1-mon-repair": "Initial fix was too intense for base phase." },
-    );
+    const [systemMessage, userMessage] =
+      buildTargetedSessionRepairPatchMessages(
+        messageProfile,
+        8,
+        repairSessions,
+        violations,
+        "en",
+        coachingBrief,
+        { "w1-mon-repair": "Initial fix was too intense for base phase." },
+      );
 
     assert.equal(systemMessage.role, "system");
     assert.equal(userMessage.role, "user");
     assert.ok(systemMessage.content.includes("targeted repair PATCH pass"));
     assert.ok(
-      systemMessage.content.includes("Repair only the sessions explicitly listed"),
+      systemMessage.content.includes(
+        "Repair only the sessions explicitly listed",
+      ),
     );
     assert.ok(
       systemMessage.content.includes("not a full plan regeneration"),
@@ -1244,15 +1247,15 @@ Deno.test(
     assert.ok(systemMessage.content.includes("phase-appropriate training"));
     assert.ok(userMessage.content.includes("phaseGoalLanguage"));
     assert.ok(userMessage.content.includes("Protect current aerobic base"));
-    assert.ok(userMessage.content.includes("\"phase\": \"base\""));
-    assert.ok(userMessage.content.includes("\"currentType\": \"intervals\""));
-    assert.ok(userMessage.content.includes("\"allowedTypes\""));
-    assert.ok(userMessage.content.includes("\"recommendedType\": \"easyRun\""));
-    assert.ok(userMessage.content.includes("\"originalSession\""));
+    assert.ok(userMessage.content.includes('"phase": "base"'));
+    assert.ok(userMessage.content.includes('"currentType": "intervals"'));
+    assert.ok(userMessage.content.includes('"allowedTypes"'));
+    assert.ok(userMessage.content.includes('"recommendedType": "easyRun"'));
+    assert.ok(userMessage.content.includes('"originalSession"'));
     assert.ok(userMessage.content.includes("w1-mon-repair"));
     assert.ok(
       userMessage.content.includes(
-        "\"priorFailureReason\": \"Initial fix was too intense for base phase.\"",
+        '"priorFailureReason": "Initial fix was too intense for base phase."',
       ),
     );
   },

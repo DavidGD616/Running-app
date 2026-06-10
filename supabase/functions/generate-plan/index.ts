@@ -8,7 +8,6 @@ import {
 import {
   deriveBackendEvidenceFromStravaSummaries,
   generatePlanFromProfile,
-  repairTargetedSessionsWithOpenAi,
   sanitizeProfileForOpenAi,
   type StravaActivitySummaryForEvidence,
 } from "./openai.ts";
@@ -16,11 +15,11 @@ import { buildCoachingBrief } from "./coaching-brief.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  detectGenericCoachCopyViolations,
   detectSessionTypePolicyViolations,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
-  mergeTargetedSessionRepairs,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
   normalizeSessionIds,
@@ -33,7 +32,9 @@ import {
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
   resolvePlanStartDate,
+  restoreSessionCoachNotes,
   smoothLongRunProgression,
+  snapshotSessionCoachNotesByIds,
   spaceStressfulSessions,
   truncateAfterRaceDate,
   unsupportedCoachingBriefReason,
@@ -41,6 +42,10 @@ import {
   validateGeneratedPlanShape,
   validateGeneratedSchedule,
 } from "./plan-rules.ts";
+import {
+  type RepairPolicyViolationsResult,
+  repairPolicyViolationsWithOpenAiPatches,
+} from "./repair-loop.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
 
 type CoachLocale = "en" | "es";
@@ -377,76 +382,104 @@ Deno.serve(async (req) => {
     safeGeneratedPlan.totalWeeks,
     coachingBrief,
   );
-  const violationSessionIds = new Set(
-    policyViolations.map((violation) => violation.sessionId),
-  );
-  const sessionsNeedingRepair = taperNormalizedSessions.filter((session) =>
-    violationSessionIds.has(session.id)
-  );
-  let repairedSessions = taperNormalizedSessions;
-  let preservedCoachNoteSessionIds: string[] = [];
+  let policyRepairResult: RepairPolicyViolationsResult = {
+    ok: true,
+    sessions: taperNormalizedSessions,
+    acceptedSessionIds: [],
+    attempts: 0,
+  };
 
-  if (sessionsNeedingRepair.length > 0 && policyViolations.length > 0) {
+  if (policyViolations.length > 0) {
     try {
-      const repairResponse = await repairTargetedSessionsWithOpenAi(
+      policyRepairResult = await repairPolicyViolationsWithOpenAiPatches(
+        taperNormalizedSessions,
         generationProfileWithPlanStartDate,
         safeGeneratedPlan.totalWeeks,
-        sessionsNeedingRepair,
-        policyViolations,
         locale,
         coachingBrief,
       );
-      const mergeResult = mergeTargetedSessionRepairs(
-        taperNormalizedSessions,
-        sessionsNeedingRepair.map((session) => session.id),
-        repairResponse.sessions,
-        generationProfileWithPlanStartDate,
-        safeGeneratedPlan.totalWeeks,
-        coachingBrief,
-      );
-      repairedSessions = mergeResult.sessions;
-      preservedCoachNoteSessionIds = mergeResult.preservedCoachNoteSessionIds;
     } catch (error) {
-      console.error(
-        "Targeted repair failed; using deterministic fallback.",
-        {
-          requestedRepairs: sessionsNeedingRepair.length,
-          violations: policyViolations.length,
-        },
+      console.error("Generated plan failed OpenAI repair validation", {
+        attempts: 0,
+        requestedRepairs: policyViolations.length,
+        error: String(error),
+      });
+      return new Response(
+        JSON.stringify({
+          error: "Generated plan failed OpenAI repair validation",
+          detail: String(error),
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
       );
     }
-  } else if (policyViolations.length > 0) {
-    console.error(
-      "Policy violations detected but no sessions matched for repair; skipping targeted pass.",
-      { violations: policyViolations.length },
+  }
+
+  if (!policyRepairResult.ok) {
+    console.error("Generated plan failed OpenAI repair validation", {
+      attempts: policyRepairResult.attempts,
+      remainingViolations: policyRepairResult.remainingViolations.length,
+      repairFailures: policyRepairResult.repairFailures.length,
+      requestedRepairs: policyViolations.length,
+    });
+    return new Response(
+      JSON.stringify({
+        error: "Generated plan failed OpenAI repair validation",
+        remainingViolations: policyRepairResult.remainingViolations,
+        repairFailures: policyRepairResult.repairFailures,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
+
+  const preservedRepairCoachNotes = snapshotSessionCoachNotesByIds(
+    policyRepairResult.sessions,
+    policyRepairResult.acceptedSessionIds,
+  );
+
+  if (policyViolations.length > 0) {
+    console.info("OpenAI repair loop completed", {
+      attempts: policyRepairResult.attempts,
+      repairedSessions: policyRepairResult.acceptedSessionIds.length,
+      requestedRepairs: policyViolations.length,
+    });
+  }
+
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
-    repairedSessions,
+    policyRepairResult.sessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
     coachingBrief,
-    preservedCoachNoteSessionIds,
+    policyRepairResult.acceptedSessionIds,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
     generationProfileWithPlanStartDate,
     locale,
   );
-  const phaseStampedSessions = firstSessionNormalizedSessions.map((
-    session,
-  ) => ({
-    ...session,
-    phase: phaseForWeekFromCoachingBrief(
-      session.weekNumber,
-      safeGeneratedPlan.totalWeeks,
-      generationProfileWithPlanStartDate,
-      coachingBrief,
-    ),
-  }));
-  const truncatedSessions = truncateAfterRaceDate(
+  const firstSessionNormalizedWithPreservedCoachNotes =
+    restoreSessionCoachNotes(
+      firstSessionNormalizedSessions,
+      preservedRepairCoachNotes,
+    );
+  const phaseStampedSessions = firstSessionNormalizedWithPreservedCoachNotes
+    .map((
+      session,
+    ) => ({
+      ...session,
+      phase: phaseForWeekFromCoachingBrief(
+        session.weekNumber,
+        safeGeneratedPlan.totalWeeks,
+        generationProfileWithPlanStartDate,
+        coachingBrief,
+      ),
+    }));
+  const phaseStampedSessionsWithPreservedCoachNotes = restoreSessionCoachNotes(
     phaseStampedSessions,
+    preservedRepairCoachNotes,
+  );
+  const truncatedSessions = truncateAfterRaceDate(
+    phaseStampedSessionsWithPreservedCoachNotes,
     generationProfileWithPlanStartDate,
   );
   const goal = isRecord(generationProfileWithPlanStartDate.goal)
@@ -464,11 +497,40 @@ Deno.serve(async (req) => {
     generationProfileWithPlanStartDate,
     locale,
   );
-  const raceDayDate = raceDate ?? lastSessionDate(preRaceTaperedSessions);
+  const preRaceTaperedWithPreservedCoachNotes = restoreSessionCoachNotes(
+    preRaceTaperedSessions,
+    preservedRepairCoachNotes,
+  );
+  const raceDayDate = raceDate ?? lastSessionDate(
+    preRaceTaperedWithPreservedCoachNotes,
+  );
   const sessionsBeforeRaceDayInfo = raceDayDate == null
-    ? preRaceTaperedSessions
-    : removeSessionsOnRaceDate(preRaceTaperedSessions, raceDayDate);
+    ? preRaceTaperedWithPreservedCoachNotes
+    : removeSessionsOnRaceDate(
+      preRaceTaperedWithPreservedCoachNotes,
+      raceDayDate,
+    );
   const idNormalizedSessions = normalizeSessionIds(sessionsBeforeRaceDayInfo);
+  const genericCoachCopyViolations = detectGenericCoachCopyViolations(
+    idNormalizedSessions,
+  );
+  if (genericCoachCopyViolations.length > 0) {
+    console.error("Generated plan failed generic coach note validation", {
+      attempts: policyRepairResult.attempts,
+      genericCoachCopyViolationCount: genericCoachCopyViolations.length,
+      sessionIds: genericCoachCopyViolations.map((violation) =>
+        violation.sessionId
+      ),
+      repairViolations: policyViolations.length,
+    });
+    return new Response(
+      JSON.stringify({
+        error: "Generated plan failed generic coach note validation",
+        violations: genericCoachCopyViolations,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   const sanitizedForValidation = withoutGoalDate(
     generationProfileWithPlanStartDate,

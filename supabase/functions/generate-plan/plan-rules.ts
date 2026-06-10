@@ -614,7 +614,10 @@ export function mergeTargetedSessionRepairPatches(
     }
 
     const mergedSession = mergeSessionWithTargetedPatch(original, patch);
-    if (isRunSessionType(mergedSession.type) && mergedSession.workoutTarget == null) {
+    if (
+      isRunSessionType(mergedSession.type) &&
+      mergedSession.workoutTarget == null
+    ) {
       addRejection(
         patch.sessionId,
         "Run sessions must keep or supply a non-null workoutTarget.",
@@ -629,7 +632,9 @@ export function mergeTargetedSessionRepairPatches(
   }
 
   return {
-    sessions: sessions.map((session) => acceptedById.get(session.id) ?? session),
+    sessions: sessions.map((session) =>
+      acceptedById.get(session.id) ?? session
+    ),
     acceptedSessionIds,
     rejectedRepairs,
     preservedCoachNoteSessionIds: acceptedSessionIds,
@@ -702,7 +707,71 @@ function restrictedCoachNoteCopy(value: string): string | null {
 
     return pattern.test(value);
   });
-  return match == null ? null : typeof match === "string" ? match : "restricted pattern";
+  return match == null
+    ? null
+    : typeof match === "string"
+    ? match
+    : "restricted pattern";
+}
+
+export type GenericCoachCopyViolation = {
+  sessionId: string;
+  reason: string;
+};
+
+export function snapshotSessionCoachNotesByIds(
+  sessions: readonly GeneratedSession[],
+  sessionIds: readonly string[],
+): Record<string, string> {
+  const acceptedIds = new Set(sessionIds);
+  const notes: Record<string, string> = Object.create(null);
+
+  for (const session of sessions) {
+    if (!acceptedIds.has(session.id)) continue;
+    if (typeof session.coachNote === "string" && session.coachNote.length > 0) {
+      notes[session.id] = session.coachNote;
+    }
+  }
+
+  return notes;
+}
+
+export function restoreSessionCoachNotes(
+  sessions: readonly GeneratedSession[],
+  preservedNotes: Readonly<Record<string, string>>,
+): GeneratedSession[] {
+  if (Object.keys(preservedNotes).length === 0) return [...sessions];
+
+  return sessions.map((session) => {
+    const preservedNote = Object.prototype.hasOwnProperty.call(
+        preservedNotes,
+        session.id,
+      )
+      ? preservedNotes[session.id]
+      : null;
+    if (preservedNote == null) return session;
+    return { ...session, coachNote: preservedNote };
+  });
+}
+
+export function detectGenericCoachCopyViolations(
+  sessions: readonly GeneratedSession[],
+): GenericCoachCopyViolation[] {
+  return sessions.flatMap((session) => {
+    const coachNote = typeof session.coachNote === "string"
+      ? session.coachNote.trim()
+      : "";
+    if (coachNote.length === 0) return [];
+
+    const restriction = restrictedCoachNoteCopy(coachNote);
+    if (restriction == null) return [];
+
+    return [{
+      sessionId: session.id,
+      reason:
+        `coachNote contains disallowed policy-explanation copy (${restriction}).`,
+    }];
+  });
 }
 
 export type SessionTypePolicyViolation = {

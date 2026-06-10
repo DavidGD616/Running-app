@@ -1,5 +1,8 @@
 import { strict as assert } from "node:assert";
-import type { GeneratedSession, TargetedSessionRepairPatchResponse } from "./schema.ts";
+import type {
+  GeneratedSession,
+  TargetedSessionRepairPatchResponse,
+} from "./schema.ts";
 import {
   type RepairPolicyViolationsResultFailure,
   type RepairPolicyViolationsResultSuccess,
@@ -111,14 +114,54 @@ Deno.test(
     };
 
     const initialSessions = [
-      session({ id: "s1", date: "2026-01-01", type: "intervals", weekNumber: 1 }),
-      session({ id: "s2", date: "2026-01-02", type: "thresholdRun", weekNumber: 2 }),
-      session({ id: "s3", date: "2026-01-03", type: "tempoRun", weekNumber: 2 }),
-      session({ id: "ok-1", date: "2026-01-04", type: "easyRun", weekNumber: 1 }),
-      session({ id: "ok-2", date: "2026-01-05", type: "recoveryRun", weekNumber: 1 }),
-      session({ id: "ok-3", date: "2026-01-06", type: "longRun", weekNumber: 1 }),
-      session({ id: "ok-4", date: "2026-01-07", type: "easyRun", weekNumber: 1 }),
-      session({ id: "ok-5", date: "2026-01-08", type: "recoveryRun", weekNumber: 2 }),
+      session({
+        id: "s1",
+        date: "2026-01-01",
+        type: "intervals",
+        weekNumber: 1,
+      }),
+      session({
+        id: "s2",
+        date: "2026-01-02",
+        type: "thresholdRun",
+        weekNumber: 2,
+      }),
+      session({
+        id: "s3",
+        date: "2026-01-03",
+        type: "tempoRun",
+        weekNumber: 2,
+      }),
+      session({
+        id: "ok-1",
+        date: "2026-01-04",
+        type: "easyRun",
+        weekNumber: 1,
+      }),
+      session({
+        id: "ok-2",
+        date: "2026-01-05",
+        type: "recoveryRun",
+        weekNumber: 1,
+      }),
+      session({
+        id: "ok-3",
+        date: "2026-01-06",
+        type: "longRun",
+        weekNumber: 1,
+      }),
+      session({
+        id: "ok-4",
+        date: "2026-01-07",
+        type: "easyRun",
+        weekNumber: 1,
+      }),
+      session({
+        id: "ok-5",
+        date: "2026-01-08",
+        type: "recoveryRun",
+        weekNumber: 2,
+      }),
       session({
         id: "ok-6",
         date: "2026-01-04",

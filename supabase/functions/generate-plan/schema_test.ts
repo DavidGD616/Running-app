@@ -5,8 +5,8 @@ import {
   removeSessionsOnRaceDate,
   StravaCoachingProfileSnapshotSchema,
   targetedSessionRepairPatchResponseJsonSchema,
-  targetedSessionRepairResponseJsonSchema,
   TargetedSessionRepairPatchResponseSchema,
+  targetedSessionRepairResponseJsonSchema,
   TargetedSessionRepairResponseSchema,
 } from "./schema.ts";
 
@@ -763,7 +763,8 @@ Deno.test(
 Deno.test(
   "targetedSessionRepairPatchResponseJsonSchema requires required top-level and item fields",
   () => {
-    const required = targetedSessionRepairPatchResponseJsonSchema.required as string[];
+    const required = targetedSessionRepairPatchResponseJsonSchema
+      .required as string[];
     assert.equal(required.includes("schemaVersion"), true);
     assert.equal(required.includes("repairs"), true);
 

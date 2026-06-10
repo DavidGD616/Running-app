@@ -2,6 +2,7 @@ import { strict as assert } from "node:assert";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  detectGenericCoachCopyViolations,
   detectSessionTypePolicyViolations,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
@@ -23,7 +24,9 @@ import {
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
   resolvePlanStartDate,
+  restoreSessionCoachNotes,
   smoothLongRunProgression,
+  snapshotSessionCoachNotesByIds,
   spaceStressfulSessions,
   truncateAfterRaceDate,
   unsupportedCoachingBriefReason,
@@ -3395,7 +3398,10 @@ Deno.test(
 
     const patched = findSession(result.sessions, "w1-targeted");
     assert.equal(patched.type, "longRun");
-    assert.equal(patched.coachNote, "Shift this to a longer controlled effort.");
+    assert.equal(
+      patched.coachNote,
+      "Shift this to a longer controlled effort.",
+    );
     assert.equal(patched.distanceKm, 14);
     assert.equal(patched.durationMinutes, 75);
 
@@ -3549,7 +3555,10 @@ Deno.test(
       originalSessions,
       requestedSessionIds,
       repairs,
-      profile({ experience: "experience_intermediate", race: "race_half_marathon" }),
+      profile({
+        experience: "experience_intermediate",
+        race: "race_half_marathon",
+      }),
       8,
     );
 
@@ -3578,7 +3587,8 @@ Deno.test(
     const repairs: TargetedSessionRepairPatchItem[] = [{
       sessionId: "w1-spanish-copy",
       type: "easyRun",
-      coachNote: "Ajustado para coincidir con el entrenamiento apropiado de la fase.",
+      coachNote:
+        "Ajustado para coincidir con el entrenamiento apropiado de la fase.",
       workoutTarget: easyWorkouts().easyTarget,
     }];
 
@@ -3586,7 +3596,10 @@ Deno.test(
       originalSessions,
       requestedSessionIds,
       repairs,
-      profile({ experience: "experience_intermediate", race: "race_half_marathon" }),
+      profile({
+        experience: "experience_intermediate",
+        race: "race_half_marathon",
+      }),
       8,
     );
 
@@ -3595,6 +3608,56 @@ Deno.test(
     assert.ok(result.rejectedRepairs[0].reason.includes("disallowed"));
   },
 );
+
+Deno.test("detectGenericCoachCopyViolations catches English restricted copy", () => {
+  const violations = detectGenericCoachCopyViolations([
+    {
+      ...session({
+        id: "copy-en",
+        date: "2026-04-10",
+        type: "easyRun",
+        weekNumber: 2,
+      }),
+      coachNote: "Adjusted to match phase-appropriate training.",
+    },
+  ]);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].sessionId, "copy-en");
+  assert.ok(violations[0].reason.includes("disallowed"));
+});
+
+Deno.test("detectGenericCoachCopyViolations catches Spanish restricted copy", () => {
+  const violations = detectGenericCoachCopyViolations([
+    {
+      ...session({
+        id: "copy-es",
+        date: "2026-04-11",
+        type: "easyRun",
+        weekNumber: 2,
+      }),
+      coachNote:
+        "Ajustado para coincidir con el entrenamiento apropiado de la fase.",
+    },
+  ]);
+  assert.equal(violations.length, 1);
+  assert.equal(violations[0].sessionId, "copy-es");
+  assert.ok(violations[0].reason.includes("disallowed"));
+});
+
+Deno.test("detectGenericCoachCopyViolations ignores normal coaching note", () => {
+  const violations = detectGenericCoachCopyViolations([
+    {
+      ...session({
+        id: "coaching-note",
+        date: "2026-04-12",
+        type: "easyRun",
+        weekNumber: 3,
+      }),
+      coachNote: "Keep your effort controlled and stay smooth into the finish.",
+    },
+  ]);
+  assert.equal(violations.length, 0);
+});
 
 Deno.test(
   "mergeTargetedSessionRepairPatches preserves original session identity fields",
@@ -4595,6 +4658,42 @@ Deno.test("normalizeFirstPlannedSession downgrades first hard workout", () => {
   assert.equal(first.intervalRecoverySeconds, null);
 });
 
+Deno.test(
+  "restoreSessionCoachNotes preserves accepted repaired note through normalizeFirstPlannedSession",
+  () => {
+    const sessions = [
+      {
+        ...session({
+          id: "w1-mon-intervals",
+          date: "2026-04-27",
+          type: "intervals",
+          weekNumber: 1,
+          coachNote: "AI tuned first-session pacing guidance.",
+        }),
+        durationMinutes: 50,
+      },
+      session({
+        id: "w1-wed-easy",
+        date: "2026-04-29",
+        type: "easyRun",
+        weekNumber: 1,
+      }),
+    ];
+    const preservedNotes = snapshotSessionCoachNotesByIds(sessions, [
+      "w1-mon-intervals",
+    ]);
+    const normalized = normalizeFirstPlannedSession(
+      sessions,
+      profile({ experience: "experience_experienced" }),
+    );
+    const restored = restoreSessionCoachNotes(normalized, preservedNotes);
+
+    const first = findSession(restored, "w1-mon-intervals");
+    assert.equal(first.type, "easyRun");
+    assert.equal(first.coachNote, "AI tuned first-session pacing guidance.");
+  },
+);
+
 Deno.test("normalizeSessionIds regenerates ids from final date and type", () => {
   const sessions = normalizeSessionIds([
     session({
@@ -5446,6 +5545,42 @@ Deno.test("enforcePreRaceTaper downgrades intervals day before 10K race", () => 
     `day-before-race intervals should be downgraded, got ${dayBefore.type}`,
   );
 });
+
+Deno.test(
+  "restoreSessionCoachNotes preserves accepted repaired note through pre-race taper fallback",
+  () => {
+    const sessions = [
+      {
+        ...session({
+          id: "w4-sat",
+          date: "2026-06-20",
+          type: "intervals",
+          weekNumber: 4,
+          coachNote: "AI tuned pre-race load guidance.",
+        }),
+        durationMinutes: 48,
+      },
+      session({
+        id: "race",
+        date: "2026-06-21",
+        type: "racePaceRun",
+        weekNumber: 4,
+        distanceKm: 10,
+      }),
+    ];
+    const preservedNotes = snapshotSessionCoachNotesByIds(sessions, ["w4-sat"]);
+    const tapered = enforcePreRaceTaper(
+      sessions,
+      profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
+      "en",
+    );
+    const restored = restoreSessionCoachNotes(tapered, preservedNotes);
+
+    const dayBefore = findSession(restored, "w4-sat");
+    assert.equal(dayBefore.type, "recoveryRun");
+    assert.equal(dayBefore.coachNote, "AI tuned pre-race load guidance.");
+  },
+);
 
 Deno.test("enforcePreRaceTaper leaves rest days before race untouched", () => {
   const sessions = enforcePreRaceTaper(
