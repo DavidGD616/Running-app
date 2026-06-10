@@ -1,4 +1,8 @@
-import type { GeneratedPlan, GeneratedSession } from "./schema.ts";
+import type {
+  GeneratedPlan,
+  GeneratedSession,
+  TargetedSessionRepairPatchItem,
+} from "./schema.ts";
 import type {
   CoachingBrief,
   CoachingRaceType,
@@ -11,6 +15,7 @@ type PlanRaceKey =
   | "race_10k"
   | "race_half_marathon"
   | "race_marathon";
+type PolicyRaceKey = PlanRaceKey | "race_other";
 type ExperienceKey =
   | "experience_brand_new"
   | "experience_beginner"
@@ -363,9 +368,11 @@ export function normalizeWorkoutTypesByPhase(
   totalWeeks: number,
   locale: CoachNoteLocale = "en",
   coachingBrief: CoachingBrief | null = null,
+  preserveCoachNoteForSessionIds: readonly string[] = [],
 ): GeneratedSession[] {
   const context = ruleContextFor(profileData, coachingBrief);
   const _raceDate = goalRaceDate(profileData);
+  const preservedCoachNotes = new Set(preserveCoachNoteForSessionIds);
 
   return sessions.map((session) => {
     if (session.type === "restDay") return session;
@@ -385,37 +392,933 @@ export function normalizeWorkoutTypesByPhase(
 
     if (policy.allowedTypes.includes(session.type)) return session;
 
-    const replacement = nearestAllowedType(session.type, policy.allowedTypes);
-    return withDowngradedType(session, replacement, locale);
+    const replacement = recommendSessionTypeForViolation(
+      session.type,
+      phase,
+      context.race,
+      context.experience,
+      policy.allowedTypes,
+    );
+    const preserveCoachNote = preservedCoachNotes.has(session.id);
+    return withDowngradedType(session, replacement, locale, preserveCoachNote);
   });
 }
 
-function nearestAllowedType(
-  currentType: string,
-  allowedTypes: string[],
-): string {
-  const downgradeMap: Record<string, string[]> = {
-    thresholdRun: ["tempoRun", "fartlek", "progressionRun", "easyRun"],
-    intervals: ["fartlek", "progressionRun", "easyRun"],
-    hillRepeats: ["fartlek", "progressionRun", "easyRun"],
-    tempoRun: ["fartlek", "progressionRun", "easyRun"],
-    racePaceRun: ["fartlek", "progressionRun", "easyRun"],
-    progressionRun: ["fartlek", "easyRun"],
-    fartlek: ["easyRun"],
+export type SessionRepairCandidate = {
+  sessionId: string;
+  repairedSession: GeneratedSession;
+};
+
+export type SessionRepairMergeResult = {
+  sessions: GeneratedSession[];
+  preservedCoachNoteSessionIds: string[];
+};
+
+export type SessionRepairPatchFailure = {
+  sessionId: string;
+  reason: string;
+};
+
+export type SessionRepairPatchMergeResult = {
+  sessions: GeneratedSession[];
+  acceptedSessionIds: string[];
+  rejectedRepairs: SessionRepairPatchFailure[];
+  preservedCoachNoteSessionIds: string[];
+};
+
+export function mergeTargetedSessionRepairs(
+  sessions: readonly GeneratedSession[],
+  requestedSessionIds: readonly string[],
+  repairs: readonly SessionRepairCandidate[],
+  profileData: Record<string, unknown> = {},
+  totalWeeks: number | null = null,
+  coachingBrief: CoachingBrief | null = null,
+): SessionRepairMergeResult {
+  const requested = new Set(requestedSessionIds);
+  const originalById = new Map(
+    sessions.map((session) => [session.id, session]),
+  );
+  const repairedById = new Map<string, GeneratedSession>();
+  const resolvedTotalWeeks = totalWeeks == null || totalWeeks < 1
+    ? sessions.reduce(
+      (maxWeek, session) => Math.max(maxWeek, session.weekNumber),
+      1,
+    )
+    : totalWeeks;
+  const policyContext = ruleContextFor(profileData, coachingBrief);
+
+  for (const item of repairs) {
+    if (!requested.has(item.sessionId)) {
+      continue;
+    }
+
+    const original = originalById.get(item.sessionId);
+    if (original == null) {
+      continue;
+    }
+
+    const repaired = item.repairedSession;
+    if (
+      repaired.id !== original.id ||
+      repaired.date !== original.date ||
+      repaired.weekNumber !== original.weekNumber
+    ) {
+      continue;
+    }
+
+    const phase = phaseForWeekFromCoachingBrief(
+      repaired.weekNumber,
+      resolvedTotalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      policyContext.race,
+      policyContext.experience,
+    );
+    if (!policy.allowedTypes.includes(repaired.type)) {
+      continue;
+    }
+
+    if (!repairedById.has(item.sessionId)) {
+      repairedById.set(item.sessionId, repaired);
+    }
+  }
+
+  const repairedIds = [...repairedById.keys()];
+  return {
+    sessions: sessions.map((session) =>
+      repairedById.get(session.id) ?? session
+    ),
+    preservedCoachNoteSessionIds: repairedIds,
+  };
+}
+
+const restrictedCoachNoteCopyPatterns: (string | RegExp)[] = [
+  "adjusted to match phase-appropriate training",
+  "phase-appropriate training",
+  "adjusted to keep hard training days spaced safely",
+  "moved to keep hard training days spaced safely",
+  "adjusted to match peak long run target",
+  "evidence-based increase is currently blocked by guardrails",
+  "backend coaching brief",
+  "policy reason",
+  "to satisfy a policy",
+  "adjusted to match the phase",
+  "adjusted to match phase",
+  "adjusted to phase-appropriate",
+  "adjusted to phase appropriate",
+  "ajustado para",
+  "entrenamiento apropiado de la fase",
+  "entrenamiento apropiado para la fase",
+  "coincidir con el entrenamiento apropiado de la fase",
+  /\bbackend\b/i,
+  /\bsistema\b/i,
+  /\bsistema\b.*pol[ií]tica/i,
+  /\bpol[ií]tica\b/i,
+  /\ballowed\s+types\b/i,
+  /\ballowedtype(s)?\b/i,
+  /\bbackend\b.*\bpolicy\b/i,
+  /\bpolicy\b.*\bbackend\b/i,
+  /\benforcement\b/i,
+  /\benforcement\b.*\bpolicy\b/i,
+  /\bpolicy\b.*\benforcement\b/i,
+  /\bguardrail\b/i,
+  /\bguardrails?\b/i,
+  /\bguardarr[ií]l\b/i,
+] as const;
+
+export function mergeTargetedSessionRepairPatches(
+  sessions: readonly GeneratedSession[],
+  requestedSessionIds: readonly string[],
+  repairs: readonly TargetedSessionRepairPatchItem[],
+  profileData: Record<string, unknown> = {},
+  totalWeeks: number | null = null,
+  coachingBrief: CoachingBrief | null = null,
+): SessionRepairPatchMergeResult {
+  const requested = new Set(requestedSessionIds);
+  const originalById = new Map(
+    sessions.map((session) => [session.id, session]),
+  );
+  const acceptedById = new Map<string, GeneratedSession>();
+  const acceptedSessionIds: string[] = [];
+  const rejectedRepairs: SessionRepairPatchFailure[] = [];
+  const resolvedTotalWeeks = totalWeeks == null || totalWeeks < 1
+    ? sessions.reduce(
+      (maxWeek, session) => Math.max(maxWeek, session.weekNumber),
+      1,
+    )
+    : totalWeeks;
+  const policyContext = ruleContextFor(profileData, coachingBrief);
+
+  const addRejection = (sessionId: string, reason: string): void => {
+    rejectedRepairs.push({ sessionId, reason });
   };
 
-  const candidates = downgradeMap[currentType] ?? [];
+  for (const patch of repairs) {
+    if (!requested.has(patch.sessionId)) {
+      addRejection(
+        patch.sessionId,
+        "Session was not requested for repair in this pass.",
+      );
+      continue;
+    }
+
+    const original = originalById.get(patch.sessionId);
+    if (original == null) {
+      addRejection(
+        patch.sessionId,
+        "Session id does not match an existing session in the current plan.",
+      );
+      continue;
+    }
+
+    const normalizedCoachNote = patch.coachNote.trim();
+    if (normalizedCoachNote.length === 0) {
+      addRejection(
+        patch.sessionId,
+        "coachNote must be non-empty.",
+      );
+      continue;
+    }
+
+    const restrictedCopy = restrictedCoachNoteCopy(
+      normalizedCoachNote,
+    );
+    if (restrictedCopy != null) {
+      addRejection(
+        patch.sessionId,
+        `coachNote contains disallowed policy-explanation copy (${restrictedCopy}).`,
+      );
+      continue;
+    }
+
+    const phase = phaseForWeekFromCoachingBrief(
+      original.weekNumber,
+      resolvedTotalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      policyContext.race,
+      policyContext.experience,
+    );
+    if (!policy.allowedTypes.includes(patch.type)) {
+      addRejection(
+        patch.sessionId,
+        `Patch type '${patch.type}' is not allowed in ${phase} phase for this profile.`,
+      );
+      continue;
+    }
+
+    const mergedSession = mergeSessionWithTargetedPatch(original, patch);
+    if (
+      isRunSessionType(mergedSession.type) &&
+      mergedSession.workoutTarget == null
+    ) {
+      addRejection(
+        patch.sessionId,
+        "Run sessions must keep or supply a non-null workoutTarget.",
+      );
+      continue;
+    }
+
+    if (!acceptedById.has(patch.sessionId)) {
+      acceptedById.set(patch.sessionId, mergedSession);
+      acceptedSessionIds.push(patch.sessionId);
+    }
+  }
+
+  return {
+    sessions: sessions.map((session) =>
+      acceptedById.get(session.id) ?? session
+    ),
+    acceptedSessionIds,
+    rejectedRepairs,
+    preservedCoachNoteSessionIds: acceptedSessionIds,
+  };
+}
+
+function mergeSessionWithTargetedPatch(
+  session: GeneratedSession,
+  patch: TargetedSessionRepairPatchItem,
+): GeneratedSession {
+  const merged: GeneratedSession = {
+    ...session,
+    type: patch.type,
+    coachNote: patch.coachNote,
+    id: session.id,
+    date: session.date,
+    weekNumber: session.weekNumber,
+  };
+
+  if (patch.workoutTarget !== undefined) {
+    merged.workoutTarget = patch.workoutTarget;
+  }
+  if (patch.distanceKm !== undefined) {
+    merged.distanceKm = patch.distanceKm;
+  }
+  if (patch.durationMinutes !== undefined) {
+    merged.durationMinutes = patch.durationMinutes;
+  }
+  if (patch.targetZone !== undefined) {
+    merged.targetZone = patch.targetZone;
+  }
+  if (patch.warmUpMinutes !== undefined) {
+    merged.warmUpMinutes = patch.warmUpMinutes;
+  }
+  if (patch.coolDownMinutes !== undefined) {
+    merged.coolDownMinutes = patch.coolDownMinutes;
+  }
+  if (patch.intervalReps !== undefined) {
+    merged.intervalReps = patch.intervalReps;
+  }
+  if (patch.intervalRepDistanceMeters !== undefined) {
+    merged.intervalRepDistanceMeters = patch.intervalRepDistanceMeters;
+  }
+  if (patch.intervalRecoverySeconds !== undefined) {
+    merged.intervalRecoverySeconds = patch.intervalRecoverySeconds;
+  }
+  if (patch.strideReps !== undefined) {
+    merged.strideReps = patch.strideReps;
+  }
+  if (patch.strideSeconds !== undefined) {
+    merged.strideSeconds = patch.strideSeconds;
+  }
+  if (patch.strideRecoverySeconds !== undefined) {
+    merged.strideRecoverySeconds = patch.strideRecoverySeconds;
+  }
+
+  return merged;
+}
+
+function isRunSessionType(type: GeneratedSession["type"]): boolean {
+  return type !== "restDay" && type !== "crossTraining" && type !== "raceDay";
+}
+
+function restrictedCoachNoteCopy(value: string): string | null {
+  const normalized = value.toLowerCase();
+  const match = restrictedCoachNoteCopyPatterns.find((pattern) => {
+    if (typeof pattern === "string") {
+      return normalized.includes(pattern);
+    }
+
+    return pattern.test(value);
+  });
+  return match == null
+    ? null
+    : typeof match === "string"
+    ? match
+    : "restricted pattern";
+}
+
+export type GenericCoachCopyViolation = {
+  sessionId: string;
+  reason: string;
+};
+
+export function snapshotSessionCoachNotesByIds(
+  sessions: readonly GeneratedSession[],
+  sessionIds: readonly string[],
+): Record<string, string> {
+  const acceptedIds = new Set(sessionIds);
+  const notes: Record<string, string> = Object.create(null);
+
+  for (const session of sessions) {
+    if (!acceptedIds.has(session.id)) continue;
+    if (typeof session.coachNote === "string" && session.coachNote.length > 0) {
+      notes[session.id] = session.coachNote;
+    }
+  }
+
+  return notes;
+}
+
+export function restoreSessionCoachNotes(
+  sessions: readonly GeneratedSession[],
+  preservedNotes: Readonly<Record<string, string>>,
+): GeneratedSession[] {
+  if (Object.keys(preservedNotes).length === 0) return [...sessions];
+
+  return sessions.map((session) => {
+    const preservedNote = Object.prototype.hasOwnProperty.call(
+        preservedNotes,
+        session.id,
+      )
+      ? preservedNotes[session.id]
+      : null;
+    if (preservedNote == null) return session;
+    return { ...session, coachNote: preservedNote };
+  });
+}
+
+export function detectGenericCoachCopyViolations(
+  sessions: readonly GeneratedSession[],
+): GenericCoachCopyViolation[] {
+  return sessions.flatMap((session) => {
+    const coachNote = typeof session.coachNote === "string"
+      ? session.coachNote.trim()
+      : "";
+    if (coachNote.length === 0) return [];
+
+    const restriction = restrictedCoachNoteCopy(coachNote);
+    if (restriction == null) return [];
+
+    return [{
+      sessionId: session.id,
+      reason:
+        `coachNote contains disallowed policy-explanation copy (${restriction}).`,
+    }];
+  });
+}
+
+export type SessionTypePolicyViolation = {
+  code: "session_type_not_allowed_for_phase";
+  sessionId: string;
+  weekNumber: number;
+  date: string;
+  currentType: GeneratedSession["type"];
+  phase: "base" | "build" | "specific" | "peak" | "taperRace";
+  allowedTypes: string[];
+  recommendedType: GeneratedSession["type"];
+  reason: string;
+};
+
+export function detectSessionTypePolicyViolations(
+  sessions: readonly GeneratedSession[],
+  profileData: Record<string, unknown>,
+  totalWeeks: number,
+  coachingBrief: CoachingBrief | null = null,
+): SessionTypePolicyViolation[] {
+  const context = ruleContextFor(profileData, coachingBrief);
+
+  return sessions.flatMap((session) => {
+    if (session.type === "restDay") return [];
+    if (isGoalRaceSession(session, profileData)) return [];
+
+    const phase = phaseForWeekFromCoachingBrief(
+      session.weekNumber,
+      totalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      context.race,
+      context.experience,
+    );
+
+    if (policy.allowedTypes.includes(session.type)) return [];
+
+    const recommendedType = recommendSessionTypeForViolation(
+      session.type,
+      phase,
+      context.race,
+      context.experience,
+      policy.allowedTypes,
+    );
+
+    return [{
+      code: "session_type_not_allowed_for_phase",
+      sessionId: session.id,
+      weekNumber: session.weekNumber,
+      date: session.date,
+      currentType: session.type,
+      phase,
+      allowedTypes: [...policy.allowedTypes],
+      recommendedType,
+      reason: buildPolicyViolationReason({
+        phase,
+        race: context.race,
+        experience: context.experience,
+        currentType: session.type,
+        recommendedType,
+      }),
+    }];
+  });
+}
+
+function normalizeRaceForPolicy(race: string): PolicyRaceKey {
+  switch (race) {
+    case "fiveK":
+    case "five-k":
+      return "race_5k";
+    case "tenK":
+    case "ten-k":
+      return "race_10k";
+    case "halfMarathon":
+    case "half-marathon":
+      return "race_half_marathon";
+    case "marathon":
+      return "race_marathon";
+    case "race_5k":
+    case "race_10k":
+    case "race_half_marathon":
+    case "race_marathon":
+      return race;
+    default:
+      return "race_other";
+  }
+}
+
+function isBeginnerExperience(experience: string): boolean {
+  return (
+    experience === "experience_brand_new" ||
+    experience === "experience_beginner"
+  );
+}
+
+function isBrandNewExperience(experience: string): boolean {
+  return experience === "experience_brand_new";
+}
+
+function isIntermediateExperience(experience: string): boolean {
+  return experience === "experience_intermediate";
+}
+
+function isExperiencedExperience(experience: string): boolean {
+  return experience === "experience_experienced";
+}
+
+function recommendSessionTypeForViolation(
+  currentType: string,
+  phase: RacePrepPhase,
+  raceType: string,
+  experience: string,
+  allowedTypes: string[],
+): GeneratedSession["type"] {
+  const allowed = new Set(allowedTypes);
+  const policyRace = normalizeRaceForPolicy(raceType);
+  const phaseBasedCandidates = phaseSpecificRecommendationCandidates(
+    phase,
+    policyRace,
+    experience,
+  );
+  const typeBasedCandidates = currentTypeBasedDowngradeCandidates(currentType);
+  const candidates = orderedUnique([
+    ...(
+      phase === "specific" || phase === "peak" || phase === "taperRace"
+        ? [...phaseBasedCandidates, ...typeBasedCandidates]
+        : [...typeBasedCandidates, ...phaseBasedCandidates]
+    ),
+  ]);
+
   for (const candidate of candidates) {
-    if (allowedTypes.includes(candidate)) return candidate;
+    if (allowedTypes.includes(candidate)) {
+      return candidate as GeneratedSession["type"];
+    }
+  }
+
+  for (
+    const candidate of knownSessionTypeFallbackOrder()
+  ) {
+    if (allowed.has(candidate)) return candidate;
   }
 
   return "easyRun";
+}
+
+function knownSessionTypeFallbackOrder(): GeneratedSession["type"][] {
+  return [
+    "easyRun",
+    "recoveryRun",
+    "progressionRun",
+    "fartlek",
+    "tempoRun",
+    "racePaceRun",
+    "thresholdRun",
+    "intervals",
+    "hillRepeats",
+    "longRun",
+    "crossTraining",
+    "restDay",
+    "raceDay",
+  ];
+}
+
+function orderedUnique(values: string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const value of values) {
+    if (!seen.has(value)) {
+      seen.add(value);
+      unique.push(value);
+    }
+  }
+  return unique;
+}
+
+function currentTypeBasedDowngradeCandidates(currentType: string): string[] {
+  switch (currentType) {
+    case "thresholdRun":
+      return [
+        "fartlek",
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "easyRun",
+        "recoveryRun",
+      ];
+    case "intervals":
+      return [
+        "fartlek",
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "easyRun",
+        "recoveryRun",
+      ];
+    case "hillRepeats":
+      return [
+        "fartlek",
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "easyRun",
+        "recoveryRun",
+      ];
+    case "tempoRun":
+      return ["fartlek", "progressionRun", "easyRun", "recoveryRun"];
+    case "racePaceRun":
+      return [
+        "tempoRun",
+        "progressionRun",
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+      ];
+    case "progressionRun":
+      return ["fartlek", "easyRun", "recoveryRun"];
+    case "fartlek":
+      return ["easyRun", "recoveryRun", "progressionRun"];
+    case "easyRun":
+    case "recoveryRun":
+    case "longRun":
+      return ["easyRun", "recoveryRun"];
+    default:
+      return ["easyRun", "fartlek", "progressionRun", "recoveryRun"];
+  }
+}
+
+function phaseSpecificRecommendationCandidates(
+  phase: RacePrepPhase,
+  raceType: PolicyRaceKey,
+  experience: string,
+): string[] {
+  if (phase === "base") {
+    return isBeginnerExperience(experience)
+      ? ["easyRun", "recoveryRun", "longRun", "restDay"]
+      : [
+        "fartlek",
+        "progressionRun",
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+      ];
+  }
+
+  if (phase === "build") {
+    if (isBrandNewExperience(experience)) {
+      return [
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+      ];
+    }
+
+    if (isBeginnerExperience(experience)) {
+      return [
+        "fartlek",
+        "progressionRun",
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+      ];
+    }
+    if (isIntermediateExperience(experience)) {
+      return [
+        "tempoRun",
+        "hillRepeats",
+        "fartlek",
+        "progressionRun",
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+      ];
+    }
+    return [
+      "racePaceRun",
+      "intervals",
+      "tempoRun",
+      "hillRepeats",
+      "fartlek",
+      "progressionRun",
+      "easyRun",
+      "recoveryRun",
+      "longRun",
+      "restDay",
+    ];
+  }
+
+  if (phase === "specific") {
+    if (raceType === "race_5k" || raceType === "race_10k") {
+      return isBeginnerExperience(experience)
+        ? [
+          "progressionRun",
+          "fartlek",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ]
+        : [
+          "intervals",
+          "racePaceRun",
+          "tempoRun",
+          "fartlek",
+          "progressionRun",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ];
+    }
+
+    if (raceType === "race_half_marathon") {
+      return isBeginnerExperience(experience)
+        ? [
+          "progressionRun",
+          "fartlek",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ]
+        : isExperiencedExperience(experience)
+        ? [
+          "thresholdRun",
+          "tempoRun",
+          "racePaceRun",
+          "fartlek",
+          "progressionRun",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ]
+        : [
+          "tempoRun",
+          "racePaceRun",
+          "fartlek",
+          "progressionRun",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ];
+    }
+
+    return isBrandNewExperience(experience)
+      ? [
+        "progressionRun",
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+      ]
+      : isExperiencedExperience(experience)
+      ? [
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "thresholdRun",
+        "longRun",
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+        "restDay",
+        "intervals",
+      ]
+      : [
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "longRun",
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+        "restDay",
+      ];
+  }
+
+  if (phase === "peak") {
+    if (isBrandNewExperience(experience)) {
+      return [
+        "fartlek",
+        "progressionRun",
+        "easyRun",
+        "recoveryRun",
+        "longRun",
+        "restDay",
+      ];
+    }
+
+    if (raceType === "race_5k" || raceType === "race_10k") {
+      return isExperiencedExperience(experience)
+        ? [
+          "intervals",
+          "tempoRun",
+          "racePaceRun",
+          "fartlek",
+          "progressionRun",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ]
+        : [
+          "tempoRun",
+          "racePaceRun",
+          "fartlek",
+          "progressionRun",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ];
+    }
+
+    if (raceType === "race_half_marathon") {
+      return isExperiencedExperience(experience)
+        ? [
+          "thresholdRun",
+          "tempoRun",
+          "racePaceRun",
+          "progressionRun",
+          "fartlek",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ]
+        : [
+          "progressionRun",
+          "tempoRun",
+          "racePaceRun",
+          "fartlek",
+          "easyRun",
+          "recoveryRun",
+          "longRun",
+          "restDay",
+        ];
+    }
+
+    return isExperiencedExperience(experience)
+      ? [
+        "longRun",
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "thresholdRun",
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+        "restDay",
+        "intervals",
+      ]
+      : [
+        "longRun",
+        "progressionRun",
+        "tempoRun",
+        "racePaceRun",
+        "fartlek",
+        "easyRun",
+        "recoveryRun",
+        "restDay",
+      ];
+  }
+
+  if (isExperiencedExperience(experience)) {
+    return [
+      "progressionRun",
+      "racePaceRun",
+      "fartlek",
+      "easyRun",
+      "recoveryRun",
+      "longRun",
+      "restDay",
+    ];
+  }
+
+  if (isBrandNewExperience(experience)) {
+    return [
+      "fartlek",
+      "easyRun",
+      "recoveryRun",
+      "longRun",
+      "restDay",
+    ];
+  }
+
+  return [
+    "fartlek",
+    "racePaceRun",
+    "progressionRun",
+    "easyRun",
+    "recoveryRun",
+    "longRun",
+    "restDay",
+  ];
+}
+
+function buildPolicyViolationReason(params: {
+  phase: RacePrepPhase;
+  race: string;
+  experience: string;
+  currentType: string;
+  recommendedType: GeneratedSession["type"];
+}): string {
+  return `${params.currentType} is not aligned with ${params.phase} phase policy ` +
+    `for ${readableRaceForPolicy(params.race)} / ${
+      readableReadinessForPolicy(params.experience)
+    } readiness; recommend ${params.recommendedType}.`;
+}
+
+function readableRaceForPolicy(race: string): string {
+  switch (race) {
+    case "race_5k":
+      return "5K";
+    case "race_10k":
+      return "10K";
+    case "race_half_marathon":
+      return "half-marathon";
+    case "race_marathon":
+      return "marathon";
+    default:
+      return "target race";
+  }
+}
+
+function readableReadinessForPolicy(experience: string): string {
+  if (experience === "experience_experienced") return "experienced";
+  if (experience === "experience_intermediate") return "intermediate";
+  if (experience === "experience_brand_new") return "brand-new";
+  return "beginner";
 }
 
 function withDowngradedType(
   session: GeneratedSession,
   newType: string,
   locale: CoachNoteLocale,
+  preserveCoachNote = false,
 ): GeneratedSession {
   const isLongRun = session.type === "longRun";
   return {
@@ -429,7 +1332,10 @@ function withDowngradedType(
         ? Math.max(35, session.durationMinutes ?? 45)
         : Math.min(35, Math.max(25, session.durationMinutes ?? 30)))
       : session.durationMinutes,
-    coachNote: trainingDayCue("adjustedForPhase", locale),
+    coachNote: preserveCoachNote ? session.coachNote : trainingDayCue(
+      "adjustedForPhase",
+      locale,
+    ),
     targetZone: newType === "easyRun"
       ? "easy"
       : newType === "recoveryRun"
@@ -449,59 +1355,43 @@ function basePhasePolicy(experience: string): WorkoutPolicy {
     maxStressDays: 2,
   };
 
-  if (
-    experience === "experience_intermediate" ||
-    experience === "experience_experienced"
-  ) {
+  if (!isBeginnerExperience(experience)) {
     base.allowedTypes.push("fartlek", "progressionRun");
-    base.maxStressDays = 2;
   }
 
   return base;
 }
 
 function buildPhasePolicy(experience: string): WorkoutPolicy {
-  if (
-    experience === "experience_brand_new" ||
-    experience === "experience_beginner"
-  ) {
-    return {
-      allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay", "fartlek"],
-      maxStressDays: 2,
-    };
-  }
-
-  if (experience === "experience_intermediate") {
-    return {
-      allowedTypes: [
-        "easyRun",
-        "recoveryRun",
-        "longRun",
-        "restDay",
-        "tempoRun",
-        "hillRepeats",
-        "fartlek",
-        "progressionRun",
-      ],
-      maxStressDays: 3,
-    };
-  }
-
-  return {
+  const policy: WorkoutPolicy = {
     allowedTypes: [
       "easyRun",
       "recoveryRun",
       "longRun",
       "restDay",
-      "tempoRun",
-      "hillRepeats",
       "fartlek",
-      "progressionRun",
-      "intervals",
-      "racePaceRun",
     ],
     maxStressDays: 3,
   };
+
+  if (isBrandNewExperience(experience)) {
+    policy.maxStressDays = 2;
+    return policy;
+  }
+
+  if (isBeginnerExperience(experience)) {
+    policy.maxStressDays = 2;
+    policy.allowedTypes.push("progressionRun");
+    return policy;
+  }
+
+  policy.allowedTypes.push("progressionRun", "tempoRun", "hillRepeats");
+  if (isIntermediateExperience(experience)) {
+    return policy;
+  }
+
+  policy.allowedTypes.push("intervals", "racePaceRun");
+  return policy;
 }
 
 function specificPhasePolicy(
@@ -513,64 +1403,94 @@ function specificPhasePolicy(
     "recoveryRun",
     "longRun",
     "restDay",
-    "tempoRun",
     "fartlek",
     "progressionRun",
   ];
+  const raceType = normalizeRaceForPolicy(_raceType);
 
-  if (
-    experience === "experience_intermediate" ||
-    experience === "experience_experienced"
-  ) {
-    allowed.push("intervals", "hillRepeats", "racePaceRun");
+  if (raceType === "race_5k" || raceType === "race_10k") {
+    if (!isBeginnerExperience(experience)) {
+      allowed.push("tempoRun", "racePaceRun", "intervals");
+      if (isExperiencedExperience(experience)) {
+        allowed.push("hillRepeats");
+      }
+    }
+    return {
+      allowedTypes: allowed,
+      maxStressDays: isBeginnerExperience(experience) ? 2 : 3,
+    };
   }
 
-  if (experience === "experience_experienced") {
-    allowed.push("thresholdRun");
+  if (raceType === "race_half_marathon") {
+    if (isBeginnerExperience(experience)) {
+      return {
+        allowedTypes: allowed,
+        maxStressDays: 2,
+      };
+    }
+
+    allowed.push("tempoRun", "racePaceRun");
+    if (isExperiencedExperience(experience)) {
+      allowed.push("thresholdRun", "intervals", "hillRepeats");
+    }
+    return {
+      allowedTypes: allowed,
+      maxStressDays: 3,
+    };
+  }
+
+  // Marathon.
+  if (isExperiencedExperience(experience)) {
+    allowed.push(
+      "progressionRun",
+      "tempoRun",
+      "racePaceRun",
+      "intervals",
+      "thresholdRun",
+    );
+    return {
+      allowedTypes: allowed,
+      maxStressDays: 3,
+    };
+  }
+
+  if (isIntermediateExperience(experience)) {
+    allowed.push("tempoRun", "racePaceRun");
+    return {
+      allowedTypes: allowed,
+      maxStressDays: 3,
+    };
   }
 
   return {
     allowedTypes: allowed,
-    maxStressDays: experience === "experience_experienced" ? 3 : 3,
+    maxStressDays: 2,
   };
 }
 
 function peakPhasePolicy(experience: string): WorkoutPolicy {
-  if (experience === "experience_brand_new") {
-    return {
-      allowedTypes: [
-        "easyRun",
-        "recoveryRun",
-        "longRun",
-        "restDay",
-        "fartlek",
-        "progressionRun",
-      ],
-      maxStressDays: 2,
-    };
+  const policy: WorkoutPolicy = {
+    allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay", "fartlek"],
+    maxStressDays: isBeginnerExperience(experience) ? 2 : 3,
+  };
+
+  if (isBeginnerExperience(experience)) {
+    return policy;
   }
 
-  const allowed: string[] = [
-    "easyRun",
-    "recoveryRun",
-    "longRun",
-    "restDay",
-    "tempoRun",
-    "fartlek",
+  policy.allowedTypes.push(
     "progressionRun",
+    "tempoRun",
     "intervals",
     "hillRepeats",
     "racePaceRun",
-  ];
+  );
 
-  if (experience === "experience_experienced") {
-    allowed.push("thresholdRun");
+  if (isExperiencedExperience(experience)) {
+    policy.allowedTypes.push("thresholdRun");
   }
 
-  return {
-    allowedTypes: allowed,
-    maxStressDays: 3,
-  };
+  return policy;
 }
 
 function taperRacePhasePolicy(experience: string): WorkoutPolicy {
@@ -581,16 +1501,15 @@ function taperRacePhasePolicy(experience: string): WorkoutPolicy {
     "fartlek",
   ];
 
+  if (!isBeginnerExperience(experience)) {
+    allowed.push("progressionRun");
+  }
+
   if (
-    experience === "experience_intermediate" ||
-    experience === "experience_experienced"
+    isIntermediateExperience(experience) || isExperiencedExperience(experience)
   ) {
     allowed.push("longRun");
     allowed.push("racePaceRun");
-  }
-
-  if (experience === "experience_experienced") {
-    allowed.push("progressionRun");
   }
 
   return {
@@ -601,11 +1520,9 @@ function taperRacePhasePolicy(experience: string): WorkoutPolicy {
 
 type CoachNoteLocale = "en" | "es";
 
-const STRAVA_RUNS_PER_WEEK_METRIC = "training_base_runs_per_week";
 const STRAVA_WEEKLY_VOLUME_METRIC = "training_base_weekly_km";
 const STRAVA_LONG_RUN_METRIC = "endurance_long_run_km";
 const STRAVA_WEEKLY_VOLUME_UNIT = "km_per_week";
-const STRAVA_RUNS_PER_WEEK_UNIT = "runs_per_week";
 const STRAVA_LONG_RUN_UNIT = "km";
 const STRAVA_EVIDENCE_GROUPS = ["trainingBase", "endurance"] as const;
 
@@ -620,7 +1537,6 @@ const GUARDRAIL_BLOCKING_PEAK_LONG_RUN = new Set([
   "recovery_load_spike",
   "recovery_pace_uncertainty",
 ]);
-const WEEKLY_VOLUME_RAMP_HIGH_RISK_FACTOR = 1.0;
 const WEEKLY_VOLUME_RAMP_DEFAULT_FACTOR = 1.1;
 const LEG_STRENGTH_CATEGORIES = new Set([
   "lower_body",
@@ -657,11 +1573,6 @@ function dataConfidence(profileData: Record<string, unknown>): string | null {
   if (profile == null) return null;
   const confidence = profile.dataConfidence;
   return typeof confidence === "string" ? confidence : null;
-}
-
-function hasHighConfidence(profileData: Record<string, unknown>): boolean {
-  const confidence = dataConfidence(profileData);
-  return confidence === "high" || confidence === "medium";
 }
 
 function recoveryGuardrails(profileData: Record<string, unknown>): string[] {
@@ -758,16 +1669,6 @@ function latestEvidenceValue(
   return points.length > 0 ? points[0].value : null;
 }
 
-function stravaRunsPerWeek(
-  profileData: Record<string, unknown>,
-): number | null {
-  return latestEvidenceValue(
-    profileData,
-    STRAVA_RUNS_PER_WEEK_METRIC,
-    STRAVA_RUNS_PER_WEEK_UNIT,
-  );
-}
-
 function stravaWeeklyVolume(
   profileData: Record<string, unknown>,
 ): number | null {
@@ -784,17 +1685,6 @@ function stravaLongRun(profileData: Record<string, unknown>): number | null {
     STRAVA_LONG_RUN_METRIC,
     STRAVA_LONG_RUN_UNIT,
   );
-}
-
-function acceptedRaceTargetDistance(
-  profileData: Record<string, unknown>,
-): number | null {
-  const target = objectOrNull(profileData.acceptedRaceTarget);
-  const distance = target?.distanceKm;
-  return typeof distance === "number" && Number.isFinite(distance) &&
-      distance > 0
-    ? distance
-    : null;
 }
 
 function baselineWeeklyVolumeProfile(

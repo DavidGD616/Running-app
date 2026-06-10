@@ -4,6 +4,10 @@ import {
   GeneratePlanRequestSchema,
   removeSessionsOnRaceDate,
   StravaCoachingProfileSnapshotSchema,
+  targetedSessionRepairPatchResponseJsonSchema,
+  TargetedSessionRepairPatchResponseSchema,
+  targetedSessionRepairResponseJsonSchema,
+  TargetedSessionRepairResponseSchema,
 } from "./schema.ts";
 
 const professionalPlanInputStrava = {
@@ -527,6 +531,278 @@ Deno.test(
     assert.equal(filtered[0].id, "c");
     assert.ok(
       !filtered.some((session) => session.date.startsWith("2026-10-18")),
+    );
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairResponseSchema accepts valid repair response with full repaired session",
+  () => {
+    const repairResponse = {
+      schemaVersion: 1,
+      sessions: [
+        {
+          sessionId: "w1-mon-easy",
+          repairedSession: generatedPlan.sessions[0],
+        },
+      ],
+    };
+
+    const parsed = TargetedSessionRepairResponseSchema.parse(repairResponse);
+    assert.equal(parsed.schemaVersion, 1);
+    assert.equal(parsed.sessions.length, 1);
+    assert.equal(parsed.sessions[0].sessionId, "w1-mon-easy");
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairResponseSchema rejects repaired run session missing workoutTarget",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      sessions: [
+        {
+          sessionId: "w1-mon-easy",
+          repairedSession: {
+            ...generatedPlan.sessions[0],
+            workoutTarget: undefined,
+          },
+        },
+      ],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairResponseSchema.parse(invalid);
+    }, /workoutTarget/);
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairResponseSchema rejects empty sessions",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      sessions: [],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairResponseSchema.parse(invalid);
+    }, /sessions/);
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairResponseJsonSchema is strict with required top-level fields",
+  () => {
+    const required = targetedSessionRepairResponseJsonSchema
+      .required as string[];
+    assert.equal(required.includes("schemaVersion"), true);
+    assert.equal(required.includes("sessions"), true);
+
+    const sessionsItems = (
+      targetedSessionRepairResponseJsonSchema.properties as {
+        sessions: {
+          items: { additionalProperties: boolean; required: string[] };
+        };
+      }
+    ).sessions.items;
+
+    assert.equal(
+      (targetedSessionRepairResponseJsonSchema as {
+        additionalProperties?: boolean;
+      })
+        .additionalProperties,
+      false,
+    );
+    assert.equal(sessionsItems.additionalProperties, false);
+    assert.equal(sessionsItems.required.includes("sessionId"), true);
+    assert.equal(sessionsItems.required.includes("repairedSession"), true);
+    assert.equal(
+      (
+        targetedSessionRepairResponseJsonSchema.properties as {
+          sessions: { minItems?: number };
+        }
+      ).sessions.minItems,
+      1,
+    );
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairResponseJsonSchema requires repairedSession.workoutTarget object",
+  () => {
+    const repairedSession = (
+      targetedSessionRepairResponseJsonSchema.properties as {
+        sessions: {
+          items: {
+            properties: {
+              repairedSession: { properties: { workoutTarget: unknown } };
+            };
+          };
+        };
+      }
+    ).sessions.items.properties.repairedSession;
+    const workoutTargetType = (
+      repairedSession as {
+        properties: { workoutTarget: { type: string | string[] } };
+      }
+    ).properties.workoutTarget.type;
+
+    assert.equal(workoutTargetType, "object");
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairResponseJsonSchema has no additionalProperties:true flags",
+  () => {
+    const schema = targetedSessionRepairResponseJsonSchema as unknown as Record<
+      string,
+      unknown
+    >;
+    let violation = "";
+    const walk = (node: unknown, path = "root") => {
+      if (node == null || typeof node !== "object") return;
+      if (Array.isArray(node)) {
+        node.forEach((child, index) => walk(child, `${path}[${index}]`));
+        return;
+      }
+
+      const objectNode = node as Record<string, unknown>;
+      if (objectNode.additionalProperties === true) {
+        violation = `${path}.additionalProperties=true`;
+        return;
+      }
+
+      for (const [key, child] of Object.entries(objectNode)) {
+        walk(child, `${path}.${key}`);
+        if (violation) return;
+      }
+    };
+
+    walk(schema);
+    assert.equal(violation, "");
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairPatchResponseSchema accepts a valid targeted patch response",
+  () => {
+    const repairPatchResponse = {
+      schemaVersion: 1,
+      repairs: [
+        {
+          sessionId: "w1-mon-easy",
+          type: "easyRun",
+          coachNote: "Keep this easy and controlled.",
+          distanceKm: 8.0,
+          durationMinutes: 50,
+          targetZone: "easy",
+          warmUpMinutes: 10,
+          coolDownMinutes: 5,
+          intervalReps: null,
+          intervalRepDistanceMeters: null,
+          intervalRecoverySeconds: null,
+          strideReps: 4,
+          strideSeconds: 20,
+          strideRecoverySeconds: 60,
+          workoutTarget: {
+            schemaVersion: 1,
+            type: "pace",
+            zone: "easy",
+            paceMinSecPerKm: 360,
+            paceMaxSecPerKm: 390,
+            effortCue: "easy",
+          },
+        },
+      ],
+    };
+
+    const parsed = TargetedSessionRepairPatchResponseSchema.parse(
+      repairPatchResponse,
+    );
+    assert.equal(parsed.schemaVersion, 1);
+    assert.equal(parsed.repairs.length, 1);
+    assert.equal(parsed.repairs[0].type, "easyRun");
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairPatchResponseSchema rejects empty repairs array",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      repairs: [],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairPatchResponseSchema.parse(invalid);
+    }, /repairs/);
+  },
+);
+
+Deno.test(
+  "TargetedSessionRepairPatchResponseSchema rejects blank coachNote",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      repairs: [
+        {
+          sessionId: "w1-mon-easy",
+          type: "easyRun",
+          coachNote: "   ",
+        },
+      ],
+    };
+
+    assert.throws(() => {
+      TargetedSessionRepairPatchResponseSchema.parse(invalid);
+    }, /coachNote/);
+  },
+);
+
+Deno.test(
+  "targetedSessionRepairPatchResponseJsonSchema requires required top-level and item fields",
+  () => {
+    const required = targetedSessionRepairPatchResponseJsonSchema
+      .required as string[];
+    assert.equal(required.includes("schemaVersion"), true);
+    assert.equal(required.includes("repairs"), true);
+
+    const repairsItems = (
+      targetedSessionRepairPatchResponseJsonSchema.properties as {
+        repairs: {
+          items: { additionalProperties: boolean; required: string[] };
+        };
+      }
+    ).repairs.items;
+
+    const expectedItemRequiredFields = [
+      "sessionId",
+      "type",
+      "coachNote",
+      "distanceKm",
+      "durationMinutes",
+      "targetZone",
+      "warmUpMinutes",
+      "coolDownMinutes",
+      "intervalReps",
+      "intervalRepDistanceMeters",
+      "intervalRecoverySeconds",
+      "strideReps",
+      "strideSeconds",
+      "strideRecoverySeconds",
+      "workoutTarget",
+    ];
+
+    for (const field of expectedItemRequiredFields) {
+      assert.equal(repairsItems.required.includes(field), true);
+    }
+
+    assert.equal(
+      (targetedSessionRepairPatchResponseJsonSchema.properties as {
+        repairs: { minItems?: number };
+      }).repairs.minItems,
+      1,
     );
   },
 );

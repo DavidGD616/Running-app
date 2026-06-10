@@ -87,7 +87,11 @@ Deno.test("normalizeWorkoutTypesByPhase keeps race-specific work only in specifi
   );
 
   assert.equal(findSession(result, "w2-thu").type, "fartlek");
-  assert.equal(findSession(result, "w3-thu").type, "fartlek");
+  assert.equal(
+    findSession(result, "w3-thu").type,
+    "progressionRun",
+    "base-phase race-pace should become progressionRun for intermediate",
+  );
 });
 
 Deno.test("normalizeWorkoutTypesByPhase allows race-specific work in specific phase", () => {
@@ -249,7 +253,11 @@ Deno.test("normalizeWorkoutTypesByPhase taper phase downgrades hillRepeats near 
     "en",
   );
 
-  assert.equal(findSession(result, "w11-thu").type, "fartlek");
+  assert.equal(
+    findSession(result, "w11-thu").type,
+    "progressionRun",
+    "experienced taper hill repeats should become progressionRun sharpening",
+  );
   assert.equal(findSession(result, "w12-sat").type, "racePaceRun");
 });
 
@@ -316,8 +324,41 @@ Deno.test("normalizeWorkoutTypesByPhase preserves goal race session", () => {
   );
 
   assert.equal(findSession(result, "w12-sat").type, "racePaceRun");
-  assert.equal(findSession(result, "w11-thu").type, "fartlek");
+  assert.equal(
+    findSession(result, "w11-thu").type,
+    "progressionRun",
+    "goal-race taper replacement should become progressionRun sharpening",
+  );
 });
+
+Deno.test(
+  "normalizeWorkoutTypesByPhase preserves repaired coach notes when requested",
+  () => {
+    const sessions: GeneratedSession[] = [
+      session({
+        id: "w1-intervals",
+        date: "2026-06-27",
+        weekNumber: 2,
+        type: "intervals",
+        coachNote: "AI-specific session guidance",
+      }),
+    ];
+
+    const result = normalizeWorkoutTypesByPhase(
+      sessions,
+      profile({ experience: "experience_beginner", race: "race_5k" }),
+      12,
+      "en",
+      null,
+      ["w1-intervals"],
+    );
+
+    assert.equal(
+      findSession(result, "w1-intervals").coachNote,
+      "AI-specific session guidance",
+    );
+  },
+);
 
 function profile({
   experience = "experience_beginner",

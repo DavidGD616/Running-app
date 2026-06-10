@@ -213,17 +213,6 @@ const StravaPaceZoneInputSchema = z.object({
   }
 });
 
-const StravaPaceZoneSchema = z.object({
-  paceMinSecPerKm: z.number().int().positive(),
-  paceMaxSecPerKm: z.number().int().positive(),
-}).strict().refine(
-  (zone) => zone.paceMinSecPerKm <= zone.paceMaxSecPerKm,
-  {
-    message: "paceMinSecPerKm must be <= paceMaxSecPerKm.",
-    path: ["paceMinSecPerKm"],
-  },
-);
-
 const StravaPaceZonesInputSchema = z.object({
   recovery: StravaPaceZoneInputSchema.optional(),
   easy: StravaPaceZoneInputSchema.optional(),
@@ -474,6 +463,24 @@ export const WorkoutTargetSchema = z.object({
   }
 });
 
+const requireWorkoutTargetForRunSessions = (
+  session: { [key: string]: unknown },
+  ctx: z.RefinementCtx,
+) => {
+  const type = typeof session.type === "string" ? session.type : "";
+  if (type === "crossTraining" || type === "restDay" || type === "raceDay") {
+    return;
+  }
+  if (session.workoutTarget == null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message:
+        "workoutTarget is required for run sessions (easy, long, quality, threshold, and recovery sessions).",
+      path: ["workoutTarget"],
+    });
+  }
+};
+
 export const GeneratedSessionSchema = z.object({
   id: z.string(),
   date: z.string(),
@@ -494,23 +501,75 @@ export const GeneratedSessionSchema = z.object({
   strideSeconds: z.number().int().nullable(),
   strideRecoverySeconds: z.number().int().nullable(),
   workoutTarget: WorkoutTargetSchema.nullable().optional(),
-}).superRefine((session, ctx) => {
-  if (
-    session.type === "crossTraining" ||
-    session.type === "restDay" ||
-    session.type === "raceDay"
-  ) {
-    return;
-  }
-  if (session.workoutTarget == null) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message:
-        "workoutTarget is required for run sessions (easy, long, quality, threshold, and recovery sessions).",
-      path: ["workoutTarget"],
-    });
-  }
-});
+}).superRefine(requireWorkoutTargetForRunSessions);
+
+const RepairedGeneratedSessionSchema = z.object({
+  id: z.string(),
+  date: z.string(),
+  weekNumber: z.number().int().min(1),
+  type: SessionTypeSchema,
+  phase: z.enum(["base", "build", "specific", "peak", "taperRace"]).nullable()
+    .optional(),
+  distanceKm: z.number().nullable(),
+  durationMinutes: z.number().int().nullable(),
+  coachNote: z.string().nullable(),
+  targetZone: TargetZoneSchema.nullable(),
+  warmUpMinutes: z.number().int().nullable(),
+  coolDownMinutes: z.number().int().nullable(),
+  intervalReps: z.number().int().nullable(),
+  intervalRepDistanceMeters: z.number().int().nullable(),
+  intervalRecoverySeconds: z.number().int().nullable(),
+  strideReps: z.number().int().nullable(),
+  strideSeconds: z.number().int().nullable(),
+  strideRecoverySeconds: z.number().int().nullable(),
+  workoutTarget: WorkoutTargetSchema,
+}).strict().superRefine(requireWorkoutTargetForRunSessions);
+
+const TargetedSessionRepairItemSchema = z.object({
+  sessionId: z.string(),
+  repairedSession: RepairedGeneratedSessionSchema,
+}).strict();
+
+const TargetedSessionRepairPatchItemSchema = z.object({
+  sessionId: z.string(),
+  type: SessionTypeSchema,
+  coachNote: z.string().trim().min(1),
+  workoutTarget: WorkoutTargetSchema.nullable().optional(),
+  distanceKm: z.number().nullable().optional(),
+  durationMinutes: z.number().int().nullable().optional(),
+  targetZone: TargetZoneSchema.nullable().optional(),
+  warmUpMinutes: z.number().int().nullable().optional(),
+  coolDownMinutes: z.number().int().nullable().optional(),
+  intervalReps: z.number().int().nullable().optional(),
+  intervalRepDistanceMeters: z.number().int().nullable().optional(),
+  intervalRecoverySeconds: z.number().int().nullable().optional(),
+  strideReps: z.number().int().nullable().optional(),
+  strideSeconds: z.number().int().nullable().optional(),
+  strideRecoverySeconds: z.number().int().nullable().optional(),
+}).strict();
+
+export const TargetedSessionRepairResponseSchema = z.object({
+  schemaVersion: z.number().int().positive(),
+  sessions: z.array(TargetedSessionRepairItemSchema).min(1),
+}).strict();
+
+export const TargetedSessionRepairPatchResponseSchema = z.object({
+  schemaVersion: z.number().int().positive(),
+  repairs: z.array(TargetedSessionRepairPatchItemSchema).min(1),
+}).strict();
+
+export type TargetedSessionRepairItem = z.infer<
+  typeof TargetedSessionRepairItemSchema
+>;
+export type TargetedSessionRepairPatchItem = z.infer<
+  typeof TargetedSessionRepairPatchItemSchema
+>;
+export type TargetedSessionRepairResponse = z.infer<
+  typeof TargetedSessionRepairResponseSchema
+>;
+export type TargetedSessionRepairPatchResponse = z.infer<
+  typeof TargetedSessionRepairPatchResponseSchema
+>;
 
 export const StravaPaceZonesSchema = z.object({
   recovery: PaceZoneSchema,
@@ -1311,6 +1370,114 @@ export const trainingPlanResponseJsonSchema = {
     "phaseStrategy",
     "stravaCoachingProfileSnapshot",
   ],
+  additionalProperties: false,
+};
+
+export const targetedSessionRepairResponseJsonSchema = {
+  type: "object",
+  properties: {
+    schemaVersion: { type: "integer", minimum: 1 },
+    sessions: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        properties: {
+          sessionId: { type: "string" },
+          repairedSession: {
+            ...(trainingPlanResponseJsonSchema
+              .properties as {
+                sessions: { items: Record<string, unknown> };
+              }).sessions.items,
+            properties: {
+              ...(trainingPlanResponseJsonSchema
+                .properties as {
+                  sessions: { items: { properties: Record<string, unknown> } };
+                }).sessions.items.properties,
+              workoutTarget: {
+                ...(trainingPlanResponseJsonSchema
+                  .properties as {
+                    sessions: {
+                      items: {
+                        properties: { workoutTarget: Record<string, unknown> };
+                      };
+                    };
+                  }).sessions.items.properties.workoutTarget,
+                type: "object",
+              },
+            },
+          },
+        },
+        required: ["sessionId", "repairedSession"],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["schemaVersion", "sessions"],
+  additionalProperties: false,
+};
+
+export const targetedSessionRepairPatchResponseJsonSchema = {
+  type: "object",
+  properties: {
+    schemaVersion: { type: "integer", minimum: 1 },
+    repairs: {
+      type: "array",
+      minItems: 1,
+      items: {
+        type: "object",
+        properties: {
+          sessionId: { type: "string" },
+          type: { type: "string", enum: SessionTypeSchema.options },
+          coachNote: { type: "string", minLength: 1 },
+          distanceKm: { type: ["number", "null"] },
+          durationMinutes: { type: ["integer", "null"] },
+          targetZone: {
+            type: ["string", "null"],
+            enum: [...TargetZoneSchema.options, null],
+          },
+          warmUpMinutes: { type: ["integer", "null"] },
+          coolDownMinutes: { type: ["integer", "null"] },
+          intervalReps: { type: ["integer", "null"] },
+          intervalRepDistanceMeters: { type: ["integer", "null"] },
+          intervalRecoverySeconds: { type: ["integer", "null"] },
+          strideReps: { type: ["integer", "null"] },
+          strideSeconds: { type: ["integer", "null"] },
+          strideRecoverySeconds: { type: ["integer", "null"] },
+          workoutTarget: {
+            ...(trainingPlanResponseJsonSchema
+              .properties as {
+                sessions: {
+                  items: {
+                    properties: { workoutTarget: Record<string, unknown> };
+                  };
+                };
+              }).sessions.items.properties.workoutTarget,
+            type: ["object", "null"],
+          },
+        },
+        required: [
+          "sessionId",
+          "type",
+          "coachNote",
+          "distanceKm",
+          "durationMinutes",
+          "targetZone",
+          "warmUpMinutes",
+          "coolDownMinutes",
+          "intervalReps",
+          "intervalRepDistanceMeters",
+          "intervalRecoverySeconds",
+          "strideReps",
+          "strideSeconds",
+          "strideRecoverySeconds",
+          "workoutTarget",
+        ],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ["schemaVersion", "repairs"],
   additionalProperties: false,
 };
 

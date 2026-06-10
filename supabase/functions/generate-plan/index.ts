@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import {
   type GeneratePlanRequest,
   GeneratePlanRequestSchema,
@@ -9,11 +9,14 @@ import {
   deriveBackendEvidenceFromStravaSummaries,
   generatePlanFromProfile,
   sanitizeProfileForOpenAi,
+  type StravaActivitySummaryForEvidence,
 } from "./openai.ts";
 import { buildCoachingBrief } from "./coaching-brief.ts";
 import {
   addStrideDefaults,
   avoidHardDayTraining,
+  detectGenericCoachCopyViolations,
+  detectSessionTypePolicyViolations,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
@@ -29,7 +32,9 @@ import {
   placeLongRunsOnPreferredDay,
   preferRestOnHardDays,
   resolvePlanStartDate,
+  restoreSessionCoachNotes,
   smoothLongRunProgression,
+  snapshotSessionCoachNotesByIds,
   spaceStressfulSessions,
   truncateAfterRaceDate,
   unsupportedCoachingBriefReason,
@@ -37,6 +42,10 @@ import {
   validateGeneratedPlanShape,
   validateGeneratedSchedule,
 } from "./plan-rules.ts";
+import {
+  type RepairPolicyViolationsResult,
+  repairPolicyViolationsWithOpenAiPatches,
+} from "./repair-loop.ts";
 import { buildWorkoutSteps } from "./workout-steps.ts";
 
 type CoachLocale = "en" | "es";
@@ -367,31 +376,110 @@ Deno.serve(async (req) => {
     locale,
     coachingBrief,
   );
-  const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
+  const policyViolations = detectSessionTypePolicyViolations(
     taperNormalizedSessions,
+    generationProfileWithPlanStartDate,
+    safeGeneratedPlan.totalWeeks,
+    coachingBrief,
+  );
+  let policyRepairResult: RepairPolicyViolationsResult = {
+    ok: true,
+    sessions: taperNormalizedSessions,
+    acceptedSessionIds: [],
+    attempts: 0,
+  };
+
+  if (policyViolations.length > 0) {
+    try {
+      policyRepairResult = await repairPolicyViolationsWithOpenAiPatches(
+        taperNormalizedSessions,
+        generationProfileWithPlanStartDate,
+        safeGeneratedPlan.totalWeeks,
+        locale,
+        coachingBrief,
+      );
+    } catch (error) {
+      console.error("Generated plan failed OpenAI repair validation", {
+        attempts: 0,
+        requestedRepairs: policyViolations.length,
+        error: String(error),
+      });
+      return new Response(
+        JSON.stringify({
+          error: "Generated plan failed OpenAI repair validation",
+          detail: String(error),
+        }),
+        { status: 500, headers: { "Content-Type": "application/json" } },
+      );
+    }
+  }
+
+  if (!policyRepairResult.ok) {
+    console.error("Generated plan failed OpenAI repair validation", {
+      attempts: policyRepairResult.attempts,
+      remainingViolations: policyRepairResult.remainingViolations.length,
+      repairFailures: policyRepairResult.repairFailures.length,
+      requestedRepairs: policyViolations.length,
+    });
+    return new Response(
+      JSON.stringify({
+        error: "Generated plan failed OpenAI repair validation",
+        remainingViolations: policyRepairResult.remainingViolations,
+        repairFailures: policyRepairResult.repairFailures,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
+
+  const preservedRepairCoachNotes = snapshotSessionCoachNotesByIds(
+    policyRepairResult.sessions,
+    policyRepairResult.acceptedSessionIds,
+  );
+
+  if (policyViolations.length > 0) {
+    console.info("OpenAI repair loop completed", {
+      attempts: policyRepairResult.attempts,
+      repairedSessions: policyRepairResult.acceptedSessionIds.length,
+      requestedRepairs: policyViolations.length,
+    });
+  }
+
+  const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
+    policyRepairResult.sessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
     coachingBrief,
+    policyRepairResult.acceptedSessionIds,
   );
   const firstSessionNormalizedSessions = normalizeFirstPlannedSession(
     phaseNormalizedSessions,
     generationProfileWithPlanStartDate,
     locale,
   );
-  const phaseStampedSessions = firstSessionNormalizedSessions.map((
-    session,
-  ) => ({
-    ...session,
-    phase: phaseForWeekFromCoachingBrief(
-      session.weekNumber,
-      safeGeneratedPlan.totalWeeks,
-      generationProfileWithPlanStartDate,
-      coachingBrief,
-    ),
-  }));
-  const truncatedSessions = truncateAfterRaceDate(
+  const firstSessionNormalizedWithPreservedCoachNotes =
+    restoreSessionCoachNotes(
+      firstSessionNormalizedSessions,
+      preservedRepairCoachNotes,
+    );
+  const phaseStampedSessions = firstSessionNormalizedWithPreservedCoachNotes
+    .map((
+      session,
+    ) => ({
+      ...session,
+      phase: phaseForWeekFromCoachingBrief(
+        session.weekNumber,
+        safeGeneratedPlan.totalWeeks,
+        generationProfileWithPlanStartDate,
+        coachingBrief,
+      ),
+    }));
+  const phaseStampedSessionsWithPreservedCoachNotes = restoreSessionCoachNotes(
     phaseStampedSessions,
+    preservedRepairCoachNotes,
+  );
+  const truncatedSessions = truncateAfterRaceDate(
+    phaseStampedSessionsWithPreservedCoachNotes,
     generationProfileWithPlanStartDate,
   );
   const goal = isRecord(generationProfileWithPlanStartDate.goal)
@@ -409,11 +497,40 @@ Deno.serve(async (req) => {
     generationProfileWithPlanStartDate,
     locale,
   );
-  const raceDayDate = raceDate ?? lastSessionDate(preRaceTaperedSessions);
+  const preRaceTaperedWithPreservedCoachNotes = restoreSessionCoachNotes(
+    preRaceTaperedSessions,
+    preservedRepairCoachNotes,
+  );
+  const raceDayDate = raceDate ?? lastSessionDate(
+    preRaceTaperedWithPreservedCoachNotes,
+  );
   const sessionsBeforeRaceDayInfo = raceDayDate == null
-    ? preRaceTaperedSessions
-    : removeSessionsOnRaceDate(preRaceTaperedSessions, raceDayDate);
+    ? preRaceTaperedWithPreservedCoachNotes
+    : removeSessionsOnRaceDate(
+      preRaceTaperedWithPreservedCoachNotes,
+      raceDayDate,
+    );
   const idNormalizedSessions = normalizeSessionIds(sessionsBeforeRaceDayInfo);
+  const genericCoachCopyViolations = detectGenericCoachCopyViolations(
+    idNormalizedSessions,
+  );
+  if (genericCoachCopyViolations.length > 0) {
+    console.error("Generated plan failed generic coach note validation", {
+      attempts: policyRepairResult.attempts,
+      genericCoachCopyViolationCount: genericCoachCopyViolations.length,
+      sessionIds: genericCoachCopyViolations.map((violation) =>
+        violation.sessionId
+      ),
+      repairViolations: policyViolations.length,
+    });
+    return new Response(
+      JSON.stringify({
+        error: "Generated plan failed generic coach note validation",
+        violations: genericCoachCopyViolations,
+      }),
+      { status: 500, headers: { "Content-Type": "application/json" } },
+    );
+  }
 
   const sanitizedForValidation = withoutGoalDate(
     generationProfileWithPlanStartDate,
@@ -565,7 +682,7 @@ function normalizeLocale(value: unknown): CoachLocale {
 
 async function addBackendEvidenceFromStravaSummaries(
   profile: ProfileShape,
-  adminClient: ReturnType<typeof createClient>,
+  adminClient: SupabaseClient,
   userId: string,
 ): Promise<ProfileShape> {
   const { data, error } = await adminClient
@@ -592,7 +709,9 @@ async function addBackendEvidenceFromStravaSummaries(
   }
 
   const derived = deriveBackendEvidenceFromStravaSummaries(
-    Array.isArray(data) ? data : [],
+    (Array.isArray(data)
+      ? data
+      : []) as readonly StravaActivitySummaryForEvidence[],
   );
   if (derived == null) return profile;
 

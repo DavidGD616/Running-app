@@ -1,12 +1,20 @@
 import { strict as assert } from "node:assert";
 import {
   buildGeneratePlanMessages,
+  buildTargetedSessionRepairCompletionOptions,
+  buildTargetedSessionRepairMessages,
+  buildTargetedSessionRepairPatchCompletionOptions,
+  buildTargetedSessionRepairPatchMessages,
   deriveBackendEvidenceFromStravaSummaries,
   parseGeneratedPlanContent,
+  parseTargetedSessionRepairContent,
+  parseTargetedSessionRepairPatchContent,
   resolveOpenAiModel,
   sanitizeProfileForOpenAi,
   trainingPlanResponseJsonSchema,
 } from "./openai.ts";
+import type { SessionTypePolicyViolation } from "./plan-rules.ts";
+import type { GeneratedSession } from "./schema.ts";
 
 const messageProfile = {
   goal: {
@@ -204,14 +212,78 @@ const coachingBrief = {
   rationale: ["Used measured Strava training evidence."],
 };
 
-function parseUserPromptProfile(content: string): any {
-  return JSON.parse(sectionAfterLabel(content, "Runner profile"));
+type UserPromptPayload = {
+  [key: string]: unknown;
+  stravaCoachingProfile: Record<string, unknown>;
+  schedule: Record<string, unknown>;
+  goal: Record<string, unknown>;
+  acceptedRaceTarget: Record<string, unknown>;
+  fitness: Record<string, unknown> & {
+    stravaCoachingProfile: Record<string, unknown>;
+  };
+  manualFitness: Record<string, unknown>;
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
-function parseUserPromptBrief(content: string): any {
-  return JSON.parse(
+function parseUserPromptProfile(content: string): UserPromptPayload {
+  const profile = JSON.parse(sectionAfterLabel(content, "Runner profile"));
+  if (!isObject(profile)) {
+    throw new Error("Runner profile section must be a JSON object.");
+  }
+
+  const profileFitness = isObject(profile.fitness) ? profile.fitness : {};
+
+  return {
+    stravaCoachingProfile: isObject(profile.stravaCoachingProfile)
+      ? profile.stravaCoachingProfile
+      : {},
+    schedule: isObject(profile.schedule) ? profile.schedule : {},
+    goal: isObject(profile.goal) ? profile.goal : {},
+    acceptedRaceTarget: isObject(profile.acceptedRaceTarget)
+      ? profile.acceptedRaceTarget
+      : {},
+    fitness: {
+      ...profileFitness,
+      stravaCoachingProfile: isObject(profileFitness.stravaCoachingProfile)
+        ? profileFitness.stravaCoachingProfile
+        : {},
+    },
+    manualFitness: isObject(profile.manualFitness) ? profile.manualFitness : {},
+    ...profile,
+  };
+}
+
+function parseUserPromptBrief(content: string): UserPromptPayload {
+  const brief = JSON.parse(
     sectionAfterLabel(content, "Backend coaching brief", "Runner profile"),
   );
+
+  if (!isObject(brief)) {
+    throw new Error("Backend coaching brief section must be a JSON object.");
+  }
+
+  const briefFitness = isObject(brief.fitness) ? brief.fitness : {};
+  return {
+    stravaCoachingProfile: isObject(brief.stravaCoachingProfile)
+      ? brief.stravaCoachingProfile
+      : {},
+    schedule: isObject(brief.schedule) ? brief.schedule : {},
+    goal: isObject(brief.goal) ? brief.goal : {},
+    acceptedRaceTarget: isObject(brief.acceptedRaceTarget)
+      ? brief.acceptedRaceTarget
+      : {},
+    fitness: {
+      ...briefFitness,
+      stravaCoachingProfile: isObject(briefFitness.stravaCoachingProfile)
+        ? briefFitness.stravaCoachingProfile
+        : {},
+    },
+    manualFitness: isObject(brief.manualFitness) ? brief.manualFitness : {},
+    ...brief,
+  };
 }
 
 function sectionAfterLabel(
@@ -1045,3 +1117,329 @@ Deno.test("parseGeneratedPlanContent throws on prose-only pace values", () => {
     parseGeneratedPlanContent(JSON.stringify(invalid));
   }, /Expected number, received string|invalid_type|Expected number/);
 });
+
+Deno.test(
+  "buildTargetedSessionRepairMessages includes only repair sessions with violations and strict coaching direction",
+  () => {
+    const repairSessions: GeneratedSession[] = [{
+      ...parseProfile.sessions[0],
+      id: "w1-mon-repair",
+      type: "intervals",
+    } as GeneratedSession];
+    const violations: SessionTypePolicyViolation[] = [
+      {
+        code: "session_type_not_allowed_for_phase",
+        sessionId: "w1-mon-repair",
+        weekNumber: 1,
+        date: "2026-10-01",
+        currentType: "intervals",
+        phase: "base",
+        allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+        recommendedType: "easyRun",
+        reason: "intervals is not allowed in base; suggest easyRun.",
+      },
+    ];
+
+    const [systemMessage, userMessage] = buildTargetedSessionRepairMessages(
+      messageProfile,
+      8,
+      repairSessions,
+      violations,
+      "en",
+      coachingBrief,
+    );
+
+    assert.equal(systemMessage.role, "system");
+    assert.equal(userMessage.role, "user");
+    assert.ok(systemMessage.content.includes("targeted repair pass"));
+    assert.ok(systemMessage.content.includes("totalWeeks is 8"));
+    assert.ok(
+      systemMessage.content.includes("Avoid generic system-explaining copy"),
+    );
+    assert.ok(!systemMessage.content.includes("phase-appropriate training"));
+    assert.ok(userMessage.content.includes("Profile context"));
+    assert.ok(userMessage.content.includes("Sessions needing repair"));
+    assert.ok(userMessage.content.includes("Policy violations"));
+    assert.ok(userMessage.content.includes("w1-mon-repair"));
+    assert.ok(userMessage.content.includes("intervals"));
+    assert.ok(userMessage.content.includes("easyRun"));
+    assert.ok(userMessage.content.includes("Backend coaching brief"));
+  },
+);
+
+Deno.test("parseTargetedSessionRepairContent accepts valid targeted repair output", () => {
+  const valid = {
+    schemaVersion: 1,
+    sessions: [
+      {
+        sessionId: "w1-mon-repair",
+        repairedSession: {
+          ...parseProfile.sessions[0],
+          id: "w1-mon-repair",
+          type: "easyRun",
+        },
+      },
+    ],
+  };
+
+  const parsed = parseTargetedSessionRepairContent(JSON.stringify(valid));
+  assert.equal(parsed.schemaVersion, 1);
+  assert.equal(parsed.sessions.length, 1);
+  assert.equal(parsed.sessions[0].sessionId, "w1-mon-repair");
+  assert.equal(parsed.sessions[0].repairedSession.id, "w1-mon-repair");
+});
+
+Deno.test("parseTargetedSessionRepairContent rejects repaired session with missing workoutTarget", () => {
+  const invalid = {
+    schemaVersion: 1,
+    sessions: [
+      {
+        sessionId: "w1-mon-repair",
+        repairedSession: {
+          ...parseProfile.sessions[0],
+          id: "w1-mon-repair",
+          workoutTarget: null,
+        },
+      },
+    ],
+  };
+
+  assert.throws(() => {
+    parseTargetedSessionRepairContent(JSON.stringify(invalid));
+  }, /workoutTarget/);
+});
+
+Deno.test(
+  "buildTargetedSessionRepairCompletionOptions uses strict JSON schema response format",
+  () => {
+    const repairSessions: GeneratedSession[] = [{
+      ...parseProfile.sessions[0],
+      id: "w1-mon-repair",
+      type: "easyRun",
+    } as GeneratedSession];
+    const violations: SessionTypePolicyViolation[] = [
+      {
+        code: "session_type_not_allowed_for_phase",
+        sessionId: "w1-mon-repair",
+        weekNumber: 1,
+        date: "2026-10-01",
+        currentType: "thresholdRun",
+        phase: "base",
+        allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+        recommendedType: "easyRun",
+        reason: "thresholdRun is not allowed in base; suggest easyRun.",
+      },
+    ];
+
+    const requestOptions = buildTargetedSessionRepairCompletionOptions(
+      messageProfile,
+      8,
+      repairSessions,
+      violations,
+      "en",
+      coachingBrief,
+      "gpt-5.4-mini",
+    );
+
+    assert.equal(requestOptions.response_format.type, "json_schema");
+    assert.equal(
+      requestOptions.response_format.json_schema.name,
+      "targeted_session_repair",
+    );
+    assert.equal(
+      requestOptions.response_format.json_schema.strict,
+      true,
+    );
+  },
+);
+
+Deno.test(
+  "buildTargetedSessionRepairPatchMessages includes phase-aware patch context and prior failure reason",
+  () => {
+    const repairSessions: GeneratedSession[] = [{
+      ...parseProfile.sessions[0],
+      id: "w1-mon-repair",
+      type: "intervals",
+    } as GeneratedSession];
+    const violations: SessionTypePolicyViolation[] = [
+      {
+        code: "session_type_not_allowed_for_phase",
+        sessionId: "w1-mon-repair",
+        weekNumber: 1,
+        date: "2026-10-01",
+        currentType: "intervals",
+        phase: "base",
+        allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+        recommendedType: "easyRun",
+        reason: "intervals is not allowed in base; suggest easyRun.",
+      },
+    ];
+
+    const [systemMessage, userMessage] =
+      buildTargetedSessionRepairPatchMessages(
+        messageProfile,
+        8,
+        repairSessions,
+        violations,
+        "en",
+        coachingBrief,
+        { "w1-mon-repair": "Initial fix was too intense for base phase." },
+      );
+
+    assert.equal(systemMessage.role, "system");
+    assert.equal(userMessage.role, "user");
+    assert.ok(systemMessage.content.includes("targeted repair PATCH pass"));
+    assert.ok(
+      systemMessage.content.includes(
+        "Repair only the sessions explicitly listed",
+      ),
+    );
+    assert.ok(
+      systemMessage.content.includes("not a full plan regeneration"),
+    );
+    assert.ok(
+      systemMessage.content.includes(
+        "For each repaired session, set the type to one of that item's allowedTypes.",
+      ),
+    );
+    assert.ok(
+      systemMessage.content.includes(
+        "Prefer recommendedType for type; only choose another allowedType",
+      ),
+    );
+    assert.ok(systemMessage.content.includes("avoid generic phraseology"));
+    assert.ok(systemMessage.content.includes("phase-appropriate training"));
+    assert.ok(userMessage.content.includes("phaseGoalLanguage"));
+    assert.ok(userMessage.content.includes("Protect current aerobic base"));
+    assert.ok(userMessage.content.includes('"phase": "base"'));
+    assert.ok(userMessage.content.includes('"currentType": "intervals"'));
+    assert.ok(userMessage.content.includes('"allowedTypes"'));
+    assert.ok(userMessage.content.includes('"recommendedType": "easyRun"'));
+    assert.ok(userMessage.content.includes('"originalSession"'));
+    assert.ok(userMessage.content.includes("w1-mon-repair"));
+    assert.ok(
+      userMessage.content.includes(
+        '"priorFailureReason": "Initial fix was too intense for base phase."',
+      ),
+    );
+  },
+);
+
+Deno.test(
+  "buildTargetedSessionRepairPatchCompletionOptions uses strict targeted patch schema",
+  () => {
+    const repairSessions: GeneratedSession[] = [{
+      ...parseProfile.sessions[0],
+      id: "w1-mon-repair",
+      type: "easyRun",
+    } as GeneratedSession];
+    const violations: SessionTypePolicyViolation[] = [
+      {
+        code: "session_type_not_allowed_for_phase",
+        sessionId: "w1-mon-repair",
+        weekNumber: 1,
+        date: "2026-10-01",
+        currentType: "thresholdRun",
+        phase: "base",
+        allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+        recommendedType: "easyRun",
+        reason: "thresholdRun is not allowed in base; suggest easyRun.",
+      },
+    ];
+
+    const requestOptions = buildTargetedSessionRepairPatchCompletionOptions(
+      messageProfile,
+      8,
+      repairSessions,
+      violations,
+      "en",
+      coachingBrief,
+      { "w1-mon-repair": "Previous attempt didn't satisfy policy." },
+      "gpt-5.4-mini",
+    );
+
+    assert.equal(requestOptions.response_format.type, "json_schema");
+    assert.equal(
+      requestOptions.response_format.json_schema.name,
+      "targeted_session_repair_patch",
+    );
+    assert.equal(requestOptions.response_format.json_schema.strict, true);
+  },
+);
+
+Deno.test("parseTargetedSessionRepairPatchContent accepts valid patch response", () => {
+  const valid = {
+    schemaVersion: 1,
+    repairs: [
+      {
+        sessionId: "w1-mon-repair",
+        type: "easyRun",
+        coachNote: "Keep this easy effort and focus on short, relaxed cadence.",
+        distanceKm: 10,
+        durationMinutes: 60,
+        targetZone: "easy",
+        warmUpMinutes: 10,
+        coolDownMinutes: 10,
+        intervalReps: 0,
+        intervalRepDistanceMeters: 0,
+        intervalRecoverySeconds: 0,
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 60,
+        workoutTarget: parseProfile.sessions[0].workoutTarget,
+      },
+    ],
+  };
+
+  const parsed = parseTargetedSessionRepairPatchContent(JSON.stringify(valid));
+
+  assert.equal(parsed.schemaVersion, 1);
+  assert.equal(parsed.repairs.length, 1);
+  assert.equal(parsed.repairs[0].sessionId, "w1-mon-repair");
+  assert.equal(parsed.repairs[0].type, "easyRun");
+});
+
+Deno.test(
+  "parseTargetedSessionRepairPatchContent rejects empty/missing content",
+  () => {
+    assert.throws(() => {
+      parseTargetedSessionRepairPatchContent(undefined);
+    }, /OpenAI returned no content/);
+
+    assert.throws(() => {
+      parseTargetedSessionRepairPatchContent("");
+    }, /OpenAI returned no content/);
+  },
+);
+
+Deno.test(
+  "parseTargetedSessionRepairPatchContent rejects blank coachNote",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      repairs: [
+        {
+          sessionId: "w1-mon-repair",
+          type: "easyRun",
+          coachNote: "   ",
+          distanceKm: 10,
+          durationMinutes: 60,
+          targetZone: "easy",
+          warmUpMinutes: 10,
+          coolDownMinutes: 10,
+          intervalReps: 0,
+          intervalRepDistanceMeters: 0,
+          intervalRecoverySeconds: 0,
+          strideReps: 4,
+          strideSeconds: 20,
+          strideRecoverySeconds: 60,
+          workoutTarget: parseProfile.sessions[0].workoutTarget,
+        },
+      ],
+    };
+
+    assert.throws(() => {
+      parseTargetedSessionRepairPatchContent(JSON.stringify(invalid));
+    }, /String must contain at least 1 character|String must contain/);
+  },
+);
