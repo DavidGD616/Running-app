@@ -1,4 +1,8 @@
-import type { GeneratedPlan, GeneratedSession } from "./schema.ts";
+import type {
+  GeneratedPlan,
+  GeneratedSession,
+  TargetedSessionRepairPatchItem,
+} from "./schema.ts";
 import type {
   CoachingBrief,
   CoachingRaceType,
@@ -410,6 +414,18 @@ export type SessionRepairMergeResult = {
   preservedCoachNoteSessionIds: string[];
 };
 
+export type SessionRepairPatchFailure = {
+  sessionId: string;
+  reason: string;
+};
+
+export type SessionRepairPatchMergeResult = {
+  sessions: GeneratedSession[];
+  acceptedSessionIds: string[];
+  rejectedRepairs: SessionRepairPatchFailure[];
+  preservedCoachNoteSessionIds: string[];
+};
+
 export function mergeTargetedSessionRepairs(
   sessions: readonly GeneratedSession[],
   requestedSessionIds: readonly string[],
@@ -477,6 +493,216 @@ export function mergeTargetedSessionRepairs(
     ),
     preservedCoachNoteSessionIds: repairedIds,
   };
+}
+
+const restrictedCoachNoteCopyPatterns: (string | RegExp)[] = [
+  "adjusted to match phase-appropriate training",
+  "phase-appropriate training",
+  "adjusted to keep hard training days spaced safely",
+  "moved to keep hard training days spaced safely",
+  "adjusted to match peak long run target",
+  "evidence-based increase is currently blocked by guardrails",
+  "backend coaching brief",
+  "policy reason",
+  "to satisfy a policy",
+  "adjusted to match the phase",
+  "adjusted to match phase",
+  "adjusted to phase-appropriate",
+  "adjusted to phase appropriate",
+  "ajustado para",
+  "entrenamiento apropiado de la fase",
+  "entrenamiento apropiado para la fase",
+  "coincidir con el entrenamiento apropiado de la fase",
+  /\bbackend\b/i,
+  /\bsistema\b/i,
+  /\bsistema\b.*pol[ií]tica/i,
+  /\bpol[ií]tica\b/i,
+  /\ballowed\s+types\b/i,
+  /\ballowedtype(s)?\b/i,
+  /\bbackend\b.*\bpolicy\b/i,
+  /\bpolicy\b.*\bbackend\b/i,
+  /\benforcement\b/i,
+  /\benforcement\b.*\bpolicy\b/i,
+  /\bpolicy\b.*\benforcement\b/i,
+  /\bguardrail\b/i,
+  /\bguardrails?\b/i,
+  /\bguardarr[ií]l\b/i,
+] as const;
+
+export function mergeTargetedSessionRepairPatches(
+  sessions: readonly GeneratedSession[],
+  requestedSessionIds: readonly string[],
+  repairs: readonly TargetedSessionRepairPatchItem[],
+  profileData: Record<string, unknown> = {},
+  totalWeeks: number | null = null,
+  coachingBrief: CoachingBrief | null = null,
+): SessionRepairPatchMergeResult {
+  const requested = new Set(requestedSessionIds);
+  const originalById = new Map(
+    sessions.map((session) => [session.id, session]),
+  );
+  const acceptedById = new Map<string, GeneratedSession>();
+  const acceptedSessionIds: string[] = [];
+  const rejectedRepairs: SessionRepairPatchFailure[] = [];
+  const resolvedTotalWeeks = totalWeeks == null || totalWeeks < 1
+    ? sessions.reduce(
+      (maxWeek, session) => Math.max(maxWeek, session.weekNumber),
+      1,
+    )
+    : totalWeeks;
+  const policyContext = ruleContextFor(profileData, coachingBrief);
+
+  const addRejection = (sessionId: string, reason: string): void => {
+    rejectedRepairs.push({ sessionId, reason });
+  };
+
+  for (const patch of repairs) {
+    if (!requested.has(patch.sessionId)) {
+      addRejection(
+        patch.sessionId,
+        "Session was not requested for repair in this pass.",
+      );
+      continue;
+    }
+
+    const original = originalById.get(patch.sessionId);
+    if (original == null) {
+      addRejection(
+        patch.sessionId,
+        "Session id does not match an existing session in the current plan.",
+      );
+      continue;
+    }
+
+    const normalizedCoachNote = patch.coachNote.trim();
+    if (normalizedCoachNote.length === 0) {
+      addRejection(
+        patch.sessionId,
+        "coachNote must be non-empty.",
+      );
+      continue;
+    }
+
+    const restrictedCopy = restrictedCoachNoteCopy(
+      normalizedCoachNote,
+    );
+    if (restrictedCopy != null) {
+      addRejection(
+        patch.sessionId,
+        `coachNote contains disallowed policy-explanation copy (${restrictedCopy}).`,
+      );
+      continue;
+    }
+
+    const phase = phaseForWeekFromCoachingBrief(
+      original.weekNumber,
+      resolvedTotalWeeks,
+      profileData,
+      coachingBrief,
+    );
+    const policy = workoutPolicyForPhase(
+      phase,
+      policyContext.race,
+      policyContext.experience,
+    );
+    if (!policy.allowedTypes.includes(patch.type)) {
+      addRejection(
+        patch.sessionId,
+        `Patch type '${patch.type}' is not allowed in ${phase} phase for this profile.`,
+      );
+      continue;
+    }
+
+    const mergedSession = mergeSessionWithTargetedPatch(original, patch);
+    if (isRunSessionType(mergedSession.type) && mergedSession.workoutTarget == null) {
+      addRejection(
+        patch.sessionId,
+        "Run sessions must keep or supply a non-null workoutTarget.",
+      );
+      continue;
+    }
+
+    if (!acceptedById.has(patch.sessionId)) {
+      acceptedById.set(patch.sessionId, mergedSession);
+      acceptedSessionIds.push(patch.sessionId);
+    }
+  }
+
+  return {
+    sessions: sessions.map((session) => acceptedById.get(session.id) ?? session),
+    acceptedSessionIds,
+    rejectedRepairs,
+    preservedCoachNoteSessionIds: acceptedSessionIds,
+  };
+}
+
+function mergeSessionWithTargetedPatch(
+  session: GeneratedSession,
+  patch: TargetedSessionRepairPatchItem,
+): GeneratedSession {
+  const merged: GeneratedSession = {
+    ...session,
+    type: patch.type,
+    coachNote: patch.coachNote,
+    id: session.id,
+    date: session.date,
+    weekNumber: session.weekNumber,
+  };
+
+  if (patch.workoutTarget !== undefined) {
+    merged.workoutTarget = patch.workoutTarget;
+  }
+  if (patch.distanceKm !== undefined) {
+    merged.distanceKm = patch.distanceKm;
+  }
+  if (patch.durationMinutes !== undefined) {
+    merged.durationMinutes = patch.durationMinutes;
+  }
+  if (patch.targetZone !== undefined) {
+    merged.targetZone = patch.targetZone;
+  }
+  if (patch.warmUpMinutes !== undefined) {
+    merged.warmUpMinutes = patch.warmUpMinutes;
+  }
+  if (patch.coolDownMinutes !== undefined) {
+    merged.coolDownMinutes = patch.coolDownMinutes;
+  }
+  if (patch.intervalReps !== undefined) {
+    merged.intervalReps = patch.intervalReps;
+  }
+  if (patch.intervalRepDistanceMeters !== undefined) {
+    merged.intervalRepDistanceMeters = patch.intervalRepDistanceMeters;
+  }
+  if (patch.intervalRecoverySeconds !== undefined) {
+    merged.intervalRecoverySeconds = patch.intervalRecoverySeconds;
+  }
+  if (patch.strideReps !== undefined) {
+    merged.strideReps = patch.strideReps;
+  }
+  if (patch.strideSeconds !== undefined) {
+    merged.strideSeconds = patch.strideSeconds;
+  }
+  if (patch.strideRecoverySeconds !== undefined) {
+    merged.strideRecoverySeconds = patch.strideRecoverySeconds;
+  }
+
+  return merged;
+}
+
+function isRunSessionType(type: GeneratedSession["type"]): boolean {
+  return type !== "restDay" && type !== "crossTraining" && type !== "raceDay";
+}
+
+function restrictedCoachNoteCopy(value: string): string | null {
+  const normalized = value.toLowerCase();
+  const match = restrictedCoachNoteCopyPatterns.find((pattern) => {
+    if (typeof pattern === "string") {
+      return normalized.includes(pattern);
+    }
+
+    return pattern.test(value);
+  });
+  return match == null ? null : typeof match === "string" ? match : "restricted pattern";
 }
 
 export type SessionTypePolicyViolation = {

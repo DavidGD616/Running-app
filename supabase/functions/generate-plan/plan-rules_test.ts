@@ -6,6 +6,7 @@ import {
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
+  mergeTargetedSessionRepairPatches,
   mergeTargetedSessionRepairs,
   normalizeFirstPlannedSession,
   normalizePeakLongRun,
@@ -33,7 +34,10 @@ import {
 } from "./plan-rules.ts";
 import type { SessionRepairCandidate } from "./plan-rules.ts";
 import type { CoachingBrief } from "./coaching-brief.ts";
-import { removeSessionsOnRaceDate } from "./schema.ts";
+import {
+  removeSessionsOnRaceDate,
+  type TargetedSessionRepairPatchItem,
+} from "./schema.ts";
 import type { GeneratedSession } from "./schema.ts";
 
 Deno.test("phaseForWeek 12-week plan week 1 is base", () => {
@@ -3289,6 +3293,351 @@ Deno.test(
 );
 
 Deno.test(
+  "mergeTargetedSessionRepairPatches applies valid patches and rejects invalid ones",
+  () => {
+    const originalSessions: GeneratedSession[] = [
+      {
+        ...session({
+          id: "w1-targeted",
+          date: "2026-04-08",
+          type: "easyRun",
+          weekNumber: 1,
+        }),
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+      {
+        ...session({
+          id: "w2-targeted",
+          date: "2026-04-10",
+          type: "easyRun",
+          weekNumber: 2,
+        }),
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+      {
+        ...session({
+          id: "w3-targeted",
+          date: "2026-04-12",
+          type: "easyRun",
+          weekNumber: 3,
+        }),
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+      {
+        ...session({
+          id: "w4-targeted",
+          date: "2026-04-14",
+          type: "easyRun",
+          weekNumber: 3,
+        }),
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+    ];
+
+    const requestedSessionIds = [
+      "w1-targeted",
+      "w2-targeted",
+      "w3-targeted",
+      "w4-targeted",
+      "w5-targeted",
+    ];
+    const repairs: TargetedSessionRepairPatchItem[] = [
+      {
+        sessionId: "w1-targeted",
+        type: "longRun",
+        coachNote: "Shift this to a longer controlled effort.",
+        workoutTarget: easyWorkouts().longRunTarget,
+        distanceKm: 14,
+        durationMinutes: 75,
+      },
+      {
+        sessionId: "w2-targeted",
+        type: "thresholdRun",
+        coachNote: "This should be rejected for type policy.",
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+      {
+        sessionId: "w3-targeted",
+        type: "easyRun",
+        coachNote: "Adjusted to match phase-appropriate training",
+      },
+      {
+        sessionId: "w4-targeted",
+        type: "easyRun",
+        coachNote: "Keep this run easy and focused.",
+      },
+      {
+        sessionId: "w5-targeted",
+        type: "easyRun",
+        coachNote: "I was requested but I do not exist.",
+      },
+      {
+        sessionId: "w6-not-requested",
+        type: "easyRun",
+        coachNote: "I was never requested.",
+      },
+    ];
+
+    const result = mergeTargetedSessionRepairPatches(
+      originalSessions,
+      requestedSessionIds,
+      repairs,
+      profile({
+        experience: "experience_beginner",
+        race: "race_half_marathon",
+      }),
+      8,
+    );
+
+    assert.equal(result.acceptedSessionIds.length, 2);
+    assert.deepEqual(result.acceptedSessionIds, ["w1-targeted", "w4-targeted"]);
+    assert.equal(result.rejectedRepairs.length, 4);
+
+    const patched = findSession(result.sessions, "w1-targeted");
+    assert.equal(patched.type, "longRun");
+    assert.equal(patched.coachNote, "Shift this to a longer controlled effort.");
+    assert.equal(patched.distanceKm, 14);
+    assert.equal(patched.durationMinutes, 75);
+
+    assert.equal(
+      findSession(result.sessions, "w2-targeted").type,
+      "easyRun",
+    );
+    assert.equal(
+      findSession(result.sessions, "w3-targeted").coachNote,
+      null,
+    );
+    assert.equal(
+      findSession(result.sessions, "w4-targeted").coachNote,
+      "Keep this run easy and focused.",
+    );
+    assert.equal(findSession(result.sessions, "w4-targeted").type, "easyRun");
+    assert.ok(
+      result.rejectedRepairs.some((item) =>
+        item.sessionId === "w2-targeted" &&
+        item.reason.includes("not allowed")
+      ),
+      JSON.stringify(result.rejectedRepairs),
+    );
+    assert.ok(
+      result.rejectedRepairs.some((item) =>
+        item.sessionId === "w3-targeted" &&
+        item.reason.includes("policy-explanation")
+      ),
+      JSON.stringify(result.rejectedRepairs),
+    );
+    assert.ok(
+      result.rejectedRepairs.some((item) =>
+        item.sessionId === "w6-not-requested" &&
+        item.reason.includes("not requested")
+      ),
+      JSON.stringify(result.rejectedRepairs),
+    );
+    assert.ok(
+      result.rejectedRepairs.some((item) =>
+        item.sessionId === "w5-targeted" &&
+        item.reason.includes("does not match an existing session")
+      ),
+      JSON.stringify(result.rejectedRepairs),
+    );
+  },
+);
+
+Deno.test("mergeTargetedSessionRepairPatches rejects patch types that violate phase policy", () => {
+  const originalSessions: GeneratedSession[] = [
+    {
+      ...session({
+        id: "w1-violation",
+        date: "2026-04-08",
+        type: "easyRun",
+        weekNumber: 2,
+        coachNote: "Original coach note",
+      }),
+      workoutTarget: easyWorkouts().easyTarget,
+    },
+  ];
+
+  const requestedSessionIds = ["w1-violation"];
+  const repairs: TargetedSessionRepairPatchItem[] = [{
+    sessionId: "w1-violation",
+    type: "intervals",
+    coachNote: "Try a harder variant.",
+    workoutTarget: easyWorkouts().easyTarget,
+  }];
+
+  const result = mergeTargetedSessionRepairPatches(
+    originalSessions,
+    requestedSessionIds,
+    repairs,
+    profile({
+      experience: "experience_brand_new",
+      race: "race_half_marathon",
+    }),
+    8,
+  );
+
+  assert.equal(result.acceptedSessionIds.length, 0);
+  assert.equal(result.rejectedRepairs.length, 1);
+  assert.equal(result.rejectedRepairs[0].sessionId, "w1-violation");
+  assert.ok(result.rejectedRepairs[0].reason.includes("not allowed"));
+  assert.equal(
+    findSession(result.sessions, "w1-violation").coachNote,
+    "Original coach note",
+  );
+});
+
+Deno.test("mergeTargetedSessionRepairPatches rejects generic policy copy in coachNote", () => {
+  const originalSessions: GeneratedSession[] = [
+    {
+      ...session({
+        id: "w1-copy",
+        date: "2026-04-08",
+        type: "easyRun",
+        weekNumber: 2,
+      }),
+      workoutTarget: easyWorkouts().easyTarget,
+    },
+  ];
+
+  const requestedSessionIds = ["w1-copy"];
+  const repairs: TargetedSessionRepairPatchItem[] = [{
+    sessionId: "w1-copy",
+    type: "easyRun",
+    coachNote: "Adjusted to keep hard training days spaced safely.",
+    workoutTarget: easyWorkouts().easyTarget,
+  }];
+
+  const result = mergeTargetedSessionRepairPatches(
+    originalSessions,
+    requestedSessionIds,
+    repairs,
+    profile({ experience: "experience_intermediate", race: "race_5k" }),
+    8,
+  );
+
+  assert.equal(result.acceptedSessionIds.length, 0);
+  assert.equal(result.rejectedRepairs.length, 1);
+  assert.ok(result.rejectedRepairs[0].reason.includes("disallowed"));
+  assert.equal(findSession(result.sessions, "w1-copy").type, "easyRun");
+  assert.equal(findSession(result.sessions, "w1-copy").coachNote, null);
+});
+
+Deno.test(
+  "mergeTargetedSessionRepairPatches rejects additional backend/policy explanation copy",
+  () => {
+    const originalSessions: GeneratedSession[] = [
+      {
+        ...session({
+          id: "w1-backend-copy",
+          date: "2026-04-09",
+          type: "easyRun",
+          weekNumber: 2,
+        }),
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+    ];
+
+    const requestedSessionIds = ["w1-backend-copy"];
+    const repairs: TargetedSessionRepairPatchItem[] = [{
+      sessionId: "w1-backend-copy",
+      type: "easyRun",
+      coachNote: "Changed to satisfy the backend policy.",
+      workoutTarget: easyWorkouts().easyTarget,
+    }];
+
+    const result = mergeTargetedSessionRepairPatches(
+      originalSessions,
+      requestedSessionIds,
+      repairs,
+      profile({ experience: "experience_intermediate", race: "race_half_marathon" }),
+      8,
+    );
+
+    assert.equal(result.acceptedSessionIds.length, 0);
+    assert.equal(result.rejectedRepairs.length, 1);
+    assert.ok(result.rejectedRepairs[0].reason.includes("disallowed"));
+  },
+);
+
+Deno.test(
+  "mergeTargetedSessionRepairPatches rejects Spanish generic policy copy",
+  () => {
+    const originalSessions: GeneratedSession[] = [
+      {
+        ...session({
+          id: "w1-spanish-copy",
+          date: "2026-04-09",
+          type: "easyRun",
+          weekNumber: 2,
+        }),
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+    ];
+
+    const requestedSessionIds = ["w1-spanish-copy"];
+    const repairs: TargetedSessionRepairPatchItem[] = [{
+      sessionId: "w1-spanish-copy",
+      type: "easyRun",
+      coachNote: "Ajustado para coincidir con el entrenamiento apropiado de la fase.",
+      workoutTarget: easyWorkouts().easyTarget,
+    }];
+
+    const result = mergeTargetedSessionRepairPatches(
+      originalSessions,
+      requestedSessionIds,
+      repairs,
+      profile({ experience: "experience_intermediate", race: "race_half_marathon" }),
+      8,
+    );
+
+    assert.equal(result.acceptedSessionIds.length, 0);
+    assert.equal(result.rejectedRepairs.length, 1);
+    assert.ok(result.rejectedRepairs[0].reason.includes("disallowed"));
+  },
+);
+
+Deno.test(
+  "mergeTargetedSessionRepairPatches preserves original session identity fields",
+  () => {
+    const originalSessions: GeneratedSession[] = [
+      {
+        ...session({
+          id: "w1-preserve",
+          date: "2026-04-08",
+          type: "easyRun",
+          weekNumber: 4,
+        }),
+        coachNote: "Original note",
+        workoutTarget: easyWorkouts().easyTarget,
+      },
+    ];
+    const requestedSessionIds = ["w1-preserve"];
+    const repairs: TargetedSessionRepairPatchItem[] = [{
+      sessionId: "w1-preserve",
+      type: "longRun",
+      coachNote: "New note",
+      distanceKm: 18,
+      workoutTarget: easyWorkouts().longRunTarget,
+    }];
+
+    const result = mergeTargetedSessionRepairPatches(
+      originalSessions,
+      requestedSessionIds,
+      repairs,
+      profile({ experience: "experience_intermediate", race: "race_marathon" }),
+      12,
+    );
+    const patched = findSession(result.sessions, "w1-preserve");
+
+    assert.equal(patched.id, "w1-preserve");
+    assert.equal(patched.date, "2026-04-08");
+    assert.equal(patched.weekNumber, 4);
+    assert.equal(patched.type, "longRun");
+    assert.equal(patched.coachNote, "New note");
+  },
+);
+
+Deno.test(
   "normalizePeakLongRun uses coaching brief readiness when profile is missing experience",
   () => {
     const createSessions = (): GeneratedSession[] => [
@@ -5919,6 +6268,30 @@ function strideCount(sessions: GeneratedSession[]): number {
   return sessions.filter((item) =>
     (item.strideReps ?? 0) > 0 && (item.strideSeconds ?? 0) > 0
   ).length;
+}
+
+function easyWorkouts(): {
+  easyTarget: NonNullable<GeneratedSession["workoutTarget"]>;
+  longRunTarget: NonNullable<GeneratedSession["workoutTarget"]>;
+} {
+  return {
+    easyTarget: {
+      schemaVersion: 1,
+      type: "pace" as const,
+      zone: "easy",
+      paceMinSecPerKm: 390,
+      paceMaxSecPerKm: 420,
+      effortCue: "easy",
+    },
+    longRunTarget: {
+      schemaVersion: 1,
+      type: "pace" as const,
+      zone: "longRun",
+      paceMinSecPerKm: 450,
+      paceMaxSecPerKm: 510,
+      effortCue: "easy",
+    },
+  };
 }
 
 function findByDate(
