@@ -213,17 +213,6 @@ const StravaPaceZoneInputSchema = z.object({
   }
 });
 
-const StravaPaceZoneSchema = z.object({
-  paceMinSecPerKm: z.number().int().positive(),
-  paceMaxSecPerKm: z.number().int().positive(),
-}).strict().refine(
-  (zone) => zone.paceMinSecPerKm <= zone.paceMaxSecPerKm,
-  {
-    message: "paceMinSecPerKm must be <= paceMaxSecPerKm.",
-    path: ["paceMinSecPerKm"],
-  },
-);
-
 const StravaPaceZonesInputSchema = z.object({
   recovery: StravaPaceZoneInputSchema.optional(),
   easy: StravaPaceZoneInputSchema.optional(),

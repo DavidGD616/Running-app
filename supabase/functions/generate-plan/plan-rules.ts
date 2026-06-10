@@ -1520,11 +1520,9 @@ function taperRacePhasePolicy(experience: string): WorkoutPolicy {
 
 type CoachNoteLocale = "en" | "es";
 
-const STRAVA_RUNS_PER_WEEK_METRIC = "training_base_runs_per_week";
 const STRAVA_WEEKLY_VOLUME_METRIC = "training_base_weekly_km";
 const STRAVA_LONG_RUN_METRIC = "endurance_long_run_km";
 const STRAVA_WEEKLY_VOLUME_UNIT = "km_per_week";
-const STRAVA_RUNS_PER_WEEK_UNIT = "runs_per_week";
 const STRAVA_LONG_RUN_UNIT = "km";
 const STRAVA_EVIDENCE_GROUPS = ["trainingBase", "endurance"] as const;
 
@@ -1539,7 +1537,6 @@ const GUARDRAIL_BLOCKING_PEAK_LONG_RUN = new Set([
   "recovery_load_spike",
   "recovery_pace_uncertainty",
 ]);
-const WEEKLY_VOLUME_RAMP_HIGH_RISK_FACTOR = 1.0;
 const WEEKLY_VOLUME_RAMP_DEFAULT_FACTOR = 1.1;
 const LEG_STRENGTH_CATEGORIES = new Set([
   "lower_body",
@@ -1576,11 +1573,6 @@ function dataConfidence(profileData: Record<string, unknown>): string | null {
   if (profile == null) return null;
   const confidence = profile.dataConfidence;
   return typeof confidence === "string" ? confidence : null;
-}
-
-function hasHighConfidence(profileData: Record<string, unknown>): boolean {
-  const confidence = dataConfidence(profileData);
-  return confidence === "high" || confidence === "medium";
 }
 
 function recoveryGuardrails(profileData: Record<string, unknown>): string[] {
@@ -1677,16 +1669,6 @@ function latestEvidenceValue(
   return points.length > 0 ? points[0].value : null;
 }
 
-function stravaRunsPerWeek(
-  profileData: Record<string, unknown>,
-): number | null {
-  return latestEvidenceValue(
-    profileData,
-    STRAVA_RUNS_PER_WEEK_METRIC,
-    STRAVA_RUNS_PER_WEEK_UNIT,
-  );
-}
-
 function stravaWeeklyVolume(
   profileData: Record<string, unknown>,
 ): number | null {
@@ -1703,17 +1685,6 @@ function stravaLongRun(profileData: Record<string, unknown>): number | null {
     STRAVA_LONG_RUN_METRIC,
     STRAVA_LONG_RUN_UNIT,
   );
-}
-
-function acceptedRaceTargetDistance(
-  profileData: Record<string, unknown>,
-): number | null {
-  const target = objectOrNull(profileData.acceptedRaceTarget);
-  const distance = target?.distanceKm;
-  return typeof distance === "number" && Number.isFinite(distance) &&
-      distance > 0
-    ? distance
-    : null;
 }
 
 function baselineWeeklyVolumeProfile(

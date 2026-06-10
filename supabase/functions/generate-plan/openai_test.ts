@@ -212,14 +212,78 @@ const coachingBrief = {
   rationale: ["Used measured Strava training evidence."],
 };
 
-function parseUserPromptProfile(content: string): any {
-  return JSON.parse(sectionAfterLabel(content, "Runner profile"));
+type UserPromptPayload = {
+  [key: string]: unknown;
+  stravaCoachingProfile: Record<string, unknown>;
+  schedule: Record<string, unknown>;
+  goal: Record<string, unknown>;
+  acceptedRaceTarget: Record<string, unknown>;
+  fitness: Record<string, unknown> & {
+    stravaCoachingProfile: Record<string, unknown>;
+  };
+  manualFitness: Record<string, unknown>;
+};
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
-function parseUserPromptBrief(content: string): any {
-  return JSON.parse(
+function parseUserPromptProfile(content: string): UserPromptPayload {
+  const profile = JSON.parse(sectionAfterLabel(content, "Runner profile"));
+  if (!isObject(profile)) {
+    throw new Error("Runner profile section must be a JSON object.");
+  }
+
+  const profileFitness = isObject(profile.fitness) ? profile.fitness : {};
+
+  return {
+    stravaCoachingProfile: isObject(profile.stravaCoachingProfile)
+      ? profile.stravaCoachingProfile
+      : {},
+    schedule: isObject(profile.schedule) ? profile.schedule : {},
+    goal: isObject(profile.goal) ? profile.goal : {},
+    acceptedRaceTarget: isObject(profile.acceptedRaceTarget)
+      ? profile.acceptedRaceTarget
+      : {},
+    fitness: {
+      ...profileFitness,
+      stravaCoachingProfile: isObject(profileFitness.stravaCoachingProfile)
+        ? profileFitness.stravaCoachingProfile
+        : {},
+    },
+    manualFitness: isObject(profile.manualFitness) ? profile.manualFitness : {},
+    ...profile,
+  };
+}
+
+function parseUserPromptBrief(content: string): UserPromptPayload {
+  const brief = JSON.parse(
     sectionAfterLabel(content, "Backend coaching brief", "Runner profile"),
   );
+
+  if (!isObject(brief)) {
+    throw new Error("Backend coaching brief section must be a JSON object.");
+  }
+
+  const briefFitness = isObject(brief.fitness) ? brief.fitness : {};
+  return {
+    stravaCoachingProfile: isObject(brief.stravaCoachingProfile)
+      ? brief.stravaCoachingProfile
+      : {},
+    schedule: isObject(brief.schedule) ? brief.schedule : {},
+    goal: isObject(brief.goal) ? brief.goal : {},
+    acceptedRaceTarget: isObject(brief.acceptedRaceTarget)
+      ? brief.acceptedRaceTarget
+      : {},
+    fitness: {
+      ...briefFitness,
+      stravaCoachingProfile: isObject(briefFitness.stravaCoachingProfile)
+        ? briefFitness.stravaCoachingProfile
+        : {},
+    },
+    manualFitness: isObject(brief.manualFitness) ? brief.manualFitness : {},
+    ...brief,
+  };
 }
 
 function sectionAfterLabel(

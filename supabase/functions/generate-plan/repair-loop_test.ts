@@ -64,7 +64,7 @@ Deno.test(
       attempt: number;
       requestIds: string[];
     }> = [];
-    const repairFn = async (
+    const repairFn = (
       _profileData: Record<string, unknown>,
       _totalWeeks: number,
       sessionsNeedingRepair: readonly GeneratedSession[],
@@ -80,7 +80,7 @@ Deno.test(
       });
 
       if (call === 1) {
-        return {
+        return Promise.resolve({
           schemaVersion: 1,
           repairs: [
             {
@@ -98,10 +98,10 @@ Deno.test(
               distanceKm: 5,
             },
           ],
-        };
+        });
       }
 
-      return {
+      return Promise.resolve({
         schemaVersion: 1,
         repairs: [{
           sessionId: "s3",
@@ -110,7 +110,7 @@ Deno.test(
           workoutTarget: LONG_RUN_TARGET,
           distanceKm: 10,
         }],
-      };
+      });
     };
 
     const initialSessions = [
@@ -200,7 +200,7 @@ Deno.test(
 Deno.test(
   "repair loop succeeds when final attempt fixes remaining violation despite extra patch rejection",
   async () => {
-    const repairFn = async (
+    const repairFn = (
       _profileData: Record<string, unknown>,
       _totalWeeks: number,
       _sessionsNeedingRepair: readonly GeneratedSession[],
@@ -210,7 +210,7 @@ Deno.test(
       _priorFailureReasons: Record<string, string>,
     ): Promise<TargetedSessionRepairPatchResponse> => {
       assert.equal(_priorFailureReasons.bad, undefined);
-      return {
+      return Promise.resolve({
         schemaVersion: 1,
         repairs: [
           {
@@ -228,7 +228,7 @@ Deno.test(
             distanceKm: 6,
           },
         ],
-      };
+      });
     };
 
     const result = await repairPolicyViolationsWithOpenAiPatches(
@@ -259,7 +259,7 @@ Deno.test(
 Deno.test(
   "repair loop returns failure after max attempts when patches stay invalid",
   async () => {
-    const repairFn = async (
+    const repairFn = (
       _profileData: Record<string, unknown>,
       _totalWeeks: number,
       _sessionsNeedingRepair: readonly GeneratedSession[],
@@ -268,7 +268,7 @@ Deno.test(
       _coachingBrief: unknown,
       _priorFailureReasons: Record<string, string>,
     ): Promise<TargetedSessionRepairPatchResponse> => {
-      return {
+      return Promise.resolve({
         schemaVersion: 1,
         repairs: [{
           sessionId: "bad",
@@ -277,7 +277,7 @@ Deno.test(
           workoutTarget: EASY_RUN_TARGET,
           distanceKm: 5,
         }],
-      };
+      });
     };
 
     const failureResult = await repairPolicyViolationsWithOpenAiPatches(
@@ -317,7 +317,7 @@ Deno.test(
   "repair loop retries after error and uses prior failure reasons",
   async () => {
     const calls: Array<{ priorFailureReasons: Record<string, string> }> = [];
-    const repairFn = async (
+    const repairFn = (
       _profileData: Record<string, unknown>,
       _totalWeeks: number,
       _sessionsNeedingRepair: readonly GeneratedSession[],
@@ -331,7 +331,7 @@ Deno.test(
         throw new Error("Transient API failure");
       }
 
-      return {
+      return Promise.resolve({
         schemaVersion: 1,
         repairs: [{
           sessionId: "retry",
@@ -340,7 +340,7 @@ Deno.test(
           workoutTarget: EASY_RUN_TARGET,
           distanceKm: 6,
         }],
-      };
+      });
     };
 
     const result = await repairPolicyViolationsWithOpenAiPatches(
