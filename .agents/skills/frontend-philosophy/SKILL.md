@@ -1,7 +1,7 @@
 ---
 name: frontend-philosophy
 description: >
-  Apply RunFlow-specific UI and interaction conventions for Flutter screens and
+  Apply project-specific UI and interaction conventions for Flutter screens and
   widgets when editing user-facing code.
 ---
 
