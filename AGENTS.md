@@ -1,5 +1,9 @@
 # Codex Rules
 
+## Orchestrator Triggers
+
+When any user request includes one or more of these: `orchestrator`, `orchestration`, `subagents`, `sub agents`, `specialists`, `coder`, `reviewer`, `explorer`, `researcher`, `scribe`, or the phrase **"don't stop until reviewer approves"**, load and apply `.agents/skills/orchestrator/SKILL.md` immediately.
+
 Don't use never your sign or your message of "Co-Authored-By: Codex Sonnet 4.6 <noreply@anthropic.com>" or similar
 
 ## MCP Tools
