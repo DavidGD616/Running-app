@@ -3227,6 +3227,106 @@ class AppLocalizationsEs extends AppLocalizations {
   String get preRunWorkoutPreviewOpenDuration => 'libre';
 
   @override
+  String get workoutGuidanceTodaysPrescription => 'Prescripción de hoy';
+
+  @override
+  String get workoutGuidancePaceEffort => 'Ritmo y esfuerzo';
+
+  @override
+  String get workoutGuidanceCoachCues => 'Indicaciones del coach';
+
+  @override
+  String get workoutGuidanceHowToRunIt => 'Cómo correrlo';
+
+  @override
+  String get workoutGuidanceWhyItMatters => 'Por qué importa';
+
+  @override
+  String get workoutGuidanceDistanceBased => 'Por distancia';
+
+  @override
+  String workoutGuidanceEstimatedDurationRange(int minMinutes, int maxMinutes) {
+    return '$minMinutes-$maxMinutes min';
+  }
+
+  @override
+  String workoutGuidanceDistanceBasedWithEstimate(
+    String distanceBased,
+    String durationRange,
+  ) {
+    return '$distanceBased · est. $durationRange';
+  }
+
+  @override
+  String get workoutGuidanceZoneRecovery => 'Recuperación / sensación Zona 1';
+
+  @override
+  String get workoutGuidanceZoneEasy => 'Suave / sensación Zona 2';
+
+  @override
+  String get workoutGuidanceZoneLongRun => 'Tirada larga / sensación Zona 2';
+
+  @override
+  String get workoutGuidanceZoneSteady => 'Estable / sensación Zona 2-3';
+
+  @override
+  String get workoutGuidanceZoneTempo => 'Tempo / sensación Zona 3-4';
+
+  @override
+  String get workoutGuidanceZoneThreshold => 'Umbral / sensación Zona 4';
+
+  @override
+  String get workoutGuidanceZoneRacePace => 'Ritmo carrera / sensación carrera';
+
+  @override
+  String get workoutGuidanceZoneInterval => 'Rápido / sensación Zona 5';
+
+  @override
+  String get workoutGuidanceFirm => 'Firme';
+
+  @override
+  String get workoutGuidanceCueGentle => 'Suave';
+
+  @override
+  String get workoutGuidanceCueConversational => 'Conversacional';
+
+  @override
+  String get workoutGuidanceCueControlled => 'Controlado';
+
+  @override
+  String get workoutGuidanceCueComposed => 'Fuerte pero compuesto';
+
+  @override
+  String get workoutGuidanceCueFast => 'Rápido, sin descontrol';
+
+  @override
+  String workoutGuidancePaceRange(String label, String paceRange, String cue) {
+    return '$label · $paceRange · $cue';
+  }
+
+  @override
+  String workoutGuidanceEffortOnly(String label, String cue) {
+    return '$label · $cue';
+  }
+
+  @override
+  String get workoutGuidanceOpenMeasure => 'Libre';
+
+  @override
+  String workoutGuidanceRepeatMeasure(int reps, String work, String recovery) {
+    return '$reps x $work · $recovery recuperación';
+  }
+
+  @override
+  String get workoutGuidanceDefaultHow =>
+      'Sigue cada bloque en orden y mantén el esfuerzo controlado.';
+
+  @override
+  String workoutGuidanceWhyForSession(String sessionType) {
+    return 'Este entrenamiento de $sessionType desarrolla forma con un propósito claro y una carga intencional.';
+  }
+
+  @override
   String get workoutOptionsTitle => 'Opciones de Entrenamiento';
 
   @override

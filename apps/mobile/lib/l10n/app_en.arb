@@ -3057,6 +3057,127 @@
   "preRunWorkoutPreviewOpenDuration": "open",
   "@preRunWorkoutPreviewOpenDuration": { "description": "Fallback label when a workout preview block has no duration or distance target" },
 
+  "workoutGuidanceTodaysPrescription": "Today's Prescription",
+  "@workoutGuidanceTodaysPrescription": { "description": "Section title for the coached workout prescription" },
+
+  "workoutGuidancePaceEffort": "Pace & Effort",
+  "@workoutGuidancePaceEffort": { "description": "Section title for pace and effort guidance" },
+
+  "workoutGuidanceCoachCues": "Coach Cues",
+  "@workoutGuidanceCoachCues": { "description": "Section title for coached workout cues" },
+
+  "workoutGuidanceHowToRunIt": "How to run it",
+  "@workoutGuidanceHowToRunIt": { "description": "Label for execution guidance" },
+
+  "workoutGuidanceWhyItMatters": "Why it matters",
+  "@workoutGuidanceWhyItMatters": { "description": "Label for workout rationale" },
+
+  "workoutGuidanceDistanceBased": "Distance-based",
+  "@workoutGuidanceDistanceBased": { "description": "Label for a workout driven by distance instead of planned duration" },
+
+  "workoutGuidanceEstimatedDurationRange": "{minMinutes}-{maxMinutes} min",
+  "@workoutGuidanceEstimatedDurationRange": {
+    "description": "Estimated duration range in minutes",
+    "placeholders": {
+      "minMinutes": { "type": "int" },
+      "maxMinutes": { "type": "int" }
+    }
+  },
+
+  "workoutGuidanceDistanceBasedWithEstimate": "{distanceBased} · est. {durationRange}",
+  "@workoutGuidanceDistanceBasedWithEstimate": {
+    "description": "Distance-based label with estimated duration range",
+    "placeholders": {
+      "distanceBased": { "type": "String" },
+      "durationRange": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceZoneRecovery": "Recovery / Zone 1 feel",
+  "@workoutGuidanceZoneRecovery": { "description": "Recovery effort label" },
+
+  "workoutGuidanceZoneEasy": "Easy / Zone 2 feel",
+  "@workoutGuidanceZoneEasy": { "description": "Easy effort label" },
+
+  "workoutGuidanceZoneLongRun": "Long run / Zone 2 feel",
+  "@workoutGuidanceZoneLongRun": { "description": "Long run effort label" },
+
+  "workoutGuidanceZoneSteady": "Steady / Zone 2-3 feel",
+  "@workoutGuidanceZoneSteady": { "description": "Steady effort label" },
+
+  "workoutGuidanceZoneTempo": "Tempo / Zone 3-4 feel",
+  "@workoutGuidanceZoneTempo": { "description": "Tempo effort label" },
+
+  "workoutGuidanceZoneThreshold": "Threshold / Zone 4 feel",
+  "@workoutGuidanceZoneThreshold": { "description": "Threshold effort label" },
+
+  "workoutGuidanceZoneRacePace": "Race pace / race feel",
+  "@workoutGuidanceZoneRacePace": { "description": "Race pace effort label" },
+
+  "workoutGuidanceZoneInterval": "Fast / Zone 5 feel",
+  "@workoutGuidanceZoneInterval": { "description": "Interval effort label" },
+
+  "workoutGuidanceFirm": "Firm",
+  "@workoutGuidanceFirm": { "description": "Firm progression block label" },
+
+  "workoutGuidanceCueGentle": "Gentle",
+  "@workoutGuidanceCueGentle": { "description": "Recovery cue" },
+
+  "workoutGuidanceCueConversational": "Conversational",
+  "@workoutGuidanceCueConversational": { "description": "Easy aerobic cue" },
+
+  "workoutGuidanceCueControlled": "Controlled",
+  "@workoutGuidanceCueControlled": { "description": "Steady effort cue" },
+
+  "workoutGuidanceCueComposed": "Strong but composed",
+  "@workoutGuidanceCueComposed": { "description": "Quality effort cue" },
+
+  "workoutGuidanceCueFast": "Fast, not frantic",
+  "@workoutGuidanceCueFast": { "description": "Fast repetition cue" },
+
+  "workoutGuidancePaceRange": "{label} · {paceRange} · {cue}",
+  "@workoutGuidancePaceRange": {
+    "description": "Zone guidance with pace range",
+    "placeholders": {
+      "label": { "type": "String" },
+      "paceRange": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceEffortOnly": "{label} · {cue}",
+  "@workoutGuidanceEffortOnly": {
+    "description": "Zone guidance without pace range",
+    "placeholders": {
+      "label": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceOpenMeasure": "Open",
+  "@workoutGuidanceOpenMeasure": { "description": "Fallback block measure when no duration or distance is available" },
+
+  "workoutGuidanceRepeatMeasure": "{reps} x {work} · {recovery} recovery",
+  "@workoutGuidanceRepeatMeasure": {
+    "description": "Repeated workout block measure",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "work": { "type": "String" },
+      "recovery": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceDefaultHow": "Follow each block in order and keep the effort controlled.",
+  "@workoutGuidanceDefaultHow": { "description": "Fallback workout execution cue" },
+
+  "workoutGuidanceWhyForSession": "This {sessionType} builds fitness with a clear purpose while keeping the workload intentional.",
+  "@workoutGuidanceWhyForSession": {
+    "description": "Workout rationale by session type",
+    "placeholders": {
+      "sessionType": { "type": "String" }
+    }
+  },
+
   "workoutOptionsTitle": "Workout Options",
   "@workoutOptionsTitle": { "description": "Title of the workout options bottom sheet" },
 

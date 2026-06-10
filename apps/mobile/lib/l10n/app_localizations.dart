@@ -5832,6 +5832,177 @@ abstract class AppLocalizations {
   /// **'open'**
   String get preRunWorkoutPreviewOpenDuration;
 
+  /// Section title for the coached workout prescription
+  ///
+  /// In en, this message translates to:
+  /// **'Today\'s Prescription'**
+  String get workoutGuidanceTodaysPrescription;
+
+  /// Section title for pace and effort guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Pace & Effort'**
+  String get workoutGuidancePaceEffort;
+
+  /// Section title for coached workout cues
+  ///
+  /// In en, this message translates to:
+  /// **'Coach Cues'**
+  String get workoutGuidanceCoachCues;
+
+  /// Label for execution guidance
+  ///
+  /// In en, this message translates to:
+  /// **'How to run it'**
+  String get workoutGuidanceHowToRunIt;
+
+  /// Label for workout rationale
+  ///
+  /// In en, this message translates to:
+  /// **'Why it matters'**
+  String get workoutGuidanceWhyItMatters;
+
+  /// Label for a workout driven by distance instead of planned duration
+  ///
+  /// In en, this message translates to:
+  /// **'Distance-based'**
+  String get workoutGuidanceDistanceBased;
+
+  /// Estimated duration range in minutes
+  ///
+  /// In en, this message translates to:
+  /// **'{minMinutes}-{maxMinutes} min'**
+  String workoutGuidanceEstimatedDurationRange(int minMinutes, int maxMinutes);
+
+  /// Distance-based label with estimated duration range
+  ///
+  /// In en, this message translates to:
+  /// **'{distanceBased} · est. {durationRange}'**
+  String workoutGuidanceDistanceBasedWithEstimate(
+    String distanceBased,
+    String durationRange,
+  );
+
+  /// Recovery effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery / Zone 1 feel'**
+  String get workoutGuidanceZoneRecovery;
+
+  /// Easy effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Easy / Zone 2 feel'**
+  String get workoutGuidanceZoneEasy;
+
+  /// Long run effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Long run / Zone 2 feel'**
+  String get workoutGuidanceZoneLongRun;
+
+  /// Steady effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Steady / Zone 2-3 feel'**
+  String get workoutGuidanceZoneSteady;
+
+  /// Tempo effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo / Zone 3-4 feel'**
+  String get workoutGuidanceZoneTempo;
+
+  /// Threshold effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold / Zone 4 feel'**
+  String get workoutGuidanceZoneThreshold;
+
+  /// Race pace effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace / race feel'**
+  String get workoutGuidanceZoneRacePace;
+
+  /// Interval effort label
+  ///
+  /// In en, this message translates to:
+  /// **'Fast / Zone 5 feel'**
+  String get workoutGuidanceZoneInterval;
+
+  /// Firm progression block label
+  ///
+  /// In en, this message translates to:
+  /// **'Firm'**
+  String get workoutGuidanceFirm;
+
+  /// Recovery cue
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle'**
+  String get workoutGuidanceCueGentle;
+
+  /// Easy aerobic cue
+  ///
+  /// In en, this message translates to:
+  /// **'Conversational'**
+  String get workoutGuidanceCueConversational;
+
+  /// Steady effort cue
+  ///
+  /// In en, this message translates to:
+  /// **'Controlled'**
+  String get workoutGuidanceCueControlled;
+
+  /// Quality effort cue
+  ///
+  /// In en, this message translates to:
+  /// **'Strong but composed'**
+  String get workoutGuidanceCueComposed;
+
+  /// Fast repetition cue
+  ///
+  /// In en, this message translates to:
+  /// **'Fast, not frantic'**
+  String get workoutGuidanceCueFast;
+
+  /// Zone guidance with pace range
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · {paceRange} · {cue}'**
+  String workoutGuidancePaceRange(String label, String paceRange, String cue);
+
+  /// Zone guidance without pace range
+  ///
+  /// In en, this message translates to:
+  /// **'{label} · {cue}'**
+  String workoutGuidanceEffortOnly(String label, String cue);
+
+  /// Fallback block measure when no duration or distance is available
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get workoutGuidanceOpenMeasure;
+
+  /// Repeated workout block measure
+  ///
+  /// In en, this message translates to:
+  /// **'{reps} x {work} · {recovery} recovery'**
+  String workoutGuidanceRepeatMeasure(int reps, String work, String recovery);
+
+  /// Fallback workout execution cue
+  ///
+  /// In en, this message translates to:
+  /// **'Follow each block in order and keep the effort controlled.'**
+  String get workoutGuidanceDefaultHow;
+
+  /// Workout rationale by session type
+  ///
+  /// In en, this message translates to:
+  /// **'This {sessionType} builds fitness with a clear purpose while keeping the workload intentional.'**
+  String workoutGuidanceWhyForSession(String sessionType);
+
   /// Title of the workout options bottom sheet
   ///
   /// In en, this message translates to:

@@ -1202,6 +1202,72 @@
   "preRunWorkoutPreviewDistanceMeters": "{meters} m",
   "preRunWorkoutPreviewOpenDuration": "libre",
 
+  "workoutGuidanceTodaysPrescription": "Prescripción de hoy",
+  "workoutGuidancePaceEffort": "Ritmo y esfuerzo",
+  "workoutGuidanceCoachCues": "Indicaciones del coach",
+  "workoutGuidanceHowToRunIt": "Cómo correrlo",
+  "workoutGuidanceWhyItMatters": "Por qué importa",
+  "workoutGuidanceDistanceBased": "Por distancia",
+  "workoutGuidanceEstimatedDurationRange": "{minMinutes}-{maxMinutes} min",
+  "@workoutGuidanceEstimatedDurationRange": {
+    "placeholders": {
+      "minMinutes": { "type": "int" },
+      "maxMinutes": { "type": "int" }
+    }
+  },
+  "workoutGuidanceDistanceBasedWithEstimate": "{distanceBased} · est. {durationRange}",
+  "@workoutGuidanceDistanceBasedWithEstimate": {
+    "placeholders": {
+      "distanceBased": { "type": "String" },
+      "durationRange": { "type": "String" }
+    }
+  },
+  "workoutGuidanceZoneRecovery": "Recuperación / sensación Zona 1",
+  "workoutGuidanceZoneEasy": "Suave / sensación Zona 2",
+  "workoutGuidanceZoneLongRun": "Tirada larga / sensación Zona 2",
+  "workoutGuidanceZoneSteady": "Estable / sensación Zona 2-3",
+  "workoutGuidanceZoneTempo": "Tempo / sensación Zona 3-4",
+  "workoutGuidanceZoneThreshold": "Umbral / sensación Zona 4",
+  "workoutGuidanceZoneRacePace": "Ritmo carrera / sensación carrera",
+  "workoutGuidanceZoneInterval": "Rápido / sensación Zona 5",
+  "workoutGuidanceFirm": "Firme",
+  "workoutGuidanceCueGentle": "Suave",
+  "workoutGuidanceCueConversational": "Conversacional",
+  "workoutGuidanceCueControlled": "Controlado",
+  "workoutGuidanceCueComposed": "Fuerte pero compuesto",
+  "workoutGuidanceCueFast": "Rápido, sin descontrol",
+  "workoutGuidancePaceRange": "{label} · {paceRange} · {cue}",
+  "@workoutGuidancePaceRange": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "paceRange": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+  "workoutGuidanceEffortOnly": "{label} · {cue}",
+  "@workoutGuidanceEffortOnly": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+  "workoutGuidanceOpenMeasure": "Libre",
+  "workoutGuidanceRepeatMeasure": "{reps} x {work} · {recovery} recuperación",
+  "@workoutGuidanceRepeatMeasure": {
+    "placeholders": {
+      "reps": { "type": "int" },
+      "work": { "type": "String" },
+      "recovery": { "type": "String" }
+    }
+  },
+  "workoutGuidanceDefaultHow": "Sigue cada bloque en orden y mantén el esfuerzo controlado.",
+  "workoutGuidanceWhyForSession": "Este entrenamiento de {sessionType} desarrolla forma con un propósito claro y una carga intencional.",
+  "@workoutGuidanceWhyForSession": {
+    "placeholders": {
+      "sessionType": { "type": "String" }
+    }
+  },
+
   "workoutOptionsTitle": "Opciones de Entrenamiento",
   "workoutOptionsSkipWorkout": "Omitir Entrenamiento",
   "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana",
