@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element, unused_element_parameter
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -21,6 +23,8 @@ import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
+import '../../../workout_guidance/presentation/widgets/coached_workout_guidance_view.dart';
+import '../../../workout_guidance/presentation/workout_guidance_presenter.dart';
 
 // ── Navigation args ───────────────────────────────────────────────────────────
 
@@ -961,15 +965,6 @@ class SessionDetailScreen extends ConsumerWidget {
     final status = freshSession.status;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final target = _selectedWorkoutTarget(freshSession);
-    final targetRange = _formatTargetRange(target, unitSystem, l10n);
-    final targetEffortCue = _selectedTargetEffortLabel(
-      freshSession,
-      target,
-      l10n,
-    );
-    final showTargetGuidance = targetRange != null || targetEffortCue != null;
-
     final title = _sessionTitle(freshSession.type, l10n);
     final categoryLabel = _categoryLabel(freshSession.type.category, l10n);
     final distanceText = freshSession.distanceKm != null
@@ -979,10 +974,11 @@ class SessionDetailScreen extends ConsumerWidget {
     final description = freshSession.description?.isNotEmpty == true
         ? freshSession.description!
         : _sessionDescription(freshSession, unitSystem, l10n);
-    final phases =
-        freshSession.workoutSteps.isNotEmpty || freshSession.phases.isNotEmpty
-        ? _structuredPhasesFor(l10n, freshSession, unitSystem)
-        : _phasesFor(l10n, freshSession, unitSystem);
+    final coachedGuidance = WorkoutGuidancePresenter(
+      l10n: l10n,
+      unitSystem: unitSystem,
+      paceZones: plan?.paceZones,
+    ).fromTrainingSession(freshSession);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -1054,112 +1050,7 @@ class SessionDetailScreen extends ConsumerWidget {
                     ),
                   const SizedBox(height: AppSpacing.xl),
 
-                  if (showTargetGuidance) ...[
-                    Text(
-                      l10n.workoutTargetGuidanceLabel,
-                      style: AppTypography.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(AppSpacing.base),
-                      decoration: BoxDecoration(
-                        color: AppColors.backgroundCard,
-                        borderRadius: AppRadius.borderLg,
-                        border: Border.all(color: AppColors.borderDefault),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          if (targetRange != null)
-                            Text(
-                              '${l10n.sessionDetailTargetRangeLabel}: $targetRange',
-                              style: AppTypography.bodyLarge,
-                            ),
-                          if (targetEffortCue != null) ...[
-                            if (targetRange != null)
-                              const SizedBox(height: AppSpacing.xs),
-                            Text(
-                              '${l10n.sessionDetailEffortCueLabel}: $targetEffortCue',
-                              style: AppTypography.bodyLarge,
-                            ),
-                          ],
-                          const SizedBox(height: AppSpacing.sm),
-                          Text(
-                            l10n.sessionDetailTargetGuidanceNote,
-                            style: AppTypography.bodyMedium.copyWith(
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xl),
-                  ],
-
-                  // ── Stat tiles ─────────────────────────────────
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _StatTile(
-                          iconAsset: 'assets/icons/route.svg',
-                          label: l10n.sessionDetailTotalDistanceLabel,
-                          value: freshSession.distanceKm != null
-                              ? UnitFormatter.formatDistanceLabel(
-                                  freshSession.distanceKm!,
-                                  unitSystem,
-                                  l10n,
-                                )
-                              : '—',
-                        ),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Expanded(
-                        child: _StatTile(
-                          iconAsset: 'assets/icons/stopwatch.svg',
-                          label: l10n.sessionDetailEstDurationLabel,
-                          value: freshSession.durationMinutes != null
-                              ? UnitFormatter.formatDuration(
-                                  freshSession.durationMinutes!,
-                                  l10n,
-                                )
-                              : '—',
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.xl),
-
-                  // ── Workout Structure ──────────────────────────
-                  if (phases.isNotEmpty) ...[
-                    Text(
-                      l10n.sessionDetailWorkoutStructure,
-                      style: AppTypography.titleLarge,
-                    ),
-                    const SizedBox(height: AppSpacing.md),
-                    ...phases.asMap().entries.map((entry) {
-                      final index = entry.key;
-                      final phase = entry.value;
-                      final isLast = index == phases.length - 1;
-                      final iconColor = _phaseIconColor(
-                        phase.type,
-                        freshSession,
-                      );
-                      return _PhaseItem(
-                        iconAsset: phase.iconAsset,
-                        iconBgColor: iconColor.withValues(alpha: 0.08),
-                        iconColor: iconColor,
-                        title: phase.title,
-                        duration: phase.duration,
-                        note: phase.note,
-                        recoveryNote: phase.recoveryNote,
-                        cardBorderColor: null,
-                        isLast: isLast,
-                        status: status,
-                        isMainPhase: phase.type == _PT.main,
-                      );
-                    }),
-                  ],
+                  CoachedWorkoutGuidanceView(guidance: coachedGuidance),
                 ],
               ),
             ),

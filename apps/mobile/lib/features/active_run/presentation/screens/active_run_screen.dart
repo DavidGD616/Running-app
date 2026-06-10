@@ -1043,7 +1043,7 @@ class _WorkoutFocusPanel extends StatelessWidget {
         phases: [
           l10n.activeRunEasyBlock,
           l10n.activeRunSteadyBlock,
-          l10n.activeRunStrongBlock,
+          l10n.workoutGuidanceFirm,
         ],
       );
     }
@@ -1101,18 +1101,18 @@ class _WorkoutFocusPanel extends StatelessWidget {
 
   int _progressionIndex(ActiveRunTimelineBlock? block) {
     if (block != null) {
-      return switch (block.kind) {
-        ActiveRunBlockKind.warmUp => 0,
-        ActiveRunBlockKind.work => 1,
-        ActiveRunBlockKind.recovery => 1,
-        ActiveRunBlockKind.stride => 1,
-        ActiveRunBlockKind.coolDown => 2,
-      };
+      final zone = block.target?.zone;
+      if (zone == TargetZone.easy || zone == TargetZone.recovery) return 0;
+      if (zone == TargetZone.steady || zone == TargetZone.longRun) return 1;
+      if (zone == TargetZone.tempo ||
+          zone == TargetZone.threshold ||
+          zone == TargetZone.racePace ||
+          zone == TargetZone.interval) {
+        return 2;
+      }
+      return block.kind == ActiveRunBlockKind.coolDown ? 2 : 0;
     }
-    final cycle = DateTime.now().second % 45;
-    if (cycle < 15) return 0;
-    if (cycle < 30) return 1;
-    return 2;
+    return 0;
   }
 
   String _blockLabel(
