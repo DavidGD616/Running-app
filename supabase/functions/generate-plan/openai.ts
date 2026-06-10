@@ -5,7 +5,10 @@ import {
   type GeneratedSession,
   StravaCoachingProfileInputSchema,
   type TargetedSessionRepairResponse,
+  type TargetedSessionRepairPatchResponse,
   targetedSessionRepairResponseJsonSchema,
+  TargetedSessionRepairPatchResponseSchema,
+  targetedSessionRepairPatchResponseJsonSchema,
   TargetedSessionRepairResponseSchema,
   trainingPlanResponseJsonSchema,
 } from "./schema.ts";
@@ -14,6 +17,7 @@ import type { SessionTypePolicyViolation } from "./plan-rules.ts";
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
 const TARGETED_SESSION_REPAIR_SCHEMA_NAME = "targeted_session_repair";
+const TARGETED_SESSION_REPAIR_PATCH_SCHEMA_NAME = "targeted_session_repair_patch";
 
 type SupportedLocale = "en" | "es";
 
@@ -154,6 +158,8 @@ const SAFE_COACHING_BRIEF_KEYS = [
   "constraints",
   "rationale",
 ] as const;
+
+export type TargetedSessionRepairPatchPriorFailurePayload = Record<string, string>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value != null && typeof value === "object" && !Array.isArray(value);
@@ -636,6 +642,119 @@ ${coachLanguageInstruction(locale)}
 Return one complete JSON object matching the strict JSON schema exactly.`;
 }
 
+function phaseGoalLanguage(
+  phase: string,
+  coachingBrief: CoachingBriefForPrompt | null,
+): string {
+  const phaseStrategyCandidate = isRecord(coachingBrief)
+    ? coachingBrief.phaseStrategy
+    : undefined;
+  if (!Array.isArray(phaseStrategyCandidate)) {
+    return `For ${phase}, choose the coaching emphasis most aligned with current readiness and phase progression.`;
+  }
+
+  const matchedPhase = phaseStrategyCandidate.find((item) => {
+    if (!isRecord(item)) return false;
+    return item.phase === phase && typeof item.focus === "string";
+  }) as { focus?: unknown } | undefined;
+  if (matchedPhase == null) {
+    return `For ${phase}, choose the coaching emphasis most aligned with current readiness and phase progression.`;
+  }
+
+  return String(matchedPhase.focus);
+}
+
+function buildTargetedRepairPayloadContext(
+  coachingBrief: CoachingBriefForPrompt | null,
+): string {
+  if (coachingBrief == null) {
+    return "No coachingBrief was provided for this repair pass.";
+  }
+  const briefRecord = isRecord(coachingBrief) ? coachingBrief : null;
+  if (briefRecord == null) {
+    return "No coachingBrief was provided for this repair pass.";
+  }
+
+  const raceType = briefRecord.raceType ?? "unknown";
+  const readiness = briefRecord.readinessLevel;
+  const confidence = briefRecord.confidence;
+
+  return `Race/readiness context: raceType=${raceType}, readiness=${readiness}, confidence=${confidence}, currentVolumeKmPerWeek=${briefRecord.currentVolumeKmPerWeek}, maxWeeklyVolumeKm=${briefRecord.maxWeeklyVolumeKm}, longRunCeilingKm=${briefRecord.longRunCeilingKm}, currentRunsPerWeek=${briefRecord.currentRunsPerWeek}, recentLongRunKm=${briefRecord.recentLongRunKm}`;
+}
+
+function buildTargetedRepairPatchPrompt(
+  totalWeeks: number,
+  locale: SupportedLocale,
+): string {
+  return `You are an expert running coach and plan editor. Perform a phase-aware targeted repair PATCH pass, not a full plan regeneration.
+
+This app is phone-first. Use effort-based guidance, duration, distance, and mobile-readable coaching cues.
+
+Critical repair constraints:
+- totalWeeks is ${totalWeeks}. Preserve session ids, date, and weekNumber exactly in all repaired sessions.
+- Repair only the sessions explicitly listed in "Sessions needing repair" and return changes as targeted PATCH objects.
+- Return one complete JSON object matching the strict JSON schema exactly.
+- Do not regenerate or reorder other sessions.
+- For each repaired session, set the type to one of that item's allowedTypes.
+- Prefer recommendedType for type; only choose another allowedType when there is a coaching-specific reason.
+- Do not describe backend enforcement or say that edits were made to satisfy a policy.
+- Explicitly avoid generic phraseology such as "Adjusted to match phase-appropriate training" or "phase-appropriate training" in coach notes.
+
+${coachLanguageInstruction(locale)}
+
+Output schema must include a \"repairs\" array where each item is scoped to one session.`;
+}
+
+function buildTargetedRepairPatchViolationPayload(
+  violations: readonly SessionTypePolicyViolation[],
+  sessionsNeedingRepair: readonly GeneratedSession[],
+  priorFailureReasons: TargetedSessionRepairPatchPriorFailurePayload = {},
+  coachingBrief: CoachingBriefForPrompt | null = null,
+): Array<
+  {
+    sessionId: string;
+    date: string;
+    weekNumber: number;
+    phase: string;
+    phaseGoalLanguage: string;
+    raceReadinessContext: string;
+    currentType: string;
+    allowedTypes: string[];
+    recommendedType: string;
+    originalSession: GeneratedSession;
+    priorFailureReason?: string;
+    reason: string;
+  }
+> {
+  const sessionsById = new Map(
+    sessionsNeedingRepair.map((session) => [session.id, session]),
+  );
+
+  return violations.map((violation) => {
+    const originalSession = sessionsById.get(violation.sessionId);
+    if (originalSession == null) {
+      throw new Error(
+        `Missing original session for targeted repair patch: ${violation.sessionId}`,
+      );
+    }
+
+    return {
+      sessionId: violation.sessionId,
+      date: violation.date,
+      weekNumber: violation.weekNumber,
+      phase: violation.phase,
+      phaseGoalLanguage: phaseGoalLanguage(violation.phase, coachingBrief),
+      raceReadinessContext: buildTargetedRepairPayloadContext(coachingBrief),
+      currentType: violation.currentType,
+      allowedTypes: violation.allowedTypes,
+      recommendedType: violation.recommendedType,
+      originalSession,
+      reason: violation.reason,
+      priorFailureReason: priorFailureReasons[violation.sessionId],
+    };
+  });
+}
+
 function buildTargetedRepairViolationPayload(
   violations: readonly SessionTypePolicyViolation[],
 ): Array<
@@ -697,6 +816,46 @@ export function buildTargetedSessionRepairMessages(
   ];
 }
 
+export function buildTargetedSessionRepairPatchMessages(
+  profileData: ProfileForPlan,
+  totalWeeks: number,
+  sessionsNeedingRepair: readonly GeneratedSession[],
+  violations: readonly SessionTypePolicyViolation[],
+  locale: SupportedLocale = "en",
+  coachingBrief: CoachingBriefForPrompt | null = null,
+  priorFailureReasons: TargetedSessionRepairPatchPriorFailurePayload = {},
+): Array<{ role: "system" | "user" | "assistant"; content: string }> {
+  const sanitizedProfile = sanitizeProfileForOpenAi(profileData);
+  const sanitizedBrief = sanitizeCoachingBriefForOpenAi(coachingBrief);
+  const systemPrompt = buildTargetedRepairPatchPrompt(totalWeeks, locale);
+  const briefPayload = sanitizedBrief == null
+    ? "Backend coaching brief: null"
+    : `Backend coaching brief:\n${JSON.stringify(sanitizedBrief, null, 2)}`;
+  const repairPayload = buildTargetedRepairPatchViolationPayload(
+    violations,
+    sessionsNeedingRepair,
+    priorFailureReasons,
+    sanitizedBrief,
+  );
+
+  const userPrompt =
+    `${briefPayload}\n\nProfile context:\n${
+      JSON.stringify(sanitizedProfile, null, 2)
+    }\n\n` +
+    `totalWeeks:\n${totalWeeks}\n\n` +
+    `Sessions needing repair:\n${
+      JSON.stringify(sessionsNeedingRepair, null, 2)
+    }\n\n` +
+    `Session repairs to apply:\n${
+      JSON.stringify(repairPayload, null, 2)
+    }`;
+
+  return [
+    { role: "system", content: systemPrompt },
+    { role: "user", content: userPrompt },
+  ];
+}
+
 export function parseTargetedSessionRepairContent(
   content: string | null | undefined,
 ): TargetedSessionRepairResponse {
@@ -714,6 +873,25 @@ export function parseTargetedSessionRepairContent(
   }
 
   return TargetedSessionRepairResponseSchema.parse(raw);
+}
+
+export function parseTargetedSessionRepairPatchContent(
+  content: string | null | undefined,
+): TargetedSessionRepairPatchResponse {
+  if (!content) {
+    throw new Error("OpenAI returned no content");
+  }
+
+  let raw: unknown;
+  try {
+    raw = JSON.parse(content);
+  } catch (error) {
+    throw new Error(
+      `Failed to parse OpenAI repair patch response JSON: ${String(error)}`,
+    );
+  }
+
+  return TargetedSessionRepairPatchResponseSchema.parse(raw);
 }
 
 export function buildTargetedSessionRepairCompletionOptions(
@@ -750,6 +928,42 @@ export function buildTargetedSessionRepairCompletionOptions(
   };
 }
 
+export function buildTargetedSessionRepairPatchCompletionOptions(
+  profileData: ProfileForPlan,
+  totalWeeks: number,
+  sessionsNeedingRepair: readonly GeneratedSession[],
+  violations: readonly SessionTypePolicyViolation[],
+  locale: SupportedLocale = "en",
+  coachingBrief: CoachingBriefForPrompt | null = null,
+  priorFailureReasons: TargetedSessionRepairPatchPriorFailurePayload = {},
+  model: string | null = null,
+) {
+  const openAiModel = model ??
+    resolveOpenAiModel(Deno.env.get("OPENAI_MODEL") ?? undefined);
+  const messages = buildTargetedSessionRepairPatchMessages(
+    profileData,
+    totalWeeks,
+    sessionsNeedingRepair,
+    violations,
+    locale,
+    coachingBrief,
+    priorFailureReasons,
+  );
+
+  return {
+    model: openAiModel,
+    messages,
+    response_format: {
+      type: "json_schema" as const,
+      json_schema: {
+        name: TARGETED_SESSION_REPAIR_PATCH_SCHEMA_NAME,
+        strict: true,
+        schema: targetedSessionRepairPatchResponseJsonSchema,
+      },
+    },
+  };
+}
+
 export async function repairTargetedSessionsWithOpenAi(
   profileData: ProfileForPlan,
   totalWeeks: number,
@@ -774,6 +988,33 @@ export async function repairTargetedSessionsWithOpenAi(
 
   const content = completion.choices[0]?.message?.content;
   return parseTargetedSessionRepairContent(content);
+}
+
+export async function repairTargetedSessionPatchesWithOpenAi(
+  profileData: ProfileForPlan,
+  totalWeeks: number,
+  sessionsNeedingRepair: readonly GeneratedSession[],
+  violations: readonly SessionTypePolicyViolation[],
+  locale: SupportedLocale = "en",
+  coachingBrief: CoachingBriefForPrompt | null = null,
+  priorFailureReasons: TargetedSessionRepairPatchPriorFailurePayload = {},
+  model: string | null = null,
+): Promise<TargetedSessionRepairPatchResponse> {
+  const client = new OpenAI({ apiKey: requireEnv("OPENAI_API_KEY") });
+  const requestOptions = buildTargetedSessionRepairPatchCompletionOptions(
+    profileData,
+    totalWeeks,
+    sessionsNeedingRepair,
+    violations,
+    locale,
+    coachingBrief,
+    priorFailureReasons,
+    model,
+  );
+
+  const completion = await client.chat.completions.create(requestOptions);
+  const content = completion.choices[0]?.message?.content;
+  return parseTargetedSessionRepairPatchContent(content);
 }
 
 export function buildGeneratePlanMessages(
@@ -850,6 +1091,7 @@ export async function generatePlanFromProfile(
 }
 
 export {
+  targetedSessionRepairPatchResponseJsonSchema,
   targetedSessionRepairResponseJsonSchema,
   trainingPlanResponseJsonSchema,
 };

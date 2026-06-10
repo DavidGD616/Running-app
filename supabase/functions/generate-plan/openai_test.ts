@@ -2,10 +2,13 @@ import { strict as assert } from "node:assert";
 import {
   buildGeneratePlanMessages,
   buildTargetedSessionRepairCompletionOptions,
+  buildTargetedSessionRepairPatchCompletionOptions,
   buildTargetedSessionRepairMessages,
+  buildTargetedSessionRepairPatchMessages,
   deriveBackendEvidenceFromStravaSummaries,
   parseGeneratedPlanContent,
   parseTargetedSessionRepairContent,
+  parseTargetedSessionRepairPatchContent,
   resolveOpenAiModel,
   sanitizeProfileForOpenAi,
   trainingPlanResponseJsonSchema,
@@ -1183,5 +1186,193 @@ Deno.test(
       requestOptions.response_format.json_schema.strict,
       true,
     );
+  },
+);
+
+Deno.test(
+  "buildTargetedSessionRepairPatchMessages includes phase-aware patch context and prior failure reason",
+  () => {
+    const repairSessions: GeneratedSession[] = [{
+      ...parseProfile.sessions[0],
+      id: "w1-mon-repair",
+      type: "intervals",
+    } as GeneratedSession];
+    const violations: SessionTypePolicyViolation[] = [
+      {
+        code: "session_type_not_allowed_for_phase",
+        sessionId: "w1-mon-repair",
+        weekNumber: 1,
+        date: "2026-10-01",
+        currentType: "intervals",
+        phase: "base",
+        allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+        recommendedType: "easyRun",
+        reason: "intervals is not allowed in base; suggest easyRun.",
+      },
+    ];
+
+    const [systemMessage, userMessage] = buildTargetedSessionRepairPatchMessages(
+      messageProfile,
+      8,
+      repairSessions,
+      violations,
+      "en",
+      coachingBrief,
+      { "w1-mon-repair": "Initial fix was too intense for base phase." },
+    );
+
+    assert.equal(systemMessage.role, "system");
+    assert.equal(userMessage.role, "user");
+    assert.ok(systemMessage.content.includes("targeted repair PATCH pass"));
+    assert.ok(
+      systemMessage.content.includes("Repair only the sessions explicitly listed"),
+    );
+    assert.ok(
+      systemMessage.content.includes("not a full plan regeneration"),
+    );
+    assert.ok(
+      systemMessage.content.includes(
+        "For each repaired session, set the type to one of that item's allowedTypes.",
+      ),
+    );
+    assert.ok(
+      systemMessage.content.includes(
+        "Prefer recommendedType for type; only choose another allowedType",
+      ),
+    );
+    assert.ok(systemMessage.content.includes("avoid generic phraseology"));
+    assert.ok(systemMessage.content.includes("phase-appropriate training"));
+    assert.ok(userMessage.content.includes("phaseGoalLanguage"));
+    assert.ok(userMessage.content.includes("Protect current aerobic base"));
+    assert.ok(userMessage.content.includes("\"phase\": \"base\""));
+    assert.ok(userMessage.content.includes("\"currentType\": \"intervals\""));
+    assert.ok(userMessage.content.includes("\"allowedTypes\""));
+    assert.ok(userMessage.content.includes("\"recommendedType\": \"easyRun\""));
+    assert.ok(userMessage.content.includes("\"originalSession\""));
+    assert.ok(userMessage.content.includes("w1-mon-repair"));
+    assert.ok(
+      userMessage.content.includes(
+        "\"priorFailureReason\": \"Initial fix was too intense for base phase.\"",
+      ),
+    );
+  },
+);
+
+Deno.test(
+  "buildTargetedSessionRepairPatchCompletionOptions uses strict targeted patch schema",
+  () => {
+    const repairSessions: GeneratedSession[] = [{
+      ...parseProfile.sessions[0],
+      id: "w1-mon-repair",
+      type: "easyRun",
+    } as GeneratedSession];
+    const violations: SessionTypePolicyViolation[] = [
+      {
+        code: "session_type_not_allowed_for_phase",
+        sessionId: "w1-mon-repair",
+        weekNumber: 1,
+        date: "2026-10-01",
+        currentType: "thresholdRun",
+        phase: "base",
+        allowedTypes: ["easyRun", "recoveryRun", "longRun", "restDay"],
+        recommendedType: "easyRun",
+        reason: "thresholdRun is not allowed in base; suggest easyRun.",
+      },
+    ];
+
+    const requestOptions = buildTargetedSessionRepairPatchCompletionOptions(
+      messageProfile,
+      8,
+      repairSessions,
+      violations,
+      "en",
+      coachingBrief,
+      { "w1-mon-repair": "Previous attempt didn't satisfy policy." },
+      "gpt-5.4-mini",
+    );
+
+    assert.equal(requestOptions.response_format.type, "json_schema");
+    assert.equal(
+      requestOptions.response_format.json_schema.name,
+      "targeted_session_repair_patch",
+    );
+    assert.equal(requestOptions.response_format.json_schema.strict, true);
+  },
+);
+
+Deno.test("parseTargetedSessionRepairPatchContent accepts valid patch response", () => {
+  const valid = {
+    schemaVersion: 1,
+    repairs: [
+      {
+        sessionId: "w1-mon-repair",
+        type: "easyRun",
+        coachNote: "Keep this easy effort and focus on short, relaxed cadence.",
+        distanceKm: 10,
+        durationMinutes: 60,
+        targetZone: "easy",
+        warmUpMinutes: 10,
+        coolDownMinutes: 10,
+        intervalReps: 0,
+        intervalRepDistanceMeters: 0,
+        intervalRecoverySeconds: 0,
+        strideReps: 4,
+        strideSeconds: 20,
+        strideRecoverySeconds: 60,
+        workoutTarget: parseProfile.sessions[0].workoutTarget,
+      },
+    ],
+  };
+
+  const parsed = parseTargetedSessionRepairPatchContent(JSON.stringify(valid));
+
+  assert.equal(parsed.schemaVersion, 1);
+  assert.equal(parsed.repairs.length, 1);
+  assert.equal(parsed.repairs[0].sessionId, "w1-mon-repair");
+  assert.equal(parsed.repairs[0].type, "easyRun");
+});
+
+Deno.test(
+  "parseTargetedSessionRepairPatchContent rejects empty/missing content",
+  () => {
+    assert.throws(() => {
+      parseTargetedSessionRepairPatchContent(undefined);
+    }, /OpenAI returned no content/);
+
+    assert.throws(() => {
+      parseTargetedSessionRepairPatchContent("");
+    }, /OpenAI returned no content/);
+  },
+);
+
+Deno.test(
+  "parseTargetedSessionRepairPatchContent rejects blank coachNote",
+  () => {
+    const invalid = {
+      schemaVersion: 1,
+      repairs: [
+        {
+          sessionId: "w1-mon-repair",
+          type: "easyRun",
+          coachNote: "   ",
+          distanceKm: 10,
+          durationMinutes: 60,
+          targetZone: "easy",
+          warmUpMinutes: 10,
+          coolDownMinutes: 10,
+          intervalReps: 0,
+          intervalRepDistanceMeters: 0,
+          intervalRecoverySeconds: 0,
+          strideReps: 4,
+          strideSeconds: 20,
+          strideRecoverySeconds: 60,
+          workoutTarget: parseProfile.sessions[0].workoutTarget,
+        },
+      ],
+    };
+
+    assert.throws(() => {
+      parseTargetedSessionRepairPatchContent(JSON.stringify(invalid));
+    }, /String must contain at least 1 character|String must contain/);
   },
 );
