@@ -1848,6 +1848,30 @@ export function normalizeTrainingDayCount(
     .sort(compareSessionsByDate);
 }
 
+export function dropSessionsBeforePlanStartDate(
+  sessions: GeneratedSession[],
+  planStartDate?: string | null,
+): GeneratedSession[] {
+  const resolvedPlanStartDate = parsePlanStartDateValue(planStartDate);
+  const startDate = resolvedPlanStartDate == null
+    ? null
+    : parseDateOnly(resolvedPlanStartDate);
+  if (startDate == null) {
+    return sessions.map((session) => ({ ...session })).sort(
+      compareSessionsByDate,
+    );
+  }
+
+  return sessions
+    .filter((session) => {
+      const sessionDate = parseDateOnly(session.date);
+      return sessionDate == null ||
+        sessionDate.getTime() >= startDate.getTime();
+    })
+    .map((session) => ({ ...session }))
+    .sort(compareSessionsByDate);
+}
+
 export function normalizeWeekNumbersFromDates(
   sessions: GeneratedSession[],
   profileData: Record<string, unknown>,
