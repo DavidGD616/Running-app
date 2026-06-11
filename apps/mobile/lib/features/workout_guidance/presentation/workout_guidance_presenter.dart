@@ -135,7 +135,7 @@ class WorkoutGuidancePresenter {
     required int? coolDownMinutes,
   }) {
     final phases = workoutSteps.isNotEmpty
-        ? _phasesFromSteps(type, workoutSteps)
+        ? _phasesFromSteps(type, workoutSteps, distanceKm)
         : _fallbackPhases(
             type,
             durationMinutes,
@@ -180,11 +180,23 @@ class WorkoutGuidancePresenter {
   List<WorkoutGuidancePhase> _phasesFromSteps(
     SessionType type,
     List<WorkoutStep> steps,
+    double? distanceKm,
   ) {
     final phases = <WorkoutGuidancePhase>[];
+    final distanceMeasures = _distanceFirstWorkMeasures(
+      type,
+      steps,
+      distanceKm,
+    );
     var progressionWorkIndex = 0;
+    var workIndex = 0;
 
     for (final step in steps) {
+      String? measureOverride;
+      if (step.kind == WorkoutStepKind.work && distanceMeasures != null) {
+        measureOverride = distanceMeasures[workIndex];
+        workIndex += 1;
+      }
       if (step.kind == WorkoutStepKind.work &&
           type == SessionType.progressionRun) {
         final title = switch (progressionWorkIndex) {
@@ -193,23 +205,71 @@ class WorkoutGuidancePresenter {
           _ => l10n.workoutGuidanceFirm,
         };
         progressionWorkIndex += 1;
-        phases.add(_phase(step, title));
+        phases.add(_phase(step, title, measureOverride: measureOverride));
         continue;
       }
 
-      phases.add(_phase(step, _stepTitle(step, type)));
+      phases.add(
+        _phase(step, _stepTitle(step, type), measureOverride: measureOverride),
+      );
     }
 
     return phases;
   }
 
-  WorkoutGuidancePhase _phase(WorkoutStep step, String title) {
+  WorkoutGuidancePhase _phase(
+    WorkoutStep step,
+    String title, {
+    String? measureOverride,
+  }) {
     return WorkoutGuidancePhase(
       title: title,
-      measure: _stepMeasure(step),
+      measure: measureOverride ?? _stepMeasure(step),
       guidance: _stepGuidance(step),
       kind: step.kind,
     );
+  }
+
+  List<String>? _distanceFirstWorkMeasures(
+    SessionType type,
+    List<WorkoutStep> steps,
+    double? distanceKm,
+  ) {
+    if (distanceKm == null || distanceKm <= 0) return null;
+    if (!_usesDistanceFirstPhaseMeasures(type)) return null;
+
+    final workSteps = steps
+        .where((step) => step.kind == WorkoutStepKind.work)
+        .toList(growable: false);
+    if (workSteps.isEmpty) return null;
+    if (workSteps.any(
+      (step) => step.distanceMeters != null && step.distanceMeters! > 0,
+    )) {
+      return null;
+    }
+
+    final buckets = _splitMeters(distanceKm, workSteps.length);
+    return [
+      for (final meters in buckets)
+        UnitFormatter.formatWorkoutRepDistance(meters, unitSystem, l10n),
+    ];
+  }
+
+  bool _usesDistanceFirstPhaseMeasures(SessionType type) {
+    return switch (type) {
+      SessionType.progressionRun || SessionType.racePaceRun => true,
+      _ => false,
+    };
+  }
+
+  List<int> _splitMeters(double distanceKm, int parts) {
+    final totalMeters = (distanceKm * 1000).round();
+    final base = totalMeters ~/ parts;
+    final remainder = totalMeters % parts;
+    return [
+      for (var index = 0; index < parts; index++)
+        base + (index < remainder ? 1 : 0),
+    ];
   }
 
   List<WorkoutGuidancePhase> _fallbackPhases(

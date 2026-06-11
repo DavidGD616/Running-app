@@ -12,7 +12,9 @@ import 'package:running_app/features/training_plan/domain/models/workout_target.
 import 'package:running_app/features/training_plan/domain/models/workout_step.dart';
 import 'package:running_app/features/training_plan/presentation/training_plan_provider.dart';
 import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
+import 'package:running_app/core/utils/unit_formatter.dart';
 import 'package:running_app/l10n/app_localizations.dart';
+import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
 
 import '../../../helpers/activity_fixtures.dart';
 import '../../../helpers/workout_fixtures.dart';
@@ -257,6 +259,98 @@ void main() {
     expect(find.text(l10n.activeRunSteadyBlock), findsOneWidget);
     expect(find.text(l10n.workoutGuidanceFirm), findsOneWidget);
   });
+
+  testWidgets(
+    'progression steps with duration estimate show session distance measures',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'progression-distance-measure',
+        date: DateTime(2026, 4, 16, 7, 30),
+        type: SessionType.progressionRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 9,
+        durationMinutes: 45,
+        workoutSteps: const [
+          WorkoutStep.work(
+            duration: Duration(minutes: 15),
+            target: WorkoutTarget.effort(TargetZone.easy),
+          ),
+          WorkoutStep.work(
+            duration: Duration(minutes: 15),
+            target: WorkoutTarget.effort(TargetZone.steady),
+          ),
+          WorkoutStep.work(
+            duration: Duration(minutes: 15),
+            target: WorkoutTarget.effort(TargetZone.tempo),
+          ),
+        ],
+      );
+      final plan = buildTestTrainingPlan(sessions: [session]);
+
+      await tester.pumpWidget(wrapWithPlan(plan, session));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+      final expectedDistanceMeasure = UnitFormatter.formatWorkoutRepDistance(
+        3_000,
+        UnitSystem.km,
+        l10n,
+      );
+
+      expect(find.text(l10n.activeRunEasyBlock), findsOneWidget);
+      expect(find.text(l10n.activeRunSteadyBlock), findsOneWidget);
+      expect(find.text(l10n.workoutGuidanceFirm), findsOneWidget);
+      expect(find.text(expectedDistanceMeasure), findsNWidgets(3));
+      expect(find.textContaining('15 min'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'race-pace run with duration-only work step shows session distance measure',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'race-pace-distance-measure',
+        date: DateTime(2026, 4, 16, 7, 30),
+        type: SessionType.racePaceRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 8,
+        durationMinutes: 50,
+        workoutSteps: const [
+          WorkoutStep.warmUp(
+            duration: Duration(minutes: 10),
+            target: WorkoutTarget.effort(TargetZone.easy),
+          ),
+          WorkoutStep.work(
+            duration: Duration(minutes: 35),
+            target: WorkoutTarget.effort(TargetZone.racePace),
+          ),
+          WorkoutStep.coolDown(
+            duration: Duration(minutes: 5),
+            target: WorkoutTarget.effort(TargetZone.recovery),
+          ),
+        ],
+      );
+      final plan = buildTestTrainingPlan(sessions: [session]);
+
+      await tester.pumpWidget(wrapWithPlan(plan, session));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+      final expectedDistanceMeasure = UnitFormatter.formatWorkoutRepDistance(
+        8_000,
+        UnitSystem.km,
+        l10n,
+      );
+
+      expect(find.text(l10n.sessionTypeRacePaceRun), findsOneWidget);
+      expect(find.text(expectedDistanceMeasure), findsOneWidget);
+      expect(find.textContaining('35 min'), findsNothing);
+    },
+  );
 
   testWidgets(
     'distance-based session shows estimated duration from pace zones',
