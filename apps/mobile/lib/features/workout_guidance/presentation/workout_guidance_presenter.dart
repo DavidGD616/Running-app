@@ -649,8 +649,20 @@ class WorkoutGuidancePresenter {
 
   String _stepGuidance(WorkoutStep step) {
     final target = step.target;
-    if (target == null) return l10n.workoutGuidanceDefaultHow;
-    return zoneGuidance(target.zone);
+    if (target != null) return targetGuidance(target);
+
+    if (step.kind == WorkoutStepKind.repeat) {
+      final workTarget = _childStep(step, WorkoutStepKind.work)?.target;
+      if (workTarget != null) return targetGuidance(workTarget);
+
+      final strideTarget = _childStep(step, WorkoutStepKind.stride)?.target;
+      if (strideTarget != null) return targetGuidance(strideTarget);
+
+      final recoveryTarget = _childStep(step, WorkoutStepKind.recovery)?.target;
+      if (recoveryTarget != null) return targetGuidance(recoveryTarget);
+    }
+
+    return l10n.workoutGuidanceDefaultHow;
   }
 
   WorkoutStep? _childStep(WorkoutStep parent, WorkoutStepKind kind) {
