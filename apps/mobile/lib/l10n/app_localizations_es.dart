@@ -824,6 +824,16 @@ class AppLocalizationsEs extends AppLocalizations {
   String get scheduleStartDateNextMonday => 'Próximo lunes';
 
   @override
+  String scheduleStartDateLateWeekWarning(String startDate) {
+    return 'Los planes no pueden empezar en esa fecha. Tu plan empezará el $startDate.';
+  }
+
+  @override
+  String scheduleStartDateLateWeekWarningToday(String startDate) {
+    return 'Los planes no pueden empezar hoy. Tu plan empezará el $startDate.';
+  }
+
+  @override
   String get trainingDaysLabel => 'Días de entrenamiento por semana';
 
   @override

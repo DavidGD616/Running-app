@@ -261,6 +261,24 @@
   "scheduleStartDateToday": "Hoy",
   "scheduleStartDateTomorrow": "Mañana",
   "scheduleStartDateNextMonday": "Próximo lunes",
+  "scheduleStartDateLateWeekWarning": "Los planes no pueden empezar en esa fecha. Tu plan empezará el {startDate}.",
+  "@scheduleStartDateLateWeekWarning": {
+    "description": "Advertencia cuando la fecha inicial seleccionada cae en viernes/sábado/domingo",
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      }
+    }
+  },
+  "scheduleStartDateLateWeekWarningToday": "Los planes no pueden empezar hoy. Tu plan empezará el {startDate}.",
+  "@scheduleStartDateLateWeekWarningToday": {
+    "description": "Advertencia cuando se selecciona Hoy y cae en viernes/sábado/domingo",
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      }
+    }
+  },
   "trainingDaysLabel": "Días de entrenamiento por semana",
   "longRunDayLabel": "Día preferido para la carrera larga",
   "longRunDayHelper": "Este es el pilar de tu plan semanal",

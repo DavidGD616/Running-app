@@ -641,6 +641,26 @@
   "scheduleStartDateNextMonday": "Next Monday",
   "@scheduleStartDateNextMonday": { "description": "Onboarding plan start date option" },
 
+  "scheduleStartDateLateWeekWarning": "Plans can’t start on the selected date. Your plan will begin {startDate}.",
+  "@scheduleStartDateLateWeekWarning": {
+    "description": "Warning when raw onboarding start date falls on Fri/Sat/Sun",
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      }
+    }
+  },
+
+  "scheduleStartDateLateWeekWarningToday": "Plans can’t start today. Your plan will begin {startDate}.",
+  "@scheduleStartDateLateWeekWarningToday": {
+    "description": "Warning when onboarding user selects Today on Fri/Sat/Sun",
+    "placeholders": {
+      "startDate": {
+        "type": "String"
+      }
+    }
+  },
+
   "trainingDaysLabel": "Training days per week",
   "@trainingDaysLabel": { "description": "Section label on schedule screen" },
 

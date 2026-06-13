@@ -328,6 +328,166 @@ void main() {
     },
   );
 
+  testWidgets('late-week start date selection is normalized to next Monday', (
+    tester,
+  ) async {
+    final fixedNow = DateTime(2026, 6, 13, 9, 30); // Saturday
+    final draft = buildRunnerProfileDraft().copyWith(
+      schedule: const ScheduleProfileDraft(),
+    );
+    final notifier = _TestOnboardingNotifier(draft);
+    await tester.pumpWidget(
+      buildApp(
+        notifier: notifier,
+        mode: ScheduleFlowMode.onboarding,
+        now: fixedNow,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(ScheduleScreen));
+    final l10n = AppLocalizations.of(context)!;
+    final mondayWarningDate = DateFormat(
+      'EEEE, MMMM d',
+      const Locale('en').toLanguageTag(),
+    ).format(DateTime(2026, 6, 15));
+    final expectedWarning = l10n.scheduleStartDateLateWeekWarningToday(
+      mondayWarningDate,
+    );
+
+    await tester.tap(find.text('4'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mon'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time45min));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time90min));
+    await tester.pumpAndSettle();
+
+    final todayLabel = l10n.scheduleStartDateToday;
+    await tester.scrollUntilVisible(
+      find.text(todayLabel),
+      100,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.text(todayLabel));
+    await tester.pumpAndSettle();
+
+    expect(find.text(expectedWarning), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, l10n.continueButton));
+    await tester.pumpAndSettle();
+
+    expect(notifier.lastPlanStartDate, DateTime(2026, 6, 15));
+  });
+
+  testWidgets('late-week tomorrow selection shows generic warning', (
+    tester,
+  ) async {
+    final fixedNow = DateTime(2026, 6, 11, 9, 30); // Thursday
+    final draft = buildRunnerProfileDraft().copyWith(
+      schedule: const ScheduleProfileDraft(),
+    );
+    final notifier = _TestOnboardingNotifier(draft);
+    await tester.pumpWidget(
+      buildApp(
+        notifier: notifier,
+        mode: ScheduleFlowMode.onboarding,
+        now: fixedNow,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(ScheduleScreen));
+    final l10n = AppLocalizations.of(context)!;
+    final mondayWarningDate = DateFormat(
+      'EEEE, MMMM d',
+      const Locale('en').toLanguageTag(),
+    ).format(DateTime(2026, 6, 15));
+    final expectedWarning = l10n.scheduleStartDateLateWeekWarning(
+      mondayWarningDate,
+    );
+
+    await tester.tap(find.text('4'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Mon'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time45min));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time90min));
+    await tester.pumpAndSettle();
+
+    final tomorrowLabel = l10n.scheduleStartDateTomorrow;
+    await tester.scrollUntilVisible(
+      find.text(tomorrowLabel),
+      100,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.text(tomorrowLabel));
+    await tester.pumpAndSettle();
+
+    expect(find.text(expectedWarning), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, l10n.continueButton));
+    await tester.pumpAndSettle();
+
+    expect(notifier.lastPlanStartDate, DateTime(2026, 6, 15));
+  });
+
+  testWidgets('late-week warning localizes and submits next Monday in Spanish', (
+    tester,
+  ) async {
+    final fixedNow = DateTime(2026, 6, 13, 9, 30); // Saturday
+    final draft = buildRunnerProfileDraft().copyWith(
+      schedule: const ScheduleProfileDraft(),
+    );
+    final notifier = _TestOnboardingNotifier(draft);
+    await tester.pumpWidget(
+      buildApp(
+        notifier: notifier,
+        mode: ScheduleFlowMode.onboarding,
+        now: fixedNow,
+        locale: const Locale('es'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(ScheduleScreen));
+    final l10n = AppLocalizations.of(context)!;
+    final mondayWarningDate = DateFormat(
+      "EEEE d 'de' MMMM",
+      const Locale('es').toLanguageTag(),
+    ).format(DateTime(2026, 6, 15));
+    final expectedWarning = l10n.scheduleStartDateLateWeekWarningToday(
+      mondayWarningDate,
+    );
+
+    await tester.tap(find.text('4'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Lun'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time45min));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(l10n.time90min));
+    await tester.pumpAndSettle();
+
+    final todayLabel = l10n.scheduleStartDateToday;
+    await tester.scrollUntilVisible(
+      find.text(todayLabel),
+      100,
+      scrollable: find.byType(Scrollable),
+    );
+    await tester.tap(find.text(todayLabel));
+    await tester.pumpAndSettle();
+
+    expect(find.text(expectedWarning), findsOneWidget);
+
+    await tester.tap(find.widgetWithText(AppButton, l10n.continueButton));
+    await tester.pumpAndSettle();
+
+    expect(notifier.lastPlanStartDate, DateTime(2026, 6, 15));
+  });
+
   testWidgets('non-onboarding schedule mode hides start date controls', (
     tester,
   ) async {

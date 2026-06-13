@@ -1537,6 +1537,18 @@ abstract class AppLocalizations {
   /// **'Next Monday'**
   String get scheduleStartDateNextMonday;
 
+  /// Warning when raw onboarding start date falls on Fri/Sat/Sun
+  ///
+  /// In en, this message translates to:
+  /// **'Plans can’t start on the selected date. Your plan will begin {startDate}.'**
+  String scheduleStartDateLateWeekWarning(String startDate);
+
+  /// Warning when onboarding user selects Today on Fri/Sat/Sun
+  ///
+  /// In en, this message translates to:
+  /// **'Plans can’t start today. Your plan will begin {startDate}.'**
+  String scheduleStartDateLateWeekWarningToday(String startDate);
+
   /// Section label on schedule screen
   ///
   /// In en, this message translates to:

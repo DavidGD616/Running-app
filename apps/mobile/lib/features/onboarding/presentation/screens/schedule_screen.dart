@@ -62,6 +62,16 @@ List<PlanStartDateCandidate> buildPlanStartDateCandidates(DateTime date) {
   ];
 }
 
+bool isLateWeekPlanStartDate(DateTime date) {
+  return date.weekday == DateTime.friday ||
+      date.weekday == DateTime.saturday ||
+      date.weekday == DateTime.sunday;
+}
+
+DateTime effectivePlanStartDate(DateTime date) {
+  return isLateWeekPlanStartDate(date) ? resolveNextMondayDate(date) : date;
+}
+
 String _startDateOptionLocalizedLabel({
   required String key,
   required AppLocalizations l10n,
@@ -71,6 +81,23 @@ String _startDateOptionLocalizedLabel({
     _startDateOptionTomorrow => l10n.scheduleStartDateTomorrow,
     _ => l10n.scheduleStartDateNextMonday,
   };
+}
+
+PlanStartDateCandidate? _findPlanStartDateCandidateByKey({
+  required String? key,
+  required List<PlanStartDateCandidate> candidates,
+}) {
+  if (key == null) {
+    return null;
+  }
+
+  for (final candidate in candidates) {
+    if (candidate.key == key) {
+      return candidate;
+    }
+  }
+
+  return null;
 }
 
 String? _selectedStartDateKeyFromDate({
@@ -194,6 +221,9 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
     final now = planStartDateOnly(ref.read(timeSourceProvider).now());
     final localeTag = Localizations.localeOf(context).toLanguageTag();
     final dateFormat = DateFormat.yMMMd(localeTag);
+    final warningDateFormat = localeTag.startsWith('es')
+        ? DateFormat("EEEE d 'de' MMMM", localeTag)
+        : DateFormat('EEEE, MMMM d', localeTag);
     final planStartDateCandidates = buildPlanStartDateCandidates(now);
     final selectedStartDateKey = isOnboardingMode
         ? (_selectedStartDateKey ??
@@ -202,11 +232,35 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                 candidates: planStartDateCandidates,
               ))
         : null;
+    final selectedStartDateCandidate = isOnboardingMode
+        ? _findPlanStartDateCandidateByKey(
+            key: selectedStartDateKey,
+            candidates: planStartDateCandidates,
+          )
+        : null;
+    final lateWeekStartDate = selectedStartDateCandidate != null &&
+            isLateWeekPlanStartDate(selectedStartDateCandidate.date)
+        ? effectivePlanStartDate(selectedStartDateCandidate.date)
+        : null;
+    final lateWeekStartDateWarning = lateWeekStartDate == null
+        ? null
+        : warningDateFormat.format(lateWeekStartDate);
+    final lateWeekStartDateWarningText =
+        lateWeekStartDateWarning == null || selectedStartDateCandidate == null
+            ? null
+            : switch (selectedStartDateCandidate.key) {
+              _startDateOptionToday =>
+                l10n.scheduleStartDateLateWeekWarningToday(lateWeekStartDateWarning),
+              _ => l10n.scheduleStartDateLateWeekWarning(lateWeekStartDateWarning),
+            };
     final hasPlanDate = isOnboardingMode;
     final isComplete = _isComplete(
       requirePlanStartDate: hasPlanDate,
       selectedStartDateKey: selectedStartDateKey,
     );
+    final onboardingPlanStartDate = _planStartDate == null
+        ? null
+        : effectivePlanStartDate(_planStartDate!);
 
     final days = [
       OnboardingValues.dayMon,
@@ -356,6 +410,26 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                           ),
                         ),
                       ),
+                      if (lateWeekStartDateWarningText != null) ...[
+                        const SizedBox(height: AppSpacing.md),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: AppSpacing.base,
+                            vertical: AppSpacing.sm,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.backgroundCard,
+                            border: Border.all(color: AppColors.warning),
+                            borderRadius: AppRadius.borderMd,
+                          ),
+                          child: Text(
+                            lateWeekStartDateWarningText,
+                            style: AppTypography.caption.copyWith(
+                              color: AppColors.warning,
+                            ),
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                     ],
 
@@ -545,7 +619,7 @@ class _ScheduleScreenState extends ConsumerState<ScheduleScreen> {
                               weekendTime: _weekendTime!,
                               hardDays: _hardDays.toList(),
                               planStartDate: isOnboardingMode
-                                  ? _planStartDate
+                                  ? onboardingPlanStartDate
                                   : null,
                               clearPlanStartDate: !isOnboardingMode,
                             );
