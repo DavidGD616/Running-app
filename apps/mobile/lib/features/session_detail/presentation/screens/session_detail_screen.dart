@@ -1062,7 +1062,10 @@ class SessionDetailScreen extends ConsumerWidget {
               label: l10n.sessionDetailStartWorkout,
               onTap: () => context.push(
                 RouteNames.preRun,
-                extra: PreRunArgs.fromSession(freshSession),
+                extra: PreRunArgs.fromSession(
+                  freshSession,
+                  paceZones: plan?.paceZones,
+                ),
               ),
             ),
         ],

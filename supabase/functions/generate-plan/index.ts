@@ -590,7 +590,7 @@ Deno.serve(async (req) => {
     ...session,
     description: session.coachNote,
     status: "upcoming",
-    workoutSteps: buildWorkoutSteps(session),
+    workoutSteps: buildWorkoutSteps(session, safeGeneratedPlan.paceZones),
   }));
   const sessionsWithRaceDayInfo = raceDayDate == null ? sessionsWithSteps : [
     ...sessionsWithSteps,

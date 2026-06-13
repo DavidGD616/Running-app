@@ -5189,6 +5189,12 @@ abstract class AppLocalizations {
   /// **'CURRENT PACE'**
   String get activeRunCurrentPace;
 
+  /// Stable live pace label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'GUIDANCE PACE'**
+  String get activeRunGuidancePace;
+
   /// Compact target label in the collapsed active run Android notification
   ///
   /// In en, this message translates to:
@@ -5377,6 +5383,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'On target'**
   String get activeRunOnTarget;
+
+  /// Active run message while waiting for enough GPS data to show stable pace guidance
+  ///
+  /// In en, this message translates to:
+  /// **'Settling pace signal'**
+  String get activeRunPaceSettling;
+
+  /// Target pace range label on the active run screen
+  ///
+  /// In en, this message translates to:
+  /// **'Target {range}'**
+  String activeRunTargetRange(String range);
 
   /// Active run status for work blocks
   ///

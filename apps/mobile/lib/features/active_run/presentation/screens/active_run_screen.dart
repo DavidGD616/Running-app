@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:go_router/go_router.dart';
@@ -16,6 +17,7 @@ import '../active_run_controller.dart';
 import '../active_run_live_activity_mapper.dart';
 import '../active_run_live_activity_sync.dart';
 import '../active_run_timeline.dart';
+import '../../domain/live_pace_guidance.dart';
 import '../../domain/models/gps_state.dart';
 import '../run_live_activity_background_service.dart';
 import '../run_live_activity_bridge.dart';
@@ -166,6 +168,15 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     }
   }
 
+  void _playPaceGuidanceHaptic(LivePaceGuidanceResult guidance) {
+    if (guidance.action == LivePaceGuidanceAction.none) return;
+    if (guidance.severity == LivePaceGuidanceSeverity.firm) {
+      HapticFeedback.mediumImpact();
+      return;
+    }
+    HapticFeedback.lightImpact();
+  }
+
   void _showModalForIntent(ActiveRunModalIntent intent) {
     switch (intent) {
       case ActiveRunModalIntent.gpsLostAutoPause:
@@ -303,6 +314,65 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     };
   }
 
+  String _paceGuidanceText(
+    ActiveRunState state,
+    SessionType type,
+    AppLocalizations l10n,
+  ) {
+    return switch (state.paceStatus.action) {
+      LivePaceGuidanceAction.tooFast =>
+        state.paceStatus.severity == LivePaceGuidanceSeverity.firm
+            ? l10n.activeRunEaseOffFirm
+            : l10n.activeRunEaseOff,
+      LivePaceGuidanceAction.tooSlow => l10n.activeRunPickUp,
+      LivePaceGuidanceAction.none =>
+        state.resolvedTarget != null
+            ? state.paceQuality == PaceDisplayQuality.stable
+                  ? l10n.activeRunOnTarget
+                  : l10n.activeRunPaceSettling
+            : _guidanceFor(type, l10n),
+    };
+  }
+
+  String? _paceStatusText(ActiveRunState state, AppLocalizations l10n) {
+    return switch (state.paceStatus.action) {
+      LivePaceGuidanceAction.tooFast =>
+        state.paceStatus.severity == LivePaceGuidanceSeverity.firm
+            ? l10n.activeRunEaseOffFirm
+            : l10n.activeRunEaseOff,
+      LivePaceGuidanceAction.tooSlow => l10n.activeRunPickUp,
+      LivePaceGuidanceAction.none =>
+        state.resolvedTarget != null &&
+                state.paceQuality == PaceDisplayQuality.stable
+            ? l10n.activeRunOnTarget
+            : null,
+    };
+  }
+
+  Color _paceStatusColor(ActiveRunState state) {
+    return switch (state.paceStatus.action) {
+      LivePaceGuidanceAction.tooFast => AppColors.warning,
+      LivePaceGuidanceAction.tooSlow => AppColors.accentPrimary,
+      LivePaceGuidanceAction.none => AppColors.accentPrimary,
+    };
+  }
+
+  String? _targetRangeLabel(
+    ActiveRunState state,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final target = state.resolvedTarget;
+    if (target == null) return null;
+    final range = _formatTargetRange(
+      target.paceMinSecPerKm,
+      target.paceMaxSecPerKm,
+      unitSystem,
+      l10n,
+    );
+    return l10n.activeRunTargetRange(range);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -313,38 +383,35 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         _showModalForIntent(next.modalIntent);
       }
 
+      final previousGuidance = prev?.paceGuidance;
+      final nextGuidance = next.paceGuidance;
+      final guidanceChanged =
+          previousGuidance?.action != nextGuidance.action ||
+          previousGuidance?.severity != nextGuidance.severity;
+      if (guidanceChanged &&
+          nextGuidance.action != LivePaceGuidanceAction.none) {
+        _playPaceGuidanceHaptic(nextGuidance);
+      }
+
       if (_session != null) {
         final unitSystem =
             ref.read(userPreferencesProvider).value?.unitSystem ??
             UnitSystem.km;
-        final guidance = _syncCoordinator.resolvePaceGuidance(
-          currentPaceSecondsPerKm: next.currentPaceSecondsPerKm,
-          currentBlockTarget: next.currentBlock?.target,
-          fallbackTarget: _session.workoutTarget,
-          fallbackZone:
-              _session.workoutTarget?.zone ?? next.currentBlock?.target?.zone,
-          runElapsed: next.elapsed,
-          blockElapsed: next.blockElapsed,
-          timelineIndex: next.timelineIndex,
-          isPaused: next.isPaused,
-          isTimerOnlyMode: next.isTimerOnlyMode,
-          isGpsReady: next.gpsStatus == GpsStatus.ready,
-        );
         final data = buildRunLiveActivityData(
           state: next,
           session: _session,
           unitSystem: unitSystem,
           l10n: l10n,
-          paceGuidanceMessageKey: guidance.messageKey,
-          paceGuidanceSeverity: guidance.severity,
+          paceGuidanceMessageKey: next.paceStatus.messageKey,
+          paceGuidanceSeverity: next.paceStatus.severity,
         );
         _syncCoordinator.sync(
           data: data,
           timelineIndex: next.timelineIndex,
           gpsStatus: next.gpsStatus,
           isTimerOnlyMode: next.isTimerOnlyMode,
-          paceGuidanceMessageKey: guidance.messageKey,
-          paceGuidanceSeverity: guidance.severity,
+          paceGuidanceMessageKey: next.paceStatus.messageKey,
+          paceGuidanceSeverity: next.paceStatus.severity,
         );
       }
     });
@@ -410,17 +477,22 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
                     GpsStatusHeroPaceCard(
                       gpsStatus: state.gpsStatus,
                       timerOnlyMode: state.isTimerOnlyMode,
-                      label: l10n.activeRunCurrentPace,
+                      label: l10n.activeRunGuidancePace,
                       value: state.isTimerOnlyMode
                           ? '--:--'
+                          : state.displayPaceSecondsPerKm == null
+                          ? '--:--'
                           : _formatPace(
-                              state.currentPaceSecondsPerKm
+                              state.displayPaceSecondsPerKm!
                                   .clamp(210, 780)
                                   .toDouble(),
                               unitSystem,
                             ),
                       unit: UnitFormatter.paceLabel(unitSystem, l10n),
-                      guidance: _guidanceFor(type, l10n),
+                      guidance: _paceGuidanceText(state, type, l10n),
+                      targetRange: _targetRangeLabel(state, unitSystem, l10n),
+                      statusText: _paceStatusText(state, l10n),
+                      statusColor: _paceStatusColor(state),
                       color: _accentFor(type),
                     ),
                     const SizedBox(height: AppSpacing.lg),
@@ -733,6 +805,17 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     final remainder = (seconds % 60).toString().padLeft(2, '0');
     return '$minutes:$remainder';
   }
+
+  String _formatTargetRange(
+    int paceMinSecPerKm,
+    int paceMaxSecPerKm,
+    UnitSystem unitSystem,
+    AppLocalizations l10n,
+  ) {
+    final min = _formatPace(paceMinSecPerKm.toDouble(), unitSystem);
+    final max = _formatPace(paceMaxSecPerKm.toDouble(), unitSystem);
+    return '$min - $max ${UnitFormatter.paceLabel(unitSystem, l10n)}';
+  }
 }
 
 class GpsStatusHeroPaceCard extends StatelessWidget {
@@ -744,6 +827,9 @@ class GpsStatusHeroPaceCard extends StatelessWidget {
     required this.value,
     required this.unit,
     required this.guidance,
+    this.targetRange,
+    this.statusText,
+    this.statusColor,
     required this.color,
   });
 
@@ -753,6 +839,9 @@ class GpsStatusHeroPaceCard extends StatelessWidget {
   final String value;
   final String unit;
   final String guidance;
+  final String? targetRange;
+  final String? statusText;
+  final Color? statusColor;
   final Color color;
 
   @override
@@ -776,8 +865,8 @@ class GpsStatusHeroPaceCard extends StatelessWidget {
           statusChipText = l10n.gpsLostTitle;
           statusChipColor = AppColors.error;
         case GpsStatus.ready:
-          statusChipText = '';
-          statusChipColor = AppColors.accentPrimary;
+          statusChipText = statusText ?? '';
+          statusChipColor = statusColor ?? AppColors.accentPrimary;
         case GpsStatus.disabled:
           statusChipText = l10n.activeRunTimerOnlyLabel;
           statusChipColor = AppColors.textSecondary;
@@ -845,6 +934,16 @@ class GpsStatusHeroPaceCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          if (targetRange != null) ...[
+            Text(
+              targetRange!,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textPrimary,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
           Text(
             timerOnlyMode
                 ? l10n.gpsWaitForSignal

@@ -1074,6 +1074,7 @@
   "activeRunTitle": "Carrera Activa",
   "activeRunDemoTracking": "Seguimiento demo",
   "activeRunCurrentPace": "RITMO ACTUAL",
+  "activeRunGuidancePace": "RITMO GUÍA",
   "activeRunNotificationTargetShort": "Obj.",
   "activeRunNotificationDistanceShort": "Dist.",
   "activeRunNotificationPaceShort": "Ritmo",
@@ -1117,6 +1118,11 @@
   "activeRunEaseOffFirm": "Baja ritmo ahora",
   "activeRunPickUp": "Acelera",
   "activeRunOnTarget": "En objetivo",
+  "activeRunPaceSettling": "Estabilizando señal de ritmo",
+  "activeRunTargetRange": "Objetivo {range}",
+  "@activeRunTargetRange": {
+    "placeholders": { "range": { "type": "String" } }
+  },
   "activeRunPush": "Empuja",
   "activeRunRecover": "Recupera",
   "activeRunSurge": "Cambio",

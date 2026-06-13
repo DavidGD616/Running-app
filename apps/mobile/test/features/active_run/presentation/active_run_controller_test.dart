@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:running_app/features/active_run/data/run_location_tracker.dart';
+import 'package:running_app/features/active_run/domain/live_pace_guidance.dart';
 import 'package:running_app/features/active_run/domain/models/gps_state.dart';
 import 'package:running_app/features/active_run/domain/models/run_track_point.dart';
 import 'package:running_app/features/active_run/presentation/active_run_controller.dart';
@@ -90,7 +91,12 @@ void main() {
       expect(state.elapsed, Duration.zero);
       expect(state.distanceKm, 0.0);
       expect(state.currentPaceSecondsPerKm, 0);
+      expect(state.displayPaceSecondsPerKm, isNull);
       expect(state.averagePaceSecondsPerKm, 0);
+      expect(state.paceQuality, PaceDisplayQuality.waiting);
+      expect(state.resolvedTarget, isNull);
+      expect(state.paceStatus.action, LivePaceGuidanceAction.none);
+      expect(state.paceGuidance.action, LivePaceGuidanceAction.none);
       expect(state.gpsStatus, GpsStatus.acquiring);
       expect(state.currentBlock, null);
       expect(state.nextBlock, null);
@@ -823,6 +829,89 @@ void main() {
 
       final state = container.read(activeRunControllerProvider);
       expect(state.routePointCount, 1);
+    });
+
+    test('unstable smoothed pace clears displayed pace and guidance', () async {
+      container = ProviderContainer(
+        overrides: [
+          locationTrackerProvider.overrideWith((ref) => fakeTracker),
+          clockProvider.overrideWith(
+            (ref) =>
+                () => fakeClock.now,
+          ),
+        ],
+      );
+
+      RunTrackPoint point(double latitude, Duration offset) {
+        return RunTrackPoint(
+          latitude: latitude,
+          longitude: -122.4194,
+          timestamp: fakeClock.now.add(offset),
+          accuracy: 10.0,
+          altitude: 100.0,
+          speed: 3.0,
+          heading: 0.0,
+          source: RunTrackPointSource.gps,
+        );
+      }
+
+      final session = RunFlowSessionContext(
+        sessionId: 'paced-session',
+        sessionDate: DateTime(2026, 4, 25),
+        sessionType: SessionType.easyRun,
+        weekNumber: 1,
+        workoutTarget: const WorkoutTarget.pace(
+          TargetZone.easy,
+          paceMinSecPerKm: 360,
+          paceMaxSecPerKm: 420,
+        ),
+        workoutSteps: const [],
+        supplementalType: null,
+        isRunSession: true,
+        distanceKm: 5.0,
+        durationMinutes: 30,
+        elevationGainMeters: null,
+        intervalReps: null,
+        intervalRepDistanceMeters: null,
+        intervalRecoverySeconds: null,
+        warmUpMinutes: null,
+        coolDownMinutes: null,
+      );
+
+      final controller = container.read(activeRunControllerProvider.notifier);
+      controller.start(
+        ActiveRunStartInput(
+          session: session,
+          checkIn: null,
+          timerOnlyMode: false,
+        ),
+      );
+      for (var i = 0; i < 46; i++) {
+        controller.tickClock();
+      }
+
+      fakeTracker.addPoint(point(37.77490, Duration.zero));
+      await Future.delayed(Duration.zero);
+      fakeTracker.addPoint(point(37.77508, const Duration(seconds: 6)));
+      await Future.delayed(Duration.zero);
+      fakeTracker.addPoint(point(37.77526, const Duration(seconds: 12)));
+      await Future.delayed(Duration.zero);
+      fakeTracker.addPoint(point(37.77544, const Duration(seconds: 18)));
+      await Future.delayed(Duration.zero);
+
+      final stableState = container.read(activeRunControllerProvider);
+      expect(stableState.displayPaceSecondsPerKm, isNotNull);
+      expect(stableState.paceQuality, PaceDisplayQuality.stable);
+      expect(stableState.paceStatus.action, isNot(LivePaceGuidanceAction.none));
+
+      fakeTracker.addPoint(point(37.77549, const Duration(seconds: 60)));
+      await Future.delayed(Duration.zero);
+
+      final waitingState = container.read(activeRunControllerProvider);
+      expect(waitingState.displayPaceSecondsPerKm, isNull);
+      expect(waitingState.paceQuality, PaceDisplayQuality.waiting);
+      expect(waitingState.paceStatus.action, LivePaceGuidanceAction.none);
+      expect(waitingState.paceGuidance.action, LivePaceGuidanceAction.none);
     });
 
     test('resume preserves prior GPS distance and avoids pause jump', () async {

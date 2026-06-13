@@ -151,10 +151,10 @@ void main() {
     });
 
     test(
-      'falls back to fallback target paces when block target has only a zone',
+      'falls back to fallback target paces when fallback matches block zone',
       () {
         final evaluator = createEvaluator();
-        final blockZoneOnly = WorkoutTarget.pace(TargetZone.interval);
+        final blockZoneOnly = WorkoutTarget.pace(TargetZone.easy);
         final fallbackTarget = targetForZone(
           TargetZone.easy,
           paceMin: 300,
@@ -171,7 +171,7 @@ void main() {
         );
         evaluator.evaluate(
           input(
-            pace: 291,
+            pace: 260,
             target: blockZoneOnly,
             runElapsed: const Duration(seconds: 60),
             fallbackTarget: fallbackTarget,
@@ -179,7 +179,7 @@ void main() {
         );
         evaluator.evaluate(
           input(
-            pace: 291,
+            pace: 260,
             target: blockZoneOnly,
             runElapsed: const Duration(seconds: 70),
             fallbackTarget: fallbackTarget,
@@ -187,7 +187,7 @@ void main() {
         );
         final result = evaluator.evaluate(
           input(
-            pace: 291,
+            pace: 260,
             target: blockZoneOnly,
             runElapsed: const Duration(seconds: 80),
             fallbackTarget: fallbackTarget,
@@ -195,12 +195,12 @@ void main() {
         );
 
         expect(result.action, LivePaceGuidanceAction.tooFast);
-        expect(result.severity, LivePaceGuidanceSeverity.gentle);
-        expect(result.messageKey, 'activeRunEaseOff');
+        expect(result.severity, LivePaceGuidanceSeverity.firm);
+        expect(result.messageKey, 'activeRunEaseOffFirm');
       },
     );
 
-    test('uses block zone when fallback target supplies pace band', () {
+    test('does not use fallback target paces for a different block zone', () {
       final evaluator = createEvaluator();
       final blockIntervalZoneOnly = WorkoutTarget.pace(TargetZone.interval);
       final fallbackEasy = targetForZone(
@@ -209,59 +209,17 @@ void main() {
         paceMax: 380,
       );
 
-      evaluator.evaluate(
-        input(
-          pace: 320,
-          target: blockIntervalZoneOnly,
-          runElapsed: const Duration(seconds: 50),
-          fallbackTarget: fallbackEasy,
-        ),
-      );
-      evaluator.evaluate(
-        input(
-          pace: 312,
-          target: blockIntervalZoneOnly,
-          runElapsed: const Duration(seconds: 60),
-          fallbackTarget: fallbackEasy,
-        ),
-      );
-      final noWarn = evaluator.evaluate(
-        input(
-          pace: 312,
-          target: blockIntervalZoneOnly,
-          runElapsed: const Duration(seconds: 70),
-          fallbackTarget: fallbackEasy,
-        ),
-      );
-      expect(noWarn.action, LivePaceGuidanceAction.none);
-
-      evaluator.evaluate(
-        input(
-          pace: 311,
-          target: blockIntervalZoneOnly,
-          runElapsed: const Duration(seconds: 80),
-          fallbackTarget: fallbackEasy,
-        ),
-      );
-
-      evaluator.evaluate(
-        input(
-          pace: 311,
-          target: blockIntervalZoneOnly,
-          runElapsed: const Duration(seconds: 90),
-          fallbackTarget: fallbackEasy,
-        ),
-      );
-
-      final tooFast = evaluator.evaluate(
-        input(
-          pace: 311,
-          target: blockIntervalZoneOnly,
-          runElapsed: const Duration(seconds: 100),
-          fallbackTarget: fallbackEasy,
-        ),
-      );
-      expect(tooFast.action, LivePaceGuidanceAction.tooFast);
+      for (final elapsed in [50, 60, 70]) {
+        final result = evaluator.evaluate(
+          input(
+            pace: 250,
+            target: blockIntervalZoneOnly,
+            runElapsed: Duration(seconds: elapsed),
+            fallbackTarget: fallbackEasy,
+          ),
+        );
+        expect(result.action, LivePaceGuidanceAction.none);
+      }
     });
 
     test('resets sustained state on timeline index change', () {

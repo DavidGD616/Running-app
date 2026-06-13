@@ -143,6 +143,40 @@ class LivePaceGuidanceEvaluator {
     );
   }
 
+  LivePaceGuidanceResult statusFor(LivePaceGuidanceInput input) {
+    if (!_isEligibleForGuidance(input)) {
+      return const LivePaceGuidanceResult.none();
+    }
+
+    final resolvedTarget = _resolveTarget(input);
+    final zone = resolvedTarget?.zone;
+    final paceMin = resolvedTarget?.target.paceMinSecPerKm;
+    final paceMax = resolvedTarget?.target.paceMaxSecPerKm;
+    if (zone == null ||
+        resolvedTarget == null ||
+        paceMin == null ||
+        paceMax == null) {
+      return const LivePaceGuidanceResult.none();
+    }
+
+    final direction = _directionForPace(
+      paceSeconds: input.currentPaceSecondsPerKm,
+      zone: zone,
+      paceMin: paceMin,
+      paceMax: paceMax,
+    );
+    if (direction == LivePaceGuidanceAction.none) {
+      return const LivePaceGuidanceResult.none();
+    }
+
+    final severity = _severity(direction, zone);
+    return LivePaceGuidanceResult(
+      action: direction,
+      messageKey: _messageKey(action: direction, severity: severity),
+      severity: severity,
+    );
+  }
+
   ({WorkoutTarget target, TargetZone zone})? _resolveTarget(
     LivePaceGuidanceInput input,
   ) {
@@ -167,6 +201,9 @@ class LivePaceGuidanceEvaluator {
           input.currentBlockTarget?.zone ??
           input.fallbackZone ??
           input.fallbackTarget!.zone;
+      if (input.fallbackTarget!.zone != zone) {
+        return null;
+      }
       return (target: input.fallbackTarget!, zone: zone);
     }
 

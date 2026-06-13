@@ -2,6 +2,7 @@ import '../../training_plan/domain/models/session_type.dart';
 import '../../training_plan/domain/models/training_session.dart';
 import '../../training_plan/domain/models/workout_step.dart';
 import '../../training_plan/domain/models/workout_target.dart';
+import '../../strava/domain/models/strava_coaching_profile.dart';
 
 enum PreRunLegCondition { fresh, normal, heavy }
 
@@ -45,9 +46,13 @@ class RunFlowSessionContext {
     required this.intervalRecoverySeconds,
     required this.warmUpMinutes,
     required this.coolDownMinutes,
+    this.paceZones,
   });
 
-  factory RunFlowSessionContext.fromSession(TrainingSession session) {
+  factory RunFlowSessionContext.fromSession(
+    TrainingSession session, {
+    StravaPaceZones? paceZones,
+  }) {
     return RunFlowSessionContext(
       sessionId: session.id,
       sessionDate: session.date,
@@ -65,6 +70,7 @@ class RunFlowSessionContext {
       intervalRecoverySeconds: session.intervalRecoverySeconds,
       warmUpMinutes: session.warmUpMinutes,
       coolDownMinutes: session.coolDownMinutes,
+      paceZones: paceZones,
     );
   }
 
@@ -86,6 +92,7 @@ class RunFlowSessionContext {
       'intervalRecoverySeconds': intervalRecoverySeconds,
       'warmUpMinutes': warmUpMinutes,
       'coolDownMinutes': coolDownMinutes,
+      if (paceZones != null) 'paceZones': paceZones!.toJson(),
     };
   }
 
@@ -130,6 +137,13 @@ class RunFlowSessionContext {
       intervalRecoverySeconds: json['intervalRecoverySeconds'] as int?,
       warmUpMinutes: json['warmUpMinutes'] as int?,
       coolDownMinutes: json['coolDownMinutes'] as int?,
+      paceZones: json['paceZones'] is Map<String, dynamic>
+          ? StravaPaceZones.fromJson(json['paceZones'] as Map<String, dynamic>)
+          : json['paceZones'] is Map
+          ? StravaPaceZones.fromJson(
+              Map<String, dynamic>.from(json['paceZones'] as Map),
+            )
+          : null,
     );
   }
 
@@ -149,6 +163,7 @@ class RunFlowSessionContext {
   final int? intervalRecoverySeconds;
   final int? warmUpMinutes;
   final int? coolDownMinutes;
+  final StravaPaceZones? paceZones;
 
   bool get isRest => sessionType.isRest;
   bool get hasStructuredWorkout =>
@@ -190,8 +205,13 @@ class PreRunCheckIn {
 class PreRunArgs {
   const PreRunArgs({required this.session});
 
-  factory PreRunArgs.fromSession(TrainingSession session) {
-    return PreRunArgs(session: RunFlowSessionContext.fromSession(session));
+  factory PreRunArgs.fromSession(
+    TrainingSession session, {
+    StravaPaceZones? paceZones,
+  }) {
+    return PreRunArgs(
+      session: RunFlowSessionContext.fromSession(session, paceZones: paceZones),
+    );
   }
 
   final RunFlowSessionContext session;

@@ -10,12 +10,24 @@ type StepKind =
 
 interface WorkoutStepJson {
   kind: StepKind;
-  target?: { type: string; zone: string } | null;
+  target?: {
+    type: string;
+    zone: string;
+    paceMinSecPerKm?: number | null;
+    paceMaxSecPerKm?: number | null;
+  } | null;
   durationMs?: number | null;
   distanceMeters?: number | null;
   repetitions?: number | null;
   steps?: WorkoutStepJson[];
 }
+
+type WorkoutStepTarget = {
+  type: string;
+  zone: TargetZone;
+  paceMinSecPerKm?: number | null;
+  paceMaxSecPerKm?: number | null;
+};
 
 type TargetZone =
   | "recovery"
@@ -27,6 +39,34 @@ type TargetZone =
   | "racePace"
   | "longRun";
 
+type PaceZoneKey =
+  | "recovery"
+  | "easy"
+  | "longRun"
+  | "steady"
+  | "tempo"
+  | "threshold"
+  | "racePace"
+  | "intervals"
+  | "strides";
+
+interface StravaPaceZone {
+  paceMinSecPerKm?: number | null;
+  paceMaxSecPerKm?: number | null;
+}
+
+interface StravaPaceZones {
+  recovery?: StravaPaceZone | null;
+  easy?: StravaPaceZone | null;
+  longRun?: StravaPaceZone | null;
+  steady?: StravaPaceZone | null;
+  tempo?: StravaPaceZone | null;
+  threshold?: StravaPaceZone | null;
+  racePace?: StravaPaceZone | null;
+  intervals?: StravaPaceZone | null;
+  strides?: StravaPaceZone | null;
+}
+
 const ONE_SECOND_MS = 1_000;
 const ONE_MINUTE_MS = 60_000;
 const MIN_WORKOUT_MINUTES = 1;
@@ -36,6 +76,7 @@ const PROGRESSION_ZONES: readonly TargetZone[] = ["easy", "steady", "tempo"];
 
 export function buildWorkoutSteps(
   session: GeneratedSession,
+  paceZones?: StravaPaceZones | null,
 ): WorkoutStepJson[] {
   if (session.type === "restDay" || session.type === "raceDay") {
     return [];
@@ -57,7 +98,7 @@ export function buildWorkoutSteps(
   if (warmUpMinutes != null) {
     steps.push({
       kind: "warmUp",
-      target: makeTarget("easy"),
+      target: makeTarget("easy", paceZones),
       durationMs: warmUpMinutes * ONE_MINUTE_MS,
     });
   }
@@ -77,6 +118,7 @@ export function buildWorkoutSteps(
         ? "threshold"
         : "tempo",
       mainDistanceMeters,
+      paceZones,
     );
   } else if (
     session.type === "easyRun" ||
@@ -92,6 +134,7 @@ export function buildWorkoutSteps(
         : resolveTargetZone(session, "easy"),
       mainWorkMinutes(session, strideBlockSeconds),
       mainDistanceMeters,
+      paceZones,
     );
   } else if (session.type === "progressionRun") {
     const rawMainMinutes = mainWorkMinutes(session, strideBlockSeconds);
@@ -111,6 +154,7 @@ export function buildWorkoutSteps(
         PROGRESSION_ZONES[index],
         durationBuckets?.[index] ?? null,
         distanceBuckets?.[index] ?? null,
+        paceZones,
       );
     }
   } else if (
@@ -127,6 +171,7 @@ export function buildWorkoutSteps(
         : resolveTargetZone(session, "racePace"),
       mainWorkMinutes(session, strideBlockSeconds),
       mainDistanceMeters,
+      paceZones,
     );
   }
 
@@ -137,12 +182,12 @@ export function buildWorkoutSteps(
       steps: [
         {
           kind: "stride",
-          target: makeTarget("interval"),
+          target: makeTarget("interval", paceZones, "strides"),
           durationMs: strideSeconds * ONE_SECOND_MS,
         },
         {
           kind: "recovery",
-          target: makeTarget("recovery"),
+          target: makeTarget("recovery", paceZones),
           durationMs: strideRecoverySeconds * ONE_SECOND_MS,
         },
       ],
@@ -152,7 +197,7 @@ export function buildWorkoutSteps(
   if (coolDownMinutes != null) {
     steps.push({
       kind: "coolDown",
-      target: makeTarget("easy"),
+      target: makeTarget("easy", paceZones),
       durationMs: coolDownMinutes * ONE_MINUTE_MS,
     });
   }
@@ -166,11 +211,13 @@ function appendIntervalOrQualityBlock(
   strideBlockSeconds: number,
   fallbackZone: TargetZone,
   distanceMeters: number | null,
+  paceZones?: StravaPaceZones | null,
 ): void {
   const intervalReps = positiveInt(session.intervalReps);
   const intervalRepDistanceMeters = positiveInt(
     session.intervalRepDistanceMeters,
   );
+  const workZone = resolveTargetZone(session, fallbackZone);
 
   if (intervalReps != null && intervalRepDistanceMeters != null) {
     steps.push({
@@ -179,12 +226,12 @@ function appendIntervalOrQualityBlock(
       steps: [
         {
           kind: "work",
-          target: makeTarget(resolveTargetZone(session, fallbackZone)),
+          target: makeTarget(workZone, paceZones),
           distanceMeters: intervalRepDistanceMeters,
         },
         {
           kind: "recovery",
-          target: makeTarget("recovery"),
+          target: makeTarget("recovery", paceZones),
           durationMs: (positiveInt(session.intervalRecoverySeconds) ??
             DEFAULT_RECOVERY_SECONDS) * ONE_SECOND_MS,
         },
@@ -195,9 +242,10 @@ function appendIntervalOrQualityBlock(
 
   appendSingleWorkBlock(
     steps,
-    resolveTargetZone(session, fallbackZone),
+    workZone,
     mainWorkMinutes(session, strideBlockSeconds),
     distanceMeters,
+    paceZones,
   );
 }
 
@@ -206,10 +254,11 @@ function appendSingleWorkBlock(
   zone: TargetZone,
   durationMinutes: number | null,
   distanceMeters: number | null,
+  paceZones?: StravaPaceZones | null,
 ): void {
   steps.push({
     kind: "work",
-    target: makeTarget(zone),
+    target: makeTarget(zone, paceZones),
     durationMs: durationMinutes != null
       ? durationMinutes * ONE_MINUTE_MS
       : null,
@@ -217,8 +266,49 @@ function appendSingleWorkBlock(
   });
 }
 
-function makeTarget(zone: TargetZone): { type: string; zone: TargetZone } {
-  return { type: "effort", zone };
+function makeTarget(
+  zone: TargetZone,
+  paceZones?: StravaPaceZones | null,
+  paceZoneKey: PaceZoneKey = zone === "interval"
+    ? "intervals"
+    : zone as PaceZoneKey,
+): WorkoutStepTarget {
+  const target: WorkoutStepTarget = {
+    type: "effort",
+    zone,
+  };
+
+  const paceRange = paceRangeFromKey(paceZones, paceZoneKey);
+  if (paceRange != null) {
+    target.paceMinSecPerKm = paceRange.paceMinSecPerKm;
+    target.paceMaxSecPerKm = paceRange.paceMaxSecPerKm;
+  }
+
+  return target;
+}
+
+function paceRangeFromKey(
+  paceZones: StravaPaceZones | null | undefined,
+  paceZoneKey: PaceZoneKey,
+): { paceMinSecPerKm: number; paceMaxSecPerKm: number } | null {
+  if (paceZones == null) return null;
+
+  const selected = paceZoneKey === "intervals"
+    ? paceZones.intervals
+    : paceZones[paceZoneKey];
+
+  if (
+    selected == null ||
+    selected.paceMinSecPerKm == null ||
+    selected.paceMaxSecPerKm == null
+  ) {
+    return null;
+  }
+
+  return {
+    paceMinSecPerKm: selected.paceMinSecPerKm,
+    paceMaxSecPerKm: selected.paceMaxSecPerKm,
+  };
 }
 
 function resolveTargetZone(

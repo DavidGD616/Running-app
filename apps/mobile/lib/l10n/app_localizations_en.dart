@@ -2840,6 +2840,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activeRunCurrentPace => 'CURRENT PACE';
 
   @override
+  String get activeRunGuidancePace => 'GUIDANCE PACE';
+
+  @override
   String get activeRunNotificationTargetShort => 'Target';
 
   @override
@@ -2948,6 +2951,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get activeRunOnTarget => 'On target';
+
+  @override
+  String get activeRunPaceSettling => 'Settling pace signal';
+
+  @override
+  String activeRunTargetRange(String range) {
+    return 'Target $range';
+  }
 
   @override
   String get activeRunPush => 'Push';

@@ -99,9 +99,8 @@ class RunLiveActivityData {
   /// not infer distance from pace.
   final double distanceKm;
 
-  /// Current pace in seconds-per-kilometre. Authoritative controller
-  /// current pace for payload, debug, and native display fallback.
-  /// Native surfaces must not use this to compute per-tick distance.
+  /// Display pace in seconds-per-kilometre. Native surfaces use this only for
+  /// the visible pace label and must not use it to compute per-tick distance.
   final int paceSecondsPerKm;
 
   /// Multiplier to convert km → user-preferred unit (1.0 km, 0.621371 mi).

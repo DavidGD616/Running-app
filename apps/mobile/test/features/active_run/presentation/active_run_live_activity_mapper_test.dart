@@ -44,6 +44,8 @@ ActiveRunState createRunningState({
   Duration elapsed = const Duration(minutes: 10, seconds: 30),
   double distanceKm = 1.23,
   int currentPaceSecondsPerKm = 300,
+  int? displayPaceSecondsPerKm,
+  bool hasDisplayPace = true,
   int averagePaceSecondsPerKm = 330,
   GpsStatus gpsStatus = GpsStatus.ready,
   ActiveRunTimelineBlock? currentBlock,
@@ -59,7 +61,16 @@ ActiveRunState createRunningState({
     elapsed: elapsed,
     distanceKm: distanceKm,
     currentPaceSecondsPerKm: currentPaceSecondsPerKm,
+    displayPaceSecondsPerKm: hasDisplayPace
+        ? displayPaceSecondsPerKm ?? currentPaceSecondsPerKm
+        : null,
     averagePaceSecondsPerKm: averagePaceSecondsPerKm,
+    paceQuality: hasDisplayPace
+        ? PaceDisplayQuality.stable
+        : PaceDisplayQuality.waiting,
+    resolvedTarget: null,
+    paceStatus: const LivePaceGuidanceResult.none(),
+    paceGuidance: const LivePaceGuidanceResult.none(),
     gpsStatus: gpsStatus,
     currentBlock: currentBlock,
     nextBlock: nextBlock,
@@ -94,7 +105,12 @@ ActiveRunState createPausedState({
     elapsed: elapsed,
     distanceKm: distanceKm,
     currentPaceSecondsPerKm: currentPaceSecondsPerKm,
+    displayPaceSecondsPerKm: currentPaceSecondsPerKm,
     averagePaceSecondsPerKm: averagePaceSecondsPerKm,
+    paceQuality: PaceDisplayQuality.stable,
+    resolvedTarget: null,
+    paceStatus: const LivePaceGuidanceResult.none(),
+    paceGuidance: const LivePaceGuidanceResult.none(),
     gpsStatus: GpsStatus.ready,
     currentBlock: currentBlock,
     nextBlock: nextBlock,
@@ -359,6 +375,24 @@ void main() {
 
       test('current pace uses direct seconds per km', () {
         final state = createRunningState(currentPaceSecondsPerKm: 360);
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: null,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+        );
+
+        expect(result.currentPaceLabel, '6:00 min/km');
+        expect(result.paceSecondsPerKm, 360);
+      });
+
+      test('current pace uses display pace instead of retained raw pace', () {
+        final state = createRunningState(
+          currentPaceSecondsPerKm: 300,
+          displayPaceSecondsPerKm: 360,
+        );
         final l10n = createL10n();
 
         final result = buildRunLiveActivityData(
@@ -774,6 +808,24 @@ void main() {
         );
 
         expect(result.currentPaceLabel, '--:-- min/km');
+      });
+
+      test('hidden display pace produces placeholder pace', () {
+        final state = createRunningState(
+          currentPaceSecondsPerKm: 300,
+          hasDisplayPace: false,
+        );
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: null,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+        );
+
+        expect(result.currentPaceLabel, '--:-- min/km');
+        expect(result.paceSecondsPerKm, 0);
       });
 
       test('negative pace produces placeholder pace', () {

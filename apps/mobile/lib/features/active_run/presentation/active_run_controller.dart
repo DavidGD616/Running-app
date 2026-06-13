@@ -7,6 +7,8 @@ import '../../pre_run/presentation/run_flow_context.dart';
 import '../data/distance_accumulator.dart';
 import '../data/pace_smoother.dart';
 import '../data/run_repository.dart';
+import '../domain/active_run_target_resolver.dart';
+import '../domain/live_pace_guidance.dart';
 import '../domain/models/gps_state.dart';
 import '../domain/models/run_track_point.dart';
 import 'active_run_timeline.dart';
@@ -26,6 +28,8 @@ enum ActiveRunModalIntent {
   finishConfirm,
   endRunConfirm,
 }
+
+enum PaceDisplayQuality { waiting, stable }
 
 @immutable
 class ActiveRunStartInput {
@@ -66,7 +70,12 @@ class ActiveRunState {
     required this.elapsed,
     required this.distanceKm,
     required this.currentPaceSecondsPerKm,
+    required this.displayPaceSecondsPerKm,
     required this.averagePaceSecondsPerKm,
+    required this.paceQuality,
+    required this.resolvedTarget,
+    required this.paceStatus,
+    required this.paceGuidance,
     required this.gpsStatus,
     required this.currentBlock,
     required this.nextBlock,
@@ -88,7 +97,12 @@ class ActiveRunState {
     elapsed: Duration.zero,
     distanceKm: 0.0,
     currentPaceSecondsPerKm: 0,
+    displayPaceSecondsPerKm: null,
     averagePaceSecondsPerKm: 0,
+    paceQuality: PaceDisplayQuality.waiting,
+    resolvedTarget: null,
+    paceStatus: LivePaceGuidanceResult.none(),
+    paceGuidance: LivePaceGuidanceResult.none(),
     gpsStatus: GpsStatus.acquiring,
     currentBlock: null,
     nextBlock: null,
@@ -109,7 +123,12 @@ class ActiveRunState {
   final Duration elapsed;
   final double distanceKm;
   final int currentPaceSecondsPerKm;
+  final int? displayPaceSecondsPerKm;
   final int averagePaceSecondsPerKm;
+  final PaceDisplayQuality paceQuality;
+  final ActiveRunResolvedTarget? resolvedTarget;
+  final LivePaceGuidanceResult paceStatus;
+  final LivePaceGuidanceResult paceGuidance;
   final GpsStatus gpsStatus;
   final ActiveRunTimelineBlock? currentBlock;
   final ActiveRunTimelineBlock? nextBlock;
@@ -130,7 +149,12 @@ class ActiveRunState {
     Duration? elapsed,
     double? distanceKm,
     int? currentPaceSecondsPerKm,
+    int? displayPaceSecondsPerKm,
     int? averagePaceSecondsPerKm,
+    PaceDisplayQuality? paceQuality,
+    ActiveRunResolvedTarget? resolvedTarget,
+    LivePaceGuidanceResult? paceStatus,
+    LivePaceGuidanceResult? paceGuidance,
     GpsStatus? gpsStatus,
     ActiveRunTimelineBlock? currentBlock,
     ActiveRunTimelineBlock? nextBlock,
@@ -145,6 +169,8 @@ class ActiveRunState {
     ActiveRunModalIntent? modalIntent,
     bool? isTimerOnlyMode,
     PreRunCheckIn? checkIn,
+    bool clearDisplayPace = false,
+    bool clearResolvedTarget = false,
     bool clearCurrentBlock = false,
     bool clearNextBlock = false,
   }) {
@@ -154,8 +180,17 @@ class ActiveRunState {
       distanceKm: distanceKm ?? this.distanceKm,
       currentPaceSecondsPerKm:
           currentPaceSecondsPerKm ?? this.currentPaceSecondsPerKm,
+      displayPaceSecondsPerKm: clearDisplayPace
+          ? null
+          : displayPaceSecondsPerKm ?? this.displayPaceSecondsPerKm,
       averagePaceSecondsPerKm:
           averagePaceSecondsPerKm ?? this.averagePaceSecondsPerKm,
+      paceQuality: paceQuality ?? this.paceQuality,
+      resolvedTarget: clearResolvedTarget
+          ? null
+          : resolvedTarget ?? this.resolvedTarget,
+      paceStatus: paceStatus ?? this.paceStatus,
+      paceGuidance: paceGuidance ?? this.paceGuidance,
       gpsStatus: gpsStatus ?? this.gpsStatus,
       currentBlock: clearCurrentBlock
           ? null
@@ -189,6 +224,10 @@ class ActiveRunController extends Notifier<ActiveRunState> {
   DistanceAccumulator _distanceAccumulator = const DistanceAccumulator();
   PaceSmoother _paceSmoother = const PaceSmoother();
   GpsState _gpsState = GpsState.initial();
+  final ActiveRunTargetResolver _targetResolver =
+      const ActiveRunTargetResolver();
+  LivePaceGuidanceEvaluator _paceGuidanceEvaluator =
+      LivePaceGuidanceEvaluator();
 
   final List<RunTrackPoint> _routePointBuffer = [];
   String? _runId;
@@ -196,6 +235,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
   Future<void>? _routePointFlushFuture;
 
   static const int _routePointFlushThreshold = 25;
+  static const double _maxPaceAccuracyMeters = 35.0;
 
   @override
   ActiveRunState build() => ActiveRunState.initial();
@@ -241,7 +281,12 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       elapsed: Duration.zero,
       distanceKm: 0.0,
       currentPaceSecondsPerKm: 0,
+      displayPaceSecondsPerKm: null,
       averagePaceSecondsPerKm: 0,
+      paceQuality: PaceDisplayQuality.waiting,
+      resolvedTarget: null,
+      paceStatus: const LivePaceGuidanceResult.none(),
+      paceGuidance: const LivePaceGuidanceResult.none(),
       gpsStatus: timerOnlyMode ? GpsStatus.disabled : GpsStatus.acquiring,
       currentBlock: firstBlock,
       nextBlock: nextBlock,
@@ -257,6 +302,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       isTimerOnlyMode: timerOnlyMode,
       checkIn: input.checkIn,
     );
+    _refreshPaceGuidance();
 
     _startTimer();
     if (!timerOnlyMode) {
@@ -291,6 +337,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
   void _resetAccumulators() {
     _distanceAccumulator = const DistanceAccumulator();
     _paceSmoother = const PaceSmoother();
+    _paceGuidanceEvaluator = LivePaceGuidanceEvaluator();
     _gpsState = GpsState.initial();
     _lastAcceptedPoint = null;
     _accumulatedDistanceMeters = 0;
@@ -300,6 +347,55 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     _routePointBuffer.clear();
     _nextRoutePointIndex = 0;
     _runId = null;
+  }
+
+  void _refreshPaceGuidance() {
+    final resolvedTarget = _targetResolver.resolve(
+      currentBlockTarget: state.currentBlock?.target,
+      blockRole: _guidanceRoleFor(state.currentBlock),
+      fallbackTarget: state.session?.workoutTarget,
+      paceZones: state.session?.paceZones,
+    );
+    final displayPace = state.displayPaceSecondsPerKm;
+    final guidanceInput = resolvedTarget == null || displayPace == null
+        ? null
+        : LivePaceGuidanceInput(
+            currentPaceSecondsPerKm: displayPace,
+            currentBlockTarget: resolvedTarget.target,
+            fallbackTarget: null,
+            fallbackZone: resolvedTarget.zone,
+            runElapsed: state.elapsed,
+            blockElapsed: state.blockElapsed,
+            timelineIndex: state.timelineIndex,
+            isPaused: state.isPaused,
+            isTimerOnlyMode: state.isTimerOnlyMode,
+            isGpsReady: state.gpsStatus == GpsStatus.ready,
+            now: ref.read(clockProvider)(),
+          );
+    final paceStatus = guidanceInput == null
+        ? const LivePaceGuidanceResult.none()
+        : _paceGuidanceEvaluator.statusFor(guidanceInput);
+    final guidance = guidanceInput == null
+        ? const LivePaceGuidanceResult.none()
+        : _paceGuidanceEvaluator.evaluate(guidanceInput);
+
+    state = state.copyWith(
+      resolvedTarget: resolvedTarget,
+      clearResolvedTarget: resolvedTarget == null,
+      paceStatus: paceStatus,
+      paceGuidance: guidance,
+    );
+  }
+
+  PaceGuidanceBlockRole? _guidanceRoleFor(ActiveRunTimelineBlock? block) {
+    return switch (block?.kind) {
+      ActiveRunBlockKind.warmUp => PaceGuidanceBlockRole.warmUp,
+      ActiveRunBlockKind.work => PaceGuidanceBlockRole.work,
+      ActiveRunBlockKind.recovery => PaceGuidanceBlockRole.recovery,
+      ActiveRunBlockKind.coolDown => PaceGuidanceBlockRole.coolDown,
+      ActiveRunBlockKind.stride => PaceGuidanceBlockRole.stride,
+      null => null,
+    };
   }
 
   void _startTimer() {
@@ -406,6 +502,8 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     state = state.copyWith(elapsed: newElapsed, blockElapsed: nextBlockElapsed);
     if (shouldAdvance) {
       _advanceToNextBlock();
+    } else {
+      _refreshPaceGuidance();
     }
   }
 
@@ -439,6 +537,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
         blockDistanceKm: 0.0,
       );
     }
+    _refreshPaceGuidance();
   }
 
   void _startGps() {
@@ -468,6 +567,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
 
     if (_gpsState.isLost) {
       _handleGpsLost();
+      _refreshPaceGuidance();
       return;
     }
 
@@ -495,11 +595,28 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     final deltaMeters =
         _distanceAccumulator.totalDistanceMeters - _accumulatedDistanceMeters;
 
-    if (deltaMeters > 0 && deltaMs > 0) {
-      _paceSmoother = _paceSmoother.add(deltaMeters.toDouble(), deltaMs);
+    if (deltaMeters > 0 &&
+        deltaMs > 0 &&
+        point.accuracy <= _maxPaceAccuracyMeters) {
+      _paceSmoother = _paceSmoother.add(
+        deltaMeters.toDouble(),
+        deltaMs,
+        at: point.timestamp,
+      );
       final smoothedPace = _paceSmoother.currentPaceSecondsPerKm;
       if (smoothedPace != null) {
-        state = state.copyWith(currentPaceSecondsPerKm: smoothedPace);
+        state = state.copyWith(
+          currentPaceSecondsPerKm: smoothedPace,
+          displayPaceSecondsPerKm: smoothedPace,
+          paceQuality: PaceDisplayQuality.stable,
+        );
+      } else {
+        state = state.copyWith(
+          paceQuality: PaceDisplayQuality.waiting,
+          clearDisplayPace: true,
+          paceStatus: const LivePaceGuidanceResult.none(),
+          paceGuidance: const LivePaceGuidanceResult.none(),
+        );
       }
     }
 
@@ -530,6 +647,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
 
     _lastAcceptedPoint = point;
     state = state.copyWith(routePointCount: state.routePointCount + 1);
+    _refreshPaceGuidance();
   }
 
   void _checkSplits(DateTime timestamp) {
@@ -590,9 +708,17 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       state = state.copyWith(
         modalIntent: ActiveRunModalIntent.gpsLostAutoPause,
         isPaused: true,
+        paceQuality: PaceDisplayQuality.waiting,
+        paceStatus: const LivePaceGuidanceResult.none(),
+        paceGuidance: const LivePaceGuidanceResult.none(),
       );
     } else {
-      state = state.copyWith(modalIntent: ActiveRunModalIntent.gpsLostWarning);
+      state = state.copyWith(
+        modalIntent: ActiveRunModalIntent.gpsLostWarning,
+        paceQuality: PaceDisplayQuality.waiting,
+        paceStatus: const LivePaceGuidanceResult.none(),
+        paceGuidance: const LivePaceGuidanceResult.none(),
+      );
     }
   }
 
@@ -602,7 +728,10 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     state = state.copyWith(
       isPaused: true,
       modalIntent: ActiveRunModalIntent.none,
+      paceStatus: const LivePaceGuidanceResult.none(),
+      paceGuidance: const LivePaceGuidanceResult.none(),
     );
+    _refreshPaceGuidance();
   }
 
   void resume() {
@@ -610,11 +739,17 @@ class ActiveRunController extends Notifier<ActiveRunState> {
 
     _lastAcceptedPoint = null;
     _distanceAccumulator = _distanceAccumulator.clearLastPoint();
+    _paceSmoother = _paceSmoother.reset();
 
     state = state.copyWith(
       isPaused: false,
       modalIntent: ActiveRunModalIntent.none,
+      paceQuality: PaceDisplayQuality.waiting,
+      clearDisplayPace: true,
+      paceStatus: const LivePaceGuidanceResult.none(),
+      paceGuidance: const LivePaceGuidanceResult.none(),
     );
+    _refreshPaceGuidance();
   }
 
   void toggleSurge() {

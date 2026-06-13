@@ -2862,6 +2862,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get activeRunCurrentPace => 'RITMO ACTUAL';
 
   @override
+  String get activeRunGuidancePace => 'RITMO GUÍA';
+
+  @override
   String get activeRunNotificationTargetShort => 'Obj.';
 
   @override
@@ -2971,6 +2974,14 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get activeRunOnTarget => 'En objetivo';
+
+  @override
+  String get activeRunPaceSettling => 'Estabilizando señal de ritmo';
+
+  @override
+  String activeRunTargetRange(String range) {
+    return 'Objetivo $range';
+  }
 
   @override
   String get activeRunPush => 'Empuja';

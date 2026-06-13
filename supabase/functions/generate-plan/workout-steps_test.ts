@@ -13,6 +13,18 @@ const VALID_ZONES = new Set([
   "longRun",
 ]);
 
+const PAZE_ZONE_FIXTURE = {
+  recovery: { paceMinSecPerKm: 460, paceMaxSecPerKm: 520 },
+  easy: { paceMinSecPerKm: 380, paceMaxSecPerKm: 420 },
+  longRun: { paceMinSecPerKm: 360, paceMaxSecPerKm: 430 },
+  steady: { paceMinSecPerKm: 340, paceMaxSecPerKm: 390 },
+  tempo: { paceMinSecPerKm: 300, paceMaxSecPerKm: 340 },
+  threshold: { paceMinSecPerKm: 280, paceMaxSecPerKm: 310 },
+  racePace: { paceMinSecPerKm: 270, paceMaxSecPerKm: 300 },
+  intervals: { paceMinSecPerKm: 260, paceMaxSecPerKm: 290 },
+  strides: { paceMinSecPerKm: 240, paceMaxSecPerKm: 260 },
+};
+
 Deno.test("buildWorkoutSteps returns no workout steps for rest day", () => {
   const steps = buildWorkoutSteps(baseSession({
     id: "rest",
@@ -238,6 +250,35 @@ Deno.test("buildWorkoutSteps preserves interval repeat behavior", () => {
   assert.equal(steps[1].steps?.[1].durationMs, 75_000);
 });
 
+Deno.test(
+  "buildWorkoutSteps maps interval target zone to pace zone intervals when available",
+  () => {
+    const steps = buildWorkoutSteps(
+      baseSession({
+        id: "intervals-default-zone",
+        date: "2026-06-20",
+        type: "intervals",
+        durationMinutes: 60,
+        warmUpMinutes: 10,
+        coolDownMinutes: 5,
+        intervalReps: 4,
+        intervalRepDistanceMeters: 400,
+        intervalRecoverySeconds: 75,
+      }),
+      PAZE_ZONE_FIXTURE,
+    );
+
+    const intervalBlock = steps[1];
+    const workStep = intervalBlock.steps?.[0];
+
+    assert.equal(intervalBlock.kind, "repeat");
+    assert.equal(workStep?.kind, "work");
+    assert.equal(workStep?.target?.zone, "interval");
+    assert.equal(workStep?.target?.paceMinSecPerKm, 260);
+    assert.equal(workStep?.target?.paceMaxSecPerKm, 290);
+  },
+);
+
 Deno.test("buildWorkoutSteps builds hill repeats as structured block when interval metadata is missing", () => {
   const steps = buildWorkoutSteps(baseSession({
     id: "hills",
@@ -341,6 +382,85 @@ Deno.test("buildWorkoutSteps includes effort target metadata on generated steps"
 
   assertTargetsHaveMetadata(steps);
 });
+
+Deno.test("buildWorkoutSteps hydrates target paces from generated pace zones", () => {
+  const steps = buildWorkoutSteps(
+    baseSession({
+      id: "hydrated",
+      date: "2026-06-20",
+      type: "easyRun",
+      warmUpMinutes: 10,
+      coolDownMinutes: 5,
+      targetZone: "easy",
+      durationMinutes: 50,
+      distanceKm: 8,
+    }),
+    PAZE_ZONE_FIXTURE,
+  );
+
+  assert.equal(steps[0].target?.zone, "easy");
+  assert.equal(steps[0].target?.paceMinSecPerKm, 380);
+  assert.equal(steps[0].target?.paceMaxSecPerKm, 420);
+  assert.equal(steps[1].target?.zone, "easy");
+  assert.equal(steps[1].target?.paceMinSecPerKm, 380);
+  assert.equal(steps[1].target?.paceMaxSecPerKm, 420);
+  assert.equal(steps[2].target?.zone, "easy");
+  assert.equal(steps[2].target?.paceMinSecPerKm, 380);
+  assert.equal(steps[2].target?.paceMaxSecPerKm, 420);
+});
+
+Deno.test(
+  "buildWorkoutSteps applies stride-specific pace ranges when pace zones are provided",
+  () => {
+    const steps = buildWorkoutSteps(
+      baseSession({
+        id: "strides-zones",
+        date: "2026-06-20",
+        type: "easyRun",
+        strideReps: 6,
+        strideSeconds: 20,
+        strideRecoverySeconds: 80,
+        targetZone: "easy",
+      }),
+      PAZE_ZONE_FIXTURE,
+    );
+
+    const strideBlock = steps[1];
+    const strideStep = strideBlock.steps?.[0];
+    const strideRecovery = strideBlock.steps?.[1];
+
+    assert.equal(strideBlock.kind, "repeat");
+    assert.equal(strideStep?.kind, "stride");
+    assert.equal(strideStep?.target?.zone, "interval");
+    assert.equal(strideStep?.target?.paceMinSecPerKm, 240);
+    assert.equal(strideStep?.target?.paceMaxSecPerKm, 260);
+    assert.equal(strideRecovery?.target?.zone, "recovery");
+    assert.equal(strideRecovery?.target?.paceMinSecPerKm, 460);
+  },
+);
+
+Deno.test(
+  "buildWorkoutSteps does not add pace ranges when no pace zones are provided",
+  () => {
+    const steps = buildWorkoutSteps(
+      baseSession({
+        id: "no-hydration",
+        date: "2026-06-20",
+        type: "tempoRun",
+        targetZone: "tempo",
+        warmUpMinutes: 5,
+        coolDownMinutes: 5,
+      }),
+    );
+
+    assert.equal(steps[0].target?.paceMinSecPerKm, undefined);
+    assert.equal(steps[0].target?.paceMaxSecPerKm, undefined);
+    assert.equal(steps[1].target?.paceMinSecPerKm, undefined);
+    assert.equal(steps[1].target?.paceMaxSecPerKm, undefined);
+    assert.equal(steps[2].target?.paceMinSecPerKm, undefined);
+    assert.equal(steps[2].target?.paceMaxSecPerKm, undefined);
+  },
+);
 
 type TestStep = {
   kind: string;

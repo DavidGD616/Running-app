@@ -22,7 +22,7 @@ RunLiveActivityData buildRunLiveActivityData({
   final elapsedLabel = _formatDuration(state.elapsed);
 
   final distanceKm = state.distanceKm;
-  final paceSecondsPerKm = state.currentPaceSecondsPerKm;
+  final paceSecondsPerKm = state.displayPaceSecondsPerKm ?? 0;
 
   final unitFactor = unitSystem == UnitSystem.km ? 1.0 : 0.621371;
   final distanceUnit = unitSystem == UnitSystem.km ? 'km' : 'mi';

@@ -2752,6 +2752,8 @@
   "@activeRunDemoTracking": { "description": "Status pill indicating the active run screen is using mock tracking data" },
   "activeRunCurrentPace": "CURRENT PACE",
   "@activeRunCurrentPace": { "description": "Current pace metric label on the active run screen" },
+  "activeRunGuidancePace": "GUIDANCE PACE",
+  "@activeRunGuidancePace": { "description": "Stable live pace label on the active run screen" },
   "activeRunNotificationTargetShort": "Target",
   "@activeRunNotificationTargetShort": { "description": "Compact target label in the collapsed active run Android notification" },
   "activeRunNotificationDistanceShort": "Dist",
@@ -2826,6 +2828,13 @@
   "@activeRunPickUp": { "description": "Active run status when user is going too slow" },
   "activeRunOnTarget": "On target",
   "@activeRunOnTarget": { "description": "Active run status when user is on target" },
+  "activeRunPaceSettling": "Settling pace signal",
+  "@activeRunPaceSettling": { "description": "Active run message while waiting for enough GPS data to show stable pace guidance" },
+  "activeRunTargetRange": "Target {range}",
+  "@activeRunTargetRange": {
+    "description": "Target pace range label on the active run screen",
+    "placeholders": { "range": { "type": "String" } }
+  },
   "activeRunPush": "Push",
   "@activeRunPush": { "description": "Active run status for work blocks" },
   "activeRunRecover": "Recover",
