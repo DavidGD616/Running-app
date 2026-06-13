@@ -1202,6 +1202,136 @@
   "preRunWorkoutPreviewDistanceMeters": "{meters} m",
   "preRunWorkoutPreviewOpenDuration": "libre",
 
+  "workoutGuidanceTodaysPrescription": "Prescripción de hoy",
+  "workoutGuidancePaceEffort": "Guía de esfuerzo",
+  "workoutGuidanceCoachCues": "Notas del coach",
+  "workoutGuidanceFocus": "Enfoque",
+  "workoutGuidanceFocusEasyRun": "Mantén un ritmo conversacional y cómodo.",
+  "workoutGuidanceFocusRecoveryRun": "Corre muy fácil, mantén las piernas frescas.",
+  "workoutGuidanceFocusLongRun": "Conserva constancia y suma tiempo con control.",
+  "workoutGuidanceFocusProgressionRun": "Empieza fácil y sube el esfuerzo por fases.",
+  "workoutGuidanceFocusIntervals": "Corre las repeticiones fuertes y recupera con intención.",
+  "workoutGuidanceFocusHillRepeats": "Sube con fuerza y recupera en el descenso.",
+  "workoutGuidanceFocusFartlek": "Haz cambios con intención y vuelve a correr suave.",
+  "workoutGuidanceFocusTempoRun": "Mantén control y fuerza estable durante todo el bloque.",
+  "workoutGuidanceFocusThresholdRun": "Ritmo duro pero repetible, sin perder técnica.",
+  "workoutGuidanceFocusRacePaceRun": "Respeta el ritmo y la técnica, sin aceleraciones.",
+  "workoutGuidanceFocusRaceDay": "Confía en tu plan y ejecuta con calma.",
+  "workoutGuidanceFocusRestDay": "Descanso total: recupera, hidrata y muévete suave.",
+  "workoutGuidanceFocusCrossTraining": "Prioriza técnica de movimiento y control de esfuerzo.",
+  "workoutGuidanceWhyItMatters": "Por qué importa",
+  "workoutGuidanceDistanceBased": "Por distancia",
+  "workoutGuidanceEstimatedDurationRange": "{minMinutes}-{maxMinutes} min",
+  "@workoutGuidanceEstimatedDurationRange": {
+    "placeholders": {
+      "minMinutes": { "type": "int" },
+      "maxMinutes": { "type": "int" }
+    }
+  },
+  "workoutGuidanceDistanceBasedWithEstimate": "{distanceBased} · est. {durationRange}",
+  "@workoutGuidanceDistanceBasedWithEstimate": {
+    "placeholders": {
+      "distanceBased": { "type": "String" },
+      "durationRange": { "type": "String" }
+    }
+  },
+  "workoutGuidanceZoneRecovery": "Recuperación / sensación Zona 1",
+  "workoutGuidanceZoneEasy": "Suave / sensación Zona 2",
+  "workoutGuidanceZoneLongRun": "Tirada larga / sensación Zona 2",
+  "workoutGuidanceZoneSteady": "Estable / sensación Zona 2-3",
+  "workoutGuidanceZoneTempo": "Tempo / sensación Zona 3-4",
+  "workoutGuidanceZoneThreshold": "Umbral / sensación Zona 4",
+  "workoutGuidanceZoneRacePace": "Ritmo carrera / sensación carrera",
+  "workoutGuidanceZoneInterval": "Rápido / sensación Zona 5",
+  "workoutGuidanceFirm": "Firme",
+  "workoutGuidanceCueGentle": "Suave",
+  "workoutGuidanceCueConversational": "Conversacional",
+  "workoutGuidanceCueControlled": "Controlado",
+  "workoutGuidanceCueComposed": "Fuerte pero compuesto",
+  "workoutGuidanceCueFast": "Rápido, sin descontrol",
+  "workoutGuidancePhaseEasyJog": "Trote suave",
+  "workoutGuidancePhaseEasyLongRun": "Tirada larga suave",
+  "workoutGuidancePhaseSteadyRun": "Ritmo estable",
+  "workoutGuidancePhaseTempoRun": "Fuerte y controlado",
+  "workoutGuidancePhaseThresholdRun": "Duro pero repetible",
+  "workoutGuidancePhaseRaceRhythm": "Ritmo de carrera",
+  "workoutGuidancePhaseFastRelaxed": "Rápido pero relajado",
+  "workoutGuidancePhaseRecovery": "Trote muy suave",
+  "workoutGuidancePhaseSmoothSurges": "Cambios suaves",
+  "workoutGuidancePhaseControlledReps": "Repeticiones controladas",
+  "workoutGuidancePhaseStrongUphill": "Repeticiones fuertes en subida",
+  "workoutGuidanceEffortEasy": "Suave",
+  "workoutGuidanceEffortLongRun": "Tirada larga",
+  "workoutGuidanceEffortSteady": "Cambio estable",
+  "workoutGuidanceEffortTempo": "Tempo",
+  "workoutGuidanceEffortThreshold": "Umbral",
+  "workoutGuidanceEffortRacePace": "Ritmo de carrera",
+  "workoutGuidanceEffortFast": "Rápido",
+  "workoutGuidanceEffortRecovery": "Recuperación",
+  "workoutGuidanceBeginnerCueEasy": "Deberías poder hablar con normalidad",
+  "workoutGuidanceBeginnerCueLongRun": "Cómodo y paciente de principio a fin",
+  "workoutGuidanceBeginnerCueSteady": "Controlado, piernas rápidas, sin competir",
+  "workoutGuidanceBeginnerCueTempo": "Fuerte pero controlado",
+  "workoutGuidanceBeginnerCueThreshold": "Duro, concentrado y aún repetible",
+  "workoutGuidanceBeginnerCueRacePace": "Encuentra el ritmo objetivo de carrera",
+  "workoutGuidanceBeginnerCueFast": "Rápido, relajado, sin descontrol",
+  "workoutGuidanceBeginnerCueRecovery": "Trote suave, prepárate para la siguiente repetición",
+  "workoutGuidanceFastPart": "Parte rápida: {guidance}",
+  "@workoutGuidanceFastPart": {
+    "placeholders": {
+      "guidance": { "type": "String" }
+    }
+  },
+  "workoutGuidanceRecoveryPart": "Recuperación: {guidance}",
+  "@workoutGuidanceRecoveryPart": {
+    "placeholders": {
+      "guidance": { "type": "String" }
+    }
+  },
+  "workoutGuidancePaceDetail": "Ritmo: {pace}",
+  "@workoutGuidancePaceDetail": {
+    "placeholders": {
+      "pace": { "type": "String" }
+    }
+  },
+  "workoutGuidanceFeelDetail": "Sensación: {feel}",
+  "@workoutGuidanceFeelDetail": {
+    "placeholders": {
+      "feel": { "type": "String" }
+    }
+  },
+  "workoutGuidancePaceRange": "{label} · {paceRange} · {cue}",
+  "@workoutGuidancePaceRange": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "paceRange": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+  "workoutGuidanceEffortOnly": "{label} · {cue}",
+  "@workoutGuidanceEffortOnly": {
+    "placeholders": {
+      "label": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+  "workoutGuidanceOpenMeasure": "Libre",
+  "workoutGuidanceRepeatMeasure": "{reps} x {work} · {recovery} recuperación",
+  "@workoutGuidanceRepeatMeasure": {
+    "placeholders": {
+      "reps": { "type": "int" },
+      "work": { "type": "String" },
+      "recovery": { "type": "String" }
+    }
+  },
+  "workoutGuidanceDefaultHow": "Sigue cada bloque en orden y mantén el esfuerzo controlado.",
+  "workoutGuidanceWhyForSession": "Este entrenamiento de {sessionType} desarrolla forma con un propósito claro y una carga intencional.",
+  "@workoutGuidanceWhyForSession": {
+    "placeholders": {
+      "sessionType": { "type": "String" }
+    }
+  },
+
   "workoutOptionsTitle": "Opciones de Entrenamiento",
   "workoutOptionsSkipWorkout": "Omitir Entrenamiento",
   "workoutOptionsSkipWorkoutDescription": "Elimina esta sesión del plan de esta semana",

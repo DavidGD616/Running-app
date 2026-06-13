@@ -1,3 +1,5 @@
+// ignore_for_file: unused_element
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -320,15 +322,6 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-
-                    if (widget.args?.session.workoutSteps.isNotEmpty ??
-                        false) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      _WorkoutPreview(
-                        steps: widget.args!.session.workoutSteps,
-                        l10n: l10n,
-                      ),
-                    ],
 
                     const SizedBox(height: AppSpacing.xxl),
 

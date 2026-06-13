@@ -17,6 +17,7 @@ import {
   avoidHardDayTraining,
   detectGenericCoachCopyViolations,
   detectSessionTypePolicyViolations,
+  dropSessionsBeforePlanStartDate,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
@@ -281,7 +282,11 @@ Deno.serve(async (req) => {
     generationStartedAt,
     resolvedPlanStartDate,
   );
-  const normalizedMaxWeek = dateNormalizedSessions.reduce(
+  const planStartFilteredGeneratedSessions = dropSessionsBeforePlanStartDate(
+    dateNormalizedSessions,
+    resolvedPlanStartDate,
+  );
+  const normalizedMaxWeek = planStartFilteredGeneratedSessions.reduce(
     (maximum, session) => Math.max(maximum, session.weekNumber),
     0,
   );
@@ -292,7 +297,7 @@ Deno.serve(async (req) => {
   const safeGeneratedPlan = {
     ...generatedPlan,
     totalWeeks: plannedWeeks,
-    sessions: dateNormalizedSessions,
+    sessions: planStartFilteredGeneratedSessions,
     currentWeekNumber: generatedPlan.currentWeekNumber ?? 1,
     generatedLocale: locale,
     coachingBriefSnapshot: coachingBrief,
@@ -435,6 +440,11 @@ Deno.serve(async (req) => {
     policyRepairResult.sessions,
     policyRepairResult.acceptedSessionIds,
   );
+  const policyRepairedPlanStartFilteredSessions =
+    dropSessionsBeforePlanStartDate(
+      policyRepairResult.sessions,
+      resolvedPlanStartDate,
+    );
 
   if (policyViolations.length > 0) {
     console.info("OpenAI repair loop completed", {
@@ -445,7 +455,7 @@ Deno.serve(async (req) => {
   }
 
   const phaseNormalizedSessions = normalizeWorkoutTypesByPhase(
-    policyRepairResult.sessions,
+    policyRepairedPlanStartFilteredSessions,
     generationProfileWithPlanStartDate,
     safeGeneratedPlan.totalWeeks,
     locale,
@@ -510,7 +520,11 @@ Deno.serve(async (req) => {
       preRaceTaperedWithPreservedCoachNotes,
       raceDayDate,
     );
-  const idNormalizedSessions = normalizeSessionIds(sessionsBeforeRaceDayInfo);
+  const planStartFilteredSessions = dropSessionsBeforePlanStartDate(
+    sessionsBeforeRaceDayInfo,
+    resolvedPlanStartDate,
+  );
+  const idNormalizedSessions = normalizeSessionIds(planStartFilteredSessions);
   const genericCoachCopyViolations = detectGenericCoachCopyViolations(
     idNormalizedSessions,
   );

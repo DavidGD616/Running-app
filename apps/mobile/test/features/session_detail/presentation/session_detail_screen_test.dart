@@ -9,8 +9,12 @@ import 'package:running_app/features/training_plan/domain/models/session_type.da
 import 'package:running_app/features/training_plan/domain/models/race_guidance.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
 import 'package:running_app/features/training_plan/domain/models/workout_target.dart';
+import 'package:running_app/features/training_plan/domain/models/workout_step.dart';
 import 'package:running_app/features/training_plan/presentation/training_plan_provider.dart';
+import 'package:running_app/features/strava/domain/models/strava_coaching_profile.dart';
+import 'package:running_app/core/utils/unit_formatter.dart';
 import 'package:running_app/l10n/app_localizations.dart';
+import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
 
 import '../../../helpers/activity_fixtures.dart';
 import '../../../helpers/workout_fixtures.dart';
@@ -64,15 +68,12 @@ void main() {
     final context = tester.element(find.byType(SessionDetailScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    expect(find.text(l10n.sessionDetailWorkoutStructure), findsOneWidget);
+    expect(find.text(l10n.workoutGuidanceTodaysPrescription), findsOneWidget);
+    expect(find.text(l10n.workoutGuidancePaceEffort), findsOneWidget);
     expect(find.text(l10n.sessionDetailWarmUp), findsOneWidget);
     expect(find.text(l10n.sessionDetailCoolDown), findsOneWidget);
     expect(
-      find.text(l10n.sessionPhaseIntervalsMainNote(6, '400 m')),
-      findsOneWidget,
-    );
-    expect(
-      find.text(l10n.sessionPhaseIntervalsMainRecovery(90)),
+      find.text(l10n.workoutGuidanceRepeatMeasure(6, '400 m', '90 s')),
       findsOneWidget,
     );
   });
@@ -89,16 +90,10 @@ void main() {
     final context = tester.element(find.byType(SessionDetailScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    expect(find.text(l10n.sessionDetailWorkoutStructure), findsOneWidget);
-    expect(
-      find.text(l10n.sessionPhaseTempoRunWarmDuration(10)),
-      findsNWidgets(2),
-    );
-    expect(find.text(l10n.sessionPhaseTempoRunMainNote), findsOneWidget);
-    expect(
-      find.text(l10n.sessionPhaseTempoRunCoolDuration(10)),
-      findsNWidgets(2),
-    );
+    expect(find.text(l10n.workoutGuidanceTodaysPrescription), findsOneWidget);
+    expect(find.text(l10n.sessionTypeTempoRun), findsWidgets);
+    expect(find.text(l10n.workoutGuidancePaceEffort), findsOneWidget);
+    expect(find.textContaining('20 min'), findsOneWidget);
   });
 
   testWidgets(
@@ -126,12 +121,8 @@ void main() {
       final context = tester.element(find.byType(SessionDetailScreen));
       final l10n = AppLocalizations.of(context)!;
 
-      expect(find.text(l10n.workoutTargetGuidanceLabel), findsOneWidget);
-      expect(
-        find.textContaining(l10n.sessionDetailTargetRangeLabel),
-        findsOneWidget,
-      );
-      expect(find.textContaining('6:30 - 7:30'), findsOneWidget);
+      expect(find.text(l10n.workoutGuidancePaceEffort), findsOneWidget);
+      expect(find.textContaining('6:30-7:30'), findsOneWidget);
       expect(
         find.textContaining(l10n.sessionDetailEffortCueLabel),
         findsNothing,
@@ -164,17 +155,8 @@ void main() {
     final context = tester.element(find.byType(SessionDetailScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    expect(
-      find.text(
-        '${l10n.sessionDetailEffortCueLabel}: Controlled strong effort',
-      ),
-      findsOneWidget,
-    );
-    expect(
-      find.textContaining(l10n.sessionDetailTargetGuidanceNote),
-      findsOneWidget,
-      reason: 'Effort cue should appear with target guidance.',
-    );
+    expect(find.textContaining('Controlled strong effort'), findsOneWidget);
+    expect(find.text(l10n.workoutGuidancePaceEffort), findsOneWidget);
   });
 
   testWidgets(
@@ -198,7 +180,7 @@ void main() {
       final context = tester.element(find.byType(SessionDetailScreen));
       final l10n = AppLocalizations.of(context)!;
 
-      expect(find.textContaining('5:30/km'), findsOneWidget);
+      expect(find.textContaining('5:30/km'), findsWidgets);
       expect(
         find.textContaining(l10n.sessionDetailTargetRangeLabel),
         findsNothing,
@@ -207,6 +189,14 @@ void main() {
         find.textContaining(l10n.sessionDetailEffortCueLabel),
         findsNothing,
       );
+      expect(
+        find.textContaining(
+          'Stay around 5:30/km and easy for the first 20 min.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.workoutGuidanceFocus), findsOneWidget);
+      expect(find.text('How to run it'), findsNothing);
     },
   );
 
@@ -235,10 +225,252 @@ void main() {
     final context = tester.element(find.byType(SessionDetailScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    final note = find.text(l10n.sessionDetailTargetGuidanceNote);
-    expect(note, findsOneWidget);
-    expect(find.textContaining('once your run is active'), findsOneWidget);
+    expect(find.text(l10n.workoutGuidancePaceEffort), findsOneWidget);
+    expect(find.textContaining('6:00-7:00'), findsOneWidget);
   });
+
+  testWidgets('progression run renders Easy -> Steady -> Firm phases', (
+    tester,
+  ) async {
+    final session = TrainingSession(
+      id: 'progression-guidance',
+      date: DateTime(2026, 4, 16, 7, 30),
+      type: SessionType.progressionRun,
+      status: SessionStatus.completed,
+      weekNumber: 4,
+      distanceKm: 9,
+      durationMinutes: 45,
+      workoutSteps: const [
+        WorkoutStep.work(
+          duration: Duration(minutes: 15),
+          target: WorkoutTarget.effort(TargetZone.easy),
+        ),
+        WorkoutStep.work(
+          duration: Duration(minutes: 15),
+          target: WorkoutTarget.effort(TargetZone.steady),
+        ),
+        WorkoutStep.work(
+          duration: Duration(minutes: 15),
+          target: WorkoutTarget.effort(TargetZone.tempo),
+        ),
+      ],
+    );
+    final plan = buildTestTrainingPlan(sessions: [session]);
+
+    await tester.pumpWidget(wrapWithPlan(plan, session));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(SessionDetailScreen));
+    final l10n = AppLocalizations.of(context)!;
+
+    expect(find.text(l10n.activeRunEasyBlock), findsWidgets);
+    expect(find.text(l10n.activeRunSteadyBlock), findsOneWidget);
+    expect(find.text(l10n.workoutGuidanceFirm), findsOneWidget);
+  });
+
+  testWidgets(
+    'progression steps with duration estimate show session distance measures',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'progression-distance-measure',
+        date: DateTime(2026, 4, 16, 7, 30),
+        type: SessionType.progressionRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 9,
+        durationMinutes: 45,
+        workoutSteps: const [
+          WorkoutStep.work(
+            duration: Duration(minutes: 15),
+            target: WorkoutTarget.effort(TargetZone.easy),
+          ),
+          WorkoutStep.work(
+            duration: Duration(minutes: 15),
+            target: WorkoutTarget.effort(TargetZone.steady),
+          ),
+          WorkoutStep.work(
+            duration: Duration(minutes: 15),
+            target: WorkoutTarget.effort(TargetZone.tempo),
+          ),
+        ],
+      );
+      final plan = buildTestTrainingPlan(sessions: [session]);
+
+      await tester.pumpWidget(wrapWithPlan(plan, session));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+      final expectedDistanceMeasure = UnitFormatter.formatWorkoutRepDistance(
+        3_000,
+        UnitSystem.km,
+        l10n,
+      );
+
+      expect(find.text(l10n.activeRunEasyBlock), findsWidgets);
+      expect(find.text(l10n.activeRunSteadyBlock), findsOneWidget);
+      expect(find.text(l10n.workoutGuidanceFirm), findsOneWidget);
+      expect(find.text(expectedDistanceMeasure), findsNWidgets(3));
+      expect(find.textContaining('15 min'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'race-pace run with duration-only work step shows session distance measure',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'race-pace-distance-measure',
+        date: DateTime(2026, 4, 16, 7, 30),
+        type: SessionType.racePaceRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 8,
+        durationMinutes: 50,
+        workoutSteps: const [
+          WorkoutStep.warmUp(
+            duration: Duration(minutes: 10),
+            target: WorkoutTarget.effort(TargetZone.easy),
+          ),
+          WorkoutStep.work(
+            duration: Duration(minutes: 35),
+            target: WorkoutTarget.effort(TargetZone.racePace),
+          ),
+          WorkoutStep.coolDown(
+            duration: Duration(minutes: 5),
+            target: WorkoutTarget.effort(TargetZone.recovery),
+          ),
+        ],
+      );
+      final plan = buildTestTrainingPlan(sessions: [session]);
+
+      await tester.pumpWidget(wrapWithPlan(plan, session));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+      final expectedDistanceMeasure = UnitFormatter.formatWorkoutRepDistance(
+        8_000,
+        UnitSystem.km,
+        l10n,
+      );
+
+      expect(find.text(l10n.sessionTypeRacePaceRun), findsOneWidget);
+      expect(find.text(expectedDistanceMeasure), findsOneWidget);
+      expect(find.textContaining('35 min'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'distance-based session shows estimated duration from pace zones',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'distance-estimate',
+        date: DateTime(2026, 4, 17, 7, 30),
+        type: SessionType.easyRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 10,
+        workoutTarget: const WorkoutTarget.effort(TargetZone.easy),
+      );
+      final plan = TrainingPlan(
+        id: 'distance-estimate-plan',
+        raceType: TrainingPlanRaceType.tenK,
+        totalWeeks: 12,
+        currentWeekNumber: 4,
+        sessions: [session],
+        paceZones: const StravaPaceZones(
+          recovery: StravaPaceZone(),
+          easy: StravaPaceZone(paceMinSecPerKm: 360, paceMaxSecPerKm: 420),
+          longRun: StravaPaceZone(),
+          steady: StravaPaceZone(),
+          tempo: StravaPaceZone(),
+          threshold: StravaPaceZone(),
+          racePace: StravaPaceZone(),
+          intervals: StravaPaceZone(),
+          strides: StravaPaceZone(),
+        ),
+      );
+
+      await tester.pumpWidget(wrapWithPlan(plan, session));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+
+      expect(
+        find.text(
+          l10n.workoutGuidanceDistanceBasedWithEstimate(
+            l10n.workoutGuidanceDistanceBased,
+            l10n.workoutGuidanceEstimatedDurationRange(60, 70),
+          ),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'distance-based estimate includes structured warm and cool blocks',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'race-pace-estimate',
+        date: DateTime(2026, 4, 17, 7, 30),
+        type: SessionType.racePaceRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 5,
+        workoutTarget: const WorkoutTarget.effort(TargetZone.racePace),
+        workoutSteps: const [
+          WorkoutStep.warmUp(
+            duration: Duration(minutes: 10),
+            target: WorkoutTarget.effort(TargetZone.easy),
+          ),
+          WorkoutStep.work(
+            distanceMeters: 5000,
+            target: WorkoutTarget.effort(TargetZone.racePace),
+          ),
+          WorkoutStep.coolDown(
+            duration: Duration(minutes: 5),
+            target: WorkoutTarget.effort(TargetZone.recovery),
+          ),
+        ],
+      );
+      final plan = TrainingPlan(
+        id: 'race-pace-estimate-plan',
+        raceType: TrainingPlanRaceType.tenK,
+        totalWeeks: 12,
+        currentWeekNumber: 4,
+        sessions: [session],
+        paceZones: const StravaPaceZones(
+          recovery: StravaPaceZone(paceMinSecPerKm: 420, paceMaxSecPerKm: 480),
+          easy: StravaPaceZone(paceMinSecPerKm: 360, paceMaxSecPerKm: 420),
+          longRun: StravaPaceZone(),
+          steady: StravaPaceZone(),
+          tempo: StravaPaceZone(),
+          threshold: StravaPaceZone(),
+          racePace: StravaPaceZone(paceMinSecPerKm: 300, paceMaxSecPerKm: 330),
+          intervals: StravaPaceZone(),
+          strides: StravaPaceZone(),
+        ),
+      );
+
+      await tester.pumpWidget(wrapWithPlan(plan, session));
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+
+      expect(
+        find.text(
+          l10n.workoutGuidanceDistanceBasedWithEstimate(
+            l10n.workoutGuidanceDistanceBased,
+            l10n.workoutGuidanceEstimatedDurationRange(40, 43),
+          ),
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('race day detail is info-only and hides workout controls', (
     tester,

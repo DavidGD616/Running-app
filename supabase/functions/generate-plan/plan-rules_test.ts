@@ -4,6 +4,7 @@ import {
   avoidHardDayTraining,
   detectGenericCoachCopyViolations,
   detectSessionTypePolicyViolations,
+  dropSessionsBeforePlanStartDate,
   enforcePreRaceTaper,
   ensureFullCalendarWeeks,
   expectedTotalWeeks,
@@ -987,6 +988,48 @@ Deno.test("validateGeneratedPlanShape does not require generated race workout on
 
   assert.deepEqual(violations, []);
 });
+
+Deno.test(
+  "dropSessionsBeforePlanStartDate removes valid sessions before plan start date",
+  () => {
+    const result = dropSessionsBeforePlanStartDate(
+      [
+        session({
+          id: "before",
+          date: "2026-06-08",
+          type: "easyRun",
+          weekNumber: 1,
+        }),
+        session({
+          id: "start",
+          date: "2026-06-10",
+          type: "easyRun",
+          weekNumber: 1,
+        }),
+        session({
+          id: "after",
+          date: "2026-06-11",
+          type: "easyRun",
+          weekNumber: 1,
+        }),
+        session({
+          id: "malformed",
+          date: "not-a-date",
+          type: "easyRun",
+          weekNumber: 1,
+        }),
+      ],
+      "2026-06-10",
+    );
+
+    assert.equal(result.length, 3);
+    const ids = result.map((session) => session.id);
+    assert.ok(!ids.includes("before"));
+    assert.ok(ids.includes("start"));
+    assert.ok(ids.includes("after"));
+    assert.ok(ids.includes("malformed"));
+  },
+);
 
 Deno.test("enforcePreRaceTaper uses fixed race date without generated race workout", () => {
   const sessions = enforcePreRaceTaper(
@@ -4994,6 +5037,64 @@ Deno.test(
   },
 );
 
+Deno.test(
+  "production rule pipeline with midweek planStartDate drops pre-start sessions",
+  () => {
+    const profileData = profile({
+      race: "race_10k",
+      raceDate: "2026-06-21T00:00:00.000",
+      experience: "experience_intermediate",
+      trainingDays: 4,
+      hardDays: ["day_tue", "day_thu", "day_sun"],
+      longRunDay: "day_sat",
+      planStartDate: "2026-06-10",
+    });
+    const totalWeeks = 8;
+    const input = [
+      session({
+        id: "w1-2026-06-08-easyRun",
+        date: "2026-06-08",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-10-intervals",
+        date: "2026-06-10",
+        type: "intervals",
+      }),
+      session({
+        id: "w1-2026-06-11-easyRun",
+        date: "2026-06-11",
+        type: "easyRun",
+      }),
+      session({
+        id: "w1-2026-06-12-easyRun",
+        date: "2026-06-12",
+        type: "easyRun",
+      }),
+    ];
+
+    const result = runProductionRulePipeline(input, profileData, totalWeeks);
+
+    assert.ok(!result.some((session) => session.date < "2026-06-10"));
+    assert.equal(trainingCountForTest(result), 4);
+    const shapeViolations = validateGeneratedPlanShape(
+      result,
+      totalWeeks,
+      profileData,
+      new Date(Date.UTC(2026, 5, 10, 12)),
+      "2026-06-10",
+    );
+    assert.ok(
+      !shapeViolations.some((violation) =>
+        violation.rule === "session_before_plan_start"
+      ),
+    );
+    assert.ok(
+      result.every((session) => session.id.includes(session.date.slice(0, 10))),
+    );
+  },
+);
+
 Deno.test("production rule pipeline moves partial-week long run onto preferred day after calendar fill", () => {
   const profileData = profile({
     race: "race_10k",
@@ -6454,8 +6555,15 @@ function runProductionRulePipeline(
       !Array.isArray(scheduleCandidate)
     ? scheduleCandidate as Record<string, unknown>
     : undefined;
-  const scheduleNormalizedSessions = normalizeTrainingDayCount(
+  const planStartFilteredInput = dropSessionsBeforePlanStartDate(
     input,
+    typeof schedule?.planStartDate === "string" &&
+      /^\d{4}-\d{2}-\d{2}$/.test(schedule.planStartDate)
+      ? schedule.planStartDate
+      : undefined,
+  );
+  const scheduleNormalizedSessions = normalizeTrainingDayCount(
+    planStartFilteredInput,
     profileData,
     "en",
     typeof schedule?.planStartDate === "string" &&
@@ -6575,7 +6683,11 @@ function runProductionRulePipeline(
   const sessionsBeforeRaceDayInfo = raceDayDate == null
     ? preRaceTaperedSessions
     : removeSessionsOnRaceDate(preRaceTaperedSessions, raceDayDate);
-  return normalizeSessionIds(sessionsBeforeRaceDayInfo);
+  const sessionsBeforePlanStartDate = dropSessionsBeforePlanStartDate(
+    sessionsBeforeRaceDayInfo,
+    planStartDate,
+  );
+  return normalizeSessionIds(sessionsBeforePlanStartDate);
 }
 
 function lastSessionDateInString(

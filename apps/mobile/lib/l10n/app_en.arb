@@ -3057,6 +3057,279 @@
   "preRunWorkoutPreviewOpenDuration": "open",
   "@preRunWorkoutPreviewOpenDuration": { "description": "Fallback label when a workout preview block has no duration or distance target" },
 
+  "workoutGuidanceTodaysPrescription": "Today's Prescription",
+  "@workoutGuidanceTodaysPrescription": { "description": "Section title for the coached workout prescription" },
+
+  "workoutGuidancePaceEffort": "Effort Guide",
+  "@workoutGuidancePaceEffort": { "description": "Section title for simplified effort guidance" },
+
+  "workoutGuidanceCoachCues": "Coach Notes",
+  "@workoutGuidanceCoachCues": { "description": "Section title for coached workout notes" },
+
+  "workoutGuidanceFocus": "Focus",
+  "@workoutGuidanceFocus": { "description": "Label for the short coach focus note" },
+
+  "workoutGuidanceFocusEasyRun": "Keep it conversational and smooth.",
+  "@workoutGuidanceFocusEasyRun": { "description": "Short focus hint for easy run sessions" },
+
+  "workoutGuidanceFocusRecoveryRun": "Very easy, fresh, and controlled.",
+  "@workoutGuidanceFocusRecoveryRun": { "description": "Short focus hint for recovery run sessions" },
+
+  "workoutGuidanceFocusLongRun": "Build duration steadily and stay patient all the way.",
+  "@workoutGuidanceFocusLongRun": { "description": "Short focus hint for long run sessions" },
+
+  "workoutGuidanceFocusProgressionRun": "Start easy and nudge the effort up by block.",
+  "@workoutGuidanceFocusProgressionRun": { "description": "Short focus hint for progression run sessions" },
+
+  "workoutGuidanceFocusIntervals": "Run the hard reps hard, then recover deliberately.",
+  "@workoutGuidanceFocusIntervals": { "description": "Short focus hint for interval sessions" },
+
+  "workoutGuidanceFocusHillRepeats": "Drive hard uphill, then reset on the way down.",
+  "@workoutGuidanceFocusHillRepeats": { "description": "Short focus hint for hill repeat sessions" },
+
+  "workoutGuidanceFocusFartlek": "Surge with purpose, then return smooth.",
+  "@workoutGuidanceFocusFartlek": { "description": "Short focus hint for fartlek sessions" },
+
+  "workoutGuidanceFocusTempoRun": "Protect tempo control; hold steady effort.",
+  "@workoutGuidanceFocusTempoRun": { "description": "Short focus hint for tempo run sessions" },
+
+  "workoutGuidanceFocusThresholdRun": "Stay strong but repeatable through each rep.",
+  "@workoutGuidanceFocusThresholdRun": { "description": "Short focus hint for threshold run sessions" },
+
+  "workoutGuidanceFocusRacePaceRun": "Keep rhythm, keep form, and stay in control.",
+  "@workoutGuidanceFocusRacePaceRun": { "description": "Short focus hint for race-pace sessions" },
+
+  "workoutGuidanceFocusRaceDay": "Trust your plan and execute calmly.",
+  "@workoutGuidanceFocusRaceDay": { "description": "Short focus hint for race day sessions" },
+
+  "workoutGuidanceFocusRestDay": "No run today: recover, hydrate, and move easy.",
+  "@workoutGuidanceFocusRestDay": { "description": "Short focus hint for rest day sessions" },
+
+  "workoutGuidanceFocusCrossTraining": "Keep effort controlled and movement crisp.",
+  "@workoutGuidanceFocusCrossTraining": { "description": "Short focus hint for cross-training sessions" },
+
+  "workoutGuidanceWhyItMatters": "Why it matters",
+  "@workoutGuidanceWhyItMatters": { "description": "Label for workout rationale" },
+
+  "workoutGuidanceDistanceBased": "Distance-based",
+  "@workoutGuidanceDistanceBased": { "description": "Label for a workout driven by distance instead of planned duration" },
+
+  "workoutGuidanceEstimatedDurationRange": "{minMinutes}-{maxMinutes} min",
+  "@workoutGuidanceEstimatedDurationRange": {
+    "description": "Estimated duration range in minutes",
+    "placeholders": {
+      "minMinutes": { "type": "int" },
+      "maxMinutes": { "type": "int" }
+    }
+  },
+
+  "workoutGuidanceDistanceBasedWithEstimate": "{distanceBased} · est. {durationRange}",
+  "@workoutGuidanceDistanceBasedWithEstimate": {
+    "description": "Distance-based label with estimated duration range",
+    "placeholders": {
+      "distanceBased": { "type": "String" },
+      "durationRange": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceZoneRecovery": "Recovery / Zone 1 feel",
+  "@workoutGuidanceZoneRecovery": { "description": "Recovery effort label" },
+
+  "workoutGuidanceZoneEasy": "Easy / Zone 2 feel",
+  "@workoutGuidanceZoneEasy": { "description": "Easy effort label" },
+
+  "workoutGuidanceZoneLongRun": "Long run / Zone 2 feel",
+  "@workoutGuidanceZoneLongRun": { "description": "Long run effort label" },
+
+  "workoutGuidanceZoneSteady": "Steady / Zone 2-3 feel",
+  "@workoutGuidanceZoneSteady": { "description": "Steady effort label" },
+
+  "workoutGuidanceZoneTempo": "Tempo / Zone 3-4 feel",
+  "@workoutGuidanceZoneTempo": { "description": "Tempo effort label" },
+
+  "workoutGuidanceZoneThreshold": "Threshold / Zone 4 feel",
+  "@workoutGuidanceZoneThreshold": { "description": "Threshold effort label" },
+
+  "workoutGuidanceZoneRacePace": "Race pace / race feel",
+  "@workoutGuidanceZoneRacePace": { "description": "Race pace effort label" },
+
+  "workoutGuidanceZoneInterval": "Fast / Zone 5 feel",
+  "@workoutGuidanceZoneInterval": { "description": "Interval effort label" },
+
+  "workoutGuidanceFirm": "Firm",
+  "@workoutGuidanceFirm": { "description": "Firm progression block label" },
+
+  "workoutGuidanceCueGentle": "Gentle",
+  "@workoutGuidanceCueGentle": { "description": "Recovery cue" },
+
+  "workoutGuidanceCueConversational": "Conversational",
+  "@workoutGuidanceCueConversational": { "description": "Easy aerobic cue" },
+
+  "workoutGuidanceCueControlled": "Controlled",
+  "@workoutGuidanceCueControlled": { "description": "Steady effort cue" },
+
+  "workoutGuidanceCueComposed": "Strong but composed",
+  "@workoutGuidanceCueComposed": { "description": "Quality effort cue" },
+
+  "workoutGuidanceCueFast": "Fast, not frantic",
+  "@workoutGuidanceCueFast": { "description": "Fast repetition cue" },
+
+  "workoutGuidancePhaseEasyJog": "Easy jog",
+  "@workoutGuidancePhaseEasyJog": { "description": "Beginner-friendly phase headline for easy running" },
+
+  "workoutGuidancePhaseEasyLongRun": "Easy long run",
+  "@workoutGuidancePhaseEasyLongRun": { "description": "Beginner-friendly phase headline for long run effort" },
+
+  "workoutGuidancePhaseSteadyRun": "Steady running",
+  "@workoutGuidancePhaseSteadyRun": { "description": "Beginner-friendly phase headline for steady effort" },
+
+  "workoutGuidancePhaseTempoRun": "Controlled strong running",
+  "@workoutGuidancePhaseTempoRun": { "description": "Beginner-friendly phase headline for tempo effort" },
+
+  "workoutGuidancePhaseThresholdRun": "Hard but repeatable",
+  "@workoutGuidancePhaseThresholdRun": { "description": "Beginner-friendly phase headline for threshold effort" },
+
+  "workoutGuidancePhaseRaceRhythm": "Race rhythm",
+  "@workoutGuidancePhaseRaceRhythm": { "description": "Beginner-friendly phase headline for race-pace effort" },
+
+  "workoutGuidancePhaseFastRelaxed": "Fast but relaxed",
+  "@workoutGuidancePhaseFastRelaxed": { "description": "Beginner-friendly phase headline for fast reps or strides" },
+
+  "workoutGuidancePhaseRecovery": "Very easy jog",
+  "@workoutGuidancePhaseRecovery": { "description": "Beginner-friendly phase headline for recovery running" },
+
+  "workoutGuidancePhaseSmoothSurges": "Smooth surges",
+  "@workoutGuidancePhaseSmoothSurges": { "description": "Beginner-friendly phase headline for fartlek repeats" },
+
+  "workoutGuidancePhaseControlledReps": "Controlled reps",
+  "@workoutGuidancePhaseControlledReps": { "description": "Beginner-friendly phase headline for interval repeats" },
+
+  "workoutGuidancePhaseStrongUphill": "Strong uphill repeats",
+  "@workoutGuidancePhaseStrongUphill": { "description": "Beginner-friendly phase headline for hill repeats" },
+
+  "workoutGuidanceEffortEasy": "Easy",
+  "@workoutGuidanceEffortEasy": { "description": "Effort guide label for easy effort" },
+
+  "workoutGuidanceEffortLongRun": "Long run",
+  "@workoutGuidanceEffortLongRun": { "description": "Effort guide label for long run effort" },
+
+  "workoutGuidanceEffortSteady": "Steady surge",
+  "@workoutGuidanceEffortSteady": { "description": "Effort guide label for steady effort" },
+
+  "workoutGuidanceEffortTempo": "Tempo",
+  "@workoutGuidanceEffortTempo": { "description": "Effort guide label for tempo effort" },
+
+  "workoutGuidanceEffortThreshold": "Threshold",
+  "@workoutGuidanceEffortThreshold": { "description": "Effort guide label for threshold effort" },
+
+  "workoutGuidanceEffortRacePace": "Race pace",
+  "@workoutGuidanceEffortRacePace": { "description": "Effort guide label for race pace effort" },
+
+  "workoutGuidanceEffortFast": "Fast",
+  "@workoutGuidanceEffortFast": { "description": "Effort guide label for fast effort" },
+
+  "workoutGuidanceEffortRecovery": "Recovery",
+  "@workoutGuidanceEffortRecovery": { "description": "Effort guide label for recovery effort" },
+
+  "workoutGuidanceBeginnerCueEasy": "You should be able to talk normally",
+  "@workoutGuidanceBeginnerCueEasy": { "description": "Beginner-friendly cue for easy effort" },
+
+  "workoutGuidanceBeginnerCueLongRun": "Comfortable and patient from start to finish",
+  "@workoutGuidanceBeginnerCueLongRun": { "description": "Beginner-friendly cue for long run effort" },
+
+  "workoutGuidanceBeginnerCueSteady": "Controlled, quick legs, not racing",
+  "@workoutGuidanceBeginnerCueSteady": { "description": "Beginner-friendly cue for steady effort" },
+
+  "workoutGuidanceBeginnerCueTempo": "Strong but controlled",
+  "@workoutGuidanceBeginnerCueTempo": { "description": "Beginner-friendly cue for tempo effort" },
+
+  "workoutGuidanceBeginnerCueThreshold": "Hard, focused, and still repeatable",
+  "@workoutGuidanceBeginnerCueThreshold": { "description": "Beginner-friendly cue for threshold effort" },
+
+  "workoutGuidanceBeginnerCueRacePace": "Settle into goal-race rhythm",
+  "@workoutGuidanceBeginnerCueRacePace": { "description": "Beginner-friendly cue for race pace effort" },
+
+  "workoutGuidanceBeginnerCueFast": "Fast, relaxed, not frantic",
+  "@workoutGuidanceBeginnerCueFast": { "description": "Beginner-friendly cue for fast reps or strides" },
+
+  "workoutGuidanceBeginnerCueRecovery": "Gentle jog, get ready for the next rep",
+  "@workoutGuidanceBeginnerCueRecovery": { "description": "Beginner-friendly cue for recovery effort" },
+
+  "workoutGuidanceFastPart": "Fast part: {guidance}",
+  "@workoutGuidanceFastPart": {
+    "description": "Detail row describing the fast part of a repeat block",
+    "placeholders": {
+      "guidance": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceRecoveryPart": "Recovery: {guidance}",
+  "@workoutGuidanceRecoveryPart": {
+    "description": "Detail row describing the recovery part of a repeat block",
+    "placeholders": {
+      "guidance": { "type": "String" }
+    }
+  },
+
+  "workoutGuidancePaceDetail": "Pace: {pace}",
+  "@workoutGuidancePaceDetail": {
+    "description": "Detail row for a pace range",
+    "placeholders": {
+      "pace": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceFeelDetail": "Feel: {feel}",
+  "@workoutGuidanceFeelDetail": {
+    "description": "Detail row for an effort or zone feel",
+    "placeholders": {
+      "feel": { "type": "String" }
+    }
+  },
+
+  "workoutGuidancePaceRange": "{label} · {paceRange} · {cue}",
+  "@workoutGuidancePaceRange": {
+    "description": "Zone guidance with pace range",
+    "placeholders": {
+      "label": { "type": "String" },
+      "paceRange": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceEffortOnly": "{label} · {cue}",
+  "@workoutGuidanceEffortOnly": {
+    "description": "Zone guidance without pace range",
+    "placeholders": {
+      "label": { "type": "String" },
+      "cue": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceOpenMeasure": "Open",
+  "@workoutGuidanceOpenMeasure": { "description": "Fallback block measure when no duration or distance is available" },
+
+  "workoutGuidanceRepeatMeasure": "{reps} x {work} · {recovery} recovery",
+  "@workoutGuidanceRepeatMeasure": {
+    "description": "Repeated workout block measure",
+    "placeholders": {
+      "reps": { "type": "int" },
+      "work": { "type": "String" },
+      "recovery": { "type": "String" }
+    }
+  },
+
+  "workoutGuidanceDefaultHow": "Follow each block in order and keep the effort controlled.",
+  "@workoutGuidanceDefaultHow": { "description": "Fallback workout execution cue" },
+
+  "workoutGuidanceWhyForSession": "This {sessionType} builds fitness with a clear purpose while keeping the workload intentional.",
+  "@workoutGuidanceWhyForSession": {
+    "description": "Workout rationale by session type",
+    "placeholders": {
+      "sessionType": { "type": "String" }
+    }
+  },
+
   "workoutOptionsTitle": "Workout Options",
   "@workoutOptionsTitle": { "description": "Title of the workout options bottom sheet" },
 

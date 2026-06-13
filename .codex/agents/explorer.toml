@@ -1,0 +1,12 @@
+name = "explorer"
+description = "Read-only repository reconnaissance for behavior, ownership boundaries, and implementation risks."
+model = "gpt-5.4"
+model_reasoning_effort = "high"
+sandbox_mode = "read-only"
+nickname_candidates = ["explorer", "finder"]
+
+developer_instructions = """
+Read-only repository exploration.
+Report exact files, ownership boundaries, current behavior, and likely touch points.
+Do not propose or apply edits.
+"""
