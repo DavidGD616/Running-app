@@ -4737,13 +4737,29 @@ export function resolvePlanStartDate(
   const rawPlanStartDate = planStartDate != null
     ? parsePlanStartDateValue(planStartDate)
     : null;
-  if (rawPlanStartDate != null) return rawPlanStartDate;
+  if (rawPlanStartDate != null) {
+    return normalizeLateWeekPlanStartDate(rawPlanStartDate);
+  }
 
   const schedule = objectOrNull(profileData?.schedule);
   const planStartFromProfile = parsePlanStartDateValue(schedule?.planStartDate);
-  if (planStartFromProfile != null) return planStartFromProfile;
+  if (planStartFromProfile != null) {
+    return normalizeLateWeekPlanStartDate(planStartFromProfile);
+  }
 
-  return nextFutureMonday(generationDate);
+  return normalizeLateWeekPlanStartDate(nextFutureMonday(generationDate));
+}
+
+function normalizeLateWeekPlanStartDate(planStartDate: string): string {
+  const parsedPlanStartDate = parseDateOnly(planStartDate);
+  if (parsedPlanStartDate == null) return planStartDate;
+
+  const weekday = parsedPlanStartDate.getUTCDay();
+  if (weekday === 5 || weekday === 6 || weekday === 0) {
+    return nextFutureMonday(parsedPlanStartDate);
+  }
+
+  return planStartDate;
 }
 
 export function planStartAnchorMonday(planStartDate: string): Date | null {

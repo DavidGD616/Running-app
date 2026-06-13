@@ -5504,6 +5504,17 @@ Deno.test("resolvePlanStartDate keeps explicit schedule planStartDate", () => {
   assert.equal(resolved, "2026-06-03");
 });
 
+Deno.test(
+  "resolvePlanStartDate normalizes late-week explicit planStartDate to next Monday",
+  () => {
+    const resolved = resolvePlanStartDate(
+      profile({ planStartDate: "2026-06-13" }),
+      new Date(Date.UTC(2026, 5, 1, 12)),
+    );
+    assert.equal(resolved, "2026-06-15");
+  },
+);
+
 Deno.test("expectedTotalWeeks computes exact 3-week minimum window", () => {
   const weeks = expectedTotalWeeks(
     profile({ race: "race_10k", raceDate: "2026-06-21T00:00:00.000" }),
@@ -6201,6 +6212,43 @@ Deno.test("validateGeneratedPlanShape maps week labels from selected planStartDa
   assert.ok(!violations.some((v) => v.rule === "session_before_plan_start"));
 });
 
+Deno.test(
+  "validateGeneratedPlanShape keeps a late-week planStartDate week mapping deterministic for week 10",
+  () => {
+    const sessions = Array.from({ length: 10 }, (_, index) => {
+      const date = new Date(Date.UTC(2026, 5, 15 + index * 7));
+      const dateOnly = date.toISOString().slice(0, 10);
+      return session({
+        id: `w${index + 1}-${dateOnly}-easyRun`,
+        date: dateOnly,
+        weekNumber: index + 1,
+        type: "easyRun",
+        distanceKm: 8,
+      });
+    });
+
+    const violations = validateGeneratedPlanShape(
+      sessions,
+      10,
+      profile({ race: "race_5k", raceDate: null, planStartDate: "2026-06-13" }),
+      new Date(Date.UTC(2026, 5, 1, 12)),
+      "2026-06-13",
+    );
+
+    assert.ok(
+      !violations.some((v) =>
+        v.rule === "session_date_week_mismatch" &&
+        v.sessionId === "w10-2026-08-17-easyRun"
+      ),
+      JSON.stringify(violations),
+    );
+    assert.ok(
+      !violations.some((v) => v.rule === "session_week_after_total_weeks"),
+    );
+    assert.ok(!violations.some((v) => v.rule === "session_before_plan_start"));
+  },
+);
+
 Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects first week far below high-confidence Strava anchor", () => {
   const violations = validateGeneratedPlanAgainstCoachingBrief(
     {
@@ -6245,6 +6293,45 @@ Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects first week far belo
     JSON.stringify(violations),
   );
 });
+
+Deno.test(
+  "validateGeneratedPlanAgainstCoachingBrief accepts high-volume week 1 after late-week start normalization",
+  () => {
+    const sessions = Array.from({ length: 10 }, (_, index) => {
+      const date = new Date(Date.UTC(2026, 5, 15 + index * 7));
+      const dateOnly = date.toISOString().slice(0, 10);
+      return session({
+        id: `w${index + 1}-${dateOnly}-easyRun`,
+        date: dateOnly,
+        weekNumber: index + 1,
+        type: "easyRun",
+        distanceKm: 30,
+      });
+    });
+
+    const violations = validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: 10,
+        raceGuidance: {
+          schemaVersion: 1,
+          raceDayExecution: "Use the evidence target.",
+        },
+        sessions,
+      },
+      coachingBriefFixture({
+        planLengthWeeks: 10,
+        currentVolumeKmPerWeek: 52,
+      }),
+    );
+
+    assert.ok(
+      !violations.some((violation) =>
+        violation.rule === "coaching_brief_week_one_below_anchor"
+      ),
+      JSON.stringify(violations),
+    );
+  },
+);
 
 Deno.test("validateGeneratedPlanAgainstCoachingBrief rejects long run above brief ceiling", () => {
   const violations = validateGeneratedPlanAgainstCoachingBrief(
