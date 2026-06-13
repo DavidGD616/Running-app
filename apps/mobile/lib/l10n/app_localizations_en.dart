@@ -3212,7 +3212,59 @@ class AppLocalizationsEn extends AppLocalizations {
   String get workoutGuidanceCoachCues => 'Coach Notes';
 
   @override
-  String get workoutGuidanceHowToRunIt => 'How to run it';
+  String get workoutGuidanceFocus => 'Focus';
+
+  @override
+  String get workoutGuidanceFocusEasyRun =>
+      'Keep it conversational and smooth.';
+
+  @override
+  String get workoutGuidanceFocusRecoveryRun =>
+      'Very easy, fresh, and controlled.';
+
+  @override
+  String get workoutGuidanceFocusLongRun =>
+      'Build duration steadily and stay patient all the way.';
+
+  @override
+  String get workoutGuidanceFocusProgressionRun =>
+      'Start easy and nudge the effort up by block.';
+
+  @override
+  String get workoutGuidanceFocusIntervals =>
+      'Run the hard reps hard, then recover deliberately.';
+
+  @override
+  String get workoutGuidanceFocusHillRepeats =>
+      'Drive hard uphill, then reset on the way down.';
+
+  @override
+  String get workoutGuidanceFocusFartlek =>
+      'Surge with purpose, then return smooth.';
+
+  @override
+  String get workoutGuidanceFocusTempoRun =>
+      'Protect tempo control; hold steady effort.';
+
+  @override
+  String get workoutGuidanceFocusThresholdRun =>
+      'Stay strong but repeatable through each rep.';
+
+  @override
+  String get workoutGuidanceFocusRacePaceRun =>
+      'Keep rhythm, keep form, and stay in control.';
+
+  @override
+  String get workoutGuidanceFocusRaceDay =>
+      'Trust your plan and execute calmly.';
+
+  @override
+  String get workoutGuidanceFocusRestDay =>
+      'No run today: recover, hydrate, and move easy.';
+
+  @override
+  String get workoutGuidanceFocusCrossTraining =>
+      'Keep effort controlled and movement crisp.';
 
   @override
   String get workoutGuidanceWhyItMatters => 'Why it matters';

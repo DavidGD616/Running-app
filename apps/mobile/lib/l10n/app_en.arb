@@ -3066,8 +3066,47 @@
   "workoutGuidanceCoachCues": "Coach Notes",
   "@workoutGuidanceCoachCues": { "description": "Section title for coached workout notes" },
 
-  "workoutGuidanceHowToRunIt": "How to run it",
-  "@workoutGuidanceHowToRunIt": { "description": "Label for execution guidance" },
+  "workoutGuidanceFocus": "Focus",
+  "@workoutGuidanceFocus": { "description": "Label for the short coach focus note" },
+
+  "workoutGuidanceFocusEasyRun": "Keep it conversational and smooth.",
+  "@workoutGuidanceFocusEasyRun": { "description": "Short focus hint for easy run sessions" },
+
+  "workoutGuidanceFocusRecoveryRun": "Very easy, fresh, and controlled.",
+  "@workoutGuidanceFocusRecoveryRun": { "description": "Short focus hint for recovery run sessions" },
+
+  "workoutGuidanceFocusLongRun": "Build duration steadily and stay patient all the way.",
+  "@workoutGuidanceFocusLongRun": { "description": "Short focus hint for long run sessions" },
+
+  "workoutGuidanceFocusProgressionRun": "Start easy and nudge the effort up by block.",
+  "@workoutGuidanceFocusProgressionRun": { "description": "Short focus hint for progression run sessions" },
+
+  "workoutGuidanceFocusIntervals": "Run the hard reps hard, then recover deliberately.",
+  "@workoutGuidanceFocusIntervals": { "description": "Short focus hint for interval sessions" },
+
+  "workoutGuidanceFocusHillRepeats": "Drive hard uphill, then reset on the way down.",
+  "@workoutGuidanceFocusHillRepeats": { "description": "Short focus hint for hill repeat sessions" },
+
+  "workoutGuidanceFocusFartlek": "Surge with purpose, then return smooth.",
+  "@workoutGuidanceFocusFartlek": { "description": "Short focus hint for fartlek sessions" },
+
+  "workoutGuidanceFocusTempoRun": "Protect tempo control; hold steady effort.",
+  "@workoutGuidanceFocusTempoRun": { "description": "Short focus hint for tempo run sessions" },
+
+  "workoutGuidanceFocusThresholdRun": "Stay strong but repeatable through each rep.",
+  "@workoutGuidanceFocusThresholdRun": { "description": "Short focus hint for threshold run sessions" },
+
+  "workoutGuidanceFocusRacePaceRun": "Keep rhythm, keep form, and stay in control.",
+  "@workoutGuidanceFocusRacePaceRun": { "description": "Short focus hint for race-pace sessions" },
+
+  "workoutGuidanceFocusRaceDay": "Trust your plan and execute calmly.",
+  "@workoutGuidanceFocusRaceDay": { "description": "Short focus hint for race day sessions" },
+
+  "workoutGuidanceFocusRestDay": "No run today: recover, hydrate, and move easy.",
+  "@workoutGuidanceFocusRestDay": { "description": "Short focus hint for rest day sessions" },
+
+  "workoutGuidanceFocusCrossTraining": "Keep effort controlled and movement crisp.",
+  "@workoutGuidanceFocusCrossTraining": { "description": "Short focus hint for cross-training sessions" },
 
   "workoutGuidanceWhyItMatters": "Why it matters",
   "@workoutGuidanceWhyItMatters": { "description": "Label for workout rationale" },

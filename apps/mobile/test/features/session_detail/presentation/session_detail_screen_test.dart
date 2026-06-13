@@ -189,6 +189,14 @@ void main() {
         find.textContaining(l10n.sessionDetailEffortCueLabel),
         findsNothing,
       );
+      expect(
+        find.textContaining(
+          'Stay around 5:30/km and easy for the first 20 min.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(l10n.workoutGuidanceFocus), findsOneWidget);
+      expect(find.text('How to run it'), findsNothing);
     },
   );
 

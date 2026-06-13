@@ -5850,11 +5850,89 @@ abstract class AppLocalizations {
   /// **'Coach Notes'**
   String get workoutGuidanceCoachCues;
 
-  /// Label for execution guidance
+  /// Label for the short coach focus note
   ///
   /// In en, this message translates to:
-  /// **'How to run it'**
-  String get workoutGuidanceHowToRunIt;
+  /// **'Focus'**
+  String get workoutGuidanceFocus;
+
+  /// Short focus hint for easy run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it conversational and smooth.'**
+  String get workoutGuidanceFocusEasyRun;
+
+  /// Short focus hint for recovery run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Very easy, fresh, and controlled.'**
+  String get workoutGuidanceFocusRecoveryRun;
+
+  /// Short focus hint for long run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Build duration steadily and stay patient all the way.'**
+  String get workoutGuidanceFocusLongRun;
+
+  /// Short focus hint for progression run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Start easy and nudge the effort up by block.'**
+  String get workoutGuidanceFocusProgressionRun;
+
+  /// Short focus hint for interval sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Run the hard reps hard, then recover deliberately.'**
+  String get workoutGuidanceFocusIntervals;
+
+  /// Short focus hint for hill repeat sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Drive hard uphill, then reset on the way down.'**
+  String get workoutGuidanceFocusHillRepeats;
+
+  /// Short focus hint for fartlek sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Surge with purpose, then return smooth.'**
+  String get workoutGuidanceFocusFartlek;
+
+  /// Short focus hint for tempo run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Protect tempo control; hold steady effort.'**
+  String get workoutGuidanceFocusTempoRun;
+
+  /// Short focus hint for threshold run sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Stay strong but repeatable through each rep.'**
+  String get workoutGuidanceFocusThresholdRun;
+
+  /// Short focus hint for race-pace sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Keep rhythm, keep form, and stay in control.'**
+  String get workoutGuidanceFocusRacePaceRun;
+
+  /// Short focus hint for race day sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Trust your plan and execute calmly.'**
+  String get workoutGuidanceFocusRaceDay;
+
+  /// Short focus hint for rest day sessions
+  ///
+  /// In en, this message translates to:
+  /// **'No run today: recover, hydrate, and move easy.'**
+  String get workoutGuidanceFocusRestDay;
+
+  /// Short focus hint for cross-training sessions
+  ///
+  /// In en, this message translates to:
+  /// **'Keep effort controlled and movement crisp.'**
+  String get workoutGuidanceFocusCrossTraining;
 
   /// Label for workout rationale
   ///

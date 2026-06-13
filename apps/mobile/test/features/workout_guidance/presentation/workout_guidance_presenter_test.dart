@@ -53,6 +53,36 @@ void main() {
   }
 
   testWidgets(
+    'focus note is derived from session type, not session description',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'focus-from-type-not-description',
+        date: DateTime(2026, 6, 11),
+        type: SessionType.longRun,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        distanceKm: 20,
+        durationMinutes: 120,
+        description:
+            'This is an intentionally long description intended only for full session context in another part of the detail screen and should not be reused as coach focus text.',
+        workoutTarget: const WorkoutTarget.effort(TargetZone.longRun),
+      );
+
+      final artifacts = await buildArtifacts(tester, session);
+
+      expect(artifacts.guidance.focus, isNot(equals(session.description)));
+      expect(
+        artifacts.guidance.focus,
+        equals(artifacts.l10n.workoutGuidanceFocusLongRun),
+      );
+      expect(
+        artifacts.guidance.focus.length,
+        lessThan(session.description!.length),
+      );
+    },
+  );
+
+  testWidgets(
     'repeat with targeted work child uses child target guidance and avoids fallback',
     (tester) async {
       final session = TrainingSession(

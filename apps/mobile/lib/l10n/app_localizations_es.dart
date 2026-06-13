@@ -3236,7 +3236,59 @@ class AppLocalizationsEs extends AppLocalizations {
   String get workoutGuidanceCoachCues => 'Notas del coach';
 
   @override
-  String get workoutGuidanceHowToRunIt => 'Cómo correrlo';
+  String get workoutGuidanceFocus => 'Enfoque';
+
+  @override
+  String get workoutGuidanceFocusEasyRun =>
+      'Mantén un ritmo conversacional y cómodo.';
+
+  @override
+  String get workoutGuidanceFocusRecoveryRun =>
+      'Corre muy fácil, mantén las piernas frescas.';
+
+  @override
+  String get workoutGuidanceFocusLongRun =>
+      'Conserva constancia y suma tiempo con control.';
+
+  @override
+  String get workoutGuidanceFocusProgressionRun =>
+      'Empieza fácil y sube el esfuerzo por fases.';
+
+  @override
+  String get workoutGuidanceFocusIntervals =>
+      'Corre las repeticiones fuertes y recupera con intención.';
+
+  @override
+  String get workoutGuidanceFocusHillRepeats =>
+      'Sube con fuerza y recupera en el descenso.';
+
+  @override
+  String get workoutGuidanceFocusFartlek =>
+      'Haz cambios con intención y vuelve a correr suave.';
+
+  @override
+  String get workoutGuidanceFocusTempoRun =>
+      'Mantén control y fuerza estable durante todo el bloque.';
+
+  @override
+  String get workoutGuidanceFocusThresholdRun =>
+      'Ritmo duro pero repetible, sin perder técnica.';
+
+  @override
+  String get workoutGuidanceFocusRacePaceRun =>
+      'Respeta el ritmo y la técnica, sin aceleraciones.';
+
+  @override
+  String get workoutGuidanceFocusRaceDay =>
+      'Confía en tu plan y ejecuta con calma.';
+
+  @override
+  String get workoutGuidanceFocusRestDay =>
+      'Descanso total: recupera, hidrata y muévete suave.';
+
+  @override
+  String get workoutGuidanceFocusCrossTraining =>
+      'Prioriza técnica de movimiento y control de esfuerzo.';
 
   @override
   String get workoutGuidanceWhyItMatters => 'Por qué importa';

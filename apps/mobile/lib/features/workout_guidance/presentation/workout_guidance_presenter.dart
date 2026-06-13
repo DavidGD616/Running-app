@@ -15,14 +15,14 @@ class WorkoutGuidance {
     required this.chips,
     required this.phases,
     required this.effortGuideRows,
-    required this.howToRunIt,
+    required this.focus,
     required this.whyItMatters,
   });
 
   final List<WorkoutGuidanceChip> chips;
   final List<WorkoutGuidancePhase> phases;
   final List<WorkoutGuidanceEffortGuideEntry> effortGuideRows;
-  final String howToRunIt;
+  final String focus;
   final String whyItMatters;
 }
 
@@ -123,7 +123,6 @@ class WorkoutGuidancePresenter {
       durationMinutes: session.durationMinutes,
       workoutTarget: session.workoutTarget,
       workoutSteps: session.workoutSteps,
-      description: session.description,
       warmUpMinutes: session.warmUpMinutes,
       coolDownMinutes: session.coolDownMinutes,
     );
@@ -136,7 +135,6 @@ class WorkoutGuidancePresenter {
       durationMinutes: session.durationMinutes,
       workoutTarget: session.workoutTarget,
       workoutSteps: session.workoutSteps,
-      description: null,
       warmUpMinutes: session.warmUpMinutes,
       coolDownMinutes: session.coolDownMinutes,
     );
@@ -148,7 +146,6 @@ class WorkoutGuidancePresenter {
     required int? durationMinutes,
     required WorkoutTarget? workoutTarget,
     required List<WorkoutStep> workoutSteps,
-    required String? description,
     required int? warmUpMinutes,
     required int? coolDownMinutes,
   }) {
@@ -188,12 +185,26 @@ class WorkoutGuidancePresenter {
       ],
       phases: phases,
       effortGuideRows: rows,
-      howToRunIt: description?.trim().isNotEmpty == true
-          ? description!.trim()
-          : l10n.workoutGuidanceDefaultHow,
+      focus: _focusHint(type),
       whyItMatters: l10n.workoutGuidanceWhyForSession(_sessionTypeLabel(type)),
     );
   }
+
+  String _focusHint(SessionType type) => switch (type) {
+    SessionType.easyRun => l10n.workoutGuidanceFocusEasyRun,
+    SessionType.longRun => l10n.workoutGuidanceFocusLongRun,
+    SessionType.progressionRun => l10n.workoutGuidanceFocusProgressionRun,
+    SessionType.intervals => l10n.workoutGuidanceFocusIntervals,
+    SessionType.hillRepeats => l10n.workoutGuidanceFocusHillRepeats,
+    SessionType.fartlek => l10n.workoutGuidanceFocusFartlek,
+    SessionType.tempoRun => l10n.workoutGuidanceFocusTempoRun,
+    SessionType.thresholdRun => l10n.workoutGuidanceFocusThresholdRun,
+    SessionType.racePaceRun => l10n.workoutGuidanceFocusRacePaceRun,
+    SessionType.recoveryRun => l10n.workoutGuidanceFocusRecoveryRun,
+    SessionType.crossTraining => l10n.workoutGuidanceFocusCrossTraining,
+    SessionType.restDay => l10n.workoutGuidanceFocusRestDay,
+    SessionType.raceDay => l10n.workoutGuidanceFocusRaceDay,
+  };
 
   List<WorkoutGuidancePhase> _phasesFromSteps(
     SessionType type,

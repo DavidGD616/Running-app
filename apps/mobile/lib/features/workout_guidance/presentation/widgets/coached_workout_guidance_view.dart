@@ -54,8 +54,8 @@ class CoachedWorkoutGuidanceView extends StatelessWidget {
           _Section(
             title: l10n.workoutGuidanceCoachCues,
             child: _CoachNotesCard(
-              howLabel: l10n.workoutGuidanceHowToRunIt,
-              howValue: guidance.howToRunIt,
+              focusLabel: l10n.workoutGuidanceFocus,
+              focusValue: guidance.focus,
               whyLabel: l10n.workoutGuidanceWhyItMatters,
               whyValue: guidance.whyItMatters,
             ),
@@ -316,14 +316,14 @@ class _SupportPill extends StatelessWidget {
 
 class _CoachNotesCard extends StatelessWidget {
   const _CoachNotesCard({
-    required this.howLabel,
-    required this.howValue,
+    required this.focusLabel,
+    required this.focusValue,
     required this.whyLabel,
     required this.whyValue,
   });
 
-  final String howLabel;
-  final String howValue;
+  final String focusLabel;
+  final String focusValue;
   final String whyLabel;
   final String whyValue;
 
@@ -340,7 +340,7 @@ class _CoachNotesCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _CoachNoteText(label: howLabel, value: howValue),
+          _CoachNoteText(label: focusLabel, value: focusValue),
           const SizedBox(height: AppSpacing.md),
           const Divider(height: 1, color: AppColors.borderDefault),
           const SizedBox(height: AppSpacing.md),
