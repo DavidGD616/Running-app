@@ -1,5 +1,6 @@
 import '../../../core/utils/unit_formatter.dart';
 import '../../../l10n/app_localizations.dart';
+import '../domain/active_run_target_resolver.dart';
 import '../domain/live_pace_guidance.dart';
 import '../domain/models/gps_state.dart';
 import '../domain/run_live_activity_data.dart';
@@ -7,6 +8,7 @@ import 'active_run_timeline.dart';
 import 'active_run_controller.dart';
 import '../../pre_run/presentation/run_flow_context.dart';
 import '../../training_plan/domain/models/session_type.dart';
+import '../../training_plan/domain/models/workout_target.dart';
 import '../../user_preferences/domain/user_preferences.dart';
 
 RunLiveActivityData buildRunLiveActivityData({
@@ -45,10 +47,15 @@ RunLiveActivityData buildRunLiveActivityData({
     paceUnit,
   );
 
-  final currentBlockLabel = _currentBlockLabel(
+  final isStructuredSession = _isStructuredSession(
+    session?.sessionType,
     state.currentBlock,
-    session?.sessionType ?? SessionType.easyRun,
-    l10n,
+  );
+  final currentBlockLabel = _currentCoachingBlockLabel(
+    currentBlock: state.currentBlock,
+    type: session?.sessionType,
+    l10n: l10n,
+    isStructuredSession: isStructuredSession,
   );
   final nextBlockLabel = state.nextBlock != null
       ? _currentBlockLabel(
@@ -74,6 +81,15 @@ RunLiveActivityData buildRunLiveActivityData({
       : null;
 
   final plannedPaceLabel = _plannedPaceLabel(session, unitSystem, l10n);
+  final currentPaceTitle = isStructuredSession
+      ? l10n.activeRunCurrentPace
+      : l10n.activeRunGuidancePace;
+  final targetContextLabel = _targetContextLabel(
+    resolvedTarget: state.resolvedTarget,
+    fallbackLabel: currentBlockLabel,
+    unitSystem: unitSystem,
+    l10n: l10n,
+  );
 
   final timeline = _buildTimeline(session, state.timelineIndex, l10n);
 
@@ -91,15 +107,17 @@ RunLiveActivityData buildRunLiveActivityData({
     elapsedUnitLabel: l10n.activeRunTimeUnit,
     distanceTitleLabel: l10n.activeRunDistanceTitle,
     distanceLabel: distanceLabel,
-    currentPaceTitleLabel: l10n.activeRunCurrentPace,
+    currentPaceTitleLabel: currentPaceTitle,
     currentPaceShortTitleLabel: l10n.activeRunCurrentPaceShort,
     currentPaceLabel: currentPaceLabel,
     avgPaceTitleLabel: l10n.activeRunAveragePace,
     avgPaceLabel: avgPaceLabel,
+    targetContextLabel: targetContextLabel,
     currentBlockLabel: currentBlockLabel,
     nextBlockLabel: nextBlockLabel,
     nextBlockTitleLabel: l10n.activeRunUpNext,
     repLabel: repLabel,
+    isStructuredSession: isStructuredSession,
     isPaused: isPaused,
     distanceKm: distanceKm,
     paceSecondsPerKm: paceSecondsPerKm,
@@ -195,6 +213,41 @@ String _formatPaceWithUnit(int secondsPerKm, String paceUnit) {
   return '${_formatPace(secondsPerKm)} $paceUnit';
 }
 
+String _targetContextLabel({
+  required ActiveRunResolvedTarget? resolvedTarget,
+  required String fallbackLabel,
+  required UnitSystem unitSystem,
+  required AppLocalizations l10n,
+}) {
+  if (resolvedTarget == null) return fallbackLabel;
+  final range = _formatTargetRange(
+    resolvedTarget.paceMinSecPerKm,
+    resolvedTarget.paceMaxSecPerKm,
+    unitSystem,
+    l10n,
+  );
+  return l10n.activeRunTargetRange(range);
+}
+
+String _formatTargetRange(
+  int paceMinSecPerKm,
+  int paceMaxSecPerKm,
+  UnitSystem unitSystem,
+  AppLocalizations l10n,
+) {
+  final min = _formatPace(
+    unitSystem == UnitSystem.km
+        ? paceMinSecPerKm
+        : (paceMinSecPerKm * 1.609344).round(),
+  );
+  final max = _formatPace(
+    unitSystem == UnitSystem.km
+        ? paceMaxSecPerKm
+        : (paceMaxSecPerKm * 1.609344).round(),
+  );
+  return '$min - $max ${UnitFormatter.paceLabel(unitSystem, l10n)}';
+}
+
 String _currentBlockLabel(
   ActiveRunTimelineBlock? block,
   SessionType type,
@@ -207,6 +260,71 @@ String _currentBlockLabel(
       type == SessionType.hillRepeats
           ? l10n.activeRunClimb
           : l10n.activeRunFastRep,
+    ActiveRunBlockKind.stride => l10n.activeRunStride,
+    ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
+    ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,
+  };
+}
+
+bool _isStructuredSession(
+  SessionType? type,
+  ActiveRunTimelineBlock? currentBlock,
+) {
+  final sessionType = type ?? SessionType.easyRun;
+
+  if (sessionType == SessionType.intervals ||
+      sessionType == SessionType.hillRepeats ||
+      sessionType == SessionType.fartlek) {
+    return true;
+  }
+
+  return currentBlock?.isRepBlock == true ||
+      currentBlock?.kind == ActiveRunBlockKind.stride;
+}
+
+String _currentCoachingBlockLabel({
+  required ActiveRunTimelineBlock? currentBlock,
+  required SessionType? type,
+  required AppLocalizations l10n,
+  required bool isStructuredSession,
+}) {
+  final sessionType = type ?? SessionType.easyRun;
+
+  if (currentBlock == null || !isStructuredSession) {
+    return _steadyTargetLabel(currentBlock, sessionType, l10n);
+  }
+
+  final blockLabel = _currentBlockLabel(currentBlock, sessionType, l10n);
+  return blockLabel;
+}
+
+String _steadyTargetLabel(
+  ActiveRunTimelineBlock? block,
+  SessionType sessionType,
+  AppLocalizations l10n,
+) {
+  if (block == null) return _targetValue(sessionType, l10n);
+
+  final zone = block.target?.zone;
+  if (zone != null) {
+    return switch (zone) {
+      TargetZone.recovery => l10n.activeRunTargetEasy,
+      TargetZone.easy => l10n.activeRunTargetEasy,
+      TargetZone.steady => l10n.activeRunTargetSteady,
+      TargetZone.tempo => l10n.activeRunTargetTempo,
+      TargetZone.threshold => l10n.activeRunTargetThreshold,
+      TargetZone.interval =>
+        sessionType == SessionType.hillRepeats
+            ? l10n.activeRunTargetClimb
+            : l10n.activeRunTargetFast,
+      TargetZone.racePace => l10n.activeRunTargetRace,
+      TargetZone.longRun => l10n.activeRunTargetSteady,
+    };
+  }
+
+  return switch (block.kind) {
+    ActiveRunBlockKind.warmUp => l10n.sessionDetailWarmUp,
+    ActiveRunBlockKind.work => _targetValue(sessionType, l10n),
     ActiveRunBlockKind.stride => l10n.activeRunStride,
     ActiveRunBlockKind.recovery => l10n.activeRunRecovery,
     ActiveRunBlockKind.coolDown => l10n.sessionDetailCoolDown,

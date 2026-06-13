@@ -123,10 +123,12 @@ private final class RunLiveActivityManagerImpl {
       currentPaceLabel: stringValue("currentPaceLabel", in: data),
       avgPaceTitleLabel: stringValue("avgPaceTitleLabel", in: data),
       avgPaceLabel: stringValue("avgPaceLabel", in: data),
+      targetContextLabel: stringValue("targetContextLabel", in: data),
       currentBlockLabel: stringValue("currentBlockLabel", in: data),
       nextBlockLabel: optionalStringValue("nextBlockLabel", in: data),
       nextBlockTitleLabel: stringValue("nextBlockTitleLabel", in: data),
       repLabel: optionalStringValue("repLabel", in: data),
+      isStructuredSession: boolValue("isStructuredSession", in: data),
       blockProgressFraction: doubleValue("blockProgressFraction", in: data),
       plannedPaceLabel: stringValue("plannedPaceLabel", in: data),
       blockRemainingLabel: optionalStringValue("blockRemainingLabel", in: data)

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:running_app/features/active_run/domain/active_run_target_resolver.dart';
 import 'package:running_app/features/active_run/domain/models/gps_state.dart';
 import 'package:running_app/features/active_run/domain/live_pace_guidance.dart';
 import 'package:running_app/features/active_run/presentation/active_run_live_activity_mapper.dart';
@@ -55,6 +56,7 @@ ActiveRunState createRunningState({
   int timelineIndex = 0,
   RunFlowSessionContext? session,
   bool isTimerOnlyMode = false,
+  ActiveRunResolvedTarget? resolvedTarget,
 }) {
   return ActiveRunState(
     session: session,
@@ -68,7 +70,7 @@ ActiveRunState createRunningState({
     paceQuality: hasDisplayPace
         ? PaceDisplayQuality.stable
         : PaceDisplayQuality.waiting,
-    resolvedTarget: null,
+    resolvedTarget: resolvedTarget,
     paceStatus: const LivePaceGuidanceResult.none(),
     paceGuidance: const LivePaceGuidanceResult.none(),
     gpsStatus: gpsStatus,
@@ -138,12 +140,11 @@ void main() {
           currentPaceSecondsPerKm: 300,
           averagePaceSecondsPerKm: 330,
         );
-        final session = createTestSession();
         final l10n = createL10n();
 
         final result = buildRunLiveActivityData(
           state: state,
-          session: session,
+          session: null,
           unitSystem: UnitSystem.km,
           l10n: l10n,
         );
@@ -927,6 +928,101 @@ void main() {
       });
     });
 
+    group('coaching hierarchy', () {
+      test('steady session uses guidance pace title and target context', () {
+        final block = ActiveRunTimelineBlock(
+          kind: ActiveRunBlockKind.work,
+          duration: const Duration(minutes: 5),
+          target: const WorkoutTarget.pace(TargetZone.easy),
+        );
+        final state = createRunningState(
+          currentBlock: block,
+          currentPaceSecondsPerKm: 300,
+          resolvedTarget: const ActiveRunResolvedTarget(
+            target: WorkoutTarget.pace(
+              TargetZone.easy,
+              paceMinSecPerKm: 310,
+              paceMaxSecPerKm: 340,
+            ),
+            zone: TargetZone.easy,
+            paceMinSecPerKm: 310,
+            paceMaxSecPerKm: 340,
+          ),
+        );
+        final session = createTestSession(type: SessionType.easyRun);
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: session,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+        );
+
+        expect(result.isStructuredSession, isFalse);
+        expect(result.currentPaceTitleLabel, 'GUIDANCE PACE');
+        expect(result.currentPaceLabel, '5:00 min/km');
+        expect(result.targetContextLabel, 'Target 5:10 - 5:40 min/km');
+        expect(result.currentBlockLabel, 'Easy');
+      });
+
+      test('structured interval run keeps rep and phase labels separate', () {
+        final block = ActiveRunTimelineBlock(
+          kind: ActiveRunBlockKind.work,
+          duration: const Duration(minutes: 1),
+          repIndex: 2,
+          totalReps: 8,
+          target: const WorkoutTarget.pace(TargetZone.interval),
+        );
+        final nextBlock = ActiveRunTimelineBlock(
+          kind: ActiveRunBlockKind.recovery,
+          duration: const Duration(minutes: 1),
+          target: const WorkoutTarget.effort(TargetZone.recovery),
+        );
+        final state = createRunningState(
+          currentBlock: block,
+          nextBlock: nextBlock,
+        );
+        final session = createTestSession(type: SessionType.intervals);
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: session,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+        );
+
+        expect(result.isStructuredSession, isTrue);
+        expect(result.currentPaceTitleLabel, 'CURRENT PACE');
+        expect(result.currentBlockLabel, 'Fast rep');
+        expect(result.repLabel, '2 / 8');
+        expect(result.nextBlockLabel, 'Recovery');
+      });
+
+      test('steady warm-up keeps guidance pace hierarchy', () {
+        final block = ActiveRunTimelineBlock(
+          kind: ActiveRunBlockKind.warmUp,
+          duration: const Duration(minutes: 5),
+          target: const WorkoutTarget.effort(TargetZone.easy),
+        );
+        final state = createRunningState(currentBlock: block);
+        final session = createTestSession(type: SessionType.easyRun);
+        final l10n = createL10n();
+
+        final result = buildRunLiveActivityData(
+          state: state,
+          session: session,
+          unitSystem: UnitSystem.km,
+          l10n: l10n,
+        );
+
+        expect(result.isStructuredSession, isFalse);
+        expect(result.currentPaceTitleLabel, 'GUIDANCE PACE');
+        expect(result.currentBlockLabel, 'Easy');
+      });
+    });
+
     group('current block label mapping', () {
       test('warmup block maps to Warm-up', () {
         final block = ActiveRunTimelineBlock(
@@ -935,11 +1031,12 @@ void main() {
           target: const WorkoutTarget.effort(TargetZone.easy),
         );
         final state = createRunningState(currentBlock: block);
+        final session = createTestSession(type: SessionType.intervals);
         final l10n = createL10n();
 
         final result = buildRunLiveActivityData(
           state: state,
-          session: null,
+          session: session,
           unitSystem: UnitSystem.km,
           l10n: l10n,
         );
@@ -954,11 +1051,12 @@ void main() {
           target: const WorkoutTarget.pace(TargetZone.interval),
         );
         final state = createRunningState(currentBlock: block);
+        final session = createTestSession(type: SessionType.intervals);
         final l10n = createL10n();
 
         final result = buildRunLiveActivityData(
           state: state,
-          session: null,
+          session: session,
           unitSystem: UnitSystem.km,
           l10n: l10n,
         );
@@ -993,11 +1091,12 @@ void main() {
           target: const WorkoutTarget.effort(TargetZone.recovery),
         );
         final state = createRunningState(currentBlock: block);
+        final session = createTestSession(type: SessionType.intervals);
         final l10n = createL10n();
 
         final result = buildRunLiveActivityData(
           state: state,
-          session: null,
+          session: session,
           unitSystem: UnitSystem.km,
           l10n: l10n,
         );
@@ -1012,11 +1111,12 @@ void main() {
           target: const WorkoutTarget.effort(TargetZone.recovery),
         );
         final state = createRunningState(currentBlock: block);
+        final session = createTestSession(type: SessionType.intervals);
         final l10n = createL10n();
 
         final result = buildRunLiveActivityData(
           state: state,
-          session: null,
+          session: session,
           unitSystem: UnitSystem.km,
           l10n: l10n,
         );

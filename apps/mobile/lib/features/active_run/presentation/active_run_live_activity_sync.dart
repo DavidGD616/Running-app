@@ -149,6 +149,8 @@ class ActiveRunLiveActivitySync {
     if (prev.currentBlockLabel != next.currentBlockLabel) return true;
     if (prev.nextBlockLabel != next.nextBlockLabel) return true;
     if (prev.repLabel != next.repLabel) return true;
+    if (prev.targetContextLabel != next.targetContextLabel) return true;
+    if (prev.isStructuredSession != next.isStructuredSession) return true;
     if (prev.gpsStatus != next.gpsStatus) return true;
     if (prev.isTimerOnlyMode != next.isTimerOnlyMode) return true;
     if (prev.statusLabel != next.statusLabel) return true;
@@ -209,6 +211,8 @@ class _PayloadSignature {
     required this.currentBlockLabel,
     required this.nextBlockLabel,
     required this.repLabel,
+    required this.targetContextLabel,
+    required this.isStructuredSession,
     required this.isPaused,
     required this.timelineIndex,
     required this.gpsStatus,
@@ -224,6 +228,8 @@ class _PayloadSignature {
   final String currentBlockLabel;
   final String? nextBlockLabel;
   final String? repLabel;
+  final String targetContextLabel;
+  final bool isStructuredSession;
   final bool isPaused;
   final int timelineIndex;
   final GpsStatus gpsStatus;
@@ -248,6 +254,8 @@ class _PayloadSignature {
       currentBlockLabel: data.currentBlockLabel,
       nextBlockLabel: data.nextBlockLabel,
       repLabel: data.repLabel,
+      targetContextLabel: data.targetContextLabel,
+      isStructuredSession: data.isStructuredSession,
       isPaused: data.isPaused,
       timelineIndex: timelineIndex,
       gpsStatus: gpsStatus,

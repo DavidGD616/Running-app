@@ -16,6 +16,8 @@ RunLiveActivityData createPayload({
   String currentBlockLabel = 'Work',
   String? nextBlockLabel,
   String? repLabel,
+  String targetContextLabel = '',
+  bool isStructuredSession = false,
   bool isPaused = false,
   double blockProgressFraction = 0.0,
   String statusLabel = '',
@@ -30,9 +32,11 @@ RunLiveActivityData createPayload({
     currentPaceLabel: '5:00',
     avgPaceTitleLabel: 'Avg',
     avgPaceLabel: '5:30',
+    targetContextLabel: targetContextLabel,
     currentBlockLabel: currentBlockLabel,
     nextBlockLabel: nextBlockLabel,
     repLabel: repLabel,
+    isStructuredSession: isStructuredSession,
     statusLabel: statusLabel,
     isPaused: isPaused,
     distanceKm: distanceKm,
@@ -605,6 +609,29 @@ void main() {
           timelineIndex: 0,
           paceGuidanceMessageKey: null,
           paceGuidanceSeverity: LivePaceGuidanceSeverity.none,
+        );
+
+        expect(bridge.updateCalls.length, 1);
+        expect(service.updateCalls.length, 1);
+      },
+    );
+
+    test(
+      'target context change alone triggers a live-activity update',
+      () async {
+        sync = createSync();
+
+        await sync.sync(
+          data: createPayload(targetContextLabel: 'Target 5:00 - 5:30'),
+          timelineIndex: 0,
+        );
+
+        bridge.reset();
+        service.reset();
+
+        await sync.sync(
+          data: createPayload(targetContextLabel: 'Target 5:20 - 5:50'),
+          timelineIndex: 0,
         );
 
         expect(bridge.updateCalls.length, 1);

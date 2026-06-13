@@ -18,10 +18,12 @@ struct RunActivityAttributes: ActivityAttributes {
     var currentPaceLabel: String
     var avgPaceTitleLabel: String
     var avgPaceLabel: String
+    var targetContextLabel: String
     var currentBlockLabel: String
     var nextBlockLabel: String?
     var nextBlockTitleLabel: String
     var repLabel: String?
+    var isStructuredSession: Bool
     var blockProgressFraction: Double
     var plannedPaceLabel: String
     var blockRemainingLabel: String?

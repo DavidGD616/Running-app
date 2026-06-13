@@ -14,9 +14,11 @@ void main() {
       currentPaceLabel: '5:06/km',
       avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '5:57/km',
+      targetContextLabel: 'Target 5:00 - 5:30 min/km',
       currentBlockLabel: 'Fast rep',
       nextBlockLabel: 'Recover',
       repLabel: '3 / 6',
+      isStructuredSession: true,
       isPaused: false,
       distanceKm: 1.42,
       paceSecondsPerKm: 306,
@@ -37,9 +39,11 @@ void main() {
     expect(map['currentPaceLabel'], '5:06/km');
     expect(map['avgPaceTitleLabel'], 'Avg pace');
     expect(map['avgPaceLabel'], '5:57/km');
+    expect(map['targetContextLabel'], 'Target 5:00 - 5:30 min/km');
     expect(map['currentBlockLabel'], 'Fast rep');
     expect(map['nextBlockLabel'], 'Recover');
     expect(map['repLabel'], '3 / 6');
+    expect(map['isStructuredSession'], true);
     expect(map['isPaused'], false);
   });
 
@@ -109,9 +113,13 @@ void main() {
     final statusUpdated = original.copyWith(
       statusTitleLabel: 'Run status',
       statusLabel: 'Paused',
+      targetContextLabel: 'Target 5:30 - 6:00 min/km',
+      isStructuredSession: true,
     );
     expect(statusUpdated.statusTitleLabel, 'Run status');
     expect(statusUpdated.statusLabel, 'Paused');
+    expect(statusUpdated.targetContextLabel, 'Target 5:30 - 6:00 min/km');
+    expect(statusUpdated.isStructuredSession, true);
   });
 
   test('copyWith can clear nullable labels', () {
@@ -154,6 +162,7 @@ void main() {
       currentPaceLabel: '6:00/km',
       avgPaceTitleLabel: 'Avg pace',
       avgPaceLabel: '6:00/km',
+      targetContextLabel: 'Target 5:50 - 6:10 min/km',
       currentBlockLabel: 'Tempo',
       nextBlockLabel: 'Cool-down',
       repLabel: null,
@@ -180,6 +189,8 @@ void main() {
       currentBlockLabel: map['currentBlockLabel'] as String,
       nextBlockLabel: map['nextBlockLabel'] as String?,
       repLabel: map['repLabel'] as String?,
+      targetContextLabel: map['targetContextLabel'] as String,
+      isStructuredSession: map['isStructuredSession'] as bool,
       isPaused: map['isPaused'] as bool,
       distanceKm: map['distanceKm'] as double,
       paceSecondsPerKm: map['paceSecondsPerKm'] as int,
@@ -201,6 +212,8 @@ void main() {
     expect(reconstructed.currentBlockLabel, original.currentBlockLabel);
     expect(reconstructed.nextBlockLabel, original.nextBlockLabel);
     expect(reconstructed.repLabel, original.repLabel);
+    expect(reconstructed.targetContextLabel, original.targetContextLabel);
+    expect(reconstructed.isStructuredSession, original.isStructuredSession);
     expect(reconstructed.isPaused, original.isPaused);
   });
 }

@@ -57,10 +57,12 @@ class RunLiveActivityData {
     required this.currentPaceLabel,
     required this.avgPaceTitleLabel,
     required this.avgPaceLabel,
+    this.targetContextLabel = '',
     required this.currentBlockLabel,
     this.nextBlockLabel,
     this.nextBlockTitleLabel = '',
     this.repLabel,
+    this.isStructuredSession = false,
     required this.isPaused,
     required this.distanceKm,
     required this.paceSecondsPerKm,
@@ -88,10 +90,12 @@ class RunLiveActivityData {
   final String currentPaceLabel;
   final String avgPaceTitleLabel;
   final String avgPaceLabel;
+  final String targetContextLabel;
   final String currentBlockLabel;
   final String? nextBlockLabel;
   final String nextBlockTitleLabel;
   final String? repLabel;
+  final bool isStructuredSession;
   final bool isPaused;
 
   /// Live distance in km. Authoritative controller distance used for
@@ -194,10 +198,12 @@ class RunLiveActivityData {
       currentPaceLabel: str('currentPaceLabel'),
       avgPaceTitleLabel: str('avgPaceTitleLabel'),
       avgPaceLabel: str('avgPaceLabel'),
+      targetContextLabel: str('targetContextLabel'),
       currentBlockLabel: str('currentBlockLabel'),
       nextBlockLabel: optStr('nextBlockLabel'),
       nextBlockTitleLabel: str('nextBlockTitleLabel'),
       repLabel: optStr('repLabel'),
+      isStructuredSession: (map['isStructuredSession'] as bool?) ?? false,
       isPaused: (map['isPaused'] as bool?) ?? false,
       distanceKm: doubleVal('distanceKm', 0),
       paceSecondsPerKm: intVal('paceSecondsPerKm'),
@@ -228,10 +234,12 @@ class RunLiveActivityData {
       'currentPaceLabel': currentPaceLabel,
       'avgPaceTitleLabel': avgPaceTitleLabel,
       'avgPaceLabel': avgPaceLabel,
+      'targetContextLabel': targetContextLabel,
       'currentBlockLabel': currentBlockLabel,
       'nextBlockLabel': nextBlockLabel,
       'nextBlockTitleLabel': nextBlockTitleLabel,
       'repLabel': repLabel,
+      'isStructuredSession': isStructuredSession,
       'isPaused': isPaused,
       'distanceKm': distanceKm,
       'paceSecondsPerKm': paceSecondsPerKm,
@@ -262,10 +270,12 @@ class RunLiveActivityData {
     String? currentPaceLabel,
     String? avgPaceTitleLabel,
     String? avgPaceLabel,
+    String? targetContextLabel,
     String? currentBlockLabel,
     Object? nextBlockLabel = _copyWithSentinel,
     String? nextBlockTitleLabel,
     Object? repLabel = _copyWithSentinel,
+    bool? isStructuredSession,
     bool? isPaused,
     double? distanceKm,
     int? paceSecondsPerKm,
@@ -295,6 +305,7 @@ class RunLiveActivityData {
       currentPaceLabel: currentPaceLabel ?? this.currentPaceLabel,
       avgPaceTitleLabel: avgPaceTitleLabel ?? this.avgPaceTitleLabel,
       avgPaceLabel: avgPaceLabel ?? this.avgPaceLabel,
+      targetContextLabel: targetContextLabel ?? this.targetContextLabel,
       currentBlockLabel: currentBlockLabel ?? this.currentBlockLabel,
       nextBlockLabel: identical(nextBlockLabel, _copyWithSentinel)
           ? this.nextBlockLabel
@@ -303,6 +314,7 @@ class RunLiveActivityData {
       repLabel: identical(repLabel, _copyWithSentinel)
           ? this.repLabel
           : repLabel as String?,
+      isStructuredSession: isStructuredSession ?? this.isStructuredSession,
       isPaused: isPaused ?? this.isPaused,
       distanceKm: distanceKm ?? this.distanceKm,
       paceSecondsPerKm: paceSecondsPerKm ?? this.paceSecondsPerKm,
