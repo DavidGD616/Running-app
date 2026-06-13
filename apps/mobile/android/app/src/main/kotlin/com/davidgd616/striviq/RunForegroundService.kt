@@ -169,12 +169,18 @@ class RunForegroundService : Service() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
         )
 
+        val primaryLine = if (data.isStructuredSession) {
+            phaseContextLabel(data.repLabel, data.currentBlockLabel)
+        } else {
+            compactPaceValue(data.currentPaceLabel)
+        }
+
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_run_notification)
             .setColor(NOTIFICATION_BACKGROUND_COLOR)
             .setColorized(true)
             .setContentTitle(data.workoutName)
-            .setContentText("${data.distanceLabel} ${data.currentPaceLabel}")
+            .setContentText(primaryLine.ifBlank { data.statusLabel })
             .setCategory(Notification.CATEGORY_STATUS)
             .setVisibility(Notification.VISIBILITY_PUBLIC)
             .setShowWhen(false)
@@ -194,6 +200,7 @@ class RunForegroundService : Service() {
             setTextViewText(R.id.run_distance_value_label, distanceValue)
             setTextViewText(R.id.run_distance_unit_label, distanceUnit)
             setTextViewText(R.id.run_elapsed_unit_label, data.elapsedUnitLabel)
+            setOptionalText(R.id.run_guidance_label, collapsedGuidanceLine(data))
             setProgressBar(R.id.run_progress_bar, 1000, progressPermille(data), false)
             bindElapsed(this, data)
         }
@@ -207,13 +214,32 @@ class RunForegroundService : Service() {
             setTextViewText(R.id.run_distance_value_label, distanceValue)
             setTextViewText(R.id.run_distance_unit_label, distanceUnit)
             setTextViewText(R.id.run_elapsed_unit_label, data.elapsedUnitLabel)
-            setTextViewText(R.id.run_current_block_label, data.currentBlockLabel)
+            setTextViewText(R.id.run_avg_pace_title, data.avgPaceTitleLabel)
+            setTextViewText(R.id.run_avg_pace_label, compactPaceValue(data.avgPaceLabel))
             setTextViewText(R.id.run_current_pace_title, data.currentPaceTitleLabel)
             setTextViewText(R.id.run_current_pace_label, data.currentPaceLabel)
-            setTextViewText(R.id.run_avg_pace_title, data.avgPaceTitleLabel)
-            setTextViewText(R.id.run_avg_pace_label, data.avgPaceLabel)
-            setOptionalText(R.id.run_next_block_label, data.nextBlockLabel)
-            setOptionalText(R.id.run_rep_label, data.repLabel)
+            setOptionalText(R.id.run_phase_context_label, null)
+            setOptionalText(R.id.run_target_context_label, null)
+            setOptionalText(R.id.run_current_block_label, null)
+            setOptionalText(R.id.run_block_remaining_label, null)
+            setOptionalText(R.id.run_next_block_label, null)
+            if (data.isStructuredSession) {
+                setOptionalText(
+                    R.id.run_phase_context_label,
+                    phaseContextLabel(data.repLabel, data.currentBlockLabel),
+                )
+                setOptionalText(R.id.run_block_remaining_label, data.blockRemainingLabel)
+                setOptionalText(R.id.run_next_block_label, data.nextBlockLabel)
+                if (data.targetContextLabel.isNotBlank() &&
+                    data.blockRemainingLabel.isNullOrBlank() &&
+                    data.nextBlockLabel.isNullOrBlank()
+                ) {
+                    setOptionalText(R.id.run_target_context_label, data.targetContextLabel)
+                }
+            } else {
+                setOptionalText(R.id.run_target_context_label, data.targetContextLabel)
+                setOptionalText(R.id.run_current_block_label, data.currentBlockLabel)
+            }
             setProgressBar(R.id.run_progress_bar, 1000, progressPermille(data), false)
             bindElapsed(this, data)
         }
@@ -226,6 +252,33 @@ class RunForegroundService : Service() {
             return Pair(trimmed.substring(0, splitAt), trimmed.substring(splitAt + 1))
         }
         return Pair(trimmed, data.distanceUnit)
+    }
+
+    private fun compactPaceValue(label: String): String {
+        val trimmed = label.trim()
+        if (trimmed.isEmpty()) return trimmed
+        val firstWord = trimmed.substringBefore(' ')
+        return firstWord.ifEmpty { trimmed }
+    }
+
+    private fun phaseContextLabel(repLabel: String?, currentBlockLabel: String): String {
+        val rep = repLabel?.trim().orEmpty()
+        val block = currentBlockLabel.trim()
+        if (rep.isEmpty()) return block
+        if (block.isEmpty()) return rep
+        return "$rep - $block"
+    }
+
+    private fun collapsedGuidanceLine(data: RunNotificationData): String? {
+        if (data.isStructuredSession) {
+            val phase = phaseContextLabel(data.repLabel, data.currentBlockLabel)
+            if (phase.isNotBlank()) return phase
+        }
+        val pace = data.currentPaceLabel.trim()
+        if (pace.isNotBlank()) return pace
+        if (data.targetContextLabel.isNotBlank()) return data.targetContextLabel
+        if (data.currentBlockLabel.isNotBlank()) return data.currentBlockLabel
+        return data.nextBlockLabel
     }
 
     private fun bindElapsed(views: RemoteViews, data: RunNotificationData) {
@@ -363,7 +416,10 @@ private data class RunNotificationData(
     val avgPaceLabel: String,
     val currentBlockLabel: String,
     val nextBlockLabel: String?,
+    val targetContextLabel: String,
+    val blockRemainingLabel: String?,
     val repLabel: String?,
+    val isStructuredSession: Boolean,
     val isPaused: Boolean,
     val distanceKm: Double,
     val paceSecondsPerKm: Int,
@@ -391,7 +447,10 @@ private data class RunNotificationData(
         putString("avgPaceLabel", avgPaceLabel)
         putString("currentBlockLabel", currentBlockLabel)
         putString("nextBlockLabel", nextBlockLabel)
+        putString("targetContextLabel", targetContextLabel)
+        blockRemainingLabel?.let { putString("blockRemainingLabel", it) }
         putString("repLabel", repLabel)
+        putBoolean("isStructuredSession", isStructuredSession)
         putBoolean("isPaused", isPaused)
         putDouble("distanceKm", distanceKm)
         putInt("paceSecondsPerKm", paceSecondsPerKm)
@@ -421,7 +480,10 @@ private data class RunNotificationData(
             avgPaceLabel = "",
             currentBlockLabel = "",
             nextBlockLabel = null,
+            targetContextLabel = "",
+            blockRemainingLabel = null,
             repLabel = null,
+            isStructuredSession = false,
             isPaused = false,
             distanceKm = 0.0,
             paceSecondsPerKm = 0,
@@ -454,7 +516,10 @@ private data class RunNotificationData(
                 avgPaceLabel = bundle.getString("avgPaceLabel").orEmpty(),
                 currentBlockLabel = bundle.getString("currentBlockLabel").orEmpty(),
                 nextBlockLabel = bundle.getString("nextBlockLabel"),
+                targetContextLabel = bundle.getString("targetContextLabel").orEmpty(),
+                blockRemainingLabel = bundle.getString("blockRemainingLabel"),
                 repLabel = bundle.getString("repLabel"),
+                isStructuredSession = bundle.getBoolean("isStructuredSession"),
                 isPaused = bundle.getBoolean("isPaused"),
                 distanceKm = bundle.getDouble("distanceKm"),
                 paceSecondsPerKm = bundle.getInt("paceSecondsPerKm"),
@@ -488,7 +553,10 @@ private data class RunNotificationData(
                 avgPaceLabel = map.stringValue("avgPaceLabel"),
                 currentBlockLabel = map.stringValue("currentBlockLabel"),
                 nextBlockLabel = map.optionalStringValue("nextBlockLabel"),
+                targetContextLabel = map.stringValue("targetContextLabel"),
+                blockRemainingLabel = map.optionalStringValue("blockRemainingLabel"),
                 repLabel = map.optionalStringValue("repLabel"),
+                isStructuredSession = map.booleanValue("isStructuredSession"),
                 isPaused = map.booleanValue("isPaused"),
                 distanceKm = map.doubleValue("distanceKm", 0.0),
                 paceSecondsPerKm = map.intValue("paceSecondsPerKm"),
