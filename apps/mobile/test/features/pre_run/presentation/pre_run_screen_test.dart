@@ -88,7 +88,9 @@ void main() {
     );
   }
 
-  testWidgets('renders structured interval repeat preview', (tester) async {
+  testWidgets('renders check-in questions without workout prescription', (
+    tester,
+  ) async {
     final session = buildStructuredIntervalSession();
     final args = PreRunArgs.fromSession(session);
 
@@ -98,14 +100,16 @@ void main() {
     final context = tester.element(find.byType(PreRunScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    expect(find.text(l10n.workoutGuidanceTodaysPrescription), findsOneWidget);
-    expect(find.text(l10n.workoutGuidancePaceEffort), findsOneWidget);
+    expect(find.text(l10n.preRunLegsQuestion), findsOneWidget);
+    expect(find.text(l10n.preRunPainQuestion), findsOneWidget);
+    expect(find.text(l10n.preRunSleepQuestion), findsOneWidget);
+    expect(find.text(l10n.preRunReadinessQuestion), findsOneWidget);
+    expect(find.text(l10n.workoutGuidanceTodaysPrescription), findsNothing);
+    expect(find.text(l10n.workoutGuidancePaceEffort), findsNothing);
     expect(
       find.text(l10n.workoutGuidanceRepeatMeasure(6, '400 m', '90 s')),
-      findsOneWidget,
+      findsNothing,
     );
-    expect(find.text(l10n.sessionDetailWarmUp), findsOneWidget);
-    expect(find.text(l10n.sessionDetailCoolDown), findsOneWidget);
   });
 
   testWidgets('starts GPS run when distance workout has always permission', (

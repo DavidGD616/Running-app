@@ -15,12 +15,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../active_run/presentation/active_run_session_provider.dart';
 import '../../../active_run/presentation/active_run_timeline.dart';
-import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../training_plan/domain/models/workout_step.dart';
-import '../../../user_preferences/domain/user_preferences.dart';
-import '../../../user_preferences/presentation/user_preferences_provider.dart';
-import '../../../workout_guidance/presentation/widgets/coached_workout_guidance_view.dart';
-import '../../../workout_guidance/presentation/workout_guidance_presenter.dart';
 import '../location_permission_service.dart';
 import '../run_flow_context.dart';
 
@@ -293,17 +288,6 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final plan = ref.watch(trainingPlanProvider).value;
-    final unitSystem =
-        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
-    final session = widget.args?.session;
-    final coachedGuidance = session == null
-        ? null
-        : WorkoutGuidancePresenter(
-            l10n: l10n,
-            unitSystem: unitSystem,
-            paceZones: plan?.paceZones,
-          ).fromRunFlowSession(session);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -338,14 +322,6 @@ class _PreRunScreenState extends ConsumerState<PreRunScreen> {
                         color: AppColors.textSecondary,
                       ),
                     ),
-
-                    if (coachedGuidance != null) ...[
-                      const SizedBox(height: AppSpacing.xl),
-                      CoachedWorkoutGuidanceView(
-                        guidance: coachedGuidance,
-                        compact: true,
-                      ),
-                    ],
 
                     const SizedBox(height: AppSpacing.xxl),
 
