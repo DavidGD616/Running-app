@@ -14,14 +14,14 @@ class WorkoutGuidance {
   const WorkoutGuidance({
     required this.chips,
     required this.phases,
-    required this.paceEffortRows,
+    required this.effortGuideRows,
     required this.howToRunIt,
     required this.whyItMatters,
   });
 
   final List<WorkoutGuidanceChip> chips;
   final List<WorkoutGuidancePhase> phases;
-  final List<String> paceEffortRows;
+  final List<WorkoutGuidanceEffortGuideEntry> effortGuideRows;
   final String howToRunIt;
   final String whyItMatters;
 }
@@ -42,14 +42,32 @@ class WorkoutGuidancePhase {
   const WorkoutGuidancePhase({
     required this.title,
     required this.measure,
-    required this.guidance,
+    required this.headline,
+    this.details = const [],
     required this.kind,
   });
 
   final String title;
   final String measure;
-  final String guidance;
+  final String headline;
+  final List<String> details;
   final WorkoutStepKind kind;
+
+  String get guidance => headline;
+}
+
+class WorkoutGuidanceEffortGuideEntry {
+  const WorkoutGuidanceEffortGuideEntry({
+    required this.label,
+    required this.cue,
+    this.pace,
+    this.feel,
+  });
+
+  final String label;
+  final String cue;
+  final String? pace;
+  final String? feel;
 }
 
 class _PaceBounds {
@@ -142,7 +160,7 @@ class WorkoutGuidancePresenter {
             warmUpMinutes,
             coolDownMinutes,
           );
-    final rows = _paceEffortRows(type, workoutTarget, workoutSteps);
+    final rows = _effortGuideRows(type, workoutTarget, workoutSteps);
     final durationLabel = _durationLabel(
       distanceKm: distanceKm,
       durationMinutes: durationMinutes,
@@ -169,7 +187,7 @@ class WorkoutGuidancePresenter {
         ),
       ],
       phases: phases,
-      paceEffortRows: rows,
+      effortGuideRows: rows,
       howToRunIt: description?.trim().isNotEmpty == true
           ? description!.trim()
           : l10n.workoutGuidanceDefaultHow,
@@ -205,12 +223,17 @@ class WorkoutGuidancePresenter {
           _ => l10n.workoutGuidanceFirm,
         };
         progressionWorkIndex += 1;
-        phases.add(_phase(step, title, measureOverride: measureOverride));
+        phases.add(_phase(step, title, type, measureOverride: measureOverride));
         continue;
       }
 
       phases.add(
-        _phase(step, _stepTitle(step, type), measureOverride: measureOverride),
+        _phase(
+          step,
+          _stepTitle(step, type),
+          type,
+          measureOverride: measureOverride,
+        ),
       );
     }
 
@@ -219,13 +242,16 @@ class WorkoutGuidancePresenter {
 
   WorkoutGuidancePhase _phase(
     WorkoutStep step,
-    String title, {
+    String title,
+    SessionType type, {
     String? measureOverride,
   }) {
+    final target = _stepDisplayTarget(step);
     return WorkoutGuidancePhase(
       title: title,
       measure: measureOverride ?? _stepMeasure(step),
-      guidance: _stepGuidance(step),
+      headline: _phaseHeadline(step, type, target),
+      details: _phaseDetails(step, target),
       kind: step.kind,
     );
   }
@@ -284,7 +310,10 @@ class WorkoutGuidancePresenter {
         WorkoutGuidancePhase(
           title: l10n.sessionDetailWarmUp,
           measure: UnitFormatter.formatDuration(warmUpMinutes, l10n),
-          guidance: zoneGuidance(TargetZone.easy),
+          headline: _beginnerLabel(TargetZone.easy),
+          details: _targetDetailRows(
+            const WorkoutTarget.effort(TargetZone.easy),
+          ),
           kind: WorkoutStepKind.warmUp,
         ),
       );
@@ -299,7 +328,8 @@ class WorkoutGuidancePresenter {
         measure: mainMinutes != null && mainMinutes > 0
             ? UnitFormatter.formatDuration(mainMinutes, l10n)
             : l10n.workoutGuidanceOpenMeasure,
-        guidance: zoneGuidance(_defaultZone(type)),
+        headline: _beginnerLabel(_defaultZone(type)),
+        details: _targetDetailRows(WorkoutTarget.effort(_defaultZone(type))),
         kind: WorkoutStepKind.work,
       ),
     );
@@ -309,7 +339,10 @@ class WorkoutGuidancePresenter {
         WorkoutGuidancePhase(
           title: l10n.sessionDetailCoolDown,
           measure: UnitFormatter.formatDuration(coolDownMinutes, l10n),
-          guidance: zoneGuidance(TargetZone.recovery),
+          headline: _beginnerLabel(TargetZone.recovery),
+          details: _targetDetailRows(
+            const WorkoutTarget.effort(TargetZone.recovery),
+          ),
           kind: WorkoutStepKind.coolDown,
         ),
       );
@@ -318,43 +351,34 @@ class WorkoutGuidancePresenter {
     return phases;
   }
 
-  List<String> _paceEffortRows(
+  List<WorkoutGuidanceEffortGuideEntry> _effortGuideRows(
     SessionType type,
     WorkoutTarget? workoutTarget,
     List<WorkoutStep> steps,
   ) {
-    final rows = <String>[];
-    final zones = <TargetZone>[];
-    void addRow(String row) {
-      if (!rows.contains(row)) rows.add(row);
-    }
+    final rows = <TargetZone, WorkoutGuidanceEffortGuideEntry>{};
 
-    void addZone(TargetZone? zone) {
-      if (zone != null && !zones.contains(zone)) zones.add(zone);
+    void addTarget(WorkoutTarget? target) {
+      if (target == null) return;
+      final next = _effortGuideEntry(target);
+      final existing = rows[target.zone];
+      if (existing == null || _hasSpecificGuidance(target)) {
+        rows[target.zone] = next;
+      }
     }
 
     for (final step in steps) {
-      if (step.target != null) addRow(targetGuidance(step.target!));
-      if (type == SessionType.progressionRun &&
-          step.kind == WorkoutStepKind.work &&
-          step.target?.zone == TargetZone.tempo) {
-        addZone(TargetZone.tempo);
-      } else {
-        addZone(step.target?.zone);
-      }
+      addTarget(step.target);
       for (final child in step.steps) {
-        if (child.target != null) addRow(targetGuidance(child.target!));
-        addZone(child.target?.zone);
+        addTarget(child.target);
       }
     }
-    if (workoutTarget != null) addRow(targetGuidance(workoutTarget));
-    addZone(workoutTarget?.zone);
-    if (zones.isEmpty) addZone(_defaultZone(type));
-
-    for (final zone in zones) {
-      addRow(zoneGuidance(zone));
+    addTarget(workoutTarget);
+    if (rows.isEmpty) {
+      final zone = _defaultZone(type);
+      rows[zone] = _effortGuideEntry(WorkoutTarget.effort(zone));
     }
-    return rows;
+    return rows.values.toList(growable: false);
   }
 
   String targetGuidance(WorkoutTarget target) {
@@ -377,6 +401,154 @@ class WorkoutGuidancePresenter {
       return l10n.workoutGuidanceEffortOnly(label, cue);
     }
     return l10n.workoutGuidancePaceRange(label, pace, cue);
+  }
+
+  WorkoutGuidanceEffortGuideEntry _effortGuideEntry(WorkoutTarget target) {
+    return WorkoutGuidanceEffortGuideEntry(
+      label: _effortGuideLabel(target.zone),
+      cue: target.effortCue?.trim().isNotEmpty == true
+          ? target.effortCue!.trim()
+          : _beginnerCue(target.zone),
+      pace: _paceRangeForTarget(target) ?? _paceRangeForZone(target.zone),
+      feel: _zoneLabel(target.zone),
+    );
+  }
+
+  bool _hasSpecificGuidance(WorkoutTarget target) {
+    return target.effortCue?.trim().isNotEmpty == true ||
+        target.paceMinSecPerKm != null ||
+        target.paceMaxSecPerKm != null;
+  }
+
+  String _phaseHeadline(
+    WorkoutStep step,
+    SessionType type,
+    WorkoutTarget? target,
+  ) {
+    if (step.kind == WorkoutStepKind.repeat) {
+      if (_childStep(step, WorkoutStepKind.stride) != null) {
+        return l10n.workoutGuidancePhaseFastRelaxed;
+      }
+      return switch (type) {
+        SessionType.fartlek => l10n.workoutGuidancePhaseSmoothSurges,
+        SessionType.hillRepeats => l10n.workoutGuidancePhaseStrongUphill,
+        SessionType.intervals => l10n.workoutGuidancePhaseControlledReps,
+        _ => _beginnerLabel(target?.zone ?? _defaultZoneForStep(step)),
+      };
+    }
+
+    return _beginnerLabel(target?.zone ?? _defaultZoneForStep(step));
+  }
+
+  List<String> _phaseDetails(WorkoutStep step, WorkoutTarget? target) {
+    if (step.kind == WorkoutStepKind.repeat) {
+      return _repeatDetailRows(step);
+    }
+    if (target == null) return [l10n.workoutGuidanceDefaultHow];
+    return _targetDetailRows(target);
+  }
+
+  List<String> _repeatDetailRows(WorkoutStep step) {
+    final rows = <String>[];
+    final work =
+        _childStep(step, WorkoutStepKind.work) ??
+        _childStep(step, WorkoutStepKind.stride);
+    final workTarget = step.target ?? work?.target;
+    final recoveryTarget = _childStep(step, WorkoutStepKind.recovery)?.target;
+
+    if (workTarget != null) {
+      rows.add(_beginnerCue(workTarget.zone, target: workTarget));
+      rows.add(l10n.workoutGuidanceFastPart(_zoneLabel(workTarget.zone)));
+      final pace =
+          _paceRangeForTarget(workTarget) ?? _paceRangeForZone(workTarget.zone);
+      if (pace != null) rows.add(l10n.workoutGuidancePaceDetail(pace));
+    }
+
+    if (recoveryTarget != null) {
+      rows.add(
+        l10n.workoutGuidanceRecoveryPart(_beginnerLabel(recoveryTarget.zone)),
+      );
+    }
+
+    if (rows.isEmpty) rows.add(l10n.workoutGuidanceDefaultHow);
+    return rows;
+  }
+
+  List<String> _targetDetailRows(WorkoutTarget target) {
+    final rows = <String>[];
+    rows.add(_beginnerCue(target.zone, target: target));
+    rows.add(l10n.workoutGuidanceFeelDetail(_zoneLabel(target.zone)));
+    final pace = _paceRangeForTarget(target) ?? _paceRangeForZone(target.zone);
+    if (pace != null) rows.add(l10n.workoutGuidancePaceDetail(pace));
+    return rows;
+  }
+
+  WorkoutTarget? _stepDisplayTarget(WorkoutStep step) {
+    final target = step.target;
+    if (target != null) return target;
+
+    if (step.kind == WorkoutStepKind.repeat) {
+      final workTarget = _childStep(step, WorkoutStepKind.work)?.target;
+      if (workTarget != null) return workTarget;
+
+      final strideTarget = _childStep(step, WorkoutStepKind.stride)?.target;
+      if (strideTarget != null) return strideTarget;
+
+      final recoveryTarget = _childStep(step, WorkoutStepKind.recovery)?.target;
+      if (recoveryTarget != null) return recoveryTarget;
+    }
+
+    return null;
+  }
+
+  TargetZone _defaultZoneForStep(WorkoutStep step) {
+    return switch (step.kind) {
+      WorkoutStepKind.recovery => TargetZone.recovery,
+      WorkoutStepKind.coolDown => TargetZone.recovery,
+      WorkoutStepKind.stride => TargetZone.interval,
+      _ => TargetZone.easy,
+    };
+  }
+
+  String _beginnerLabel(TargetZone zone) {
+    return switch (zone) {
+      TargetZone.recovery => l10n.workoutGuidancePhaseRecovery,
+      TargetZone.easy => l10n.workoutGuidancePhaseEasyJog,
+      TargetZone.longRun => l10n.workoutGuidancePhaseEasyLongRun,
+      TargetZone.steady => l10n.workoutGuidancePhaseSteadyRun,
+      TargetZone.tempo => l10n.workoutGuidancePhaseTempoRun,
+      TargetZone.threshold => l10n.workoutGuidancePhaseThresholdRun,
+      TargetZone.racePace => l10n.workoutGuidancePhaseRaceRhythm,
+      TargetZone.interval => l10n.workoutGuidancePhaseFastRelaxed,
+    };
+  }
+
+  String _effortGuideLabel(TargetZone zone) {
+    return switch (zone) {
+      TargetZone.recovery => l10n.workoutGuidanceEffortRecovery,
+      TargetZone.easy => l10n.workoutGuidanceEffortEasy,
+      TargetZone.longRun => l10n.workoutGuidanceEffortLongRun,
+      TargetZone.steady => l10n.workoutGuidanceEffortSteady,
+      TargetZone.tempo => l10n.workoutGuidanceEffortTempo,
+      TargetZone.threshold => l10n.workoutGuidanceEffortThreshold,
+      TargetZone.racePace => l10n.workoutGuidanceEffortRacePace,
+      TargetZone.interval => l10n.workoutGuidanceEffortFast,
+    };
+  }
+
+  String _beginnerCue(TargetZone zone, {WorkoutTarget? target}) {
+    final cue = target?.effortCue;
+    if (cue != null && cue.trim().isNotEmpty) return cue.trim();
+    return switch (zone) {
+      TargetZone.recovery => l10n.workoutGuidanceBeginnerCueRecovery,
+      TargetZone.easy => l10n.workoutGuidanceBeginnerCueEasy,
+      TargetZone.longRun => l10n.workoutGuidanceBeginnerCueLongRun,
+      TargetZone.steady => l10n.workoutGuidanceBeginnerCueSteady,
+      TargetZone.tempo => l10n.workoutGuidanceBeginnerCueTempo,
+      TargetZone.threshold => l10n.workoutGuidanceBeginnerCueThreshold,
+      TargetZone.racePace => l10n.workoutGuidanceBeginnerCueRacePace,
+      TargetZone.interval => l10n.workoutGuidanceBeginnerCueFast,
+    };
   }
 
   String _zoneLabel(TargetZone zone) {
@@ -645,24 +817,6 @@ class WorkoutGuidancePresenter {
       return UnitFormatter.formatDuration(duration.inMinutes, l10n);
     }
     return l10n.workoutGuidanceOpenMeasure;
-  }
-
-  String _stepGuidance(WorkoutStep step) {
-    final target = step.target;
-    if (target != null) return targetGuidance(target);
-
-    if (step.kind == WorkoutStepKind.repeat) {
-      final workTarget = _childStep(step, WorkoutStepKind.work)?.target;
-      if (workTarget != null) return targetGuidance(workTarget);
-
-      final strideTarget = _childStep(step, WorkoutStepKind.stride)?.target;
-      if (strideTarget != null) return targetGuidance(strideTarget);
-
-      final recoveryTarget = _childStep(step, WorkoutStepKind.recovery)?.target;
-      if (recoveryTarget != null) return targetGuidance(recoveryTarget);
-    }
-
-    return l10n.workoutGuidanceDefaultHow;
   }
 
   WorkoutStep? _childStep(WorkoutStep parent, WorkoutStepKind kind) {

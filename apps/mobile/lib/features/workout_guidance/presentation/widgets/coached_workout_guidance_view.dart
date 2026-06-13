@@ -44,8 +44,8 @@ class CoachedWorkoutGuidanceView extends StatelessWidget {
         _Section(
           title: l10n.workoutGuidancePaceEffort,
           child: Column(
-            children: guidance.paceEffortRows
-                .map((row) => _GuidanceRow(text: row))
+            children: guidance.effortGuideRows
+                .map((row) => _EffortGuideCard(entry: row))
                 .toList(growable: false),
           ),
         ),
@@ -53,18 +53,11 @@ class CoachedWorkoutGuidanceView extends StatelessWidget {
           const SizedBox(height: AppSpacing.xl),
           _Section(
             title: l10n.workoutGuidanceCoachCues,
-            child: Column(
-              children: [
-                _CueBlock(
-                  label: l10n.workoutGuidanceHowToRunIt,
-                  value: guidance.howToRunIt,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                _CueBlock(
-                  label: l10n.workoutGuidanceWhyItMatters,
-                  value: guidance.whyItMatters,
-                ),
-              ],
+            child: _CoachNotesCard(
+              howLabel: l10n.workoutGuidanceHowToRunIt,
+              howValue: guidance.howToRunIt,
+              whyLabel: l10n.workoutGuidanceWhyItMatters,
+              whyValue: guidance.whyItMatters,
             ),
           ),
         ],
@@ -206,11 +199,21 @@ class _PhaseCard extends StatelessWidget {
                 ),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
-                  phase.guidance,
+                  phase.headline,
                   style: AppTypography.bodyMedium.copyWith(
-                    color: AppColors.textSecondary,
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
+                for (final detail in phase.details) ...[
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    detail,
+                    style: AppTypography.caption.copyWith(
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -220,10 +223,10 @@ class _PhaseCard extends StatelessWidget {
   }
 }
 
-class _GuidanceRow extends StatelessWidget {
-  const _GuidanceRow({required this.text});
+class _EffortGuideCard extends StatelessWidget {
+  const _EffortGuideCard({required this.entry});
 
-  final String text;
+  final WorkoutGuidanceEffortGuideEntry entry;
 
   @override
   Widget build(BuildContext context) {
@@ -236,22 +239,93 @@ class _GuidanceRow extends StatelessWidget {
         borderRadius: AppRadius.borderLg,
         border: Border.all(color: AppColors.borderDefault),
       ),
-      child: Text(
-        text,
-        style: AppTypography.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
-          fontWeight: FontWeight.w600,
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            entry.label,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textPrimary,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            entry.cue,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (entry.pace != null || entry.feel != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Wrap(
+              spacing: AppSpacing.xs,
+              runSpacing: AppSpacing.xs,
+              children: [
+                if (entry.pace != null)
+                  _SupportPill(icon: Icons.speed_outlined, label: entry.pace!),
+                if (entry.feel != null)
+                  _SupportPill(
+                    icon: Icons.stacked_line_chart_outlined,
+                    label: entry.feel!,
+                  ),
+              ],
+            ),
+          ],
+        ],
       ),
     );
   }
 }
 
-class _CueBlock extends StatelessWidget {
-  const _CueBlock({required this.label, required this.value});
+class _SupportPill extends StatelessWidget {
+  const _SupportPill({required this.icon, required this.label});
 
+  final IconData icon;
   final String label;
-  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundElevated,
+        borderRadius: AppRadius.borderFull,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: AppColors.textSecondary),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: AppTypography.caption.copyWith(
+              color: AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CoachNotesCard extends StatelessWidget {
+  const _CoachNotesCard({
+    required this.howLabel,
+    required this.howValue,
+    required this.whyLabel,
+    required this.whyValue,
+  });
+
+  final String howLabel;
+  final String howValue;
+  final String whyLabel;
+  final String whyValue;
 
   @override
   Widget build(BuildContext context) {
@@ -266,22 +340,43 @@ class _CueBlock extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: AppTypography.caption.copyWith(
-              color: AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(
-            value,
-            style: AppTypography.bodyMedium.copyWith(
-              color: AppColors.textSecondary,
-            ),
-          ),
+          _CoachNoteText(label: howLabel, value: howValue),
+          const SizedBox(height: AppSpacing.md),
+          const Divider(height: 1, color: AppColors.borderDefault),
+          const SizedBox(height: AppSpacing.md),
+          _CoachNoteText(label: whyLabel, value: whyValue),
         ],
       ),
+    );
+  }
+}
+
+class _CoachNoteText extends StatelessWidget {
+  const _CoachNoteText({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTypography.caption.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        Text(
+          value,
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+          ),
+        ),
+      ],
     );
   }
 }

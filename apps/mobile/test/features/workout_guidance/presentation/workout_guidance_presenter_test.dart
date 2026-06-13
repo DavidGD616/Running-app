@@ -81,16 +81,35 @@ void main() {
 
       final artifacts = await buildArtifacts(tester, session);
       final phase = artifacts.guidance.phases.first;
-      final expectedGuidance = artifacts.presenter.targetGuidance(
-        const WorkoutTarget.pace(
-          TargetZone.interval,
-          paceMinSecPerKm: 345,
-          paceMaxSecPerKm: 355,
-        ),
+      final pace = artifacts.presenter.targetGuidance(
+        const WorkoutTarget.pace(TargetZone.interval),
       );
 
-      expect(phase.guidance, equals(expectedGuidance));
-      expect(phase.guidance, isNot(artifacts.l10n.workoutGuidanceDefaultHow));
+      expect(
+        phase.headline,
+        equals(artifacts.l10n.workoutGuidancePhaseControlledReps),
+      );
+      expect(
+        phase.details,
+        contains(artifacts.l10n.workoutGuidanceBeginnerCueFast),
+      );
+      expect(
+        phase.details,
+        contains(
+          artifacts.l10n.workoutGuidanceFastPart(
+            artifacts.l10n.workoutGuidanceZoneInterval,
+          ),
+        ),
+      );
+      expect(
+        phase.details,
+        contains(artifacts.l10n.workoutGuidancePaceDetail('5:45-5:55 min/km')),
+      );
+      expect(
+        phase.details,
+        isNot(contains(artifacts.l10n.workoutGuidanceDefaultHow)),
+      );
+      expect(pace, contains(artifacts.l10n.workoutGuidanceZoneInterval));
     },
   );
 
@@ -122,15 +141,16 @@ void main() {
 
     final artifacts = await buildArtifacts(tester, session);
     final phase = artifacts.guidance.phases.first;
-    final expectedGuidance = artifacts.presenter.targetGuidance(
-      const WorkoutTarget.effort(
-        TargetZone.interval,
-        effortCue: 'Quick cadence',
-      ),
-    );
 
-    expect(phase.guidance, equals(expectedGuidance));
-    expect(phase.guidance, isNot(artifacts.l10n.workoutGuidanceDefaultHow));
+    expect(
+      phase.headline,
+      equals(artifacts.l10n.workoutGuidancePhaseFastRelaxed),
+    );
+    expect(phase.details, contains('Quick cadence'));
+    expect(
+      phase.details,
+      isNot(contains(artifacts.l10n.workoutGuidanceDefaultHow)),
+    );
   });
 
   testWidgets(
@@ -157,8 +177,12 @@ void main() {
       final artifacts = await buildArtifacts(tester, session);
 
       expect(
-        artifacts.guidance.phases.first.guidance,
-        equals(artifacts.l10n.workoutGuidanceDefaultHow),
+        artifacts.guidance.phases.first.headline,
+        equals(artifacts.l10n.workoutGuidancePhaseSmoothSurges),
+      );
+      expect(
+        artifacts.guidance.phases.first.details,
+        contains(artifacts.l10n.workoutGuidanceDefaultHow),
       );
     },
   );
@@ -195,15 +219,25 @@ void main() {
 
       final artifacts = await buildArtifacts(tester, session);
       final phase = artifacts.guidance.phases.first;
-      final expectedGuidance = artifacts.presenter.targetGuidance(
-        const WorkoutTarget.effort(
-          TargetZone.interval,
-          effortCue: 'Controlled hard efforts',
+
+      expect(
+        phase.headline,
+        equals(artifacts.l10n.workoutGuidancePhaseControlledReps),
+      );
+      expect(phase.details, contains('Controlled hard efforts'));
+      expect(
+        phase.details,
+        contains(
+          artifacts.l10n.workoutGuidanceFastPart(
+            artifacts.l10n.workoutGuidanceZoneInterval,
+          ),
         ),
       );
-
-      expect(phase.guidance, equals(expectedGuidance));
-      expect(phase.guidance, isNot(artifacts.l10n.workoutGuidanceDefaultHow));
+      expect(phase.details.join('\n'), isNot(contains('5:00-5:20')));
+      expect(
+        phase.details,
+        isNot(contains(artifacts.l10n.workoutGuidanceDefaultHow)),
+      );
     },
   );
 
@@ -237,21 +271,73 @@ void main() {
 
       final artifacts = await buildArtifacts(tester, session);
 
-      final expectedGuidance = artifacts.presenter.targetGuidance(
-        const WorkoutTarget.pace(
-          TargetZone.recovery,
-          paceMinSecPerKm: 420,
-          paceMaxSecPerKm: 480,
+      expect(
+        artifacts.guidance.phases.first.details,
+        contains(
+          artifacts.l10n.workoutGuidanceRecoveryPart(
+            artifacts.l10n.workoutGuidancePhaseRecovery,
+          ),
         ),
       );
+      expect(artifacts.guidance.phases.first.details, hasLength(1));
+    },
+  );
 
+  testWidgets(
+    'effort guide deduplicates repeated zones and keeps clear labels',
+    (tester) async {
+      final session = TrainingSession(
+        id: 'dedupe-effort-guide',
+        date: DateTime(2026, 6, 11),
+        type: SessionType.fartlek,
+        status: SessionStatus.completed,
+        weekNumber: 4,
+        workoutSteps: [
+          WorkoutStep.warmUp(
+            duration: const Duration(minutes: 10),
+            target: const WorkoutTarget.effort(TargetZone.easy),
+          ),
+          WorkoutStep.repeat(
+            repetitions: 4,
+            steps: [
+              WorkoutStep.work(
+                distanceMeters: 300,
+                target: const WorkoutTarget.effort(
+                  TargetZone.steady,
+                  effortCue: 'Smooth rhythm work',
+                ),
+              ),
+              WorkoutStep.recovery(
+                duration: const Duration(seconds: 60),
+                target: const WorkoutTarget.effort(TargetZone.recovery),
+              ),
+            ],
+          ),
+          WorkoutStep.coolDown(
+            duration: const Duration(minutes: 8),
+            target: const WorkoutTarget.effort(TargetZone.easy),
+          ),
+        ],
+      );
+
+      final artifacts = await buildArtifacts(tester, session);
+
+      expect(artifacts.guidance.effortGuideRows, hasLength(3));
       expect(
-        artifacts.guidance.phases.first.guidance,
-        equals(expectedGuidance),
+        artifacts.guidance.effortGuideRows.map((row) => row.label),
+        orderedEquals([
+          artifacts.l10n.workoutGuidanceEffortEasy,
+          artifacts.l10n.workoutGuidanceEffortSteady,
+          artifacts.l10n.workoutGuidanceEffortRecovery,
+        ]),
       );
       expect(
-        artifacts.guidance.phases.first.guidance,
-        isNot(artifacts.l10n.workoutGuidanceDefaultHow),
+        artifacts.guidance.effortGuideRows
+            .singleWhere(
+              (row) => row.label == artifacts.l10n.workoutGuidanceEffortSteady,
+            )
+            .cue,
+        equals('Smooth rhythm work'),
       );
     },
   );

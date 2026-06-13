@@ -255,7 +255,7 @@ void main() {
     final context = tester.element(find.byType(SessionDetailScreen));
     final l10n = AppLocalizations.of(context)!;
 
-    expect(find.text(l10n.activeRunEasyBlock), findsOneWidget);
+    expect(find.text(l10n.activeRunEasyBlock), findsWidgets);
     expect(find.text(l10n.activeRunSteadyBlock), findsOneWidget);
     expect(find.text(l10n.workoutGuidanceFirm), findsOneWidget);
   });
@@ -299,7 +299,7 @@ void main() {
         l10n,
       );
 
-      expect(find.text(l10n.activeRunEasyBlock), findsOneWidget);
+      expect(find.text(l10n.activeRunEasyBlock), findsWidgets);
       expect(find.text(l10n.activeRunSteadyBlock), findsOneWidget);
       expect(find.text(l10n.workoutGuidanceFirm), findsOneWidget);
       expect(find.text(expectedDistanceMeasure), findsNWidgets(3));

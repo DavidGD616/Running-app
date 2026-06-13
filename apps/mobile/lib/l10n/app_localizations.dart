@@ -5838,16 +5838,16 @@ abstract class AppLocalizations {
   /// **'Today\'s Prescription'**
   String get workoutGuidanceTodaysPrescription;
 
-  /// Section title for pace and effort guidance
+  /// Section title for simplified effort guidance
   ///
   /// In en, this message translates to:
-  /// **'Pace & Effort'**
+  /// **'Effort Guide'**
   String get workoutGuidancePaceEffort;
 
-  /// Section title for coached workout cues
+  /// Section title for coached workout notes
   ///
   /// In en, this message translates to:
-  /// **'Coach Cues'**
+  /// **'Coach Notes'**
   String get workoutGuidanceCoachCues;
 
   /// Label for execution guidance
@@ -5966,6 +5966,192 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Fast, not frantic'**
   String get workoutGuidanceCueFast;
+
+  /// Beginner-friendly phase headline for easy running
+  ///
+  /// In en, this message translates to:
+  /// **'Easy jog'**
+  String get workoutGuidancePhaseEasyJog;
+
+  /// Beginner-friendly phase headline for long run effort
+  ///
+  /// In en, this message translates to:
+  /// **'Easy long run'**
+  String get workoutGuidancePhaseEasyLongRun;
+
+  /// Beginner-friendly phase headline for steady effort
+  ///
+  /// In en, this message translates to:
+  /// **'Steady running'**
+  String get workoutGuidancePhaseSteadyRun;
+
+  /// Beginner-friendly phase headline for tempo effort
+  ///
+  /// In en, this message translates to:
+  /// **'Controlled strong running'**
+  String get workoutGuidancePhaseTempoRun;
+
+  /// Beginner-friendly phase headline for threshold effort
+  ///
+  /// In en, this message translates to:
+  /// **'Hard but repeatable'**
+  String get workoutGuidancePhaseThresholdRun;
+
+  /// Beginner-friendly phase headline for race-pace effort
+  ///
+  /// In en, this message translates to:
+  /// **'Race rhythm'**
+  String get workoutGuidancePhaseRaceRhythm;
+
+  /// Beginner-friendly phase headline for fast reps or strides
+  ///
+  /// In en, this message translates to:
+  /// **'Fast but relaxed'**
+  String get workoutGuidancePhaseFastRelaxed;
+
+  /// Beginner-friendly phase headline for recovery running
+  ///
+  /// In en, this message translates to:
+  /// **'Very easy jog'**
+  String get workoutGuidancePhaseRecovery;
+
+  /// Beginner-friendly phase headline for fartlek repeats
+  ///
+  /// In en, this message translates to:
+  /// **'Smooth surges'**
+  String get workoutGuidancePhaseSmoothSurges;
+
+  /// Beginner-friendly phase headline for interval repeats
+  ///
+  /// In en, this message translates to:
+  /// **'Controlled reps'**
+  String get workoutGuidancePhaseControlledReps;
+
+  /// Beginner-friendly phase headline for hill repeats
+  ///
+  /// In en, this message translates to:
+  /// **'Strong uphill repeats'**
+  String get workoutGuidancePhaseStrongUphill;
+
+  /// Effort guide label for easy effort
+  ///
+  /// In en, this message translates to:
+  /// **'Easy'**
+  String get workoutGuidanceEffortEasy;
+
+  /// Effort guide label for long run effort
+  ///
+  /// In en, this message translates to:
+  /// **'Long run'**
+  String get workoutGuidanceEffortLongRun;
+
+  /// Effort guide label for steady effort
+  ///
+  /// In en, this message translates to:
+  /// **'Steady surge'**
+  String get workoutGuidanceEffortSteady;
+
+  /// Effort guide label for tempo effort
+  ///
+  /// In en, this message translates to:
+  /// **'Tempo'**
+  String get workoutGuidanceEffortTempo;
+
+  /// Effort guide label for threshold effort
+  ///
+  /// In en, this message translates to:
+  /// **'Threshold'**
+  String get workoutGuidanceEffortThreshold;
+
+  /// Effort guide label for race pace effort
+  ///
+  /// In en, this message translates to:
+  /// **'Race pace'**
+  String get workoutGuidanceEffortRacePace;
+
+  /// Effort guide label for fast effort
+  ///
+  /// In en, this message translates to:
+  /// **'Fast'**
+  String get workoutGuidanceEffortFast;
+
+  /// Effort guide label for recovery effort
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get workoutGuidanceEffortRecovery;
+
+  /// Beginner-friendly cue for easy effort
+  ///
+  /// In en, this message translates to:
+  /// **'You should be able to talk normally'**
+  String get workoutGuidanceBeginnerCueEasy;
+
+  /// Beginner-friendly cue for long run effort
+  ///
+  /// In en, this message translates to:
+  /// **'Comfortable and patient from start to finish'**
+  String get workoutGuidanceBeginnerCueLongRun;
+
+  /// Beginner-friendly cue for steady effort
+  ///
+  /// In en, this message translates to:
+  /// **'Controlled, quick legs, not racing'**
+  String get workoutGuidanceBeginnerCueSteady;
+
+  /// Beginner-friendly cue for tempo effort
+  ///
+  /// In en, this message translates to:
+  /// **'Strong but controlled'**
+  String get workoutGuidanceBeginnerCueTempo;
+
+  /// Beginner-friendly cue for threshold effort
+  ///
+  /// In en, this message translates to:
+  /// **'Hard, focused, and still repeatable'**
+  String get workoutGuidanceBeginnerCueThreshold;
+
+  /// Beginner-friendly cue for race pace effort
+  ///
+  /// In en, this message translates to:
+  /// **'Settle into goal-race rhythm'**
+  String get workoutGuidanceBeginnerCueRacePace;
+
+  /// Beginner-friendly cue for fast reps or strides
+  ///
+  /// In en, this message translates to:
+  /// **'Fast, relaxed, not frantic'**
+  String get workoutGuidanceBeginnerCueFast;
+
+  /// Beginner-friendly cue for recovery effort
+  ///
+  /// In en, this message translates to:
+  /// **'Gentle jog, get ready for the next rep'**
+  String get workoutGuidanceBeginnerCueRecovery;
+
+  /// Detail row describing the fast part of a repeat block
+  ///
+  /// In en, this message translates to:
+  /// **'Fast part: {guidance}'**
+  String workoutGuidanceFastPart(String guidance);
+
+  /// Detail row describing the recovery part of a repeat block
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery: {guidance}'**
+  String workoutGuidanceRecoveryPart(String guidance);
+
+  /// Detail row for a pace range
+  ///
+  /// In en, this message translates to:
+  /// **'Pace: {pace}'**
+  String workoutGuidancePaceDetail(String pace);
+
+  /// Detail row for an effort or zone feel
+  ///
+  /// In en, this message translates to:
+  /// **'Feel: {feel}'**
+  String workoutGuidanceFeelDetail(String feel);
 
   /// Zone guidance with pace range
   ///

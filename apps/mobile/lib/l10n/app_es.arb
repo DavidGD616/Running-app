@@ -1203,8 +1203,8 @@
   "preRunWorkoutPreviewOpenDuration": "libre",
 
   "workoutGuidanceTodaysPrescription": "Prescripción de hoy",
-  "workoutGuidancePaceEffort": "Ritmo y esfuerzo",
-  "workoutGuidanceCoachCues": "Indicaciones del coach",
+  "workoutGuidancePaceEffort": "Guía de esfuerzo",
+  "workoutGuidanceCoachCues": "Notas del coach",
   "workoutGuidanceHowToRunIt": "Cómo correrlo",
   "workoutGuidanceWhyItMatters": "Por qué importa",
   "workoutGuidanceDistanceBased": "Por distancia",
@@ -1236,6 +1236,57 @@
   "workoutGuidanceCueControlled": "Controlado",
   "workoutGuidanceCueComposed": "Fuerte pero compuesto",
   "workoutGuidanceCueFast": "Rápido, sin descontrol",
+  "workoutGuidancePhaseEasyJog": "Trote suave",
+  "workoutGuidancePhaseEasyLongRun": "Tirada larga suave",
+  "workoutGuidancePhaseSteadyRun": "Ritmo estable",
+  "workoutGuidancePhaseTempoRun": "Fuerte y controlado",
+  "workoutGuidancePhaseThresholdRun": "Duro pero repetible",
+  "workoutGuidancePhaseRaceRhythm": "Ritmo de carrera",
+  "workoutGuidancePhaseFastRelaxed": "Rápido pero relajado",
+  "workoutGuidancePhaseRecovery": "Trote muy suave",
+  "workoutGuidancePhaseSmoothSurges": "Cambios suaves",
+  "workoutGuidancePhaseControlledReps": "Repeticiones controladas",
+  "workoutGuidancePhaseStrongUphill": "Repeticiones fuertes en subida",
+  "workoutGuidanceEffortEasy": "Suave",
+  "workoutGuidanceEffortLongRun": "Tirada larga",
+  "workoutGuidanceEffortSteady": "Cambio estable",
+  "workoutGuidanceEffortTempo": "Tempo",
+  "workoutGuidanceEffortThreshold": "Umbral",
+  "workoutGuidanceEffortRacePace": "Ritmo de carrera",
+  "workoutGuidanceEffortFast": "Rápido",
+  "workoutGuidanceEffortRecovery": "Recuperación",
+  "workoutGuidanceBeginnerCueEasy": "Deberías poder hablar con normalidad",
+  "workoutGuidanceBeginnerCueLongRun": "Cómodo y paciente de principio a fin",
+  "workoutGuidanceBeginnerCueSteady": "Controlado, piernas rápidas, sin competir",
+  "workoutGuidanceBeginnerCueTempo": "Fuerte pero controlado",
+  "workoutGuidanceBeginnerCueThreshold": "Duro, concentrado y aún repetible",
+  "workoutGuidanceBeginnerCueRacePace": "Encuentra el ritmo objetivo de carrera",
+  "workoutGuidanceBeginnerCueFast": "Rápido, relajado, sin descontrol",
+  "workoutGuidanceBeginnerCueRecovery": "Trote suave, prepárate para la siguiente repetición",
+  "workoutGuidanceFastPart": "Parte rápida: {guidance}",
+  "@workoutGuidanceFastPart": {
+    "placeholders": {
+      "guidance": { "type": "String" }
+    }
+  },
+  "workoutGuidanceRecoveryPart": "Recuperación: {guidance}",
+  "@workoutGuidanceRecoveryPart": {
+    "placeholders": {
+      "guidance": { "type": "String" }
+    }
+  },
+  "workoutGuidancePaceDetail": "Ritmo: {pace}",
+  "@workoutGuidancePaceDetail": {
+    "placeholders": {
+      "pace": { "type": "String" }
+    }
+  },
+  "workoutGuidanceFeelDetail": "Sensación: {feel}",
+  "@workoutGuidanceFeelDetail": {
+    "placeholders": {
+      "feel": { "type": "String" }
+    }
+  },
   "workoutGuidancePaceRange": "{label} · {paceRange} · {cue}",
   "@workoutGuidancePaceRange": {
     "placeholders": {
