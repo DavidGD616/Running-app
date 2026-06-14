@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
+import 'package:running_app/features/auth/presentation/screens/splash_screen.dart';
 import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
 import 'package:running_app/core/router/app_router.dart';
 import 'package:running_app/core/router/route_names.dart';
@@ -146,6 +148,47 @@ void main() {
     );
 
     expect(redirect, isNull);
+  });
+
+  testWidgets('SplashScreen does not navigate away after 2 seconds', (
+    tester,
+  ) async {
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: RouteNames.splash,
+          builder: (context, state) => const SplashScreen(),
+        ),
+        GoRoute(
+          path: RouteNames.welcome,
+          builder: (context, state) =>
+              const SizedBox(key: ValueKey('welcome-screen')),
+        ),
+      ],
+      initialLocation: RouteNames.splash,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('es')],
+      ),
+    );
+
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('welcome-screen')), findsNothing);
+
+    await tester.pump(const Duration(seconds: 3));
+
+    expect(find.byType(SplashScreen), findsOneWidget);
+    expect(find.byKey(const ValueKey('welcome-screen')), findsNothing);
   });
 
   testWidgets('/onboarding/strength renders strength screen', (tester) async {

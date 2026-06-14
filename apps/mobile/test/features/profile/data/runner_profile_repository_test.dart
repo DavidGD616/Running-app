@@ -261,6 +261,235 @@ void main() {
     },
   );
 
+  test(
+    'user-scoped local cache keeps profile and draft data isolated per user',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      final aliceRepo = SharedPreferencesRunnerProfileRepository(
+        prefs,
+        userId: 'alice-user-id',
+      );
+      final bobRepo = SharedPreferencesRunnerProfileRepository(
+        prefs,
+        userId: 'bob-user-id',
+      );
+
+      final aliceProfile = buildRunnerProfile(gender: ProfileGender.female);
+      final bobProfile = buildRunnerProfile(gender: ProfileGender.male);
+      final aliceDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.balanced,
+        ),
+      );
+      final bobDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.performance,
+        ),
+      );
+
+      await aliceRepo.saveProfile(aliceProfile);
+      await bobRepo.saveProfile(bobProfile);
+      await aliceRepo.saveDraft(aliceDraft);
+      await bobRepo.saveDraft(bobDraft);
+
+      _expectProfileMatches(
+        actual: aliceRepo.loadProfile(),
+        expected: aliceProfile,
+      );
+      _expectProfileMatches(
+        actual: bobRepo.loadProfile(),
+        expected: bobProfile,
+      );
+      expect(
+        (await aliceRepo.loadProfileAsync(refresh: false))!.toJson(),
+        isNotNull,
+      );
+      expect(
+        (await bobRepo.loadProfileAsync(refresh: false))!.toJson(),
+        isNotNull,
+      );
+
+      _expectDraftMatches(actual: aliceRepo.loadDraft(), expected: aliceDraft);
+      expect(
+        (await aliceRepo.loadDraftAsync(refresh: false))!.toJson(),
+        isNotNull,
+      );
+      _expectDraftMatches(actual: bobRepo.loadDraft(), expected: bobDraft);
+      expect(
+        (await bobRepo.loadDraftAsync(refresh: false))!.toJson(),
+        isNotNull,
+      );
+    },
+  );
+
+  test(
+    'stale user-scoped cache writes and clears do not mutate another user cache',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      final staleUserRepo = SharedPreferencesRunnerProfileRepository(
+        prefs,
+        userId: 'stale-user-id',
+      );
+      final currentUserRepo = SharedPreferencesRunnerProfileRepository(
+        prefs,
+        userId: 'current-user-id',
+      );
+
+      final currentProfile = buildRunnerProfile(
+        clock: DateTime(2026, 4, 7, 8, 15),
+      );
+      final currentDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.performance,
+        ),
+      );
+
+      await currentUserRepo.saveProfile(currentProfile);
+      await currentUserRepo.saveDraft(currentDraft);
+
+      final staleProfile = buildRunnerProfile(
+        gender: ProfileGender.other,
+        clock: DateTime(2026, 4, 7, 7, 45),
+      );
+      final staleDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.balanced,
+        ),
+      );
+
+      await staleUserRepo.saveProfile(staleProfile);
+      await staleUserRepo.saveDraft(staleDraft);
+
+      _expectProfileMatches(
+        actual: staleUserRepo.loadProfile(),
+        expected: staleProfile,
+      );
+      _expectProfileMatches(
+        actual: currentUserRepo.loadProfile(),
+        expected: currentProfile,
+      );
+      _expectDraftMatches(
+        actual: staleUserRepo.loadDraft(),
+        expected: staleDraft,
+      );
+      _expectDraftMatches(
+        actual: currentUserRepo.loadDraft(),
+        expected: currentDraft,
+      );
+
+      await staleUserRepo.clearDraft();
+      _expectDraftMatches(
+        actual: currentUserRepo.loadDraft(),
+        expected: currentDraft,
+      );
+      expect(staleUserRepo.loadDraft(), isNull);
+
+      await staleUserRepo.clearProfile();
+      _expectProfileMatches(
+        actual: currentUserRepo.loadProfile(),
+        expected: currentProfile,
+      );
+      expect(staleUserRepo.loadProfile(), isNull);
+      _expectDraftMatches(
+        actual: currentUserRepo.loadDraft(),
+        expected: currentDraft,
+      );
+    },
+  );
+
+  test(
+    'unauthenticated local repository clearProfile clears global and user-scoped entries',
+    () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      final globalRepo = SharedPreferencesRunnerProfileRepository(prefs);
+      final userRepoOne = SharedPreferencesRunnerProfileRepository(
+        prefs,
+        userId: 'user-one',
+      );
+      final userRepoTwo = SharedPreferencesRunnerProfileRepository(
+        prefs,
+        userId: 'user-two',
+      );
+
+      final globalProfile = buildRunnerProfile(gender: ProfileGender.female);
+      final globalDraft = buildRunnerProfileDraft();
+      final userOneProfile = buildRunnerProfile(gender: ProfileGender.male);
+      final userOneDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.balanced,
+        ),
+      );
+      final userTwoProfile = buildRunnerProfile(
+        gender: ProfileGender.other,
+        clock: DateTime(2026, 4, 9, 10, 0),
+      );
+      final userTwoDraft = buildRunnerProfileDraft().copyWith(
+        trainingPreferences: const TrainingPreferencesProfileDraft(
+          planPreference: PlanPreferenceChoice.performance,
+        ),
+      );
+
+      await globalRepo.saveProfile(globalProfile);
+      await globalRepo.saveDraft(globalDraft);
+      await userRepoOne.saveProfile(userOneProfile);
+      await userRepoOne.saveDraft(userOneDraft);
+      await userRepoTwo.saveProfile(userTwoProfile);
+      await userRepoTwo.saveDraft(userTwoDraft);
+
+      _expectProfileMatches(
+        actual: globalRepo.loadProfile(),
+        expected: globalProfile,
+      );
+      _expectDraftMatches(
+        actual: globalRepo.loadDraft(),
+        expected: globalDraft,
+      );
+      _expectProfileMatches(
+        actual: userRepoOne.loadProfile(),
+        expected: userOneProfile,
+      );
+      _expectProfileMatches(
+        actual: userRepoTwo.loadProfile(),
+        expected: userTwoProfile,
+      );
+      _expectDraftMatches(
+        actual: userRepoOne.loadDraft(),
+        expected: userOneDraft,
+      );
+      _expectDraftMatches(
+        actual: userRepoTwo.loadDraft(),
+        expected: userTwoDraft,
+      );
+
+      await globalRepo.clearProfile();
+
+      expect(globalRepo.loadProfile(), isNull);
+      expect(globalRepo.loadDraft(), isNull);
+      expect(userRepoOne.loadProfile(), isNull);
+      expect(userRepoTwo.loadProfile(), isNull);
+      expect(userRepoOne.loadDraft(), isNull);
+      expect(userRepoTwo.loadDraft(), isNull);
+      expect(
+        prefs.getString(
+          SharedPreferencesRunnerProfileRepository.profileStorageKey,
+        ),
+        isNull,
+      );
+      expect(
+        prefs.getString(
+          SharedPreferencesRunnerProfileRepository.draftStorageKey,
+        ),
+        isNull,
+      );
+    },
+  );
+
   test('saving a final profile clears any stale draft copy', () async {
     final staleDraft = buildRunnerProfileDraft().copyWith(
       trainingPreferences: const TrainingPreferencesProfileDraft(
@@ -326,6 +555,35 @@ void main() {
       expect(repository.loadDraft(), isNull);
       expect(repository.loadProfile(), isNull);
     },
+  );
+}
+
+void _expectProfileMatches({
+  required RunnerProfile? actual,
+  required RunnerProfile expected,
+}) {
+  expect(actual, isNotNull);
+  expect(actual!.goal.race, expected.goal.race);
+  expect(actual.gender, expected.gender);
+  expect(
+    actual.trainingPreferences.planPreference,
+    expected.trainingPreferences.planPreference,
+  );
+  expect(actual.schedule.trainingDays, expected.schedule.trainingDays);
+  expect(actual.schedule.hardDays, expected.schedule.hardDays);
+}
+
+void _expectDraftMatches({
+  required RunnerProfileDraft? actual,
+  required RunnerProfileDraft expected,
+}) {
+  expect(actual, isNotNull);
+  expect(actual!.goal.race, expected.goal.race);
+  expect(actual.schedule.trainingDays, expected.schedule.trainingDays);
+  expect(actual.schedule.hardDays, expected.schedule.hardDays);
+  expect(
+    actual.trainingPreferences.planPreference,
+    expected.trainingPreferences.planPreference,
   );
 }
 

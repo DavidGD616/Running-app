@@ -17,51 +17,78 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
   final SharedPreferencesRunnerProfileRepository _localCache;
 
   @override
-  RunnerProfileDraft? loadDraft() => _localCache.loadDraft();
+  RunnerProfileDraft? loadDraft() {
+    if (!_isCurrentAuthenticatedUser) return null;
+    return _localCache.loadDraft();
+  }
 
   @override
-  RunnerProfile? loadProfile() => _localCache.loadProfile();
+  RunnerProfile? loadProfile() {
+    if (!_isCurrentAuthenticatedUser) return null;
+    return _localCache.loadProfile();
+  }
 
   @override
-  bool hasPersistedProfile() => _localCache.hasPersistedProfile();
+  bool hasPersistedProfile() {
+    if (!_isCurrentAuthenticatedUser) return false;
+    return _localCache.hasPersistedProfile();
+  }
 
   @override
   Future<RunnerProfileDraft?> loadDraftAsync({bool refresh = true}) async {
+    if (!_isCurrentAuthenticatedUser) return null;
+
     if (!refresh) {
       return _localCache.loadDraft();
     }
 
     try {
       final draft = await _fetchDraft();
+      if (!_isCurrentAuthenticatedUser) return null;
+
       if (draft == null) {
         await _localCache.clearDraft();
         return null;
       }
 
       await _localCache.saveDraft(draft);
+      if (!_isCurrentAuthenticatedUser) {
+        await _localCache.clearDraft();
+        return null;
+      }
+
       return draft;
     } catch (_) {
-      return _localCache.loadDraft();
+      return _isCurrentAuthenticatedUser ? _localCache.loadDraft() : null;
     }
   }
 
   @override
   Future<RunnerProfile?> loadProfileAsync({bool refresh = true}) async {
+    if (!_isCurrentAuthenticatedUser) return null;
+
     if (!refresh) {
       return _localCache.loadProfile();
     }
 
     try {
       final profile = await _fetchProfile();
+      if (!_isCurrentAuthenticatedUser) return null;
+
       if (profile == null) {
         await _localCache.clearCachedProfileOnly();
         return null;
       }
 
       await _localCache.saveProfile(profile);
+      if (!_isCurrentAuthenticatedUser) {
+        await _localCache.clearProfile();
+        return null;
+      }
+
       return profile;
     } catch (_) {
-      return _localCache.loadProfile();
+      return _isCurrentAuthenticatedUser ? _localCache.loadProfile() : null;
     }
   }
 
@@ -72,7 +99,14 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
 
   @override
   Future<void> saveDraft(RunnerProfileDraft draft) async {
+    if (!_isCurrentAuthenticatedUser) return;
     await _localCache.saveDraft(draft);
+    if (!_isCurrentAuthenticatedUser) {
+      await _localCache.clearDraft();
+      return;
+    }
+
+    if (!_isCurrentAuthenticatedUser) return;
     await _client.from(_draftsTable).upsert({
       'user_id': _userId,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
@@ -82,6 +116,8 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
 
   @override
   Future<void> saveProfile(RunnerProfile profile) async {
+    if (!_isCurrentAuthenticatedUser) return;
+
     final completedOnboardingAt =
         profile.completedOnboardingAt ?? await _loadCompletedOnboardingAt();
     final profileToPersist =
@@ -89,6 +125,7 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
         ? profile
         : profile.copyWith(completedOnboardingAt: completedOnboardingAt);
 
+    if (!_isCurrentAuthenticatedUser) return;
     await _client.from(_profilesTable).upsert({
       'user_id': _userId,
       'schema_version': profileToPersist.schemaVersion,
@@ -99,15 +136,23 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
       'data': _profileData(profileToPersist),
     }, onConflict: 'user_id');
 
+    if (!_isCurrentAuthenticatedUser) return;
     await _client.from(_draftsTable).delete().eq('user_id', _userId);
+
+    if (!_isCurrentAuthenticatedUser) return;
     await _localCache.saveProfile(profileToPersist);
+    if (!_isCurrentAuthenticatedUser) {
+      await _localCache.clearProfile();
+    }
   }
 
   @override
   Future<void> clearDraft() async {
+    if (!_isCurrentAuthenticatedUser) return;
     await _localCache.clearDraft();
 
     try {
+      if (!_isCurrentAuthenticatedUser) return;
       await _client.from(_draftsTable).delete().eq('user_id', _userId);
     } catch (_) {
       // Preserve local clear semantics even if the network path is unavailable.
@@ -116,9 +161,11 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
 
   @override
   Future<void> clearProfile() async {
+    if (!_isCurrentAuthenticatedUser) return;
     await _localCache.clearProfile();
 
     try {
+      if (!_isCurrentAuthenticatedUser) return;
       await _client.from(_profilesTable).delete().eq('user_id', _userId);
       await _client.from(_draftsTable).delete().eq('user_id', _userId);
     } catch (_) {
@@ -195,4 +242,7 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
     }
     return value;
   }
+
+  bool get _isCurrentAuthenticatedUser =>
+      _client.auth.currentUser?.id == _userId;
 }

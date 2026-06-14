@@ -32,16 +32,50 @@ abstract interface class RunnerProfileRepository {
 /// structured cache, but for now SP is the locked cache strategy.
 class SharedPreferencesRunnerProfileRepository
     implements RunnerProfileRepository {
-  SharedPreferencesRunnerProfileRepository(this._prefs);
+  SharedPreferencesRunnerProfileRepository(this._prefs, {String? userId})
+    : _userId = userId;
 
   static const draftStorageKey = 'runner_profile_draft_v1';
   static const profileStorageKey = 'runner_profile_v1';
+  static const _userScopedKeySeparator = '__user__';
 
   final SharedPreferences _prefs;
+  final String? _userId;
+
+  static String draftStorageKeyForUser(String userId) {
+    return '$draftStorageKey$_userScopedKeySeparator$userId';
+  }
+
+  static String profileStorageKeyForUser(String userId) {
+    return '$profileStorageKey$_userScopedKeySeparator$userId';
+  }
+
+  String get _scopedDraftStorageKey =>
+      _userId == null ? draftStorageKey : draftStorageKeyForUser(_userId);
+  String get _scopedProfileStorageKey =>
+      _userId == null ? profileStorageKey : profileStorageKeyForUser(_userId);
+
+  bool get _isGlobalRepository => _userId == null;
+
+  bool _isUserScopedDraftKey(String key) =>
+      key.startsWith('$draftStorageKey$_userScopedKeySeparator');
+
+  bool _isUserScopedProfileKey(String key) =>
+      key.startsWith('$profileStorageKey$_userScopedKeySeparator');
+
+  Future<void> _clearUserScopedKeys(bool Function(String key) predicate) async {
+    final keysToRemove = _prefs
+        .getKeys()
+        .where((key) => predicate(key))
+        .toList();
+    for (final key in keysToRemove) {
+      await _prefs.remove(key);
+    }
+  }
 
   @override
   RunnerProfileDraft? loadDraft() {
-    final raw = _prefs.getString(draftStorageKey);
+    final raw = _prefs.getString(_scopedDraftStorageKey);
     if (raw == null || raw.isEmpty) return null;
     final json = _decode(raw);
     if (json == null) return null;
@@ -50,7 +84,7 @@ class SharedPreferencesRunnerProfileRepository
 
   @override
   RunnerProfile? loadProfile() {
-    final raw = _prefs.getString(profileStorageKey);
+    final raw = _prefs.getString(_scopedProfileStorageKey);
     if (raw == null || raw.isEmpty) return null;
     final json = _decode(raw);
     if (json == null) return null;
@@ -77,28 +111,35 @@ class SharedPreferencesRunnerProfileRepository
 
   @override
   Future<void> saveDraft(RunnerProfileDraft draft) async {
-    await _prefs.setString(draftStorageKey, jsonEncode(draft.toJson()));
+    await _prefs.setString(_scopedDraftStorageKey, jsonEncode(draft.toJson()));
   }
 
   @override
   Future<void> saveProfile(RunnerProfile profile) async {
-    await _prefs.setString(profileStorageKey, jsonEncode(profile.toJson()));
-    await _prefs.remove(draftStorageKey);
+    await _prefs.setString(
+      _scopedProfileStorageKey,
+      jsonEncode(profile.toJson()),
+    );
+    await _prefs.remove(_scopedDraftStorageKey);
   }
 
   @override
   Future<void> clearDraft() async {
-    await _prefs.remove(draftStorageKey);
+    await _prefs.remove(_scopedDraftStorageKey);
   }
 
   @override
   Future<void> clearProfile() async {
-    await _prefs.remove(profileStorageKey);
-    await _prefs.remove(draftStorageKey);
+    await _prefs.remove(_scopedProfileStorageKey);
+    await _prefs.remove(_scopedDraftStorageKey);
+    if (_isGlobalRepository) {
+      await _clearUserScopedKeys(_isUserScopedProfileKey);
+      await _clearUserScopedKeys(_isUserScopedDraftKey);
+    }
   }
 
   Future<void> clearCachedProfileOnly() async {
-    await _prefs.remove(profileStorageKey);
+    await _prefs.remove(_scopedProfileStorageKey);
   }
 
   Map<String, dynamic>? _decode(String raw) {
@@ -129,9 +170,13 @@ final runnerProfileRepositoryProvider = Provider<RunnerProfileRepository>((
   }
 
   final client = ref.watch(supabaseClientProvider);
+  final userScopedCache = SharedPreferencesRunnerProfileRepository(
+    prefs,
+    userId: user.id,
+  );
   return SupabaseRunnerProfileRepository(
     client: client,
     userId: user.id,
-    localCache: localCache,
+    localCache: userScopedCache,
   );
 });
