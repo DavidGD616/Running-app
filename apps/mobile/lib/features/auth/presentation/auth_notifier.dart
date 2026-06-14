@@ -11,7 +11,9 @@ import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../profile/data/runner_profile_repository.dart';
+import '../../profile/presentation/runner_profile_provider.dart';
 import '../auth_error_localizer.dart';
+import 'auth_state_provider.dart';
 
 const _authRedirectUrl = 'striviq://login-callback';
 
@@ -52,6 +54,7 @@ class AuthNotifier extends AsyncNotifier<void> {
           l10n.authSuccessCheckEmailForConfirmation,
         );
       }
+      _refreshAuthDependentState();
       return null;
     } on AuthException catch (error, stackTrace) {
       state = AsyncError(error, stackTrace);
@@ -74,6 +77,7 @@ class AuthNotifier extends AsyncNotifier<void> {
     state = const AsyncLoading();
     try {
       await _client.auth.signInWithPassword(email: email, password: password);
+      _refreshAuthDependentState();
       state = const AsyncData(null);
       return null;
     } on AuthException catch (error, stackTrace) {
@@ -117,6 +121,7 @@ class AuthNotifier extends AsyncNotifier<void> {
         idToken: idToken,
         accessToken: accessToken,
       );
+      _refreshAuthDependentState();
       state = const AsyncData(null);
       return null;
     } on AuthException catch (error, stackTrace) {
@@ -179,6 +184,7 @@ class AuthNotifier extends AsyncNotifier<void> {
         // ignore: avoid_print
         print('[AppleSignIn] Failed to store Apple token: $e');
       }
+      _refreshAuthDependentState();
       state = const AsyncData(null);
       return null;
     } on SignInWithAppleAuthorizationException catch (e, stackTrace) {
@@ -251,6 +257,7 @@ class AuthNotifier extends AsyncNotifier<void> {
       await _client.auth.signOut();
       final prefs = ref.read(sharedPreferencesProvider);
       await SharedPreferencesRunnerProfileRepository(prefs).clearProfile();
+      _refreshAuthDependentState();
       state = const AsyncData(null);
       return null;
     } on AuthException catch (error, stackTrace) {
@@ -300,6 +307,7 @@ class AuthNotifier extends AsyncNotifier<void> {
         // ignore: avoid_print
         print('[deleteAccount] Local state clear failed: $e');
       }
+      _refreshAuthDependentState();
       state = const AsyncData(null);
       return AuthActionFeedback.success(l10n.settingsAccountDeleteSuccess);
     } on FunctionException {
@@ -327,6 +335,13 @@ class AuthNotifier extends AsyncNotifier<void> {
     if (locale != null) {
       await prefs.setString('pref_locale', locale);
     }
+  }
+
+  void _refreshAuthDependentState() {
+    ref.invalidate(authStateProvider);
+    ref.invalidate(currentUserProvider);
+    ref.invalidate(runnerProfileRepositoryProvider);
+    ref.invalidate(runnerProfileProvider);
   }
 }
 
