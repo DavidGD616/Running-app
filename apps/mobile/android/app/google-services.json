@@ -12,7 +12,20 @@
           "package_name": "com.davidgd616.striviq"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "471648964484-3g9v6o6spt721ka53u5c6bcvq66hdskt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.davidgd616.striviq",
+            "certificate_hash": "6ba65a449e39ff14914f22384f0088093a86cefd"
+          }
+        },
+        {
+          "client_id": "471648964484-61vv3tt6pcc3j1r2lajr1jlggkt1t6mc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyCUfi01FNyVzitQgBruokO3G1uRbOZvEe8"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "471648964484-61vv3tt6pcc3j1r2lajr1jlggkt1t6mc.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "471648964484-0n1i70jvg9lunlurlbneq5jri32dgiti.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.davidgd616.striviq"
+              }
+            }
+          ]
         }
       }
     }
