@@ -26,6 +26,7 @@ import {
   normalizeSessionIds,
   normalizeTaper,
   normalizeTrainingDayCount,
+  normalizeUnsupportedAmbitiousTargetUsage,
   normalizeWeeklyVolumeRamp,
   normalizeWeekNumbersFromDates,
   normalizeWorkoutTypesByPhase,
@@ -231,24 +232,6 @@ Deno.serve(async (req) => {
     console.error("OpenAI generation failed:", err);
     return new Response(
       JSON.stringify({ error: "Plan generation failed", detail: String(err) }),
-      { status: 500, headers: { "Content-Type": "application/json" } },
-    );
-  }
-
-  const briefViolations = validateGeneratedPlanAgainstCoachingBrief(
-    generatedPlan,
-    coachingBrief,
-  );
-  if (briefViolations.length > 0) {
-    console.error(
-      "Generated plan failed coaching brief validation:",
-      briefViolations,
-    );
-    return new Response(
-      JSON.stringify({
-        error: "Generated plan failed coaching brief validation",
-        violations: briefViolations,
-      }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
   }
@@ -524,7 +507,17 @@ Deno.serve(async (req) => {
     sessionsBeforeRaceDayInfo,
     resolvedPlanStartDate,
   );
-  const idNormalizedSessions = normalizeSessionIds(planStartFilteredSessions);
+  const unsupportedNormalizedPlan = normalizeUnsupportedAmbitiousTargetUsage(
+    planStartFilteredSessions,
+    coachingBrief,
+    locale,
+    safeGeneratedPlan.raceGuidance,
+    safeGeneratedPlan.paceZones,
+  );
+  const idNormalizedSessions = normalizeSessionIds(
+    unsupportedNormalizedPlan.sessions,
+  );
+  const normalizedRaceGuidance = unsupportedNormalizedPlan.raceGuidance;
   const genericCoachCopyViolations = detectGenericCoachCopyViolations(
     idNormalizedSessions,
   );
@@ -561,7 +554,7 @@ Deno.serve(async (req) => {
     ...validateGeneratedPlanAgainstCoachingBrief(
       {
         totalWeeks: safeGeneratedPlan.totalWeeks,
-        raceGuidance: safeGeneratedPlan.raceGuidance,
+        raceGuidance: normalizedRaceGuidance,
         sessions: idNormalizedSessions,
       },
       coachingBrief,
@@ -574,8 +567,7 @@ Deno.serve(async (req) => {
     );
     return new Response(
       JSON.stringify({
-        error: "Generated plan failed schedule validation",
-        violations: finalViolations,
+        error: "Plan generation failed",
       }),
       { status: 500, headers: { "Content-Type": "application/json" } },
     );
@@ -612,6 +604,7 @@ Deno.serve(async (req) => {
     ...safeGeneratedPlan,
     id: versionId,
     currentWeekNumber: safeGeneratedPlan.currentWeekNumber ?? 1,
+    raceGuidance: normalizedRaceGuidance,
     sessions: sessionsWithRaceDayInfo,
   };
 

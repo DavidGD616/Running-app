@@ -3224,7 +3224,8 @@ type TrainingDayCueKey =
   | "movedAwayFromHardDay"
   | "hardDayRecoveryFallback"
   | "firstSessionEasyStart"
-  | "peakLongRunGuardrailCapped";
+  | "peakLongRunGuardrailCapped"
+  | "unsupportedAmbitiousTarget";
 
 function trainingDayCue(
   key: TrainingDayCueKey,
@@ -3297,6 +3298,10 @@ function trainingDayCue(
         "Peak long run was kept at the safety limit; evidence-based increase is currently blocked by guardrails.",
       es:
         "La tirada larga máxima se mantuvo por límites de seguridad; la evidencia adicional está bloqueada por guardas de riesgo.",
+    },
+    unsupportedAmbitiousTarget: {
+      en: "Use a controlled tempo effort for this session.",
+      es: "Usa un esfuerzo de tempo controlado para esta sesión.",
     },
   };
   return cues[key][locale];
@@ -4564,6 +4569,235 @@ export function validateGeneratedPlanAgainstCoachingBrief(
   }
 
   return violations;
+}
+
+export type UnsupportedAmbitiousTargetNormalizationResult = {
+  sessions: GeneratedSession[];
+  raceGuidance: Pick<GeneratedPlan, "raceGuidance">["raceGuidance"];
+};
+
+export function normalizeUnsupportedAmbitiousTargetUsage(
+  sessions: readonly GeneratedSession[],
+  coachingBrief: CoachingBrief,
+  locale: "en" | "es",
+  raceGuidance: Pick<GeneratedPlan, "raceGuidance">["raceGuidance"],
+  paceZones?: Pick<GeneratedPlan, "paceZones">["paceZones"],
+): UnsupportedAmbitiousTargetNormalizationResult {
+  if (coachingBrief.ambitiousTarget.supported) {
+    return {
+      sessions: sessions.map((session) => ({ ...session })),
+      raceGuidance: { ...raceGuidance },
+    };
+  }
+
+  const unsupportedAmbitiousTargetPatternValue =
+    unsupportedAmbitiousTargetPattern(
+      coachingBrief,
+    );
+  const shouldPreserveRacePaceUsage = coachingBrief.evidenceTarget.supported;
+  const cue = trainingDayCue("unsupportedAmbitiousTarget", locale);
+  const cueReplacement = unsupportedAmbitiousTargetReplacement(locale);
+  const updateRaceGuidance = unsupportedAmbitiousTargetPatternValue == null
+    ? { ...raceGuidance }
+    : sanitizeUnsupportedAmbitiousTargetText(
+      raceGuidance,
+      unsupportedAmbitiousTargetPatternValue,
+      cueReplacement,
+    );
+
+  return {
+    sessions: sessions.map((session) => {
+      const usesRacePaceTarget = session.type === "racePaceRun" ||
+        session.targetZone === "racePace" ||
+        session.workoutTarget?.zone === "racePace";
+
+      const mentionsUnsupportedTarget =
+        unsupportedAmbitiousTargetPatternValue != null &&
+        textMatchesTarget(
+          [session.coachNote, session.workoutTarget?.effortCue],
+          unsupportedAmbitiousTargetPatternValue,
+        );
+
+      const shouldNormalizeRacePace = usesRacePaceTarget &&
+        !shouldPreserveRacePaceUsage;
+      if (!shouldNormalizeRacePace && !mentionsUnsupportedTarget) {
+        return session;
+      }
+
+      const normalizedSession = shouldNormalizeRacePace
+        ? toTempoEffortSession(session, cue, paceZones?.tempo)
+        : { ...session };
+
+      const updatedCoachNote = replaceUnsupportedAmbitiousTargetMentions(
+        normalizedSession.coachNote,
+        unsupportedAmbitiousTargetPatternValue,
+        cueReplacement,
+      );
+
+      const updatedEffortCue = maybeReplaceUnsupportedEffortCue(
+        normalizedSession.workoutTarget,
+        unsupportedAmbitiousTargetPatternValue,
+        cueReplacement,
+      );
+
+      return {
+        ...normalizedSession,
+        coachNote: updatedCoachNote,
+        workoutTarget: updatedEffortCue,
+      };
+    }),
+    raceGuidance: updateRaceGuidance as Pick<
+      GeneratedPlan,
+      "raceGuidance"
+    >["raceGuidance"],
+  };
+}
+
+function unsupportedAmbitiousTargetReplacement(
+  locale: CoachNoteLocale,
+): string {
+  return locale === "es"
+    ? "esfuerzo de tempo controlado"
+    : "controlled tempo effort";
+}
+
+function sanitizeUnsupportedAmbitiousTargetText(
+  raceGuidance: Record<string, unknown>,
+  targetPattern: RegExp,
+  replacement: string,
+): Record<string, unknown> {
+  const sanitizedRaceGuidance = { ...raceGuidance };
+  let hasUpdates = false;
+
+  for (const [key, value] of Object.entries(sanitizedRaceGuidance)) {
+    if (typeof value !== "string") continue;
+    if (!targetPattern.test(value)) continue;
+
+    sanitizedRaceGuidance[key] = replaceAllUnsupportedTargetMatches(
+      value,
+      targetPattern,
+      replacement,
+    );
+    hasUpdates = true;
+  }
+
+  return hasUpdates ? sanitizedRaceGuidance : { ...raceGuidance };
+}
+
+function replaceUnsupportedAmbitiousTargetMentions(
+  value: string | null | undefined,
+  targetPattern: RegExp | null,
+  replacement: string,
+): string | null {
+  if (typeof value !== "string") return value ?? null;
+  if (targetPattern == null) return value;
+  return targetPattern.test(value)
+    ? replaceAllUnsupportedTargetMatches(value, targetPattern, replacement)
+    : value;
+}
+
+function maybeReplaceUnsupportedEffortCue(
+  workoutTarget: GeneratedSession["workoutTarget"],
+  targetPattern: RegExp | null,
+  replacement: string,
+): GeneratedSession["workoutTarget"] {
+  if (workoutTarget == null) return workoutTarget;
+  if (workoutTarget.effortCue == null) return workoutTarget;
+  if (targetPattern == null) return workoutTarget;
+  if (!targetPattern.test(workoutTarget.effortCue)) return workoutTarget;
+
+  return {
+    ...workoutTarget,
+    effortCue: replaceAllUnsupportedTargetMatches(
+      workoutTarget.effortCue,
+      targetPattern,
+      replacement,
+    ),
+  };
+}
+
+function replaceAllUnsupportedTargetMatches(
+  value: string,
+  targetPattern: RegExp,
+  replacement: string,
+): string {
+  const flags = targetPattern.flags.includes("g")
+    ? targetPattern.flags
+    : `${targetPattern.flags}g`;
+  return value.replace(new RegExp(targetPattern.source, flags), replacement);
+}
+
+function toTempoEffortSession(
+  session: GeneratedSession,
+  replacementEffortCue: string,
+  tempoPaceZone?: Pick<
+    GeneratedPlan,
+    "paceZones"
+  >["paceZones"]["tempo"],
+): GeneratedSession {
+  const tempoBounds = tempoEffortBounds(
+    session.workoutTarget,
+    tempoPaceZone,
+  );
+
+  return {
+    ...session,
+    type: "tempoRun",
+    targetZone: "tempo",
+    workoutTarget: {
+      schemaVersion: session.workoutTarget?.schemaVersion ?? 1,
+      type: "effort",
+      zone: "tempo",
+      paceMinSecPerKm: tempoBounds.paceMinSecPerKm,
+      paceMaxSecPerKm: tempoBounds.paceMaxSecPerKm,
+      effortCue: session.workoutTarget?.effortCue ?? replacementEffortCue,
+    },
+  };
+}
+
+function tempoEffortBounds(
+  workoutTarget: GeneratedSession["workoutTarget"],
+  tempoPaceZone:
+    | Pick<GeneratedPlan, "paceZones">["paceZones"]["tempo"]
+    | undefined,
+): { paceMinSecPerKm: number; paceMaxSecPerKm: number } {
+  if (
+    tempoPaceZone != null &&
+    Number.isInteger(tempoPaceZone.paceMinSecPerKm) &&
+    Number.isInteger(tempoPaceZone.paceMaxSecPerKm) &&
+    tempoPaceZone.paceMinSecPerKm > 0 &&
+    tempoPaceZone.paceMaxSecPerKm >= tempoPaceZone.paceMinSecPerKm
+  ) {
+    return {
+      paceMinSecPerKm: tempoPaceZone.paceMinSecPerKm,
+      paceMaxSecPerKm: tempoPaceZone.paceMaxSecPerKm,
+    };
+  }
+
+  const paceMinSecPerKm = workoutTarget?.paceMinSecPerKm;
+  const paceMaxSecPerKm = workoutTarget?.paceMaxSecPerKm;
+  if (
+    typeof paceMinSecPerKm === "number" &&
+    typeof paceMaxSecPerKm === "number" &&
+    Number.isInteger(paceMinSecPerKm) &&
+    Number.isInteger(paceMaxSecPerKm) &&
+    paceMinSecPerKm > 0 &&
+    paceMaxSecPerKm >= paceMinSecPerKm
+  ) {
+    const conservativeMin = Math.max(
+      paceMaxSecPerKm + 30,
+      paceMinSecPerKm + 60,
+    );
+    return {
+      paceMinSecPerKm: conservativeMin,
+      paceMaxSecPerKm: conservativeMin + 45,
+    };
+  }
+
+  return {
+    paceMinSecPerKm: 360,
+    paceMaxSecPerKm: 450,
+  };
 }
 
 function weeklyRunVolumeKm(
