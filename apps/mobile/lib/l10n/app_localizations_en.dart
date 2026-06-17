@@ -3120,7 +3120,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get preRunSubtitle =>
-      'Quick check to make sure today\'s interval session is still the right move.';
+      'Quick check to make sure today\'s session is still the right move.';
 
   @override
   String get preRunLegsQuestion => 'How do your legs feel today?';

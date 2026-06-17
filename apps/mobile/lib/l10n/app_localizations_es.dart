@@ -3144,7 +3144,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get preRunSubtitle =>
-      'Verificación rápida para asegurarte de que la sesión de intervalos de hoy sigue siendo la decisión correcta.';
+      'Verificación rápida para confirmar que la sesión de hoy sigue siendo la decisión correcta.';
 
   @override
   String get preRunLegsQuestion => '¿Cómo se sienten tus piernas hoy?';

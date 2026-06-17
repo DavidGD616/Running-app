@@ -5693,7 +5693,7 @@ abstract class AppLocalizations {
   /// Subtitle below heading on the pre-run check screen
   ///
   /// In en, this message translates to:
-  /// **'Quick check to make sure today\'s interval session is still the right move.'**
+  /// **'Quick check to make sure today\'s session is still the right move.'**
   String get preRunSubtitle;
 
   /// Question label for legs feeling section

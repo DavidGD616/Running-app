@@ -279,9 +279,7 @@ class _AppleSignInButton extends StatelessWidget {
           backgroundColor: Colors.black,
           foregroundColor: Colors.white,
           side: const BorderSide(color: Color(0xFF3A3A3A), width: 1),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.borderMd,
-          ),
+          shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMd),
           padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         ),
         child: isLoading
@@ -327,49 +325,57 @@ class _GoogleSignInButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: OutlinedButton(
-        onPressed: onPressed,
-        style: OutlinedButton.styleFrom(
-          backgroundColor: Colors.white,
-          foregroundColor: const Color(0xFF1F1F1F),
-          side: const BorderSide(color: Color(0xFFDADCE0), width: 1),
-          shape: RoundedRectangleBorder(
-            borderRadius: AppRadius.borderMd,
+    return Semantics(
+      container: true,
+      button: true,
+      enabled: !isLoading,
+      label: label,
+      child: SizedBox(
+        width: double.infinity,
+        height: 52,
+        child: OutlinedButton(
+          onPressed: onPressed,
+          style: OutlinedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFF1F1F1F),
+            side: const BorderSide(color: Color(0xFFDADCE0), width: 1),
+            shape: RoundedRectangleBorder(borderRadius: AppRadius.borderMd),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
           ),
-          padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-        ),
-        child: isLoading
-            ? const SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF1F1F1F)),
-                ),
-              )
-            : Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SvgPicture.asset(
-                    'assets/icons/google.svg',
-                    width: 20,
-                    height: 20,
-                  ),
-                  const SizedBox(width: AppSpacing.sm),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF1F1F1F),
-                      letterSpacing: 0.1,
+          child: isLoading
+              ? const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF1F1F1F),
                     ),
                   ),
-                ],
-              ),
+                )
+              : ExcludeSemantics(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SvgPicture.asset(
+                        'assets/icons/google.svg',
+                        width: 20,
+                        height: 20,
+                      ),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        label,
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFF1F1F1F),
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+        ),
       ),
     );
   }

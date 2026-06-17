@@ -2958,7 +2958,7 @@
   "preRunHeading": "How are you feeling?",
   "@preRunHeading": { "description": "Large heading on the pre-run check screen" },
 
-  "preRunSubtitle": "Quick check to make sure today's interval session is still the right move.",
+  "preRunSubtitle": "Quick check to make sure today's session is still the right move.",
   "@preRunSubtitle": { "description": "Subtitle below heading on the pre-run check screen" },
 
   "preRunLegsQuestion": "How do your legs feel today?",

@@ -51,6 +51,7 @@ void main() {
   Widget wrap(
     PreRunArgs args, {
     LocationPermissionService? locationPermissionService,
+    Locale locale = const Locale('en'),
   }) {
     final router = GoRouter(
       initialLocation: '/',
@@ -75,7 +76,7 @@ void main() {
           ),
       ],
       child: MaterialApp.router(
-        locale: const Locale('en'),
+        locale: locale,
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -111,6 +112,29 @@ void main() {
       findsNothing,
     );
   });
+
+  testWidgets(
+    'shows session-neutral pre-run subtitle for non-interval sessions',
+    (tester) async {
+      final session = buildLegacyTempoSession();
+      final args = PreRunArgs.fromSession(session);
+
+      for (final locale in const [Locale('en'), Locale('es')]) {
+        await tester.pumpWidget(wrap(args, locale: locale));
+        await tester.pumpAndSettle();
+
+        final context = tester.element(find.byType(PreRunScreen));
+        final l10n = AppLocalizations.of(context)!;
+
+        expect(find.text(l10n.preRunSubtitle), findsOneWidget);
+        expect(l10n.preRunSubtitle.toLowerCase().contains('interval'), isFalse);
+        expect(
+          l10n.preRunSubtitle.toLowerCase().contains('intervalo'),
+          isFalse,
+        );
+      }
+    },
+  );
 
   testWidgets('starts GPS run when distance workout has always permission', (
     tester,
