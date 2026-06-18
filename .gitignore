@@ -32,3 +32,6 @@ Thumbs.db
 
 # Flutter
 devtools_options.yaml
+
+# Local Maestro QA artifacts
+apps/mobile/maestro/
