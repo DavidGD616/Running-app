@@ -3281,7 +3281,7 @@
   "workoutGuidanceBeginnerCueFast": "Fast, relaxed, not frantic",
   "@workoutGuidanceBeginnerCueFast": { "description": "Beginner-friendly cue for fast reps or strides" },
 
-  "workoutGuidanceBeginnerCueRecovery": "Gentle jog, get ready for the next rep",
+  "workoutGuidanceBeginnerCueRecovery": "Keep the jog light and let your breathing settle",
   "@workoutGuidanceBeginnerCueRecovery": { "description": "Beginner-friendly cue for recovery effort" },
 
   "workoutGuidanceFastPart": "Fast part: {guidance}",

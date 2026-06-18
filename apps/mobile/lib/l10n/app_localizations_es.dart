@@ -3459,7 +3459,7 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get workoutGuidanceBeginnerCueRecovery =>
-      'Trote suave, prepárate para la siguiente repetición';
+      'Mantén un trote suave y deja que tu respiración se calme';
 
   @override
   String workoutGuidanceFastPart(String guidance) {

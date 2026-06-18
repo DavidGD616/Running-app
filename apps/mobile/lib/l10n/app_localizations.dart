@@ -6234,7 +6234,7 @@ abstract class AppLocalizations {
   /// Beginner-friendly cue for recovery effort
   ///
   /// In en, this message translates to:
-  /// **'Gentle jog, get ready for the next rep'**
+  /// **'Keep the jog light and let your breathing settle'**
   String get workoutGuidanceBeginnerCueRecovery;
 
   /// Detail row describing the fast part of a repeat block

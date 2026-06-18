@@ -3433,7 +3433,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get workoutGuidanceBeginnerCueRecovery =>
-      'Gentle jog, get ready for the next rep';
+      'Keep the jog light and let your breathing settle';
 
   @override
   String workoutGuidanceFastPart(String guidance) {

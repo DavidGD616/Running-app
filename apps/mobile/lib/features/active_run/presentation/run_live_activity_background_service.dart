@@ -24,11 +24,11 @@ abstract class RunLiveActivityBackgroundServicePort {
   Future<void> configure();
 }
 
-class RunLiveActivityBackgroundService implements RunLiveActivityBackgroundServicePort {
+class RunLiveActivityBackgroundService
+    implements RunLiveActivityBackgroundServicePort {
   RunLiveActivityBackgroundService._();
 
-  static RunLiveActivityBackgroundServicePort get instance =>
-      _instance;
+  static RunLiveActivityBackgroundServicePort get instance => _instance;
 
   static void setInstance(RunLiveActivityBackgroundServicePort port) {
     _instance = port;
@@ -43,6 +43,10 @@ class RunLiveActivityBackgroundService implements RunLiveActivityBackgroundServi
   @override
   Future<void> configure() async {
     if (!Platform.isIOS && !Platform.isAndroid) return;
+    if (Platform.isAndroid) {
+      _configured = true;
+      return;
+    }
     if (_configured) return;
 
     try {
@@ -89,16 +93,19 @@ class RunLiveActivityBackgroundService implements RunLiveActivityBackgroundServi
 
   @override
   Future<void> start(RunLiveActivityData data) async {
+    if (Platform.isAndroid) return;
     await _send(_updateRunEvent, data.toMap(), startIfNeeded: true);
   }
 
   @override
   Future<void> update(RunLiveActivityData data) async {
+    if (Platform.isAndroid) return;
     await _send(_updateRunEvent, data.toMap(), startIfNeeded: true);
   }
 
   @override
   Future<void> stop() async {
+    if (Platform.isAndroid) return;
     await _send(_endRunEvent, null, startIfNeeded: false);
     await _send(_stopServiceEvent, null, startIfNeeded: false);
   }
@@ -109,6 +116,7 @@ class RunLiveActivityBackgroundService implements RunLiveActivityBackgroundServi
     required bool startIfNeeded,
   }) async {
     if (!Platform.isIOS && !Platform.isAndroid) return;
+    if (Platform.isAndroid) return;
 
     try {
       await configure();

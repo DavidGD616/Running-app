@@ -97,12 +97,13 @@ class MainActivity : FlutterFragmentActivity() {
     private fun endRunService() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
 
+        RunForegroundService.current?.endRun()
         val serviceIntent = RunForegroundService.intent(
             this,
             RunForegroundService.ACTION_END,
         )
+        RunForegroundService.cancelActiveRunNotification(this)
         stopService(serviceIntent)
-        RunForegroundService.current?.endRun()
     }
 
     private fun canPostRunNotification(): Boolean {

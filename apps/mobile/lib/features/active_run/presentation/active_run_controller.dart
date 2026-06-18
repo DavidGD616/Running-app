@@ -347,6 +347,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     _routePointBuffer.clear();
     _nextRoutePointIndex = 0;
     _runId = null;
+    _routePointFlushFuture = null;
   }
 
   void _refreshPaceGuidance() {
@@ -756,7 +757,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     state = state.copyWith(isSurging: !state.isSurging);
   }
 
-  Future<ActiveRunFinishResult> finish() async {
+  Future<void> _stopRuntime({bool flushRoutePoints = false}) async {
     _timer?.cancel();
     _timer = null;
     _progressTimer?.cancel();
@@ -770,7 +771,13 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       tracker.stop();
     } catch (_) {}
 
-    await _flushRoutePoints();
+    if (flushRoutePoints) {
+      await _flushRoutePoints();
+    }
+  }
+
+  Future<ActiveRunFinishResult> finish() async {
+    await _stopRuntime(flushRoutePoints: true);
 
     final runId = _runId;
     final splits = state.splits;
@@ -821,6 +828,15 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     );
 
     return result;
+  }
+
+  Future<void> discard() async {
+    await _stopRuntime();
+    _runId = null;
+    _routePointBuffer.clear();
+    _routePointFlushFuture = null;
+    _resetAccumulators();
+    state = ActiveRunState.initial();
   }
 
   void dismissModal() {

@@ -46,6 +46,10 @@ class RunForegroundService : Service() {
 
     override fun onDestroy() {
         stopTickLoop()
+        seeded = false
+        foregroundStarted = false
+        latestData = RunNotificationData.empty()
+        lastTickRealtime = 0L
         if (current === this) current = null
         super.onDestroy()
     }
@@ -82,6 +86,7 @@ class RunForegroundService : Service() {
 
     fun endRun() {
         stopTickLoop()
+        clearNotification()
         emitFinishedEvent()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             stopForeground(STOP_FOREGROUND_REMOVE)
@@ -89,6 +94,10 @@ class RunForegroundService : Service() {
             @Suppress("DEPRECATION")
             stopForeground(true)
         }
+        seeded = false
+        foregroundStarted = false
+        latestData = RunNotificationData.empty()
+        lastTickRealtime = 0L
         stopSelf()
     }
 
@@ -131,6 +140,10 @@ class RunForegroundService : Service() {
         if (!tickRunning) return
         tickHandler.removeCallbacks(tickRunnable)
         tickRunning = false
+    }
+
+    private fun clearNotification() {
+        notificationManager.cancel(NOTIFICATION_ID)
     }
 
     private fun tick() {
@@ -331,6 +344,14 @@ class RunForegroundService : Service() {
             private set
 
         var eventsSink: EventChannel.EventSink? = null
+
+        @JvmStatic
+        fun cancelActiveRunNotification(context: Context) {
+            val serviceManager = context.getSystemService(
+                Context.NOTIFICATION_SERVICE,
+            ) as NotificationManager
+            serviceManager.cancel(NOTIFICATION_ID)
+        }
 
         fun intent(context: Context, action: String, data: Map<*, *>? = null): Intent {
             return Intent(context, RunForegroundService::class.java).apply {

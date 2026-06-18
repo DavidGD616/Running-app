@@ -117,7 +117,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final rows = _buildRows(plan);
-    final weekStart = rows.isNotEmpty ? rows.first.date.day.toString() : '';
+    final totalWeeks = plan?.totalWeeks.toString() ?? '';
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -136,7 +136,7 @@ class WeeklyPlanScreen extends ConsumerWidget {
               Text(
                 l10n.weeklyPlanTitle(
                   (plan?.currentWeekNumber ?? 1).toString(),
-                  weekStart,
+                  totalWeeks,
                 ),
                 style: AppTypography.titleLarge,
               ),

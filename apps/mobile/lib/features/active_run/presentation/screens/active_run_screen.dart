@@ -40,7 +40,7 @@ class ActiveRunScreen extends ConsumerStatefulWidget {
 
 class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     with WidgetsBindingObserver {
-  late final _session =
+  late final RunFlowSessionContext? _session =
       widget.args?.session ?? ref.read(activeRunSessionProvider);
   late final _checkIn =
       widget.args?.checkIn ??
@@ -54,6 +54,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         backgroundService: _backgroundService,
       );
   bool _finished = false;
+  bool _invalidSessionHandled = false;
 
   @override
   void initState() {
@@ -62,6 +63,11 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      if (_session == null) {
+        _exitInvalidActiveRun();
+        return;
+      }
+
       ref
           .read(activeRunControllerProvider.notifier)
           .start(
@@ -75,6 +81,42 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
             ),
           );
     });
+  }
+
+  Future<void> _clearActiveRunState() async {
+    await _syncCoordinator.end();
+    final controller = ref.read(activeRunControllerProvider.notifier);
+    await controller.discard();
+    await ref.read(activeRunSessionProvider.notifier).clear();
+    await ref.read(activeRunProgressProvider.notifier).clear();
+  }
+
+  void _exitActiveRunToSafeRoute() {
+    if (!mounted) return;
+    final navigator = Navigator.of(context);
+    if (navigator.canPop()) {
+      navigator.pop();
+      return;
+    }
+
+    try {
+      context.go(RouteNames.today);
+    } catch (_) {
+      // Non-go-router contexts are intentionally no-op here.
+    }
+  }
+
+  Future<void> _exitInvalidActiveRun() async {
+    if (_invalidSessionHandled || !mounted) return;
+    _invalidSessionHandled = true;
+    _finished = true;
+    try {
+      await _clearActiveRunState();
+    } finally {
+      if (mounted) {
+        _exitActiveRunToSafeRoute();
+      }
+    }
   }
 
   @override
@@ -140,6 +182,12 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
     () async {
       await _syncCoordinator.end();
       if (!mounted) return;
+
+      if (_session == null) {
+        await _exitInvalidActiveRun();
+        return;
+      }
+
       final result = await ref
           .read(activeRunControllerProvider.notifier)
           .finish();
@@ -178,6 +226,7 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
   }
 
   void _showModalForIntent(ActiveRunModalIntent intent) {
+    if (_session == null || _finished) return;
     switch (intent) {
       case ActiveRunModalIntent.gpsLostAutoPause:
         _showGpsLostAutoPauseDialog();
@@ -393,27 +442,26 @@ class _ActiveRunScreenState extends ConsumerState<ActiveRunScreen>
         _playPaceGuidanceHaptic(nextGuidance);
       }
 
-      if (_session != null) {
-        final unitSystem =
-            ref.read(userPreferencesProvider).value?.unitSystem ??
-            UnitSystem.km;
-        final data = buildRunLiveActivityData(
-          state: next,
-          session: _session,
-          unitSystem: unitSystem,
-          l10n: l10n,
-          paceGuidanceMessageKey: next.paceStatus.messageKey,
-          paceGuidanceSeverity: next.paceStatus.severity,
-        );
-        _syncCoordinator.sync(
-          data: data,
-          timelineIndex: next.timelineIndex,
-          gpsStatus: next.gpsStatus,
-          isTimerOnlyMode: next.isTimerOnlyMode,
-          paceGuidanceMessageKey: next.paceStatus.messageKey,
-          paceGuidanceSeverity: next.paceStatus.severity,
-        );
-      }
+      if (_finished || _session == null) return;
+
+      final unitSystem =
+          ref.read(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+      final data = buildRunLiveActivityData(
+        state: next,
+        session: _session,
+        unitSystem: unitSystem,
+        l10n: l10n,
+        paceGuidanceMessageKey: next.paceStatus.messageKey,
+        paceGuidanceSeverity: next.paceStatus.severity,
+      );
+      _syncCoordinator.sync(
+        data: data,
+        timelineIndex: next.timelineIndex,
+        gpsStatus: next.gpsStatus,
+        isTimerOnlyMode: next.isTimerOnlyMode,
+        paceGuidanceMessageKey: next.paceStatus.messageKey,
+        paceGuidanceSeverity: next.paceStatus.severity,
+      );
     });
 
     final runState = ref.watch(activeRunControllerProvider);

@@ -232,9 +232,7 @@ void main() {
     );
     expect(find.text(l10n.planMetadataTargetsLabel), findsOneWidget);
     expect(
-      find.text(
-        '${l10n.planMetadataEvidenceTargetValue('1:55:00')} · ${l10n.planMetadataAmbitiousTargetValue(l10n.planMetadataUnsupportedTarget)}',
-      ),
+      find.text(l10n.planMetadataEvidenceTargetValue('1:55:00')),
       findsOneWidget,
     );
     expect(find.text(l10n.planMetadataPhaseStrategyLabel), findsOneWidget);
@@ -245,6 +243,50 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('Used measured Strava evidence.'), findsOneWidget);
+  });
+
+  testWidgets('plan ready omits targets row when all targets are unsupported', (
+    tester,
+  ) async {
+    final goal = buildHalfMarathonTimeGoal();
+    final draft = buildRunnerProfileDraft();
+    final plan = TrainingPlan(
+      id: 'plan-ready-unsupported-targets',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 1,
+      sessions: [
+        TrainingSession(
+          id: 'run-1',
+          date: DateTime(2026, 6, 1),
+          type: SessionType.easyRun,
+          status: SessionStatus.upcoming,
+          weekNumber: 1,
+        ),
+      ],
+      coachingBriefSnapshot: const CoachingBriefSnapshot(
+        readinessLevel: CoachingReadinessLevel.prepared,
+        confidence: CoachingConfidence.high,
+        source: CoachingSource.strava,
+      ),
+      evidenceTarget: const CoachingTarget(
+        time: Duration(hours: 1, minutes: 55),
+        supported: false,
+      ),
+      ambitiousTarget: const CoachingTarget(
+        time: Duration(hours: 2, minutes: 10),
+        supported: false,
+      ),
+      confidence: CoachingConfidence.high,
+    );
+
+    await tester.pumpWidget(wrap(plan: plan, draft: draft, goal: goal));
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(PlanReadyScreen));
+    final l10n = AppLocalizations.of(context)!;
+
+    expect(find.text(l10n.planMetadataTargetsLabel), findsNothing);
   });
 
   testWidgets('plan ready details read in Spanish without guidance sections', (

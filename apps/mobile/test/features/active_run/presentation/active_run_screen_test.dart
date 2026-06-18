@@ -197,7 +197,7 @@ void main() {
   });
 
   group('_showEndRunConfirmDialog', () {
-    testWidgets('uses the dedicated end-run confirmation body text', (
+    testWidgets('does not show end-run confirmation for null session', (
       tester,
     ) async {
       final prefs = await SharedPreferences.getInstance();
@@ -213,9 +213,8 @@ void main() {
         tester.element(find.byType(ActiveRunScreen)),
       )!;
 
-      expect(find.byType(AlertDialog), findsOneWidget);
-      expect(find.text(l10n.activeRunEndRunConfirmBody), findsOneWidget);
-      expect(find.text(l10n.activeRunGpsLostAutoPauseBody), findsNothing);
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(find.text(l10n.activeRunEndRunConfirmBody), findsNothing);
     });
   });
 }

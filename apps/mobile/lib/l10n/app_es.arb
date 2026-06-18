@@ -1299,7 +1299,7 @@
   "workoutGuidanceBeginnerCueThreshold": "Duro, concentrado y aún repetible",
   "workoutGuidanceBeginnerCueRacePace": "Encuentra el ritmo objetivo de carrera",
   "workoutGuidanceBeginnerCueFast": "Rápido, relajado, sin descontrol",
-  "workoutGuidanceBeginnerCueRecovery": "Trote suave, prepárate para la siguiente repetición",
+  "workoutGuidanceBeginnerCueRecovery": "Mantén un trote suave y deja que tu respiración se calme",
   "workoutGuidanceFastPart": "Parte rápida: {guidance}",
   "@workoutGuidanceFastPart": {
     "placeholders": {

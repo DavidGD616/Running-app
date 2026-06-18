@@ -313,6 +313,32 @@ void main() {
     },
   );
 
+  testWidgets('recovery guidance uses standalone recovery cue', (tester) async {
+    final session = TrainingSession(
+      id: 'recovery-guidance-standalone',
+      date: DateTime(2026, 6, 11),
+      type: SessionType.easyRun,
+      status: SessionStatus.completed,
+      weekNumber: 4,
+      workoutSteps: [
+        WorkoutStep.recovery(
+          duration: const Duration(seconds: 90),
+          target: const WorkoutTarget.effort(TargetZone.recovery),
+        ),
+      ],
+    );
+
+    final artifacts = await buildArtifacts(tester, session);
+    final recoveryRow = artifacts.guidance.effortGuideRows.singleWhere(
+      (row) => row.label == artifacts.l10n.workoutGuidanceEffortRecovery,
+    );
+
+    expect(
+      recoveryRow.cue,
+      equals(artifacts.l10n.workoutGuidanceBeginnerCueRecovery),
+    );
+  });
+
   testWidgets(
     'effort guide deduplicates repeated zones and keeps clear labels',
     (tester) async {

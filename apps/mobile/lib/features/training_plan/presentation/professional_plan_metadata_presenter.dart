@@ -67,7 +67,7 @@ List<ProfessionalPlanMetadataRow> professionalPlanMetadataRows({
     );
   }
 
-  if (evidenceTarget != null || ambitiousTarget != null) {
+  if (_hasVisibleTarget(evidenceTarget) || _hasVisibleTarget(ambitiousTarget)) {
     rows.add(
       ProfessionalPlanMetadataRow(
         label: l10n.planMetadataTargetsLabel,
@@ -147,14 +147,16 @@ String _targetsLabel({
 
 String? _targetLabel(CoachingTarget? target, AppLocalizations l10n) {
   if (target == null) return null;
-  if (target.supported == false) {
-    return l10n.planMetadataUnsupportedTarget;
-  }
+  if (target.supported == false) return null;
   if (target.time != null) return _formatDuration(target.time!);
   if (target.paceSecPerKm != null) {
     return l10n.planMetadataPaceValue(_formatPace(target.paceSecPerKm!));
   }
   return target.reason;
+}
+
+bool _hasVisibleTarget(CoachingTarget? target) {
+  return target != null && target.supported != false;
 }
 
 String _formatDuration(Duration duration) {
