@@ -1,6 +1,8 @@
 import 'package:intl/intl.dart';
 
 import '../../../l10n/app_localizations.dart';
+import '../../user_preferences/domain/user_preferences.dart';
+import '../../../core/utils/unit_formatter.dart';
 import '../domain/models/professional_plan_metadata.dart';
 import '../domain/models/training_plan.dart';
 
@@ -14,6 +16,7 @@ class ProfessionalPlanMetadataRow {
 List<ProfessionalPlanMetadataRow> professionalPlanMetadataRows({
   required TrainingPlan plan,
   required AppLocalizations l10n,
+  required UnitSystem unitSystem,
 }) {
   final rows = <ProfessionalPlanMetadataRow>[];
   final brief = plan.coachingBriefSnapshot;
@@ -61,6 +64,7 @@ List<ProfessionalPlanMetadataRow> professionalPlanMetadataRows({
         value: _currentVolumeLabel(
           volumeKm: currentVolume,
           runsPerWeek: runsPerWeek,
+          unitSystem: unitSystem,
           l10n: l10n,
         ),
       ),
@@ -112,13 +116,17 @@ List<ProfessionalPlanMetadataRow> professionalPlanMetadataRows({
 String _currentVolumeLabel({
   required double? volumeKm,
   required double? runsPerWeek,
+  required UnitSystem unitSystem,
   required AppLocalizations l10n,
 }) {
   final parts = <String>[];
   if (volumeKm != null) {
-    parts.add(
-      l10n.planMetadataVolumeValue(_formatNumber(volumeKm, l10n.localeName)),
+    final volumeValue = _formatNumber(
+      UnitFormatter.distanceValue(volumeKm, unitSystem),
+      l10n.localeName,
     );
+    final unit = UnitFormatter.unitLabel(unitSystem, l10n);
+    parts.add(l10n.planMetadataVolumeValue(volumeValue, unit));
   }
   if (runsPerWeek != null) {
     parts.add(

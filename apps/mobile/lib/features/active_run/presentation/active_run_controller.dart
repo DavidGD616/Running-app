@@ -12,6 +12,7 @@ import '../domain/live_pace_guidance.dart';
 import '../domain/models/gps_state.dart';
 import '../domain/models/run_track_point.dart';
 import 'active_run_timeline.dart';
+import 'active_run_progress_provider.dart';
 import 'location_tracker_provider.dart';
 import 'run_repository_provider.dart';
 
@@ -231,6 +232,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
 
   final List<RunTrackPoint> _routePointBuffer = [];
   String? _runId;
+  int? _startedAtMs;
   int _nextRoutePointIndex = 0;
   Future<void>? _routePointFlushFuture;
 
@@ -269,40 +271,53 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       return;
     }
 
-    _resetAccumulators();
-    _runId = ref.read(clockProvider)().millisecondsSinceEpoch.toString();
+    final persistedProgress = ref.read(activeRunProgressProvider);
+    if (_canRestoreFromProgress(session, timerOnlyMode, persistedProgress)) {
+      _restoreFromProgress(
+        session: session,
+        checkIn: input.checkIn,
+        progress: persistedProgress!,
+      );
+    } else {
+      if (persistedProgress?.sessionId != null &&
+          persistedProgress?.sessionId != session.sessionId) {
+        await ref.read(activeRunProgressProvider.notifier).clear();
+      }
+      _resetAccumulators();
+      _runId = ref.read(clockProvider)().millisecondsSinceEpoch.toString();
+      _startedAtMs = ref.read(clockProvider)().millisecondsSinceEpoch;
+      final blocks = timeline.blocks;
+      final firstBlock = blocks.isNotEmpty ? blocks.first : null;
+      final nextBlock = blocks.length > 1 ? blocks[1] : null;
 
-    final blocks = timeline.blocks;
-    final firstBlock = blocks.isNotEmpty ? blocks.first : null;
-    final nextBlock = blocks.length > 1 ? blocks[1] : null;
-
-    state = ActiveRunState(
-      session: session,
-      elapsed: Duration.zero,
-      distanceKm: 0.0,
-      currentPaceSecondsPerKm: 0,
-      displayPaceSecondsPerKm: null,
-      averagePaceSecondsPerKm: 0,
-      paceQuality: PaceDisplayQuality.waiting,
-      resolvedTarget: null,
-      paceStatus: const LivePaceGuidanceResult.none(),
-      paceGuidance: const LivePaceGuidanceResult.none(),
-      gpsStatus: timerOnlyMode ? GpsStatus.disabled : GpsStatus.acquiring,
-      currentBlock: firstBlock,
-      nextBlock: nextBlock,
-      blockElapsed: Duration.zero,
-      blockDistanceKm: 0.0,
-      timelineIndex: 0,
-      isPaused: false,
-      isSurging: false,
-      routePointCount: 0,
-      splits: const [],
-      error: null,
-      modalIntent: ActiveRunModalIntent.none,
-      isTimerOnlyMode: timerOnlyMode,
-      checkIn: input.checkIn,
-    );
-    _refreshPaceGuidance();
+      state = ActiveRunState(
+        session: session,
+        elapsed: Duration.zero,
+        distanceKm: 0.0,
+        currentPaceSecondsPerKm: 0,
+        displayPaceSecondsPerKm: null,
+        averagePaceSecondsPerKm: 0,
+        paceQuality: PaceDisplayQuality.waiting,
+        resolvedTarget: null,
+        paceStatus: const LivePaceGuidanceResult.none(),
+        paceGuidance: const LivePaceGuidanceResult.none(),
+        gpsStatus: timerOnlyMode ? GpsStatus.disabled : GpsStatus.acquiring,
+        currentBlock: firstBlock,
+        nextBlock: nextBlock,
+        blockElapsed: Duration.zero,
+        blockDistanceKm: 0.0,
+        timelineIndex: 0,
+        isPaused: false,
+        isSurging: false,
+        routePointCount: 0,
+        splits: const [],
+        error: null,
+        modalIntent: ActiveRunModalIntent.none,
+        isTimerOnlyMode: timerOnlyMode,
+        checkIn: input.checkIn,
+      );
+      _refreshPaceGuidance();
+    }
 
     _startTimer();
     if (!timerOnlyMode) {
@@ -314,12 +329,14 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       final repository = RunRepository(db: db);
       await repository.insertActiveRun(
         runId: _runId!,
-        startedAtMs: ref.read(clockProvider)().millisecondsSinceEpoch,
+        startedAtMs:
+            _startedAtMs ?? ref.read(clockProvider)().millisecondsSinceEpoch,
         timerOnly: timerOnlyMode,
         session: session,
       );
     } catch (_) {}
 
+    unawaited(_saveActiveProgress());
     _startProgressTimer();
   }
 
@@ -332,6 +349,145 @@ class ActiveRunController extends Notifier<ActiveRunState> {
 
     return currentSession.sessionId == incomingSession.sessionId &&
         state.isTimerOnlyMode == input.timerOnlyMode;
+  }
+
+  bool _canRestoreFromProgress(
+    RunFlowSessionContext? session,
+    bool timerOnlyMode,
+    ActiveRunProgress? progress,
+  ) {
+    if (session == null || progress == null) return false;
+    if (progress.timerOnlyMode != timerOnlyMode) return false;
+    if (progress.sessionId == null) return false;
+    return progress.sessionId == session.sessionId;
+  }
+
+  void _restoreFromProgress({
+    required RunFlowSessionContext? session,
+    required PreRunCheckIn? checkIn,
+    required ActiveRunProgress progress,
+  }) {
+    if (session == null) return;
+    final timeline = ActiveRunTimeline.fromSession(session).blocks;
+    final timelineIndex = timeline.isEmpty
+        ? 0
+        : progress.timelineIndex.clamp(0, timeline.length);
+    final currentBlock = _blockAtIndex(timeline, timelineIndex);
+    final nextBlock = _blockAtIndex(timeline, timelineIndex + 1);
+
+    _resetAccumulators();
+    _runId =
+        progress.runId ??
+        ref.read(clockProvider)().millisecondsSinceEpoch.toString();
+    _startedAtMs =
+        progress.startedAtMs ??
+        _startedAtMs ??
+        ref.read(clockProvider)().millisecondsSinceEpoch;
+    _accumulatedDistanceMeters = (progress.distanceKm * 1000).round();
+    _distanceAccumulator = DistanceAccumulator(
+      totalDistanceMeters: progress.distanceKm * 1000,
+      lastPoint: progress.lastAcceptedPoint != null
+          ? _toGpsPoint(progress.lastAcceptedPoint!)
+          : null,
+      isResettable: false,
+    );
+    _lastAcceptedPoint = progress.lastAcceptedPoint;
+    _lastSplitDistanceMeters = progress.splits.fold<int>(
+      0,
+      (total, split) => total + (split.distanceKm * 1000).round(),
+    );
+    _splitStartTime = progress.segmentStartedAtMs != null
+        ? DateTime.fromMillisecondsSinceEpoch(progress.segmentStartedAtMs!)
+        : null;
+    _splitsCount = progress.currentRep > 0
+        ? progress.currentRep
+        : progress.splits.length;
+    _nextRoutePointIndex = 0;
+
+    state = ActiveRunState(
+      session: session,
+      elapsed: Duration(milliseconds: progress.accumulatedActiveMs),
+      distanceKm: progress.distanceKm,
+      currentPaceSecondsPerKm: progress.currentPaceSecondsPerKm,
+      displayPaceSecondsPerKm: progress.currentPaceSecondsPerKm,
+      averagePaceSecondsPerKm: _averagePaceForRestore(
+        progress.distanceKm,
+        progress.accumulatedActiveMs,
+      ),
+      paceQuality: PaceDisplayQuality.stable,
+      resolvedTarget: null,
+      paceStatus: const LivePaceGuidanceResult.none(),
+      paceGuidance: const LivePaceGuidanceResult.none(),
+      gpsStatus: progress.gpsStatus == GpsStatus.disabled
+          ? GpsStatus.disabled
+          : progress.gpsStatus,
+      currentBlock: currentBlock,
+      nextBlock: nextBlock,
+      blockElapsed: Duration(milliseconds: progress.blockElapsedMs),
+      blockDistanceKm: progress.blockDistanceKm,
+      timelineIndex: timelineIndex,
+      isPaused: progress.isPaused,
+      isSurging: progress.isSurging,
+      routePointCount: 0,
+      splits: progress.splits
+          .map(
+            (entry) => ActiveRunSplit(
+              splitIndex: entry.splitIndex,
+              startedAt: DateTime.fromMillisecondsSinceEpoch(entry.startedAtMs),
+              endedAt: DateTime.fromMillisecondsSinceEpoch(entry.endedAtMs),
+              duration: Duration(milliseconds: entry.durationMs),
+              distanceKm: entry.distanceKm,
+              paceSecondsPerKm: entry.paceSecondsPerKm,
+            ),
+          )
+          .toList(),
+      error: null,
+      modalIntent: ActiveRunModalIntent.none,
+      isTimerOnlyMode: progress.timerOnlyMode,
+      checkIn: checkIn,
+    );
+
+    _gpsState = progress.lastAcceptedPoint == null
+        ? GpsState.initial()
+        : GpsState(
+            status: progress.gpsStatus,
+            lastFix: GpsFix(
+              latitude: progress.lastAcceptedPoint!.latitude,
+              longitude: progress.lastAcceptedPoint!.longitude,
+              accuracy: progress.lastAcceptedPoint!.accuracy,
+              timestamp: progress.lastAcceptedPoint!.timestamp,
+            ),
+            lastStatusChange: DateTime.now(),
+          );
+
+    if (state.isPaused) {
+      _paceSmoother = const PaceSmoother();
+    }
+
+    _refreshPaceGuidance();
+  }
+
+  int _averagePaceForRestore(double distanceKm, int elapsedMs) {
+    if (distanceKm <= 0) return 0;
+    final seconds = elapsedMs ~/ 1000;
+    if (seconds <= 0) return 0;
+    return ((seconds * 1000) / (distanceKm * 1000)).round();
+  }
+
+  GpsPoint _toGpsPoint(RunTrackPoint point) {
+    return GpsPoint(
+      latitude: point.latitude,
+      longitude: point.longitude,
+      timestamp: point.timestamp,
+    );
+  }
+
+  ActiveRunTimelineBlock? _blockAtIndex(
+    List<ActiveRunTimelineBlock> blocks,
+    int index,
+  ) {
+    if (index < 0 || index >= blocks.length) return null;
+    return blocks[index];
   }
 
   void _resetAccumulators() {
@@ -347,6 +503,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     _routePointBuffer.clear();
     _nextRoutePointIndex = 0;
     _runId = null;
+    _startedAtMs = null;
     _routePointFlushFuture = null;
   }
 
@@ -417,6 +574,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
 
   Future<void> _saveActiveProgress() async {
     if (_runId == null) return;
+    final progress = _buildActiveRunProgress();
     try {
       final db = await ref.read(runDatabaseProvider.future);
       final repository = RunRepository(db: db);
@@ -426,6 +584,43 @@ class ActiveRunController extends Notifier<ActiveRunState> {
         distanceKm: state.distanceKm,
       );
     } catch (_) {}
+    try {
+      await ref.read(activeRunProgressProvider.notifier).save(progress);
+    } catch (_) {}
+  }
+
+  ActiveRunProgress _buildActiveRunProgress() {
+    return ActiveRunProgress(
+      runId: _runId!,
+      sessionId: state.session?.sessionId,
+      timerOnlyMode: state.isTimerOnlyMode,
+      startedAtMs: _startedAtMs,
+      distanceKm: state.distanceKm,
+      accumulatedActiveMs: state.elapsed.inMilliseconds,
+      timelineIndex: state.timelineIndex,
+      blockElapsedMs: state.blockElapsed.inMilliseconds,
+      blockDistanceKm: state.blockDistanceKm,
+      currentRep: _splitsCount,
+      isPaused: state.isPaused,
+      isSurging: state.isSurging,
+      segmentStartedAtMs: _splitStartTime?.millisecondsSinceEpoch,
+      lastTickAtMs: ref.read(clockProvider)().millisecondsSinceEpoch,
+      currentPaceSecondsPerKm: state.currentPaceSecondsPerKm,
+      gpsStatus: state.gpsStatus,
+      lastAcceptedPoint: _lastAcceptedPoint,
+      splits: state.splits
+          .map(
+            (split) => SplitEntry(
+              splitIndex: split.splitIndex,
+              startedAtMs: split.startedAt.millisecondsSinceEpoch,
+              endedAtMs: split.endedAt.millisecondsSinceEpoch,
+              durationMs: split.duration.inMilliseconds,
+              distanceKm: split.distanceKm,
+              paceSecondsPerKm: split.paceSecondsPerKm,
+            ),
+          )
+          .toList(),
+    );
   }
 
   Future<void> _flushRoutePoints() async {
@@ -732,6 +927,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       paceStatus: const LivePaceGuidanceResult.none(),
       paceGuidance: const LivePaceGuidanceResult.none(),
     );
+    unawaited(_saveActiveProgress());
     _refreshPaceGuidance();
   }
 
@@ -750,6 +946,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       paceStatus: const LivePaceGuidanceResult.none(),
       paceGuidance: const LivePaceGuidanceResult.none(),
     );
+    unawaited(_saveActiveProgress());
     _refreshPaceGuidance();
   }
 
@@ -827,6 +1024,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
       modalIntent: ActiveRunModalIntent.none,
     );
 
+    await ref.read(activeRunProgressProvider.notifier).clear();
     return result;
   }
 
@@ -836,6 +1034,7 @@ class ActiveRunController extends Notifier<ActiveRunState> {
     _routePointBuffer.clear();
     _routePointFlushFuture = null;
     _resetAccumulators();
+    await ref.read(activeRunProgressProvider.notifier).clear();
     state = ActiveRunState.initial();
   }
 

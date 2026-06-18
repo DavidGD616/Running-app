@@ -1597,10 +1597,13 @@
   "planMetadataSourceUnknown": "Unknown source",
   "@planMetadataSourceUnknown": { "description": "Plan metadata source label: unknown" },
 
-  "planMetadataVolumeValue": "{value} km/week",
+  "planMetadataVolumeValue": "{value} {unit}/week",
   "@planMetadataVolumeValue": {
     "description": "Plan metadata current weekly volume value",
-    "placeholders": { "value": { "type": "String" } }
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
   },
 
   "planMetadataRunsValue": "{value} runs/week",

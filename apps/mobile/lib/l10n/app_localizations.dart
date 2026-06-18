@@ -3328,8 +3328,8 @@ abstract class AppLocalizations {
   /// Plan metadata current weekly volume value
   ///
   /// In en, this message translates to:
-  /// **'{value} km/week'**
-  String planMetadataVolumeValue(String value);
+  /// **'{value} {unit}/week'**
+  String planMetadataVolumeValue(String value, String unit);
 
   /// Plan metadata current runs-per-week value
   ///

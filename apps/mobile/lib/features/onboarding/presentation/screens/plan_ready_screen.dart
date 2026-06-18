@@ -14,6 +14,8 @@ import '../../../goals/presentation/goal_provider.dart';
 import '../../../profile/domain/models/runner_profile.dart';
 import '../../../training_plan/presentation/professional_plan_metadata_presenter.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../onboarding_provider.dart';
 import '../onboarding_values.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -93,9 +95,15 @@ class PlanReadyScreen extends ConsumerWidget {
     final answers = onboardingAsync.value ?? const RunnerProfileDraft();
     final goal = ref.watch(onboardingGoalProvider);
     final plan = ref.watch(trainingPlanProvider).value;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final metadataRows = plan == null
         ? const <ProfessionalPlanMetadataRow>[]
-        : professionalPlanMetadataRows(plan: plan, l10n: l10n);
+        : professionalPlanMetadataRows(
+            plan: plan,
+            l10n: l10n,
+            unitSystem: unitSystem,
+          );
     final isSettingsFlow = mode != PlanReadyFlowMode.onboarding;
     final primaryLabel = switch (mode) {
       PlanReadyFlowMode.onboarding => l10n.planReadyStartPlan,

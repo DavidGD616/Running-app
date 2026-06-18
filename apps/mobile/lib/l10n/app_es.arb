@@ -594,7 +594,14 @@
   "planMetadataSourceManual": "Fuente manual",
   "planMetadataSourceMixed": "Fuente mixta",
   "planMetadataSourceUnknown": "Fuente desconocida",
-  "planMetadataVolumeValue": "{value} km/semana",
+  "planMetadataVolumeValue": "{value} {unit}/semana",
+  "@planMetadataVolumeValue": {
+    "description": "Plan metadata current weekly volume value",
+    "placeholders": {
+      "value": { "type": "String" },
+      "unit": { "type": "String" }
+    }
+  },
   "planMetadataRunsValue": "{value} carreras/semana",
   "planMetadataEvidenceTargetValue": "Evidencia {target}",
   "planMetadataAmbitiousTargetValue": "Ambicioso {target}",

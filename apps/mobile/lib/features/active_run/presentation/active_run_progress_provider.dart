@@ -37,12 +37,13 @@ class ActiveRunProgressNotifier extends Notifier<ActiveRunProgress?> {
 
 final activeRunProgressProvider =
     NotifierProvider<ActiveRunProgressNotifier, ActiveRunProgress?>(
-  ActiveRunProgressNotifier.new,
-);
+      ActiveRunProgressNotifier.new,
+    );
 
 class ActiveRunProgress {
   const ActiveRunProgress({
     this.runId,
+    this.sessionId,
     this.timerOnlyMode = false,
     this.startedAtMs,
     required this.distanceKm,
@@ -62,6 +63,7 @@ class ActiveRunProgress {
   });
 
   final String? runId;
+  final String? sessionId;
   final bool timerOnlyMode;
   final int? startedAtMs;
   final double distanceKm;
@@ -80,24 +82,25 @@ class ActiveRunProgress {
   final List<SplitEntry> splits;
 
   Map<String, dynamic> toJson() => {
-        'runId': runId,
-        'timerOnlyMode': timerOnlyMode,
-        'startedAtMs': startedAtMs,
-        'distanceKm': distanceKm,
-        'accumulatedActiveMs': accumulatedActiveMs,
-        'timelineIndex': timelineIndex,
-        'blockElapsedMs': blockElapsedMs,
-        'blockDistanceKm': blockDistanceKm,
-        'currentRep': currentRep,
-        'isPaused': isPaused,
-        'isSurging': isSurging,
-        'segmentStartedAtMs': segmentStartedAtMs,
-        'lastTickAtMs': lastTickAtMs,
-        'currentPaceSecondsPerKm': currentPaceSecondsPerKm,
-        'gpsStatus': gpsStatus.name,
-        'lastAcceptedPoint': lastAcceptedPoint?.toMap(),
-        'splits': splits.map((s) => s.toJson()).toList(),
-      };
+    'runId': runId,
+    'sessionId': sessionId,
+    'timerOnlyMode': timerOnlyMode,
+    'startedAtMs': startedAtMs,
+    'distanceKm': distanceKm,
+    'accumulatedActiveMs': accumulatedActiveMs,
+    'timelineIndex': timelineIndex,
+    'blockElapsedMs': blockElapsedMs,
+    'blockDistanceKm': blockDistanceKm,
+    'currentRep': currentRep,
+    'isPaused': isPaused,
+    'isSurging': isSurging,
+    'segmentStartedAtMs': segmentStartedAtMs,
+    'lastTickAtMs': lastTickAtMs,
+    'currentPaceSecondsPerKm': currentPaceSecondsPerKm,
+    'gpsStatus': gpsStatus.name,
+    'lastAcceptedPoint': lastAcceptedPoint?.toMap(),
+    'splits': splits.map((s) => s.toJson()).toList(),
+  };
 
   factory ActiveRunProgress.fromJson(Map<String, dynamic> json) {
     final hasRunId = json.containsKey('runId');
@@ -106,6 +109,7 @@ class ActiveRunProgress {
     }
     return ActiveRunProgress(
       runId: json['runId'] as String?,
+      sessionId: json['sessionId'] as String?,
       timerOnlyMode: (json['timerOnlyMode'] as bool?) ?? false,
       startedAtMs: json['startedAtMs'] as int?,
       distanceKm: (json['distanceKm'] as num).toDouble(),
@@ -123,7 +127,8 @@ class ActiveRunProgress {
       gpsStatus: _parseGpsStatus(json['gpsStatus'] as String?),
       lastAcceptedPoint: json['lastAcceptedPoint'] != null
           ? RunTrackPoint.fromMap(
-              json['lastAcceptedPoint'] as Map<String, dynamic>)
+              json['lastAcceptedPoint'] as Map<String, dynamic>,
+            )
           : null,
       splits: _parseSplits(json['splits']),
     );
@@ -149,6 +154,7 @@ class ActiveRunProgress {
   static ActiveRunProgress _migrateFromV1(Map<String, dynamic> json) {
     return ActiveRunProgress(
       runId: null,
+      sessionId: null,
       timerOnlyMode: false,
       startedAtMs: null,
       distanceKm: (json['distanceKm'] as num).toDouble(),
@@ -187,13 +193,13 @@ class SplitEntry {
   final int paceSecondsPerKm;
 
   Map<String, dynamic> toJson() => {
-        'splitIndex': splitIndex,
-        'startedAtMs': startedAtMs,
-        'endedAtMs': endedAtMs,
-        'durationMs': durationMs,
-        'distanceKm': distanceKm,
-        'paceSecondsPerKm': paceSecondsPerKm,
-      };
+    'splitIndex': splitIndex,
+    'startedAtMs': startedAtMs,
+    'endedAtMs': endedAtMs,
+    'durationMs': durationMs,
+    'distanceKm': distanceKm,
+    'paceSecondsPerKm': paceSecondsPerKm,
+  };
 
   factory SplitEntry.fromJson(Map<String, dynamic> json) {
     return SplitEntry(

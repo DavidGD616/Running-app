@@ -8,10 +8,30 @@ import 'package:running_app/features/active_run/domain/models/gps_state.dart';
 import 'package:running_app/features/active_run/domain/models/run_track_point.dart';
 import 'package:running_app/features/active_run/presentation/active_run_controller.dart';
 import 'package:running_app/features/active_run/presentation/location_tracker_provider.dart';
+import 'package:running_app/features/active_run/presentation/active_run_progress_provider.dart';
 import 'package:running_app/features/pre_run/presentation/run_flow_context.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/workout_step.dart';
 import 'package:running_app/features/training_plan/domain/models/workout_target.dart';
+
+class _TestActiveRunProgressNotifier extends ActiveRunProgressNotifier {
+  _TestActiveRunProgressNotifier(this.initialProgress);
+
+  final ActiveRunProgress? initialProgress;
+
+  @override
+  ActiveRunProgress? build() => initialProgress;
+
+  @override
+  Future<void> save(ActiveRunProgress progress) async {
+    state = progress;
+  }
+
+  @override
+  Future<void> clear() async {
+    state = null;
+  }
+}
 
 class FakeClock {
   FakeClock(this._currentTime);
@@ -258,6 +278,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -272,6 +295,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -305,6 +331,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -331,6 +360,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -359,6 +391,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -385,6 +420,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -409,6 +447,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -435,6 +476,169 @@ void main() {
       expect(stateAfterRestart.elapsed, const Duration(seconds: 2));
       expect(stateAfterRestart.timelineIndex, 0);
     });
+
+    test('start restores persisted progress for matching session', () async {
+      container = ProviderContainer(
+        overrides: [
+          locationTrackerProvider.overrideWith((ref) => fakeTracker),
+          clockProvider.overrideWith(
+            (ref) =>
+                () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(
+              ActiveRunProgress(
+                runId: 'run-restore-001',
+                sessionId: 'test-session-1',
+                timerOnlyMode: false,
+                startedAtMs: 1_704_000_000_000,
+                distanceKm: 1.45,
+                accumulatedActiveMs: 93_000,
+                timelineIndex: 1,
+                blockElapsedMs: 18_000,
+                blockDistanceKm: 0.8,
+                currentRep: 2,
+                isPaused: true,
+                isSurging: true,
+                segmentStartedAtMs: 1_704_000_001_000,
+                lastTickAtMs: 1_704_000_002_000,
+                currentPaceSecondsPerKm: 390,
+                gpsStatus: GpsStatus.ready,
+                lastAcceptedPoint: RunTrackPoint(
+                  latitude: 37.7749,
+                  longitude: -122.4194,
+                  timestamp: DateTime.fromMillisecondsSinceEpoch(
+                    1_704_000_001_000,
+                  ),
+                  accuracy: 4.0,
+                  altitude: 12.0,
+                  speed: 3.1,
+                  heading: 80.0,
+                  source: RunTrackPointSource.gps,
+                ),
+                splits: const [
+                  SplitEntry(
+                    splitIndex: 0,
+                    startedAtMs: 1_704_000_000_500,
+                    endedAtMs: 1_704_000_001_000,
+                    durationMs: 500,
+                    distanceKm: 0.5,
+                    paceSecondsPerKm: 390,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+
+      final controller = container.read(activeRunControllerProvider.notifier);
+      await controller.start(
+        ActiveRunStartInput(
+          session: createTestSession(),
+          checkIn: null,
+          timerOnlyMode: false,
+        ),
+      );
+
+      final restored = container.read(activeRunControllerProvider);
+      expect(restored.elapsed, const Duration(milliseconds: 93000));
+      expect(restored.distanceKm, 1.45);
+      expect(restored.timelineIndex, 1);
+      expect(restored.blockElapsed, const Duration(milliseconds: 18000));
+      expect(restored.blockDistanceKm, 0.8);
+      expect(restored.currentPaceSecondsPerKm, 390);
+      expect(restored.gpsStatus, GpsStatus.ready);
+      expect(restored.isPaused, true);
+      expect(restored.isSurging, true);
+      expect(restored.splits, hasLength(1));
+    });
+
+    test('restored active run keeps split timing from segment start', () async {
+      const segmentStartedAtMs = 1_704_000_001_000;
+      const lastTickAtMs = segmentStartedAtMs + 30_000;
+      container = ProviderContainer(
+        overrides: [
+          locationTrackerProvider.overrideWith((ref) => fakeTracker),
+          clockProvider.overrideWith(
+            (ref) =>
+                () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(
+              ActiveRunProgress(
+                runId: 'run-restore-split-001',
+                sessionId: 'test-session-1',
+                timerOnlyMode: false,
+                startedAtMs: 1_704_000_000_000,
+                distanceKm: 1.45,
+                accumulatedActiveMs: 93_000,
+                timelineIndex: 0,
+                blockElapsedMs: 93_000,
+                blockDistanceKm: 1.45,
+                currentRep: 1,
+                isPaused: false,
+                isSurging: false,
+                segmentStartedAtMs: segmentStartedAtMs,
+                lastTickAtMs: lastTickAtMs,
+                currentPaceSecondsPerKm: 390,
+                gpsStatus: GpsStatus.ready,
+                lastAcceptedPoint: RunTrackPoint(
+                  latitude: 37.7749,
+                  longitude: -122.4194,
+                  timestamp: DateTime.fromMillisecondsSinceEpoch(lastTickAtMs),
+                  accuracy: 4.0,
+                  altitude: 12.0,
+                  speed: 3.1,
+                  heading: 80.0,
+                  source: RunTrackPointSource.gps,
+                ),
+                splits: const [
+                  SplitEntry(
+                    splitIndex: 0,
+                    startedAtMs: 1_704_000_000_000,
+                    endedAtMs: segmentStartedAtMs,
+                    durationMs: 1_000,
+                    distanceKm: 1.0,
+                    paceSecondsPerKm: 1,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      );
+
+      final controller = container.read(activeRunControllerProvider.notifier);
+      await controller.start(
+        ActiveRunStartInput(
+          session: createTestSession(),
+          checkIn: null,
+          timerOnlyMode: false,
+        ),
+      );
+
+      fakeTracker.addPoint(
+        RunTrackPoint(
+          latitude: 37.7800,
+          longitude: -122.4194,
+          timestamp: DateTime.fromMillisecondsSinceEpoch(
+            segmentStartedAtMs + 61_000,
+          ),
+          accuracy: 4.0,
+          altitude: 12.0,
+          speed: 3.1,
+          heading: 80.0,
+          source: RunTrackPointSource.gps,
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      final restored = container.read(activeRunControllerProvider);
+      expect(restored.splits, hasLength(2));
+      expect(restored.splits.last.duration, const Duration(seconds: 61));
+      expect(restored.splits.last.paceSecondsPerKm, 61);
+    });
   });
 
   group('ActiveRunController pause behavior', () {
@@ -458,6 +662,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -485,6 +692,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -510,6 +720,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -553,6 +766,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -580,6 +796,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -606,6 +825,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -649,6 +871,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -675,6 +900,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -700,6 +928,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -741,6 +972,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -784,6 +1018,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -838,6 +1075,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -921,6 +1161,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -1018,6 +1261,9 @@ void main() {
             clockProvider.overrideWith(
               (ref) =>
                   () => fakeClock.now,
+            ),
+            activeRunProgressProvider.overrideWith(
+              () => _TestActiveRunProgressNotifier(null),
             ),
           ],
         );
@@ -1118,6 +1364,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -1158,6 +1407,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -1200,6 +1452,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -1228,6 +1483,9 @@ void main() {
             clockProvider.overrideWith(
               (ref) =>
                   () => fakeClock.now,
+            ),
+            activeRunProgressProvider.overrideWith(
+              () => _TestActiveRunProgressNotifier(null),
             ),
           ],
         );
@@ -1281,6 +1539,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -1400,6 +1661,9 @@ void main() {
               (ref) =>
                   () => fakeClock.now,
             ),
+            activeRunProgressProvider.overrideWith(
+              () => _TestActiveRunProgressNotifier(null),
+            ),
           ],
         );
 
@@ -1458,6 +1722,9 @@ void main() {
               (ref) =>
                   () => fakeClock.now,
             ),
+            activeRunProgressProvider.overrideWith(
+              () => _TestActiveRunProgressNotifier(null),
+            ),
           ],
         );
 
@@ -1513,6 +1780,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -1584,6 +1854,9 @@ void main() {
             clockProvider.overrideWith(
               (ref) =>
                   () => fakeClock.now,
+            ),
+            activeRunProgressProvider.overrideWith(
+              () => _TestActiveRunProgressNotifier(null),
             ),
           ],
         );
@@ -1664,6 +1937,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );
@@ -1755,6 +2031,9 @@ void main() {
             (ref) =>
                 () => fakeClock.now,
           ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
+          ),
         ],
       );
 
@@ -1798,6 +2077,9 @@ void main() {
           clockProvider.overrideWith(
             (ref) =>
                 () => fakeClock.now,
+          ),
+          activeRunProgressProvider.overrideWith(
+            () => _TestActiveRunProgressNotifier(null),
           ),
         ],
       );

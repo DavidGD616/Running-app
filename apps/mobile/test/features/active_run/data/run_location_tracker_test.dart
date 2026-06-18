@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:running_app/features/active_run/data/run_location_tracker.dart';
@@ -107,6 +108,34 @@ void main() {
       tracker.stop();
     });
 
+    test('Android settings do not configure foreground notification', () {
+      final controller = StreamController<Position>();
+      LocationSettings? capturedSettings;
+      late GeolocatorRunLocationTracker tracker;
+      final previousPlatform = debugDefaultTargetPlatformOverride;
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+
+      try {
+        tracker = GeolocatorRunLocationTracker(
+          notificationTitle: 'Test Title',
+          notificationBody: 'Test Body',
+          positionStreamFactory: (settings) {
+            capturedSettings = settings;
+            return controller.stream;
+          },
+        );
+
+        tracker.start();
+
+        expect(capturedSettings, isA<AndroidSettings>());
+        final androidSettings = capturedSettings as AndroidSettings;
+        expect(androidSettings.foregroundNotificationConfig, isNull);
+      } finally {
+        debugDefaultTargetPlatformOverride = previousPlatform;
+        tracker.stop();
+      }
+    });
+
     test('points returns a broadcast stream', () async {
       final controller = StreamController<Position>();
       final tracker = GeolocatorRunLocationTracker(
@@ -124,18 +153,20 @@ void main() {
 
       tracker.start();
 
-      controller.add(Position(
-        latitude: 37.7749,
-        longitude: -122.4194,
-        timestamp: DateTime.now(),
-        accuracy: 10.0,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: DateTime.now(),
+          accuracy: 10.0,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
       await Future.delayed(Duration.zero);
 
@@ -158,18 +189,20 @@ void main() {
       final receivedPoints = <RunTrackPoint>[];
       tracker.points.listen(receivedPoints.add);
 
-      controller.add(Position(
-        latitude: 37.7749,
-        longitude: -122.4194,
-        timestamp: DateTime.now(),
-        accuracy: 10.0,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: DateTime.now(),
+          accuracy: 10.0,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
       await Future.delayed(Duration.zero);
 
@@ -193,44 +226,50 @@ void main() {
       final receivedPoints = <RunTrackPoint>[];
       tracker.points.listen(receivedPoints.add);
 
-      controller.add(Position(
-        latitude: 37.7749,
-        longitude: -122.4194,
-        timestamp: DateTime.now(),
-        accuracy: 10.0,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: DateTime.now(),
+          accuracy: 10.0,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
-      controller.add(Position(
-        latitude: 37.7749,
-        longitude: -122.4194,
-        timestamp: DateTime.now(),
-        accuracy: 100.0,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: DateTime.now(),
+          accuracy: 100.0,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
-      controller.add(Position(
-        latitude: 37.7750,
-        longitude: -122.4195,
-        timestamp: DateTime.now(),
-        accuracy: 10.0,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7750,
+          longitude: -122.4195,
+          timestamp: DateTime.now(),
+          accuracy: 10.0,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
       await Future.delayed(Duration.zero);
 
@@ -253,18 +292,20 @@ void main() {
       final receivedPoints = <RunTrackPoint>[];
       tracker.points.listen(receivedPoints.add);
 
-      controller.add(Position(
-        latitude: 37.7749,
-        longitude: -122.4194,
-        timestamp: DateTime.now(),
-        accuracy: 60.0,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: DateTime.now(),
+          accuracy: 60.0,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
       await Future.delayed(Duration.zero);
 
@@ -286,18 +327,20 @@ void main() {
       final receivedPoints = <RunTrackPoint>[];
       tracker.points.listen(receivedPoints.add);
 
-      controller.add(Position(
-        latitude: 37.7749,
-        longitude: -122.4194,
-        timestamp: DateTime.now(),
-        accuracy: 60.01,
-        altitude: 100.0,
-        heading: 0.0,
-        speed: 5.0,
-        altitudeAccuracy: 1.0,
-        headingAccuracy: 1.0,
-        speedAccuracy: 1.0,
-      ));
+      controller.add(
+        Position(
+          latitude: 37.7749,
+          longitude: -122.4194,
+          timestamp: DateTime.now(),
+          accuracy: 60.01,
+          altitude: 100.0,
+          heading: 0.0,
+          speed: 5.0,
+          altitudeAccuracy: 1.0,
+          headingAccuracy: 1.0,
+          speedAccuracy: 1.0,
+        ),
+      );
 
       await Future.delayed(Duration.zero);
 

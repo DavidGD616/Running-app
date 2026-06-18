@@ -1781,8 +1781,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get planMetadataSourceUnknown => 'Unknown source';
 
   @override
-  String planMetadataVolumeValue(String value) {
-    return '$value km/week';
+  String planMetadataVolumeValue(String value, String unit) {
+    return '$value $unit/week';
   }
 
   @override

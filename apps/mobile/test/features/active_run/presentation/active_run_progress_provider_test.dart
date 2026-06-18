@@ -8,6 +8,7 @@ void main() {
     test('toJson and fromJson round-trip preserves all fields', () {
       final progress = ActiveRunProgress(
         runId: 'run_123',
+        sessionId: 'session_456',
         timerOnlyMode: false,
         startedAtMs: 1714032000000,
         distanceKm: 2.5,
@@ -48,6 +49,7 @@ void main() {
       final restored = ActiveRunProgress.fromJson(json);
 
       expect(restored.runId, progress.runId);
+      expect(restored.sessionId, progress.sessionId);
       expect(restored.timerOnlyMode, progress.timerOnlyMode);
       expect(restored.startedAtMs, progress.startedAtMs);
       expect(restored.distanceKm, progress.distanceKm);
@@ -60,12 +62,19 @@ void main() {
       expect(restored.isSurging, progress.isSurging);
       expect(restored.segmentStartedAtMs, progress.segmentStartedAtMs);
       expect(restored.lastTickAtMs, progress.lastTickAtMs);
-      expect(restored.currentPaceSecondsPerKm, progress.currentPaceSecondsPerKm);
+      expect(
+        restored.currentPaceSecondsPerKm,
+        progress.currentPaceSecondsPerKm,
+      );
       expect(restored.gpsStatus, progress.gpsStatus);
-      expect(restored.lastAcceptedPoint?.latitude,
-          progress.lastAcceptedPoint?.latitude);
-      expect(restored.lastAcceptedPoint?.longitude,
-          progress.lastAcceptedPoint?.longitude);
+      expect(
+        restored.lastAcceptedPoint?.latitude,
+        progress.lastAcceptedPoint?.latitude,
+      );
+      expect(
+        restored.lastAcceptedPoint?.longitude,
+        progress.lastAcceptedPoint?.longitude,
+      );
       expect(restored.splits.length, progress.splits.length);
       expect(restored.splits[0].splitIndex, progress.splits[0].splitIndex);
     });
@@ -186,6 +195,7 @@ void main() {
         final progress = ActiveRunProgress.fromJson(v1Json);
 
         expect(progress.runId, isNull);
+        expect(progress.sessionId, isNull);
         expect(progress.timerOnlyMode, false);
         expect(progress.startedAtMs, isNull);
         expect(progress.distanceKm, 2.5);
@@ -218,6 +228,7 @@ void main() {
         expect(progress.isPaused, true);
         expect(progress.segmentStartedAtMs, isNull);
         expect(progress.lastTickAtMs, isNull);
+        expect(progress.sessionId, isNull);
       });
 
       test('v1 migration does not crash on empty string runId', () {

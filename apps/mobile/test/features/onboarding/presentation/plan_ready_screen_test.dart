@@ -14,6 +14,8 @@ import 'package:running_app/features/training_plan/domain/models/session_type.da
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
 import 'package:running_app/features/training_plan/domain/models/training_session.dart';
 import 'package:running_app/features/training_plan/presentation/training_plan_provider.dart';
+import 'package:running_app/features/user_preferences/domain/user_preferences.dart';
+import 'package:running_app/features/user_preferences/presentation/user_preferences_provider.dart';
 import 'package:running_app/l10n/app_localizations.dart';
 
 import '../../../helpers/goal_fixtures.dart';
@@ -45,6 +47,15 @@ class _TestTrainingPlanNotifier extends TrainingPlanNotifier {
   Future<TrainingPlan> build() async => plan;
 }
 
+class _TestUserPreferencesNotifier extends UserPreferencesNotifier {
+  _TestUserPreferencesNotifier([this.value = const UserPreferences()]);
+
+  final UserPreferences value;
+
+  @override
+  Future<UserPreferences> build() async => value;
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -52,6 +63,7 @@ void main() {
     required TrainingPlan plan,
     required RunnerProfileDraft draft,
     required Goal? goal,
+    UserPreferences userPreferences = const UserPreferences(),
     Locale locale = const Locale('en'),
   }) {
     return ProviderScope(
@@ -60,6 +72,9 @@ void main() {
         onboardingGoalProvider.overrideWithValue(goal),
         trainingPlanProvider.overrideWith(
           () => _TestTrainingPlanNotifier(plan),
+        ),
+        userPreferencesProvider.overrideWith(
+          () => _TestUserPreferencesNotifier(userPreferences),
         ),
       ],
       child: MaterialApp(
@@ -226,7 +241,7 @@ void main() {
     expect(find.text(l10n.planMetadataCurrentVolumeLabel), findsOneWidget);
     expect(
       find.text(
-        '${l10n.planMetadataVolumeValue('42')} · ${l10n.planMetadataRunsValue('4')}',
+        '${l10n.planMetadataVolumeValue('42', l10n.unitKm)} · ${l10n.planMetadataRunsValue('4')}',
       ),
       findsOneWidget,
     );
@@ -244,6 +259,53 @@ void main() {
     );
     expect(find.text('Used measured Strava evidence.'), findsOneWidget);
   });
+
+  testWidgets(
+    'plan ready formats current volume using miles when unit preference is miles',
+    (tester) async {
+      final goal = buildHalfMarathonTimeGoal();
+      final draft = buildRunnerProfileDraft();
+      final plan = TrainingPlan(
+        id: 'plan-ready-metadata-miles',
+        raceType: TrainingPlanRaceType.halfMarathon,
+        totalWeeks: 12,
+        currentWeekNumber: 1,
+        sessions: [
+          TrainingSession(
+            id: 'run-1',
+            date: DateTime(2026, 6, 1),
+            type: SessionType.easyRun,
+            status: SessionStatus.upcoming,
+            weekNumber: 1,
+          ),
+        ],
+        coachingBriefSnapshot: const CoachingBriefSnapshot(
+          currentVolumeKmPerWeek: 42,
+          currentRunsPerWeek: 4,
+        ),
+      );
+
+      await tester.pumpWidget(
+        wrap(
+          plan: plan,
+          draft: draft,
+          goal: goal,
+          userPreferences: const UserPreferences(unitSystem: UnitSystem.miles),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final context = tester.element(find.byType(PlanReadyScreen));
+      final l10n = AppLocalizations.of(context)!;
+
+      expect(
+        find.text(
+          '${l10n.planMetadataVolumeValue('26.1', l10n.unitMi)} · ${l10n.planMetadataRunsValue('4')}',
+        ),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets('plan ready omits targets row when all targets are unsupported', (
     tester,
@@ -339,7 +401,7 @@ void main() {
     );
     expect(
       find.text(
-        '${l10n.planMetadataVolumeValue('42,5')} · ${l10n.planMetadataRunsValue('4,5')}',
+        '${l10n.planMetadataVolumeValue('42,5', l10n.unitKm)} · ${l10n.planMetadataRunsValue('4,5')}',
       ),
       findsOneWidget,
     );

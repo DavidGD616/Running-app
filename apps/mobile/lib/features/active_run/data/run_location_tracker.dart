@@ -22,7 +22,7 @@ class GeolocatorRunLocationTracker implements RunLocationTracker {
     required this.notificationTitle,
     required this.notificationBody,
     required PositionStreamFactory positionStreamFactory,
-  })  : _positionStreamFactory = positionStreamFactory;
+  }) : _positionStreamFactory = positionStreamFactory;
 
   final String notificationTitle;
   final String notificationBody;
@@ -49,10 +49,9 @@ class GeolocatorRunLocationTracker implements RunLocationTracker {
 
     final locationSettings = _buildLocationSettings();
 
-    _subscription = _positionStreamFactory(locationSettings).listen(
-      _onPosition,
-      onError: _onError,
-    );
+    _subscription = _positionStreamFactory(
+      locationSettings,
+    ).listen(_onPosition, onError: _onError);
   }
 
   @override
@@ -70,12 +69,6 @@ class GeolocatorRunLocationTracker implements RunLocationTracker {
         accuracy: LocationAccuracy.high,
         distanceFilter: distanceFilterMeters,
         intervalDuration: intervalDuration,
-        foregroundNotificationConfig: ForegroundNotificationConfig(
-          notificationTitle: notificationTitle,
-          notificationText: notificationBody,
-          enableWakeLock: true,
-          setOngoing: true,
-        ),
       );
     } else if (defaultTargetPlatform == TargetPlatform.iOS ||
         defaultTargetPlatform == TargetPlatform.macOS) {
@@ -107,5 +100,5 @@ class GeolocatorRunLocationTracker implements RunLocationTracker {
   }
 }
 
-typedef PositionStreamFactory = Stream<Position> Function(
-    LocationSettings locationSettings);
+typedef PositionStreamFactory =
+    Stream<Position> Function(LocationSettings locationSettings);
