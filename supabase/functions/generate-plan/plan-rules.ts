@@ -4531,15 +4531,16 @@ export function validateGeneratedPlanAgainstCoachingBrief(
       const usesRacePaceTarget = session.type === "racePaceRun" ||
         session.targetZone === "racePace" ||
         session.workoutTarget?.zone === "racePace";
-      const drivesFromUnsupportedTarget = usesRacePaceTarget &&
-        !coachingBrief.evidenceTarget.supported;
       const mentionsUnsupportedTarget =
-        unsupportedAmbitiousTargetText != null &&
-        textMatchesTarget(
+        (unsupportedAmbitiousTargetText != null &&
+          textMatchesTarget(
+            [session.coachNote, session.workoutTarget?.effortCue],
+            unsupportedAmbitiousTargetText,
+          )) ||
+        textMatchesUnsupportedRacePaceLanguage(
           [session.coachNote, session.workoutTarget?.effortCue],
-          unsupportedAmbitiousTargetText,
         );
-      if (!drivesFromUnsupportedTarget && !mentionsUnsupportedTarget) {
+      if (!usesRacePaceTarget && !mentionsUnsupportedTarget) {
         continue;
       }
       violations.push({
@@ -4554,10 +4555,17 @@ export function validateGeneratedPlanAgainstCoachingBrief(
     const raceGuidanceText = Object.values(plan.raceGuidance).filter((
       value,
     ): value is string => typeof value === "string");
-    if (
-      unsupportedAmbitiousTargetText != null &&
-      textMatchesTarget(raceGuidanceText, unsupportedAmbitiousTargetText)
-    ) {
+    const raceGuidanceMentionsUnsupportedTarget =
+      (unsupportedAmbitiousTargetText != null &&
+        textMatchesTarget(raceGuidanceText, unsupportedAmbitiousTargetText)) ||
+      textMatchesUnsupportedRacePaceLanguage(raceGuidanceText);
+    const raceGuidanceUsesUnsupportedTarget =
+      raceGuidanceMentionsUnsupportedTarget ||
+      raceGuidanceUsesUnsupportedTargetSeconds(
+        plan.raceGuidance,
+        coachingBrief,
+      );
+    if (raceGuidanceUsesUnsupportedTarget) {
       violations.push({
         rule: "coaching_brief_unsupported_ambitious_target",
         sessionId: "raceGuidance",
@@ -4594,16 +4602,17 @@ export function normalizeUnsupportedAmbitiousTargetUsage(
     unsupportedAmbitiousTargetPattern(
       coachingBrief,
     );
-  const shouldPreserveRacePaceUsage = coachingBrief.evidenceTarget.supported;
   const cue = trainingDayCue("unsupportedAmbitiousTarget", locale);
   const cueReplacement = unsupportedAmbitiousTargetReplacement(locale);
-  const updateRaceGuidance = unsupportedAmbitiousTargetPatternValue == null
-    ? { ...raceGuidance }
-    : sanitizeUnsupportedAmbitiousTargetText(
-      raceGuidance,
-      unsupportedAmbitiousTargetPatternValue,
-      cueReplacement,
-    );
+  const raceGuidanceReplacement = unsupportedRaceGuidanceReplacement(
+    coachingBrief,
+    locale,
+  );
+  const updateRaceGuidance = sanitizeUnsupportedAmbitiousTargetText(
+    normalizeUnsupportedRaceGuidanceTargets(raceGuidance, coachingBrief),
+    unsupportedAmbitiousTargetPatternValue,
+    raceGuidanceReplacement,
+  );
 
   return {
     sessions: sessions.map((session) => {
@@ -4612,14 +4621,16 @@ export function normalizeUnsupportedAmbitiousTargetUsage(
         session.workoutTarget?.zone === "racePace";
 
       const mentionsUnsupportedTarget =
-        unsupportedAmbitiousTargetPatternValue != null &&
-        textMatchesTarget(
+        (unsupportedAmbitiousTargetPatternValue != null &&
+          textMatchesTarget(
+            [session.coachNote, session.workoutTarget?.effortCue],
+            unsupportedAmbitiousTargetPatternValue,
+          )) ||
+        textMatchesUnsupportedRacePaceLanguage(
           [session.coachNote, session.workoutTarget?.effortCue],
-          unsupportedAmbitiousTargetPatternValue,
         );
 
-      const shouldNormalizeRacePace = usesRacePaceTarget &&
-        !shouldPreserveRacePaceUsage;
+      const shouldNormalizeRacePace = usesRacePaceTarget;
       if (!shouldNormalizeRacePace && !mentionsUnsupportedTarget) {
         return session;
       }
@@ -4661,9 +4672,40 @@ function unsupportedAmbitiousTargetReplacement(
     : "controlled tempo effort";
 }
 
+function unsupportedRaceGuidanceReplacement(
+  coachingBrief: CoachingBrief,
+  locale: CoachNoteLocale,
+): string {
+  const hasEvidenceTarget = coachingBrief.evidenceTarget.supported &&
+    coachingBrief.evidenceTarget.timeSec != null;
+  if (locale === "es") {
+    return hasEvidenceTarget
+      ? "esfuerzo respaldado por tu evidencia actual"
+      : "esfuerzo controlado por sensaciones";
+  }
+
+  return hasEvidenceTarget
+    ? "evidence-supported effort"
+    : "controlled effort by feel";
+}
+
+function normalizeUnsupportedRaceGuidanceTargets(
+  raceGuidance: Pick<GeneratedPlan, "raceGuidance">["raceGuidance"],
+  coachingBrief: CoachingBrief,
+): Record<string, unknown> {
+  const evidenceTargetSec = coachingBrief.evidenceTarget.supported
+    ? coachingBrief.evidenceTarget.timeSec
+    : null;
+  return {
+    ...raceGuidance,
+    primaryTargetSec: evidenceTargetSec ?? null,
+    stretchTargetSec: null,
+  };
+}
+
 function sanitizeUnsupportedAmbitiousTargetText(
   raceGuidance: Record<string, unknown>,
-  targetPattern: RegExp,
+  targetPattern: RegExp | null,
   replacement: string,
 ): Record<string, unknown> {
   const sanitizedRaceGuidance = { ...raceGuidance };
@@ -4671,13 +4713,14 @@ function sanitizeUnsupportedAmbitiousTargetText(
 
   for (const [key, value] of Object.entries(sanitizedRaceGuidance)) {
     if (typeof value !== "string") continue;
-    if (!targetPattern.test(value)) continue;
-
-    sanitizedRaceGuidance[key] = replaceAllUnsupportedTargetMatches(
+    const sanitizedValue = sanitizeUnsupportedTargetLanguage(
       value,
       targetPattern,
       replacement,
     );
+    if (sanitizedValue === value) continue;
+
+    sanitizedRaceGuidance[key] = sanitizedValue;
     hasUpdates = true;
   }
 
@@ -4690,10 +4733,7 @@ function replaceUnsupportedAmbitiousTargetMentions(
   replacement: string,
 ): string | null {
   if (typeof value !== "string") return value ?? null;
-  if (targetPattern == null) return value;
-  return targetPattern.test(value)
-    ? replaceAllUnsupportedTargetMatches(value, targetPattern, replacement)
-    : value;
+  return sanitizeUnsupportedTargetLanguage(value, targetPattern, replacement);
 }
 
 function maybeReplaceUnsupportedEffortCue(
@@ -4703,17 +4743,31 @@ function maybeReplaceUnsupportedEffortCue(
 ): GeneratedSession["workoutTarget"] {
   if (workoutTarget == null) return workoutTarget;
   if (workoutTarget.effortCue == null) return workoutTarget;
-  if (targetPattern == null) return workoutTarget;
-  if (!targetPattern.test(workoutTarget.effortCue)) return workoutTarget;
+  const effortCue = sanitizeUnsupportedTargetLanguage(
+    workoutTarget.effortCue,
+    targetPattern,
+    replacement,
+  );
+  if (effortCue === workoutTarget.effortCue) return workoutTarget;
 
   return {
     ...workoutTarget,
-    effortCue: replaceAllUnsupportedTargetMatches(
-      workoutTarget.effortCue,
-      targetPattern,
-      replacement,
-    ),
+    effortCue,
   };
+}
+
+function sanitizeUnsupportedTargetLanguage(
+  value: string,
+  targetPattern: RegExp | null,
+  replacement: string,
+): string {
+  const withoutTarget = targetPattern == null
+    ? value
+    : replaceAllUnsupportedTargetMatches(value, targetPattern, replacement);
+  return withoutTarget.replace(
+    unsupportedRacePaceLanguagePattern(),
+    replacement,
+  );
 }
 
 function replaceAllUnsupportedTargetMatches(
@@ -4849,6 +4903,32 @@ function textMatchesTarget(
   return values.some((value) =>
     typeof value === "string" && targetPattern.test(value)
   );
+}
+
+function textMatchesUnsupportedRacePaceLanguage(
+  values: readonly (string | null | undefined)[],
+): boolean {
+  return values.some((value) =>
+    typeof value === "string" &&
+    unsupportedRacePaceLanguagePattern().test(value)
+  );
+}
+
+function unsupportedRacePaceLanguagePattern(): RegExp {
+  return /\b(?:goal[-\s]?race[-\s]?pace|target[-\s]?race[-\s]?pace|race[-\s]?pace|goal[-\s]?pace|ritmo\s+de\s+carrera|ritmo\s+carrera|ritmo\s+objetivo|ritmo\s+de\s+objetivo|ritmo\s+meta|ritmo\s+de\s+competici[oó]n)\b/gi;
+}
+
+function raceGuidanceUsesUnsupportedTargetSeconds(
+  raceGuidance: Pick<GeneratedPlan, "raceGuidance">["raceGuidance"],
+  coachingBrief: CoachingBrief,
+): boolean {
+  const evidenceTargetSec = coachingBrief.evidenceTarget.supported
+    ? coachingBrief.evidenceTarget.timeSec
+    : null;
+  if (typeof raceGuidance.stretchTargetSec === "number") return true;
+  if (typeof raceGuidance.primaryTargetSec !== "number") return false;
+  return evidenceTargetSec == null ||
+    raceGuidance.primaryTargetSec !== evidenceTargetSec;
 }
 
 function formatTimeTarget(totalSeconds: number): string {

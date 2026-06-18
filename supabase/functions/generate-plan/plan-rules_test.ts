@@ -6591,8 +6591,10 @@ Deno.test(
     );
     assert.equal(
       normalized.raceGuidance.raceDayExecution,
-      "Race day target remains controlled tempo effort for this event.",
+      "Race day target remains controlled effort by feel for this event.",
     );
+    assert.equal(normalized.raceGuidance.primaryTargetSec, null);
+    assert.equal(normalized.raceGuidance.stretchTargetSec, null);
   },
 );
 
@@ -6706,7 +6708,7 @@ Deno.test(
           zone: "racePace",
           paceMinSecPerKm: 300,
           paceMaxSecPerKm: 340,
-          effortCue: "Mantén 5:13/km para el objetivo.",
+          effortCue: "Mantén ritmo objetivo sin forzar.",
         },
       }),
     ];
@@ -6717,7 +6719,7 @@ Deno.test(
       "es",
       {
         schemaVersion: 1,
-        raceDayExecution: "Mantén 5:13/km para el objetivo.",
+        raceDayExecution: "Mantén ritmo objetivo para el cierre.",
       },
       paceZonesFixture({
         tempo: { paceMinSecPerKm: 360, paceMaxSecPerKm: 390 },
@@ -6731,10 +6733,16 @@ Deno.test(
       "Corre a esfuerzo de tempo controlado con técnica.",
     );
     assert.ok(!normalizedNote?.includes("5:13/km"));
+    assert.ok(
+      !normalized.sessions[0].workoutTarget?.effortCue?.toLowerCase()
+        .includes("ritmo objetivo"),
+    );
     assert.equal(
       normalized.raceGuidance.raceDayExecution,
-      "Mantén esfuerzo de tempo controlado para el objetivo.",
+      "Mantén esfuerzo controlado por sensaciones para el cierre.",
     );
+    assert.equal(normalized.raceGuidance.primaryTargetSec, null);
+    assert.equal(normalized.raceGuidance.stretchTargetSec, null);
   },
 );
 
@@ -6851,6 +6859,214 @@ Deno.test(
         violation.rule === "coaching_brief_weekly_volume_above_max"
       ),
       JSON.stringify(violations),
+    );
+  },
+);
+
+Deno.test(
+  "normalizeUnsupportedAmbitiousTargetUsage converts racePace when ambitious target is unsupported even if evidenceTarget is supported",
+  () => {
+    const brief = coachingBriefFixture({
+      evidenceTarget: {
+        distanceKm: 21.097,
+        timeSec: 6900,
+        paceSecPerKm: 327,
+        confidence: "high",
+        source: "strava",
+        supported: true,
+        reason: "Evidence target is supported.",
+      },
+      ambitiousTarget: {
+        distanceKm: 21.097,
+        timeSec: 6600,
+        paceSecPerKm: 313,
+        confidence: "limited",
+        source: "strava",
+        supported: false,
+        reason: "Too aggressive for current evidence.",
+      },
+    });
+
+    const sessions: GeneratedSession[] = [
+      {
+        ...session({
+          id: "w10-2026-08-15-racePaceRun",
+          date: "2026-08-15",
+          weekNumber: 10,
+          type: "racePaceRun",
+          targetZone: "racePace",
+          distanceKm: 10,
+          coachNote: "Run near 5:13/km for your goal pace effort.",
+        }),
+        workoutTarget: {
+          schemaVersion: 1,
+          type: "pace",
+          zone: "racePace",
+          paceMinSecPerKm: 300,
+          paceMaxSecPerKm: 340,
+          effortCue: "Goal pace 5:13/km, keep it controlled.",
+        },
+      },
+    ];
+
+    const normalized = normalizeUnsupportedAmbitiousTargetUsage(
+      sessions,
+      brief,
+      "en",
+      {
+        schemaVersion: 1,
+        raceDayExecution: "Goal pace target is 5:13/km near end.",
+        primaryTargetSec: 6600,
+        stretchTargetSec: 6500,
+      },
+      paceZonesFixture({
+        tempo: { paceMinSecPerKm: 360, paceMaxSecPerKm: 390 },
+        racePace: { paceMinSecPerKm: 300, paceMaxSecPerKm: 340 },
+      }),
+    );
+
+    assert.equal(normalized.sessions[0].type, "tempoRun");
+    assert.equal(normalized.sessions[0].targetZone, "tempo");
+    assert.equal(normalized.sessions[0].workoutTarget?.type, "effort");
+    assert.equal(normalized.sessions[0].workoutTarget?.zone, "tempo");
+    assert.equal(normalized.sessions[0].workoutTarget?.paceMinSecPerKm, 360);
+    assert.equal(normalized.sessions[0].workoutTarget?.paceMaxSecPerKm, 390);
+    assert.ok(!normalized.sessions[0].coachNote?.includes("5:13/km"));
+    assert.ok(
+      !normalized.sessions[0].coachNote?.toLowerCase().includes("goal pace"),
+    );
+    assert.ok(
+      !normalized.sessions[0].workoutTarget?.effortCue?.includes("5:13/km"),
+    );
+    assert.ok(
+      !normalized.sessions[0].workoutTarget?.effortCue?.toLowerCase()
+        .includes("goal pace"),
+    );
+    assert.ok(
+      !String(normalized.raceGuidance.raceDayExecution).toLowerCase()
+        .includes("goal pace"),
+    );
+    assert.ok(
+      !String(normalized.raceGuidance.raceDayExecution).includes("5:13/km"),
+    );
+    assert.equal(normalized.raceGuidance.primaryTargetSec, 6900);
+    assert.equal(normalized.raceGuidance.stretchTargetSec, null);
+
+    const violations = validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: brief.planLengthWeeks,
+        raceGuidance: {
+          ...normalized.raceGuidance,
+        },
+        sessions: normalized.sessions,
+      },
+      brief,
+    );
+    assert.ok(
+      !violations.some((violation) =>
+        violation.rule === "coaching_brief_unsupported_ambitious_target"
+      ),
+      JSON.stringify(violations),
+    );
+  },
+);
+
+Deno.test(
+  "validateGeneratedPlanAgainstCoachingBrief rejects unsupported ambitious numeric race guidance targets",
+  () => {
+    const brief = coachingBriefFixture({
+      evidenceTarget: {
+        distanceKm: 21.097,
+        timeSec: 6900,
+        paceSecPerKm: 327,
+        confidence: "high",
+        source: "strava",
+        supported: true,
+        reason: "Evidence target is supported.",
+      },
+      ambitiousTarget: {
+        distanceKm: 21.097,
+        timeSec: 6600,
+        paceSecPerKm: 313,
+        confidence: "limited",
+        source: "strava",
+        supported: false,
+        reason: "Too aggressive for current evidence.",
+      },
+    });
+
+    const violations = validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: brief.planLengthWeeks,
+        raceGuidance: {
+          schemaVersion: 1,
+          raceDayExecution: "Run controlled by feel.",
+          primaryTargetSec: 6600,
+          stretchTargetSec: null,
+        },
+        sessions: [
+          session({
+            id: "w1-2026-06-01-easyRun",
+            date: "2026-06-01",
+            weekNumber: 1,
+            type: "easyRun",
+            distanceKm: 5,
+            targetZone: "easy",
+            coachNote: "Easy effort.",
+          }),
+        ],
+      },
+      brief,
+    );
+
+    assert.ok(
+      violations.some((violation) =>
+        violation.rule === "coaching_brief_unsupported_ambitious_target" &&
+        violation.sessionId === "raceGuidance"
+      ),
+      JSON.stringify(violations),
+    );
+
+    const stretchViolations = validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: brief.planLengthWeeks,
+        raceGuidance: {
+          schemaVersion: 1,
+          raceDayExecution: "Run controlled by feel.",
+          primaryTargetSec: 6900,
+          stretchTargetSec: 6900,
+        },
+        sessions: [],
+      },
+      brief,
+    );
+    assert.ok(
+      stretchViolations.some((violation) =>
+        violation.rule === "coaching_brief_unsupported_ambitious_target" &&
+        violation.sessionId === "raceGuidance"
+      ),
+      JSON.stringify(stretchViolations),
+    );
+
+    const nearEvidenceViolations = validateGeneratedPlanAgainstCoachingBrief(
+      {
+        totalWeeks: brief.planLengthWeeks,
+        raceGuidance: {
+          schemaVersion: 1,
+          raceDayExecution: "Run controlled by feel.",
+          primaryTargetSec: 6903,
+          stretchTargetSec: null,
+        },
+        sessions: [],
+      },
+      brief,
+    );
+    assert.ok(
+      nearEvidenceViolations.some((violation) =>
+        violation.rule === "coaching_brief_unsupported_ambitious_target" &&
+        violation.sessionId === "raceGuidance"
+      ),
+      JSON.stringify(nearEvidenceViolations),
     );
   },
 );

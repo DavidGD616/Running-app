@@ -318,6 +318,40 @@ Deno.test("buildGeneratePlanMessages builds locale-specific English copy", () =>
   assert.ok(systemMessage.content.includes("coachNote"));
 });
 
+Deno.test(
+  "buildGeneratePlanMessages blocks race-pace outputs when ambitious target is unsupported",
+  () => {
+    const [systemMessage] = buildGeneratePlanMessages(
+      messageProfile,
+      "en",
+      8,
+      {
+        ...coachingBrief,
+        ambitiousTarget: {
+          ...coachingBrief.ambitiousTarget,
+          supported: false,
+        },
+      },
+    );
+    const prompt = systemMessage.content.toLowerCase();
+    assert.ok(prompt.includes("do not let that ambitious target drive"));
+    assert.ok(prompt.includes("racepacerun"));
+    assert.ok(prompt.includes("targetzone"));
+    assert.ok(prompt.includes("workouttarget.zone"));
+    assert.ok(prompt.includes("race pace"));
+    assert.ok(prompt.includes("race-pace"));
+    assert.ok(prompt.includes("goal pace"));
+    assert.ok(prompt.includes("goal-pace"));
+    assert.ok(prompt.includes("ritmo de carrera"));
+    assert.ok(prompt.includes("ritmo objetivo"));
+    assert.ok(prompt.includes("evidencetarget"));
+    assert.ok(prompt.includes("effort-guided"));
+    assert.ok(prompt.includes("tempo"));
+    assert.ok(prompt.includes("steady"));
+    assert.ok(prompt.includes("interval"));
+  },
+);
+
 Deno.test("buildGeneratePlanMessages includes planStartDate guidance", () => {
   const profileWithPlanStart = {
     ...messageProfile,

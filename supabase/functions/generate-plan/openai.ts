@@ -592,7 +592,7 @@ Critical brief requirements:
 - Never exceed coachingBrief.maxWeeklyVolumeKm in any week.
 - Never exceed coachingBrief.longRunCeilingKm for a longRun.
 - Follow coachingBrief.phaseStrategy and taper; final taper weeks should use taperRace phase.
-- If coachingBrief.ambitiousTarget.supported is false, do not let that ambitious target drive workoutTarget, racePace sessions, or race-pace language. Use evidenceTarget or effort guidance instead.
+- If coachingBrief.ambitiousTarget.supported is false, do not let that ambitious target drive workoutTarget, racePace sessions, or race-pace language. Never emit racePaceRun, targetZone: "racePace", or workoutTarget.zone: "racePace", and do not use race pace, race-pace, goal pace, goal-pace, target race pace, ritmo de carrera, or ritmo objetivo wording in coachNote or effortCue. Use evidenceTarget only for conservative raceGuidance, and use effort-guided tempo/steady/interval alternatives for workouts.
 
 IMPORTANT: Do not create strength, mobility, support, raceDay, or dedicated goal-race sessions. The goal race is guidance-only in raceGuidance; the backend will add one info-only Race Day item after validation.
 ${raceDateGuidance}
