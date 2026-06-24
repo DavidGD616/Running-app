@@ -38,7 +38,7 @@ type PatchType =
   | "repeatWeek"
   | "progressSlightly";
 
-const DEFAULT_OPENAI_MODEL = "gpt-5.4-mini";
+const DEFAULT_OPENAI_MODEL = "gpt-5.5";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const HARD_SESSION_TYPES = new Set<SessionType>([
   "intervals",
