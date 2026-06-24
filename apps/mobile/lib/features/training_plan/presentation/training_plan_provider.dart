@@ -11,6 +11,7 @@ import '../domain/models/session_feedback.dart';
 import '../domain/models/session_type.dart';
 import '../domain/models/training_plan.dart';
 import '../domain/models/week_progress.dart';
+import '../domain/models/weekly_training_summary.dart';
 import 'adaptation_provider.dart';
 
 final sessionFeedbacksProvider = Provider<List<SessionFeedback>>((ref) {
@@ -150,6 +151,10 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
     required PreRunCheckIn? checkIn,
     required String? notes,
     required DateTime recordedAt,
+    SessionFeedbackSleep? sleep,
+    SessionFeedbackLegs? legs,
+    SessionFeedbackPain? pain,
+    SessionFeedbackMotivation? motivation,
   }) {
     final eventIdSuffix = recordedAt.microsecondsSinceEpoch.toString();
     final feedback = SessionFeedback(
@@ -159,6 +164,10 @@ class TrainingPlanNotifier extends AsyncNotifier<TrainingPlan> {
       activityId: activityId,
       difficulty: _difficultyFromEffort(perceivedEffort),
       recoveryStatus: _recoveryStatusFromCheckIn(checkIn),
+      sleep: sleep ?? _sleepFromCheckIn(checkIn),
+      legs: legs ?? _legsFromCheckIn(checkIn),
+      pain: pain ?? _painFromCheckIn(checkIn),
+      motivation: motivation ?? _motivationFromReadiness(checkIn),
       notes: notes,
     );
     unawaited(
@@ -325,9 +334,69 @@ SessionRecoveryStatus? _recoveryStatusFromCheckIn(PreRunCheckIn? checkIn) {
   };
 }
 
+SessionFeedbackSleep? _sleepFromCheckIn(PreRunCheckIn? checkIn) {
+  return switch (checkIn?.sleep) {
+    PreRunSleepLevel.great => SessionFeedbackSleep.great,
+    PreRunSleepLevel.okay => SessionFeedbackSleep.okay,
+    PreRunSleepLevel.poor => SessionFeedbackSleep.poor,
+    null => null,
+  };
+}
+
+SessionFeedbackLegs? _legsFromCheckIn(PreRunCheckIn? checkIn) {
+  return switch (checkIn?.legs) {
+    PreRunLegCondition.fresh => SessionFeedbackLegs.fresh,
+    PreRunLegCondition.normal => SessionFeedbackLegs.normal,
+    PreRunLegCondition.heavy => SessionFeedbackLegs.heavy,
+    null => null,
+  };
+}
+
+SessionFeedbackPain? _painFromCheckIn(PreRunCheckIn? checkIn) {
+  return switch (checkIn?.pain) {
+    PreRunPainLevel.none => SessionFeedbackPain.none,
+    PreRunPainLevel.mild => SessionFeedbackPain.mild,
+    PreRunPainLevel.moderate => SessionFeedbackPain.moderate,
+    PreRunPainLevel.sharp => SessionFeedbackPain.severe,
+    null => null,
+  };
+}
+
+SessionFeedbackMotivation? _motivationFromReadiness(PreRunCheckIn? checkIn) {
+  return switch (checkIn?.readiness) {
+    PreRunReadinessLevel.letsGo => SessionFeedbackMotivation.ready,
+    PreRunReadinessLevel.notFullyReady => SessionFeedbackMotivation.low,
+    null => null,
+  };
+}
+
 /// Derived provider — computes week progress from the current week's sessions.
 final weekProgressProvider = Provider<WeekProgress>((ref) {
   final plan = ref.watch(trainingPlanProvider).value;
   if (plan == null) return WeekProgress.fromSessions(const []);
   return WeekProgress.fromSessions(plan.currentWeekSessions);
+});
+
+/// Derived provider — computes weekly adaptation input summary from the current
+/// week's sessions, completed activities, and persisted session feedback.
+final weeklyTrainingSummaryProvider = Provider<WeeklyTrainingSummary>((ref) {
+  final plan = ref.watch(trainingPlanProvider).value;
+  final completedActivities = ref.watch(completedActivitiesProvider);
+  final feedbacks = ref.watch(sessionFeedbacksProvider);
+
+  if (plan == null) {
+    return weeklyTrainingSummaryFromPlanAndActivityData(
+      sessions: const [],
+      completedActivities: completedActivities,
+      feedbacks: feedbacks,
+      referenceDate: DateTime.now(),
+    );
+  }
+
+  return weeklyTrainingSummaryFromPlanAndActivityData(
+    sessions: plan.sessions,
+    completedActivities: completedActivities,
+    feedbacks: feedbacks,
+    referenceDate: DateTime.now(),
+  );
 });

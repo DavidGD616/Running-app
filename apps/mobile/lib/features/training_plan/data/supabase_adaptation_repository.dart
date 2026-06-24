@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/supabase/supabase_client_provider.dart';
+import '../domain/models/adaptation_review.dart';
 import '../domain/models/plan_adjustment.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
@@ -58,6 +59,21 @@ class SupabaseAdaptationRepository implements AsyncAdaptationRepository {
       cacheSave: (items) async {
         if (_localCache != null) {
           await _localCache.savePlanRevisions(items);
+        }
+      },
+    );
+  }
+
+  @override
+  Future<List<AdaptationReview>> loadAdaptationReviews() async {
+    return _loadList<AdaptationReview>(
+      table: 'adaptation_reviews',
+      orderColumn: 'created_at',
+      fromRow: _adaptationReviewFromRow,
+      cacheLoad: () => _localCache?.loadAdaptationReviews() ?? const [],
+      cacheSave: (items) async {
+        if (_localCache != null) {
+          await _localCache.saveAdaptationReviews(items);
         }
       },
     );
@@ -139,6 +155,39 @@ class SupabaseAdaptationRepository implements AsyncAdaptationRepository {
         );
   }
 
+  @override
+  Future<void> saveAdaptationReviews(List<AdaptationReview> reviews) async {
+    await _localCache?.saveAdaptationReviews(reviews);
+
+    final uid = _uid;
+    if (uid == null || reviews.isEmpty) return;
+
+    await _client
+        .from('adaptation_reviews')
+        .upsert(
+          reviews
+              .map(
+                (item) => {
+                  'id': item.id,
+                  'user_id': uid,
+                  'week_start': item.weekStart.toUtc().toIso8601String(),
+                  'week_end': item.weekEnd.toUtc().toIso8601String(),
+                  'source_plan_version_id': item.sourcePlanVersionId,
+                  'proposed_plan_version_id': item.proposedPlanVersionId,
+                  'status': item.status.key,
+                  'classification': item.classification.key,
+                  'severity': item.severity.key,
+                  'created_at': item.createdAt.toUtc().toIso8601String(),
+                  'load_before': item.loadBefore,
+                  'load_after': item.loadAfter,
+                  'data': item.toJson(),
+                },
+              )
+              .toList(growable: false),
+          onConflict: 'id',
+        );
+  }
+
   Future<List<T>> _loadList<T>({
     required String table,
     required String orderColumn,
@@ -194,6 +243,28 @@ class SupabaseAdaptationRepository implements AsyncAdaptationRepository {
     if (row.containsKey('id')) data['id'] = row['id'];
     if (row.containsKey('created_at')) data['createdAt'] = row['created_at'];
     return PlanRevision.fromJson(data);
+  }
+
+  AdaptationReview? _adaptationReviewFromRow(Map<String, dynamic> row) {
+    final data = _jsonMap(row['data']);
+    if (row.containsKey('id')) data['id'] = row['id'];
+    if (row.containsKey('week_start')) data['weekStart'] = row['week_start'];
+    if (row.containsKey('week_end')) data['weekEnd'] = row['week_end'];
+    if (row.containsKey('source_plan_version_id')) {
+      data['sourcePlanVersionId'] = row['source_plan_version_id'];
+    }
+    if (row.containsKey('proposed_plan_version_id')) {
+      data['proposedPlanVersionId'] = row['proposed_plan_version_id'];
+    }
+    if (row.containsKey('status')) data['status'] = row['status'];
+    if (row.containsKey('classification')) {
+      data['classification'] = row['classification'];
+    }
+    if (row.containsKey('severity')) data['severity'] = row['severity'];
+    if (row.containsKey('created_at')) data['createdAt'] = row['created_at'];
+    if (row.containsKey('load_before')) data['loadBefore'] = row['load_before'];
+    if (row.containsKey('load_after')) data['loadAfter'] = row['load_after'];
+    return AdaptationReview.fromJson(data);
   }
 }
 

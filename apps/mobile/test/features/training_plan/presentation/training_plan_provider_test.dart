@@ -457,6 +457,60 @@ void main() {
     );
   });
 
+  test(
+    'recordCompletedRunFeedback captures expanded readiness fields',
+    () async {
+      final prefs = await SharedPreferences.getInstance();
+      final container = ProviderContainer(
+        overrides: [sharedPreferencesProvider.overrideWithValue(prefs)],
+      );
+      addTearDown(container.dispose);
+
+      container
+          .read(trainingPlanProvider.notifier)
+          .recordCompletedRunFeedback(
+            session: PreRunArgs(
+              session: RunFlowSessionContext(
+                sessionId: 'w4-wed',
+                sessionDate: DateTime(2026, 4, 7, 7, 30),
+                sessionType: SessionType.tempoRun,
+                weekNumber: 4,
+                workoutTarget: null,
+                workoutSteps: [],
+                supplementalType: null,
+                isRunSession: true,
+                distanceKm: 12.0,
+                durationMinutes: 52,
+                elevationGainMeters: 96,
+                intervalReps: null,
+                intervalRepDistanceMeters: null,
+                intervalRecoverySeconds: null,
+                warmUpMinutes: 5,
+                coolDownMinutes: 3,
+              ),
+            ).session,
+            activityId: 'activity_w4-wed',
+            perceivedEffort: ActivityPerceivedEffort.moderate,
+            checkIn: const PreRunCheckIn(
+              sleep: PreRunSleepLevel.okay,
+              legs: PreRunLegCondition.heavy,
+              pain: PreRunPainLevel.mild,
+              readiness: PreRunReadinessLevel.notFullyReady,
+            ),
+            notes: 'Mixed fatigue',
+            recordedAt: DateTime(2026, 4, 7, 8, 30),
+          );
+      await Future<void>.delayed(Duration.zero);
+
+      final feedback = await container.read(sessionFeedbackProvider.future);
+      expect(feedback, hasLength(1));
+      expect(feedback.single.sleep, SessionFeedbackSleep.okay);
+      expect(feedback.single.legs, SessionFeedbackLegs.heavy);
+      expect(feedback.single.pain, SessionFeedbackPain.mild);
+      expect(feedback.single.motivation, SessionFeedbackMotivation.low);
+    },
+  );
+
   test('repeated feedback events keep distinct feedback history', () async {
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(

@@ -48,6 +48,8 @@ import '../../features/log_run/presentation/screens/log_run_screen.dart';
 import '../../features/full_plan/presentation/screens/full_plan_screen.dart';
 import '../../features/progress/presentation/screens/training_history_screen.dart';
 import '../../features/progress/presentation/screens/completed_sessions_screen.dart';
+import '../../features/training_plan/presentation/screens/adaptation_review_screen.dart';
+import '../../features/training_plan/presentation/screens/adaptation_diff_screen.dart';
 import '../../features/profile/data/runner_profile_repository.dart';
 import '../../features/profile/domain/models/runner_profile.dart';
 import '../../features/profile/presentation/runner_profile_provider.dart';
@@ -441,6 +443,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: RouteNames.completedSessions,
         builder: (context, state) => const CompletedSessionsScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.adaptationReview,
+        builder: (context, state) => const AdaptationReviewScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.adaptationDiff,
+        builder: (context, state) => const AdaptationDiffScreen(),
       ),
       GoRoute(
         path: RouteNames.preRun,

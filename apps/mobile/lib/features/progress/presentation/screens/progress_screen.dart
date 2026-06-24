@@ -15,7 +15,9 @@ import '../../../../core/widgets/streak_banner.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../progress/domain/models/recent_session.dart';
 import '../../../progress/domain/models/weekly_volume_data.dart';
+import '../../../training_plan/domain/models/adaptation_review.dart';
 import '../../../training_plan/domain/models/session_type.dart';
+import '../../../training_plan/presentation/adaptation_provider.dart';
 import '../../presentation/progress_provider.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
@@ -125,6 +127,9 @@ class ProgressScreen extends ConsumerWidget {
     final stats = ref.watch(userStatsProvider);
     final sessions = ref.watch(recentSessionsProvider);
     final volumeData = ref.watch(weeklyVolumeProvider);
+    final adaptationReviews =
+        ref.watch(adaptationReviewsProvider).value ??
+        const <AdaptationReview>[];
     final monthlyDistanceStats = ref.watch(monthlyDistanceStatsProvider);
     final monthlyTimeStats = ref.watch(monthlyTimeStatsProvider);
     final longestRunStats = ref.watch(longestRunStatsProvider);
@@ -179,6 +184,12 @@ class ProgressScreen extends ConsumerWidget {
               StreakBanner(
                 streakWeeks: stats.streakWeeks,
                 subtitle: l10n.progressStreakBannerSubtitle,
+              ),
+
+              const SizedBox(height: AppSpacing.md),
+
+              _AdaptationHistoryCard(
+                reviews: adaptationReviews.take(3).toList(growable: false),
               ),
 
               const SizedBox(height: AppSpacing.md),
@@ -291,6 +302,110 @@ class ProgressScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+class _AdaptationHistoryCard extends StatelessWidget {
+  const _AdaptationHistoryCard({required this.reviews});
+
+  final List<AdaptationReview> reviews;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.adaptationHistoryTitle, style: AppTypography.titleMedium),
+          const SizedBox(height: AppSpacing.md),
+          if (reviews.isEmpty)
+            Text(
+              l10n.adaptationHistoryEmpty,
+              style: AppTypography.bodyMedium.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            )
+          else
+            for (final review in reviews) ...[
+              _AdaptationHistoryRow(review: review),
+              if (review != reviews.last)
+                Divider(
+                  height: AppSpacing.lg,
+                  color: AppColors.borderDefault.withValues(alpha: 0.5),
+                ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+class _AdaptationHistoryRow extends StatelessWidget {
+  const _AdaptationHistoryRow({required this.review});
+
+  final AdaptationReview review;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            _historySummary(review, l10n),
+            style: AppTypography.bodyMedium,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Text(
+          _statusLabel(review.status, l10n),
+          style: AppTypography.caption.copyWith(
+            color: _statusColor(review.status),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+String _historySummary(AdaptationReview review, AppLocalizations l10n) {
+  return switch (review.classification) {
+    AdaptationReviewClassification.onTrack => l10n.adaptationSummaryOnTrack,
+    AdaptationReviewClassification.tooAggressive =>
+      l10n.adaptationSummaryTooAggressive,
+    AdaptationReviewClassification.tooEasy => l10n.adaptationSummaryTooEasy,
+    AdaptationReviewClassification.recoveryNeeded =>
+      l10n.adaptationSummaryRecoveryNeeded,
+    AdaptationReviewClassification.scheduleMismatch =>
+      l10n.adaptationSummaryScheduleMismatch,
+    AdaptationReviewClassification.insufficientData =>
+      l10n.adaptationSummaryInsufficientData,
+  };
+}
+
+String _statusLabel(AdaptationReviewStatus status, AppLocalizations l10n) {
+  return switch (status) {
+    AdaptationReviewStatus.pending => l10n.adaptationStatusPending,
+    AdaptationReviewStatus.accepted => l10n.adaptationStatusAccepted,
+    AdaptationReviewStatus.dismissed => l10n.adaptationStatusDismissed,
+    AdaptationReviewStatus.failed => l10n.adaptationStatusFailed,
+  };
+}
+
+Color _statusColor(AdaptationReviewStatus status) {
+  return switch (status) {
+    AdaptationReviewStatus.pending => AppColors.warning,
+    AdaptationReviewStatus.accepted => AppColors.accentPrimary,
+    AdaptationReviewStatus.dismissed => AppColors.textDisabled,
+    AdaptationReviewStatus.failed => AppColors.error,
+  };
 }
 
 // ── Week data ─────────────────────────────────────────────────────────────────

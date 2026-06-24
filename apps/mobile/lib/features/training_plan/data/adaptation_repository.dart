@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
 import '../../auth/presentation/auth_state_provider.dart';
+import '../domain/models/adaptation_review.dart';
 import '../domain/models/plan_adjustment.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
@@ -14,18 +15,22 @@ abstract interface class AdaptationRepository {
   List<SessionFeedback> loadSessionFeedback();
   List<PlanAdjustment> loadPlanAdjustments();
   List<PlanRevision> loadPlanRevisions();
+  List<AdaptationReview> loadAdaptationReviews();
   Future<void> saveSessionFeedback(List<SessionFeedback> feedback);
   Future<void> savePlanAdjustments(List<PlanAdjustment> adjustments);
   Future<void> savePlanRevisions(List<PlanRevision> revisions);
+  Future<void> saveAdaptationReviews(List<AdaptationReview> reviews);
 }
 
 abstract interface class AsyncAdaptationRepository {
   Future<List<SessionFeedback>> loadSessionFeedback();
   Future<List<PlanAdjustment>> loadPlanAdjustments();
   Future<List<PlanRevision>> loadPlanRevisions();
+  Future<List<AdaptationReview>> loadAdaptationReviews();
   Future<void> saveSessionFeedback(List<SessionFeedback> feedback);
   Future<void> savePlanAdjustments(List<PlanAdjustment> adjustments);
   Future<void> savePlanRevisions(List<PlanRevision> revisions);
+  Future<void> saveAdaptationReviews(List<AdaptationReview> reviews);
 }
 
 class AdaptationRepositoryAsyncAdapter implements AsyncAdaptationRepository {
@@ -49,6 +54,11 @@ class AdaptationRepositoryAsyncAdapter implements AsyncAdaptationRepository {
   }
 
   @override
+  Future<List<AdaptationReview>> loadAdaptationReviews() async {
+    return _repository.loadAdaptationReviews();
+  }
+
+  @override
   Future<void> saveSessionFeedback(List<SessionFeedback> feedback) {
     return _repository.saveSessionFeedback(feedback);
   }
@@ -61,6 +71,11 @@ class AdaptationRepositoryAsyncAdapter implements AsyncAdaptationRepository {
   @override
   Future<void> savePlanRevisions(List<PlanRevision> revisions) {
     return _repository.savePlanRevisions(revisions);
+  }
+
+  @override
+  Future<void> saveAdaptationReviews(List<AdaptationReview> reviews) {
+    return _repository.saveAdaptationReviews(reviews);
   }
 }
 
@@ -76,6 +91,7 @@ class SharedPreferencesAdaptationRepository implements AdaptationRepository {
   static const sessionFeedbackKey = 'session_feedback_v1';
   static const planAdjustmentsKey = 'plan_adjustments_v1';
   static const planRevisionsKey = 'plan_revisions_v1';
+  static const adaptationReviewsKey = 'adaptation_reviews_v1';
 
   final SharedPreferences _prefs;
 
@@ -97,6 +113,13 @@ class SharedPreferencesAdaptationRepository implements AdaptationRepository {
   List<PlanRevision> loadPlanRevisions() => _decodeList(
     key: planRevisionsKey,
     fromJson: PlanRevision.fromJson,
+    sortBy: (a, b) => b.createdAt.compareTo(a.createdAt),
+  );
+
+  @override
+  List<AdaptationReview> loadAdaptationReviews() => _decodeList(
+    key: adaptationReviewsKey,
+    fromJson: AdaptationReview.fromJson,
     sortBy: (a, b) => b.createdAt.compareTo(a.createdAt),
   );
 
@@ -125,6 +148,14 @@ class SharedPreferencesAdaptationRepository implements AdaptationRepository {
       jsonEncode(
         revisions.map((item) => item.toJson()).toList(growable: false),
       ),
+    );
+  }
+
+  @override
+  Future<void> saveAdaptationReviews(List<AdaptationReview> reviews) async {
+    await _prefs.setString(
+      adaptationReviewsKey,
+      jsonEncode(reviews.map((item) => item.toJson()).toList(growable: false)),
     );
   }
 

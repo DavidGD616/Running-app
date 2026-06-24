@@ -2829,6 +2829,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logSessionVeryHard => 'Very Hard';
 
   @override
+  String get logSessionBodyCheck => 'Body check';
+
+  @override
   String get logSessionNotes => 'Notes';
 
   @override
@@ -3665,4 +3668,173 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get allowAlwaysLocationOpenSettings => 'Open Settings';
+
+  @override
+  String get adaptationReviewTitle => 'Coach Review';
+
+  @override
+  String get adaptationReviewSubtitle =>
+      'Your recent training response is ready to review.';
+
+  @override
+  String get adaptationNoReviewTitle => 'No coach review yet';
+
+  @override
+  String get adaptationNoReviewBody =>
+      'Generate a weekly review when this week has enough training feedback.';
+
+  @override
+  String get adaptationGenerateReview => 'Generate Review';
+
+  @override
+  String get adaptationReviewChanges => 'Review Changes';
+
+  @override
+  String get adaptationKeepOriginal => 'Keep Original Plan';
+
+  @override
+  String get adaptationApplyChanges => 'Apply Changes';
+
+  @override
+  String get adaptationPlanDiffTitle => 'Plan Changes';
+
+  @override
+  String get adaptationWeeklySnapshot => 'Weekly Snapshot';
+
+  @override
+  String get adaptationSessionsLabel => 'Sessions';
+
+  @override
+  String get adaptationRecoveryLabel => 'Recovery';
+
+  @override
+  String get adaptationPainLabel => 'Pain';
+
+  @override
+  String adaptationCompletedSessions(int completed, int planned) {
+    return '$completed of $planned sessions';
+  }
+
+  @override
+  String adaptationDistanceProgress(String completed, String planned) {
+    return '$completed / $planned';
+  }
+
+  @override
+  String adaptationRecoveryFlags(int count) {
+    return '$count recovery flags';
+  }
+
+  @override
+  String adaptationPainFlags(int count) {
+    return '$count pain flags';
+  }
+
+  @override
+  String get adaptationNoChanges => 'No session changes proposed.';
+
+  @override
+  String adaptationBeforeAfter(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String get adaptationHistoryTitle => 'Coach Adjustments';
+
+  @override
+  String get adaptationHistoryEmpty => 'No plan adjustments yet.';
+
+  @override
+  String get adaptationHomeCardTitle => 'Coach check';
+
+  @override
+  String get adaptationHomePendingBody => 'A weekly plan review is ready.';
+
+  @override
+  String get adaptationHomeTriggerBody =>
+      'Your week has enough feedback for a coach review.';
+
+  @override
+  String get adaptationSummaryOnTrack => 'You are on track this week.';
+
+  @override
+  String get adaptationSummaryTooAggressive =>
+      'This week looked slightly aggressive.';
+
+  @override
+  String get adaptationSummaryRecoveryNeeded =>
+      'Recovery should come first this week.';
+
+  @override
+  String get adaptationSummaryScheduleMismatch =>
+      'Your schedule did not match the plan.';
+
+  @override
+  String get adaptationSummaryTooEasy => 'This week looked manageable.';
+
+  @override
+  String get adaptationSummaryInsufficientData =>
+      'There is not enough feedback to change the plan yet.';
+
+  @override
+  String get adaptationSummaryFailed =>
+      'The coach review could not safely update the plan.';
+
+  @override
+  String get adaptationReasonPainReported => 'Pain was reported.';
+
+  @override
+  String get adaptationReasonHighEffortRecovery =>
+      'Effort and recovery signals were elevated.';
+
+  @override
+  String get adaptationReasonMissedSessions =>
+      'Several sessions were missed or skipped.';
+
+  @override
+  String get adaptationReasonOnTrack => 'Training response matched the plan.';
+
+  @override
+  String get adaptationReasonInsufficientData =>
+      'More completed sessions are needed.';
+
+  @override
+  String get adaptationReasonNoChange => 'The plan can stay unchanged.';
+
+  @override
+  String get adaptationReasonGenerationFailed =>
+      'The review fell back to a safe no-change recommendation.';
+
+  @override
+  String get adaptationPatchNoChange => 'No change';
+
+  @override
+  String get adaptationPatchReduceSession => 'Reduce session';
+
+  @override
+  String get adaptationPatchReplaceSession => 'Replace session';
+
+  @override
+  String get adaptationPatchMoveSession => 'Move session';
+
+  @override
+  String get adaptationPatchShortenLongRun => 'Shorten long run';
+
+  @override
+  String get adaptationPatchRepeatWeek => 'Repeat week';
+
+  @override
+  String get adaptationPatchProgressSlightly => 'Progress slightly';
+
+  @override
+  String get adaptationStatusPending => 'Pending';
+
+  @override
+  String get adaptationStatusAccepted => 'Applied';
+
+  @override
+  String get adaptationStatusDismissed => 'Dismissed';
+
+  @override
+  String get adaptationStatusFailed => 'Failed';
 }

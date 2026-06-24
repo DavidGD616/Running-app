@@ -5159,6 +5159,12 @@ abstract class AppLocalizations {
   /// **'Very Hard'**
   String get logSessionVeryHard;
 
+  /// Section heading for post-run body signal selection
+  ///
+  /// In en, this message translates to:
+  /// **'Body check'**
+  String get logSessionBodyCheck;
+
   /// Notes section heading
   ///
   /// In en, this message translates to:
@@ -6638,6 +6644,300 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open Settings'**
   String get allowAlwaysLocationOpenSettings;
+
+  /// Title for the adaptive coaching weekly review screen
+  ///
+  /// In en, this message translates to:
+  /// **'Coach Review'**
+  String get adaptationReviewTitle;
+
+  /// Subtitle for a pending adaptive coaching review
+  ///
+  /// In en, this message translates to:
+  /// **'Your recent training response is ready to review.'**
+  String get adaptationReviewSubtitle;
+
+  /// Empty state title when no adaptation review exists
+  ///
+  /// In en, this message translates to:
+  /// **'No coach review yet'**
+  String get adaptationNoReviewTitle;
+
+  /// Empty state body when no adaptation review exists
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a weekly review when this week has enough training feedback.'**
+  String get adaptationNoReviewBody;
+
+  /// Button label to request an adaptive coaching review
+  ///
+  /// In en, this message translates to:
+  /// **'Generate Review'**
+  String get adaptationGenerateReview;
+
+  /// Button label to view adaptation patch diff
+  ///
+  /// In en, this message translates to:
+  /// **'Review Changes'**
+  String get adaptationReviewChanges;
+
+  /// Button label to dismiss a pending adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'Keep Original Plan'**
+  String get adaptationKeepOriginal;
+
+  /// Button label to accept an adaptation review and apply plan changes
+  ///
+  /// In en, this message translates to:
+  /// **'Apply Changes'**
+  String get adaptationApplyChanges;
+
+  /// Title for adaptation plan diff screen
+  ///
+  /// In en, this message translates to:
+  /// **'Plan Changes'**
+  String get adaptationPlanDiffTitle;
+
+  /// Section title for adaptation weekly metrics
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly Snapshot'**
+  String get adaptationWeeklySnapshot;
+
+  /// Metric label for sessions in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'Sessions'**
+  String get adaptationSessionsLabel;
+
+  /// Metric label for recovery flags in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery'**
+  String get adaptationRecoveryLabel;
+
+  /// Metric label for pain flags in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'Pain'**
+  String get adaptationPainLabel;
+
+  /// Completed sessions count in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} of {planned} sessions'**
+  String adaptationCompletedSessions(int completed, int planned);
+
+  /// Completed and planned distance in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'{completed} / {planned}'**
+  String adaptationDistanceProgress(String completed, String planned);
+
+  /// Recovery flag count in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'{count} recovery flags'**
+  String adaptationRecoveryFlags(int count);
+
+  /// Pain flag count in adaptation review
+  ///
+  /// In en, this message translates to:
+  /// **'{count} pain flags'**
+  String adaptationPainFlags(int count);
+
+  /// Empty state for adaptation diff with no patches
+  ///
+  /// In en, this message translates to:
+  /// **'No session changes proposed.'**
+  String get adaptationNoChanges;
+
+  /// Before and after value in adaptation diff
+  ///
+  /// In en, this message translates to:
+  /// **'{before} → {after}'**
+  String adaptationBeforeAfter(String before, String after);
+
+  /// Progress section title for adaptation review history
+  ///
+  /// In en, this message translates to:
+  /// **'Coach Adjustments'**
+  String get adaptationHistoryTitle;
+
+  /// Empty state for adaptation review history
+  ///
+  /// In en, this message translates to:
+  /// **'No plan adjustments yet.'**
+  String get adaptationHistoryEmpty;
+
+  /// Home card title for adaptive coaching
+  ///
+  /// In en, this message translates to:
+  /// **'Coach check'**
+  String get adaptationHomeCardTitle;
+
+  /// Home card body when a review is pending
+  ///
+  /// In en, this message translates to:
+  /// **'A weekly plan review is ready.'**
+  String get adaptationHomePendingBody;
+
+  /// Home card body when a review can be generated
+  ///
+  /// In en, this message translates to:
+  /// **'Your week has enough feedback for a coach review.'**
+  String get adaptationHomeTriggerBody;
+
+  /// Adaptation summary for on-track week
+  ///
+  /// In en, this message translates to:
+  /// **'You are on track this week.'**
+  String get adaptationSummaryOnTrack;
+
+  /// Adaptation summary for too aggressive week
+  ///
+  /// In en, this message translates to:
+  /// **'This week looked slightly aggressive.'**
+  String get adaptationSummaryTooAggressive;
+
+  /// Adaptation summary for recovery-needed week
+  ///
+  /// In en, this message translates to:
+  /// **'Recovery should come first this week.'**
+  String get adaptationSummaryRecoveryNeeded;
+
+  /// Adaptation summary for schedule mismatch week
+  ///
+  /// In en, this message translates to:
+  /// **'Your schedule did not match the plan.'**
+  String get adaptationSummaryScheduleMismatch;
+
+  /// Adaptation summary for too easy week
+  ///
+  /// In en, this message translates to:
+  /// **'This week looked manageable.'**
+  String get adaptationSummaryTooEasy;
+
+  /// Adaptation summary for insufficient data
+  ///
+  /// In en, this message translates to:
+  /// **'There is not enough feedback to change the plan yet.'**
+  String get adaptationSummaryInsufficientData;
+
+  /// Adaptation summary when adaptation generation failed
+  ///
+  /// In en, this message translates to:
+  /// **'The coach review could not safely update the plan.'**
+  String get adaptationSummaryFailed;
+
+  /// Reason label for pain adaptation signal
+  ///
+  /// In en, this message translates to:
+  /// **'Pain was reported.'**
+  String get adaptationReasonPainReported;
+
+  /// Reason label for high effort and recovery adaptation signal
+  ///
+  /// In en, this message translates to:
+  /// **'Effort and recovery signals were elevated.'**
+  String get adaptationReasonHighEffortRecovery;
+
+  /// Reason label for missed sessions adaptation signal
+  ///
+  /// In en, this message translates to:
+  /// **'Several sessions were missed or skipped.'**
+  String get adaptationReasonMissedSessions;
+
+  /// Reason label for on-track adaptation signal
+  ///
+  /// In en, this message translates to:
+  /// **'Training response matched the plan.'**
+  String get adaptationReasonOnTrack;
+
+  /// Reason label for insufficient adaptation data
+  ///
+  /// In en, this message translates to:
+  /// **'More completed sessions are needed.'**
+  String get adaptationReasonInsufficientData;
+
+  /// Reason label for no-change adaptation patch
+  ///
+  /// In en, this message translates to:
+  /// **'The plan can stay unchanged.'**
+  String get adaptationReasonNoChange;
+
+  /// Reason label when adaptation generation failed
+  ///
+  /// In en, this message translates to:
+  /// **'The review fell back to a safe no-change recommendation.'**
+  String get adaptationReasonGenerationFailed;
+
+  /// Patch type label for no change
+  ///
+  /// In en, this message translates to:
+  /// **'No change'**
+  String get adaptationPatchNoChange;
+
+  /// Patch type label for reducing a session
+  ///
+  /// In en, this message translates to:
+  /// **'Reduce session'**
+  String get adaptationPatchReduceSession;
+
+  /// Patch type label for replacing a session
+  ///
+  /// In en, this message translates to:
+  /// **'Replace session'**
+  String get adaptationPatchReplaceSession;
+
+  /// Patch type label for moving a session
+  ///
+  /// In en, this message translates to:
+  /// **'Move session'**
+  String get adaptationPatchMoveSession;
+
+  /// Patch type label for shortening a long run
+  ///
+  /// In en, this message translates to:
+  /// **'Shorten long run'**
+  String get adaptationPatchShortenLongRun;
+
+  /// Patch type label for repeating a week
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat week'**
+  String get adaptationPatchRepeatWeek;
+
+  /// Patch type label for a slight progression
+  ///
+  /// In en, this message translates to:
+  /// **'Progress slightly'**
+  String get adaptationPatchProgressSlightly;
+
+  /// Adaptation review pending status label
+  ///
+  /// In en, this message translates to:
+  /// **'Pending'**
+  String get adaptationStatusPending;
+
+  /// Adaptation review accepted status label
+  ///
+  /// In en, this message translates to:
+  /// **'Applied'**
+  String get adaptationStatusAccepted;
+
+  /// Adaptation review dismissed status label
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get adaptationStatusDismissed;
+
+  /// Adaptation review failed status label
+  ///
+  /// In en, this message translates to:
+  /// **'Failed'**
+  String get adaptationStatusFailed;
 }
 
 class _AppLocalizationsDelegate
