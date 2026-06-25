@@ -38,7 +38,7 @@ BLOCKING_PATTERNS = [
 ]
 
 OVERALL_ASSESSMENT_LINE_PATTERN = re.compile(
-    r"(?im)^\s*(?:[-*]\s*)?overall\s+assessment:\s*(approve|request\s+changes|needs\s+discussion)\s*$"
+    r"^Overall Assessment: (APPROVE|REQUEST_CHANGES|NEEDS_DISCUSSION)$"
 )
 NON_BLOCKING_APPROVE_TRAILING_PATTERNS = (
     r"\bno\s+blocking\s+findings\b",
@@ -100,9 +100,9 @@ def _split_paragraphs(text: str) -> list[list[str]]:
 def _assessment_lines(text: str) -> list[tuple[int, str, str]]:
     results: list[tuple[int, str, str]] = []
     for idx, line in enumerate(text.splitlines()):
-        match = OVERALL_ASSESSMENT_LINE_PATTERN.match(line.strip())
+        match = OVERALL_ASSESSMENT_LINE_PATTERN.match(line)
         if match:
-            results.append((idx, (match.group(1) or "").lower(), line.strip()))
+            results.append((idx, (match.group(1) or ""), line))
     return results
 
 
@@ -153,15 +153,17 @@ def looks_blocking(text: str) -> bool:
         return True
 
     verdict_line_index, verdict, verdict_line = assessments[0]
-    if verdict != "approve":
+    if verdict != "APPROVE":
         return True
 
     paragraphs = _split_paragraphs(text)
     if not paragraphs:
         return True
 
-    final_paragraph = _normalize_assessment_line("\n".join(paragraphs[-1]))
-    if _normalize_assessment_line(verdict_line) != final_paragraph:
+    final_paragraph = paragraphs[-1]
+    if len(final_paragraph) != 1:
+        return True
+    if final_paragraph[0] != "Overall Assessment: APPROVE":
         return True
 
     review_body = "\n".join(lines[:verdict_line_index])

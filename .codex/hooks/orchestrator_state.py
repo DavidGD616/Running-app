@@ -101,6 +101,11 @@ def default_state() -> Dict[str, Any]:
             "agents": {
                 "coder_started": False,
                 "coder_start_seq": None,
+                "coder_stopped": False,
+                "coder_last_seq": None,
+                "coder_last_snapshot_signature": [],
+                "coder_last_task_id": None,
+                "coder_passes": [],
                 "reviewer_stopped": False,
                 "reviewer_stops": [],
                 "researcher_started": False,
@@ -109,7 +114,16 @@ def default_state() -> Dict[str, Any]:
                 "reviewer_last_seq": None,
                 "reviewer_last_snapshot_signature": [],
                 "reviewer_last_blocking": None,
+                "blocking_reviewer_seq": None,
+                "blocking_reviewer_snapshot_signature": [],
+                "remediation_required_after_seq": None,
+                "remediation_coder_start_seq": None,
+                "remediation_coder_last_seq": None,
+                "remediation_coder_task_id": None,
+                "main_agent_file_edit_detected": False,
+                "main_agent_file_edit_events": [],
             },
+            "current_task_id": None,
             "verification": {
                 "run": False,
                 "commands": [],
@@ -130,6 +144,14 @@ def default_state() -> Dict[str, Any]:
             "pending_commit": {
                 "seq": None,
                 "snapshot_signature": [],
+            },
+            "pre_tool_signature": {
+                "seq": None,
+                "signature": [],
+                "coder_pass_open": False,
+                "tool_name": "",
+                "tool_may_edit_files": False,
+                "command": "",
             },
             "events": [],
         },
@@ -165,12 +187,29 @@ def load_state() -> Dict[str, Any]:
                 state["turn"]["files_changed_signature_current"] = []
             if not isinstance(state["turn"]["agents"]["reviewer_last_snapshot_signature"], list):
                 state["turn"]["agents"]["reviewer_last_snapshot_signature"] = []
+            if not isinstance(state["turn"]["agents"].get("coder_last_snapshot_signature"), list):
+                state["turn"]["agents"]["coder_last_snapshot_signature"] = []
+            if not isinstance(state["turn"]["agents"].get("blocking_reviewer_snapshot_signature"), list):
+                state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = []
+            if not isinstance(state["turn"].get("current_task_id"), str):
+                state["turn"]["current_task_id"] = None
             if not isinstance(state["turn"]["pending_commit"], dict):
                 state["turn"]["pending_commit"] = default_state()["turn"]["pending_commit"]
                 state["turn"]["pending_commit"]["seq"] = None
                 state["turn"]["pending_commit"]["snapshot_signature"] = []
             if not isinstance(state["turn"].get("files_changed_current"), list):
                 state["turn"]["files_changed_current"] = state["turn"]["files_changed_at_start"]
+            if not isinstance(state["turn"]["agents"].get("coder_passes"), list):
+                state["turn"]["agents"]["coder_passes"] = []
+            if not isinstance(state["turn"]["agents"].get("main_agent_file_edit_detected"), bool):
+                state["turn"]["agents"]["main_agent_file_edit_detected"] = False
+            if not isinstance(state["turn"]["agents"].get("main_agent_file_edit_events"), list):
+                state["turn"]["agents"]["main_agent_file_edit_events"] = []
+            if not isinstance(state["turn"].get("pre_tool_signature"), dict):
+                state["turn"]["pre_tool_signature"] = default_state()["turn"]["pre_tool_signature"]
+            pre_tool_signature = state["turn"]["pre_tool_signature"]
+            if not isinstance(pre_tool_signature.get("tool_may_edit_files"), bool):
+                pre_tool_signature["tool_may_edit_files"] = False
             return state
     except (OSError, json.JSONDecodeError):
         return default_state()
@@ -262,6 +301,18 @@ def extract_prompt_text(event: Dict[str, Any]) -> str:
     return ""
 
 
+TASK_ID_PATTERN = re.compile(
+    r"(?im)(?:^|[\n\r\"'])\s*(?:task\s*id|current\s+task|chunk\s*id)\s*:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\b"
+)
+
+
+def extract_task_id(text: str) -> str | None:
+    match = TASK_ID_PATTERN.search(text or "")
+    if not match:
+        return None
+    return match.group(1).strip()
+
+
 def _contains_any(text: str, patterns: List[str]) -> bool:
     lowered = text.lower()
     return any(re.search(pattern, lowered, flags=re.IGNORECASE) for pattern in patterns)
@@ -285,10 +336,42 @@ READ_ONLY_PATTERNS = [
     r"\bno\s+changes?\b",
 ]
 
+REVIEW_REQUEST_PATTERNS = [
+    r"\breview\s+this\s+change\b",
+    r"\breview\s+the\s+change\b",
+    r"\breview\s+this\s+changes\b",
+    r"\breview\s+this\s+diff\b",
+    r"\breview\s+this\s+patch\b",
+    r"\breview\s+this\s+code\b",
+    r"\breview\s+my\s+changes\b",
+    r"\breview\s+my\s+change\b",
+    r"\breview\s+my\s+diff\b",
+    r"\breview\s+my\s+patch\b",
+    r"\breview\s+my\s+code\b",
+    r"\breview\s+this\s+update\b",
+    r"\breview\s+the\s+latest\s+update\b",
+    r"\breview\s+current\s+update\b",
+    r"\breview\s+the\s+latest\s+changes\b",
+    r"\breview\s+the\s+current\s+changes\b",
+    r"\breview\s+current\s+changes\b",
+    r"\breview\s+latest\s+changes\b",
+    r"\breview\s+changes\b",
+    r"\breview\s+recent\s+changes\b",
+    r"\breview\s+that\s+change\b",
+    r"\breview\s+that\s+changes\b",
+    r"\breview\s+that\s+diff\b",
+    r"\breview\s+that\s+patch\b",
+    r"\breview\s+that\s+code\b",
+    r"\breview\s+(?:this|that)\s+pull\s+request\b",
+    r"\breview\s+(?:this|that)\s+pr\b",
+]
+
 
 def is_implementation_oriented(text: str) -> bool:
     lowered = text.lower()
     if _contains_any(lowered, READ_ONLY_PATTERNS) or _contains_any(lowered, PLAN_ONLY_PATTERNS):
+        return False
+    if _contains_any(lowered, REVIEW_REQUEST_PATTERNS):
         return False
     return any(re.search(pattern, lowered, flags=re.IGNORECASE) for pattern in IMPLEMENT_PATTERNS)
 
@@ -404,8 +487,19 @@ def git_changed_file_signatures() -> List[str]:
     return [record["signature"] for record in _iter_git_changed_records()]
 
 
+def _signature_content_key(signature: str) -> str | None:
+    if not isinstance(signature, str):
+        return None
+    parts = signature.split("|", 2)
+    if len(parts) != 3:
+        return None
+    return f"{parts[1]}|{parts[2]}"
+
+
 def signatures_match(a: List[str], b: List[str]) -> bool:
-    return sorted(a) == sorted(b)
+    return {sig for sig in (_signature_content_key(entry) for entry in a) if sig is not None} == {
+        sig for sig in (_signature_content_key(entry) for entry in b) if sig is not None
+    }
 
 
 def signatures_changed(a: List[str], b: List[str]) -> bool:
@@ -421,6 +515,184 @@ def signature_paths(signatures: List[str]) -> List[str]:
 def command_match_verification(command: str) -> bool:
     lowered = command.lower()
     return any(pattern.search(lowered) for pattern in VERIFICATION_PATTERNS)
+
+
+_MUTATING_TOOL_NAMES = {
+    "apply_patch",
+    "applypatch",
+}
+
+
+_MUTATING_BASH_COMMANDS = {
+    "chmod",
+    "chown",
+    "cp",
+    "install",
+    "ln",
+    "mkdir",
+    "mv",
+    "rm",
+    "rmdir",
+    "sed",
+    "python",
+    "python3",
+    "tee",
+    "touch",
+    "perl",
+    "git",
+    "dart",
+    "flutter",
+}
+
+_SHELL_WRAPPERS = {
+    "bash",
+    "sh",
+}
+
+
+_MUTATING_GIT_SUBCOMMANDS = {
+    "add",
+    "apply",
+    "cherry-pick",
+    "commit",
+    "checkout",
+    "mv",
+    "restore",
+    "rm",
+    "revert",
+    "reset",
+    "switch",
+    "tag",
+}
+
+
+_WRITE_REDIRECTION_PATTERN = re.compile(
+    r"(^|[ \t])(?:[0-9]{0,2}>>?(?!&)|&>>?)(?=\s|$)",
+    re.IGNORECASE,
+)
+
+
+def _tool_name_is_mutating(tool_name: str) -> bool:
+    normalized = (tool_name or "").strip().lower()
+    return normalized in _MUTATING_TOOL_NAMES
+
+
+def _tokenize_command(command: str) -> List[str]:
+    stripped = command.strip()
+    if not stripped:
+        return []
+    try:
+        import shlex
+
+        return shlex.split(stripped)
+    except (ValueError, TypeError):
+        return stripped.split()
+
+
+def _strip_command_prefix_wrappers(parts: List[str]) -> List[str]:
+    if not parts:
+        return []
+
+    trimmed = list(parts)
+    while trimmed:
+        token = trimmed[0]
+        lowered = token.lower()
+        if lowered in {"sudo", "command", "env", "time", "nohup"}:
+            trimmed = trimmed[1:]
+            continue
+        if "=" in token and not token.startswith("-") and not token.startswith("'") and not token.startswith('"'):
+            trimmed = trimmed[1:]
+            continue
+        break
+    return trimmed
+
+
+def _extract_wrapped_command(parts: List[str]) -> str | None:
+    if not parts:
+        return None
+
+    command_name = (parts[0] or "").lower()
+    if command_name not in _SHELL_WRAPPERS:
+        return None
+
+    args = [part for part in parts[1:] if part]
+    for idx, arg in enumerate(args):
+        lowered = arg.lower()
+        if lowered == "-c" and idx + 1 < len(args):
+            return args[idx + 1]
+        if lowered.startswith("-") and not lowered.startswith("--") and "c" in lowered[1:] and idx + 1 < len(args):
+            # e.g. -lc, -cx, -cfoo
+            return args[idx + 1]
+    return None
+
+
+def tool_may_edit_files(tool_name: str, command: str) -> bool:
+    if _tool_name_is_mutating(tool_name):
+        return True
+
+    command = (command or "").strip()
+    if not command:
+        return False
+
+    lowered = command.lower()
+    if _WRITE_REDIRECTION_PATTERN.search(lowered):
+        return True
+
+    segments = re.split(r"\s*(?:&&|\|\||;|\n)\s*", command)
+    for segment in segments:
+        segment = segment.strip()
+        if not segment:
+            continue
+
+        for pipeline_chunk in segment.split("|"):
+            chunk = pipeline_chunk.strip()
+            if not chunk:
+                continue
+            parts = _tokenize_command(chunk)
+            parts = _strip_command_prefix_wrappers(parts)
+            if not parts:
+                continue
+            command_name = parts[0].lower()
+            arguments = [part.lower() for part in parts[1:]]
+
+            wrapped = _extract_wrapped_command(parts)
+            if wrapped is not None:
+                return tool_may_edit_files(tool_name, wrapped)
+
+            if command_name not in _MUTATING_BASH_COMMANDS:
+                continue
+
+            if command_name == "sed":
+                if any(arg.startswith("-i") for arg in arguments):
+                    return True
+                continue
+
+            if command_name == "perl":
+                if any(arg.startswith("-i") for arg in arguments):
+                    return True
+                if any(arg == "-0777" for arg in arguments):
+                    continue
+                return False
+
+            if command_name == "git":
+                if arguments and arguments[0] in _MUTATING_GIT_SUBCOMMANDS:
+                    return True
+                continue
+
+            if command_name in {"dart", "flutter"}:
+                if arguments and arguments[0] == "format":
+                    return True
+                continue
+
+            if command_name in {"cp", "mv", "rm", "rmdir", "mkdir", "touch", "chmod", "chown", "ln", "install", "tee"}:
+                return True
+
+            if command_name in {"python", "python3"}:
+                return any(argument == "-c" for argument in arguments)
+
+            return True
+
+    return False
 
 
 def command_is_commit(command: str) -> bool:
@@ -478,4 +750,25 @@ def changed_files_delta(baseline: List[str], current: List[str]) -> List[str]:
 
 
 def changed_signatures_delta(baseline: List[str], current: List[str]) -> List[str]:
-    return _normalize_files(list(set(current) ^ set(baseline)))
+    baseline_by_key: dict[str, str] = {}
+    for signature in baseline:
+        key = _signature_content_key(signature)
+        if key is None:
+            continue
+        baseline_by_key[key] = signature
+
+    current_by_key: dict[str, str] = {}
+    for signature in current:
+        key = _signature_content_key(signature)
+        if key is None:
+            continue
+        current_by_key[key] = signature
+
+    delta_keys = set(baseline_by_key.keys()) ^ set(current_by_key.keys())
+    delta: List[str] = []
+    for key in sorted(delta_keys):
+        if key in current_by_key:
+            delta.append(current_by_key[key])
+        elif key in baseline_by_key:
+            delta.append(baseline_by_key[key])
+    return _normalize_files(delta)
