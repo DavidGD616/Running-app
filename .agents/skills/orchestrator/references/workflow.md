@@ -5,7 +5,7 @@
 1. Inspect the repo state with `git status --short`.
 2. Spawn explorer for read-only context when file ownership is unclear.
 3. Spawn researcher only when current external docs are required.
-4. Select exactly one current task/chunk and assign one coder to that bounded file ownership set. The coder prompt must include `Task ID: ...`.
+4. Select exactly one current task/chunk and assign one coder to that bounded file ownership set. The first non-empty line in the coder prompt must be `Codex-Orchestrator-Internal-Subagent: coder`, followed by a stable `Task ID: ...`.
 5. While coder runs, inspect non-overlapping context or prepare verification.
 6. Run verification after the coder pass and before reviewer sign-off.
 7. Run focused tests.
@@ -27,7 +27,7 @@
    API, database write, or client rendering.
 2. Use explorer to map files/tests/log signatures.
 3. Explain the cause before editing if the user asks for investigation only.
-4. For implementation, assign the smallest backend/frontend fix to one coder with a `Task ID`.
+4. For implementation, assign the smallest backend/frontend fix to one coder with a leading sentinel line (`Codex-Orchestrator-Internal-Subagent: ...`) and a `Task ID`.
 5. Add regression coverage for the observed failure.
 6. Run the narrow test, then the relevant broader suite.
 7. Review; if blocked, send remediation to a new coder rather than editing directly.

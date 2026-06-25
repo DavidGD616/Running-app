@@ -11,6 +11,11 @@ keywords (`orchestrator`, `orchestration`, `subagents`, `coder`, `reviewer`, `ex
 3. After trust is granted, reload or restart Codex in that session so the repo `.codex` config is active; otherwise the project hooks are not loaded.
 4. For persistent use in a new session, open a new thread after trust is accepted, or restart Codex, so project-level `.codex` config loads.
 
+## Internal subagent prompts
+
+Text-only internal subagent prompts are now accepted only when they include the sentinel header:
+`Codex-Orchestrator-Internal-Subagent: <role>` on the first non-empty line (for example `reviewer` or `coder`).
+
 ## What the enforcement checks
 
 During an orchestrator turn with implementation intent, completion is blocked until:

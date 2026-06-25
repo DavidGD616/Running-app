@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 import hashlib
+import os
 import json
+import tempfile
+import contextlib
 import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List
+
+try:
+    import fcntl  # type: ignore[attr-defined]
+except ImportError:  # pragma: no cover
+    fcntl = None
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -158,7 +166,7 @@ def default_state() -> Dict[str, Any]:
     }
 
 
-def load_state() -> Dict[str, Any]:
+def _load_state_no_lock() -> Dict[str, Any]:
     if not STATE_FILE.exists():
         return default_state()
 
@@ -216,10 +224,74 @@ def load_state() -> Dict[str, Any]:
     return default_state()
 
 
-def save_state(state: Dict[str, Any]) -> None:
+def load_state() -> Dict[str, Any]:
+    return _load_state_no_lock()
+
+
+@contextlib.contextmanager
+def _state_file_lock() -> Any:
     STATE_DIR.mkdir(parents=True, exist_ok=True)
+    lock_path = STATE_DIR / ".state.lock"
+    if fcntl is None:
+        yield
+        return
+
+    lock_fd: int | None = None
+    try:
+        lock_fd = os.open(lock_path, os.O_CREAT | os.O_RDWR, 0o600)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
+        yield
+    finally:
+        if lock_fd is not None:
+            try:
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            try:
+                os.close(lock_fd)
+            except OSError:
+                pass
+
+
+def _save_state_no_lock(state: Dict[str, Any]) -> None:
     state["updated_at"] = now_iso()
-    STATE_FILE.write_text(json.dumps(state, indent=2, sort_keys=True))
+    serialized_state = json.dumps(state, indent=2, sort_keys=True)
+    fd, tmp_path = tempfile.mkstemp(prefix="state.", suffix=".json", dir=STATE_DIR)
+    tmp_file = Path(tmp_path)
+    os.close(fd)
+    try:
+        with tmp_file.open("w", encoding="utf-8") as handle:
+            handle.write(serialized_state)
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(tmp_path, STATE_FILE)
+    except Exception:
+        try:
+            if tmp_file.exists():
+                tmp_file.unlink()
+        except OSError:
+            pass
+        raise
+
+
+def save_state(state: Dict[str, Any], with_lock: bool = True) -> None:
+    if with_lock:
+        with _state_file_lock():
+            _save_state_no_lock(state)
+        return
+    _save_state_no_lock(state)
+
+
+def with_state(mutator: Callable[[Dict[str, Any]], None]) -> Dict[str, Any]:
+    with _state_file_lock():
+        state = _load_state_no_lock()
+        mutator(state)
+        _save_state_no_lock(state)
+    return state
+
+
+def update_state(mutator: Callable[[Dict[str, Any]], None]) -> Dict[str, Any]:
+    return with_state(mutator)
 
 
 def _collect_strings(data: Any, skip_keys: tuple[str, ...] = ()) -> List[str]:
@@ -302,7 +374,8 @@ def extract_prompt_text(event: Dict[str, Any]) -> str:
 
 
 TASK_ID_PATTERN = re.compile(
-    r"(?im)(?:^|[\n\r\"'])\s*(?:task\s*id|current\s+task|chunk\s*id)\s*:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\b"
+    r"(?im)\b(?:task\s*id|current\s+task|chunk\s+id)\s*:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\b",
+    re.IGNORECASE,
 )
 
 
@@ -311,6 +384,75 @@ def extract_task_id(text: str) -> str | None:
     if not match:
         return None
     return match.group(1).strip()
+
+
+INTERNAL_SUBAGENT_PROMPT_SENTINEL_MARKER = re.compile(
+    r"(?im)^\s*Codex-Orchestrator-Internal-Subagent:\s*([A-Za-z0-9._-]+)\s*$"
+)
+
+
+def _metadata_is_internal(event: Dict[str, Any]) -> bool:
+    metadata = event.get("metadata")
+    if not isinstance(metadata, dict):
+        return False
+
+    keys = (
+        metadata.get("agent_type"),
+        metadata.get("agent"),
+        metadata.get("role"),
+        metadata.get("name"),
+        metadata.get("subagent"),
+        metadata.get("source"),
+        metadata.get("intent"),
+    )
+    for value in keys:
+        if not isinstance(value, str):
+            continue
+        normalized = normalize_agent(value)
+        if (
+            normalized in AGENT_CODER
+            or normalized in AGENT_REVIEWER
+            or normalized in AGENT_RESEARCHER
+            or normalized in AGENT_EXPLORER
+            or normalized in AGENT_SCRIBE
+            or "subagent" in normalized
+            or "coordinator" in normalized
+            or "reviewer" in normalized
+            or "coder" in normalized
+        ):
+            return True
+
+    if metadata.get("is_internal_prompt") is True:
+        return True
+    return False
+
+
+def _extract_internal_sentinel(text: str) -> str | None:
+    match = INTERNAL_SUBAGENT_PROMPT_SENTINEL_MARKER.search(text or "")
+    return match.group(1).strip() if match else None
+
+
+def _has_internal_sentinel_at_top(text: str) -> bool:
+    for line in (text or "").splitlines():
+        if not line.strip():
+            continue
+        return bool(INTERNAL_SUBAGENT_PROMPT_SENTINEL_MARKER.match(line))
+    return False
+
+
+def is_internal_subagent_prompt(event: Dict[str, Any], text: str) -> bool:
+    if not isinstance(event, dict):
+        return False
+    if _metadata_is_internal(event):
+        return True
+
+    if classify_agent(event) in {"coder", "reviewer", "researcher", "explorer", "scribe"}:
+        return True
+
+    if not _has_internal_sentinel_at_top(text):
+        return False
+
+    return _extract_internal_sentinel(text) is not None
 
 
 def _contains_any(text: str, patterns: List[str]) -> bool:

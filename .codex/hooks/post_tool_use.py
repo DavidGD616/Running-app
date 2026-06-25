@@ -13,10 +13,9 @@ from orchestrator_state import (
     changed_signatures_delta,
     command_match_verification,
     git_changed_file_signatures,
-    load_state,
     now_iso,
     parse_tool_exit_code,
-    save_state,
+    update_state,
 )
 
 
@@ -33,10 +32,6 @@ def _normalize_command(tool_input: dict | object) -> str:
 
 def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
-    state = load_state()
-    if not state.get("active"):
-        print(json.dumps({}))
-        return
 
     tool_input = event.get("tool_input") if isinstance(event, dict) else None
     command = _normalize_command(tool_input)
@@ -46,85 +41,89 @@ def main() -> None:
     if isinstance(event, dict):
         tool_name = str(event.get("tool_name", event.get("tool", "")))
 
-    event_seq = append_event(
-        state,
-        "PostToolUse.Bash",
-        {"command": command[:240], "exit_code": exit_code},
-    )
+    def apply_state(state):
+        if not state.get("active"):
+            return
 
-    if command_match_verification(command_lower):
-        state["turn"]["verification"]["run"] = exit_code == 0
-        state["turn"]["verification"]["commands"].append(
-            {"at": now_iso(), "command": command, "exit_code": exit_code}
+        event_seq = append_event(
+            state,
+            "PostToolUse.Bash",
+            {"command": command[:240], "exit_code": exit_code},
         )
-        if exit_code == 0:
-            state["turn"]["verification"]["last_seq"] = event_seq
-            state["turn"]["verification"]["at"] = now_iso()
-            state["turn"]["verification"]["snapshot_signature"] = git_changed_file_signatures()
-            state["turn"]["verification"]["snapshot"] = signature_paths(state["turn"]["verification"]["snapshot_signature"])
 
-    if command_is_commit(command_lower):
-        pending_commit = state["turn"].get("pending_commit", {})
-        pending_signature = pending_commit.get("snapshot_signature") if isinstance(pending_commit, dict) else []
-        state["turn"]["commit"]["commands"].append(
-            {"at": now_iso(), "command": command, "exit_code": exit_code}
-        )
-        if exit_code == 0:
-            use_pending_signature = (
-                isinstance(pending_signature, list)
-                and bool(pending_signature)
-                and any(isinstance(item, str) and "|" in item for item in pending_signature)
+        if command_match_verification(command_lower):
+            state["turn"]["verification"]["run"] = exit_code == 0
+            state["turn"]["verification"]["commands"].append(
+                {"at": now_iso(), "command": command, "exit_code": exit_code}
             )
-            state["turn"]["commit"]["done"] = True
-            state["turn"]["commit"]["last_seq"] = event_seq
-            state["turn"]["commit"]["at"] = now_iso()
-            state["turn"]["commit"]["snapshot_signature"] = pending_signature if use_pending_signature else git_changed_file_signatures()
-            state["turn"]["commit"]["snapshot"] = signature_paths(state["turn"]["commit"]["snapshot_signature"])
-            state["turn"]["commit"]["snapshot_from_pre_tool"] = bool(use_pending_signature)
-            if isinstance(pending_commit, dict):
-                state["turn"]["pending_commit"] = {
-                    "seq": None,
-                    "snapshot_signature": [],
-                }
+            if exit_code == 0:
+                state["turn"]["verification"]["last_seq"] = event_seq
+                state["turn"]["verification"]["at"] = now_iso()
+                state["turn"]["verification"]["snapshot_signature"] = git_changed_file_signatures()
+                state["turn"]["verification"]["snapshot"] = signature_paths(state["turn"]["verification"]["snapshot_signature"])
 
-        state["turn"]["pending_commit"] = {"seq": None, "snapshot_signature": []}
-
-    pre_tool_signature = state["turn"].get("pre_tool_signature", {})
-    if isinstance(pre_tool_signature, dict):
-        pre_signature = pre_tool_signature.get("signature")
-        pre_seq = pre_tool_signature.get("seq")
-        pre_tool_name = pre_tool_signature.get("tool_name", "")
-        pre_command = str(pre_tool_signature.get("command", ""))[:200]
-        pre_tool_may_edit = bool(pre_tool_signature.get("tool_may_edit_files"))
-        if pre_seq is not None and isinstance(pre_signature, list) and pre_tool_may_edit:
-            post_signature = git_changed_file_signatures()
-            tool_edit_detected = bool(
-                pre_tool_signature.get("coder_pass_open")
-                and changed_signatures_delta(pre_signature, post_signature)
+        if command_is_commit(command_lower):
+            pending_commit = state["turn"].get("pending_commit", {})
+            pending_signature = pending_commit.get("snapshot_signature") if isinstance(pending_commit, dict) else []
+            state["turn"]["commit"]["commands"].append(
+                {"at": now_iso(), "command": command, "exit_code": exit_code}
             )
-            if tool_edit_detected:
-                agents = state.get("turn", {}).get("agents", {})
-                agents["main_agent_file_edit_detected"] = True
-                events = agents.get("main_agent_file_edit_events")
-                if isinstance(events, list):
-                    events.append(
-                        {
-                            "at": now_iso(),
-                            "tool_name": pre_tool_name or tool_name,
-                            "tool_pre_seq": pre_seq,
-                            "tool_post_seq": event_seq,
-                            "command": pre_command,
-                        }
-                    )
-        state["turn"]["pre_tool_signature"] = {
-            "seq": None,
-            "signature": [],
-            "coder_pass_open": False,
-            "tool_name": "",
-            "command": "",
-        }
+            if exit_code == 0:
+                use_pending_signature = (
+                    isinstance(pending_signature, list)
+                    and bool(pending_signature)
+                    and any(isinstance(item, str) and "|" in item for item in pending_signature)
+                )
+                state["turn"]["commit"]["done"] = True
+                state["turn"]["commit"]["last_seq"] = event_seq
+                state["turn"]["commit"]["at"] = now_iso()
+                state["turn"]["commit"]["snapshot_signature"] = pending_signature if use_pending_signature else git_changed_file_signatures()
+                state["turn"]["commit"]["snapshot"] = signature_paths(state["turn"]["commit"]["snapshot_signature"])
+                state["turn"]["commit"]["snapshot_from_pre_tool"] = bool(use_pending_signature)
+                if isinstance(pending_commit, dict):
+                    state["turn"]["pending_commit"] = {
+                        "seq": None,
+                        "snapshot_signature": [],
+                    }
 
-    save_state(state)
+            state["turn"]["pending_commit"] = {"seq": None, "snapshot_signature": []}
+
+        pre_tool_signature = state["turn"].get("pre_tool_signature", {})
+        if isinstance(pre_tool_signature, dict):
+            pre_signature = pre_tool_signature.get("signature")
+            pre_seq = pre_tool_signature.get("seq")
+            pre_tool_name = pre_tool_signature.get("tool_name", "")
+            pre_command = str(pre_tool_signature.get("command", ""))[:200]
+            pre_tool_may_edit = bool(pre_tool_signature.get("tool_may_edit_files"))
+            if pre_seq is not None and isinstance(pre_signature, list) and pre_tool_may_edit:
+                post_signature = git_changed_file_signatures()
+                tool_edit_detected = bool(
+                    pre_tool_signature.get("coder_pass_open")
+                    and changed_signatures_delta(pre_signature, post_signature)
+                )
+                if tool_edit_detected:
+                    agents = state.get("turn", {}).get("agents", {})
+                    agents["main_agent_file_edit_detected"] = True
+                    events = agents.get("main_agent_file_edit_events")
+                    if isinstance(events, list):
+                        events.append(
+                            {
+                                "at": now_iso(),
+                                "tool_name": pre_tool_name or tool_name,
+                                "tool_pre_seq": pre_seq,
+                                "tool_post_seq": event_seq,
+                                "command": pre_command,
+                            }
+                        )
+            state["turn"]["pre_tool_signature"] = {
+                "seq": None,
+                "signature": [],
+                "coder_pass_open": False,
+                "tool_name": "",
+                "command": "",
+            }
+
+    update_state(apply_state)
     print(json.dumps({}))
 
 

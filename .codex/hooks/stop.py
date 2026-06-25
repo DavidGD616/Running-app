@@ -13,9 +13,8 @@ from orchestrator_state import (
     changed_signatures_delta,
     signatures_match,
     git_changed_file_signatures,
-    load_state,
     git_changed_files,
-    save_state,
+    update_state,
 )
 
 
@@ -352,30 +351,34 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
 
 def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
-    state = load_state()
+    output = {"missing": []}
 
-    turn = state.get("turn", {})
-    changed_now = git_changed_files()
-    changed_signature = git_changed_file_signatures()
-    turn["files_changed_current"] = changed_now
-    turn["files_changed_signature_current"] = changed_signature
-    append_event(state, "Stop", {"input_keys": sorted(event.keys()) if isinstance(event, dict) else []})
+    def apply_state(state):
+        turn = state.get("turn", {})
+        changed_now = git_changed_files()
+        changed_signature = git_changed_file_signatures()
+        turn["files_changed_current"] = changed_now
+        turn["files_changed_signature_current"] = changed_signature
+        append_event(state, "Stop", {"input_keys": sorted(event.keys()) if isinstance(event, dict) else []})
 
-    changed_since_start = False
-    if state.get("active"):
-        baseline_signature = turn.get("files_changed_signature_at_start", [])
-        if not isinstance(baseline_signature, list):
-            baseline_signature = []
-        changed_since_start = bool(changed_signatures_delta(baseline_signature, changed_signature))
-    commit_recorded = _commit_command_recorded(turn)
+        changed_since_start = False
+        if state.get("active"):
+            baseline_signature = turn.get("files_changed_signature_at_start", [])
+            if not isinstance(baseline_signature, list):
+                baseline_signature = []
+            changed_since_start = bool(changed_signatures_delta(baseline_signature, changed_signature))
+        commit_recorded = _commit_command_recorded(turn)
 
-    missing: list[str] = []
-    if turn.get("triggered") and (
-        turn.get("implementation_oriented") or changed_since_start or commit_recorded
-    ):
-        missing = _missing_requirements(state, changed_signature)
+        missing: list[str] = []
+        if turn.get("triggered") and (
+            turn.get("implementation_oriented") or changed_since_start or commit_recorded
+        ):
+            missing = _missing_requirements(state, changed_signature)
+        output["missing"] = missing
 
-    save_state(state)
+    update_state(apply_state)
+
+    missing = output["missing"]
 
     if missing:
         print(

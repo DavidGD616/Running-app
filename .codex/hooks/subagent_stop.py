@@ -14,9 +14,8 @@ from orchestrator_state import (
     extract_prompt_text,
     extract_task_id,
     git_changed_file_signatures,
-    load_state,
     parse_tool_exit_code,
-    save_state,
+    update_state,
 )
 
 
@@ -177,92 +176,97 @@ def looks_blocking(text: str) -> bool:
 
 def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
-    state = load_state()
-    if not state.get("active"):
-        print(json.dumps({}))
-        return
-
     agent = classify_agent(event)
     summary = extract_prompt_text(event)
-
-    event_seq = append_event(state, "SubagentStop", {"agent": agent, "summary_excerpt": summary[:200]})
-    state["turn"]["events"] = state["turn"]["events"][-40:]
     code = parse_tool_exit_code(event)
 
-    if agent == "reviewer":
-        state["turn"]["agents"]["reviewer_stopped"] = True
-        blocking = looks_blocking(summary)
-        reviewer_snapshot_signature = git_changed_file_signatures()
-        if blocking:
-            state["turn"]["agents"]["blocking_reviewer_seq"] = event_seq
-            state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = reviewer_snapshot_signature
-            state["turn"]["agents"]["remediation_required_after_seq"] = event_seq
-            state["turn"]["agents"]["remediation_coder_start_seq"] = None
-            state["turn"]["agents"]["remediation_coder_last_seq"] = None
-            state["turn"]["agents"]["remediation_coder_task_id"] = None
-        state["turn"]["agents"]["reviewer_stops"].append(
-            {
-                "at": datetime.utcnow().isoformat() + "Z",
-                "text": summary[:400],
-                "blocking": blocking,
-                "seq": event_seq,
-                "snapshot_signature": reviewer_snapshot_signature,
-            }
-        )
-        state["turn"]["agents"]["reviewer_last_seq"] = event_seq
-        state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
-        state["turn"]["agents"]["reviewer_last_blocking"] = blocking
-    elif agent == "coder":
-        task_id, task_id_count = _extract_coder_task_info(event)
-        coder_snapshot_signature = git_changed_file_signatures()
-        agents = state["turn"]["agents"]
-        agents["coder_started"] = True
-        agents["coder_stopped"] = True
-        agents["coder_last_seq"] = event_seq
-        agents["coder_last_snapshot_signature"] = coder_snapshot_signature
-        agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
-        if task_id and not state["turn"].get("current_task_id"):
-            state["turn"]["current_task_id"] = task_id
+    decision = {}
 
-        coder_passes = agents.get("coder_passes")
-        if not isinstance(coder_passes, list):
-            coder_passes = []
-            agents["coder_passes"] = coder_passes
+    def apply_state(state):
+        nonlocal decision
+        if not state.get("active"):
+            return
 
-        open_pass = None
-        for idx in range(len(coder_passes) - 1, -1, -1):
-            candidate = coder_passes[idx]
-            if not isinstance(candidate, dict):
-                continue
-            if isinstance(candidate.get("stop_seq"), int):
-                continue
-            open_pass = candidate
-            break
+        event_seq = append_event(state, "SubagentStop", {"agent": agent, "summary_excerpt": summary[:200]})
+        state["turn"]["events"] = state["turn"]["events"][-40:]
 
-        if open_pass is not None:
-            open_pass["stop_seq"] = event_seq
-            open_pass["stop_task_id"] = task_id
-            open_pass["stop_task_id_count"] = task_id_count
-            open_pass["stop_snapshot_signature"] = coder_snapshot_signature
-        else:
-            coder_passes.append(
+        if agent == "reviewer":
+            state["turn"]["agents"]["reviewer_stopped"] = True
+            blocking = looks_blocking(summary)
+            reviewer_snapshot_signature = git_changed_file_signatures()
+            if blocking:
+                state["turn"]["agents"]["blocking_reviewer_seq"] = event_seq
+                state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = reviewer_snapshot_signature
+                state["turn"]["agents"]["remediation_required_after_seq"] = event_seq
+                state["turn"]["agents"]["remediation_coder_start_seq"] = None
+                state["turn"]["agents"]["remediation_coder_last_seq"] = None
+                state["turn"]["agents"]["remediation_coder_task_id"] = None
+            state["turn"]["agents"]["reviewer_stops"].append(
                 {
-                    "start_seq": None,
-                    "start_task_id": task_id,
-                    "start_task_id_count": task_id_count,
-                    "start_snapshot_signature": [],
-                    "start_snapshot_recorded": False,
-                    "stop_seq": event_seq,
-                    "stop_task_id": task_id,
-                    "stop_task_id_count": task_id_count,
-                    "stop_snapshot_signature": coder_snapshot_signature,
+                    "at": datetime.utcnow().isoformat() + "Z",
+                    "text": summary[:400],
+                    "blocking": blocking,
+                    "seq": event_seq,
+                    "snapshot_signature": reviewer_snapshot_signature,
                 }
             )
-    save_state(state)
+            state["turn"]["agents"]["reviewer_last_seq"] = event_seq
+            state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
+            state["turn"]["agents"]["reviewer_last_blocking"] = blocking
+        elif agent == "coder":
+            task_id, task_id_count = _extract_coder_task_info(event)
+            coder_snapshot_signature = git_changed_file_signatures()
+            agents = state["turn"]["agents"]
+            agents["coder_started"] = True
+            agents["coder_stopped"] = True
+            agents["coder_last_seq"] = event_seq
+            agents["coder_last_snapshot_signature"] = coder_snapshot_signature
+            agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
+            if task_id and not state["turn"].get("current_task_id"):
+                state["turn"]["current_task_id"] = task_id
 
-    # Keep output minimal unless blocking/continuation details are required.
-    if agent == "reviewer" and code != 0:
-        print(json.dumps({"decision": "block", "reason": f"reviewer tool_exit={code}"}))
+            coder_passes = agents.get("coder_passes")
+            if not isinstance(coder_passes, list):
+                coder_passes = []
+                agents["coder_passes"] = coder_passes
+
+            open_pass = None
+            for idx in range(len(coder_passes) - 1, -1, -1):
+                candidate = coder_passes[idx]
+                if not isinstance(candidate, dict):
+                    continue
+                if isinstance(candidate.get("stop_seq"), int):
+                    continue
+                open_pass = candidate
+                break
+
+            if open_pass is not None:
+                open_pass["stop_seq"] = event_seq
+                open_pass["stop_task_id"] = task_id
+                open_pass["stop_task_id_count"] = task_id_count
+                open_pass["stop_snapshot_signature"] = coder_snapshot_signature
+            else:
+                coder_passes.append(
+                    {
+                        "start_seq": None,
+                        "start_task_id": task_id,
+                        "start_task_id_count": task_id_count,
+                        "start_snapshot_signature": [],
+                        "start_snapshot_recorded": False,
+                        "stop_seq": event_seq,
+                        "stop_task_id": task_id,
+                        "stop_task_id_count": task_id_count,
+                        "stop_snapshot_signature": coder_snapshot_signature,
+                    }
+                )
+
+        if agent == "reviewer" and code != 0:
+            decision = {"decision": "block", "reason": f"reviewer tool_exit={code}"}
+
+    update_state(apply_state)
+
+    if decision:
+        print(json.dumps(decision))
         return
     print(json.dumps({}))
 

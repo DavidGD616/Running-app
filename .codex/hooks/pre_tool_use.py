@@ -10,10 +10,9 @@ from orchestrator_state import (
     append_event,
     command_is_commit,
     git_changed_file_signatures,
-    load_state,
     now_iso,
+    update_state,
     tool_may_edit_files,
-    save_state,
 )
 
 
@@ -30,11 +29,6 @@ def _normalize_command(tool_input: dict | object) -> str:
 
 def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
-    state = load_state()
-
-    if not state.get("active"):
-        print(json.dumps({}))
-        return
 
     tool_input = event.get("tool_input") if isinstance(event, dict) else None
     command = _normalize_command(tool_input)
@@ -44,29 +38,33 @@ def main() -> None:
     command_lower = command.lower()
     may_edit_files = tool_may_edit_files(tool_name, command)
 
-    event_seq = append_event(state, "PreToolUse.Bash", {"command": command[:240]})
+    def apply_state(state):
+        if not state.get("active"):
+            return
 
-    agents = state.get("turn", {}).get("agents", {})
-    coder_pass_open = bool(agents.get("coder_started")) and not bool(agents.get("coder_stopped"))
-    track_for_edit_signature = coder_pass_open and may_edit_files
-    state["turn"]["pre_tool_signature"] = {
-        "seq": event_seq if track_for_edit_signature else None,
-        "signature": git_changed_file_signatures() if track_for_edit_signature else [],
-        "coder_pass_open": coder_pass_open,
-        "tool_name": str(tool_name),
-        "tool_may_edit_files": bool(may_edit_files),
-        "command": command[:200],
-        "at": now_iso(),
-    }
+        event_seq = append_event(state, "PreToolUse.Bash", {"command": command[:240]})
 
-    if command_is_commit(command_lower):
-        state["turn"]["pending_commit"] = {
-            "seq": event_seq,
-            "snapshot_signature": git_changed_file_signatures(),
-            "at": command[:40],
+        agents = state.get("turn", {}).get("agents", {})
+        coder_pass_open = bool(agents.get("coder_started")) and not bool(agents.get("coder_stopped"))
+        track_for_edit_signature = coder_pass_open and may_edit_files
+        state["turn"]["pre_tool_signature"] = {
+            "seq": event_seq if track_for_edit_signature else None,
+            "signature": git_changed_file_signatures() if track_for_edit_signature else [],
+            "coder_pass_open": coder_pass_open,
+            "tool_name": str(tool_name),
+            "tool_may_edit_files": bool(may_edit_files),
+            "command": command[:200],
+            "at": now_iso(),
         }
 
-    save_state(state)
+        if command_is_commit(command_lower):
+            state["turn"]["pending_commit"] = {
+                "seq": event_seq,
+                "snapshot_signature": git_changed_file_signatures(),
+                "at": command[:40],
+            }
+
+    update_state(apply_state)
     print(json.dumps({}))
 
 

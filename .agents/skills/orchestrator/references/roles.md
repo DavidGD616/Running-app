@@ -35,6 +35,7 @@ Model:
   for a different coder model.
 
 Coder prompt must include:
+- exact sentinel line first (first non-empty line): `Codex-Orchestrator-Internal-Subagent: <role>` where role is the subagent role (for example `reviewer` or `coder`)
 - repository path
 - branch/context if relevant
 - stable `Task ID:` for the one plan task/chunk being implemented
@@ -50,6 +51,7 @@ Keep write scopes disjoint across unrelated coders. Remediation coders for a blo
 ## Reviewer
 
 Use after implementation and before final/commit when risk is non-trivial.
+Reviewer prompts must start with the sentinel line `Codex-Orchestrator-Internal-Subagent: <role>` before task instructions.
 
 Ask reviewers to check:
 - correctness against the user request
