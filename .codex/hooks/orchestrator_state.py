@@ -56,7 +56,13 @@ IMPLEMENT_PATTERNS = [
 
 PLAN_ONLY_PATTERNS = [
     r"\bcreate\s+plan\b",
+    r"\bcreate\s+(?:a|an)\s+plan\s+for\s+implementation\b",
+    r"\bcreate\s+an?\s+implementation\s+plan\b",
+    r"\bcreate\s+implementation\s+plan\b",
     r"\bmake\s+a?\s+plan\b",
+    r"\bmake\s+(?:a|an)\s+plan\s+for\s+implementation\b",
+    r"\bplan\s+the\s+implementation\b",
+    r"\bplan\s+implementation(?:\s+steps)?\b",
     r"\bplan\s+out\b",
     r"\bplan-?only\b",
 ]
@@ -464,7 +470,20 @@ def is_orchestrator_trigger(text: str) -> bool:
     return _contains_any(text, TRIGGER_PATTERNS)
 
 
+NON_IMPLEMENT_EXPLICIT_PATTERNS = [
+    r"\bdon't implement\b",
+    r"\bdont implement\b",
+    r"\bdo not implement\b",
+]
+
 READ_ONLY_PATTERNS = [
+    r"\bjust check\b",
+    r"\bcheck only\b",
+    r"\bonly inspect\b",
+    r"\binspect only\b",
+    r"\bjust inspect\b",
+    r"\bonly analyze\b",
+    r"\bjust analyze\b",
     r"\bdo\s+not\s+edit\b",
     r"\bdo\s+not\s+modify\b",
     r"\bdo\s+not\s+change\b",
@@ -476,6 +495,15 @@ READ_ONLY_PATTERNS = [
     r"\banalyze\s+only\b",
     r"\bno\s+edits?\b",
     r"\bno\s+changes?\b",
+]
+
+READ_ONLY_NOUN_PATTERNS = [
+    r"\b(?:the|a|this|that|latest|current|recent)\s+change(?:s)?\b",
+    r"\b(?:the|a|this|that|latest|current|recent)\s+update(?:s)?\b",
+    r"\b(?:the|a|this|that|latest|current|recent)\s+diff(?:s)?\b",
+    r"\b(?:the|a|this|that|latest|current|recent)\s+patch(?:es)?\b",
+    r"\b(?:the|a|this|that|latest|current|recent)\s+code\b",
+    r"\bthe\s+plan\s+update\b",
 ]
 
 REVIEW_REQUEST_PATTERNS = [
@@ -491,6 +519,7 @@ REVIEW_REQUEST_PATTERNS = [
     r"\breview\s+my\s+patch\b",
     r"\breview\s+my\s+code\b",
     r"\breview\s+this\s+update\b",
+    r"\breview\s+the\s+update\s+only\b",
     r"\breview\s+the\s+latest\s+update\b",
     r"\breview\s+current\s+update\b",
     r"\breview\s+the\s+latest\s+changes\b",
@@ -506,16 +535,91 @@ REVIEW_REQUEST_PATTERNS = [
     r"\breview\s+that\s+code\b",
     r"\breview\s+(?:this|that)\s+pull\s+request\b",
     r"\breview\s+(?:this|that)\s+pr\b",
+    r"\b(?:orchestrator\s+)?(?:reviewer|explorer|researcher|scribe)\b[^.!?\n]{0,80}\b(?:review|inspect|check|analyz(?:e|ed|ing)|evaluate)\b[^.!?\n]{0,80}\b(?:this|that|the|latest|current|recent)?\s*(?:change|changes|diff|patch|update|code)\b",
 ]
+
+
+IMPLEMENT_VERB_TOKENS = {
+    "implement",
+    "implementing",
+    "build",
+    "create",
+    "add",
+    "update",
+    "modify",
+    "change",
+    "fix",
+    "edit",
+    "remove",
+    "delete",
+    "refactor",
+    "wire",
+    "wired",
+    "adjust",
+}
+
+
+def _classifier_tokens(text: str) -> List[str]:
+    return re.findall(r"[a-z']+", text.lower())
+
+
+def _is_negated_implementation_token(tokens: List[str], index: int) -> bool:
+    if index == 0:
+        return False
+    prev = tokens[index - 1]
+    if prev in {"don't", "dont"}:
+        return True
+    if prev == "not" and index >= 2 and tokens[index - 2] == "do":
+        return True
+    return False
+
+
+def _has_positive_implementation(text: str) -> bool:
+    tokens = _classifier_tokens(text)
+    return any(
+        token in IMPLEMENT_VERB_TOKENS and not _is_negated_implementation_token(tokens, index)
+        for index, token in enumerate(tokens)
+    )
+
+
+def _strip_review_request_phrases(text: str) -> str:
+    stripped = text
+    for pattern in REVIEW_REQUEST_PATTERNS:
+        stripped = re.sub(pattern, " ", stripped, flags=re.IGNORECASE)
+    return stripped
+
+
+def _strip_patterns(text: str, patterns: list[str]) -> str:
+    stripped = text
+    for pattern in patterns:
+        stripped = re.sub(pattern, " ", stripped, flags=re.IGNORECASE)
+    return stripped
+
+
+def _strip_non_implementation_intent(text: str) -> str:
+    stripped = _strip_review_request_phrases(text)
+    stripped = _strip_patterns(stripped, PLAN_ONLY_PATTERNS)
+    stripped = _strip_patterns(stripped, READ_ONLY_PATTERNS)
+    stripped = _strip_patterns(stripped, READ_ONLY_NOUN_PATTERNS)
+    return stripped
 
 
 def is_implementation_oriented(text: str) -> bool:
     lowered = text.lower()
-    if _contains_any(lowered, READ_ONLY_PATTERNS) or _contains_any(lowered, PLAN_ONLY_PATTERNS):
+    implementation_probe = _strip_non_implementation_intent(lowered)
+    has_implementation = _has_positive_implementation(implementation_probe)
+
+    if has_implementation:
+        return True
+    if _contains_any(lowered, PLAN_ONLY_PATTERNS):
+        return False
+    if _contains_any(lowered, NON_IMPLEMENT_EXPLICIT_PATTERNS):
         return False
     if _contains_any(lowered, REVIEW_REQUEST_PATTERNS):
         return False
-    return any(re.search(pattern, lowered, flags=re.IGNORECASE) for pattern in IMPLEMENT_PATTERNS)
+    if _contains_any(lowered, READ_ONLY_PATTERNS):
+        return False
+    return False
 
 
 def is_commit_requested(text: str) -> bool:

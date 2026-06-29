@@ -172,24 +172,6 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
         return missing
 
     coder_passes = _normalize_coder_passes(agents.get("coder_passes"))
-    if not coder_passes:
-        coder_last_seq = agents.get("coder_last_seq")
-        fallback_task_id = None
-        if isinstance(agents.get("coder_last_task_id"), str):
-            fallback_task_id = agents.get("coder_last_task_id")
-        coder_passes = [
-            {
-                "start_seq": agents.get("coder_start_seq"),
-                "start_task_id": fallback_task_id,
-                "start_task_id_count": 1 if fallback_task_id else 0,
-                "start_snapshot_signature": [],
-                "start_snapshot_recorded": False,
-                "stop_seq": coder_last_seq,
-                "stop_task_id": fallback_task_id,
-                "stop_task_id_count": 1 if fallback_task_id else 0,
-                "stop_snapshot_signature": _coder_signature(turn),
-            }
-        ]
 
     if not agents.get("coder_started"):
         missing.append("coder subagent not started")
