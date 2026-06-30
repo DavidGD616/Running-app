@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import sys
-import re
 from pathlib import Path
 
 sys.path.append(str(Path(__file__).resolve().parent))
@@ -10,32 +9,34 @@ sys.path.append(str(Path(__file__).resolve().parent))
 from orchestrator_state import (
     append_event,
     classify_agent,
+    extract_task_ids_from_prompt_lines,
     extract_prompt_text,
-    extract_task_id,
+    extract_task_id_from_subagent_transcript,
     git_changed_file_signatures,
     update_state,
 )
-
-
-TASK_ID_PATTERN = re.compile(r"(?i)\btask\s*id:\s*([a-z0-9_.-]+)\b")
-
-
-def extract_task_ids(text: str) -> list[str]:
-    if not isinstance(text, str):
-        return []
-    return [value.strip() for value in TASK_ID_PATTERN.findall(text)]
 
 
 def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
     agent = classify_agent(event)
     prompt_text = extract_prompt_text(event)
-    task_ids = extract_task_ids(prompt_text)
-    if not task_ids:
-        task_ids = extract_task_ids(json.dumps(event))
+    task_ids = extract_task_ids_from_prompt_lines(prompt_text)
     task_id = task_ids[0] if len(task_ids) == 1 else None
     if not task_id:
-        task_id = extract_task_id(prompt_text) or extract_task_id(json.dumps(event))
+        transcript_path = ""
+        raw = event.get("raw") if isinstance(event, dict) else None
+        if isinstance(raw, dict):
+            transcript_path = str(raw.get("transcript_path", ""))
+
+        if not transcript_path:
+            transcript_path = str(event.get("transcript_path", ""))
+
+        recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(transcript_path)
+        if recovered_task_id and recovered_count == 1:
+            task_id = recovered_task_id
+            task_ids = [recovered_task_id]
+
     task_id_count = len(task_ids) if task_ids else 0
     snapshot_signature = git_changed_file_signatures()
 

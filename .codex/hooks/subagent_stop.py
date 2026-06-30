@@ -5,14 +5,17 @@ import re
 import sys
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 sys.path.append(str(Path(__file__).resolve().parent))
 
 from orchestrator_state import (
     append_event,
     classify_agent,
+    extract_task_id_from_subagent_transcript,
+    extract_task_ids,
+    extract_task_ids_from_prompt_lines,
     extract_prompt_text,
-    extract_task_id,
     git_changed_file_signatures,
     parse_tool_exit_code,
     update_state,
@@ -54,30 +57,80 @@ SEVERITY_NO_ISSUE_BODY_RE = re.compile(
     r"^(?:none|n/?a|no\s+issues?|no\s+issues?\s+found|no\s+findings?|not\s+applicable)$",
     re.IGNORECASE,
 )
-TASK_ID_PATTERN = re.compile(r"(?i)\btask\s*id:\s*([a-z0-9_.-]+)\b")
-
-
-def extract_task_ids(text: str) -> list[str]:
-    if not isinstance(text, str):
-        return []
-    return [value.strip() for value in TASK_ID_PATTERN.findall(text)]
-
-
-def _extract_coder_task_info(event: dict) -> tuple[str | None, int]:
+def _extract_coder_task_info(
+    event: dict[str, Any],
+    state: dict[str, Any],
+    open_pass: dict[str, Any] | None,
+) -> tuple[str | None, int, bool]:
     summary = extract_prompt_text(event)
-    event_json = json.dumps(event)
 
-    task_ids = extract_task_ids(summary)
+    if open_pass is not None and open_pass.get("start_seq") is not None:
+        start_seq = open_pass.get("start_seq")
+        start_raw = _find_coder_start_raw_from_events(
+            state,
+            start_seq if isinstance(start_seq, int) else None,
+        )
+        if isinstance(start_raw, dict):
+            raw = start_raw.get("raw")
+            transcript_path = str(raw.get("transcript_path", "")) if isinstance(raw, dict) else ""
+            recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(transcript_path)
+            if recovered_task_id and recovered_count == 1:
+                return recovered_task_id, recovered_count, True
+
+    task_ids = extract_task_ids_from_prompt_lines(summary)
     if not task_ids:
-        task_ids = extract_task_ids(event_json)
+        task_ids = extract_task_ids(summary)
 
     task_id = task_ids[0] if len(task_ids) == 1 else None
     task_id_count = len(task_ids) if task_ids else 0
 
-    if not task_id:
-        task_id = extract_task_id(summary) or extract_task_id(event_json)
+    return task_id, task_id_count, False
 
-    return task_id, task_id_count
+
+def _extract_reviewer_task_info(
+    event: dict[str, Any],
+    state: dict[str, Any],
+) -> tuple[str | None, int]:
+    summary = extract_prompt_text(event)
+    task_ids = extract_task_ids_from_prompt_lines(summary)
+    if task_ids:
+        if len(task_ids) == 1:
+            return task_ids[0], 1
+        return None, len(task_ids)
+
+    return None, 0
+
+
+def _find_coder_start_raw_from_events(state: dict[str, Any], start_seq: int | None) -> dict[str, Any] | None:
+    if not isinstance(start_seq, int):
+        return None
+
+    candidates = state.get("turn", {}).get("events", [])
+    best: dict[str, Any] | None = None
+    best_seq: int | None = None
+
+    for event in candidates:
+        if not isinstance(event, dict) or event.get("event") != "SubagentStart":
+            continue
+        details = event.get("details")
+        if not isinstance(details, dict) or details.get("agent") != "coder":
+            continue
+
+        event_seq = event.get("seq")
+        if not isinstance(event_seq, int):
+            continue
+
+        if event_seq == start_seq:
+            return details
+
+        if event_seq < start_seq and best_seq is not None and event_seq <= best_seq:
+            continue
+
+        if event_seq < start_seq and (best_seq is None or event_seq > best_seq):
+            best = details
+            best_seq = event_seq
+
+    return best
 
 
 def _split_paragraphs(text: str) -> list[list[str]]:
@@ -194,19 +247,40 @@ def main() -> None:
             state["turn"]["agents"]["reviewer_stopped"] = True
             blocking = looks_blocking(summary)
             reviewer_snapshot_signature = git_changed_file_signatures()
+            reviewer_task_id, reviewer_task_id_count = _extract_reviewer_task_info(
+                event,
+                state,
+            )
             if blocking:
                 state["turn"]["agents"]["blocking_reviewer_seq"] = event_seq
                 state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = reviewer_snapshot_signature
                 state["turn"]["agents"]["remediation_required_after_seq"] = event_seq
+                blocked_task_id = state["turn"].get("current_task_id")
+                blocked_task_ids: list[str] = []
+                if isinstance(blocked_task_id, str):
+                    blocked_task_id = blocked_task_id.strip()
+                    if blocked_task_id:
+                        blocked_task_ids = [blocked_task_id]
+                if not blocked_task_ids:
+                    blocked_task_ids = extract_task_ids(summary)
+                state["turn"]["agents"]["remediation_required_task_id"] = (
+                    blocked_task_ids[0] if len(blocked_task_ids) == 1 else None
+                )
                 state["turn"]["agents"]["remediation_coder_start_seq"] = None
                 state["turn"]["agents"]["remediation_coder_last_seq"] = None
                 state["turn"]["agents"]["remediation_coder_task_id"] = None
+            reviewer_stops = state["turn"]["agents"].get("reviewer_stops")
+            if not isinstance(reviewer_stops, list):
+                reviewer_stops = []
+                state["turn"]["agents"]["reviewer_stops"] = reviewer_stops
             state["turn"]["agents"]["reviewer_stops"].append(
                 {
                     "at": datetime.utcnow().isoformat() + "Z",
                     "text": summary[:400],
                     "blocking": blocking,
                     "seq": event_seq,
+                    "task_id": reviewer_task_id if reviewer_task_id_count == 1 else None,
+                    "task_id_count": reviewer_task_id_count,
                     "snapshot_signature": reviewer_snapshot_signature,
                 }
             )
@@ -214,16 +288,12 @@ def main() -> None:
             state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
             state["turn"]["agents"]["reviewer_last_blocking"] = blocking
         elif agent == "coder":
-            task_id, task_id_count = _extract_coder_task_info(event)
             coder_snapshot_signature = git_changed_file_signatures()
             agents = state["turn"]["agents"]
             agents["coder_started"] = True
             agents["coder_stopped"] = True
             agents["coder_last_seq"] = event_seq
             agents["coder_last_snapshot_signature"] = coder_snapshot_signature
-            agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
-            if task_id and not state["turn"].get("current_task_id"):
-                state["turn"]["current_task_id"] = task_id
 
             coder_passes = agents.get("coder_passes")
             if not isinstance(coder_passes, list):
@@ -239,6 +309,27 @@ def main() -> None:
                     continue
                 open_pass = candidate
                 break
+
+            task_id, task_id_count, recovered_from_start = _extract_coder_task_info(event, state, open_pass)
+            if recovered_from_start and isinstance(open_pass, dict) and task_id_count == 1:
+                if open_pass.get("start_task_id_count") != 1:
+                    open_pass["start_task_id"] = task_id
+                    open_pass["start_task_id_count"] = task_id_count
+                if open_pass.get("stop_task_id_count") != 1:
+                    open_pass["stop_task_id"] = task_id
+                    open_pass["stop_task_id_count"] = task_id_count
+            if (
+                open_pass is not None
+                and task_id
+                and task_id_count == 1
+                and open_pass.get("start_task_id_count") != 1
+            ):
+                open_pass["start_task_id"] = task_id
+                open_pass["start_task_id_count"] = task_id_count
+            if task_id and (not state["turn"].get("current_task_id") or state["turn"]["current_task_id"] != task_id):
+                state["turn"]["current_task_id"] = task_id
+
+            agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
 
             if open_pass is not None:
                 open_pass["stop_seq"] = event_seq

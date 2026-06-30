@@ -131,6 +131,7 @@ def default_state() -> Dict[str, Any]:
                 "blocking_reviewer_seq": None,
                 "blocking_reviewer_snapshot_signature": [],
                 "remediation_required_after_seq": None,
+                "remediation_required_task_id": None,
                 "remediation_coder_start_seq": None,
                 "remediation_coder_last_seq": None,
                 "remediation_coder_task_id": None,
@@ -385,11 +386,285 @@ TASK_ID_PATTERN = re.compile(
 )
 
 
+SUBAGENT_TASK_ID_PROMPT_LINE_PATTERN = re.compile(
+    r"(?im)^\s*(?:[-*]\s*)?task\s*id\s*:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*$",
+    re.IGNORECASE,
+)
+
+
+def extract_task_ids_from_prompt_lines(text: str) -> list[str]:
+    if not isinstance(text, str):
+        return []
+    ids: list[str] = []
+    seen: set[str] = set()
+    for value in SUBAGENT_TASK_ID_PROMPT_LINE_PATTERN.findall(text):
+        normalized = str(value).strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ids.append(normalized)
+    return ids
+
+
+def extract_task_ids(text: str) -> list[str]:
+    if not isinstance(text, str):
+        return []
+    ids: list[str] = []
+    seen: set[str] = set()
+    for value in TASK_ID_PATTERN.findall(text):
+        normalized = value.strip()
+        if not normalized or normalized in seen:
+            continue
+        seen.add(normalized)
+        ids.append(normalized)
+    return ids
+
+
 def extract_task_id(text: str) -> str | None:
-    match = TASK_ID_PATTERN.search(text or "")
-    if not match:
+    ids = extract_task_ids(text)
+    if len(ids) == 1:
+        return ids[0]
+    return None
+
+
+def _iter_transcript_records(path: str | Path) -> list[dict[str, Any]]:
+    transcript = Path(path)
+    if not transcript.exists():
+        return []
+
+    records: list[dict[str, Any]] = []
+    try:
+        with transcript.open("r", encoding="utf-8", errors="ignore") as handle:
+            for line in handle:
+                if not line.strip():
+                    continue
+                try:
+                    record = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                if isinstance(record, dict):
+                    records.append(record)
+    except OSError:
+        return []
+    return records
+
+
+def _normalize_prompt_signature(text: str) -> str:
+    return " ".join((text or "").split()).strip().lower()
+
+
+def _coerce_text_content(value: Any) -> str:
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        chunks: list[str] = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            item_text = _coerce_text_content(item.get("text") if "text" in item else item.get("content"))
+            if item_text:
+                chunks.append(item_text)
+        return "\n".join(chunks)
+    return ""
+
+
+def _iter_transcript_prompt_candidates(record: dict[str, Any]) -> list[str]:
+    payload = record.get("payload") if isinstance(record, dict) else None
+    if not isinstance(payload, dict):
+        return []
+
+    candidates: list[str] = []
+
+    payload_type = str(payload.get("type", "")).lower()
+    if payload_type == "message":
+        role = str(payload.get("role", "")).lower()
+        if role == "user":
+            content = _coerce_text_content(payload.get("content"))
+            if content:
+                candidates.append(content)
+
+    if payload_type == "user_message":
+        message = payload.get("message")
+        if isinstance(message, str) and message.strip():
+            candidates.append(message)
+
+    return candidates
+
+
+def extract_first_internal_subagent_prompt_from_transcript(transcript_path: str | Path) -> str:
+    records = _iter_transcript_records(transcript_path)
+    seen: set[str] = set()
+    fallback: str = ""
+
+    for record in records:
+        for candidate in _iter_transcript_prompt_candidates(record):
+            normalized = _normalize_prompt_signature(candidate)
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+
+            if _extract_internal_sentinel(candidate):
+                return candidate
+
+            if not fallback:
+                fallback = candidate
+
+    return fallback
+
+
+def extract_task_id_from_subagent_transcript(transcript_path: str | Path) -> tuple[str | None, int]:
+    if not transcript_path:
+        return None, 0
+
+    prompt_text = extract_first_internal_subagent_prompt_from_transcript(transcript_path)
+    task_ids = extract_task_ids_from_prompt_lines(prompt_text)
+    if not task_ids:
+        return None, 0
+
+    if len(task_ids) == 1:
+        return task_ids[0], 1
+    return None, len(task_ids)
+
+
+def _extract_exit_code_from_exec_output(output: str) -> int | None:
+    if not isinstance(output, str):
         return None
-    return match.group(1).strip()
+
+    fail_match = re.search(r"exit_code\s*[:=]\s*(-?\d+)", output, flags=re.IGNORECASE)
+    if fail_match:
+        return int(fail_match.group(1))
+
+    if "exec_command failed" in output.lower():
+        return 1
+
+    success_match = re.search(r"Process exited with code\s*(-?\d+)?", output, flags=re.IGNORECASE)
+    if success_match:
+        value = success_match.group(1)
+        if not value:
+            return 0
+        try:
+            return int(value)
+        except ValueError:
+            return None
+
+    if output.startswith("Command:"):
+        return 0
+
+    return None
+
+
+def _extract_command_from_exec_arguments(arguments: Any) -> str:
+    if isinstance(arguments, str):
+        try:
+            parsed = json.loads(arguments)
+        except json.JSONDecodeError:
+            return ""
+    elif isinstance(arguments, dict):
+        parsed = arguments
+    else:
+        return ""
+
+    command = parsed.get("cmd")
+    if not isinstance(command, str):
+        return ""
+    return command
+
+
+def _extract_command_from_output(output: str) -> str:
+    if not isinstance(output, str):
+        return ""
+
+    match = re.search(r"^Command:\s*(.+)$", output, flags=re.IGNORECASE | re.MULTILINE)
+    if match:
+        return match.group(1).strip()
+
+    match = re.search(r"exec_command failed for `([^`]+)`", output, flags=re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+
+    return ""
+
+
+def _extract_call_id_from_output(output: str) -> str:
+    if not isinstance(output, str):
+        return ""
+
+    match = re.search(r"(call_[A-Za-z0-9_]+)", output)
+    return match.group(1) if match else ""
+
+
+def recover_successful_exec_calls_from_transcript(transcript_path: str | Path) -> list[dict[str, Any]]:
+    records = _iter_transcript_records(transcript_path)
+    if not records:
+        return []
+
+    pending_by_call_id: dict[str, dict[str, Any]] = {}
+
+    recovered: list[dict[str, Any]] = []
+    for index, record in enumerate(records, start=1):
+        payload = record.get("payload") if isinstance(record, dict) else None
+        if not isinstance(payload, dict):
+            continue
+
+        event_type = str(payload.get("type", "")).lower()
+
+        if event_type == "function_call" and payload.get("name") == "exec_command":
+            command = _extract_command_from_exec_arguments(payload.get("arguments"))
+            if not command:
+                continue
+
+            call_id = str(payload.get("call_id", "")).strip()
+            if not call_id:
+                continue
+
+            record_data = {
+                "seq": index,
+                "call_id": call_id,
+                "function_call_id": str(payload.get("id", "")).strip(),
+                "command": command,
+            }
+            pending_by_call_id[call_id] = record_data
+            continue
+
+        if event_type != "function_call_output":
+            continue
+
+        output = str(payload.get("output", ""))
+        if not output:
+            continue
+
+        exit_code = _extract_exit_code_from_exec_output(output)
+        if exit_code != 0:
+            continue
+
+        output_call_id = str(payload.get("call_id", "")).strip()
+        if not output_call_id:
+            continue
+
+        selected = None
+        if output_call_id in pending_by_call_id:
+            selected = pending_by_call_id.pop(output_call_id)
+
+        if not selected:
+            continue
+
+        command = _extract_command_from_output(output)
+        if not command:
+            command = str(selected.get("command", "")).strip()
+        if not command:
+            continue
+
+        recovered.append(
+            {
+                "seq": int(selected.get("seq", 0)),
+                "command": command,
+                "exit_code": exit_code,
+                "transcript_seq": index,
+            }
+        )
+
+    return recovered
+
 
 
 INTERNAL_SUBAGENT_PROMPT_SENTINEL_MARKER = re.compile(
@@ -811,6 +1086,18 @@ _MUTATING_GIT_SUBCOMMANDS = {
     "tag",
 }
 
+_GIT_GLOBAL_OPTIONS_WITH_VALUE = {
+    "-c",
+    "-C",
+    "--config",
+    "--config-env",
+    "--exec-path",
+    "--git-dir",
+    "--namespace",
+    "--super-prefix",
+    "--work-tree",
+}
+
 
 _WRITE_REDIRECTION_PATTERN = re.compile(
     r"(^|[ \t])(?:[0-9]{0,2}>>?(?!&)|&>>?)(?=\s|$)",
@@ -830,9 +1117,78 @@ def _tokenize_command(command: str) -> List[str]:
     try:
         import shlex
 
-        return shlex.split(stripped)
+        lexer = shlex.shlex(stripped, posix=True, punctuation_chars="&|;")
+        lexer.whitespace_split = True
+        lexer.commenters = ""
+        return list(lexer)
     except (ValueError, TypeError):
         return stripped.split()
+
+
+def _segment_tokens() -> set[str]:
+    return {"&&", "||", ";", "|"}
+
+
+def _iter_command_segments(command: str) -> list[list[str]]:
+    tokens = _tokenize_command(command)
+    if not tokens:
+        return []
+
+    segments: list[list[str]] = []
+    current: list[str] = []
+    for token in tokens:
+        if token in _segment_tokens():
+            if current:
+                segments.append(current)
+                current = []
+            continue
+        current.append(token)
+    if current:
+        segments.append(current)
+    return segments
+
+
+def _iter_command_segment_parts(command: str) -> list[list[str]]:
+    expanded: list[list[str]] = []
+    for segment_parts in _iter_command_segments(command):
+        parts = _strip_command_prefix_wrappers(segment_parts)
+        if not parts:
+            continue
+
+        wrapped = _extract_wrapped_command(parts)
+        if wrapped is None:
+            expanded.append(parts)
+            continue
+        if "\n" in wrapped:
+            for wrapped_line in wrapped.splitlines():
+                wrapped_line = wrapped_line.strip()
+                if not wrapped_line:
+                    continue
+                expanded.extend(_iter_command_segment_parts(wrapped_line))
+            continue
+
+        expanded.extend(_iter_command_segment_parts(wrapped))
+
+    return expanded
+
+
+def _split_command_parts_by_newline(parts: list[str]) -> list[list[str]]:
+    if not parts:
+        return []
+
+    merged = " ".join(parts)
+    if "\n" not in merged:
+        return [parts]
+
+    out: list[list[str]] = []
+    for line in merged.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+        tokens = _tokenize_command(line)
+        if tokens:
+            out.append(tokens)
+    return out
 
 
 def _strip_command_prefix_wrappers(parts: List[str]) -> List[str]:
@@ -942,7 +1298,55 @@ def tool_may_edit_files(tool_name: str, command: str) -> bool:
 
 
 def command_is_commit(command: str) -> bool:
-    return re.search(r"\bgit\s+commit\b", command.lower()) is not None
+    lowered = (command or "").strip().lower()
+    if not lowered:
+        return False
+
+    for command_parts in _iter_command_segment_parts(lowered):
+        if not command_parts:
+            continue
+
+        for command_line_parts in _split_command_parts_by_newline(command_parts):
+            if not command_line_parts:
+                continue
+
+            command_name = command_line_parts[0].lower()
+            if command_name != "git":
+                continue
+
+            arguments = command_line_parts[1:]
+            if not arguments:
+                continue
+
+            idx = 0
+            while idx < len(arguments):
+                argument = arguments[idx]
+                if argument == "--":
+                    idx += 1
+                    break
+
+                if argument.startswith("--"):
+                    base, _, value = argument.partition("=")
+                    if base in _GIT_GLOBAL_OPTIONS_WITH_VALUE:
+                        idx += 1 if value else 2
+                        continue
+                    idx += 1
+                    continue
+
+                if argument in {"-c", "-C"}:
+                    idx += 2
+                    continue
+
+                if argument.startswith("-c") or argument.startswith("-C"):
+                    idx += 1
+                    continue
+
+                break
+
+            if idx < len(arguments) and arguments[idx] == "commit":
+                return True
+
+    return False
 
 
 def parse_tool_exit_code(event: Dict[str, Any]) -> int:
