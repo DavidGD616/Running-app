@@ -92,35 +92,42 @@ def main() -> None:
         if isinstance(pre_tool_signature, dict):
             pre_signature = pre_tool_signature.get("signature")
             pre_seq = pre_tool_signature.get("seq")
-            pre_tool_name = pre_tool_signature.get("tool_name", "")
-            pre_command = str(pre_tool_signature.get("command", ""))[:200]
-            pre_tool_may_edit = bool(pre_tool_signature.get("tool_may_edit_files"))
-            if pre_seq is not None and isinstance(pre_signature, list) and pre_tool_may_edit:
-                post_signature = git_changed_file_signatures()
-                tool_edit_detected = bool(
-                    pre_tool_signature.get("coder_pass_open")
-                    and changed_signatures_delta(pre_signature, post_signature)
-                )
-                if tool_edit_detected:
-                    agents = state.get("turn", {}).get("agents", {})
-                    agents["main_agent_file_edit_detected"] = True
-                    events = agents.get("main_agent_file_edit_events")
-                    if isinstance(events, list):
-                        events.append(
-                            {
-                                "at": now_iso(),
-                                "tool_name": pre_tool_name or tool_name,
-                                "tool_pre_seq": pre_seq,
-                                "tool_post_seq": event_seq,
-                                "command": pre_command,
-                            }
-                        )
+        pre_tool_name = pre_tool_signature.get("tool_name", "")
+        pre_tool_actor = str(pre_tool_signature.get("actor", "")).strip()
+        pre_command = str(pre_tool_signature.get("command", ""))[:200]
+        pre_tool_may_edit = bool(pre_tool_signature.get("tool_may_edit_files"))
+        if pre_seq is not None and isinstance(pre_signature, list) and pre_tool_may_edit:
+            post_signature = git_changed_file_signatures()
+            is_coordinator = pre_tool_actor == "coordinator"
+            tool_edit_detected = bool(
+                pre_tool_signature.get("coder_pass_open")
+                and changed_signatures_delta(pre_signature, post_signature)
+            )
+            if tool_edit_detected and is_coordinator:
+                agents = state.get("turn", {}).get("agents", {})
+                agents["main_agent_file_edit_detected"] = True
+                events = agents.get("main_agent_file_edit_events")
+                if isinstance(events, list):
+                    events.append(
+                        {
+                            "at": now_iso(),
+                            "tool_name": pre_tool_name or tool_name,
+                            "tool_pre_seq": pre_seq,
+                            "tool_post_seq": event_seq,
+                            "command": pre_command,
+                            "actor": pre_tool_actor,
+                        }
+                    )
             state["turn"]["pre_tool_signature"] = {
                 "seq": None,
                 "signature": [],
                 "coder_pass_open": False,
                 "tool_name": "",
                 "command": "",
+                "actor": "",
+                "at": now_iso(),
+                "transcript_path": "",
+                "tool_may_edit_files": False,
             }
 
     update_state(apply_state)

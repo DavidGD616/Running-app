@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 import sys
 from pathlib import Path
@@ -5,22 +7,49 @@ from pathlib import Path
 sys.path.append(str(Path(__file__).resolve().parent))
 
 from orchestrator_state import (
+    _extract_internal_sentinel,
     append_event,
     default_state,
+    extract_event_transcript_path,
     extract_prompt_text,
+    normalize_agent,
     update_state,
     is_internal_subagent_prompt,
     new_turn,
+    classify_agent,
 )
+
+
+def classify_actor(event: dict[str, object], prompt_text: str) -> str:
+    if not isinstance(event, dict):
+        return "other"
+
+    agent = classify_agent(event)
+    if agent != "other":
+        return agent
+
+    sentinel = _extract_internal_sentinel(prompt_text or "")
+    if sentinel:
+        return normalize_agent(sentinel)
+    return "other"
 
 
 def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
 
     prompt_text = extract_prompt_text(event)
+    transcript_path = extract_event_transcript_path(event)
     internal_prompt = is_internal_subagent_prompt(event, prompt_text)
+
     if internal_prompt:
+        actor = classify_actor(event, prompt_text)
+
         def apply_internal_prompt(state):
+            if transcript_path:
+                tool_call_actors = state["turn"].setdefault("tool_call_actors", {})
+                if isinstance(tool_call_actors, dict):
+                    tool_call_actors[str(transcript_path)] = actor
+
             append_event(
                 state,
                 "UserPromptSubmit.internal_prompt_ignored",
@@ -59,6 +88,11 @@ def main() -> None:
         state["turn"]["commit"]["snapshot_signature"] = []
         state["turn"]["commit"]["snapshot_from_pre_tool"] = False
         state["turn"]["pending_commit"] = {"seq": None, "snapshot_signature": []}
+
+        if transcript_path:
+            tool_call_actors = state["turn"].setdefault("tool_call_actors", {})
+            if isinstance(tool_call_actors, dict):
+                tool_call_actors[str(transcript_path)] = "coordinator"
 
     update_state(apply_turn)
 

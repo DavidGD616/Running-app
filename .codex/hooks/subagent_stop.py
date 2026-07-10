@@ -11,6 +11,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 
 from orchestrator_state import (
     append_event,
+    extract_event_transcript_path,
     classify_agent,
     extract_task_id_from_subagent_transcript,
     extract_task_ids,
@@ -73,7 +74,10 @@ def _extract_coder_task_info(
         if isinstance(start_raw, dict):
             raw = start_raw.get("raw")
             transcript_path = str(raw.get("transcript_path", "")) if isinstance(raw, dict) else ""
-            recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(transcript_path)
+            recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
+                transcript_path,
+                agent="coder",
+            )
             if recovered_task_id and recovered_count == 1:
                 return recovered_task_id, recovered_count, True
 
@@ -97,6 +101,15 @@ def _extract_reviewer_task_info(
         if len(task_ids) == 1:
             return task_ids[0], 1
         return None, len(task_ids)
+
+    transcript_path = extract_event_transcript_path(event)
+    if transcript_path:
+        recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
+            transcript_path,
+            agent="reviewer",
+        )
+        if recovered_task_id and recovered_count == 1:
+            return recovered_task_id, recovered_count
 
     return None, 0
 

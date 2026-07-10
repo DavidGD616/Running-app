@@ -9,6 +9,7 @@ sys.path.append(str(Path(__file__).resolve().parent))
 from orchestrator_state import (
     append_event,
     command_is_commit,
+    extract_event_transcript_path,
     git_changed_file_signatures,
     now_iso,
     update_state,
@@ -35,6 +36,8 @@ def main() -> None:
     tool_name = ""
     if isinstance(event, dict):
         tool_name = str(event.get("tool_name", event.get("tool", "")))
+
+    transcript_path = extract_event_transcript_path(event)
     command_lower = command.lower()
     may_edit_files = tool_may_edit_files(tool_name, command)
 
@@ -47,6 +50,13 @@ def main() -> None:
         agents = state.get("turn", {}).get("agents", {})
         coder_pass_open = bool(agents.get("coder_started")) and not bool(agents.get("coder_stopped"))
         track_for_edit_signature = coder_pass_open and may_edit_files
+        actor = ""
+        if transcript_path:
+            actor = str(
+                state.get("turn", {})
+                .get("tool_call_actors", {})
+                .get(str(transcript_path), "")
+            )
         state["turn"]["pre_tool_signature"] = {
             "seq": event_seq if track_for_edit_signature else None,
             "signature": git_changed_file_signatures() if track_for_edit_signature else [],
@@ -54,6 +64,8 @@ def main() -> None:
             "tool_name": str(tool_name),
             "tool_may_edit_files": bool(may_edit_files),
             "command": command[:200],
+            "actor": actor,
+            "transcript_path": str(transcript_path) if transcript_path else "",
             "at": now_iso(),
         }
 

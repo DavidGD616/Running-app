@@ -891,7 +891,8 @@ def _backfill_pass_tasks_from_subagent_starts(state: dict[str, Any]) -> None:
         recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
             str(transcript_path)
             if isinstance(transcript_path, str)
-            else ""
+            else "",
+            agent="coder",
         )
         if recovered_task_id and recovered_count == 1:
             pass_record["start_task_id"] = recovered_task_id
@@ -1285,7 +1286,11 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
                 if _signature_stale(work_signature, latest_signature):
                     missing.append("final work signature does not match relevant coder output")
 
-    if agents.get("main_agent_file_edit_detected"):
+    coordinator_file_edits = any(
+        isinstance(event, dict) and event.get("actor") == "coordinator"
+        for event in agents.get("main_agent_file_edit_events", [])
+    )
+    if coordinator_file_edits:
         missing.append("main agent performed file-edit tool actions while a coder pass was open")
 
     reviewer_pass_issue = _reviewer_passed_reason(turn)

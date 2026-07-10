@@ -32,7 +32,10 @@ def main() -> None:
         if not transcript_path:
             transcript_path = str(event.get("transcript_path", ""))
 
-        recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(transcript_path)
+        recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
+            transcript_path,
+            agent=agent,
+        )
         if recovered_task_id and recovered_count == 1:
             task_id = recovered_task_id
             task_ids = [recovered_task_id]

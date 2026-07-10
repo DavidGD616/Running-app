@@ -16,6 +16,12 @@ keywords (`orchestrator`, `orchestration`, `subagents`, `coder`, `reviewer`, `ex
 Text-only internal subagent prompts are now accepted only when they include the sentinel header:
 `Codex-Orchestrator-Internal-Subagent: <role>` on the first non-empty line (for example `reviewer` or `coder`).
 
+`UserPromptSubmit` records transcript-path actor attribution for each prompt:
+- coordinator prompts map to `coordinator`
+- internal prompts map to the classified role (`coder`, `reviewer`, etc.)
+
+Role-specific transcript attribution is used during transcript recovery and for tool-hook actor assignment.
+
 ## What the enforcement checks
 
 During an orchestrator turn with implementation intent, completion is blocked until:
@@ -46,6 +52,7 @@ Behavior is now defined per prompt baseline:
   - the command sequence number (`turn.verification.last_seq`)
   - the command timestamp (`turn.verification.at`)
   - the changed-file snapshot signatures (`turn.verification.snapshot_signature`)
+  - command matching is performed on command segments (command + args), so non-command body text like PR descriptions cannot satisfy verification.
 - Commit success stores:
   - the command sequence number (`turn.commit.last_seq`)
   - the command timestamp (`turn.commit.at`)
@@ -59,6 +66,7 @@ Behavior is now defined per prompt baseline:
   - a pass is missing a start snapshot signature when recording was attempted incorrectly,
   - a stop without open start metadata is treated as anomalous,
   - a main agent file-edit event is detected while a coder pass is open (best-effort),
+    but only when tool-hook actor attribution proves the edit came from coordinator.
   - final work differs from the latest coder completion snapshot,
   - a blocking reviewer pass was not followed by a later coder remediation pass,
   - a remediation coder pass that is accepted after blocking review did not start from the blocking reviewer snapshot,

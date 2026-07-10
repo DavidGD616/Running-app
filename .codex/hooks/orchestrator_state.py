@@ -78,8 +78,13 @@ NO_COMMIT_PATTERNS = [
 VERIFICATION_PATTERNS = [
     re.compile(r"\bflutter\s+(analyze|test|gen-l10n)\b"),
     re.compile(r"\bpython3?\s+(-m\s+)?(pytest|unittest|compile|py_compile)\b"),
+    re.compile(r"\bpython3?\s+-m\s+(?:compile|py_compile)\b"),
     re.compile(r"\bdart\s+test\b"),
 ]
+
+_VERIFICATION_FLUTTER_COMMANDS = {"analyze", "test", "gen-l10n"}
+_VERIFICATION_PYTHON_MODULES = {"pytest", "unittest", "compile", "py_compile"}
+_VERIFICATION_DART_COMMANDS = {"test"}
 
 AGENT_CODER = {"coder", "implementation", "worker"}
 AGENT_REVIEWER = {"reviewer"}
@@ -94,6 +99,28 @@ def now_iso() -> str:
 
 def _normalize_files(items: List[str]) -> List[str]:
     return sorted(set(filter(None, (item.strip() for item in items))))
+
+
+def _hydrate_with_defaults(defaults: Dict[str, Any], loaded: Any) -> Any:
+    if isinstance(defaults, dict):
+        loaded_map = loaded if isinstance(loaded, dict) else {}
+        merged: Dict[str, Any] = {}
+        for key, default_value in defaults.items():
+            merged[key] = _hydrate_with_defaults(default_value, loaded_map.get(key))
+        for key, loaded_value in loaded_map.items():
+            if key not in defaults:
+                merged[key] = loaded_value
+        return merged
+
+    if isinstance(defaults, list):
+        if isinstance(loaded, list):
+            return loaded
+        return list(defaults)
+
+    if loaded is None:
+        return defaults
+
+    return loaded
 
 
 def default_state() -> Dict[str, Any]:
@@ -166,8 +193,12 @@ def default_state() -> Dict[str, Any]:
                 "coder_pass_open": False,
                 "tool_name": "",
                 "tool_may_edit_files": False,
+                "actor": "",
+                "at": None,
+                "transcript_path": "",
                 "command": "",
             },
+            "tool_call_actors": {},
             "events": [],
         },
     }
@@ -180,22 +211,15 @@ def _load_state_no_lock() -> Dict[str, Any]:
     try:
         data = json.loads(STATE_FILE.read_text())
         if isinstance(data, dict):
-            # Ensure expected keys exist after upgrades.
-            state = default_state()
-            state.update(data)
-            state["turn"] = {**state["turn"], **data.get("turn", {})}
-            state["turn"]["agents"] = {**state["turn"]["agents"], **data.get("turn", {}).get("agents", {})}
-            state["turn"]["verification"] = {
-                **state["turn"]["verification"],
-                **data.get("turn", {}).get("verification", {}),
-            }
-            state["turn"]["commit"] = {**state["turn"]["commit"], **data.get("turn", {}).get("commit", {})}
-            state["turn"]["pending_commit"] = {**state["turn"]["pending_commit"], **data.get("turn", {}).get("pending_commit", {})}
-            if "files_changed_at_start" not in data.get("turn", {}):
+            default = default_state()
+            state = _hydrate_with_defaults(default, data)
+            legacy_turn = data.get("turn", {})
+            if isinstance(legacy_turn, dict) and "files_changed_at_start" not in legacy_turn:
                 legacy_files = data.get("turn", {}).get("files_changed", [])
                 if isinstance(legacy_files, list):
-                    state["turn"]["files_changed_at_start"] = _normalize_files(legacy_files)
-                    state["turn"]["files_changed_current"] = _normalize_files(legacy_files)
+                    migrated_files = _normalize_files(legacy_files)
+                    state["turn"]["files_changed_at_start"] = migrated_files
+                    state["turn"]["files_changed_current"] = migrated_files
             if not isinstance(state["turn"]["files_changed_signature_at_start"], list):
                 state["turn"]["files_changed_signature_at_start"] = []
             if not isinstance(state["turn"]["files_changed_signature_current"], list):
@@ -225,6 +249,14 @@ def _load_state_no_lock() -> Dict[str, Any]:
             pre_tool_signature = state["turn"]["pre_tool_signature"]
             if not isinstance(pre_tool_signature.get("tool_may_edit_files"), bool):
                 pre_tool_signature["tool_may_edit_files"] = False
+            if not isinstance(pre_tool_signature.get("actor"), str):
+                pre_tool_signature["actor"] = ""
+            if not isinstance(pre_tool_signature.get("at"), str):
+                pre_tool_signature["at"] = None
+            if not isinstance(pre_tool_signature.get("transcript_path"), str):
+                pre_tool_signature["transcript_path"] = ""
+            if not isinstance(state["turn"].get("tool_call_actors"), dict):
+                state["turn"]["tool_call_actors"] = {}
             return state
     except (OSError, json.JSONDecodeError):
         return default_state()
@@ -380,6 +412,71 @@ def extract_prompt_text(event: Dict[str, Any]) -> str:
     return ""
 
 
+def extract_event_transcript_path(event: Dict[str, Any]) -> str:
+    if not isinstance(event, dict):
+        return ""
+
+    raw = event.get("raw")
+    if isinstance(raw, dict):
+        raw_path = str(raw.get("transcript_path", "")).strip()
+        if raw_path:
+            return raw_path
+
+    direct_path = str(event.get("transcript_path", "")).strip()
+    return direct_path
+
+
+def _decode_possible_json(value: Any) -> Any:
+    if not isinstance(value, str):
+        return value
+
+    stripped = value.strip()
+    if not stripped:
+        return ""
+
+    if not (
+        (stripped.startswith("{") and stripped.endswith("}"))
+        or (stripped.startswith("[") and stripped.endswith("]"))
+    ):
+        return value
+
+    try:
+        return json.loads(stripped)
+    except json.JSONDecodeError:
+        return value
+
+
+def _collect_prompt_texts(value: Any, depth: int = 4) -> list[str]:
+    if depth <= 0:
+        return []
+
+    normalized = _decode_possible_json(value)
+    if isinstance(normalized, str):
+        normalized = normalized.strip()
+        return [normalized] if normalized else []
+
+    if isinstance(normalized, list):
+        out: list[str] = []
+        for item in normalized:
+            out.extend(_collect_prompt_texts(item, depth - 1))
+        return out
+
+    if isinstance(normalized, dict):
+        out: list[str] = []
+        prioritized = ("message", "prompt", "input", "tool_input", "text", "content", "value", "command", "output")
+        for key in prioritized:
+            if key in normalized:
+                out.extend(_collect_prompt_texts(normalized[key], depth - 1))
+
+        for key, item in normalized.items():
+            if key in prioritized:
+                continue
+            out.extend(_collect_prompt_texts(item, depth - 1))
+        return out
+
+    return []
+
+
 TASK_ID_PATTERN = re.compile(
     r"(?im)\b(?:task\s*id|current\s+task|chunk\s+id)\s*:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\b",
     re.IGNORECASE,
@@ -488,13 +585,23 @@ def _iter_transcript_prompt_candidates(record: dict[str, Any]) -> list[str]:
         if isinstance(message, str) and message.strip():
             candidates.append(message)
 
+    if payload_type in {"function_call", "custom_tool_call", "tool_call"}:
+        for key in ("input", "arguments", "message", "prompt", "tool_input", "output", "content", "text"):
+            for candidate in _collect_prompt_texts(payload.get(key)):
+                if isinstance(candidate, str) and candidate.strip():
+                    candidates.append(candidate)
+
     return candidates
 
 
-def extract_first_internal_subagent_prompt_from_transcript(transcript_path: str | Path) -> str:
+def extract_first_internal_subagent_prompt_from_transcript(
+    transcript_path: str | Path,
+    agent: str | None = None,
+) -> str:
     records = _iter_transcript_records(transcript_path)
     seen: set[str] = set()
     fallback: str = ""
+    normalized_agent = normalize_agent(agent) if isinstance(agent, str) else ""
 
     for record in records:
         for candidate in _iter_transcript_prompt_candidates(record):
@@ -503,20 +610,31 @@ def extract_first_internal_subagent_prompt_from_transcript(transcript_path: str 
                 continue
             seen.add(normalized)
 
-            if _extract_internal_sentinel(candidate):
+            sentinel = _extract_internal_sentinel(candidate)
+            if sentinel:
+                if normalized_agent:
+                    if normalize_agent(sentinel) == normalized_agent:
+                        return candidate
+                    continue
                 return candidate
 
-            if not fallback:
+            if not normalized_agent and not fallback:
                 fallback = candidate
 
-    return fallback
+    return "" if normalized_agent else fallback
 
 
-def extract_task_id_from_subagent_transcript(transcript_path: str | Path) -> tuple[str | None, int]:
+def extract_task_id_from_subagent_transcript(
+    transcript_path: str | Path,
+    agent: str | None = None,
+) -> tuple[str | None, int]:
     if not transcript_path:
         return None, 0
 
-    prompt_text = extract_first_internal_subagent_prompt_from_transcript(transcript_path)
+    prompt_text = extract_first_internal_subagent_prompt_from_transcript(
+        transcript_path,
+        agent=agent,
+    )
     task_ids = extract_task_ids_from_prompt_lines(prompt_text)
     if not task_ids:
         return None, 0
@@ -1034,8 +1152,37 @@ def signature_paths(signatures: List[str]) -> List[str]:
 
 
 def command_match_verification(command: str) -> bool:
+    if not isinstance(command, str):
+        return False
+
     lowered = command.lower()
-    return any(pattern.search(lowered) for pattern in VERIFICATION_PATTERNS)
+    for command_parts in _iter_command_segment_parts(lowered):
+        if not command_parts:
+            continue
+
+        for command_line_parts in _split_command_parts_by_newline(command_parts):
+            if not command_line_parts:
+                continue
+
+            command_name = command_line_parts[0].lower()
+            arguments = [part.lower() for part in command_line_parts[1:]]
+
+            if command_name == "flutter":
+                if arguments and arguments[0] in _VERIFICATION_FLUTTER_COMMANDS:
+                    return True
+
+            if command_name in {"python", "python3"}:
+                for idx, argument in enumerate(arguments):
+                    if argument != "-m" or idx + 1 >= len(arguments):
+                        continue
+                    if arguments[idx + 1] in _VERIFICATION_PYTHON_MODULES:
+                        return True
+
+            if command_name in {"dart"}:
+                if arguments and arguments[0] in _VERIFICATION_DART_COMMANDS:
+                    return True
+
+    return False
 
 
 _MUTATING_TOOL_NAMES = {
