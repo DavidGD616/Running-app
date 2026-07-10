@@ -1,0 +1,60 @@
+appId: com.davidgd616.striviq
+name: Adaptive Coach Review Pending Smoke
+---
+- launchApp:
+    clearState: true
+    clearKeychain: true
+    stopApp: true
+- extendedWaitUntil:
+    visible:
+      text: "Welcome to StrivIQ|Bienvenido a StrivIQ"
+    timeout: 30000
+- tapOn:
+    text: "Log In|Iniciar sesión"
+- extendedWaitUntil:
+    visible:
+      text: "Welcome back|Bienvenido de nuevo"
+    timeout: 10000
+- tapOn:
+    text: "you@example.com|tu@ejemplo.com"
+- inputText: "adaptive.runner@example.test"
+- tapOn:
+    text: "Enter your password|Ingresa tu contraseña"
+- inputText: "AdaptiveTest123!"
+- hideKeyboard:
+    optional: true
+- tapOn:
+    text: "Log In|Iniciar sesión"
+    optional: true
+- extendedWaitUntil:
+    visible:
+      text: "Today|Hoy"
+    timeout: 30000
+- scrollUntilVisible:
+    element:
+      text: "Coach check\\nA weekly plan review is ready\\.|Chequeo del coach\\nUna revisión semanal del plan está lista\\."
+    direction: DOWN
+    timeout: 10000
+    visibilityPercentage: 80
+- tapOn:
+    text: "Coach check\\nA weekly plan review is ready\\.|Chequeo del coach\\nUna revisión semanal del plan está lista\\."
+- extendedWaitUntil:
+    visible:
+      text: "Coach Review|Revisión del Coach"
+    timeout: 10000
+- assertVisible:
+    text: "This week looked slightly aggressive\\.|Esta semana se vio un poco agresiva\\."
+- assertVisible:
+    text: "Weekly Snapshot|Resumen Semanal"
+- assertVisible:
+    text: "Effort and recovery signals were elevated\\.|El esfuerzo y la recuperación estuvieron elevados\\."
+- tapOn:
+    text: "Review Changes|Revisar Cambios"
+- extendedWaitUntil:
+    visible:
+      text: "Plan Changes|Cambios del Plan"
+    timeout: 10000
+- assertVisible:
+    text: "Reduce session\\nEasy Run → Easy Run\\n6\\.0 km → 4\\.9 km\\n35 min → 30 min\\nEffort and recovery signals were elevated\\."
+- assertVisible:
+    text: "Apply Changes|Aplicar Cambios"

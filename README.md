@@ -215,6 +215,74 @@ supabase db push
 supabase functions serve generate-plan
 ```
 
+Adaptive coaching local test fixture:
+
+```sh
+supabase start
+supabase db push
+supabase status
+```
+
+Use the local anon key from `supabase status` in
+`apps/mobile/config/dart_defines.env`. For iOS Simulator, use:
+
+```text
+SUPABASE_URL=http://127.0.0.1:54321
+SUPABASE_ANON_KEY=<local anon key>
+```
+
+For Android Emulator, the app usually needs:
+
+```text
+SUPABASE_URL=http://10.0.2.2:54321
+SUPABASE_ANON_KEY=<local anon key>
+```
+
+Seed a local athlete who already has current-week activity and feedback:
+
+```sh
+cd apps/mobile
+export SUPABASE_SERVICE_ROLE_KEY=<local service_role key from supabase status>
+export SUPABASE_SEED_URL=http://127.0.0.1:54321
+dart run tool/seed_adaptive_review_user.dart --scenario too-aggressive --review pending
+```
+
+The seed utility refuses remote Supabase URLs and only accepts local targets
+(for example `http://127.0.0.1:54321` or `http://10.0.2.2:54321`) at the CLI or
+via `SUPABASE_SEED_URL`/`SUPABASE_URL`.
+
+The default seeded login is:
+
+```text
+adaptive.runner@example.test
+AdaptiveTest123!
+```
+
+Use `--review pending` for deterministic UI/Maestro testing. Use
+`--review none` to test live review generation through the local `adapt-plan`
+Edge Function. In a separate terminal from the app:
+
+```sh
+cp supabase/.env.local.example supabase/.env.local
+# Fill SB_PUBLISHABLE_KEY with the local anon key and OPENAI_API_KEY if needed.
+supabase functions serve adapt-plan --env-file supabase/.env.local
+```
+
+Then run the app:
+
+```sh
+cd apps/mobile
+flutter run --dart-define-from-file=config/dart_defines.env
+```
+
+Run the deterministic Maestro smoke flow from the repository root:
+
+```sh
+maestro test apps/mobile/maestro/adaptive_review_pending_smoke.yaml
+```
+
+Maestro requires a Java runtime and a running simulator/device.
+
 Deploy the plan generation function:
 
 ```sh
