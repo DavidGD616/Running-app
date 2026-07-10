@@ -86,12 +86,13 @@ class WeeklyTrainingSummary {
     required DateTime weekStart,
     required DateTime referenceDate,
   }) {
-    final weekEnd = weekStart.add(const Duration(days: 7));
+    final weekEndExclusive = weekStart.add(const Duration(days: 7));
+    final weekEnd = weekStart.add(const Duration(days: 6));
     final dueCutoff = _dateOnly(referenceDate);
     final allWeekSessions = sessions
         .where((session) {
           final date = _dateOnly(session.date);
-          return !date.isBefore(weekStart) && date.isBefore(weekEnd);
+          return !date.isBefore(weekStart) && date.isBefore(weekEndExclusive);
         })
         .where((session) => session.countsAsRun)
         .toList(growable: false);
@@ -157,10 +158,6 @@ class WeeklyTrainingSummary {
       if (feedback?.difficulty == SessionFeedbackDifficulty.veryHard) {
         veryHardSessionCount++;
       }
-      if (feedback?.difficulty == SessionFeedbackDifficulty.hard) {
-        hardSessionCount++;
-      }
-
       if (session.status == SessionStatus.completed) {
         completedSessions++;
 

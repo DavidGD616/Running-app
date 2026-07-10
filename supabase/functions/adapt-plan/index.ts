@@ -40,6 +40,9 @@ type PatchType =
 
 const DEFAULT_OPENAI_MODEL = "gpt-5.5";
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const ONE_MINUTE_MS = 60 * 1000;
+const MIN_TIMEZONE_OFFSET_MINUTES = -12 * 60;
+const MAX_TIMEZONE_OFFSET_MINUTES = 14 * 60;
 const HARD_SESSION_TYPES = new Set<SessionType>([
   "intervals",
   "hillRepeats",
@@ -71,8 +74,8 @@ const AdaptationPatchSchema = z.object({
     "repeatWeek",
     "progressSlightly",
   ]),
-  sessionId: z.string().optional(),
-  targetDate: z.string().optional(),
+  sessionId: z.string().nullish(),
+  targetDate: z.string().nullish(),
   targetType: z.enum([
     "easyRun",
     "longRun",
@@ -87,9 +90,9 @@ const AdaptationPatchSchema = z.object({
     "crossTraining",
     "restDay",
     "raceDay",
-  ]).optional(),
-  targetDistanceKm: z.number().positive().optional(),
-  targetDurationMinutes: z.number().int().positive().optional(),
+  ]).nullish(),
+  targetDistanceKm: z.number().positive().nullish(),
+  targetDurationMinutes: z.number().int().positive().nullish(),
   reasonKey: z.string().min(1),
 }).strict();
 
@@ -242,17 +245,43 @@ function parseDateOnly(value: string | null | undefined): Date | null {
     return null;
   }
   const parsed = new Date(`${value}T00:00:00.000Z`);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  if (Number.isNaN(parsed.getTime()) || normalizeDateOnly(parsed) !== value) {
+    return null;
+  }
+  return parsed;
+}
+
+export function parseTimezoneOffsetMinutes(value: unknown): number | null {
+  if (value === undefined) return 0;
+  if (
+    typeof value !== "number" ||
+    !Number.isInteger(value) ||
+    value < MIN_TIMEZONE_OFFSET_MINUTES ||
+    value > MAX_TIMEZONE_OFFSET_MINUTES
+  ) {
+    return null;
+  }
+  return value;
+}
+
+export function currentDateAtTimezoneOffset(
+  instant: Date,
+  timezoneOffsetMinutes: number,
+): string {
+  return normalizeDateOnly(
+    new Date(instant.getTime() + timezoneOffsetMinutes * ONE_MINUTE_MS),
+  );
 }
 
 function defaultWeekBounds(
   now = new Date(),
+  timezoneOffsetMinutes = 0,
 ): { weekStart: string; weekEnd: string } {
-  const utc = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-  ));
+  const currentDate = currentDateAtTimezoneOffset(
+    now,
+    timezoneOffsetMinutes,
+  );
+  const utc = parseDateOnly(currentDate)!;
   const weekday = utc.getUTCDay() === 0 ? 7 : utc.getUTCDay();
   const weekStart = new Date(utc.getTime() - (weekday - 1) * ONE_DAY_MS);
   const weekEnd = new Date(weekStart.getTime() + 6 * ONE_DAY_MS);
@@ -536,7 +565,7 @@ function resolveOpenAiModel(): string {
   return value && !/\s/.test(value) ? value : DEFAULT_OPENAI_MODEL;
 }
 
-function adaptationJsonSchema(): JsonObject {
+export function adaptationJsonSchema(): JsonObject {
   return {
     type: "object",
     additionalProperties: false,
@@ -567,7 +596,15 @@ function adaptationJsonSchema(): JsonObject {
         items: {
           type: "object",
           additionalProperties: false,
-          required: ["type", "reasonKey"],
+          required: [
+            "type",
+            "sessionId",
+            "targetDate",
+            "targetType",
+            "targetDistanceKm",
+            "targetDurationMinutes",
+            "reasonKey",
+          ],
           properties: {
             type: {
               type: "string",
@@ -577,14 +614,13 @@ function adaptationJsonSchema(): JsonObject {
                 "replaceSession",
                 "moveSession",
                 "shortenLongRun",
-                "repeatWeek",
                 "progressSlightly",
               ],
             },
-            sessionId: { type: "string" },
-            targetDate: { type: "string" },
+            sessionId: { type: ["string", "null"] },
+            targetDate: { type: ["string", "null"] },
             targetType: {
-              type: "string",
+              type: ["string", "null"],
               enum: [
                 "easyRun",
                 "longRun",
@@ -599,10 +635,11 @@ function adaptationJsonSchema(): JsonObject {
                 "crossTraining",
                 "restDay",
                 "raceDay",
+                null,
               ],
             },
-            targetDistanceKm: { type: "number" },
-            targetDurationMinutes: { type: "integer" },
+            targetDistanceKm: { type: ["number", "null"] },
+            targetDurationMinutes: { type: ["integer", "null"] },
             reasonKey: { type: "string" },
           },
         },
@@ -688,54 +725,411 @@ export function validateAdaptationPatches(
   patches: AdaptationPatch[],
   futureSessions: PlannedSession[],
   summary: WeeklyTrainingSummary,
+  options: { asOfDate?: string } = {},
 ): { ok: true; patches: AdaptationPatch[] } | { ok: false; reason: string } {
+  if (patches.length === 0) {
+    return { ok: false, reason: "missing_patches" };
+  }
+  const noChangePatches = patches.filter((patch) => patch.type === "noChange");
+  if (noChangePatches.length > 0 && patches.length > 1) {
+    return { ok: false, reason: "no_change_must_be_exclusive" };
+  }
+
+  const asOfDate = options.asOfDate ?? normalizeDateOnly(new Date());
+  if (parseDateOnly(asOfDate) == null) {
+    return { ok: false, reason: "invalid_as_of_date" };
+  }
   const sessionById = new Map(
     futureSessions.map((session) => [session.id, session]),
   );
+  const remainingPlanDates = futureSessions
+    .map((session) => session.date.slice(0, 10))
+    .filter((date) => parseDateOnly(date) != null)
+    .sort();
+  const planStart = remainingPlanDates.at(0) ?? null;
+  const planEnd = remainingPlanDates.at(-1) ?? null;
+  const patchedSessionIds = new Set<string>();
   const sanitized: AdaptationPatch[] = [];
 
   for (const patch of patches) {
     if (patch.type === "noChange") {
-      sanitized.push(patch);
+      if (hasTargetFields(patch)) {
+        return { ok: false, reason: "no_change_has_target_fields" };
+      }
+      sanitized.push({
+        type: "noChange",
+        reasonKey: patch.reasonKey,
+      });
       continue;
+    }
+    if (patch.type === "repeatWeek") {
+      return { ok: false, reason: "unsupported_patch_type" };
     }
     if (patch.sessionId == null || !sessionById.has(patch.sessionId)) {
       return { ok: false, reason: "unknown_session" };
     }
+    if (patchedSessionIds.has(patch.sessionId)) {
+      return { ok: false, reason: "duplicate_session_patch" };
+    }
+    patchedSessionIds.add(patch.sessionId);
     const session = sessionById.get(patch.sessionId)!;
     if (summary.severity === "high" && patch.type === "progressSlightly") {
       return { ok: false, reason: "progression_blocked_by_high_severity" };
     }
+
+    const validation = validatePatchForSession({
+      patch,
+      session,
+      summary,
+      asOfDate,
+      planStart,
+      planEnd,
+    });
+    if (!validation.ok) return validation;
+    sanitized.push(validation.patch);
+  }
+
+  return { ok: true, patches: sanitized };
+}
+
+function hasTargetFields(patch: AdaptationPatch): boolean {
+  return patch.sessionId != null ||
+    patch.targetDate != null ||
+    patch.targetType != null ||
+    patch.targetDistanceKm != null ||
+    patch.targetDurationMinutes != null;
+}
+
+function hasMetricTargets(patch: AdaptationPatch): boolean {
+  return patch.targetDistanceKm != null || patch.targetDurationMinutes != null;
+}
+
+function validateMetricShape(
+  patch: AdaptationPatch,
+): { ok: true } | { ok: false; reason: string } {
+  if (
+    patch.targetDistanceKm != null &&
+    (!Number.isFinite(patch.targetDistanceKm) || patch.targetDistanceKm <= 0)
+  ) {
+    return { ok: false, reason: "invalid_target_distance" };
+  }
+  if (
+    patch.targetDurationMinutes != null &&
+    (!Number.isInteger(patch.targetDurationMinutes) ||
+      patch.targetDurationMinutes <= 0)
+  ) {
+    return { ok: false, reason: "invalid_target_duration" };
+  }
+  return { ok: true };
+}
+
+function validateComparableMetrics(
+  patch: AdaptationPatch,
+  session: PlannedSession,
+): { ok: true } | { ok: false; reason: string } {
+  const shape = validateMetricShape(patch);
+  if (!shape.ok) return shape;
+  if (patch.targetDistanceKm != null && session.distanceKm == null) {
+    return { ok: false, reason: "target_distance_not_available" };
+  }
+  if (patch.targetDurationMinutes != null && session.durationMinutes == null) {
+    return { ok: false, reason: "target_duration_not_available" };
+  }
+  return { ok: true };
+}
+
+function exceedsIncreaseCap(
+  patch: AdaptationPatch,
+  session: PlannedSession,
+): { ok: true } | { ok: false; reason: string } {
+  if (
+    patch.targetDistanceKm != null &&
+    session.distanceKm != null &&
+    patch.targetDistanceKm > session.distanceKm * 1.08
+  ) {
+    return { ok: false, reason: "distance_increase_too_large" };
+  }
+  if (
+    patch.targetDurationMinutes != null &&
+    session.durationMinutes != null &&
+    patch.targetDurationMinutes > session.durationMinutes * 1.08
+  ) {
+    return { ok: false, reason: "duration_increase_too_large" };
+  }
+  return { ok: true };
+}
+
+function metricPatch(
+  patch: AdaptationPatch,
+): Pick<
+  AdaptationPatch,
+  "targetDistanceKm" | "targetDurationMinutes"
+> {
+  return {
+    ...(patch.targetDistanceKm == null
+      ? {}
+      : { targetDistanceKm: patch.targetDistanceKm }),
+    ...(patch.targetDurationMinutes == null
+      ? {}
+      : { targetDurationMinutes: patch.targetDurationMinutes }),
+  };
+}
+
+function validateReductionPatch(
+  patch: AdaptationPatch,
+  session: PlannedSession,
+): { ok: true; patch: AdaptationPatch } | { ok: false; reason: string } {
+  if (patch.targetDate != null || patch.targetType != null) {
+    return { ok: false, reason: "reduction_has_unexpected_fields" };
+  }
+  if (!hasMetricTargets(patch)) {
+    return { ok: false, reason: "reduction_requires_target_metric" };
+  }
+  const comparable = validateComparableMetrics(patch, session);
+  if (!comparable.ok) return comparable;
+  if (
+    (patch.targetDistanceKm != null &&
+      patch.targetDistanceKm > session.distanceKm!) ||
+    (patch.targetDurationMinutes != null &&
+      patch.targetDurationMinutes > session.durationMinutes!)
+  ) {
+    return { ok: false, reason: "reduction_cannot_increase_metric" };
+  }
+  const reducesDistance = patch.targetDistanceKm != null &&
+    patch.targetDistanceKm < session.distanceKm!;
+  const reducesDuration = patch.targetDurationMinutes != null &&
+    patch.targetDurationMinutes < session.durationMinutes!;
+  if (!reducesDistance && !reducesDuration) {
+    return { ok: false, reason: "reduction_must_reduce_metric" };
+  }
+  return {
+    ok: true,
+    patch: {
+      type: patch.type,
+      sessionId: patch.sessionId,
+      ...metricPatch(patch),
+      reasonKey: patch.reasonKey,
+    },
+  };
+}
+
+function validateProgressionPatch(
+  patch: AdaptationPatch,
+  session: PlannedSession,
+): { ok: true; patch: AdaptationPatch } | { ok: false; reason: string } {
+  if (patch.targetDate != null || patch.targetType != null) {
+    return { ok: false, reason: "progression_has_unexpected_fields" };
+  }
+  if (!hasMetricTargets(patch)) {
+    return { ok: false, reason: "progression_requires_target_metric" };
+  }
+  const comparable = validateComparableMetrics(patch, session);
+  if (!comparable.ok) return comparable;
+  if (
+    (patch.targetDistanceKm != null &&
+      patch.targetDistanceKm < session.distanceKm!) ||
+    (patch.targetDurationMinutes != null &&
+      patch.targetDurationMinutes < session.durationMinutes!)
+  ) {
+    return { ok: false, reason: "progression_cannot_reduce_metric" };
+  }
+  const increasesDistance = patch.targetDistanceKm != null &&
+    patch.targetDistanceKm > session.distanceKm!;
+  const increasesDuration = patch.targetDurationMinutes != null &&
+    patch.targetDurationMinutes > session.durationMinutes!;
+  if (!increasesDistance && !increasesDuration) {
+    return { ok: false, reason: "progression_must_increase_metric" };
+  }
+  const cap = exceedsIncreaseCap(patch, session);
+  if (!cap.ok) return cap;
+  return {
+    ok: true,
+    patch: {
+      type: "progressSlightly",
+      sessionId: patch.sessionId,
+      ...metricPatch(patch),
+      reasonKey: patch.reasonKey,
+    },
+  };
+}
+
+function validatePatchForSession({
+  patch,
+  session,
+  summary,
+  asOfDate,
+  planStart,
+  planEnd,
+}: {
+  patch: AdaptationPatch;
+  session: PlannedSession;
+  summary: WeeklyTrainingSummary;
+  asOfDate: string;
+  planStart: string | null;
+  planEnd: string | null;
+}): { ok: true; patch: AdaptationPatch } | { ok: false; reason: string } {
+  if (patch.type === "reduceSession") {
+    return validateReductionPatch(patch, session);
+  }
+  if (patch.type === "shortenLongRun") {
+    if (session.type !== "longRun") {
+      return { ok: false, reason: "shorten_requires_long_run" };
+    }
+    return validateReductionPatch(patch, session);
+  }
+  if (patch.type === "progressSlightly") {
+    return validateProgressionPatch(patch, session);
+  }
+  if (patch.type === "replaceSession") {
+    if (patch.targetDate != null) {
+      return { ok: false, reason: "replacement_has_unexpected_fields" };
+    }
+    if (patch.targetType == null) {
+      return { ok: false, reason: "replacement_requires_target_type" };
+    }
+    if (patch.targetType === session.type) {
+      return { ok: false, reason: "replacement_must_change_type" };
+    }
     if (
       summary.painFeedbackCount > 0 &&
-      patch.targetType != null &&
       HARD_SESSION_TYPES.has(patch.targetType)
     ) {
       return { ok: false, reason: "pain_cannot_add_intensity" };
     }
-    if (
-      patch.targetDistanceKm != null &&
-      session.distanceKm != null &&
-      patch.targetDistanceKm > session.distanceKm * 1.08
-    ) {
-      return { ok: false, reason: "distance_increase_too_large" };
-    }
-    if (
-      patch.targetDurationMinutes != null &&
-      session.durationMinutes != null &&
-      patch.targetDurationMinutes > session.durationMinutes * 1.08
-    ) {
-      return { ok: false, reason: "duration_increase_too_large" };
-    }
-    sanitized.push(patch);
+    const comparable = validateComparableMetrics(patch, session);
+    if (!comparable.ok) return comparable;
+    const cap = exceedsIncreaseCap(patch, session);
+    if (!cap.ok) return cap;
+    return {
+      ok: true,
+      patch: {
+        type: "replaceSession",
+        sessionId: patch.sessionId,
+        targetType: patch.targetType,
+        ...metricPatch(patch),
+        reasonKey: patch.reasonKey,
+      },
+    };
   }
+  if (patch.type === "moveSession") {
+    if (
+      patch.targetType != null ||
+      patch.targetDistanceKm != null ||
+      patch.targetDurationMinutes != null
+    ) {
+      return { ok: false, reason: "move_has_unexpected_fields" };
+    }
+    if (patch.targetDate == null || parseDateOnly(patch.targetDate) == null) {
+      return { ok: false, reason: "invalid_target_date" };
+    }
+    if (patch.targetDate <= asOfDate) {
+      return { ok: false, reason: "target_date_must_be_future" };
+    }
+    if (patch.targetDate === session.date.slice(0, 10)) {
+      return { ok: false, reason: "move_must_change_date" };
+    }
+    if (
+      planStart == null ||
+      planEnd == null ||
+      patch.targetDate < planStart ||
+      patch.targetDate > planEnd
+    ) {
+      return { ok: false, reason: "target_date_outside_plan" };
+    }
+    return {
+      ok: true,
+      patch: {
+        type: "moveSession",
+        sessionId: patch.sessionId,
+        targetDate: patch.targetDate,
+        reasonKey: patch.reasonKey,
+      },
+    };
+  }
+  return { ok: false, reason: "unsupported_patch_type" };
+}
 
-  return {
-    ok: true,
-    patches: sanitized.length === 0
-      ? defaultProposal(summary).patches
-      : sanitized,
-  };
+export function revalidateAdaptationForAcceptance({
+  plan,
+  patches,
+  activities,
+  feedback,
+  weekStart,
+  weekEnd,
+  asOfDate,
+}: {
+  plan: JsonObject;
+  patches: AdaptationPatch[];
+  activities: ActivitySummary[];
+  feedback: FeedbackSummary[];
+  weekStart: string;
+  weekEnd: string;
+  asOfDate: string;
+}):
+  | {
+    ok: true;
+    patches: AdaptationPatch[];
+    summary: WeeklyTrainingSummary;
+  }
+  | { ok: false; reason: string } {
+  if (
+    parseDateOnly(weekStart) == null ||
+    parseDateOnly(weekEnd) == null ||
+    weekStart > weekEnd
+  ) {
+    return { ok: false, reason: "invalid_review_week" };
+  }
+  if (parseDateOnly(asOfDate) == null) {
+    return { ok: false, reason: "invalid_as_of_date" };
+  }
+  const summary = buildWeeklyTrainingSummary({
+    plan,
+    activities,
+    feedback,
+    weekStart,
+    weekEnd,
+    asOfDate: minDateOnly(asOfDate, nextDateOnly(weekEnd)),
+  });
+  const futureSessions = sessionsFromPlan(plan)
+    .filter((session) => session.date.slice(0, 10) >= asOfDate);
+  const validation = validateAdaptationPatches(
+    patches,
+    futureSessions,
+    summary,
+    { asOfDate },
+  );
+  if (!validation.ok) return validation;
+  return { ok: true, patches: validation.patches, summary };
+}
+
+export function revalidateAdaptationForAcceptanceAtInstant({
+  instant,
+  timezoneOffsetMinutes,
+  ...input
+}: {
+  plan: JsonObject;
+  patches: AdaptationPatch[];
+  activities: ActivitySummary[];
+  feedback: FeedbackSummary[];
+  weekStart: string;
+  weekEnd: string;
+  instant: Date;
+  timezoneOffsetMinutes: number;
+}):
+  | {
+    ok: true;
+    patches: AdaptationPatch[];
+    summary: WeeklyTrainingSummary;
+  }
+  | { ok: false; reason: string } {
+  const parsedOffset = parseTimezoneOffsetMinutes(timezoneOffsetMinutes);
+  if (parsedOffset == null) {
+    return { ok: false, reason: "invalid_review_timezone" };
+  }
+  return revalidateAdaptationForAcceptance({
+    ...input,
+    asOfDate: currentDateAtTimezoneOffset(instant, parsedOffset),
+  });
 }
 
 function targetZoneFor(type: SessionType): string | null {
@@ -856,22 +1250,6 @@ function normalizeAdaptationPatch(value: unknown): AdaptationPatch {
   });
 }
 
-function validatePatchTargetsForPlan(
-  patches: AdaptationPatch[],
-  plan: JsonObject,
-): { ok: true } | { ok: false; reason: string } {
-  const sessionIds = new Set(
-    sessionsFromPlan(plan).map((session) => session.id),
-  );
-  for (const patch of patches) {
-    if (patch.type === "noChange") continue;
-    if (patch.sessionId == null || !sessionIds.has(patch.sessionId)) {
-      return { ok: false, reason: "adaptation_patch_target_not_found" };
-    }
-  }
-  return { ok: true };
-}
-
 async function activePlanVersion(
   admin: SupabaseClient,
   userId: string,
@@ -891,10 +1269,11 @@ async function loadActivities(
   admin: SupabaseClient,
   userId: string,
 ): Promise<ActivitySummary[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("activity_records")
     .select()
     .eq("user_id", userId);
+  if (error) throw error;
   return rowsFromResponse(data).map(activityFromRow).filter((
     item,
   ): item is ActivitySummary => item != null);
@@ -904,13 +1283,46 @@ async function loadFeedback(
   admin: SupabaseClient,
   userId: string,
 ): Promise<FeedbackSummary[]> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from("session_feedback")
     .select()
     .eq("user_id", userId);
+  if (error) throw error;
   return rowsFromResponse(data).map(feedbackFromRow).filter((
     item,
   ): item is FeedbackSummary => item != null);
+}
+
+async function pendingReviewForScope(
+  admin: SupabaseClient,
+  userId: string,
+  sourcePlanVersionId: string,
+  weekStart: string,
+  weekEnd: string,
+): Promise<JsonObject | null> {
+  const { data, error } = await admin
+    .from("adaptation_reviews")
+    .select()
+    .eq("user_id", userId)
+    .eq("source_plan_version_id", sourcePlanVersionId)
+    .eq("week_start", weekStart)
+    .eq("week_end", weekEnd)
+    .eq("status", "pending")
+    .maybeSingle();
+  if (error) throw error;
+  return isRecord(data) ? data : null;
+}
+
+function pendingReviewResponse(reviewRow: JsonObject): Response {
+  if (!isRecord(reviewRow.data)) {
+    throw new Error("Pending adaptation review has invalid data");
+  }
+  const reviewId = stringOrNull(reviewRow.id) ??
+    stringOrNull(reviewRow.data.id);
+  if (reviewId == null) {
+    throw new Error("Pending adaptation review is missing its id");
+  }
+  return jsonResponse({ reviewId, review: reviewRow.data, reused: true });
 }
 
 async function createReview(
@@ -918,14 +1330,40 @@ async function createReview(
   userId: string,
   body: JsonObject,
 ): Promise<Response> {
+  const timezoneOffsetMinutes = parseTimezoneOffsetMinutes(
+    body.timezoneOffsetMinutes,
+  );
+  if (timezoneOffsetMinutes == null) {
+    return jsonResponse({ error: "Invalid timezone offset" }, 400);
+  }
   const planVersion = await activePlanVersion(admin, userId);
   if (planVersion == null) {
     return jsonResponse({ error: "Active plan not found" }, 404);
   }
-  const bounds = defaultWeekBounds();
+  const creationInstant = new Date();
+  const bounds = defaultWeekBounds(creationInstant, timezoneOffsetMinutes);
   const weekStart = stringOrNull(body.weekStart) ?? bounds.weekStart;
   const weekEnd = stringOrNull(body.weekEnd) ?? bounds.weekEnd;
-  const today = normalizeDateOnly(new Date());
+  if (
+    parseDateOnly(weekStart) == null ||
+    parseDateOnly(weekEnd) == null ||
+    weekStart > weekEnd
+  ) {
+    return jsonResponse({ error: "Invalid review week" }, 400);
+  }
+  const pendingReview = await pendingReviewForScope(
+    admin,
+    userId,
+    planVersion.id,
+    weekStart,
+    weekEnd,
+  );
+  if (pendingReview != null) return pendingReviewResponse(pendingReview);
+
+  const today = currentDateAtTimezoneOffset(
+    creationInstant,
+    timezoneOffsetMinutes,
+  );
   const asOfDate = minDateOnly(today, nextDateOnly(weekEnd));
   const locale = (body.locale === "es" ? "es" : "en") as SupportedLocale;
   const activities = await loadActivities(admin, userId);
@@ -961,13 +1399,14 @@ async function createReview(
     proposal.patches,
     futureSessions,
     summary,
+    { asOfDate: today },
   );
   const status: AdaptationReviewStatus = validation.ok ? "pending" : "failed";
   const patches = validation.ok ? validation.patches : [{
     type: "noChange",
     reasonKey: validation.reason,
   }] satisfies AdaptationPatch[];
-  const now = new Date().toISOString();
+  const now = creationInstant.toISOString();
   const reviewId = crypto.randomUUID();
   const review = {
     schemaVersion: 1,
@@ -981,6 +1420,7 @@ async function createReview(
     weeklySummary: summary,
     weekStart,
     weekEnd,
+    timezoneOffsetMinutes,
     sourcePlanVersionId: planVersion.id,
     proposedPlanVersionId: null,
     createdAt: now,
@@ -1002,6 +1442,18 @@ async function createReview(
     data: review,
   });
   if (error) {
+    if (error.code === "23505" && status === "pending") {
+      const concurrentReview = await pendingReviewForScope(
+        admin,
+        userId,
+        planVersion.id,
+        weekStart,
+        weekEnd,
+      );
+      if (concurrentReview != null) {
+        return pendingReviewResponse(concurrentReview);
+      }
+    }
     console.error("Failed to save adaptation review", error);
     return jsonResponse({ error: "Failed to save adaptation review" }, 500);
   }
@@ -1028,34 +1480,60 @@ async function acceptReview(
   if (reviewRow.status !== "pending") {
     return jsonResponse({ error: "Adaptation review is not pending" }, 409);
   }
+  const timezoneOffsetMinutes = parseTimezoneOffsetMinutes(
+    reviewRow.data.timezoneOffsetMinutes,
+  );
+  if (timezoneOffsetMinutes == null) {
+    return jsonResponse({ error: "invalid_review_timezone" }, 409);
+  }
   const planVersion = await activePlanVersion(admin, userId);
   if (planVersion == null) {
     return jsonResponse({ error: "Active plan not found" }, 404);
   }
-  const sourcePlanVersionId =
-    stringOrNull(reviewRow.data.sourcePlanVersionId) ??
-      stringOrNull(reviewRow.source_plan_version_id);
+  const sourcePlanVersionId = stringOrNull(reviewRow.source_plan_version_id);
   if (sourcePlanVersionId !== planVersion.id) {
     return jsonResponse({ error: "Adaptation review is stale" }, 409);
   }
   const patchesRaw = reviewRow.data.patches;
-  const patches = Array.isArray(patchesRaw)
-    ? patchesRaw.map((item) => normalizeAdaptationPatch(item))
-    : [];
-  const targetValidation = validatePatchTargetsForPlan(
-    patches,
-    planVersion.data,
-  );
-  if (!targetValidation.ok) {
-    return jsonResponse({ error: targetValidation.reason }, 409);
+  let patches: AdaptationPatch[];
+  try {
+    if (!Array.isArray(patchesRaw)) {
+      return jsonResponse({ error: "invalid_stored_patches" }, 409);
+    }
+    patches = patchesRaw.map((item) => normalizeAdaptationPatch(item));
+  } catch {
+    return jsonResponse({ error: "invalid_stored_patches" }, 409);
   }
-  const nextPlan = applyPatchesToPlan(planVersion.data, patches);
+  const weekStart = stringOrNull(reviewRow.week_start);
+  const weekEnd = stringOrNull(reviewRow.week_end);
+  if (weekStart == null || weekEnd == null) {
+    return jsonResponse({ error: "invalid_review_week" }, 409);
+  }
+  const activities = await loadActivities(admin, userId);
+  const feedback = await loadFeedback(admin, userId);
+  const acceptanceInstant = new Date();
+  const validation = revalidateAdaptationForAcceptanceAtInstant({
+    plan: planVersion.data,
+    patches,
+    activities,
+    feedback,
+    weekStart,
+    weekEnd,
+    instant: acceptanceInstant,
+    timezoneOffsetMinutes,
+  });
+  if (!validation.ok) {
+    return jsonResponse({ error: validation.reason }, 409);
+  }
+  const nextPlan = applyPatchesToPlan(planVersion.data, validation.patches);
   const versionId = crypto.randomUUID();
-  const now = new Date().toISOString();
+  const now = acceptanceInstant.toISOString();
   const updatedReview = {
     ...reviewRow.data,
     status: "accepted",
-    patches,
+    patches: validation.patches,
+    weeklySummary: validation.summary,
+    timezoneOffsetMinutes,
     proposedPlanVersionId: versionId,
     updatedAt: now,
   };
@@ -1089,6 +1567,53 @@ async function acceptReview(
   });
 }
 
+async function dismissReview(
+  admin: SupabaseClient,
+  userId: string,
+  body: JsonObject,
+): Promise<Response> {
+  const reviewId = stringOrNull(body.reviewId);
+  if (reviewId == null) return jsonResponse({ error: "Missing reviewId" }, 400);
+
+  const { data: reviewRow, error: reviewError } = await admin
+    .from("adaptation_reviews")
+    .select()
+    .eq("user_id", userId)
+    .eq("id", reviewId)
+    .maybeSingle();
+  if (reviewError) throw reviewError;
+  if (!isRecord(reviewRow) || !isRecord(reviewRow.data)) {
+    return jsonResponse({ error: "Adaptation review not found" }, 404);
+  }
+  if (reviewRow.status !== "pending") {
+    return jsonResponse({ error: "Adaptation review is not pending" }, 409);
+  }
+
+  const now = new Date().toISOString();
+  const updatedReview = {
+    ...reviewRow.data,
+    status: "dismissed",
+    updatedAt: now,
+  };
+  const { data: updatedRow, error: updateError } = await admin
+    .from("adaptation_reviews")
+    .update({
+      status: "dismissed",
+      updated_at: now,
+      data: updatedReview,
+    })
+    .eq("user_id", userId)
+    .eq("id", reviewId)
+    .eq("status", "pending")
+    .select()
+    .maybeSingle();
+  if (updateError) throw updateError;
+  if (!isRecord(updatedRow)) {
+    return jsonResponse({ error: "Adaptation review is stale" }, 409);
+  }
+  return jsonResponse({ review: updatedReview });
+}
+
 Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -1115,6 +1640,7 @@ Deno.serve(async (req) => {
     const body = await req.json().catch(() => ({} as JsonObject));
     const action = stringOrNull(body.action) ?? "review";
     if (action === "accept") return await acceptReview(admin, userId, body);
+    if (action === "dismiss") return await dismissReview(admin, userId, body);
     if (action === "review") return await createReview(admin, userId, body);
     return jsonResponse({ error: "Unsupported action" }, 400);
   } catch (error) {

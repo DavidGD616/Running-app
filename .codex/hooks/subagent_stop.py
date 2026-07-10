@@ -51,7 +51,22 @@ NON_BLOCKING_APPROVE_TRAILING_PATTERNS = (
     r"\bno\s+critical\s+issues\b.*\bno\s+major\s+issues\b",
 )
 SEVERITY_FINDING_HEADER_RE = re.compile(
-    r"^\s*(?:[-*]\s*)?(critical|major|high)(?:\s+risk)?\s*(?::\s*|-\s*)(.+?)\s*$",
+    r"^\s*(?:[-*]\s*)?(?:#{1,6}\s*)?"
+    r"(critical|major|high)(?:\s+(?:issues?|findings?|risks?))?"
+    r"(?:\s*(?:\([^\n)]*\)|[^\w\s:#-]+))*\s*(?::\s*|-\s+)(.+?)\s*$",
+    re.IGNORECASE,
+)
+SEVERITY_SECTION_HEADER_RE = re.compile(
+    r"^\s*(?:#{1,6}\s*)?(?:critical|major|high)"
+    r"(?:\s+(?:issues?|findings?|risks?))?"
+    r"(?:\s*(?:\([^\n)]*\)|[^\w\s:#-]+))*\s*:?[ \t]*$",
+    re.IGNORECASE,
+)
+REVIEW_SECTION_HEADER_RE = re.compile(
+    r"^\s*(?:#{1,6}\s*)?(?:"
+    r"(?:critical|major|high|medium|minor|low)(?:\s+(?:issues?|findings?|risks?))?"
+    r"|positive\s+observations?|verification|summary|recommendations?|notes?"
+    r")(?:\s*(?:\([^\n)]*\)|[^\w\s:#-]+))*\s*:?[ \t]*$",
     re.IGNORECASE,
 )
 SEVERITY_NO_ISSUE_BODY_RE = re.compile(
@@ -64,6 +79,22 @@ def _extract_coder_task_info(
     open_pass: dict[str, Any] | None,
 ) -> tuple[str | None, int, bool]:
     summary = extract_prompt_text(event)
+
+    task_ids = extract_task_ids_from_prompt_lines(summary)
+    if not task_ids:
+        task_ids = extract_task_ids(summary)
+    if task_ids:
+        task_id = task_ids[0] if len(task_ids) == 1 else None
+        return task_id, len(task_ids), False
+
+    transcript_path = extract_event_transcript_path(event)
+    if transcript_path:
+        recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
+            transcript_path,
+            agent="coder",
+        )
+        if recovered_task_id and recovered_count == 1:
+            return recovered_task_id, recovered_count, True
 
     if open_pass is not None and open_pass.get("start_seq") is not None:
         start_seq = open_pass.get("start_seq")
@@ -81,14 +112,7 @@ def _extract_coder_task_info(
             if recovered_task_id and recovered_count == 1:
                 return recovered_task_id, recovered_count, True
 
-    task_ids = extract_task_ids_from_prompt_lines(summary)
-    if not task_ids:
-        task_ids = extract_task_ids(summary)
-
-    task_id = task_ids[0] if len(task_ids) == 1 else None
-    task_id_count = len(task_ids) if task_ids else 0
-
-    return task_id, task_id_count, False
+    return None, 0, False
 
 
 def _extract_reviewer_task_info(
@@ -179,18 +203,40 @@ def _is_explicit_no_issue_value(value: str) -> bool:
     normalized = re.sub(r"\s+", " ", (value or "").strip().lower()).strip()
     if not normalized:
         return False
+    normalized = re.sub(r"^(?:[-*+]\s*|\d+[.)]\s*)", "", normalized)
+    normalized = normalized.replace("`", "").replace("*", "").replace("_", "")
     normalized = normalized.strip("`'\"().,;:!?)-")
     return bool(SEVERITY_NO_ISSUE_BODY_RE.fullmatch(normalized))
 
 
 def _has_blocking_severity_findings(value: str) -> bool:
-    for raw_line in (value or "").splitlines():
+    lines = (value or "").splitlines()
+    index = 0
+    while index < len(lines):
+        raw_line = lines[index]
         match = SEVERITY_FINDING_HEADER_RE.match(raw_line.strip())
-        if not match:
+        if match:
+            body = match.group(2).strip()
+            if not _is_explicit_no_issue_value(body):
+                return True
+            index += 1
             continue
-        body = match.group(2).strip()
-        if not _is_explicit_no_issue_value(body):
-            return True
+
+        if not SEVERITY_SECTION_HEADER_RE.match(raw_line.strip()):
+            index += 1
+            continue
+
+        index += 1
+        while index < len(lines):
+            body_line = lines[index].strip()
+            if not body_line:
+                index += 1
+                continue
+            if REVIEW_SECTION_HEADER_RE.match(body_line):
+                break
+            if not _is_explicit_no_issue_value(body_line):
+                return True
+            index += 1
     return False
 
 
@@ -244,6 +290,7 @@ def main() -> None:
     event = json.loads(sys.stdin.read() or "{}")
     agent = classify_agent(event)
     summary = extract_prompt_text(event)
+    agent_transcript_path = extract_event_transcript_path(event)
     code = parse_tool_exit_code(event)
 
     decision = {}
@@ -253,7 +300,15 @@ def main() -> None:
         if not state.get("active"):
             return
 
-        event_seq = append_event(state, "SubagentStop", {"agent": agent, "summary_excerpt": summary[:200]})
+        event_seq = append_event(
+            state,
+            "SubagentStop",
+            {
+                "agent": agent,
+                "summary_excerpt": summary[:200],
+                "agent_transcript_path": agent_transcript_path,
+            },
+        )
         state["turn"]["events"] = state["turn"]["events"][-40:]
 
         if agent == "reviewer":
@@ -294,6 +349,7 @@ def main() -> None:
                     "seq": event_seq,
                     "task_id": reviewer_task_id if reviewer_task_id_count == 1 else None,
                     "task_id_count": reviewer_task_id_count,
+                    "agent_transcript_path": agent_transcript_path,
                     "snapshot_signature": reviewer_snapshot_signature,
                 }
             )
@@ -348,6 +404,7 @@ def main() -> None:
                 open_pass["stop_seq"] = event_seq
                 open_pass["stop_task_id"] = task_id
                 open_pass["stop_task_id_count"] = task_id_count
+                open_pass["agent_transcript_path"] = agent_transcript_path
                 open_pass["stop_snapshot_signature"] = coder_snapshot_signature
             else:
                 coder_passes.append(
@@ -360,6 +417,7 @@ def main() -> None:
                         "stop_seq": event_seq,
                         "stop_task_id": task_id,
                         "stop_task_id_count": task_id_count,
+                        "agent_transcript_path": agent_transcript_path,
                         "stop_snapshot_signature": coder_snapshot_signature,
                     }
                 )

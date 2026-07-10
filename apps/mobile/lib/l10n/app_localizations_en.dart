@@ -3722,12 +3722,26 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String adaptationRecoveryFlags(int count) {
-    return '$count recovery flags';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count recovery flags',
+      one: '1 recovery flag',
+      zero: 'No recovery flags',
+    );
+    return '$_temp0';
   }
 
   @override
   String adaptationPainFlags(int count) {
-    return '$count pain flags';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count pain flags',
+      one: '1 pain flag',
+      zero: 'No pain flags',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3753,6 +3767,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get adaptationHomeTriggerBody =>
       'Your week has enough feedback for a coach review.';
+
+  @override
+  String get adaptationActionError =>
+      'We couldn’t complete that coach action. Try again.';
 
   @override
   String get adaptationSummaryOnTrack => 'You are on track this week.';

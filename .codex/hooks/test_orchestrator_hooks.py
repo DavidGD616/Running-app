@@ -37,7 +37,8 @@ class OrchestratorHookTests(unittest.TestCase):
         self.addCleanup(patcher_state_file.stop)
 
     def _write_transcript(self, records: list[dict[str, Any]]) -> Path:
-        path = Path(self._tempdir.name) / f"transcript-{id(records)}.jsonl"
+        transcript_number = len(list(Path(self._tempdir.name).glob("transcript-*.jsonl")))
+        path = Path(self._tempdir.name) / f"transcript-{transcript_number}.jsonl"
         with path.open("w", encoding="utf-8") as handle:
             for record in records:
                 handle.write(json.dumps(record))
@@ -141,8 +142,8 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertEqual("CODEC-101", recovered_task_id)
         self.assertEqual(1, recovered_count)
 
-    def test_reviewer_task_id_recovered_from_transcript_when_summary_missing(self) -> None:
-        transcript_path = self._write_transcript(
+    def test_reviewer_task_id_recovered_from_agent_transcript_when_summary_missing(self) -> None:
+        agent_transcript_path = self._write_transcript(
             [
                 {
                     "payload": {
@@ -159,15 +160,40 @@ class OrchestratorHookTests(unittest.TestCase):
                 }
             ]
         )
+        parent_transcript_path = self._write_transcript(
+            [
+                {
+                    "payload": {
+                        "type": "function_call",
+                        "name": "functions.exec",
+                        "arguments": json.dumps(
+                            {
+                                "name": "spawn_agent",
+                                "agent_type": "reviewer",
+                                "message": "Codex-Orchestrator-Internal-Subagent: reviewer\nTask ID: WRONG-PARENT",
+                            }
+                        ),
+                    }
+                }
+            ]
+        )
 
         event: dict[str, Any] = {
-            "prompt": "Reviewer completed",
-            "raw": {"transcript_path": str(transcript_path)},
+            "hook_event_name": "SubagentStop",
+            "agent_id": "reviewer-agent-1",
+            "agent_type": "reviewer",
+            "last_assistant_message": "Reviewer completed",
+            "agent_transcript_path": str(agent_transcript_path),
+            "transcript_path": str(parent_transcript_path),
         }
         task_id, count = subagent_stop._extract_reviewer_task_info(event, {})
 
         self.assertEqual("REV-77", task_id)
         self.assertEqual(1, count)
+        self.assertEqual(
+            str(agent_transcript_path),
+            orchestrator_state.extract_event_transcript_path(event),
+        )
 
     def test_reviewer_task_id_recovery_fails_when_only_non_matching_sentinel_or_text_exists(self) -> None:
         transcript_path = self._write_transcript(
@@ -196,6 +222,104 @@ class OrchestratorHookTests(unittest.TestCase):
 
         self.assertIsNone(recovered_task_id)
         self.assertEqual(0, recovered_count)
+
+    def test_subagent_stop_persists_official_agent_transcript_path(self) -> None:
+        agent_transcript_path = self._write_transcript(
+            [
+                {
+                    "payload": {
+                        "type": "user_message",
+                        "message": (
+                            "Codex-Orchestrator-Internal-Subagent: reviewer\n"
+                            "Task ID: REVIEW-42"
+                        ),
+                    }
+                }
+            ]
+        )
+        self._set_active_turn_state()
+
+        event: dict[str, Any] = {
+            "hook_event_name": "SubagentStop",
+            "agent_id": "reviewer-agent-42",
+            "agent_type": "reviewer",
+            "last_assistant_message": "Overall Assessment: APPROVE",
+            "agent_transcript_path": str(agent_transcript_path),
+            "transcript_path": str(Path(self._tempdir.name) / "parent.jsonl"),
+        }
+        with patch.object(subagent_stop, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(subagent_stop, event)
+
+        reviewer_stop = self._load_state()["turn"]["agents"]["reviewer_stops"][-1]
+        self.assertEqual("REVIEW-42", reviewer_stop["task_id"])
+        self.assertEqual(
+            str(agent_transcript_path),
+            reviewer_stop["agent_transcript_path"],
+        )
+
+    def test_stop_backfill_prefers_persisted_agent_transcript_path(self) -> None:
+        agent_transcript_path = self._write_transcript(
+            [
+                {
+                    "payload": {
+                        "type": "user_message",
+                        "message": (
+                            "Codex-Orchestrator-Internal-Subagent: coder\n"
+                            "Task ID: CODER-AGENT-9"
+                        ),
+                    }
+                }
+            ]
+        )
+        parent_transcript_path = self._write_transcript(
+            [
+                {
+                    "payload": {
+                        "type": "user_message",
+                        "message": (
+                            "Codex-Orchestrator-Internal-Subagent: coder\n"
+                            "Task ID: WRONG-PARENT"
+                        ),
+                    }
+                }
+            ]
+        )
+        state = orchestrator_state.default_state()
+        state["turn"]["agents"]["coder_passes"] = [
+            {
+                "start_seq": 1,
+                "start_task_id": None,
+                "start_task_id_count": 0,
+                "stop_seq": 2,
+                "stop_task_id": None,
+                "stop_task_id_count": 0,
+                "agent_transcript_path": str(agent_transcript_path),
+            }
+        ]
+        state["turn"]["events"] = [
+            {
+                "event": "SubagentStart",
+                "seq": 1,
+                "details": {
+                    "agent": "coder",
+                    "raw": {"transcript_path": str(parent_transcript_path)},
+                },
+            },
+            {
+                "event": "SubagentStop",
+                "seq": 2,
+                "details": {
+                    "agent": "coder",
+                    "agent_transcript_path": str(agent_transcript_path),
+                },
+            },
+        ]
+
+        stop._backfill_pass_tasks_from_subagent_starts(state)
+
+        coder_pass = state["turn"]["agents"]["coder_passes"][0]
+        self.assertEqual("CODER-AGENT-9", coder_pass["start_task_id"])
+        self.assertEqual("CODER-AGENT-9", coder_pass["stop_task_id"])
 
     def test_user_prompt_submit_records_internal_actor_by_transcript_path(self) -> None:
         orchestrator_state.save_state(orchestrator_state.default_state(), with_lock=False)
@@ -275,6 +399,51 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertFalse(orchestrator_state.command_match_verification("flutter create test"))
         self.assertFalse(orchestrator_state.command_match_verification("flutter --version test"))
         self.assertFalse(orchestrator_state.command_match_verification("dart pub test"))
+
+    def test_string_tool_response_preserves_failure_exit_codes(self) -> None:
+        events = (
+            ({"tool_response": "Process exited with code 1"}, 1),
+            ({"tool_response": "exit_code: 23"}, 23),
+            ({"tool_response": "exec_command failed for `flutter test`"}, 1),
+        )
+
+        for event, expected in events:
+            with self.subTest(tool_response=event["tool_response"]):
+                self.assertEqual(expected, orchestrator_state.parse_tool_exit_code(event))
+
+    def test_tool_exit_code_preserves_structured_responses_and_successful_stdout(self) -> None:
+        self.assertEqual(
+            7,
+            orchestrator_state.parse_tool_exit_code({"tool_response": {"exit_code": 7}}),
+        )
+        self.assertEqual(
+            0,
+            orchestrator_state.parse_tool_exit_code(
+                {"tool_response": "Completed 7 checks successfully."}
+            ),
+        )
+
+    def test_standard_severity_sections_with_findings_are_blocking(self) -> None:
+        reviews = (
+            "Critical Issues\n- App crashes on launch.\n\nOverall Assessment: APPROVE",
+            "Major Issues (🟠)\n- User data can be lost.\n\nOverall Assessment: APPROVE",
+            "High Risk\n- Authentication can be bypassed.\n\nOverall Assessment: APPROVE",
+        )
+
+        for review in reviews:
+            with self.subTest(review=review):
+                self.assertTrue(subagent_stop.looks_blocking(review))
+
+    def test_explicitly_empty_severity_sections_remain_non_blocking(self) -> None:
+        reviews = (
+            "Critical Issues\nNone\n\nOverall Assessment: APPROVE",
+            "Major Issues (🟠)\n- No issues\n\nOverall Assessment: APPROVE",
+            "High Risk\nNo findings\n\nOverall Assessment: APPROVE",
+        )
+
+        for review in reviews:
+            with self.subTest(review=review):
+                self.assertFalse(subagent_stop.looks_blocking(review))
 
     def test_load_state_legacy_turn_is_recursively_hydrated_with_defaults_and_preserved_values(self) -> None:
         legacy_state = {

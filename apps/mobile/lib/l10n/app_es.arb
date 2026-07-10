@@ -1547,12 +1547,12 @@
       "planned": { "type": "String" }
     }
   },
-  "adaptationRecoveryFlags": "{count} señales de recuperación",
+  "adaptationRecoveryFlags": "{count, plural, =0{Ninguna señal de recuperación} =1{1 señal de recuperación} other{{count} señales de recuperación}}",
   "@adaptationRecoveryFlags": {
     "description": "Recovery flag count in adaptation review",
     "placeholders": { "count": { "type": "int" } }
   },
-  "adaptationPainFlags": "{count} señales de dolor",
+  "adaptationPainFlags": "{count, plural, =0{Ninguna señal de dolor} =1{1 señal de dolor} other{{count} señales de dolor}}",
   "@adaptationPainFlags": {
     "description": "Pain flag count in adaptation review",
     "placeholders": { "count": { "type": "int" } }
@@ -1577,6 +1577,8 @@
   "@adaptationHomePendingBody": { "description": "Home card body when a review is pending" },
   "adaptationHomeTriggerBody": "Tu semana tiene suficiente feedback para una revisión del coach.",
   "@adaptationHomeTriggerBody": { "description": "Home card body when a review can be generated" },
+  "adaptationActionError": "No pudimos completar esa acción del coach. Inténtalo de nuevo.",
+  "@adaptationActionError": { "description": "Error shown when a coach review action fails" },
   "adaptationSummaryOnTrack": "Vas en buen camino esta semana.",
   "@adaptationSummaryOnTrack": { "description": "Adaptation summary for on-track week" },
   "adaptationSummaryTooAggressive": "Esta semana se vio un poco agresiva.",

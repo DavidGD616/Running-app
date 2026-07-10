@@ -416,8 +416,16 @@ def extract_event_transcript_path(event: Dict[str, Any]) -> str:
     if not isinstance(event, dict):
         return ""
 
+    agent_path = event.get("agent_transcript_path")
+    if isinstance(agent_path, str) and agent_path.strip():
+        return agent_path.strip()
+
     raw = event.get("raw")
     if isinstance(raw, dict):
+        raw_agent_path = raw.get("agent_transcript_path")
+        if isinstance(raw_agent_path, str) and raw_agent_path.strip():
+            return raw_agent_path.strip()
+
         raw_path = str(raw.get("transcript_path", "")).strip()
         if raw_path:
             return raw_path
@@ -648,18 +656,20 @@ def _extract_exit_code_from_exec_output(output: str) -> int | None:
     if not isinstance(output, str):
         return None
 
-    fail_match = re.search(r"exit_code\s*[:=]\s*(-?\d+)", output, flags=re.IGNORECASE)
+    fail_match = re.search(
+        r"exit[_ ]code[\"']?\s*[:=]\s*[\"']?(-?\d+)",
+        output,
+        flags=re.IGNORECASE,
+    )
     if fail_match:
         return int(fail_match.group(1))
 
     if "exec_command failed" in output.lower():
         return 1
 
-    success_match = re.search(r"Process exited with code\s*(-?\d+)?", output, flags=re.IGNORECASE)
+    success_match = re.search(r"Process exited with code\s*(-?\d+)", output, flags=re.IGNORECASE)
     if success_match:
         value = success_match.group(1)
-        if not value:
-            return 0
         try:
             return int(value)
         except ValueError:
@@ -1496,21 +1506,55 @@ def command_is_commit(command: str) -> bool:
     return False
 
 
+def _coerce_explicit_exit_code(value: Any) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float) and value.is_integer():
+        return int(value)
+    if isinstance(value, str):
+        stripped = value.strip()
+        if re.fullmatch(r"-?\d+", stripped):
+            return int(stripped)
+        return _extract_exit_code_from_exec_output(stripped)
+    return None
+
+
+def _extract_tool_response_exit_codes(value: Any) -> list[int]:
+    if isinstance(value, str):
+        code = _extract_exit_code_from_exec_output(value)
+        return [code] if code is not None else []
+
+    if isinstance(value, list):
+        codes: list[int] = []
+        for item in value:
+            codes.extend(_extract_tool_response_exit_codes(item))
+        return codes
+
+    if not isinstance(value, dict):
+        return []
+
+    codes = []
+    for key, item in value.items():
+        if str(key).lower() in {"exit_code", "exitcode", "code", "status"}:
+            code = _coerce_explicit_exit_code(item)
+            if code is not None:
+                codes.append(code)
+        codes.extend(_extract_tool_response_exit_codes(item))
+
+    if value.get("ok") is False:
+        codes.append(1)
+    return codes
+
+
 def parse_tool_exit_code(event: Dict[str, Any]) -> int:
     tool_response = event.get("tool_response") if isinstance(event, dict) else None
-    if not isinstance(tool_response, dict):
-        return 0
-    for key in ("exit_code", "code", "status"):
-        value = tool_response.get(key)
-        if value is None:
-            continue
-        try:
-            return int(value)
-        except (TypeError, ValueError):
-            continue
-    if tool_response.get("ok") is True:
-        return 0
-    return 0
+    codes = _extract_tool_response_exit_codes(tool_response)
+    for code in codes:
+        if code != 0:
+            return code
+    return codes[0] if codes else 0
 
 
 def new_turn(text: str) -> Dict[str, Any]:

@@ -6738,13 +6738,13 @@ abstract class AppLocalizations {
   /// Recovery flag count in adaptation review
   ///
   /// In en, this message translates to:
-  /// **'{count} recovery flags'**
+  /// **'{count, plural, =0{No recovery flags} =1{1 recovery flag} other{{count} recovery flags}}'**
   String adaptationRecoveryFlags(int count);
 
   /// Pain flag count in adaptation review
   ///
   /// In en, this message translates to:
-  /// **'{count} pain flags'**
+  /// **'{count, plural, =0{No pain flags} =1{1 pain flag} other{{count} pain flags}}'**
   String adaptationPainFlags(int count);
 
   /// Empty state for adaptation diff with no patches
@@ -6788,6 +6788,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your week has enough feedback for a coach review.'**
   String get adaptationHomeTriggerBody;
+
+  /// Error shown when a coach review action fails
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t complete that coach action. Try again.'**
+  String get adaptationActionError;
 
   /// Adaptation summary for on-track week
   ///

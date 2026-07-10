@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -15,7 +16,9 @@ import '../../../user_preferences/domain/user_preferences.dart';
 import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../domain/models/adaptation_patch.dart';
 import '../../domain/models/session_type.dart';
+import '../../domain/models/training_session.dart';
 import '../adaptation_actions_provider.dart';
+import '../training_plan_provider.dart';
 
 class AdaptationDiffScreen extends ConsumerWidget {
   const AdaptationDiffScreen({super.key});
@@ -28,6 +31,7 @@ class AdaptationDiffScreen extends ConsumerWidget {
     final isLoading = actionState is AdaptationActionLoading;
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final plan = ref.watch(trainingPlanProvider).value;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -59,20 +63,40 @@ class AdaptationDiffScreen extends ConsumerWidget {
                             const SizedBox(height: AppSpacing.md),
                         itemBuilder: (context, index) => _PatchCard(
                           patch: review.patches[index],
+                          sourceSession: _sourceSession(
+                            review.patches[index],
+                            plan?.sessions ?? const [],
+                          ),
                           unitSystem: unitSystem,
                         ),
                       ),
               ),
+              if (actionState is AdaptationActionFailure) ...[
+                const SizedBox(height: AppSpacing.md),
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l10n.adaptationActionError,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.error,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               AppButton(
                 label: l10n.adaptationApplyChanges,
                 isLoading: isLoading,
                 onPressed: review == null || isLoading
                     ? null
                     : () async {
-                        await ref
+                        final succeeded = await ref
                             .read(adaptationActionsProvider.notifier)
                             .acceptReview(review);
-                        if (context.mounted) context.go(RouteNames.today);
+                        if (succeeded && context.mounted) {
+                          context.go(RouteNames.today);
+                        }
                       },
               ),
             ],
@@ -84,14 +108,42 @@ class AdaptationDiffScreen extends ConsumerWidget {
 }
 
 class _PatchCard extends StatelessWidget {
-  const _PatchCard({required this.patch, required this.unitSystem});
+  const _PatchCard({
+    required this.patch,
+    required this.sourceSession,
+    required this.unitSystem,
+  });
 
   final AdaptationPatch patch;
+  final TrainingSession? sourceSession;
   final UnitSystem unitSystem;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final source = sourceSession;
+    final targetDate = patch.date;
+    final targetType = patch.afterSessionType;
+    final targetDistance = patch.afterDistanceKm;
+    final targetDuration = patch.afterDurationMinutes;
+    final showsDate =
+        patch.type == AdaptationPatchType.moveSession &&
+        source != null &&
+        targetDate != null &&
+        !_sameDate(source.date, targetDate);
+    final showsType =
+        patch.type == AdaptationPatchType.replaceSession &&
+        source != null &&
+        targetType != null &&
+        source.type != targetType;
+    final showsDistance =
+        source?.distanceKm != null &&
+        targetDistance != null &&
+        source!.distanceKm != targetDistance;
+    final showsDuration =
+        source?.durationMinutes != null &&
+        targetDuration != null &&
+        source!.durationMinutes != targetDuration;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -108,26 +160,32 @@ class _PatchCard extends StatelessWidget {
             style: AppTypography.titleMedium,
           ),
           const SizedBox(height: AppSpacing.sm),
-          if (patch.beforeSessionType != null || patch.afterSessionType != null)
+          if (showsDate)
             _ChangeLine(
               value: l10n.adaptationBeforeAfter(
-                _sessionTypeLabel(patch.beforeSessionType, l10n),
-                _sessionTypeLabel(patch.afterSessionType, l10n),
+                _dateLabel(source.date, context),
+                _dateLabel(targetDate, context),
               ),
             ),
-          if (patch.beforeDistanceKm != null || patch.afterDistanceKm != null)
+          if (showsType)
             _ChangeLine(
               value: l10n.adaptationBeforeAfter(
-                _distanceLabel(patch.beforeDistanceKm, unitSystem, l10n),
-                _distanceLabel(patch.afterDistanceKm, unitSystem, l10n),
+                _sessionTypeLabel(source.type, l10n),
+                _sessionTypeLabel(targetType, l10n),
               ),
             ),
-          if (patch.beforeDurationMinutes != null ||
-              patch.afterDurationMinutes != null)
+          if (showsDistance)
             _ChangeLine(
               value: l10n.adaptationBeforeAfter(
-                _durationLabel(patch.beforeDurationMinutes, l10n),
-                _durationLabel(patch.afterDurationMinutes, l10n),
+                _distanceLabel(source.distanceKm!, unitSystem, l10n),
+                _distanceLabel(targetDistance, unitSystem, l10n),
+              ),
+            ),
+          if (showsDuration)
+            _ChangeLine(
+              value: l10n.adaptationBeforeAfter(
+                _durationLabel(source.durationMinutes!, l10n),
+                _durationLabel(targetDuration, l10n),
               ),
             ),
           const SizedBox(height: AppSpacing.sm),
@@ -141,6 +199,29 @@ class _PatchCard extends StatelessWidget {
       ),
     );
   }
+}
+
+TrainingSession? _sourceSession(
+  AdaptationPatch patch,
+  List<TrainingSession> sessions,
+) {
+  final sessionId = patch.sessionId;
+  if (sessionId == null) return null;
+  for (final session in sessions) {
+    if (session.id == sessionId) return session;
+  }
+  return null;
+}
+
+bool _sameDate(DateTime first, DateTime second) {
+  return first.year == second.year &&
+      first.month == second.month &&
+      first.day == second.day;
+}
+
+String _dateLabel(DateTime value, BuildContext context) {
+  final locale = Localizations.localeOf(context).toLanguageTag();
+  return DateFormat.yMMMd(locale).format(value);
 }
 
 class _ChangeLine extends StatelessWidget {
@@ -190,16 +271,14 @@ String _sessionTypeLabel(SessionType? type, AppLocalizations l10n) {
 }
 
 String _distanceLabel(
-  double? value,
+  double value,
   UnitSystem unitSystem,
   AppLocalizations l10n,
 ) {
-  if (value == null) return '-';
   return UnitFormatter.formatDistanceLabel(value, unitSystem, l10n);
 }
 
-String _durationLabel(int? value, AppLocalizations l10n) {
-  if (value == null) return '-';
+String _durationLabel(int value, AppLocalizations l10n) {
   return UnitFormatter.formatDuration(value, l10n);
 }
 

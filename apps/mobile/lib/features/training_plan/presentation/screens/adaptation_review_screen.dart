@@ -47,14 +47,33 @@ class AdaptationReviewScreen extends ConsumerWidget {
             AppSpacing.screen,
             AppSpacing.xl,
           ),
-          child: review == null
-              ? _EmptyReviewState(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              if (actionState is AdaptationActionFailure) ...[
+                Semantics(
+                  liveRegion: true,
+                  child: Text(
+                    l10n.adaptationActionError,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
+              if (review == null)
+                _EmptyReviewState(
                   isLoading: isLoading,
                   onGenerate: () => ref
                       .read(adaptationActionsProvider.notifier)
-                      .requestWeeklyReview(),
+                      .requestWeeklyReview(
+                        weekStart: localSummary.weekStart,
+                        weekEnd: localSummary.weekEnd,
+                      ),
                 )
-              : Column(
+              else
+                Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _ReviewHeader(review: review),
@@ -75,14 +94,18 @@ class AdaptationReviewScreen extends ConsumerWidget {
                       onPressed: isLoading
                           ? null
                           : () async {
-                              await ref
+                              final succeeded = await ref
                                   .read(adaptationActionsProvider.notifier)
                                   .dismissReview(review);
-                              if (context.mounted) context.go(RouteNames.today);
+                              if (succeeded && context.mounted) {
+                                context.go(RouteNames.today);
+                              }
                             },
                     ),
                   ],
                 ),
+            ],
+          ),
         ),
       ),
     );

@@ -302,4 +302,42 @@ void main() {
       expect(summary.signals, contains(WeeklySummarySignal.painConcern));
     },
   );
+
+  test('WeeklyTrainingSummary counts each hard-feedback session once', () {
+    final weekStart = DateTime(2026, 7, 6);
+    final sessions = [
+      for (var index = 0; index < 2; index++)
+        TrainingSession(
+          id: 'hard-$index',
+          date: weekStart.add(Duration(days: index)),
+          type: SessionType.easyRun,
+          status: SessionStatus.completed,
+          distanceKm: 5,
+          durationMinutes: 30,
+          effort: TrainingSessionEffort.easy,
+        ),
+    ];
+    final feedbacks = [
+      for (var index = 0; index < 2; index++)
+        SessionFeedback(
+          id: 'feedback-$index',
+          recordedAt: weekStart.add(Duration(days: index)),
+          plannedSessionId: 'hard-$index',
+          difficulty: SessionFeedbackDifficulty.hard,
+        ),
+    ];
+
+    final summary = WeeklyTrainingSummary.forWeek(
+      sessions: sessions,
+      completedActivities: const [],
+      feedbacks: feedbacks,
+      weekStart: weekStart,
+      referenceDate: weekStart.add(const Duration(days: 3)),
+    );
+
+    expect(summary.weekEnd, DateTime(2026, 7, 12));
+    expect(summary.hardSessionCount, 2);
+    expect(summary.hasHighLoadSignals, isFalse);
+    expect(summary.shouldTriggerAdaptationReview, isFalse);
+  });
 }

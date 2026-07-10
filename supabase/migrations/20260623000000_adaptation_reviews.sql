@@ -24,15 +24,26 @@ create index if not exists adaptation_reviews_user_status
 create index if not exists adaptation_reviews_user_week
   on public.adaptation_reviews (user_id, week_start, week_end);
 
+create unique index if not exists adaptation_reviews_one_pending_per_plan_week
+  on public.adaptation_reviews (
+    user_id,
+    source_plan_version_id,
+    week_start,
+    week_end
+  )
+  where status = 'pending';
+
 alter table public.adaptation_reviews enable row level security;
 
 drop policy if exists "Users manage own adaptation reviews"
   on public.adaptation_reviews;
 
-create policy "Users manage own adaptation reviews"
-  on public.adaptation_reviews for all
-  using (auth.uid() = user_id)
-  with check (auth.uid() = user_id);
+drop policy if exists "Users view own adaptation reviews"
+  on public.adaptation_reviews;
+
+create policy "Users view own adaptation reviews"
+  on public.adaptation_reviews for select
+  using ((select auth.uid()) = user_id);
 
 create or replace function public.accept_adaptation_plan_version(
   p_user_id uuid,

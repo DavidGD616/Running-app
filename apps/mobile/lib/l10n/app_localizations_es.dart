@@ -3750,12 +3750,26 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String adaptationRecoveryFlags(int count) {
-    return '$count señales de recuperación';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count señales de recuperación',
+      one: '1 señal de recuperación',
+      zero: 'Ninguna señal de recuperación',
+    );
+    return '$_temp0';
   }
 
   @override
   String adaptationPainFlags(int count) {
-    return '$count señales de dolor';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count señales de dolor',
+      one: '1 señal de dolor',
+      zero: 'Ninguna señal de dolor',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3782,6 +3796,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get adaptationHomeTriggerBody =>
       'Tu semana tiene suficiente feedback para una revisión del coach.';
+
+  @override
+  String get adaptationActionError =>
+      'No pudimos completar esa acción del coach. Inténtalo de nuevo.';
 
   @override
   String get adaptationSummaryOnTrack => 'Vas en buen camino esta semana.';

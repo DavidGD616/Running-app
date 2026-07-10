@@ -3584,12 +3584,12 @@
       "planned": { "type": "String" }
     }
   },
-  "adaptationRecoveryFlags": "{count} recovery flags",
+  "adaptationRecoveryFlags": "{count, plural, =0{No recovery flags} =1{1 recovery flag} other{{count} recovery flags}}",
   "@adaptationRecoveryFlags": {
     "description": "Recovery flag count in adaptation review",
     "placeholders": { "count": { "type": "int" } }
   },
-  "adaptationPainFlags": "{count} pain flags",
+  "adaptationPainFlags": "{count, plural, =0{No pain flags} =1{1 pain flag} other{{count} pain flags}}",
   "@adaptationPainFlags": {
     "description": "Pain flag count in adaptation review",
     "placeholders": { "count": { "type": "int" } }
@@ -3614,6 +3614,8 @@
   "@adaptationHomePendingBody": { "description": "Home card body when a review is pending" },
   "adaptationHomeTriggerBody": "Your week has enough feedback for a coach review.",
   "@adaptationHomeTriggerBody": { "description": "Home card body when a review can be generated" },
+  "adaptationActionError": "We couldn’t complete that coach action. Try again.",
+  "@adaptationActionError": { "description": "Error shown when a coach review action fails" },
   "adaptationSummaryOnTrack": "You are on track this week.",
   "@adaptationSummaryOnTrack": { "description": "Adaptation summary for on-track week" },
   "adaptationSummaryTooAggressive": "This week looked slightly aggressive.",

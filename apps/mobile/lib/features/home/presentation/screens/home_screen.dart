@@ -224,15 +224,20 @@ class HomeScreen extends ConsumerWidget {
                         isPending: pendingReview != null,
                         isLoading:
                             adaptationActionState is AdaptationActionLoading,
+                        hasError:
+                            adaptationActionState is AdaptationActionFailure,
                         onTap: () async {
                           if (pendingReview != null) {
                             context.push(RouteNames.adaptationReview);
                             return;
                           }
-                          await ref
+                          final succeeded = await ref
                               .read(adaptationActionsProvider.notifier)
-                              .requestWeeklyReview();
-                          if (context.mounted) {
+                              .requestWeeklyReview(
+                                weekStart: weeklySummary.weekStart,
+                                weekEnd: weeklySummary.weekEnd,
+                              );
+                          if (succeeded && context.mounted) {
                             context.push(RouteNames.adaptationReview);
                           }
                         },
@@ -383,17 +388,20 @@ class _CoachReviewCard extends StatelessWidget {
   const _CoachReviewCard({
     required this.isPending,
     required this.isLoading,
+    required this.hasError,
     required this.onTap,
   });
 
   final bool isPending;
   final bool isLoading;
+  final bool hasError;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     return GestureDetector(
+      key: const Key('adaptation_coach_review_card'),
       onTap: isLoading ? null : onTap,
       child: Container(
         width: double.infinity,
@@ -415,11 +423,15 @@ class _CoachReviewCard extends StatelessWidget {
                   ),
                   const SizedBox(height: AppSpacing.xs),
                   Text(
-                    isPending
+                    hasError
+                        ? l10n.adaptationActionError
+                        : isPending
                         ? l10n.adaptationHomePendingBody
                         : l10n.adaptationHomeTriggerBody,
                     style: AppTypography.bodyMedium.copyWith(
-                      color: AppColors.textSecondary,
+                      color: hasError
+                          ? AppColors.error
+                          : AppColors.textSecondary,
                     ),
                   ),
                 ],

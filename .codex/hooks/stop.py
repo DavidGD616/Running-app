@@ -857,9 +857,10 @@ def _backfill_pass_tasks_from_subagent_starts(state: dict[str, Any]) -> None:
     if not isinstance(events, list):
         return
 
-    start_records: dict[int, dict[str, Any]] = {}
+    start_records: dict[int, str] = {}
+    stop_records: dict[int, str] = {}
     for event in events:
-        if not isinstance(event, dict) or event.get("event") != "SubagentStart":
+        if not isinstance(event, dict):
             continue
         details = event.get("details")
         if not isinstance(details, dict) or details.get("agent") != "coder":
@@ -868,12 +869,17 @@ def _backfill_pass_tasks_from_subagent_starts(state: dict[str, Any]) -> None:
         if not isinstance(seq, int):
             continue
 
-        raw = details.get("raw")
-        if not isinstance(raw, dict):
-            continue
-        transcript_path = raw.get("transcript_path")
-        if isinstance(transcript_path, str) and transcript_path:
-            start_records[seq] = raw
+        if event.get("event") == "SubagentStart":
+            raw = details.get("raw")
+            if not isinstance(raw, dict):
+                continue
+            transcript_path = raw.get("transcript_path")
+            if isinstance(transcript_path, str) and transcript_path:
+                start_records[seq] = transcript_path
+        elif event.get("event") == "SubagentStop":
+            transcript_path = details.get("agent_transcript_path")
+            if isinstance(transcript_path, str) and transcript_path:
+                stop_records[seq] = transcript_path
 
     for pass_record in coder_passes:
         if not isinstance(pass_record, dict):
@@ -883,17 +889,26 @@ def _backfill_pass_tasks_from_subagent_starts(state: dict[str, Any]) -> None:
         if not isinstance(start_seq, int):
             continue
 
-        raw = start_records.get(start_seq)
-        if not isinstance(raw, dict):
-            continue
+        transcript_paths: list[str] = []
+        agent_transcript_path = pass_record.get("agent_transcript_path")
+        if isinstance(agent_transcript_path, str) and agent_transcript_path:
+            transcript_paths.append(agent_transcript_path)
 
-        transcript_path = raw.get("transcript_path")
-        recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
-            str(transcript_path)
-            if isinstance(transcript_path, str)
-            else "",
-            agent="coder",
-        )
+        stop_seq = pass_record.get("stop_seq")
+        if isinstance(stop_seq, int) and stop_seq in stop_records:
+            transcript_paths.append(stop_records[stop_seq])
+        if start_seq in start_records:
+            transcript_paths.append(start_records[start_seq])
+
+        recovered_task_id: str | None = None
+        recovered_count = 0
+        for transcript_path in dict.fromkeys(transcript_paths):
+            recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
+                transcript_path,
+                agent="coder",
+            )
+            if recovered_task_id and recovered_count == 1:
+                break
         if recovered_task_id and recovered_count == 1:
             pass_record["start_task_id"] = recovered_task_id
             pass_record["start_task_id_count"] = recovered_count

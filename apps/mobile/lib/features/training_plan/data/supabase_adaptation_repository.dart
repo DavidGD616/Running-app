@@ -158,34 +158,6 @@ class SupabaseAdaptationRepository implements AsyncAdaptationRepository {
   @override
   Future<void> saveAdaptationReviews(List<AdaptationReview> reviews) async {
     await _localCache?.saveAdaptationReviews(reviews);
-
-    final uid = _uid;
-    if (uid == null || reviews.isEmpty) return;
-
-    await _client
-        .from('adaptation_reviews')
-        .upsert(
-          reviews
-              .map(
-                (item) => {
-                  'id': item.id,
-                  'user_id': uid,
-                  'week_start': item.weekStart.toUtc().toIso8601String(),
-                  'week_end': item.weekEnd.toUtc().toIso8601String(),
-                  'source_plan_version_id': item.sourcePlanVersionId,
-                  'proposed_plan_version_id': item.proposedPlanVersionId,
-                  'status': item.status.key,
-                  'classification': item.classification.key,
-                  'severity': item.severity.key,
-                  'created_at': item.createdAt.toUtc().toIso8601String(),
-                  'load_before': item.loadBefore,
-                  'load_after': item.loadAfter,
-                  'data': item.toJson(),
-                },
-              )
-              .toList(growable: false),
-          onConflict: 'id',
-        );
   }
 
   Future<List<T>> _loadList<T>({
