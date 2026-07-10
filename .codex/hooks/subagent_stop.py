@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import re
 import sys
-from datetime import datetime
 from pathlib import Path
 from typing import Any
 
@@ -18,6 +17,8 @@ from orchestrator_state import (
     extract_task_ids_from_prompt_lines,
     extract_prompt_text,
     git_changed_file_signatures,
+    infer_internal_subagent_role_from_transcript,
+    now_iso,
     parse_tool_exit_code,
     update_state,
 )
@@ -77,6 +78,8 @@ def _extract_coder_task_info(
     event: dict[str, Any],
     state: dict[str, Any],
     open_pass: dict[str, Any] | None,
+    coordinator_transcript_paths: list[str] | None = None,
+    collaboration_spawn_evidence: list[dict[str, Any]] | None = None,
 ) -> tuple[str | None, int, bool]:
     summary = extract_prompt_text(event)
 
@@ -92,6 +95,8 @@ def _extract_coder_task_info(
         recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
             transcript_path,
             agent="coder",
+            coordinator_transcript_paths=coordinator_transcript_paths or [],
+            collaboration_spawn_evidence=collaboration_spawn_evidence or [],
         )
         if recovered_task_id and recovered_count == 1:
             return recovered_task_id, recovered_count, True
@@ -103,14 +108,34 @@ def _extract_coder_task_info(
             start_seq if isinstance(start_seq, int) else None,
         )
         if isinstance(start_raw, dict):
-            raw = start_raw.get("raw")
-            transcript_path = str(raw.get("transcript_path", "")) if isinstance(raw, dict) else ""
+            transcript_path = str(
+                start_raw.get("agent_transcript_path", "")
+            ).strip()
+            if not transcript_path:
+                raw = start_raw.get("raw")
+                transcript_path = (
+                    str(raw.get("transcript_path", ""))
+                    if isinstance(raw, dict)
+                    else ""
+                )
             recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
                 transcript_path,
                 agent="coder",
+                coordinator_transcript_paths=coordinator_transcript_paths or [],
+                collaboration_spawn_evidence=collaboration_spawn_evidence or [],
             )
             if recovered_task_id and recovered_count == 1:
                 return recovered_task_id, recovered_count, True
+
+    if isinstance(open_pass, dict):
+        start_task_id = open_pass.get("start_task_id")
+        start_task_id_count = open_pass.get("start_task_id_count")
+        if (
+            isinstance(start_task_id, str)
+            and start_task_id.strip()
+            and start_task_id_count == 1
+        ):
+            return start_task_id.strip(), 1, True
 
     return None, 0, False
 
@@ -118,6 +143,8 @@ def _extract_coder_task_info(
 def _extract_reviewer_task_info(
     event: dict[str, Any],
     state: dict[str, Any],
+    coordinator_transcript_paths: list[str] | None = None,
+    collaboration_spawn_evidence: list[dict[str, Any]] | None = None,
 ) -> tuple[str | None, int]:
     summary = extract_prompt_text(event)
     task_ids = extract_task_ids_from_prompt_lines(summary)
@@ -131,6 +158,8 @@ def _extract_reviewer_task_info(
         recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
             transcript_path,
             agent="reviewer",
+            coordinator_transcript_paths=coordinator_transcript_paths or [],
+            collaboration_spawn_evidence=collaboration_spawn_evidence or [],
         )
         if recovered_task_id and recovered_count == 1:
             return recovered_task_id, recovered_count
@@ -291,6 +320,17 @@ def main() -> None:
     agent = classify_agent(event)
     summary = extract_prompt_text(event)
     agent_transcript_path = extract_event_transcript_path(event)
+    official_agent_transcript_path = ""
+    if isinstance(event, dict):
+        direct_agent_path = event.get("agent_transcript_path")
+        if isinstance(direct_agent_path, str) and direct_agent_path.strip():
+            official_agent_transcript_path = direct_agent_path.strip()
+        else:
+            raw = event.get("raw")
+            if isinstance(raw, dict):
+                raw_agent_path = raw.get("agent_transcript_path")
+                if isinstance(raw_agent_path, str) and raw_agent_path.strip():
+                    official_agent_transcript_path = raw_agent_path.strip()
     code = parse_tool_exit_code(event)
 
     decision = {}
@@ -300,24 +340,54 @@ def main() -> None:
         if not state.get("active"):
             return
 
+        actors = state["turn"].get("tool_call_actors")
+        if not isinstance(actors, dict):
+            actors = {}
+            state["turn"]["tool_call_actors"] = actors
+        coordinator_transcript_paths = [
+            path
+            for path, mapped_actor in actors.items()
+            if mapped_actor == "coordinator"
+        ]
+        collaboration_spawn_evidence = state["turn"].get(
+            "collaboration_spawn_evidence",
+        )
+        if not isinstance(collaboration_spawn_evidence, list):
+            collaboration_spawn_evidence = []
+        resolved_agent = agent
+        if resolved_agent == "other" and official_agent_transcript_path:
+            inferred_agent = infer_internal_subagent_role_from_transcript(
+                official_agent_transcript_path,
+                coordinator_transcript_paths=coordinator_transcript_paths,
+                collaboration_spawn_evidence=collaboration_spawn_evidence,
+            )
+            if inferred_agent:
+                resolved_agent = inferred_agent
+
         event_seq = append_event(
             state,
             "SubagentStop",
             {
-                "agent": agent,
+                "agent": resolved_agent,
                 "summary_excerpt": summary[:200],
                 "agent_transcript_path": agent_transcript_path,
             },
         )
         state["turn"]["events"] = state["turn"]["events"][-40:]
 
-        if agent == "reviewer":
+        if resolved_agent != "other" and agent_transcript_path:
+            if actors.get(agent_transcript_path) != "coordinator":
+                actors[agent_transcript_path] = resolved_agent
+
+        if resolved_agent == "reviewer":
             state["turn"]["agents"]["reviewer_stopped"] = True
             blocking = looks_blocking(summary)
             reviewer_snapshot_signature = git_changed_file_signatures()
             reviewer_task_id, reviewer_task_id_count = _extract_reviewer_task_info(
                 event,
                 state,
+                coordinator_transcript_paths,
+                collaboration_spawn_evidence,
             )
             if blocking:
                 state["turn"]["agents"]["blocking_reviewer_seq"] = event_seq
@@ -343,7 +413,7 @@ def main() -> None:
                 state["turn"]["agents"]["reviewer_stops"] = reviewer_stops
             state["turn"]["agents"]["reviewer_stops"].append(
                 {
-                    "at": datetime.utcnow().isoformat() + "Z",
+                    "at": now_iso(),
                     "text": summary[:400],
                     "blocking": blocking,
                     "seq": event_seq,
@@ -356,7 +426,7 @@ def main() -> None:
             state["turn"]["agents"]["reviewer_last_seq"] = event_seq
             state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
             state["turn"]["agents"]["reviewer_last_blocking"] = blocking
-        elif agent == "coder":
+        elif resolved_agent == "coder":
             coder_snapshot_signature = git_changed_file_signatures()
             agents = state["turn"]["agents"]
             agents["coder_started"] = True
@@ -379,7 +449,13 @@ def main() -> None:
                 open_pass = candidate
                 break
 
-            task_id, task_id_count, recovered_from_start = _extract_coder_task_info(event, state, open_pass)
+            task_id, task_id_count, recovered_from_start = _extract_coder_task_info(
+                event,
+                state,
+                open_pass,
+                coordinator_transcript_paths,
+                collaboration_spawn_evidence,
+            )
             if recovered_from_start and isinstance(open_pass, dict) and task_id_count == 1:
                 if open_pass.get("start_task_id_count") != 1:
                     open_pass["start_task_id"] = task_id
@@ -422,7 +498,7 @@ def main() -> None:
                     }
                 )
 
-        if agent == "reviewer" and code != 0:
+        if resolved_agent == "reviewer" and code != 0:
             decision = {"decision": "block", "reason": f"reviewer tool_exit={code}"}
 
     update_state(apply_state)

@@ -9,7 +9,7 @@ import re
 import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, Iterable, List
 
 try:
     import fcntl  # type: ignore[attr-defined]
@@ -199,6 +199,7 @@ def default_state() -> Dict[str, Any]:
                 "command": "",
             },
             "tool_call_actors": {},
+            "collaboration_spawn_evidence": [],
             "events": [],
         },
     }
@@ -632,20 +633,536 @@ def extract_first_internal_subagent_prompt_from_transcript(
     return "" if normalized_agent else fallback
 
 
+def _task_name_component(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.strip().strip("/")
+    if not normalized:
+        return ""
+    return normalized.rsplit("/", 1)[-1]
+
+
+def _normalize_task_name(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.strip()
+    if not normalized or "/" in normalized or normalized in {".", ".."}:
+        return ""
+    return normalized
+
+
+def _normalize_agent_path(value: Any) -> str:
+    if not isinstance(value, str):
+        return ""
+    normalized = value.strip()
+    if not normalized.startswith("/"):
+        return ""
+    components = normalized.split("/")[1:]
+    if not components or any(
+        not component or component in {".", ".."}
+        for component in components
+    ):
+        return ""
+    return "/" + "/".join(components)
+
+
+def extract_transcript_session_identity(
+    transcript_path: str | Path,
+) -> Dict[str, Any] | None:
+    for record in _iter_transcript_records(transcript_path):
+        if str(record.get("type", "")).lower() != "session_meta":
+            continue
+        payload = record.get("payload")
+        if not isinstance(payload, dict):
+            return None
+        thread_id = payload.get("id")
+        if not isinstance(thread_id, str) or not thread_id.strip():
+            return None
+
+        source = payload.get("source")
+        thread_spawn = None
+        if isinstance(source, dict):
+            subagent = source.get("subagent")
+            if isinstance(subagent, dict):
+                candidate = subagent.get("thread_spawn")
+                if isinstance(candidate, dict):
+                    thread_spawn = candidate
+
+        if thread_spawn is None:
+            return {
+                "thread_id": thread_id.strip(),
+                "parent_thread_id": None,
+                "depth": 0,
+                "agent_path": "/root",
+                "is_subagent": False,
+            }
+
+        parent_thread_id = thread_spawn.get("parent_thread_id")
+        depth = thread_spawn.get("depth")
+        agent_path = _normalize_agent_path(thread_spawn.get("agent_path"))
+        agent_path_parts = agent_path.strip("/").split("/") if agent_path else []
+        if (
+            not isinstance(parent_thread_id, str)
+            or not parent_thread_id.strip()
+            or not isinstance(depth, int)
+            or isinstance(depth, bool)
+            or depth < 1
+            or not agent_path
+            or agent_path_parts[0] != "root"
+            or len(agent_path_parts) - 1 != depth
+        ):
+            return None
+        return {
+            "thread_id": thread_id.strip(),
+            "parent_thread_id": parent_thread_id.strip(),
+            "depth": depth,
+            "agent_path": agent_path,
+            "is_subagent": True,
+        }
+    return None
+
+
+def _has_subagent_thread_spawn_metadata(transcript_path: str | Path) -> bool:
+    for record in _iter_transcript_records(transcript_path):
+        if str(record.get("type", "")).lower() != "session_meta":
+            continue
+        payload = record.get("payload")
+        if not isinstance(payload, dict):
+            return False
+        source = payload.get("source")
+        if not isinstance(source, dict):
+            return False
+        subagent = source.get("subagent")
+        return isinstance(subagent, dict) and "thread_spawn" in subagent
+    return False
+
+
+def _session_boundary_for_identity(
+    coordinator_identity: Dict[str, Any],
+    task_name: str,
+) -> Dict[str, Any] | None:
+    normalized_task_name = _normalize_task_name(task_name)
+    coordinator_path = _normalize_agent_path(coordinator_identity.get("agent_path"))
+    coordinator_thread_id = coordinator_identity.get("thread_id")
+    coordinator_depth = coordinator_identity.get("depth")
+    if (
+        not normalized_task_name
+        or not coordinator_path
+        or not isinstance(coordinator_thread_id, str)
+        or not isinstance(coordinator_depth, int)
+        or isinstance(coordinator_depth, bool)
+    ):
+        return None
+    return {
+        "coordinator_thread_id": coordinator_thread_id,
+        "coordinator_agent_path": coordinator_path,
+        "coordinator_depth": coordinator_depth,
+        "expected_agent_path": f"{coordinator_path}/{normalized_task_name}",
+        "expected_child_depth": coordinator_depth + 1,
+    }
+
+
+def _is_exact_direct_child_session(
+    coordinator_identity: Dict[str, Any],
+    child_identity: Dict[str, Any],
+    task_name: str,
+) -> bool:
+    boundary = _session_boundary_for_identity(coordinator_identity, task_name)
+    if boundary is None:
+        return False
+    return bool(
+        child_identity.get("is_subagent") is True
+        and child_identity.get("parent_thread_id")
+        == boundary["coordinator_thread_id"]
+        and child_identity.get("depth") == boundary["expected_child_depth"]
+        and child_identity.get("agent_path") == boundary["expected_agent_path"]
+    )
+
+
+def collaboration_spawn_session_boundary(
+    coordinator_transcript_path: str | Path,
+    task_name: str,
+) -> Dict[str, Any] | None:
+    normalized_task_name = _normalize_task_name(task_name)
+    coordinator_identity = extract_transcript_session_identity(
+        coordinator_transcript_path,
+    )
+    if not isinstance(coordinator_identity, dict):
+        return None
+    return _session_boundary_for_identity(coordinator_identity, normalized_task_name)
+
+
+def _extract_matching_collaboration_spawn_prompt(
+    coordinator_transcript_path: str | Path,
+    child_identity: Dict[str, Any],
+) -> str:
+    coordinator_identity = extract_transcript_session_identity(
+        coordinator_transcript_path,
+    )
+    expected_task_name = _task_name_component(child_identity.get("agent_path"))
+    if not expected_task_name:
+        return ""
+    if not isinstance(coordinator_identity, dict) or not _is_exact_direct_child_session(
+        coordinator_identity,
+        child_identity,
+        expected_task_name,
+    ):
+        return ""
+
+    for record in _iter_transcript_records(coordinator_transcript_path):
+        payload = record.get("payload")
+        if not isinstance(payload, dict):
+            continue
+        if str(payload.get("type", "")).lower() not in {
+            "function_call",
+            "custom_tool_call",
+            "tool_call",
+        }:
+            continue
+
+        tool_name = str(payload.get("name", "")).strip().lower()
+        namespace = str(payload.get("namespace", "")).strip().lower()
+        is_collaboration_spawn = (
+            tool_name == "spawn_agent" and namespace == "collaboration"
+        ) or tool_name in {
+            "collaboration.spawn_agent",
+            "collaboration__spawn_agent",
+        }
+        if not is_collaboration_spawn:
+            continue
+
+        arguments = _decode_possible_json(
+            payload.get("arguments", payload.get("input"))
+        )
+        if not isinstance(arguments, dict):
+            continue
+        if _normalize_task_name(arguments.get("task_name")) != expected_task_name:
+            continue
+
+        message = arguments.get("message")
+        if not isinstance(message, str) or not _has_internal_sentinel_at_top(message):
+            continue
+        return message
+
+    return ""
+
+
+def extract_internal_subagent_prompt_from_transcript(
+    transcript_path: str | Path,
+    agent: str | None = None,
+    coordinator_transcript_paths: Iterable[str | Path] = (),
+) -> str:
+    child_identity = extract_transcript_session_identity(
+        transcript_path,
+    )
+    normalized_agent = normalize_agent(agent) if isinstance(agent, str) else ""
+    if _has_subagent_thread_spawn_metadata(transcript_path):
+        if not isinstance(child_identity, dict):
+            return ""
+        for coordinator_path in coordinator_transcript_paths:
+            correlated_prompt = _extract_matching_collaboration_spawn_prompt(
+                coordinator_path,
+                child_identity,
+            )
+            if not correlated_prompt:
+                continue
+            sentinel = _extract_internal_sentinel(correlated_prompt)
+            if normalized_agent and normalize_agent(sentinel or "") != normalized_agent:
+                continue
+            return correlated_prompt
+        # A thread-spawn transcript may include the coordinator's forked history.
+        # Without an exact trusted spawn match, scanning it would misattribute an
+        # older subagent prompt to the current path.
+        return ""
+
+    direct_prompt = extract_first_internal_subagent_prompt_from_transcript(
+        transcript_path,
+        agent=agent,
+    )
+    if _extract_internal_sentinel(direct_prompt):
+        return direct_prompt
+    return ""
+
+
+def extract_internal_subagent_identity(
+    prompt_text: str,
+) -> tuple[str | None, str | None, int]:
+    if not _has_internal_sentinel_at_top(prompt_text):
+        return None, None, 0
+    sentinel = _extract_internal_sentinel(prompt_text)
+    role = classify_agent({"agent": sentinel or ""})
+    if role not in {"coder", "reviewer", "researcher", "explorer", "scribe"}:
+        return None, None, 0
+
+    task_ids = extract_task_ids_from_prompt_lines(prompt_text)
+    task_id = task_ids[0] if len(task_ids) == 1 else None
+    return role, task_id, len(task_ids)
+
+
+_ENCODED_TASK_NAME_RE = re.compile(
+    r"^(coder|reviewer|researcher|explorer|scribe)__"
+    r"([a-z0-9]+(?:_[a-z0-9]+)*)"
+    r"(?:__([a-z0-9]+(?:_[a-z0-9]+)*))?$"
+)
+
+
+def extract_encoded_task_name_identity(
+    value: Any,
+) -> tuple[str, str, int] | None:
+    task_name = _normalize_task_name(value)
+    if not task_name or len(task_name) > 100:
+        return None
+    match = _ENCODED_TASK_NAME_RE.fullmatch(task_name)
+    if not match:
+        return None
+    return match.group(1), match.group(2), 1
+
+
+def _iter_nested_event_mappings(
+    value: Any,
+    depth: int = 5,
+) -> Iterable[Dict[str, Any]]:
+    if depth <= 0:
+        return
+    decoded = _decode_possible_json(value)
+    if isinstance(decoded, dict):
+        yield decoded
+        for key in (
+            "tool_input",
+            "input",
+            "arguments",
+            "args",
+            "payload",
+            "data",
+            "request",
+        ):
+            if key in decoded:
+                yield from _iter_nested_event_mappings(decoded[key], depth - 1)
+    elif isinstance(decoded, list):
+        for item in decoded:
+            yield from _iter_nested_event_mappings(item, depth - 1)
+
+
+def extract_completed_agent_paths(value: Any, depth: int = 6) -> set[str]:
+    if depth <= 0:
+        return set()
+    decoded = _decode_possible_json(value)
+    if isinstance(decoded, str):
+        return set()
+    if isinstance(decoded, list):
+        completed: set[str] = set()
+        for item in decoded:
+            completed.update(extract_completed_agent_paths(item, depth - 1))
+        return completed
+    if not isinstance(decoded, dict):
+        return set()
+
+    agents = decoded.get("agents")
+    if isinstance(agents, list):
+        completed = set()
+        for agent in agents[:100]:
+            if not isinstance(agent, dict):
+                continue
+            status = agent.get("agent_status")
+            if (
+                not isinstance(status, dict)
+                or "completed" not in status
+                or not isinstance(status.get("completed"), str)
+            ):
+                continue
+            agent_path = _normalize_agent_path(agent.get("agent_name"))
+            if agent_path and len(agent_path) <= 512:
+                completed.add(agent_path)
+        return completed
+
+    completed = set()
+    for nested in decoded.values():
+        completed.update(extract_completed_agent_paths(nested, depth - 1))
+    return completed
+
+
+def _is_collaboration_spawn_tool(name: Any, namespace: Any = "") -> bool:
+    normalized_name = re.sub(
+        r"[^a-z0-9]+",
+        "_",
+        str(name or "").strip().lower(),
+    ).strip("_")
+    normalized_namespace = re.sub(
+        r"[^a-z0-9]+",
+        "_",
+        str(namespace or "").strip().lower(),
+    ).strip("_")
+    if normalized_name == "spawn_agent":
+        return normalized_namespace in {"", "collaboration"}
+    return normalized_name in {
+        "collaborationspawn_agent",
+        "collaboration_spawn_agent",
+        "functionscollaborationspawn_agent",
+        "functions_collaboration_spawn_agent",
+        "mcpcollaborationspawn_agent",
+        "mcp_collaboration_spawn_agent",
+    }
+
+
+def _collaboration_spawn_payload(
+    event: Dict[str, Any],
+) -> Dict[str, Any] | None:
+    mappings = list(_iter_nested_event_mappings(event))
+    if not any(
+        _is_collaboration_spawn_tool(
+            mapping.get("tool_name", mapping.get("tool", mapping.get("name", ""))),
+            mapping.get("namespace", ""),
+        )
+        for mapping in mappings
+    ):
+        return None
+    return next(
+        (
+            mapping
+            for mapping in mappings
+            if _normalize_task_name(mapping.get("task_name"))
+        ),
+        {},
+    )
+
+
+def _collaboration_spawn_message(spawn_payload: Dict[str, Any]) -> Any:
+    for mapping in _iter_nested_event_mappings(spawn_payload):
+        if "message" in mapping:
+            return mapping.get("message")
+    return None
+
+
+def collaboration_spawn_diagnostics(event: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(event, dict):
+        return {}
+    spawn_payload = _collaboration_spawn_payload(event)
+    if spawn_payload is None:
+        return {}
+
+    message = _collaboration_spawn_message(spawn_payload)
+    if isinstance(message, str) and _has_internal_sentinel_at_top(message):
+        message_kind = "plaintext_sentinel"
+    elif isinstance(message, str) and message:
+        message_kind = "opaque_string"
+    else:
+        message_kind = "missing"
+    return {
+        "message_kind": message_kind,
+        "task_name_present": bool(
+            _normalize_task_name(spawn_payload.get("task_name"))
+        ),
+    }
+
+
+def extract_collaboration_spawn_identity(
+    event: Dict[str, Any],
+) -> tuple[str, str | None, int, str] | None:
+    if not isinstance(event, dict):
+        return None
+    spawn_payload = _collaboration_spawn_payload(event)
+    if not spawn_payload:
+        return None
+
+    task_name = _normalize_task_name(spawn_payload.get("task_name"))
+    if not task_name:
+        return None
+    encoded_identity = extract_encoded_task_name_identity(task_name)
+    message = _collaboration_spawn_message(spawn_payload)
+    if isinstance(message, str) and _has_internal_sentinel_at_top(message):
+        role, task_id, task_id_count = extract_internal_subagent_identity(message)
+        if role:
+            if encoded_identity and encoded_identity != (
+                role,
+                task_id,
+                task_id_count,
+            ):
+                return None
+            return role, task_id, task_id_count, task_name
+
+    if not encoded_identity:
+        return None
+    role, task_id, task_id_count = encoded_identity
+    return role, task_id, task_id_count, task_name
+
+
+def _identity_from_collaboration_spawn_evidence(
+    transcript_path: str | Path,
+    coordinator_transcript_paths: Iterable[str | Path],
+    collaboration_spawn_evidence: Iterable[Dict[str, Any]],
+) -> tuple[str | None, str | None, int]:
+    child_identity = extract_transcript_session_identity(transcript_path)
+    if not isinstance(child_identity, dict) or child_identity.get("is_subagent") is not True:
+        return None, None, 0
+    task_name = _task_name_component(child_identity.get("agent_path"))
+    trusted_coordinator_paths = {
+        str(path) for path in coordinator_transcript_paths if str(path).strip()
+    }
+    if not trusted_coordinator_paths:
+        return None, None, 0
+
+    records = list(collaboration_spawn_evidence)
+    for evidence in reversed(records):
+        if not isinstance(evidence, dict):
+            continue
+        if evidence.get("coordinator_transcript_path") not in trusted_coordinator_paths:
+            continue
+        if _normalize_task_name(evidence.get("task_name")) != task_name:
+            continue
+        coordinator_path = str(evidence.get("coordinator_transcript_path", ""))
+        coordinator_identity = extract_transcript_session_identity(coordinator_path)
+        if not isinstance(coordinator_identity, dict):
+            continue
+        if not _is_exact_direct_child_session(
+            coordinator_identity,
+            child_identity,
+            task_name,
+        ):
+            continue
+        boundary = collaboration_spawn_session_boundary(coordinator_path, task_name)
+        if not isinstance(boundary, dict) or any(
+            evidence.get(key) != value
+            for key, value in boundary.items()
+        ):
+            continue
+        role = str(evidence.get("role", ""))
+        if role not in {"coder", "reviewer", "researcher", "explorer", "scribe"}:
+            continue
+        task_id_count = evidence.get("task_id_count")
+        if not isinstance(task_id_count, int):
+            task_id_count = 0
+        task_id = evidence.get("task_id")
+        if not isinstance(task_id, str) or task_id_count != 1:
+            task_id = None
+        return role, task_id, task_id_count
+    return None, None, 0
+
+
 def extract_task_id_from_subagent_transcript(
     transcript_path: str | Path,
     agent: str | None = None,
+    coordinator_transcript_paths: Iterable[str | Path] = (),
+    collaboration_spawn_evidence: Iterable[Dict[str, Any]] = (),
 ) -> tuple[str | None, int]:
     if not transcript_path:
         return None, 0
 
-    prompt_text = extract_first_internal_subagent_prompt_from_transcript(
+    prompt_text = extract_internal_subagent_prompt_from_transcript(
         transcript_path,
         agent=agent,
+        coordinator_transcript_paths=coordinator_transcript_paths,
     )
     task_ids = extract_task_ids_from_prompt_lines(prompt_text)
     if not task_ids:
-        return None, 0
+        evidence_role, task_id, task_id_count = _identity_from_collaboration_spawn_evidence(
+            transcript_path,
+            coordinator_transcript_paths,
+            collaboration_spawn_evidence,
+        )
+        expected_role = classify_agent({"agent": agent or ""}) if agent else None
+        if expected_role and evidence_role != expected_role:
+            return None, 0
+        return task_id, task_id_count
 
     if len(task_ids) == 1:
         return task_ids[0], 1
@@ -839,6 +1356,34 @@ def _metadata_is_internal(event: Dict[str, Any]) -> bool:
 def _extract_internal_sentinel(text: str) -> str | None:
     match = INTERNAL_SUBAGENT_PROMPT_SENTINEL_MARKER.search(text or "")
     return match.group(1).strip() if match else None
+
+
+def infer_internal_subagent_role_from_transcript(
+    transcript_path: str | Path,
+    coordinator_transcript_paths: Iterable[str | Path] = (),
+    collaboration_spawn_evidence: Iterable[Dict[str, Any]] = (),
+) -> str | None:
+    """Return the canonical role named by a transcript's first internal sentinel."""
+    if not transcript_path:
+        return None
+
+    prompt_text = extract_internal_subagent_prompt_from_transcript(
+        transcript_path,
+        coordinator_transcript_paths=coordinator_transcript_paths,
+    )
+    sentinel = _extract_internal_sentinel(prompt_text)
+    if not sentinel:
+        role, _, _ = _identity_from_collaboration_spawn_evidence(
+            transcript_path,
+            coordinator_transcript_paths,
+            collaboration_spawn_evidence,
+        )
+        return role
+
+    role = classify_agent({"agent": sentinel})
+    if role not in {"coder", "reviewer", "researcher", "explorer", "scribe"}:
+        return None
+    return role
 
 
 def _has_internal_sentinel_at_top(text: str) -> bool:
