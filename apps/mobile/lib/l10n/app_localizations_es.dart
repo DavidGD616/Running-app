@@ -2851,6 +2851,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get logSessionVeryHard => 'Muy Duro';
 
   @override
+  String get logSessionBodyCheck => 'Control corporal';
+
+  @override
   String get logSessionNotes => 'Notas';
 
   @override
@@ -3693,4 +3696,193 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get allowAlwaysLocationOpenSettings => 'Abrir Ajustes';
+
+  @override
+  String get adaptationReviewTitle => 'Revisión del Coach';
+
+  @override
+  String get adaptationReviewSubtitle =>
+      'Tu respuesta reciente al entrenamiento está lista para revisar.';
+
+  @override
+  String get adaptationNoReviewTitle => 'Aún no hay revisión';
+
+  @override
+  String get adaptationNoReviewBody =>
+      'Genera una revisión semanal cuando esta semana tenga suficiente feedback de entrenamiento.';
+
+  @override
+  String get adaptationGenerateReview => 'Generar Revisión';
+
+  @override
+  String get adaptationReviewChanges => 'Revisar Cambios';
+
+  @override
+  String get adaptationKeepOriginal => 'Mantener Plan Original';
+
+  @override
+  String get adaptationApplyChanges => 'Aplicar Cambios';
+
+  @override
+  String get adaptationPlanDiffTitle => 'Cambios del Plan';
+
+  @override
+  String get adaptationWeeklySnapshot => 'Resumen Semanal';
+
+  @override
+  String get adaptationSessionsLabel => 'Sesiones';
+
+  @override
+  String get adaptationRecoveryLabel => 'Recuperación';
+
+  @override
+  String get adaptationPainLabel => 'Dolor';
+
+  @override
+  String adaptationCompletedSessions(int completed, int planned) {
+    return '$completed de $planned sesiones';
+  }
+
+  @override
+  String adaptationDistanceProgress(String completed, String planned) {
+    return '$completed / $planned';
+  }
+
+  @override
+  String adaptationRecoveryFlags(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count señales de recuperación',
+      one: '1 señal de recuperación',
+      zero: 'Ninguna señal de recuperación',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String adaptationPainFlags(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count señales de dolor',
+      one: '1 señal de dolor',
+      zero: 'Ninguna señal de dolor',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get adaptationNoChanges => 'No se propusieron cambios de sesión.';
+
+  @override
+  String adaptationBeforeAfter(String before, String after) {
+    return '$before → $after';
+  }
+
+  @override
+  String get adaptationHistoryTitle => 'Ajustes del Coach';
+
+  @override
+  String get adaptationHistoryEmpty => 'Aún no hay ajustes del plan.';
+
+  @override
+  String get adaptationHomeCardTitle => 'Chequeo del coach';
+
+  @override
+  String get adaptationHomePendingBody =>
+      'Una revisión semanal del plan está lista.';
+
+  @override
+  String get adaptationHomeTriggerBody =>
+      'Tu semana tiene suficiente feedback para una revisión del coach.';
+
+  @override
+  String get adaptationActionError =>
+      'No pudimos completar esa acción del coach. Inténtalo de nuevo.';
+
+  @override
+  String get adaptationSummaryOnTrack => 'Vas en buen camino esta semana.';
+
+  @override
+  String get adaptationSummaryTooAggressive =>
+      'Esta semana se vio un poco agresiva.';
+
+  @override
+  String get adaptationSummaryRecoveryNeeded =>
+      'La recuperación debe ser prioridad esta semana.';
+
+  @override
+  String get adaptationSummaryScheduleMismatch =>
+      'Tu agenda no coincidió con el plan.';
+
+  @override
+  String get adaptationSummaryTooEasy => 'Esta semana se vio manejable.';
+
+  @override
+  String get adaptationSummaryInsufficientData =>
+      'Todavía no hay suficiente feedback para cambiar el plan.';
+
+  @override
+  String get adaptationSummaryFailed =>
+      'La revisión no pudo actualizar el plan de forma segura.';
+
+  @override
+  String get adaptationReasonPainReported => 'Se reportó dolor.';
+
+  @override
+  String get adaptationReasonHighEffortRecovery =>
+      'El esfuerzo y la recuperación estuvieron elevados.';
+
+  @override
+  String get adaptationReasonMissedSessions =>
+      'Se omitieron o saltaron varias sesiones.';
+
+  @override
+  String get adaptationReasonOnTrack =>
+      'La respuesta al entrenamiento coincidió con el plan.';
+
+  @override
+  String get adaptationReasonInsufficientData =>
+      'Se necesitan más sesiones completadas.';
+
+  @override
+  String get adaptationReasonNoChange => 'El plan puede mantenerse igual.';
+
+  @override
+  String get adaptationReasonGenerationFailed =>
+      'La revisión usó una recomendación segura sin cambios.';
+
+  @override
+  String get adaptationPatchNoChange => 'Sin cambios';
+
+  @override
+  String get adaptationPatchReduceSession => 'Reducir sesión';
+
+  @override
+  String get adaptationPatchReplaceSession => 'Reemplazar sesión';
+
+  @override
+  String get adaptationPatchMoveSession => 'Mover sesión';
+
+  @override
+  String get adaptationPatchShortenLongRun => 'Acortar tirada larga';
+
+  @override
+  String get adaptationPatchRepeatWeek => 'Repetir semana';
+
+  @override
+  String get adaptationPatchProgressSlightly => 'Progresar un poco';
+
+  @override
+  String get adaptationStatusPending => 'Pendiente';
+
+  @override
+  String get adaptationStatusAccepted => 'Aplicado';
+
+  @override
+  String get adaptationStatusDismissed => 'Descartado';
+
+  @override
+  String get adaptationStatusFailed => 'Falló';
 }

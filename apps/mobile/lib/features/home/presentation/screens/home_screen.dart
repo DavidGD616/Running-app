@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_radius.dart';
 import '../../../session_detail/presentation/screens/session_detail_screen.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -17,6 +18,7 @@ import '../../../../core/widgets/workout_hero_card.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
+import '../../../training_plan/presentation/adaptation_actions_provider.dart';
 import '../../../training_plan/presentation/training_plan_localization.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
@@ -149,6 +151,9 @@ class HomeScreen extends ConsumerWidget {
 
     final plan = planAsync.value;
     final progress = ref.watch(weekProgressProvider);
+    final weeklySummary = ref.watch(weeklyTrainingSummaryProvider);
+    final pendingReview = ref.watch(pendingAdaptationReviewProvider);
+    final adaptationActionState = ref.watch(adaptationActionsProvider);
     final profile = ref.watch(userProfileDisplayProvider);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
@@ -211,6 +216,33 @@ class HomeScreen extends ConsumerWidget {
                     SectionLabel(label: l10n.homeSectionTodaysWorkout),
                     const SizedBox(height: AppSpacing.md),
                     _buildTodayCard(context, l10n, todaySession, unitSystem),
+
+                    if (pendingReview != null ||
+                        weeklySummary.shouldTriggerAdaptationReview) ...[
+                      const SizedBox(height: AppSpacing.md),
+                      _CoachReviewCard(
+                        isPending: pendingReview != null,
+                        isLoading:
+                            adaptationActionState is AdaptationActionLoading,
+                        hasError:
+                            adaptationActionState is AdaptationActionFailure,
+                        onTap: () async {
+                          if (pendingReview != null) {
+                            context.push(RouteNames.adaptationReview);
+                            return;
+                          }
+                          final succeeded = await ref
+                              .read(adaptationActionsProvider.notifier)
+                              .requestWeeklyReview(
+                                weekStart: weeklySummary.weekStart,
+                                weekEnd: weeklySummary.weekEnd,
+                              );
+                          if (succeeded && context.mounted) {
+                            context.push(RouteNames.adaptationReview);
+                          }
+                        },
+                      ),
+                    ],
 
                     const SizedBox(height: AppSpacing.xl),
 
@@ -346,6 +378,77 @@ class _PlanNotReadyEmptyState extends ConsumerWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CoachReviewCard extends StatelessWidget {
+  const _CoachReviewCard({
+    required this.isPending,
+    required this.isLoading,
+    required this.hasError,
+    required this.onTap,
+  });
+
+  final bool isPending;
+  final bool isLoading;
+  final bool hasError;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return GestureDetector(
+      key: const Key('adaptation_coach_review_card'),
+      onTap: isLoading ? null : onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundCard,
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(color: AppColors.warning.withValues(alpha: 0.7)),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.adaptationHomeCardTitle,
+                    style: AppTypography.titleMedium,
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    hasError
+                        ? l10n.adaptationActionError
+                        : isPending
+                        ? l10n.adaptationHomePendingBody
+                        : l10n.adaptationHomeTriggerBody,
+                    style: AppTypography.bodyMedium.copyWith(
+                      color: hasError
+                          ? AppColors.error
+                          : AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (isLoading)
+              const SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: AppColors.warning,
+                ),
+              )
+            else
+              const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+          ],
         ),
       ),
     );

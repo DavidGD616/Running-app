@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../data/adaptation_repository.dart';
 import '../domain/models/plan_adjustment.dart';
+import '../domain/models/adaptation_review.dart';
 import '../domain/models/plan_revision.dart';
 import '../domain/models/session_feedback.dart';
 
@@ -106,6 +107,36 @@ class PlanRevisionsNotifier extends AsyncNotifier<List<PlanRevision>> {
   }
 }
 
+class AdaptationReviewsNotifier extends AsyncNotifier<List<AdaptationReview>> {
+  AsyncAdaptationRepository get _asyncRepository =>
+      ref.read(asyncAdaptationRepositoryProvider);
+
+  int _mutationEpoch = 0;
+
+  @override
+  Future<List<AdaptationReview>> build() async {
+    ref.watch(asyncAdaptationRepositoryProvider);
+    final buildEpoch = _mutationEpoch;
+    final loaded = await _asyncRepository.loadAdaptationReviews();
+    if (!ref.mounted) return loaded;
+    if (_mutationEpoch != buildEpoch) return state.value ?? loaded;
+    return loaded;
+  }
+
+  Future<void> recordReview(AdaptationReview review) async {
+    _mutationEpoch++;
+    final current = _currentReviews();
+    final next = [review, ...current.where((item) => item.id != review.id)]
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    state = AsyncData(next);
+    await _asyncRepository.saveAdaptationReviews(next);
+  }
+
+  List<AdaptationReview> _currentReviews() {
+    return state.maybeWhen(data: (reviews) => reviews, orElse: () => const []);
+  }
+}
+
 final sessionFeedbackProvider =
     AsyncNotifierProvider<SessionFeedbackNotifier, List<SessionFeedback>>(
       SessionFeedbackNotifier.new,
@@ -119,4 +150,9 @@ final planAdjustmentsProvider =
 final planRevisionsProvider =
     AsyncNotifierProvider<PlanRevisionsNotifier, List<PlanRevision>>(
       PlanRevisionsNotifier.new,
+    );
+
+final adaptationReviewsProvider =
+    AsyncNotifierProvider<AdaptationReviewsNotifier, List<AdaptationReview>>(
+      AdaptationReviewsNotifier.new,
     );

@@ -24,6 +24,7 @@ import '../../../health_export/presentation/health_export_provider.dart';
 import '../../../integrations/domain/models/device_connection.dart';
 import '../../../integrations/presentation/device_connection_provider.dart';
 import '../../../pre_run/presentation/run_flow_context.dart';
+import '../../../training_plan/domain/models/session_feedback.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/presentation/training_plan_provider.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
@@ -40,6 +41,10 @@ class LogRunScreen extends ConsumerStatefulWidget {
 
 class _LogRunScreenState extends ConsumerState<LogRunScreen> {
   ActivityPerceivedEffort? _selectedFeeling;
+  SessionFeedbackSleep? _selectedSleep;
+  SessionFeedbackLegs? _selectedLegs;
+  SessionFeedbackPain? _selectedPain;
+  SessionFeedbackMotivation? _selectedMotivation;
   final _notesController = TextEditingController();
   CompletedRunData? _completedRunData;
   bool _loadingFromDb = false;
@@ -47,6 +52,10 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
   @override
   void initState() {
     super.initState();
+    _selectedSleep = _sleepFromCheckIn(widget.args?.checkIn);
+    _selectedLegs = _legsFromCheckIn(widget.args?.checkIn);
+    _selectedPain = _painFromCheckIn(widget.args?.checkIn);
+    _selectedMotivation = _motivationFromCheckIn(widget.args?.checkIn);
     _loadFromDbIfNeeded();
   }
 
@@ -140,6 +149,10 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
           checkIn: widget.args?.checkIn,
           notes: record.notes,
           recordedAt: now,
+          sleep: _selectedSleep,
+          legs: _selectedLegs,
+          pain: _selectedPain,
+          motivation: _selectedMotivation,
         );
     if (!mounted) return;
     context.go(RouteNames.today);
@@ -234,6 +247,42 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
       ActivityPerceivedEffort.moderate => l10n.logSessionModerate,
       ActivityPerceivedEffort.hard => l10n.logSessionHard,
       ActivityPerceivedEffort.veryHard => l10n.logSessionVeryHard,
+    };
+  }
+
+  SessionFeedbackSleep? _sleepFromCheckIn(PreRunCheckIn? checkIn) {
+    return switch (checkIn?.sleep) {
+      PreRunSleepLevel.great => SessionFeedbackSleep.great,
+      PreRunSleepLevel.okay => SessionFeedbackSleep.okay,
+      PreRunSleepLevel.poor => SessionFeedbackSleep.poor,
+      null => null,
+    };
+  }
+
+  SessionFeedbackLegs? _legsFromCheckIn(PreRunCheckIn? checkIn) {
+    return switch (checkIn?.legs) {
+      PreRunLegCondition.fresh => SessionFeedbackLegs.fresh,
+      PreRunLegCondition.normal => SessionFeedbackLegs.normal,
+      PreRunLegCondition.heavy => SessionFeedbackLegs.heavy,
+      null => null,
+    };
+  }
+
+  SessionFeedbackPain? _painFromCheckIn(PreRunCheckIn? checkIn) {
+    return switch (checkIn?.pain) {
+      PreRunPainLevel.none => SessionFeedbackPain.none,
+      PreRunPainLevel.mild => SessionFeedbackPain.mild,
+      PreRunPainLevel.moderate => SessionFeedbackPain.moderate,
+      PreRunPainLevel.sharp => SessionFeedbackPain.severe,
+      null => null,
+    };
+  }
+
+  SessionFeedbackMotivation? _motivationFromCheckIn(PreRunCheckIn? checkIn) {
+    return switch (checkIn?.readiness) {
+      PreRunReadinessLevel.letsGo => SessionFeedbackMotivation.ready,
+      PreRunReadinessLevel.notFullyReady => SessionFeedbackMotivation.low,
+      null => null,
     };
   }
 
@@ -424,6 +473,103 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
 
                     const SizedBox(height: AppSpacing.xl),
 
+                    Text(
+                      l10n.logSessionBodyCheck,
+                      style: AppTypography.titleMedium.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.md),
+                    _OptionGroup<SessionFeedbackSleep>(
+                      label: l10n.preRunSleepQuestion,
+                      selectedValue: _selectedSleep,
+                      options: [
+                        _Option(
+                          value: SessionFeedbackSleep.great,
+                          label: l10n.preRunGreat,
+                        ),
+                        _Option(
+                          value: SessionFeedbackSleep.okay,
+                          label: l10n.preRunOkay,
+                        ),
+                        _Option(
+                          value: SessionFeedbackSleep.poor,
+                          label: l10n.preRunPoor,
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _selectedSleep = value),
+                    ),
+                    const SizedBox(height: AppSpacing.base),
+                    _OptionGroup<SessionFeedbackLegs>(
+                      label: l10n.preRunLegsQuestion,
+                      selectedValue: _selectedLegs,
+                      options: [
+                        _Option(
+                          value: SessionFeedbackLegs.fresh,
+                          label: l10n.preRunFresh,
+                        ),
+                        _Option(
+                          value: SessionFeedbackLegs.normal,
+                          label: l10n.preRunNormal,
+                        ),
+                        _Option(
+                          value: SessionFeedbackLegs.heavy,
+                          label: l10n.preRunHeavy,
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _selectedLegs = value),
+                    ),
+                    const SizedBox(height: AppSpacing.base),
+                    _OptionGroup<SessionFeedbackPain>(
+                      label: l10n.preRunPainQuestion,
+                      selectedValue: _selectedPain,
+                      options: [
+                        _Option(
+                          value: SessionFeedbackPain.none,
+                          label: l10n.preRunNone,
+                        ),
+                        _Option(
+                          value: SessionFeedbackPain.mild,
+                          label: l10n.preRunMildDiscomfort,
+                        ),
+                        _Option(
+                          value: SessionFeedbackPain.moderate,
+                          label: l10n.preRunModeratePain,
+                        ),
+                        _Option(
+                          value: SessionFeedbackPain.severe,
+                          label: l10n.preRunSharpPain,
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _selectedPain = value),
+                    ),
+                    const SizedBox(height: AppSpacing.base),
+                    _OptionGroup<SessionFeedbackMotivation>(
+                      label: l10n.preRunReadinessQuestion,
+                      selectedValue: _selectedMotivation,
+                      options: [
+                        _Option(
+                          value: SessionFeedbackMotivation.ready,
+                          label: l10n.preRunLetsGo,
+                        ),
+                        _Option(
+                          value: SessionFeedbackMotivation.mixed,
+                          label: l10n.logSessionModerate,
+                        ),
+                        _Option(
+                          value: SessionFeedbackMotivation.low,
+                          label: l10n.preRunNotFullyReady,
+                        ),
+                      ],
+                      onChanged: (value) =>
+                          setState(() => _selectedMotivation = value),
+                    ),
+
+                    const SizedBox(height: AppSpacing.xl),
+
                     Row(
                       children: [
                         Text(
@@ -472,6 +618,64 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _Option<T> {
+  const _Option({required this.value, required this.label});
+
+  final T value;
+  final String label;
+}
+
+class _OptionGroup<T> extends StatelessWidget {
+  const _OptionGroup({
+    required this.label,
+    required this.selectedValue,
+    required this.options,
+    required this.onChanged,
+  });
+
+  final String label;
+  final T? selectedValue;
+  final List<_Option<T>> options;
+  final ValueChanged<T> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: AppTypography.bodyMedium.copyWith(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.sm),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final itemWidth = (constraints.maxWidth - AppSpacing.sm) / 2;
+            return Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                for (final option in options)
+                  SizedBox(
+                    width: itemWidth,
+                    child: _FeelButton(
+                      label: option.label,
+                      isSelected: selectedValue == option.value,
+                      onTap: () => onChanged(option.value),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
     );
   }
 }
@@ -658,6 +862,9 @@ class _FeelButton extends StatelessWidget {
         child: Center(
           child: Text(
             label,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
             style: AppTypography.titleMedium.copyWith(
               color: isSelected
                   ? AppColors.accentPrimary

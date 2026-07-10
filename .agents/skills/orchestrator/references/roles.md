@@ -35,8 +35,10 @@ Model:
   for a different coder model.
 
 Coder prompt must include:
+- exact sentinel line first (first non-empty line): `Codex-Orchestrator-Internal-Subagent: <role>` where role is the subagent role (for example `reviewer` or `coder`)
 - repository path
 - branch/context if relevant
+- stable `Task ID:` for the one plan task/chunk being implemented
 - exact owned files or module boundary
 - expected behavior
 - tests to add or update
@@ -44,11 +46,12 @@ Coder prompt must include:
 - instruction that they are not alone in the codebase
 - instruction not to revert unrelated or user-made changes
 
-Keep write scopes disjoint across coders.
+Keep write scopes disjoint across unrelated coders. Remediation coders for a blocking review must use the same `Task ID:` as the original coder pass and may edit only within the reviewed task scope.
 
 ## Reviewer
 
 Use after implementation and before final/commit when risk is non-trivial.
+Reviewer prompts must start with the sentinel line `Codex-Orchestrator-Internal-Subagent: <role>` before task instructions.
 
 Ask reviewers to check:
 - correctness against the user request
@@ -59,8 +62,12 @@ Ask reviewers to check:
 - deployment risk
 - downstream compatibility
 
-Require findings first, with file/line references. If no findings, ask for a
-clear "No findings" verdict and residual risk.
+Require findings first, with file/line references.
+Require a machine-readable overall verdict in the final paragraph using exactly one of:
+- `Overall Assessment: APPROVE`
+- `Overall Assessment: REQUEST_CHANGES`
+- `Overall Assessment: NEEDS_DISCUSSION`
+If no findings, this still requires `Overall Assessment: APPROVE` and residual risk.
 
 ## Scribe
 
