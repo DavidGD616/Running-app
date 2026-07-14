@@ -58,7 +58,7 @@ class SupabaseRunnerProfileRepository implements RunnerProfileRepository {
         return null;
       }
 
-      await _localCache.saveProfile(profile);
+      await _localCache.cacheProfile(profile);
       return profile;
     } catch (_) {
       return _localCache.loadProfile();

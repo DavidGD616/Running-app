@@ -6944,6 +6944,294 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed'**
   String get adaptationStatusFailed;
+
+  /// No description provided for @editGoalFormTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Goal'**
+  String get editGoalFormTitle;
+
+  /// No description provided for @editGoalFormSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update the race you are already training for. Your completed progress stays intact.'**
+  String get editGoalFormSubtitle;
+
+  /// No description provided for @editGoalDistanceSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Race distance'**
+  String get editGoalDistanceSection;
+
+  /// No description provided for @editGoalFixedDateSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Fixed race date'**
+  String get editGoalFixedDateSection;
+
+  /// No description provided for @editGoalTargetTimeSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Target time'**
+  String get editGoalTargetTimeSection;
+
+  /// No description provided for @editGoalTargetTimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'HH:MM:SS'**
+  String get editGoalTargetTimeHint;
+
+  /// No description provided for @editGoalCurrentTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Current target: {time}'**
+  String editGoalCurrentTarget(String time);
+
+  /// No description provided for @editGoalSuggestedTarget.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence-supported target: {time}'**
+  String editGoalSuggestedTarget(String time);
+
+  /// No description provided for @editGoalDateMinimumError.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a date at least 7 days from today.'**
+  String get editGoalDateMinimumError;
+
+  /// No description provided for @editGoalTimeError.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive target time as HH:MM:SS.'**
+  String get editGoalTimeError;
+
+  /// No description provided for @editGoalPreviewChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview changes'**
+  String get editGoalPreviewChanges;
+
+  /// No description provided for @editGoalPreviewLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Building your updated plan preview…'**
+  String get editGoalPreviewLoading;
+
+  /// No description provided for @editGoalRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get editGoalRetry;
+
+  /// No description provided for @editGoalErrorAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to edit your goal.'**
+  String get editGoalErrorAuth;
+
+  /// No description provided for @editGoalErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the goal details and try again.'**
+  String get editGoalErrorInvalid;
+
+  /// No description provided for @editGoalErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The preview took too long. Try again.'**
+  String get editGoalErrorTimeout;
+
+  /// No description provided for @editGoalErrorStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Your active plan changed. Generate a fresh preview.'**
+  String get editGoalErrorStale;
+
+  /// No description provided for @editGoalErrorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview expired. Generate a fresh one.'**
+  String get editGoalErrorExpired;
+
+  /// No description provided for @editGoalErrorConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview can no longer be applied.'**
+  String get editGoalErrorConflict;
+
+  /// No description provided for @editGoalErrorParse.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not read the updated plan.'**
+  String get editGoalErrorParse;
+
+  /// No description provided for @editGoalErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get editGoalErrorGeneric;
+
+  /// No description provided for @editGoalPreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review Goal Changes'**
+  String get editGoalPreviewTitle;
+
+  /// No description provided for @editGoalComparisonSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal comparison'**
+  String get editGoalComparisonSection;
+
+  /// No description provided for @editGoalCurrentLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get editGoalCurrentLabel;
+
+  /// No description provided for @editGoalProposedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed'**
+  String get editGoalProposedLabel;
+
+  /// No description provided for @editGoalNoFixedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed date'**
+  String get editGoalNoFixedDate;
+
+  /// No description provided for @editGoalWarningShortNoticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Short preparation window'**
+  String get editGoalWarningShortNoticeTitle;
+
+  /// No description provided for @editGoalWarningShortNoticeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your race is within 4 weeks. The plan will prioritize a safer build and taper.'**
+  String get editGoalWarningShortNoticeBody;
+
+  /// No description provided for @editGoalWarningAggressiveTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Aggressive target'**
+  String get editGoalWarningAggressiveTitle;
+
+  /// No description provided for @editGoalWarningAggressiveBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This target is faster than your current evidence supports.'**
+  String get editGoalWarningAggressiveBody;
+
+  /// No description provided for @editGoalWarningSuggested.
+  ///
+  /// In en, this message translates to:
+  /// **'Safer target: {time}'**
+  String editGoalWarningSuggested(String time);
+
+  /// No description provided for @editGoalImpactSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan impact'**
+  String get editGoalImpactSection;
+
+  /// No description provided for @editGoalAddedDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Added workouts'**
+  String get editGoalAddedDetailsSection;
+
+  /// No description provided for @editGoalRemovedDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed workouts'**
+  String get editGoalRemovedDetailsSection;
+
+  /// No description provided for @editGoalChangedDetailsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed workouts'**
+  String get editGoalChangedDetailsSection;
+
+  /// No description provided for @editGoalPreservedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions preserved'**
+  String editGoalPreservedCount(int count);
+
+  /// No description provided for @editGoalAddedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions added'**
+  String editGoalAddedCount(int count);
+
+  /// No description provided for @editGoalRemovedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions removed'**
+  String editGoalRemovedCount(int count);
+
+  /// No description provided for @editGoalChangedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions changed'**
+  String editGoalChangedCount(int count);
+
+  /// No description provided for @editGoalTotalWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total weeks'**
+  String editGoalTotalWeeks(int count);
+
+  /// No description provided for @editGoalEndsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String editGoalEndsOn(String date);
+
+  /// No description provided for @editGoalScheduleSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed schedule'**
+  String get editGoalScheduleSection;
+
+  /// No description provided for @editGoalWeekLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week}'**
+  String editGoalWeekLabel(int week);
+
+  /// No description provided for @editGoalSessionLine.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {session}'**
+  String editGoalSessionLine(String date, String session);
+
+  /// No description provided for @editGoalApplyChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply changes'**
+  String get editGoalApplyChanges;
+
+  /// No description provided for @editGoalKeepCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current goal'**
+  String get editGoalKeepCurrent;
+
+  /// No description provided for @editGoalFreshPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a fresh preview'**
+  String get editGoalFreshPreview;
+
+  /// No description provided for @editGoalPreviewExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview has expired and cannot be applied.'**
+  String get editGoalPreviewExpired;
 }
 
 class _AppLocalizationsDelegate

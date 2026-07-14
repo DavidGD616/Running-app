@@ -5,11 +5,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
+import 'package:running_app/features/settings/presentation/edit_goal_provider.dart';
+import 'package:running_app/features/settings/presentation/screens/edit_goal_form_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/settings_goal_intro_screen.dart';
 import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
 import 'package:running_app/core/router/app_router.dart';
 import 'package:running_app/core/router/route_names.dart';
 import 'package:running_app/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../../helpers/runner_profile_fixtures.dart';
 
 class _TestOnboardingNotifier extends OnboardingNotifier {
   @override
@@ -191,4 +196,73 @@ void main() {
     expect(find.text('Strength Preferences'), findsOneWidget);
     expect(find.text('Training Preferences'), findsNothing);
   });
+
+  testWidgets(
+    'Edit Goal opens its dedicated form while New Goal keeps its intro',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            userPreferencesRepositoryProvider.overrideWithValue(
+              SharedPreferencesUserPreferencesRepository(prefs),
+            ),
+            appBootstrapStateProvider.overrideWithValue(
+              AppBootstrapState.authenticatedReady,
+            ),
+            editGoalClockProvider.overrideWith(
+              (ref) =>
+                  () => DateTime(2026, 7, 13, 9),
+            ),
+            editGoalLocaleCodeProvider.overrideWithValue('en'),
+            editGoalEvidenceSuggestionProvider.overrideWithValue(null),
+            editGoalInitialDataLoaderProvider.overrideWithValue(
+              () async => EditGoalInitialData(
+                profile: buildRunnerProfile(),
+                acceptedRaceTarget: const AcceptedRaceTarget(
+                  distanceKm: 21.097,
+                  primaryTime: Duration(hours: 1, minutes: 55),
+                ),
+                activePlanId: 'plan-active',
+              ),
+            ),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(appRouterProvider);
+              return MaterialApp.router(
+                locale: const Locale('en'),
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('en'), Locale('es')],
+                routerConfig: appRouter,
+              );
+            },
+          ),
+        ),
+      );
+      final appRouter = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      ).read(appRouterProvider);
+
+      appRouter.go(RouteNames.settingsUpdatePlanEditGoal);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EditGoalFormScreen), findsOneWidget);
+      expect(find.byType(SettingsGoalIntroScreen), findsNothing);
+
+      appRouter.go(RouteNames.settingsUpdatePlanNewGoal);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SettingsGoalIntroScreen), findsOneWidget);
+      expect(find.byType(EditGoalFormScreen), findsNothing);
+    },
+  );
 }

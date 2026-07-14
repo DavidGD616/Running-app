@@ -3885,4 +3885,182 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adaptationStatusFailed => 'Falló';
+
+  @override
+  String get editGoalFormTitle => 'Editar objetivo';
+
+  @override
+  String get editGoalFormSubtitle =>
+      'Actualiza la carrera para la que ya entrenas. Tu progreso completado se mantiene.';
+
+  @override
+  String get editGoalDistanceSection => 'Distancia de carrera';
+
+  @override
+  String get editGoalFixedDateSection => 'Fecha de carrera fija';
+
+  @override
+  String get editGoalTargetTimeSection => 'Tiempo objetivo';
+
+  @override
+  String get editGoalTargetTimeHint => 'HH:MM:SS';
+
+  @override
+  String editGoalCurrentTarget(String time) {
+    return 'Objetivo actual: $time';
+  }
+
+  @override
+  String editGoalSuggestedTarget(String time) {
+    return 'Objetivo respaldado por tus datos: $time';
+  }
+
+  @override
+  String get editGoalDateMinimumError =>
+      'Elige una fecha a al menos 7 días de hoy.';
+
+  @override
+  String get editGoalTimeError => 'Introduce un tiempo positivo como HH:MM:SS.';
+
+  @override
+  String get editGoalPreviewChanges => 'Vista previa de cambios';
+
+  @override
+  String get editGoalPreviewLoading =>
+      'Creando la vista previa de tu plan actualizado…';
+
+  @override
+  String get editGoalRetry => 'Intentar de nuevo';
+
+  @override
+  String get editGoalErrorAuth =>
+      'Inicia sesión de nuevo para editar tu objetivo.';
+
+  @override
+  String get editGoalErrorInvalid =>
+      'Revisa los detalles del objetivo e inténtalo de nuevo.';
+
+  @override
+  String get editGoalErrorTimeout =>
+      'La vista previa tardó demasiado. Inténtalo de nuevo.';
+
+  @override
+  String get editGoalErrorStale =>
+      'Tu plan activo cambió. Genera una vista previa nueva.';
+
+  @override
+  String get editGoalErrorExpired =>
+      'Esta vista previa caducó. Genera una nueva.';
+
+  @override
+  String get editGoalErrorConflict =>
+      'Esta vista previa ya no se puede aplicar.';
+
+  @override
+  String get editGoalErrorParse => 'No pudimos leer el plan actualizado.';
+
+  @override
+  String get editGoalErrorGeneric => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get editGoalPreviewTitle => 'Revisar cambios del objetivo';
+
+  @override
+  String get editGoalComparisonSection => 'Comparación del objetivo';
+
+  @override
+  String get editGoalCurrentLabel => 'Actual';
+
+  @override
+  String get editGoalProposedLabel => 'Propuesto';
+
+  @override
+  String get editGoalNoFixedDate => 'Sin fecha fija';
+
+  @override
+  String get editGoalWarningShortNoticeTitle => 'Ventana de preparación corta';
+
+  @override
+  String get editGoalWarningShortNoticeBody =>
+      'Tu carrera es dentro de 4 semanas. El plan priorizará una progresión y una descarga más seguras.';
+
+  @override
+  String get editGoalWarningAggressiveTitle => 'Objetivo exigente';
+
+  @override
+  String get editGoalWarningAggressiveBody =>
+      'Este objetivo es más rápido de lo que respaldan tus datos actuales.';
+
+  @override
+  String editGoalWarningSuggested(String time) {
+    return 'Objetivo más seguro: $time';
+  }
+
+  @override
+  String get editGoalImpactSection => 'Impacto en el plan';
+
+  @override
+  String get editGoalAddedDetailsSection => 'Sesiones añadidas';
+
+  @override
+  String get editGoalRemovedDetailsSection => 'Sesiones eliminadas';
+
+  @override
+  String get editGoalChangedDetailsSection => 'Sesiones modificadas';
+
+  @override
+  String editGoalPreservedCount(int count) {
+    return '$count sesiones conservadas';
+  }
+
+  @override
+  String editGoalAddedCount(int count) {
+    return '$count sesiones añadidas';
+  }
+
+  @override
+  String editGoalRemovedCount(int count) {
+    return '$count sesiones eliminadas';
+  }
+
+  @override
+  String editGoalChangedCount(int count) {
+    return '$count sesiones cambiadas';
+  }
+
+  @override
+  String editGoalTotalWeeks(int count) {
+    return '$count semanas en total';
+  }
+
+  @override
+  String editGoalEndsOn(String date) {
+    return 'Termina el $date';
+  }
+
+  @override
+  String get editGoalScheduleSection => 'Calendario propuesto';
+
+  @override
+  String editGoalWeekLabel(int week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String editGoalSessionLine(String date, String session) {
+    return '$date · $session';
+  }
+
+  @override
+  String get editGoalApplyChanges => 'Aplicar cambios';
+
+  @override
+  String get editGoalKeepCurrent => 'Mantener objetivo actual';
+
+  @override
+  String get editGoalFreshPreview => 'Generar una vista previa nueva';
+
+  @override
+  String get editGoalPreviewExpired =>
+      'Esta vista previa caducó y no se puede aplicar.';
 }

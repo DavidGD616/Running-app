@@ -36,19 +36,6 @@ void main() {
     );
   }
 
-  testWidgets('edit goal intro copy omits removed priority and time targets', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      wrap(const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.editGoal)),
-    );
-
-    expect(find.textContaining('priority'), findsNothing);
-    expect(find.textContaining('time target'), findsNothing);
-    expect(find.textContaining('pacing target'), findsNothing);
-    expect(find.textContaining('race and date'), findsOneWidget);
-  });
-
   testWidgets('new goal intro copy does not promise custom distance', (
     tester,
   ) async {

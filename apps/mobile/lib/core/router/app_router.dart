@@ -40,6 +40,8 @@ import '../../features/settings/presentation/screens/settings_account_name_scree
 import '../../features/settings/presentation/screens/settings_account_sex_screen.dart';
 import '../../features/settings/presentation/screens/settings_account_security_info_screen.dart';
 import '../../features/settings/presentation/screens/settings_integrations_screen.dart';
+import '../../features/settings/presentation/screens/edit_goal_form_screen.dart';
+import '../../features/settings/presentation/screens/edit_goal_preview_screen.dart';
 import '../../features/session_detail/presentation/screens/session_detail_screen.dart';
 import '../../features/pre_run/presentation/run_flow_context.dart';
 import '../../features/pre_run/presentation/screens/pre_run_screen.dart';
@@ -337,40 +339,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanEditGoal,
-        builder: (context, state) =>
-            const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.editGoal),
+        builder: (context, state) => const EditGoalFormScreen(),
       ),
       GoRoute(
-        path: RouteNames.settingsUpdatePlanEditGoalForm,
-        builder: (context, state) =>
-            const GoalScreen(mode: GoalFlowMode.editGoal),
-      ),
-      GoRoute(
-        path: RouteNames.settingsUpdatePlanEditGoalSchedule,
-        builder: (context, state) =>
-            const ScheduleScreen(mode: ScheduleFlowMode.editGoal),
-      ),
-      GoRoute(
-        path: RouteNames.settingsUpdatePlanEditGoalTraining,
-        builder: (context, state) => const TrainingPreferencesScreen(
-          mode: TrainingPreferencesFlowMode.editGoal,
-        ),
-      ),
-      GoRoute(
-        path: RouteNames.settingsUpdatePlanEditGoalSummary,
-        builder: (context, state) => const SettingsGoalReviewScreen(
-          mode: SettingsGoalReviewMode.editGoal,
-        ),
-      ),
-      GoRoute(
-        path: RouteNames.settingsUpdatePlanEditGoalGenerating,
-        builder: (context, state) =>
-            const PlanGenerationScreen(mode: PlanGenerationFlowMode.editGoal),
-      ),
-      GoRoute(
-        path: RouteNames.settingsUpdatePlanEditGoalReady,
-        builder: (context, state) =>
-            const PlanReadyScreen(mode: PlanReadyFlowMode.editGoal),
+        path: RouteNames.settingsUpdatePlanEditGoalPreview,
+        builder: (context, state) => const EditGoalPreviewScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoal,

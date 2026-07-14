@@ -82,8 +82,15 @@ class SharedPreferencesRunnerProfileRepository
 
   @override
   Future<void> saveProfile(RunnerProfile profile) async {
-    await _prefs.setString(profileStorageKey, jsonEncode(profile.toJson()));
+    await cacheProfile(profile);
     await _prefs.remove(draftStorageKey);
+  }
+
+  /// Updates only the local profile cache without changing draft fallback
+  /// data. Remote refreshes use this so accepted target metadata retained in
+  /// the draft cache is not discarded as a side effect of a read.
+  Future<void> cacheProfile(RunnerProfile profile) async {
+    await _prefs.setString(profileStorageKey, jsonEncode(profile.toJson()));
   }
 
   @override

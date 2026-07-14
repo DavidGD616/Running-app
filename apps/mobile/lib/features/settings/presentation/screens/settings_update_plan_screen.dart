@@ -31,6 +31,7 @@ class SettingsUpdatePlanScreen extends StatelessWidget {
           child: SettingsCard(
             children: [
               SettingsRow(
+                key: const Key('settingsEditGoalRow'),
                 label: l10n.settingsEditGoal,
                 iconAsset: 'assets/icons/target.svg',
                 variant: SettingsRowVariant.chevron,

@@ -1,0 +1,132 @@
+import 'package:flutter_test/flutter_test.dart';
+import 'package:running_app/features/settings/domain/edit_goal_models.dart';
+import 'package:running_app/features/training_plan/domain/models/session_type.dart';
+
+void main() {
+  test('summary strictly parses canonical chronological session details', () {
+    final summary = GoalEditChangeSummary.fromJson(_summary());
+
+    expect(summary.addedUpcomingSessions, hasLength(2));
+    expect(
+      summary.addedUpcomingSessions.first.afterSessionType,
+      SessionType.intervals,
+    );
+    expect(
+      summary.removedUpcomingSessions.single.beforeSessionType,
+      SessionType.longRun,
+    );
+    final changed = summary.materiallyChangedUpcomingSessions.single;
+    expect(changed.beforeSessionType, SessionType.easyRun);
+    expect(changed.afterSessionType, SessionType.intervals);
+    expect(changed.beforeDurationMinutes, 30);
+    expect(changed.afterDistanceKm, 6);
+  });
+
+  test('summary remains backward compatible when detail arrays are absent', () {
+    final legacy = _summary()
+      ..removeWhere((key, _) => key.endsWith('Sessions'));
+
+    final summary = GoalEditChangeSummary.fromJson(legacy);
+
+    expect(summary.addedUpcomingCount, 2);
+    expect(summary.addedUpcomingSessions, isEmpty);
+    expect(summary.removedUpcomingSessions, isEmpty);
+    expect(summary.materiallyChangedUpcomingSessions, isEmpty);
+  });
+
+  test('summary rejects malformed session detail rows', () {
+    final unknownType = _summary();
+    (unknownType['addedUpcomingSessions'] as List).first['afterSessionType'] =
+        'localized easy run';
+    expect(
+      () => GoalEditChangeSummary.fromJson(unknownType),
+      throwsFormatException,
+    );
+
+    final invalidSides = _summary();
+    (invalidSides['removedUpcomingSessions'] as List)
+            .first['afterSessionType'] =
+        'easyRun';
+    expect(
+      () => GoalEditChangeSummary.fromJson(invalidSides),
+      throwsFormatException,
+    );
+
+    final countMismatch = _summary();
+    countMismatch['addedUpcomingCount'] = 1;
+    expect(
+      () => GoalEditChangeSummary.fromJson(countMismatch),
+      throwsFormatException,
+    );
+
+    final unordered = _summary();
+    unordered['addedUpcomingSessions'] = [
+      _row(date: '2026-07-20', afterType: 'recoveryRun'),
+      _row(date: '2026-07-14', afterType: 'intervals'),
+    ];
+    expect(
+      () => GoalEditChangeSummary.fromJson(unordered),
+      throwsFormatException,
+    );
+  });
+}
+
+Map<String, dynamic> _summary() => {
+  'preservedCount': 4,
+  'addedUpcomingCount': 2,
+  'removedUpcomingCount': 1,
+  'materiallyChangedUpcomingCount': 1,
+  'addedUpcomingSessions': [
+    _row(
+      date: '2026-07-14',
+      afterType: 'intervals',
+      afterDuration: 25,
+      afterDistance: 6.5,
+    ),
+    _row(
+      date: '2026-07-20',
+      afterType: 'recoveryRun',
+      afterDuration: 30,
+      afterDistance: 4,
+    ),
+  ],
+  'removedUpcomingSessions': [
+    _row(
+      date: '2026-07-15',
+      beforeType: 'longRun',
+      beforeDuration: 60,
+      beforeDistance: 12,
+    ),
+  ],
+  'materiallyChangedUpcomingSessions': [
+    _row(
+      date: '2026-07-16',
+      beforeType: 'easyRun',
+      afterType: 'intervals',
+      beforeDuration: 30,
+      afterDuration: 35,
+      beforeDistance: 5,
+      afterDistance: 6,
+    ),
+  ],
+  'totalWeeks': 12,
+  'endDate': '2026-10-18',
+};
+
+Map<String, dynamic> _row({
+  required String date,
+  String? beforeType,
+  String? afterType,
+  int? beforeDuration,
+  int? afterDuration,
+  double? beforeDistance,
+  double? afterDistance,
+}) => {
+  'localDate': date,
+  'beforeSessionType': beforeType,
+  'afterSessionType': afterType,
+  'beforeDurationMinutes': beforeDuration,
+  'afterDurationMinutes': afterDuration,
+  'beforeDistanceKm': beforeDistance,
+  'afterDistanceKm': afterDistance,
+};

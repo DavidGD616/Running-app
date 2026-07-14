@@ -357,6 +357,9 @@ allow_dynamic_registration = false
 [functions.generate-plan]
 verify_jwt = false
 
+[functions.edit-goal]
+verify_jwt = false
+
 [functions.store-apple-token]
 verify_jwt = false
 

@@ -3855,4 +3855,177 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get adaptationStatusFailed => 'Failed';
+
+  @override
+  String get editGoalFormTitle => 'Edit Goal';
+
+  @override
+  String get editGoalFormSubtitle =>
+      'Update the race you are already training for. Your completed progress stays intact.';
+
+  @override
+  String get editGoalDistanceSection => 'Race distance';
+
+  @override
+  String get editGoalFixedDateSection => 'Fixed race date';
+
+  @override
+  String get editGoalTargetTimeSection => 'Target time';
+
+  @override
+  String get editGoalTargetTimeHint => 'HH:MM:SS';
+
+  @override
+  String editGoalCurrentTarget(String time) {
+    return 'Current target: $time';
+  }
+
+  @override
+  String editGoalSuggestedTarget(String time) {
+    return 'Evidence-supported target: $time';
+  }
+
+  @override
+  String get editGoalDateMinimumError =>
+      'Choose a date at least 7 days from today.';
+
+  @override
+  String get editGoalTimeError => 'Enter a positive target time as HH:MM:SS.';
+
+  @override
+  String get editGoalPreviewChanges => 'Preview changes';
+
+  @override
+  String get editGoalPreviewLoading => 'Building your updated plan preview…';
+
+  @override
+  String get editGoalRetry => 'Try again';
+
+  @override
+  String get editGoalErrorAuth => 'Sign in again to edit your goal.';
+
+  @override
+  String get editGoalErrorInvalid => 'Check the goal details and try again.';
+
+  @override
+  String get editGoalErrorTimeout => 'The preview took too long. Try again.';
+
+  @override
+  String get editGoalErrorStale =>
+      'Your active plan changed. Generate a fresh preview.';
+
+  @override
+  String get editGoalErrorExpired =>
+      'This preview expired. Generate a fresh one.';
+
+  @override
+  String get editGoalErrorConflict => 'This preview can no longer be applied.';
+
+  @override
+  String get editGoalErrorParse => 'We could not read the updated plan.';
+
+  @override
+  String get editGoalErrorGeneric => 'Something went wrong. Try again.';
+
+  @override
+  String get editGoalPreviewTitle => 'Review Goal Changes';
+
+  @override
+  String get editGoalComparisonSection => 'Goal comparison';
+
+  @override
+  String get editGoalCurrentLabel => 'Current';
+
+  @override
+  String get editGoalProposedLabel => 'Proposed';
+
+  @override
+  String get editGoalNoFixedDate => 'No fixed date';
+
+  @override
+  String get editGoalWarningShortNoticeTitle => 'Short preparation window';
+
+  @override
+  String get editGoalWarningShortNoticeBody =>
+      'Your race is within 4 weeks. The plan will prioritize a safer build and taper.';
+
+  @override
+  String get editGoalWarningAggressiveTitle => 'Aggressive target';
+
+  @override
+  String get editGoalWarningAggressiveBody =>
+      'This target is faster than your current evidence supports.';
+
+  @override
+  String editGoalWarningSuggested(String time) {
+    return 'Safer target: $time';
+  }
+
+  @override
+  String get editGoalImpactSection => 'Plan impact';
+
+  @override
+  String get editGoalAddedDetailsSection => 'Added workouts';
+
+  @override
+  String get editGoalRemovedDetailsSection => 'Removed workouts';
+
+  @override
+  String get editGoalChangedDetailsSection => 'Changed workouts';
+
+  @override
+  String editGoalPreservedCount(int count) {
+    return '$count sessions preserved';
+  }
+
+  @override
+  String editGoalAddedCount(int count) {
+    return '$count sessions added';
+  }
+
+  @override
+  String editGoalRemovedCount(int count) {
+    return '$count sessions removed';
+  }
+
+  @override
+  String editGoalChangedCount(int count) {
+    return '$count sessions changed';
+  }
+
+  @override
+  String editGoalTotalWeeks(int count) {
+    return '$count total weeks';
+  }
+
+  @override
+  String editGoalEndsOn(String date) {
+    return 'Ends $date';
+  }
+
+  @override
+  String get editGoalScheduleSection => 'Proposed schedule';
+
+  @override
+  String editGoalWeekLabel(int week) {
+    return 'Week $week';
+  }
+
+  @override
+  String editGoalSessionLine(String date, String session) {
+    return '$date · $session';
+  }
+
+  @override
+  String get editGoalApplyChanges => 'Apply changes';
+
+  @override
+  String get editGoalKeepCurrent => 'Keep current goal';
+
+  @override
+  String get editGoalFreshPreview => 'Generate a fresh preview';
+
+  @override
+  String get editGoalPreviewExpired =>
+      'This preview has expired and cannot be applied.';
 }
