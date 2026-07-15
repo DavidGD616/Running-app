@@ -1656,9 +1656,47 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
     return missing
 
 
+def _validated_headless_restart_chain(
+    coder_passes: list[dict[str, Any]], baseline_head: str,
+) -> list[dict[str, Any]]:
+    """Return a restart chain only when a later coder validates its baseline.
+
+    Older hook versions did not always record ``start_head``.  A commit made
+    after such a pass cannot supply that missing evidence: the commit belongs
+    to the same cycle and would make the check self-authorizing.  Recovery is
+    allowed only when a later coder records the active baseline and its start
+    snapshot continues the preceding coder's stop snapshot without a gap.
+    """
+    ordered = sorted(coder_passes, key=lambda item: item["start_seq"])
+    if len(ordered) < 2:
+        return []
+    first = ordered[0]
+    if str(first.get("start_head", "")).strip():
+        return []
+    if not isinstance(first.get("start_snapshot_signature"), list):
+        return []
+    later = ordered[1:]
+    if any(
+        str(item.get("start_head", "")).strip() != baseline_head
+        for item in later
+    ):
+        return []
+    if not all(
+        isinstance(left.get("stop_snapshot_signature"), list)
+        and isinstance(right.get("start_snapshot_signature"), list)
+        and signatures_match(
+            left["stop_snapshot_signature"], right["start_snapshot_signature"],
+        )
+        for left, right in zip(ordered, ordered[1:])
+    ):
+        return []
+    return ordered
+
+
 def _approved_same_task_commits_before(
     ledger: dict[str, Any], before_seq: int,
     reviewer_passes: list[dict[str, Any]] | None = None,
+    active_history_commits: list[dict[str, Any]] | None = None,
 ) -> list[dict[str, Any]]:
     """Return the uninterrupted approved commit chain preceding a coder pass."""
     baseline_head = str(ledger.get("baseline_head", "")).strip()
@@ -1706,12 +1744,37 @@ def _approved_same_task_commits_before(
         )
         if isinstance(item, dict) and isinstance(item.get("seq"), int)
     ]
+    history_commits = [
+        item for item in (active_history_commits or [])
+        if isinstance(item, dict) and isinstance(item.get("seq"), int)
+        and str(item.get("hash", "")).strip()
+    ]
 
     for commit in commits:
         commit_seq = commit["seq"]
+        cycle_boundary_seq = previous_commit_seq
+        inferred_external_restart = False
+        commit_head_before = str(commit.get("head_before", "")).strip()
+        external_baselines = [
+            item for item in history_commits
+            if item["seq"] < commit_seq
+            and str(item.get("hash", "")).strip() == commit_head_before
+            and _commit_is_in_active_ancestry(item, reference_head)
+        ]
+        if (
+            not accepted
+            and commit_head_before
+            and commit_head_before != expected_head
+            and external_baselines
+        ):
+            external_baseline = max(external_baselines, key=lambda item: item["seq"])
+            cycle_boundary_seq = external_baseline["seq"]
+            expected_head = commit_head_before
+            inferred_external_restart = True
+
         cycle_passes = [
             item for item in passes
-            if previous_commit_seq < item["start_seq"]
+            if cycle_boundary_seq < item["start_seq"]
             and item["stop_seq"] < commit_seq
         ]
         if not cycle_passes:
@@ -1721,7 +1784,7 @@ def _approved_same_task_commits_before(
 
         cycle_reviews = [
             item for item in reviews
-            if previous_commit_seq < item["seq"] < commit_seq
+            if cycle_boundary_seq < item["seq"] < commit_seq
         ]
         if not cycle_reviews:
             break
@@ -1780,6 +1843,22 @@ def _approved_same_task_commits_before(
         first_parent = str(commit.get("first_parent", "")).strip()
         if coder_start_head and coder_start_head != expected_head:
             break
+        first_start_head = str(first_coder_pass.get("start_head", "")).strip()
+        if (
+            inferred_external_restart
+            and not first_start_head
+        ):
+            intervening_history = [
+                item for item in history_commits
+                if cycle_boundary_seq < item["seq"] < commit_seq
+                and str(item.get("hash", "")).strip() != commit_head_before
+                and _commit_is_in_active_ancestry(item, reference_head)
+            ]
+            if (
+                not _validated_headless_restart_chain(cycle_passes, expected_head)
+                or intervening_history
+            ):
+                break
         if (
             not commit_hash
             or not expected_head
@@ -1837,6 +1916,7 @@ def _head_is_active_ancestor(candidate: str, reference_head: str) -> bool:
 def _cycle_context(
     ledger: dict[str, Any], final_coder: dict[str, Any], current_head: str,
     reviewer_passes: list[dict[str, Any]] | None = None,
+    active_history_commits: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
     """Locate the accepted active-history cycle containing ``final_coder``.
 
@@ -1854,27 +1934,6 @@ def _cycle_context(
     if not isinstance(cycle_end_seq, int):
         cycle_end_seq = 2**63 - 1
     final_start_head = str(final_coder.get("start_head", "")).strip()
-    if not final_start_head:
-        # A recovery coder can start while an older hook version is active and
-        # therefore lack start_head. Once its active commit exists, the normal
-        # first-parent checks make head_before the authoritative cycle start.
-        later_active_commits = [
-            item for item in ledger.get("commits", [])
-            if isinstance(item, dict) and isinstance(item.get("seq"), int)
-            and item["seq"] > cycle_end_seq
-            and _commit_is_in_active_ancestry(item, current_head)
-        ]
-        if later_active_commits:
-            first_later_commit = min(
-                later_active_commits, key=lambda item: item["seq"]
-            )
-            inferred_head = str(
-                first_later_commit.get("head_before", "")
-            ).strip()
-            if _is_real_git_hash(inferred_head):
-                final_start_head = inferred_head
-        else:
-            final_start_head = current_head
     ancestry_head = final_start_head or current_head
     prior_commits = [
         item for item in ledger.get("commits", [])
@@ -1889,6 +1948,7 @@ def _cycle_context(
     approved_prior = (
         _approved_same_task_commits_before(
             ledger, final_start_seq, reviewer_passes=reviewer_passes,
+            active_history_commits=active_history_commits,
         )
         if isinstance(final_start_seq, int) else []
     )
@@ -1916,12 +1976,37 @@ def _cycle_context(
         or (final_start_head if restarted else baseline_head)
     )
     prior_boundary = prior_commit["seq"] if prior_commit else -1
+    restart_boundary = prior_boundary
+    if restarted and active_history_commits:
+        matching_baselines = [
+            item for item in active_history_commits
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] < cycle_end_seq
+            and str(item.get("hash", "")).strip() == cycle_baseline_head
+            and _commit_is_in_active_ancestry(item, current_head)
+        ]
+        if matching_baselines:
+            restart_boundary = max(
+                matching_baselines, key=lambda item: item["seq"]
+            )["seq"]
+    restart_passes = [
+        item for item in ledger.get("coder_passes", [])
+        if isinstance(item, dict)
+        and isinstance(item.get("start_seq"), int)
+        and isinstance(item.get("stop_seq"), int)
+        and restart_boundary < item["start_seq"] <= cycle_end_seq
+    ]
+    validated_headless_chain = (
+        _validated_headless_restart_chain(restart_passes, cycle_baseline_head)
+        if restarted else []
+    )
     candidates = [
         item for item in ledger.get("coder_passes", [])
         if isinstance(item, dict) and isinstance(item.get("start_seq"), int)
         and prior_boundary < item["start_seq"] <= cycle_end_seq
         and (
             item is final_coder
+            or item in validated_headless_chain
             or (
                 not restarted
                 and not str(item.get("start_head", "")).strip()
@@ -1948,6 +2033,70 @@ def _cycle_context(
         "effective_start_seq": first_coder.get("start_seq"),
         "restarted": restarted,
     }
+
+
+def _authorizing_task_tuple(
+    final_coder: dict[str, Any],
+    verifications: list[dict[str, Any]],
+    reviews: list[dict[str, Any]],
+    commits: list[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]] | None:
+    """Select verification -> approval -> commit evidence for one coder cycle.
+
+    Evidence recorded after a commit is diagnostic only. It cannot replace or
+    invalidate the pre-commit verification and approval that authorized that
+    commit, and it cannot retroactively authorize an earlier commit.
+    """
+    coder_stop_seq = final_coder.get("stop_seq")
+    coder_snapshot = final_coder.get("stop_snapshot_signature")
+    if not isinstance(coder_stop_seq, int):
+        return None
+
+    candidates: list[
+        tuple[dict[str, Any], dict[str, Any], dict[str, Any]]
+    ] = []
+    for commit in commits:
+        commit_seq = commit.get("seq")
+        if not isinstance(commit_seq, int) or commit_seq <= coder_stop_seq:
+            continue
+        eligible_reviews = [
+            item for item in reviews
+            if isinstance(item.get("seq"), int)
+            and coder_stop_seq < item["seq"] < commit_seq
+        ]
+        if not eligible_reviews:
+            continue
+        approval = max(eligible_reviews, key=lambda item: item["seq"])
+        approval_seq = approval["seq"]
+        if approval.get("blocking") is not False:
+            continue
+        eligible_verifications = [
+            item for item in verifications
+            if isinstance(item.get("seq"), int)
+            and coder_stop_seq < item["seq"] < approval_seq
+        ]
+        if not eligible_verifications:
+            continue
+        verification = max(eligible_verifications, key=lambda item: item["seq"])
+        snapshots = (
+            coder_snapshot,
+            verification.get("snapshot_signature"),
+            approval.get("snapshot_signature"),
+            commit.get("snapshot_signature"),
+        )
+        if not all(
+            isinstance(snapshot, list) and snapshot for snapshot in snapshots
+        ):
+            continue
+        if all(
+            signatures_match(snapshots[0], snapshot)
+            for snapshot in snapshots[1:]
+        ):
+            candidates.append((verification, approval, commit))
+
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item[2]["seq"])
 
 
 def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
@@ -1980,6 +2129,14 @@ def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
 
     current_head = git_head_commit()
     effective_starts: dict[str, int] = {}
+    active_history_commits = [
+        commit
+        for candidate_ledger in ledgers.values()
+        if isinstance(candidate_ledger, dict)
+        for commit in candidate_ledger.get("commits", [])
+        if isinstance(commit, dict)
+        and _commit_is_in_active_ancestry(commit, current_head)
+    ]
 
     for task_id, ledger in ledgers.items():
         if not isinstance(ledger, dict):
@@ -2022,22 +2179,47 @@ def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
 
         cycle = _cycle_context(
             ledger, latest, current_head, reviewer_passes=reviews,
+            active_history_commits=active_history_commits,
         )
         effective_start_seq = cycle.get("effective_start_seq")
         if isinstance(effective_start_seq, int):
             effective_starts[task_id] = effective_start_seq
 
-        verifications = [
+        all_verifications = [
             item for item in ledger.get("verifications", [])
             if isinstance(item, dict) and isinstance(item.get("seq"), int)
             and item["seq"] > final_coder_seq
         ]
+        all_commits = [
+            item for item in ledger.get("commits", [])
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] > final_coder_seq
+        ]
+        authorizing_tuple = _authorizing_task_tuple(
+            latest, all_verifications, reviews, all_commits,
+        ) if changed else None
+        commit_not_authorized = bool(changed and all_commits and authorizing_tuple is None)
+        if authorizing_tuple is not None:
+            latest_verification, approval, commit = authorizing_tuple
+            verifications = [latest_verification]
+            verification_seq = latest_verification["seq"]
+            approvals = [approval]
+            approval_seq = approval["seq"]
+            commits = [commit]
+        else:
+            commit_ceiling = min(
+                (item["seq"] for item in all_commits), default=2**63 - 1,
+            )
+            verifications = [
+                item for item in all_verifications if item["seq"] < commit_ceiling
+            ]
         if not verifications:
             missing.append(f"{prefix} verification must run after its final coder pass")
             verification_seq = None
         else:
-            verification_seq = max(item["seq"] for item in verifications)
-            latest_verification = max(verifications, key=lambda item: item["seq"])
+            if authorizing_tuple is None:
+                verification_seq = max(item["seq"] for item in verifications)
+                latest_verification = max(verifications, key=lambda item: item["seq"])
             coder_snapshot = latest.get("stop_snapshot_signature")
             verification_snapshot = latest_verification.get("snapshot_signature")
             if (
@@ -2049,19 +2231,24 @@ def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
 
         if len({item.get("agent_identity") for item in reviews}) != len(reviews):
             missing.append(f"{prefix} reused a reviewer agent/session")
-        approvals = [
-            item for item in reviews
-            if item.get("blocking") is False
-            and isinstance(item.get("seq"), int)
-            and isinstance(verification_seq, int)
-            and item["seq"] > verification_seq
-        ]
+        if authorizing_tuple is None:
+            approval_ceiling = min(
+                (item["seq"] for item in all_commits), default=2**63 - 1,
+            )
+            approvals = [
+                item for item in reviews
+                if item.get("blocking") is False
+                and isinstance(item.get("seq"), int)
+                and isinstance(verification_seq, int)
+                and verification_seq < item["seq"] < approval_ceiling
+            ]
         if not approvals:
             missing.append(f"{prefix} needs a fresh non-blocking reviewer after verification")
             approval_seq = None
         else:
-            approval_seq = max(item["seq"] for item in approvals)
-            approval = max(approvals, key=lambda item: item["seq"])
+            if authorizing_tuple is None:
+                approval_seq = max(item["seq"] for item in approvals)
+                approval = max(approvals, key=lambda item: item["seq"])
             review_snapshot = approval.get("snapshot_signature")
             if (
                 verifications
@@ -2076,15 +2263,18 @@ def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
 
         if not changed:
             continue
-        commits = [
-            item for item in ledger.get("commits", [])
-            if isinstance(item, dict) and isinstance(item.get("seq"), int)
-            and isinstance(approval_seq, int) and item["seq"] > approval_seq
-        ]
+        if authorizing_tuple is None:
+            # Preserve detailed commit diagnostics, but temporal proximity
+            # alone still cannot authorize this candidate.
+            commits = [
+                item for item in all_commits
+                if isinstance(approval_seq, int) and item["seq"] > approval_seq
+            ]
         if not commits:
             missing.append(f"{prefix} requires its own task-sized commit after approval")
             continue
-        commit = max(commits, key=lambda item: item["seq"])
+        if authorizing_tuple is None:
+            commit = min(commits, key=lambda item: item["seq"])
         accepted_commit_seqs[task_id] = commit["seq"]
         accepted_commits[task_id] = commit
         commit_hash = str(commit.get("hash", "")).strip()
@@ -2156,6 +2346,8 @@ def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
             and not signatures_match(baseline_snapshot, post_commit_snapshot)
         ):
             missing.append(f"{prefix} commit did not consume exactly the verified task change")
+        if commit_not_authorized:
+            missing.append(f"{prefix} requires its own task-sized commit after approval")
 
     ordered_tasks: list[tuple[int, str, dict[str, Any]]] = []
     for task_id, ledger in ledgers.items():

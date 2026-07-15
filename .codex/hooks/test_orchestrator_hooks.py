@@ -2554,18 +2554,25 @@ class OrchestratorHookTests(unittest.TestCase):
             # yet record start_head. Its eventual active commit's validated
             # head_before establishes the same baseline.
             "start_snapshot_signature": [],
+            "stop_snapshot_signature": ["100|hooks_chunk.py|draft"],
+        })
+        hooks["coder_passes"].append({
+            "start_seq": 27, "stop_seq": 28,
+            "agent_identity": "validated-recovery-hooks-coder",
+            "start_head": database_hash,
+            "start_snapshot_signature": ["100|hooks_chunk.py|draft"],
             "stop_snapshot_signature": ["100|hooks_chunk.py|accepted"],
         })
         hooks["verifications"].append({
-            "seq": 27, "snapshot_signature": ["100|hooks_chunk.py|accepted"],
+            "seq": 29, "snapshot_signature": ["100|hooks_chunk.py|accepted"],
         })
         hooks["reviewer_passes"].append({
-            "seq": 28, "agent_identity": "recovery-hooks-reviewer",
+            "seq": 30, "agent_identity": "recovery-hooks-reviewer",
             "blocking": False,
             "snapshot_signature": ["100|hooks_chunk.py|accepted"],
         })
         hooks["commits"].append({
-            "seq": 29, "hash": hooks_hash, "head_before": database_hash,
+            "seq": 31, "hash": hooks_hash, "head_before": database_hash,
             "first_parent": database_hash,
             "snapshot_signature": ["100|hooks_chunk.py|accepted"],
             "post_snapshot_signature": [],
@@ -2582,6 +2589,45 @@ class OrchestratorHookTests(unittest.TestCase):
         }]
         with patch.object(orchestrator_state, "ROOT", repo):
             self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_rewritten_current_cycle_rejects_single_headless_coder_commit(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "abandoned.txt").write_text("abandoned\n", encoding="utf-8")
+        self._git(repo, "add", "abandoned.txt")
+        self._git(repo, "commit", "-q", "-m", "abandoned baseline")
+        abandoned_hash = self._git(repo, "rev-parse", "HEAD")
+        self._git(repo, "reset", "--hard", base_hash)
+        (repo / "recovery.txt").write_text("recovered\n", encoding="utf-8")
+        self._git(repo, "add", "recovery.txt")
+        self._git(repo, "commit", "-q", "-m", "headless recovery")
+        recovery_hash = self._git(repo, "rev-parse", "HEAD")
+
+        work = ["100|recovery.txt|recovered"]
+        ledger = self._strict_ledger(
+            "recovery_chunk", coder_identity="headless-recovery-coder",
+            reviewer_identity="recovery-reviewer", commit_hash=recovery_hash,
+            baseline_head=abandoned_hash,
+        )
+        ledger["coder_passes"][0].pop("start_head", None)
+        ledger["coder_passes"][0].update({
+            "start_snapshot_signature": [], "stop_snapshot_signature": work,
+        })
+        ledger["verifications"][0]["snapshot_signature"] = work
+        ledger["reviewer_passes"][0]["snapshot_signature"] = work
+        ledger["commits"][0].update({
+            "head_before": base_hash, "first_parent": base_hash,
+            "snapshot_signature": work, "post_snapshot_signature": [],
+        })
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {"recovery_chunk": ledger}
+
+        with patch.object(orchestrator_state, "ROOT", repo):
+            missing = stop._missing_task_ledger_requirements(turn)
+
+        self.assertTrue(any(
+            "commit did not advance its recorded baseline HEAD" in item
+            for item in missing
+        ))
 
     def test_restart_rejects_active_unapproved_same_task_commit(self) -> None:
         repo, base_hash = self._new_git_history_repo()
@@ -2750,6 +2796,211 @@ class OrchestratorHookTests(unittest.TestCase):
             # remediation baseline from the preceding same-task commit.
             ledger["coder_passes"][1].pop("start_head")
             self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_restart_cycle_rejects_single_headless_pass(self) -> None:
+        ledger = self._strict_ledger(
+            "restart_chunk", coder_identity="legacy-recovery-coder",
+            reviewer_identity="restart-reviewer", commit_hash="restart-hash",
+            baseline_head="abandoned-head", offset=5,
+        )
+        baseline = ["100|user-owned.txt|baseline"]
+        work = baseline + ["100|restart.py|work"]
+        ledger["baseline_signature"] = baseline
+        ledger["coder_passes"][0].update({
+            "start_snapshot_signature": baseline,
+            "stop_snapshot_signature": work,
+        })
+        ledger["verifications"][0].update({
+            "seq": 8, "snapshot_signature": work,
+        })
+        ledger["reviewer_passes"][0].update({
+            "seq": 9, "snapshot_signature": work,
+        })
+        ledger["commits"][0].update({
+            "seq": 10, "head_before": "active-baseline",
+            "first_parent": "active-baseline", "snapshot_signature": work,
+            "post_snapshot_signature": baseline,
+        })
+
+        approved = stop._approved_same_task_commits_before(
+            ledger, 11,
+            active_history_commits=[{"seq": 5, "hash": "active-baseline"}],
+        )
+
+        self.assertEqual([], approved)
+
+    def test_restart_cycle_infers_missing_head_from_strict_snapshot_chain(self) -> None:
+        ledger = self._strict_ledger(
+            "restart_chunk", coder_identity="legacy-recovery-coder",
+            reviewer_identity="restart-reviewer", commit_hash="restart-hash",
+            baseline_head="abandoned-head", offset=5,
+        )
+        baseline = ["100|user-owned.txt|baseline"]
+        first_work = baseline + ["100|restart.py|first"]
+        final_work = baseline + ["100|restart.py|final"]
+        ledger["baseline_signature"] = baseline
+        ledger["coder_passes"][0].update({
+            "start_snapshot_signature": baseline,
+            "stop_snapshot_signature": first_work,
+        })
+        ledger["coder_passes"].append({
+            "start_seq": 8, "stop_seq": 9, "agent_identity": "modern-coder",
+            "start_head": "active-baseline", "start_snapshot_signature": first_work,
+            "stop_snapshot_signature": final_work,
+        })
+        ledger["verifications"][0].update({
+            "seq": 10, "snapshot_signature": final_work,
+        })
+        ledger["reviewer_passes"][0].update({
+            "seq": 11, "snapshot_signature": final_work,
+        })
+        ledger["commits"][0].update({
+            "seq": 12, "head_before": "active-baseline",
+            "first_parent": "active-baseline", "snapshot_signature": final_work,
+            "post_snapshot_signature": baseline,
+        })
+        active_baseline = {"seq": 5, "hash": "active-baseline"}
+
+        approved = stop._approved_same_task_commits_before(
+            ledger, 13, active_history_commits=[active_baseline],
+        )
+
+        self.assertEqual([ledger["commits"][0]], approved)
+
+    def test_restart_cycle_rejects_broken_snapshot_chain(self) -> None:
+        ledger = self._strict_ledger(
+            "restart_chunk", coder_identity="legacy-recovery-coder",
+            reviewer_identity="restart-reviewer", commit_hash="restart-hash",
+            baseline_head="abandoned-head", offset=5,
+        )
+        first_work = ["100|restart.py|first"]
+        final_work = ["100|restart.py|final"]
+        ledger["coder_passes"][0].update({
+            "start_snapshot_signature": [],
+            "stop_snapshot_signature": first_work,
+        })
+        ledger["coder_passes"].append({
+            "start_seq": 8, "stop_seq": 9, "agent_identity": "modern-coder",
+            "start_head": "active-baseline",
+            "start_snapshot_signature": ["100|restart.py|broken"],
+            "stop_snapshot_signature": final_work,
+        })
+        ledger["verifications"][0].update({"seq": 10, "snapshot_signature": final_work})
+        ledger["reviewer_passes"][0].update({"seq": 11, "snapshot_signature": final_work})
+        ledger["commits"][0].update({
+            "seq": 12, "head_before": "active-baseline",
+            "first_parent": "active-baseline", "snapshot_signature": final_work,
+        })
+
+        approved = stop._approved_same_task_commits_before(
+            ledger, 13,
+            active_history_commits=[{"seq": 5, "hash": "active-baseline"}],
+        )
+
+        self.assertEqual([], approved)
+
+    def test_restart_cycle_rejects_intervening_active_history(self) -> None:
+        ledger = self._strict_ledger(
+            "restart_chunk", coder_identity="legacy-recovery-coder",
+            reviewer_identity="restart-reviewer", commit_hash="restart-hash",
+            baseline_head="abandoned-head", offset=5,
+        )
+        work = ["100|restart.py|work"]
+        ledger["coder_passes"][0].update({
+            "start_snapshot_signature": [], "stop_snapshot_signature": work,
+        })
+        ledger["coder_passes"].append({
+            "start_seq": 9, "stop_seq": 10, "agent_identity": "modern-coder",
+            "start_head": "active-baseline", "start_snapshot_signature": work,
+            "stop_snapshot_signature": work,
+        })
+        ledger["verifications"][0].update({"seq": 11, "snapshot_signature": work})
+        ledger["reviewer_passes"][0].update({"seq": 12, "snapshot_signature": work})
+        ledger["commits"][0].update({
+            "seq": 13, "head_before": "active-baseline",
+            "first_parent": "active-baseline", "snapshot_signature": work,
+        })
+
+        approved = stop._approved_same_task_commits_before(
+            ledger, 14,
+            active_history_commits=[
+                {"seq": 5, "hash": "active-baseline"},
+                {"seq": 8, "hash": "intervening-commit"},
+            ],
+        )
+
+        self.assertEqual([], approved)
+
+    def test_post_commit_verification_does_not_replace_authorizing_tuple(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "committed_chunk", coder_identity="coder", reviewer_identity="reviewer",
+            commit_hash="commit-hash",
+        )
+        ledger["verifications"].append({"seq": 6, "snapshot_signature": []})
+        turn["task_ledgers"] = {"committed_chunk": ledger}
+
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_verification_only_after_commit_cannot_authorize(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "committed_chunk", coder_identity="coder", reviewer_identity="reviewer",
+            commit_hash="commit-hash",
+        )
+        ledger["verifications"] = [{
+            "seq": 6, "snapshot_signature": ["100|committed_chunk.py|work"],
+        }]
+        turn["task_ledgers"] = {"committed_chunk": ledger}
+
+        missing = stop._missing_task_ledger_requirements(turn)
+
+        self.assertTrue(any("verification must run after" in item for item in missing))
+        self.assertTrue(any("requires its own task-sized commit" in item for item in missing))
+
+    def test_post_commit_mismatch_cannot_retroactively_authorize(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "committed_chunk", coder_identity="coder", reviewer_identity="reviewer",
+            commit_hash="commit-hash",
+        )
+        ledger["verifications"][0]["snapshot_signature"] = [
+            "100|committed_chunk.py|unverified",
+        ]
+        ledger["verifications"].append({
+            "seq": 6, "snapshot_signature": ["100|committed_chunk.py|work"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 7, "agent_identity": "post-commit-reviewer", "blocking": False,
+            "snapshot_signature": ["100|committed_chunk.py|work"],
+        })
+        turn["task_ledgers"] = {"committed_chunk": ledger}
+
+        missing = stop._missing_task_ledger_requirements(turn)
+
+        self.assertTrue(any("verification snapshot does not match" in item for item in missing))
+        self.assertTrue(any("requires its own task-sized commit" in item for item in missing))
+
+    def test_newer_remediation_cycle_requires_its_own_authorizing_tuple(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "committed_chunk", coder_identity="coder", reviewer_identity="reviewer",
+            commit_hash="commit-hash",
+        )
+        ledger["coder_passes"].append({
+            "start_seq": 6, "stop_seq": 7, "agent_identity": "fresh-coder",
+            "start_head": "commit-hash", "start_snapshot_signature": [],
+            "stop_snapshot_signature": ["100|committed_chunk.py|new-work"],
+        })
+        ledger["verifications"].append({
+            "seq": 8, "snapshot_signature": ["100|committed_chunk.py|new-work"],
+        })
+        turn["task_ledgers"] = {"committed_chunk": ledger}
+
+        missing = stop._missing_task_ledger_requirements(turn)
+
+        self.assertTrue(any("fresh non-blocking reviewer" in item for item in missing))
+        self.assertTrue(any("requires its own task-sized commit" in item for item in missing))
 
     def test_strict_same_task_prior_commit_must_consume_its_approved_change(self) -> None:
         turn = orchestrator_state.default_state()["turn"]
