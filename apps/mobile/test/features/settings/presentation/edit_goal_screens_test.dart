@@ -101,7 +101,7 @@ void main() {
   });
 
   testWidgets(
-    'switching race hides stale evidence suggestion and preserves target input',
+    'switching race projects evidence suggestion and preserves target input',
     (tester) async {
       await tester.pumpWidget(_app(now: now));
       await tester.pumpAndSettle();
@@ -112,6 +112,7 @@ void main() {
       await tester.tap(find.text('10K'));
       await tester.pump();
 
+      expect(find.text('Evidence-supported target: 0:53:29'), findsOneWidget);
       expect(find.text('Evidence-supported target: 1:58:00'), findsNothing);
       expect(tester.widget<TextField>(targetField).controller?.text, '0:47:30');
     },

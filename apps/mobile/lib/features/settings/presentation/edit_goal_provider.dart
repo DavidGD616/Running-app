@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -56,13 +57,43 @@ class EditGoalEvidenceSuggestion {
 
   final RunnerGoalRace race;
   final Duration targetTime;
+
+  EditGoalEvidenceSuggestion? projectTo(RunnerGoalRace targetRace) {
+    if (targetTime <= Duration.zero) return null;
+    final sourceDistanceKm = _canonicalRaceDistanceKm(race);
+    final targetDistanceKm = _canonicalRaceDistanceKm(targetRace);
+    if (sourceDistanceKm == null || targetDistanceKm == null) return null;
+    if (targetRace == race) return this;
+
+    const riegelExponent = 1.06;
+    final projectedSeconds =
+        targetTime.inSeconds *
+        math.pow(targetDistanceKm / sourceDistanceKm, riegelExponent);
+    if (!projectedSeconds.isFinite || projectedSeconds <= 0) return null;
+    final roundedSeconds = projectedSeconds.round();
+    if (roundedSeconds <= 0) return null;
+    return EditGoalEvidenceSuggestion(
+      race: targetRace,
+      targetTime: Duration(seconds: roundedSeconds),
+    );
+  }
 }
+
+double? _canonicalRaceDistanceKm(RunnerGoalRace race) => switch (race) {
+  RunnerGoalRace.fiveK => 5,
+  RunnerGoalRace.tenK => 10,
+  RunnerGoalRace.halfMarathon => 21.0975,
+  RunnerGoalRace.marathon => 42.195,
+  RunnerGoalRace.other => null,
+};
 
 final editGoalEvidenceSuggestionProvider =
     Provider<EditGoalEvidenceSuggestion?>((ref) {
       final plan = ref.watch(trainingPlanProvider).value;
       final targetTime = plan?.evidenceTarget?.time;
-      if (plan == null || targetTime == null) return null;
+      if (plan == null || targetTime == null || targetTime <= Duration.zero) {
+        return null;
+      }
       final race = switch (plan.raceType) {
         TrainingPlanRaceType.fiveK => RunnerGoalRace.fiveK,
         TrainingPlanRaceType.tenK => RunnerGoalRace.tenK,
@@ -70,6 +101,7 @@ final editGoalEvidenceSuggestionProvider =
         TrainingPlanRaceType.marathon => RunnerGoalRace.marathon,
         TrainingPlanRaceType.other => RunnerGoalRace.other,
       };
+      if (_canonicalRaceDistanceKm(race) == null) return null;
       return EditGoalEvidenceSuggestion(race: race, targetTime: targetTime);
     });
 

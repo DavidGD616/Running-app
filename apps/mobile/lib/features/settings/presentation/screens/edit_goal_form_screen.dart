@@ -46,6 +46,9 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
     final isPreviewing = state is EditGoalPreviewing;
     final failure = state is EditGoalFailure ? state : null;
     final evidenceSuggestion = ref.watch(editGoalEvidenceSuggestionProvider);
+    final selectedRaceSuggestion = evidenceSuggestion?.projectTo(
+      draft?.race ?? RunnerGoalRace.other,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -191,11 +194,12 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
                                 color: AppColors.textSecondary,
                               ),
                             ),
-                            if (evidenceSuggestion != null &&
-                                evidenceSuggestion.race == draft.race)
+                            if (selectedRaceSuggestion != null)
                               Text(
                                 l10n.editGoalSuggestedTarget(
-                                  _formatTime(evidenceSuggestion.targetTime),
+                                  _formatTime(
+                                    selectedRaceSuggestion.targetTime,
+                                  ),
                                 ),
                                 style: AppTypography.caption.copyWith(
                                   color: AppColors.accentLight,

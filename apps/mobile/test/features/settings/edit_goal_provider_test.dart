@@ -23,6 +23,65 @@ void main() {
     preferences = await SharedPreferences.getInstance();
   });
 
+  group('Edit Goal evidence suggestion', () {
+    const halfMarathonEvidence = EditGoalEvidenceSuggestion(
+      race: RunnerGoalRace.halfMarathon,
+      targetTime: Duration(hours: 1, minutes: 58),
+    );
+
+    test('keeps the evidence anchor unchanged', () {
+      final suggestion = halfMarathonEvidence.projectTo(
+        RunnerGoalRace.halfMarathon,
+      );
+
+      expect(identical(suggestion, halfMarathonEvidence), isTrue);
+      expect(suggestion?.targetTime, const Duration(hours: 1, minutes: 58));
+    });
+
+    test('projects supported races with the Riegel exponent', () {
+      expect(
+        halfMarathonEvidence.projectTo(RunnerGoalRace.fiveK)?.targetTime,
+        const Duration(minutes: 25, seconds: 39),
+      );
+      expect(
+        halfMarathonEvidence.projectTo(RunnerGoalRace.tenK)?.targetTime,
+        const Duration(minutes: 53, seconds: 29),
+      );
+      expect(
+        halfMarathonEvidence.projectTo(RunnerGoalRace.marathon)?.targetTime,
+        const Duration(hours: 4, minutes: 6, seconds: 1),
+      );
+    });
+
+    test('returns no projection for unsupported or non-positive evidence', () {
+      expect(halfMarathonEvidence.projectTo(RunnerGoalRace.other), isNull);
+      expect(
+        const EditGoalEvidenceSuggestion(
+          race: RunnerGoalRace.other,
+          targetTime: Duration(minutes: 30),
+        ).projectTo(RunnerGoalRace.fiveK),
+        isNull,
+      );
+      expect(
+        const EditGoalEvidenceSuggestion(
+          race: RunnerGoalRace.tenK,
+          targetTime: Duration.zero,
+        ).projectTo(RunnerGoalRace.fiveK),
+        isNull,
+      );
+    });
+
+    test('returns no projection when a positive result rounds to zero', () {
+      expect(
+        const EditGoalEvidenceSuggestion(
+          race: RunnerGoalRace.marathon,
+          targetTime: Duration(seconds: 1),
+        ).projectTo(RunnerGoalRace.fiveK),
+        isNull,
+      );
+    });
+  });
+
   test(
     'initializes draft from persisted profile and accepted target',
     () async {
