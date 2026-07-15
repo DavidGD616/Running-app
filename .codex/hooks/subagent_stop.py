@@ -42,6 +42,10 @@ BLOCKING_PATTERNS = [
     r"\bmust be addressed",
     r"\bneeds? to be fixed\b",
     r"\bneeds? fixing\b",
+    r"\bfollow[- ]?up\s+(?:is\s+)?required\b",
+    r"\baction\s+required\b",
+    r"\brequired\s+action\s*:",
+    r"\brequired\s+follow[- ]?up\s*:",
     r"\bblocking\s+(?:issue|issues|finding|findings|blocker|blockers)\b",
     r"\bi cannot approve this yet\b",
     r"\bnot approved until tests are added\b",
@@ -51,12 +55,8 @@ BLOCKING_PATTERNS = [
 OVERALL_ASSESSMENT_LINE_PATTERN = re.compile(
     r"^Overall Assessment: (APPROVE|REQUEST_CHANGES|NEEDS_DISCUSSION)$"
 )
-NON_BLOCKING_APPROVE_TRAILING_PATTERNS = (
-    r"\bno\s+blocking\s+findings\b",
-    r"\bno\s+pending\s+fixes?\s+remain\b",
-    r"\ball\s+issues\s+resolved\s+after\s+remediation\b",
-    r"\bissues\s+resolved\s+after\s+remediation\b",
-    r"\bno\s+critical\s+issues\b.*\bno\s+major\s+issues\b",
+EXACT_NON_BLOCKING_FINDINGS_TEXT = (
+    "No blocking or non-blocking findings at ≥80% confidence."
 )
 SEVERITY_FINDING_HEADER_RE = re.compile(
     r"^\s*(?:[-*]\s*)?(?:#{1,6}\s*)?"
@@ -235,6 +235,11 @@ def _normalize_assessment_line(value: str) -> str:
     return re.sub(r"\s+", " ", (value or "").strip().lower())
 
 
+def _is_exact_non_blocking_findings_line(value: str) -> bool:
+    normalized = re.sub(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)", "", value or "")
+    return normalized.strip() == EXACT_NON_BLOCKING_FINDINGS_TEXT
+
+
 def _is_explicit_no_issue_value(value: str) -> bool:
     normalized = re.sub(r"\s+", " ", (value or "").strip().lower()).strip()
     if not normalized:
@@ -268,6 +273,8 @@ def _has_blocking_severity_findings(value: str) -> bool:
             if not body_line:
                 index += 1
                 continue
+            if OVERALL_ASSESSMENT_LINE_PATTERN.match(body_line):
+                break
             if REVIEW_SECTION_HEADER_RE.match(body_line):
                 break
             if not _is_explicit_no_issue_value(body_line):
@@ -278,14 +285,14 @@ def _has_blocking_severity_findings(value: str) -> bool:
 
 def _has_blocking_approve_followups(value: str) -> bool:
     for raw_line in (value or "").splitlines():
+        if _is_exact_non_blocking_findings_line(raw_line):
+            continue
         normalized = _normalize_assessment_line(raw_line)
         if not normalized:
             continue
+        if OVERALL_ASSESSMENT_LINE_PATTERN.match(raw_line.strip()):
+            continue
         if _is_explicit_no_issue_value(normalized):
-            continue
-        if any(re.search(pattern, normalized) for pattern in NON_BLOCKING_APPROVE_TRAILING_PATTERNS):
-            continue
-        if "no blocking findings" in normalized:
             continue
         if any(re.search(pattern, normalized) for pattern in BLOCKING_PATTERNS):
             return True
@@ -313,12 +320,10 @@ def looks_blocking(text: str) -> bool:
     if final_paragraph[0] != "Overall Assessment: APPROVE":
         return True
 
-    review_body = "\n".join(lines[:verdict_line_index])
-    if _has_blocking_severity_findings(review_body):
+    if _has_blocking_severity_findings(text):
         return True
-    if _has_blocking_approve_followups(review_body):
+    if _has_blocking_approve_followups(text):
         return True
-
     return False
 
 
@@ -371,14 +376,19 @@ def main() -> None:
             if inferred_agent:
                 resolved_agent = inferred_agent
 
+        stop_event_details = {
+            "agent": resolved_agent,
+            "summary_excerpt": summary[:200],
+            "agent_transcript_path": agent_transcript_path,
+        }
+        if resolved_agent == "reviewer" and official_agent_transcript_path:
+            stop_event_details["official_agent_transcript_path"] = (
+                official_agent_transcript_path
+            )
         event_seq = append_event(
             state,
             "SubagentStop",
-            {
-                "agent": resolved_agent,
-                "summary_excerpt": summary[:200],
-                "agent_transcript_path": agent_transcript_path,
-            },
+            stop_event_details,
         )
         state["turn"]["events"] = state["turn"]["events"][-40:]
 
@@ -464,32 +474,40 @@ def main() -> None:
             if not isinstance(reviewer_stops, list):
                 reviewer_stops = []
                 state["turn"]["agents"]["reviewer_stops"] = reviewer_stops
+            reviewer_stop_record = {
+                "at": now_iso(),
+                "text": summary[:400],
+                "blocking": blocking,
+                "seq": event_seq,
+                "task_id": reviewer_task_id if reviewer_task_id_count == 1 else None,
+                "task_id_count": reviewer_task_id_count,
+                "agent_transcript_path": agent_transcript_path,
+                "snapshot_signature": reviewer_snapshot_signature,
+            }
+            if official_agent_transcript_path:
+                reviewer_stop_record["official_agent_transcript_path"] = (
+                    official_agent_transcript_path
+                )
             state["turn"]["agents"]["reviewer_stops"].append(
-                {
-                    "at": now_iso(),
-                    "text": summary[:400],
-                    "blocking": blocking,
-                    "seq": event_seq,
-                    "task_id": reviewer_task_id if reviewer_task_id_count == 1 else None,
-                    "task_id_count": reviewer_task_id_count,
-                    "agent_transcript_path": agent_transcript_path,
-                    "snapshot_signature": reviewer_snapshot_signature,
-                }
+                reviewer_stop_record
             )
             state["turn"]["agents"]["reviewer_last_seq"] = event_seq
             state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
             state["turn"]["agents"]["reviewer_last_blocking"] = blocking
             if strict_identity is not None:
                 ledger = ensure_task_ledger(state["turn"], strict_identity["task_id"])
-                ledger["reviewer_passes"].append(
-                    {
-                        "seq": event_seq,
-                        "agent_identity": strict_identity["identity"],
-                        "agent_name": strict_identity["agent_name"],
-                        "blocking": blocking,
-                        "snapshot_signature": reviewer_snapshot_signature,
-                    }
-                )
+                reviewer_pass_record = {
+                    "seq": event_seq,
+                    "agent_identity": strict_identity["identity"],
+                    "agent_name": strict_identity["agent_name"],
+                    "blocking": blocking,
+                    "snapshot_signature": reviewer_snapshot_signature,
+                }
+                if official_agent_transcript_path:
+                    reviewer_pass_record["official_agent_transcript_path"] = (
+                        official_agent_transcript_path
+                    )
+                ledger["reviewer_passes"].append(reviewer_pass_record)
                 if blocking:
                     ledger["blocking_review_seq"] = event_seq
         elif resolved_agent == "coder":

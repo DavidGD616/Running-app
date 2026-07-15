@@ -86,6 +86,7 @@ VERIFICATION_PATTERNS = [
 _VERIFICATION_FLUTTER_COMMANDS = {"analyze", "test", "gen-l10n"}
 _VERIFICATION_PYTHON_MODULES = {"pytest", "unittest", "compile", "py_compile"}
 _VERIFICATION_DART_COMMANDS = {"test"}
+_VERIFICATION_SUPABASE_COMMAND = ("test", "db")
 
 AGENT_CODER = {"coder", "implementation", "worker"}
 AGENT_REVIEWER = {"reviewer"}
@@ -1209,6 +1210,7 @@ def register_strict_agent_start(
             "agent_identity": identity_key,
             "agent_name": identity["agent_name"],
             "start_snapshot_signature": list(snapshot),
+            "start_head": git_head_commit(),
         }
         ledger["coder_passes"].append(pass_record)
     return identity
@@ -2040,6 +2042,13 @@ def command_match_verification(command: str) -> bool:
     if not isinstance(command, str):
         return False
 
+    # A successful aggregate shell exit is only useful as verification evidence
+    # when the test command could neither be skipped nor have its failure masked.
+    # `&&` preserves that property (for example, `cd repo && test`); OR lists,
+    # pipelines, backgrounding, semicolon lists, and multiline lists do not.
+    if "\n" in command or _command_has_unsafe_verification_control_flow(command):
+        return False
+
     lowered = command.lower()
     for command_parts in _iter_command_segment_parts(lowered):
         if not command_parts:
@@ -2067,7 +2076,27 @@ def command_match_verification(command: str) -> bool:
                 if arguments and arguments[0] in _VERIFICATION_DART_COMMANDS:
                     return True
 
+            if command_name == "supabase":
+                if tuple(arguments[:2]) == _VERIFICATION_SUPABASE_COMMAND:
+                    return True
+
     return False
+
+
+def _command_has_unsafe_verification_control_flow(command: str) -> bool:
+    parts = _tokenize_command(command)
+    if any(part in {"||", ";", "|", "|&", "&"} for part in parts):
+        return True
+
+    stripped = _strip_command_prefix_wrappers(parts)
+    wrapped = _extract_wrapped_command(stripped)
+    return bool(
+        wrapped is not None
+        and (
+            "\n" in wrapped
+            or _command_has_unsafe_verification_control_flow(wrapped)
+        )
+    )
 
 
 _MUTATING_TOOL_NAMES = {

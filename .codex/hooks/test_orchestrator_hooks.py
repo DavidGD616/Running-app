@@ -153,6 +153,107 @@ class OrchestratorHookTests(unittest.TestCase):
         )
         return coordinator_path, subagent_path
 
+    def _legacy_reviewer_provenance_fixture(
+        self,
+        *,
+        transcript_role: str = "reviewer",
+        transcript_task_id: str = "target_task",
+        ledger_task_id: str = "target_task",
+        final_text: str = (
+            "Findings:\n\n"
+            "- No blocking or non-blocking findings at ≥80% confidence.\n\n"
+            "Coverage: The hook parser and provenance correlation were reviewed.\n\n"
+            "Residual risk: Historical recovery remains limited to correlated evidence.\n\n"
+            "Overall Assessment: APPROVE"
+        ),
+        seq: int = 973,
+        correlated: bool = True,
+        official: bool = False,
+    ) -> tuple[dict[str, Any], dict[str, Any], Path, Path]:
+        task_name = f"{transcript_role}__{transcript_task_id}__legacy"
+        coordinator_thread_id = f"coordinator-{task_name}"
+        spawn_message = (
+            f"Codex-Orchestrator-Internal-Subagent: {transcript_role}\n"
+            f"Task ID: {transcript_task_id}\n\n"
+            "Bounded task instructions."
+        )
+        coordinator_path = self._write_coordinator_transcript(
+            coordinator_thread_id,
+            [{
+                "payload": {
+                    "type": "function_call",
+                    "name": "spawn_agent",
+                    "namespace": "collaboration",
+                    "arguments": json.dumps({
+                        "task_name": task_name,
+                        "message": spawn_message,
+                    }),
+                },
+            }],
+        )
+        transcript_path = self._write_spawned_subagent_transcript(
+            task_name,
+            [{
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "last_agent_message": final_text,
+                },
+            }],
+            parent_thread_id=coordinator_thread_id,
+        )
+        identity = orchestrator_state.strict_agent_session_identity(
+            transcript_path, transcript_role,
+        )
+        self.assertIsNotNone(identity)
+        assert identity is not None
+
+        turn = orchestrator_state.default_state()["turn"]
+        turn["tool_call_actors"] = {str(coordinator_path): "coordinator"}
+        if correlated:
+            boundary = orchestrator_state.collaboration_spawn_session_boundary(
+                coordinator_path, task_name,
+            )
+            self.assertIsNotNone(boundary)
+            evidence = {
+                "seq": seq - 1,
+                "coordinator_transcript_path": str(coordinator_path),
+                "task_name": task_name,
+                "role": transcript_role,
+                "task_id": transcript_task_id,
+                "task_id_count": 1,
+                "identity_source": "prompt_sentinel",
+                "message_kind": "plaintext_sentinel",
+            }
+            evidence.update(boundary or {})
+            turn["collaboration_spawn_evidence"] = [evidence]
+        turn["agent_identity_usage"]["reviewer"][identity["identity"]] = {
+            "seq": seq,
+            "task_id": transcript_task_id,
+            "stopped": True,
+        }
+
+        reviewer_stop = {
+            "seq": seq,
+            "task_id": ledger_task_id,
+            "task_id_count": 1,
+            "blocking": True,
+            "text": "Truncated coordinator summary.",
+            "agent_transcript_path": str(transcript_path),
+        }
+        reviewer_pass = {
+            "seq": seq,
+            "agent_identity": identity["identity"],
+            "agent_name": identity["agent_name"],
+            "blocking": True,
+        }
+        if official:
+            reviewer_stop["official_agent_transcript_path"] = str(transcript_path)
+            reviewer_pass["official_agent_transcript_path"] = str(transcript_path)
+        turn["agents"]["reviewer_stops"] = [reviewer_stop]
+        ledger = {"reviewer_passes": [reviewer_pass]}
+        return turn, ledger, coordinator_path, transcript_path
+
     def _write_coordinator_transcript(
         self,
         thread_id: str = "coordinator-thread",
@@ -396,6 +497,7 @@ class OrchestratorHookTests(unittest.TestCase):
                         "head_before": recorded_head,
                         "first_parent": recorded_head,
                         "snapshot_signature": [f"100|{task_id}.py|work"],
+                        "post_snapshot_signature": [],
                     }]
                     if commit_hash is not None
                     else []
@@ -541,6 +643,40 @@ class OrchestratorHookTests(unittest.TestCase):
             str(agent_transcript_path),
             reviewer_stop["agent_transcript_path"],
         )
+        self.assertEqual(
+            str(agent_transcript_path),
+            reviewer_stop["official_agent_transcript_path"],
+        )
+        reviewer_pass = self._load_state()["turn"]["task_ledgers"][
+            "review_42"
+        ]["reviewer_passes"][-1]
+        self.assertEqual(
+            str(agent_transcript_path),
+            reviewer_pass["official_agent_transcript_path"],
+        )
+
+    def test_subagent_stop_does_not_label_generic_transcript_path_official(self) -> None:
+        coordinator_path, agent_transcript_path = self._write_correlated_role_transcripts(
+            "reviewer", "review_43", "reviewer__review_43",
+        )
+        self._set_active_turn_state({str(coordinator_path): "coordinator"})
+        event: dict[str, Any] = {
+            "hook_event_name": "SubagentStop",
+            "agent_id": "reviewer-agent-43",
+            "agent_type": "reviewer",
+            "last_assistant_message": "Overall Assessment: APPROVE",
+            "raw": {"transcript_path": str(agent_transcript_path)},
+        }
+        with patch.object(subagent_stop, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(subagent_stop, event)
+
+        state = self._load_state()
+        reviewer_stop = state["turn"]["agents"]["reviewer_stops"][-1]
+        self.assertNotIn("official_agent_transcript_path", reviewer_stop)
+        reviewer_pass = state["turn"]["task_ledgers"]["review_43"][
+            "reviewer_passes"
+        ][-1]
+        self.assertNotIn("official_agent_transcript_path", reviewer_pass)
 
     def test_stop_backfill_prefers_persisted_agent_transcript_path(self) -> None:
         agent_transcript_path = self._write_transcript(
@@ -1727,11 +1863,49 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertTrue(orchestrator_state.command_match_verification("python3 -m compile my_module.py"))
         self.assertTrue(orchestrator_state.command_match_verification("python3 -m py_compile file.py"))
         self.assertTrue(orchestrator_state.command_match_verification("dart test ."))
+        self.assertTrue(orchestrator_state.command_match_verification(
+            "supabase test db --local supabase/tests/database/edit_goal_proposals_test.sql"
+        ))
+        self.assertTrue(orchestrator_state.command_match_verification(
+            "cd supabase && supabase test db --local"
+        ))
+        self.assertFalse(orchestrator_state.command_match_verification(
+            "true || supabase test db --local"
+        ))
+        self.assertFalse(orchestrator_state.command_match_verification(
+            "supabase test db --local || true"
+        ))
+        self.assertFalse(orchestrator_state.command_match_verification(
+            "sh -c 'supabase test db --local || true'"
+        ))
+        unsafe_commands = (
+            "supabase test db --local | cat",
+            "supabase test db --local |& cat",
+            "supabase test db --local; true",
+            "supabase test db --local & wait",
+            "supabase test db --local\ntrue",
+            "supabase test db --local || true",
+            "bash -c 'supabase test db --local | cat'",
+            "sh -c 'supabase test db --local |& cat'",
+            "bash -lc 'supabase test db --local; true'",
+            "sh -c 'supabase test db --local & wait'",
+            "bash -c 'supabase test db --local\ntrue'",
+            "sh -lc 'supabase test db --local || true'",
+        )
+        for unsafe_command in unsafe_commands:
+            with self.subTest(unsafe_command=unsafe_command):
+                self.assertFalse(
+                    orchestrator_state.command_match_verification(unsafe_command)
+                )
         self.assertFalse(orchestrator_state.command_match_verification("gh pr create --body 'please run flutter test'"))
         self.assertFalse(orchestrator_state.command_match_verification("echo 'python3 -m pytest'"))
         self.assertFalse(orchestrator_state.command_match_verification("flutter create test"))
         self.assertFalse(orchestrator_state.command_match_verification("flutter --version test"))
         self.assertFalse(orchestrator_state.command_match_verification("dart pub test"))
+        self.assertFalse(orchestrator_state.command_match_verification("supabase db test --local"))
+        self.assertFalse(orchestrator_state.command_match_verification("supabase functions test"))
+        self.assertFalse(orchestrator_state.command_match_verification("supabase db reset"))
+        self.assertFalse(orchestrator_state.command_match_verification("echo 'supabase test db'"))
 
     def test_string_tool_response_preserves_failure_exit_codes(self) -> None:
         events = (
@@ -1756,7 +1930,7 @@ class OrchestratorHookTests(unittest.TestCase):
             ),
         )
 
-    def test_standard_severity_sections_with_findings_are_blocking(self) -> None:
+    def test_terminal_approve_does_not_override_blocking_severity_findings(self) -> None:
         reviews = (
             "Critical Issues\n- App crashes on launch.\n\nOverall Assessment: APPROVE",
             "Major Issues (🟠)\n- User data can be lost.\n\nOverall Assessment: APPROVE",
@@ -1766,6 +1940,445 @@ class OrchestratorHookTests(unittest.TestCase):
         for review in reviews:
             with self.subTest(review=review):
                 self.assertTrue(subagent_stop.looks_blocking(review))
+
+    def test_no_blocking_or_non_blocking_findings_does_not_match_blocker(self) -> None:
+        review = (
+            "Findings:\n\n- No blocking or non-blocking findings at ≥80% confidence."
+            "\n\nOverall Assessment: APPROVE"
+        )
+
+        self.assertFalse(subagent_stop.looks_blocking(review))
+
+    def test_exact_non_blocking_phrase_does_not_hide_contradictory_blocker(self) -> None:
+        review = (
+            "Findings:\n\n"
+            "- No blocking or non-blocking findings at ≥80% confidence.\n"
+            "- A blocking issue remains in the commit guard.\n\n"
+            "Overall Assessment: APPROVE"
+        )
+
+        self.assertTrue(subagent_stop.looks_blocking(review))
+
+    def test_terminal_approve_does_not_override_required_followup(self) -> None:
+        review = (
+            "Findings:\n\n"
+            "- Follow-up required: fix the missing RLS assertion.\n\n"
+            "Overall Assessment: APPROVE"
+        )
+
+        self.assertTrue(subagent_stop.looks_blocking(review))
+
+    def test_terminal_approve_does_not_override_required_prefixes(self) -> None:
+        reviews = (
+            "Required action: fix the missing RLS assertion.",
+            "Required follow-up: add the retry regression test.",
+        )
+
+        for finding in reviews:
+            with self.subTest(finding=finding):
+                review = f"Findings:\n\n- {finding}\n\nOverall Assessment: APPROVE"
+                self.assertTrue(subagent_stop.looks_blocking(review))
+
+    def test_benign_required_word_order_does_not_create_blocker(self) -> None:
+        review = (
+            "Notes:\n\n"
+            "- The action completed the required validation coverage.\n"
+            "- Follow-up documentation describes the required behavior.\n\n"
+            "Overall Assessment: APPROVE"
+        )
+
+        self.assertFalse(subagent_stop.looks_blocking(review))
+
+    def test_altered_non_blocking_phrase_remains_blocking(self) -> None:
+        review = (
+            "Findings:\n\n"
+            "- No blocking findings at 80% confidence.\n\n"
+            "Overall Assessment: APPROVE"
+        )
+
+        self.assertTrue(subagent_stop.looks_blocking(review))
+
+    def test_terminal_non_approval_verdicts_remain_blocking(self) -> None:
+        for verdict in ("REQUEST_CHANGES", "NEEDS_DISCUSSION"):
+            with self.subTest(verdict=verdict):
+                self.assertTrue(
+                    subagent_stop.looks_blocking(
+                        f"No findings.\n\nOverall Assessment: {verdict}"
+                    )
+                )
+
+    def test_approve_must_be_the_single_terminal_paragraph(self) -> None:
+        self.assertTrue(
+            subagent_stop.looks_blocking(
+                "Overall Assessment: APPROVE\n\nAdditional follow-up text."
+            )
+        )
+
+    def test_legacy_approval_text_without_provenance_remains_blocking(self) -> None:
+        task_id = "edit_goal_database_tests"
+        turn = {
+            "agents": {
+                "reviewer_stops": [{
+                    "seq": 973,
+                    "task_id": task_id,
+                    "task_id_count": 1,
+                    "blocking": True,
+                    "text": "No blocking or non-blocking findings at ≥80% confidence.",
+                }],
+            },
+        }
+        ledger = {
+            "reviewer_passes": [{
+                "seq": 973,
+                "agent_identity": "legacy-reviewer",
+                "blocking": True,
+            }],
+        }
+
+        normalized = stop._normalized_ledger_reviewer_passes(turn, task_id, ledger)
+
+        self.assertTrue(normalized[0]["blocking"])
+        self.assertTrue(ledger["reviewer_passes"][0]["blocking"])
+
+    def test_legacy_reviewer_normalization_requires_exact_task_and_phrase(self) -> None:
+        ledger = {
+            "reviewer_passes": [{
+                "seq": 7,
+                "agent_identity": "legacy-reviewer",
+                "blocking": True,
+            }],
+        }
+        cases = (
+            {
+                "seq": 7, "task_id": "different_task", "task_id_count": 1,
+                "text": "No blocking or non-blocking findings.",
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": "No blocking findings were recorded.",
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": "No blocking or non-blocking findings.",
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": (
+                    "No blocking or non-blocking findings.\n"
+                    "Overall Assessment: REQUEST_CHANGES"
+                ),
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": (
+                    "Overall Assessment: APPROVE\n"
+                    "Overall Assessment: APPROVE"
+                ),
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": (
+                    "Overall Assessment: APPROVE\n\n"
+                    "Additional follow-up text."
+                ),
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": (
+                    "No blocking or non-blocking findings.\n"
+                    "A blocking issue remains."
+                ),
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": "Overall Assessment: NEEDS_DISCUSSION",
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": "Overall Assessment: APPROVED",
+            },
+            {
+                "seq": 7, "task_id": "target_task", "task_id_count": 1,
+                "text": "Summary: looks good to me.",
+            },
+        )
+
+        for reviewer_stop in cases:
+            with self.subTest(reviewer_stop=reviewer_stop):
+                turn = {"agents": {"reviewer_stops": [reviewer_stop]}}
+                normalized = stop._normalized_ledger_reviewer_passes(
+                    turn, "target_task", ledger,
+                )
+                self.assertTrue(normalized[0]["blocking"])
+
+    def test_legacy_reviewer_summary_terminal_approval_without_provenance_blocks(self) -> None:
+        task_id = "target_task"
+        turn = {
+            "agents": {
+                "reviewer_stops": [{
+                    "seq": 7,
+                    "task_id": task_id,
+                    "task_id_count": 1,
+                    "blocking": True,
+                    "text": "No findings.\n\nOverall Assessment: APPROVE",
+                }],
+            },
+        }
+        ledger = {
+            "reviewer_passes": [{
+                "seq": 7,
+                "agent_identity": "legacy-reviewer",
+                "blocking": True,
+            }],
+        }
+
+        normalized = stop._normalized_ledger_reviewer_passes(
+            turn, task_id, ledger,
+        )
+
+        self.assertTrue(normalized[0]["blocking"])
+
+    def test_legacy_reviewer_unrelated_terminal_transcript_approval_blocks(self) -> None:
+        task_id = "target_task"
+        final_text = "Findings:\n\nNone.\n\nOverall Assessment: APPROVE"
+        transcript_path = self._write_transcript([
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "agent_message",
+                    "phase": "final_answer",
+                    "message": final_text,
+                },
+            },
+            {
+                "type": "response_item",
+                "payload": {
+                    "type": "message",
+                    "role": "assistant",
+                    "phase": "final_answer",
+                    "content": [{"type": "output_text", "text": final_text}],
+                },
+            },
+            {
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "last_agent_message": final_text,
+                },
+            },
+        ])
+        turn = {
+            "agents": {
+                "reviewer_stops": [{
+                    "seq": 7,
+                    "task_id": task_id,
+                    "task_id_count": 1,
+                    "blocking": True,
+                    "text": "Truncated review summary without its verdict.",
+                    "agent_transcript_path": str(transcript_path),
+                }],
+            },
+        }
+        ledger = {
+            "reviewer_passes": [{
+                "seq": 7,
+                "agent_identity": "legacy-reviewer",
+                "blocking": True,
+            }],
+        }
+
+        normalized = stop._normalized_ledger_reviewer_passes(turn, task_id, ledger)
+
+        self.assertTrue(normalized[0]["blocking"])
+        self.assertTrue(ledger["reviewer_passes"][0]["blocking"])
+
+    def test_legacy_seq_973_correlated_reviewer_transcript_is_normalized(self) -> None:
+        turn, ledger, _, _ = self._legacy_reviewer_provenance_fixture()
+
+        normalized = stop._normalized_ledger_reviewer_passes(
+            turn, "target_task", ledger,
+        )
+
+        self.assertFalse(normalized[0]["blocking"])
+        self.assertTrue(ledger["reviewer_passes"][0]["blocking"])
+
+    def test_legacy_seq_973_full_text_diagnostic_uses_shared_parser(self) -> None:
+        turn, ledger, _, _ = self._legacy_reviewer_provenance_fixture()
+        reviewer_stop = turn["agents"]["reviewer_stops"][0]
+        transcript_path = stop._reviewer_approval_transcript_path(
+            turn, "target_task", reviewer_stop, ledger["reviewer_passes"][0],
+        )
+
+        self.assertIsNotNone(transcript_path)
+        final_text = stop._legacy_reviewer_final_text_from_transcript(transcript_path)
+        self.assertIsNotNone(final_text)
+        assert final_text is not None
+        self.assertIn("Findings:", final_text)
+        self.assertIn(stop.LEGACY_REVIEWER_NO_FINDINGS_TEXT, final_text)
+        self.assertFalse(subagent_stop.looks_blocking(final_text))
+
+    def test_official_correlated_reviewer_transcript_is_normalized(self) -> None:
+        turn, ledger, _, _ = self._legacy_reviewer_provenance_fixture(
+            seq=41, official=True,
+        )
+
+        normalized = stop._normalized_ledger_reviewer_passes(
+            turn, "target_task", ledger,
+        )
+
+        self.assertFalse(normalized[0]["blocking"])
+
+    def test_coordinator_transcript_with_terminal_approve_remains_blocking(self) -> None:
+        turn, ledger, coordinator_path, _ = self._legacy_reviewer_provenance_fixture()
+        with coordinator_path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps({
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "last_agent_message": "Overall Assessment: APPROVE",
+                },
+            }) + "\n")
+        turn["agents"]["reviewer_stops"][0]["agent_transcript_path"] = str(
+            coordinator_path
+        )
+
+        normalized = stop._normalized_ledger_reviewer_passes(
+            turn, "target_task", ledger,
+        )
+
+        self.assertTrue(normalized[0]["blocking"])
+
+    def test_legacy_seq_973_rejects_wrong_role_task_and_uncorrelated_path(self) -> None:
+        fixtures = (
+            self._legacy_reviewer_provenance_fixture(transcript_role="coder"),
+            self._legacy_reviewer_provenance_fixture(
+                transcript_task_id="different_task",
+            ),
+            self._legacy_reviewer_provenance_fixture(correlated=False),
+        )
+        for turn, ledger, _, transcript_path in fixtures:
+            with self.subTest(transcript_path=transcript_path):
+                normalized = stop._normalized_ledger_reviewer_passes(
+                    turn, "target_task", ledger,
+                )
+                self.assertTrue(normalized[0]["blocking"])
+
+    def test_legacy_reviewer_transcript_recovery_rejects_invalid_verdict_evidence(self) -> None:
+        task_id = "target_task"
+        reviews = (
+            (
+                "multiple verdicts",
+                "Overall Assessment: REQUEST_CHANGES\n\nOverall Assessment: APPROVE",
+            ),
+            (
+                "trailing prose",
+                "Overall Assessment: APPROVE\n\nAdditional follow-up text.",
+            ),
+            ("request changes", "Overall Assessment: REQUEST_CHANGES"),
+        )
+        for label, final_text in reviews:
+            with self.subTest(label=label):
+                transcript_path = self._write_transcript([{
+                    "type": "event_msg",
+                    "payload": {
+                        "type": "task_complete",
+                        "last_agent_message": final_text,
+                    },
+                }])
+                turn = {
+                    "agents": {
+                        "reviewer_stops": [{
+                            "seq": 7,
+                            "task_id": task_id,
+                            "task_id_count": 1,
+                            "blocking": True,
+                            "text": stop.LEGACY_REVIEWER_NO_FINDINGS_TEXT,
+                            "agent_transcript_path": str(transcript_path),
+                        }],
+                    },
+                }
+                ledger = {
+                    "reviewer_passes": [{"seq": 7, "blocking": True}],
+                }
+
+                normalized = stop._normalized_ledger_reviewer_passes(
+                    turn, task_id, ledger,
+                )
+
+                self.assertTrue(normalized[0]["blocking"])
+
+    def test_legacy_reviewer_transcript_recovery_rejects_unusable_files(self) -> None:
+        malformed_path = Path(self._tempdir.name) / "malformed.jsonl"
+        malformed_path.write_text('{"type": "event_msg"}\nnot-json\n', encoding="utf-8")
+        wrong_suffix_path = Path(self._tempdir.name) / "transcript.txt"
+        wrong_suffix_path.write_text(
+            json.dumps({
+                "type": "event_msg",
+                "payload": {
+                    "type": "task_complete",
+                    "last_agent_message": "Overall Assessment: APPROVE",
+                },
+            }),
+            encoding="utf-8",
+        )
+        paths = (
+            malformed_path,
+            Path(self._tempdir.name) / "missing.jsonl",
+            wrong_suffix_path,
+        )
+        for transcript_path in paths:
+            with self.subTest(transcript_path=transcript_path):
+                turn = {
+                    "agents": {
+                        "reviewer_stops": [{
+                            "seq": 7,
+                            "task_id": "target_task",
+                            "task_id_count": 1,
+                            "blocking": True,
+                            "text": stop.LEGACY_REVIEWER_NO_FINDINGS_TEXT,
+                            "agent_transcript_path": str(transcript_path),
+                        }],
+                    },
+                }
+                ledger = {
+                    "reviewer_passes": [{"seq": 7, "blocking": True}],
+                }
+
+                normalized = stop._normalized_ledger_reviewer_passes(
+                    turn, "target_task", ledger,
+                )
+
+                self.assertTrue(normalized[0]["blocking"])
+
+    def test_legacy_reviewer_transcript_recovery_requires_correlated_task_and_seq(self) -> None:
+        transcript_path = self._write_transcript([{
+            "type": "event_msg",
+            "payload": {
+                "type": "task_complete",
+                "last_agent_message": "Overall Assessment: APPROVE",
+            },
+        }])
+        ledger = {
+            "reviewer_passes": [{"seq": 7, "blocking": True}],
+        }
+        cases = (
+            {"seq": 8, "task_id": "target_task", "task_id_count": 1},
+            {"seq": 7, "task_id": "different_task", "task_id_count": 1},
+            {"seq": 7, "task_id": "target_task", "task_id_count": 2},
+        )
+        for reviewer_stop in cases:
+            with self.subTest(reviewer_stop=reviewer_stop):
+                reviewer_stop.update({
+                    "blocking": True,
+                    "text": "Truncated summary.",
+                    "agent_transcript_path": str(transcript_path),
+                })
+                normalized = stop._normalized_ledger_reviewer_passes(
+                    {"agents": {"reviewer_stops": [reviewer_stop]}},
+                    "target_task",
+                    ledger,
+                )
+                self.assertTrue(normalized[0]["blocking"])
 
     def test_explicitly_empty_severity_sections_remain_non_blocking(self) -> None:
         reviews = (
@@ -1876,6 +2489,712 @@ class OrchestratorHookTests(unittest.TestCase):
         with patch.object(orchestrator_state, "ROOT", repo):
             self.assertEqual([], stop._missing_task_ledger_requirements(turn))
 
+    def test_rewritten_attempts_restart_from_active_history_and_reorder_tasks(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "abandoned-baseline.txt").write_text("old baseline\n", encoding="utf-8")
+        self._git(repo, "add", "abandoned-baseline.txt")
+        self._git(repo, "commit", "-q", "-m", "abandoned baseline")
+        abandoned_baseline = self._git(repo, "rev-parse", "HEAD")
+        (repo / "database.txt").write_text("abandoned database\n", encoding="utf-8")
+        self._git(repo, "add", "database.txt")
+        self._git(repo, "commit", "-q", "-m", "abandoned database attempt")
+        abandoned_database = self._git(repo, "rev-parse", "HEAD")
+        (repo / "hooks.txt").write_text("abandoned hooks\n", encoding="utf-8")
+        self._git(repo, "add", "hooks.txt")
+        self._git(repo, "commit", "-q", "-m", "abandoned hook attempt")
+        abandoned_hooks = self._git(repo, "rev-parse", "HEAD")
+
+        self._git(repo, "reset", "--hard", base_hash)
+        (repo / "database.txt").write_text("accepted database\n", encoding="utf-8")
+        self._git(repo, "add", "database.txt")
+        self._git(repo, "commit", "-q", "-m", "accepted database")
+        database_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "hooks.txt").write_text("accepted hooks\n", encoding="utf-8")
+        self._git(repo, "add", "hooks.txt")
+        self._git(repo, "commit", "-q", "-m", "accepted hooks")
+        hooks_hash = self._git(repo, "rev-parse", "HEAD")
+
+        database = self._strict_ledger(
+            "database_chunk", coder_identity="old-database-coder",
+            reviewer_identity="old-database-reviewer",
+            commit_hash=abandoned_database, baseline_head=abandoned_baseline,
+        )
+        database["coder_passes"][0]["start_head"] = abandoned_baseline
+        database["coder_passes"].append({
+            "start_seq": 20, "stop_seq": 21,
+            "agent_identity": "recovery-database-coder",
+            "start_head": base_hash, "start_snapshot_signature": [],
+            "stop_snapshot_signature": ["100|database_chunk.py|accepted"],
+        })
+        database["verifications"].append({
+            "seq": 22, "snapshot_signature": ["100|database_chunk.py|accepted"],
+        })
+        database["reviewer_passes"].append({
+            "seq": 23, "agent_identity": "recovery-database-reviewer",
+            "blocking": False,
+            "snapshot_signature": ["100|database_chunk.py|accepted"],
+        })
+        database["commits"].append({
+            "seq": 24, "hash": database_hash, "head_before": base_hash,
+            "first_parent": base_hash,
+            "snapshot_signature": ["100|database_chunk.py|accepted"],
+            "post_snapshot_signature": [],
+        })
+
+        hooks = self._strict_ledger(
+            "hooks_chunk", coder_identity="old-hooks-coder",
+            reviewer_identity="old-hooks-reviewer", commit_hash=abandoned_hooks,
+            baseline_head=abandoned_database, offset=5,
+        )
+        hooks["coder_passes"][0]["start_head"] = abandoned_database
+        hooks["coder_passes"].append({
+            "start_seq": 25, "stop_seq": 26,
+            "agent_identity": "recovery-hooks-coder",
+            # The older hook running when this recovery coder started did not
+            # yet record start_head. Its eventual active commit's validated
+            # head_before establishes the same baseline.
+            "start_snapshot_signature": [],
+            "stop_snapshot_signature": ["100|hooks_chunk.py|accepted"],
+        })
+        hooks["verifications"].append({
+            "seq": 27, "snapshot_signature": ["100|hooks_chunk.py|accepted"],
+        })
+        hooks["reviewer_passes"].append({
+            "seq": 28, "agent_identity": "recovery-hooks-reviewer",
+            "blocking": False,
+            "snapshot_signature": ["100|hooks_chunk.py|accepted"],
+        })
+        hooks["commits"].append({
+            "seq": 29, "hash": hooks_hash, "head_before": database_hash,
+            "first_parent": database_hash,
+            "snapshot_signature": ["100|hooks_chunk.py|accepted"],
+            "post_snapshot_signature": [],
+        })
+
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {"database_chunk": database, "hooks_chunk": hooks}
+        turn["lifecycle_violations"] = [{
+            "task_id": "hooks_chunk",
+            "message": (
+                "task hooks_chunk started before changed task database_chunk "
+                "received its approved commit"
+            ),
+        }]
+        with patch.object(orchestrator_state, "ROOT", repo):
+            self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_restart_rejects_active_unapproved_same_task_commit(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "abandoned.txt").write_text("abandoned\n", encoding="utf-8")
+        self._git(repo, "add", "abandoned.txt")
+        self._git(repo, "commit", "-q", "-m", "abandoned baseline")
+        abandoned_baseline = self._git(repo, "rev-parse", "HEAD")
+        self._git(repo, "reset", "--hard", base_hash)
+        (repo / "poison.txt").write_text("active poison\n", encoding="utf-8")
+        self._git(repo, "add", "poison.txt")
+        self._git(repo, "commit", "-q", "-m", "active unapproved attempt")
+        poison_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "repair.txt").write_text("repair\n", encoding="utf-8")
+        self._git(repo, "add", "repair.txt")
+        self._git(repo, "commit", "-q", "-m", "attempted repair")
+        repair_hash = self._git(repo, "rev-parse", "HEAD")
+
+        ledger = self._strict_ledger(
+            "repair_chunk", coder_identity="recovery-coder",
+            reviewer_identity="recovery-reviewer", commit_hash=repair_hash,
+            baseline_head=abandoned_baseline,
+        )
+        ledger["coder_passes"][0].update({
+            "start_seq": 6, "stop_seq": 7, "start_head": poison_hash,
+            "start_snapshot_signature": [],
+        })
+        ledger["verifications"][0]["seq"] = 8
+        ledger["reviewer_passes"][0]["seq"] = 9
+        ledger["commits"] = [
+            {
+                "seq": 5, "hash": poison_hash, "head_before": base_hash,
+                "first_parent": base_hash,
+                "snapshot_signature": ["100|poison.py|unapproved"],
+                "post_snapshot_signature": [],
+            },
+            {
+                "seq": 10, "hash": repair_hash, "head_before": poison_hash,
+                "first_parent": poison_hash,
+                "snapshot_signature": ["100|repair_chunk.py|work"],
+                "post_snapshot_signature": [],
+            },
+        ]
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {"repair_chunk": ledger}
+        with patch.object(orchestrator_state, "ROOT", repo):
+            missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+
+    def test_remediation_consumption_uses_first_coder_cycle_baseline(self) -> None:
+        baseline = ["100|user-owned.txt|original"]
+        work = baseline + ["100|repair_chunk.py|work"]
+        ledger = self._strict_ledger(
+            "repair_chunk", coder_identity="initial-coder",
+            reviewer_identity="blocking-reviewer", commit_hash="repair-hash",
+        )
+        ledger["baseline_signature"] = baseline
+        ledger["coder_passes"][0].update({
+            "start_snapshot_signature": baseline,
+            "stop_snapshot_signature": work,
+        })
+        ledger["verifications"][0]["snapshot_signature"] = work
+        ledger["reviewer_passes"] = [{
+            "seq": 4, "agent_identity": "blocking-reviewer", "blocking": True,
+            "snapshot_signature": work,
+        }]
+        ledger["blocking_review_seq"] = 4
+        ledger["coder_passes"].append({
+            "start_seq": 5, "stop_seq": 6,
+            "agent_identity": "remediation-coder",
+            "start_snapshot_signature": work,
+            "stop_snapshot_signature": work,
+        })
+        ledger["verifications"].append({"seq": 7, "snapshot_signature": work})
+        ledger["reviewer_passes"].append({
+            "seq": 8, "agent_identity": "remediation-reviewer", "blocking": False,
+            "snapshot_signature": work,
+        })
+        ledger["commits"] = [{
+            "seq": 9, "hash": "repair-hash",
+            "head_before": "base-repair_chunk", "first_parent": "base-repair_chunk",
+            "snapshot_signature": work, "post_snapshot_signature": baseline,
+        }]
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {"repair_chunk": ledger}
+
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+        ledger["commits"][0]["post_snapshot_signature"] = []
+        self.assertTrue(any(
+            "did not consume exactly" in item
+            for item in stop._missing_task_ledger_requirements(turn)
+        ))
+        ledger["commits"][0]["post_snapshot_signature"] = baseline
+        followup_work = baseline + ["100|repair_chunk.py|followup"]
+        ledger["coder_passes"].append({
+            "start_seq": 10, "stop_seq": 11,
+            "agent_identity": "followup-coder", "start_head": "repair-hash",
+            "start_snapshot_signature": baseline,
+            "stop_snapshot_signature": followup_work,
+        })
+        ledger["verifications"].append({
+            "seq": 12, "snapshot_signature": followup_work,
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 13, "agent_identity": "followup-reviewer", "blocking": False,
+            "snapshot_signature": followup_work,
+        })
+        ledger["commits"].append({
+            "seq": 14, "hash": "followup-hash", "head_before": "repair-hash",
+            "first_parent": "repair-hash", "snapshot_signature": followup_work,
+            "post_snapshot_signature": baseline,
+        })
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_strict_same_task_sequential_remediation_commit_succeeds(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "history.txt").write_text("base\ninitial\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "initial task change")
+        initial_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "history.txt").write_text("base\ninitial\nremediation\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "task remediation")
+        remediation_hash = self._git(repo, "rev-parse", "HEAD")
+
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash=initial_hash,
+            baseline_head=base_hash,
+        )
+        ledger["commits"][0]["post_snapshot_signature"] = []
+        ledger["coder_passes"].append({
+            "start_seq": 6,
+            "stop_seq": 7,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": initial_hash,
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 8,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 9,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 10,
+            "hash": remediation_hash,
+            "head_before": initial_hash,
+            "first_parent": initial_hash,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        with patch.object(orchestrator_state, "ROOT", repo):
+            self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+            # Ledgers captured before start_head existed still derive the
+            # remediation baseline from the preceding same-task commit.
+            ledger["coder_passes"][1].pop("start_head")
+            self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_strict_same_task_prior_commit_must_consume_its_approved_change(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash="initial-hash",
+        )
+        ledger["commits"][0]["post_snapshot_signature"] = [
+            "100|approved_dirty.py|still-dirty"
+        ]
+        ledger["coder_passes"].append({
+            "start_seq": 6,
+            "stop_seq": 7,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": ["100|approved_dirty.py|still-dirty"],
+            "start_head": "initial-hash",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 8,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 9,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 10,
+            "hash": "remediation-hash",
+            "head_before": "initial-hash",
+            "first_parent": "initial-hash",
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": ["100|approved_dirty.py|still-dirty"],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+        self.assertTrue(any(
+            "coder start HEAD is not its previously approved same-task baseline" in item
+            for item in missing
+        ))
+
+    def test_strict_same_task_prior_approval_is_invalidated_by_later_blocker(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash="initial-hash",
+        )
+        # coder -> verification -> APPROVE -> REQUEST_CHANGES -> commit
+        ledger["reviewer_passes"].append({
+            "seq": 5,
+            "agent_identity": "blocking-reviewer",
+            "blocking": True,
+            "snapshot_signature": ["100|remediated_chunk.py|work"],
+        })
+        ledger["commits"][0]["seq"] = 6
+        ledger["blocking_review_seq"] = 5
+
+        # remediation coder -> verification -> APPROVE -> commit
+        ledger["coder_passes"].append({
+            "start_seq": 7,
+            "stop_seq": 8,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": "initial-hash",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 9,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 10,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 11,
+            "hash": "remediation-hash",
+            "head_before": "initial-hash",
+            "first_parent": "initial-hash",
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+        self.assertTrue(any(
+            "coder start HEAD is not its previously approved same-task baseline" in item
+            for item in missing
+        ))
+
+    def test_prior_commit_rejects_approval_without_coder_after_blocker(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="blocking-reviewer", commit_hash="initial-hash",
+        )
+        # coder -> verification -> REQUEST_CHANGES -> APPROVE -> commit
+        ledger["reviewer_passes"][0]["blocking"] = True
+        ledger["reviewer_passes"].append({
+            "seq": 5,
+            "agent_identity": "approval-without-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|work"],
+        })
+        ledger["commits"][0]["seq"] = 6
+
+        # A later valid cycle must not retroactively authorize the bad commit.
+        ledger["coder_passes"].append({
+            "start_seq": 7,
+            "stop_seq": 8,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": "initial-hash",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 9,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 10,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 11,
+            "hash": "remediation-hash",
+            "head_before": "initial-hash",
+            "first_parent": "initial-hash",
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        self.assertEqual([], stop._approved_same_task_commits_before(ledger, 7))
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+
+    def test_prior_commit_rejects_unverified_final_coder_pass(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash="initial-hash",
+        )
+        # coder1 -> verification -> coder2 -> APPROVE -> commit
+        ledger["coder_passes"].append({
+            "start_seq": 4,
+            "stop_seq": 5,
+            "agent_identity": "coder-unverified",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|work"],
+        })
+        ledger["reviewer_passes"][0]["seq"] = 6
+        ledger["commits"][0]["seq"] = 7
+
+        # A later valid cycle must not retroactively verify coder2.
+        ledger["coder_passes"].append({
+            "start_seq": 8,
+            "stop_seq": 9,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": "initial-hash",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 10,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 11,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 12,
+            "hash": "remediation-hash",
+            "head_before": "initial-hash",
+            "first_parent": "initial-hash",
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        self.assertEqual([], stop._approved_same_task_commits_before(ledger, 8))
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+
+    def test_prior_commit_accepts_blocking_review_with_valid_remediation(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="blocking-reviewer", commit_hash="remediation-hash",
+        )
+        # coder1 -> verification -> REQUEST_CHANGES -> coder2 -> verification
+        # -> APPROVE -> commit
+        ledger["reviewer_passes"][0]["blocking"] = True
+        ledger["coder_passes"].append({
+            "start_seq": 5,
+            "stop_seq": 6,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": "base-remediated_chunk",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 7,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 8,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"][0].update({
+            "seq": 9,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["blocking_review_seq"] = 4
+
+        # The accepted prior cycle can serve as the baseline for a later valid
+        # same-task cycle.
+        ledger["coder_passes"].append({
+            "start_seq": 10,
+            "stop_seq": 11,
+            "agent_identity": "coder-followup",
+            "start_snapshot_signature": [],
+            "start_head": "remediation-hash",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|followup"],
+        })
+        ledger["verifications"].append({
+            "seq": 12,
+            "snapshot_signature": ["100|remediated_chunk.py|followup"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 13,
+            "agent_identity": "reviewer-followup",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|followup"],
+        })
+        ledger["commits"].append({
+            "seq": 14,
+            "hash": "followup-hash",
+            "head_before": "remediation-hash",
+            "first_parent": "remediation-hash",
+            "snapshot_signature": ["100|remediated_chunk.py|followup"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        approved = stop._approved_same_task_commits_before(ledger, 10)
+        self.assertEqual([ledger["commits"][0]], approved)
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_strict_same_task_prior_commit_rejects_forged_real_parent(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "history.txt").write_text("base\ninitial\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "initial task change")
+        initial_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "history.txt").write_text("base\ninitial\nrepair\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "task remediation")
+        remediation_hash = self._git(repo, "rev-parse", "HEAD")
+
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash=initial_hash,
+            # Keep the recorded fields internally self-consistent but forge a
+            # real Git object as the claimed parent. Live Git inspection must
+            # reject it because initial_hash's actual parent is base_hash.
+            baseline_head=remediation_hash,
+        )
+        ledger["coder_passes"].append({
+            "start_seq": 6,
+            "stop_seq": 7,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": initial_hash,
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 8, "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 9, "agent_identity": "reviewer-remediation", "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 10, "hash": remediation_hash, "head_before": initial_hash,
+            "first_parent": initial_hash,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        with patch.object(orchestrator_state, "ROOT", repo):
+            missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+
+    def test_strict_same_task_rejects_unapproved_intervening_git_baseline(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "history.txt").write_text("base\ninitial\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "approved initial task change")
+        initial_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "poison.txt").write_text("unapproved\n", encoding="utf-8")
+        self._git(repo, "add", "poison.txt")
+        self._git(repo, "commit", "-q", "-m", "unapproved intervening history")
+        poisoned_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "history.txt").write_text(
+            "base\ninitial\nremediation\n", encoding="utf-8"
+        )
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "remediation after poisoned baseline")
+        remediation_hash = self._git(repo, "rev-parse", "HEAD")
+
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash=initial_hash,
+            baseline_head=base_hash,
+        )
+        # This same-task commit has no fresh coder -> verification -> approval
+        # lifecycle. The previous implementation nevertheless trusted it as the
+        # next coder's baseline merely because it preceded that coder pass.
+        ledger["commits"].append({
+            "seq": 6,
+            "hash": poisoned_hash,
+            "head_before": initial_hash,
+            "first_parent": initial_hash,
+            "snapshot_signature": ["100|poison.txt|unapproved"],
+            "post_snapshot_signature": [],
+        })
+        ledger["coder_passes"].append({
+            "start_seq": 7,
+            "stop_seq": 8,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": poisoned_hash,
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 9,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 10,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 11,
+            "hash": remediation_hash,
+            "head_before": poisoned_hash,
+            "first_parent": poisoned_hash,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+            "post_snapshot_signature": [],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        with patch.object(orchestrator_state, "ROOT", repo):
+            missing = stop._missing_task_ledger_requirements(turn)
+
+        self.assertTrue(any(
+            "sequential baseline includes an unapproved same-task commit" in item
+            for item in missing
+        ))
+        self.assertTrue(any(
+            "coder start HEAD is not its previously approved same-task baseline" in item
+            for item in missing
+        ))
+        self.assertTrue(any(
+            "commit did not advance its recorded baseline HEAD" in item
+            for item in missing
+        ))
+
+    def test_strict_same_task_remediation_rejects_wrong_parent_and_snapshot(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "remediated_chunk", coder_identity="coder-initial",
+            reviewer_identity="reviewer-initial", commit_hash="initial-hash",
+        )
+        ledger["coder_passes"].append({
+            "start_seq": 6,
+            "stop_seq": 7,
+            "agent_identity": "coder-remediation",
+            "start_snapshot_signature": [],
+            "start_head": "initial-hash",
+            "stop_snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["verifications"].append({
+            "seq": 8,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["reviewer_passes"].append({
+            "seq": 9,
+            "agent_identity": "reviewer-remediation",
+            "blocking": False,
+            "snapshot_signature": ["100|remediated_chunk.py|repair"],
+        })
+        ledger["commits"].append({
+            "seq": 10,
+            "hash": "remediation-hash",
+            "head_before": "unrelated-head",
+            "first_parent": "unrelated-head",
+            "snapshot_signature": ["100|remediated_chunk.py|wrong"],
+            "post_snapshot_signature": ["100|remediated_chunk.py|still-dirty"],
+        })
+        turn["task_ledgers"] = {"remediated_chunk": ledger}
+
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any("recorded baseline HEAD" in item for item in missing))
+        self.assertTrue(any("commit snapshot does not match verified coder output" in item for item in missing))
+        self.assertTrue(any("did not consume exactly" in item for item in missing))
+
+        ledger["commits"][1]["seq"] = 9
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any("requires its own task-sized commit after approval" in item for item in missing))
+
     def test_strict_second_task_commit_amend_is_rejected(self) -> None:
         repo, base_hash = self._new_git_history_repo()
         (repo / "history.txt").write_text("base\nchunk one\n", encoding="utf-8")
@@ -1952,6 +3271,31 @@ class OrchestratorHookTests(unittest.TestCase):
         )
         # chunk_two starts at seq 3 while chunk_one's approved commit is seq 5.
         turn["task_ledgers"] = {"chunk_one": first, "chunk_two": second}
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "task chunk_two started before changed task chunk_one received" in item
+            for item in missing
+        ))
+
+    def test_active_later_task_cannot_bypass_unresolved_earlier_task(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        first = self._strict_ledger(
+            "chunk_one", coder_identity="coder-1", reviewer_identity="reviewer-1",
+            commit_hash=None,
+        )
+        second = self._strict_ledger(
+            "chunk_two", coder_identity="coder-2", reviewer_identity="reviewer-2",
+            commit_hash="hash-2", offset=2,
+        )
+        turn["task_ledgers"] = {"chunk_one": first, "chunk_two": second}
+        turn["lifecycle_violations"] = [{
+            "task_id": "chunk_two",
+            "message": (
+                "task chunk_two started before changed task chunk_one "
+                "received its approved commit"
+            ),
+        }]
+
         missing = stop._missing_task_ledger_requirements(turn)
         self.assertTrue(any(
             "task chunk_two started before changed task chunk_one received" in item
