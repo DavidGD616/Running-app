@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import base64
 import os
 import json
 import tempfile
@@ -97,6 +98,48 @@ def now_iso() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 
+def git_head_commit() -> str:
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=ROOT, text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+
+
+def git_commit_first_parent(commit_hash: str) -> str:
+    if not isinstance(commit_hash, str) or not commit_hash.strip():
+        return ""
+    try:
+        line = subprocess.check_output(
+            ["git", "rev-list", "--parents", "-n", "1", commit_hash.strip()],
+            cwd=ROOT,
+            text=True,
+            stderr=subprocess.DEVNULL,
+        ).strip()
+    except (OSError, subprocess.CalledProcessError):
+        return ""
+    parts = line.split()
+    return parts[1] if len(parts) >= 2 else ""
+
+
+def git_is_ancestor(ancestor: str, descendant: str) -> bool:
+    if not all(isinstance(value, str) and value.strip() for value in (ancestor, descendant)):
+        return False
+    try:
+        result = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", ancestor.strip(), descendant.strip()],
+            cwd=ROOT,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            check=False,
+        )
+    except OSError:
+        return False
+    return result.returncode == 0
+
+
 def _normalize_files(items: List[str]) -> List[str]:
     return sorted(set(filter(None, (item.strip() for item in items))))
 
@@ -166,6 +209,11 @@ def default_state() -> Dict[str, Any]:
                 "main_agent_file_edit_events": [],
             },
             "current_task_id": None,
+            # Strict per-chunk lifecycle evidence.  The legacy turn-global fields
+            # remain populated for compatibility with older hook events/state.
+            "task_ledgers": {},
+            "agent_identity_usage": {"coder": {}, "reviewer": {}},
+            "lifecycle_violations": [],
             "verification": {
                 "run": False,
                 "commands": [],
@@ -186,6 +234,7 @@ def default_state() -> Dict[str, Any]:
             "pending_commit": {
                 "seq": None,
                 "snapshot_signature": [],
+                "head_before": "",
             },
             "pre_tool_signature": {
                 "seq": None,
@@ -233,6 +282,30 @@ def _load_state_no_lock() -> Dict[str, Any]:
                 state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = []
             if not isinstance(state["turn"].get("current_task_id"), str):
                 state["turn"]["current_task_id"] = None
+            if not isinstance(state["turn"].get("task_ledgers"), dict):
+                state["turn"]["task_ledgers"] = {}
+            for task_id, ledger in list(state["turn"]["task_ledgers"].items()):
+                if not isinstance(task_id, str) or not isinstance(ledger, dict):
+                    state["turn"]["task_ledgers"].pop(task_id, None)
+                    continue
+                ledger.setdefault("task_id", task_id)
+                ledger.setdefault("baseline_signature", [])
+                ledger.setdefault("baseline_head", "")
+                ledger.setdefault("changed", False)
+                ledger.setdefault("blocking_review_seq", None)
+                for list_key in (
+                    "coder_passes", "reviewer_passes", "verifications",
+                    "commits", "violations",
+                ):
+                    if not isinstance(ledger.get(list_key), list):
+                        ledger[list_key] = []
+            if not isinstance(state["turn"].get("agent_identity_usage"), dict):
+                state["turn"]["agent_identity_usage"] = {"coder": {}, "reviewer": {}}
+            for role in ("coder", "reviewer"):
+                if not isinstance(state["turn"]["agent_identity_usage"].get(role), dict):
+                    state["turn"]["agent_identity_usage"][role] = {}
+            if not isinstance(state["turn"].get("lifecycle_violations"), list):
+                state["turn"]["lifecycle_violations"] = []
             if not isinstance(state["turn"]["pending_commit"], dict):
                 state["turn"]["pending_commit"] = default_state()["turn"]["pending_commit"]
                 state["turn"]["pending_commit"]["seq"] = None
@@ -502,12 +575,10 @@ def extract_task_ids_from_prompt_lines(text: str) -> list[str]:
     if not isinstance(text, str):
         return []
     ids: list[str] = []
-    seen: set[str] = set()
     for value in SUBAGENT_TASK_ID_PROMPT_LINE_PATTERN.findall(text):
         normalized = str(value).strip()
-        if not normalized or normalized in seen:
+        if not normalized:
             continue
-        seen.add(normalized)
         ids.append(normalized)
     return ids
 
@@ -918,6 +989,231 @@ def extract_encoded_task_name_identity(
     return match.group(1), match.group(2), 1
 
 
+CANONICAL_TASK_ID_RE = re.compile(r"^[a-z0-9]+(?:_[a-z0-9]+)*$")
+
+
+def is_canonical_task_id(value: Any) -> bool:
+    return isinstance(value, str) and bool(CANONICAL_TASK_ID_RE.fullmatch(value))
+
+
+def strict_agent_session_identity(
+    transcript_path: str | Path,
+    expected_role: str | None = None,
+) -> Dict[str, Any] | None:
+    """Return the strict encoded identity from trusted subagent session metadata.
+
+    Prompt evidence is validated separately; the optional name nonce remains
+    part of the unique agent/session identity.
+    """
+    identity = extract_transcript_session_identity(transcript_path)
+    if not isinstance(identity, dict) or identity.get("is_subagent") is not True:
+        return None
+    agent_path = identity.get("agent_path")
+    thread_id = identity.get("thread_id")
+    if not isinstance(agent_path, str) or not isinstance(thread_id, str):
+        return None
+    name = agent_path.rsplit("/", 1)[-1]
+    encoded = extract_encoded_task_name_identity(name)
+    if encoded is None:
+        return None
+    role, task_id, count = encoded
+    if count != 1 or not is_canonical_task_id(task_id):
+        return None
+    if expected_role and role != expected_role:
+        return None
+    return {
+        "role": role,
+        "task_id": task_id,
+        "agent_name": name,
+        "agent_path": agent_path,
+        "thread_id": thread_id,
+        "parent_thread_id": identity.get("parent_thread_id"),
+        "depth": identity.get("depth"),
+        "identity": f"{agent_path}|{thread_id}",
+    }
+
+
+def require_strict_agent_session_identity(
+    turn: Dict[str, Any], role: str, transcript_path: str | Path,
+) -> Dict[str, Any] | None:
+    """Require strict names for newly observed coder/reviewer sessions.
+
+    Legacy state can still be hydrated and inspected, but a live role-bearing
+    event cannot enter the old aggregate lifecycle when its session name is
+    missing, malformed, or not encoded with the canonical Task ID.
+    """
+    identity = strict_agent_session_identity(transcript_path, role)
+    if identity is not None:
+        return identity
+    if role in {"coder", "reviewer"}:
+        record_lifecycle_violation(
+            turn,
+            None,
+            f"new {role} session must use strict name "
+            f"{role}__<canonical_task_id>[__<nonce>] and matching Task ID evidence",
+        )
+    return None
+
+
+def ensure_task_ledger(
+    turn: Dict[str, Any], task_id: str, baseline: List[str] | None = None,
+    baseline_head: str | None = None,
+) -> Dict[str, Any]:
+    ledgers = turn.setdefault("task_ledgers", {})
+    ledger = ledgers.get(task_id)
+    if not isinstance(ledger, dict):
+        ledger = {
+            "task_id": task_id,
+            "baseline_signature": list(baseline or []),
+            "baseline_head": str(baseline_head or ""),
+            "coder_passes": [],
+            "reviewer_passes": [],
+            "verifications": [],
+            "commits": [],
+            "changed": False,
+            "blocking_review_seq": None,
+            "violations": [],
+        }
+        ledgers[task_id] = ledger
+    return ledger
+
+
+def record_lifecycle_violation(turn: Dict[str, Any], task_id: str | None, message: str) -> None:
+    record = {"task_id": task_id, "message": message, "at": now_iso()}
+    violations = turn.setdefault("lifecycle_violations", [])
+    if record["message"] not in [item.get("message") for item in violations if isinstance(item, dict)]:
+        violations.append(record)
+    if task_id and is_canonical_task_id(task_id):
+        ledger = ensure_task_ledger(turn, task_id)
+        if message not in ledger["violations"]:
+            ledger["violations"].append(message)
+
+
+def validate_strict_prompt_identity(
+    turn: Dict[str, Any], identity: Dict[str, Any], prompt_text: str,
+    *,
+    record_task_violation: bool = True,
+) -> bool:
+    """Require plaintext Task ID evidence or an explicitly correlated opaque spawn."""
+    violation_task_id = (
+        str(identity.get("task_id", "")) if record_task_violation else None
+    )
+    if not isinstance(prompt_text, str) or not prompt_text.strip():
+        task_id = str(identity.get("task_id", ""))
+        role = str(identity.get("role", "agent"))
+        correlated_prompt_evidence = any(
+            isinstance(evidence, dict)
+            and evidence.get("role") == role
+            and evidence.get("task_id") == task_id
+            and evidence.get("task_id_count") == 1
+            and evidence.get("task_name") == identity.get("agent_name")
+            and evidence.get("expected_agent_path") == identity.get("agent_path")
+            and evidence.get("coordinator_thread_id") == identity.get("parent_thread_id")
+            and evidence.get("expected_child_depth") == identity.get("depth")
+            and (
+                (
+                    evidence.get("message_kind") == "plaintext_sentinel"
+                    and evidence.get("identity_source") == "prompt_sentinel"
+                )
+                or (
+                    evidence.get("message_kind") == "opaque_encrypted"
+                    and evidence.get("identity_source") == "encoded_task_name"
+                )
+            )
+            for evidence in turn.get("collaboration_spawn_evidence", [])
+        )
+        if correlated_prompt_evidence:
+            return True
+        record_lifecycle_violation(
+            turn, violation_task_id,
+            f"{role} prompt must contain exactly one Task ID line matching encoded collaboration name",
+        )
+        return False
+    task_ids = extract_task_ids_from_prompt_lines(prompt_text)
+    role = str(identity.get("role", "agent"))
+    task_id = str(identity.get("task_id", ""))
+    if len(task_ids) != 1:
+        record_lifecycle_violation(
+            turn, violation_task_id,
+            f"{role} prompt must contain exactly one Task ID line matching encoded collaboration name",
+        )
+        return False
+    if task_ids[0] != task_id:
+        record_lifecycle_violation(
+            turn, violation_task_id,
+            f"{role} prompt Task ID does not exactly match encoded collaboration name",
+        )
+        return False
+    return True
+
+
+def _ledger_has_approved_commit(ledger: Dict[str, Any]) -> bool:
+    completed = [
+        item for item in ledger.get("coder_passes", [])
+        if isinstance(item, dict) and isinstance(item.get("stop_seq"), int)
+    ]
+    if not completed:
+        return False
+    coder_seq = max(item["stop_seq"] for item in completed)
+    verified = [
+        item for item in ledger.get("verifications", [])
+        if isinstance(item, dict) and isinstance(item.get("seq"), int)
+        and item["seq"] > coder_seq
+    ]
+    if not verified:
+        return False
+    verification_seq = max(item["seq"] for item in verified)
+    approvals = [
+        item for item in ledger.get("reviewer_passes", [])
+        if isinstance(item, dict) and item.get("blocking") is False
+        and isinstance(item.get("seq"), int) and item["seq"] > verification_seq
+    ]
+    if not approvals:
+        return False
+    approval_seq = max(item["seq"] for item in approvals)
+    return any(
+        isinstance(item, dict) and isinstance(item.get("seq"), int)
+        and item["seq"] > approval_seq and bool(str(item.get("hash", "")).strip())
+        for item in ledger.get("commits", [])
+    )
+
+
+def register_strict_agent_start(
+    turn: Dict[str, Any], role: str, transcript_path: str | Path, seq: int, snapshot: List[str]
+) -> Dict[str, Any] | None:
+    identity = require_strict_agent_session_identity(turn, role, transcript_path)
+    if identity is None:
+        return None
+    task_id = identity["task_id"]
+    ledger = ensure_task_ledger(turn, task_id, snapshot, git_head_commit())
+    usage = turn.setdefault("agent_identity_usage", {}).setdefault(role, {})
+    identity_key = identity["identity"]
+    if identity_key in usage:
+        record_lifecycle_violation(
+            turn, task_id, f"{role} agent/session reused; a brand-new {role} is required for every pass"
+        )
+    else:
+        usage[identity_key] = {"task_id": task_id, "seq": seq}
+
+    if role == "coder":
+        for other_task_id, other in turn.get("task_ledgers", {}).items():
+            if other_task_id == task_id or not isinstance(other, dict):
+                continue
+            if other.get("changed") and not _ledger_has_approved_commit(other):
+                record_lifecycle_violation(
+                    turn, task_id,
+                    f"task {task_id} started before changed task {other_task_id} received its approved commit",
+                )
+        pass_record = {
+            "start_seq": seq,
+            "agent_identity": identity_key,
+            "agent_name": identity["agent_name"],
+            "start_snapshot_signature": list(snapshot),
+        }
+        ledger["coder_passes"].append(pass_record)
+    return identity
+
+
 def _iter_nested_event_mappings(
     value: Any,
     depth: int = 5,
@@ -993,7 +1289,7 @@ def _is_collaboration_spawn_tool(name: Any, namespace: Any = "") -> bool:
         str(namespace or "").strip().lower(),
     ).strip("_")
     if normalized_name == "spawn_agent":
-        return normalized_namespace in {"", "collaboration"}
+        return normalized_namespace == "collaboration"
     return normalized_name in {
         "collaborationspawn_agent",
         "collaboration_spawn_agent",
@@ -1007,30 +1303,62 @@ def _is_collaboration_spawn_tool(name: Any, namespace: Any = "") -> bool:
 def _collaboration_spawn_payload(
     event: Dict[str, Any],
 ) -> Dict[str, Any] | None:
-    mappings = list(_iter_nested_event_mappings(event))
-    if not any(
-        _is_collaboration_spawn_tool(
-            mapping.get("tool_name", mapping.get("tool", mapping.get("name", ""))),
-            mapping.get("namespace", ""),
-        )
-        for mapping in mappings
-    ):
+    """Return spawn arguments only for an authoritative top-level hook call.
+
+    Hook payloads are untrusted input.  A nested mapping that merely claims to
+    be ``collaboration.spawn_agent`` (for example inside ``functions.exec``
+    arguments) is not evidence that the collaboration boundary was invoked.
+    """
+    tool_name = event.get("tool_name", event.get("tool", event.get("name", "")))
+    if not _is_collaboration_spawn_tool(tool_name, event.get("namespace", "")):
         return None
-    return next(
-        (
-            mapping
-            for mapping in mappings
-            if _normalize_task_name(mapping.get("task_name"))
-        ),
-        {},
-    )
+
+    payload = _decode_possible_json(event.get("tool_input", {}))
+    if not isinstance(payload, dict):
+        return {}
+
+    # Some hook boundaries preserve the authoritative tool name at the top
+    # level while serializing its arguments once.  Unwrap only that documented
+    # boundary representation; never recursively search arbitrary mappings.
+    if not _normalize_task_name(payload.get("task_name")):
+        for key in ("arguments", "args", "input"):
+            decoded = _decode_possible_json(payload.get(key))
+            if isinstance(decoded, dict) and _normalize_task_name(decoded.get("task_name")):
+                payload = decoded
+                break
+    return payload
 
 
 def _collaboration_spawn_message(spawn_payload: Dict[str, Any]) -> Any:
-    for mapping in _iter_nested_event_mappings(spawn_payload):
-        if "message" in mapping:
-            return mapping.get("message")
-    return None
+    return spawn_payload.get("message")
+
+
+def _is_valid_opaque_spawn_message(message: Any) -> bool:
+    """Accept only a narrowly validated encrypted token as opaque evidence.
+
+    A non-empty string is not evidence.  The accepted representation is a
+    URL-safe base64 token whose decoded payload has the Fernet version byte and
+    enough bytes for its timestamp, IV, and authentication tag.  This mirrors
+    the encrypted prompt representation emitted by the hook boundary while
+    rejecting prose, truncated tokens, and merely Fernet-looking prefixes.
+    """
+    if not isinstance(message, str):
+        return False
+    token = message.strip()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{54,}={0,2}", token):
+        return False
+    try:
+        padded = token + ("=" * (-len(token) % 4))
+        decoded = base64.b64decode(
+            padded.encode("ascii"), altchars=b"-_", validate=True,
+        )
+    except (ValueError, UnicodeEncodeError):
+        return False
+    return (
+        len(decoded) >= 73
+        and decoded[0] == 0x80
+        and (len(decoded) - 57) % 16 == 0
+    )
 
 
 def collaboration_spawn_diagnostics(event: Dict[str, Any]) -> Dict[str, Any]:
@@ -1043,8 +1371,10 @@ def collaboration_spawn_diagnostics(event: Dict[str, Any]) -> Dict[str, Any]:
     message = _collaboration_spawn_message(spawn_payload)
     if isinstance(message, str) and _has_internal_sentinel_at_top(message):
         message_kind = "plaintext_sentinel"
-    elif isinstance(message, str) and message:
-        message_kind = "opaque_string"
+    elif _is_valid_opaque_spawn_message(message):
+        message_kind = "opaque_encrypted"
+    elif isinstance(message, str) and message.strip():
+        message_kind = "invalid_plaintext"
     else:
         message_kind = "missing"
     return {
@@ -1080,7 +1410,7 @@ def extract_collaboration_spawn_identity(
                 return None
             return role, task_id, task_id_count, task_name
 
-    if not encoded_identity:
+    if not encoded_identity or not _is_valid_opaque_spawn_message(message):
         return None
     role, task_id, task_id_count = encoded_identity
     return role, task_id, task_id_count, task_name

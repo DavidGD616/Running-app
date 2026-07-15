@@ -41,6 +41,22 @@ def main() -> None:
     transcript_path = extract_event_transcript_path(event)
     internal_prompt = is_internal_subagent_prompt(event, prompt_text)
 
+    # Stop-hook feedback is transport control data, not a fresh user request.
+    # Treating it as a prompt can recursively activate orchestration because the
+    # error necessarily contains words such as coder/reviewer/orchestration.
+    hook_feedback = (
+        "<hook_prompt " in prompt_text
+        and "Orchestration closure gate failed:" in prompt_text
+    )
+
+    if hook_feedback:
+        def apply_hook_feedback(state):
+            append_event(state, "UserPromptSubmit.hook_feedback_ignored", {})
+
+        update_state(apply_hook_feedback)
+        print(json.dumps({"hookSpecificOutput": {"hookEventName": "UserPromptSubmit"}}))
+        return
+
     if internal_prompt:
         actor = classify_actor(event, prompt_text)
 

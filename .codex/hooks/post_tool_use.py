@@ -17,6 +17,9 @@ from orchestrator_state import (
     extract_encoded_task_name_identity,
     extract_transcript_session_identity,
     git_changed_file_signatures,
+    git_commit_first_parent,
+    git_head_commit,
+    ensure_task_ledger,
     now_iso,
     parse_tool_exit_code,
     update_state,
@@ -145,6 +148,29 @@ def _close_completed_coder_pass(
         agents["remediation_coder_last_seq"] = event_seq
         agents["remediation_coder_task_id"] = task_id
 
+    agent_identity = matching_pass.get("agent_identity")
+    ledgers = turn.get("task_ledgers", {})
+    ledger = ledgers.get(task_id) if isinstance(ledgers, dict) else None
+    if isinstance(agent_identity, str) and isinstance(ledger, dict):
+        ledger_pass = next(
+            (
+                item for item in reversed(ledger.get("coder_passes", []))
+                if isinstance(item, dict)
+                and item.get("agent_identity") == agent_identity
+                and not isinstance(item.get("stop_seq"), int)
+            ),
+            None,
+        )
+        if ledger_pass is not None:
+            ledger_pass["stop_seq"] = event_seq
+            ledger_pass["stop_snapshot_signature"] = snapshot_signature
+            ledger_pass["changed"] = bool(
+                changed_signatures_delta(
+                    ledger_pass.get("start_snapshot_signature", []), snapshot_signature
+                )
+            )
+            ledger["changed"] = bool(ledger.get("changed") or ledger_pass["changed"])
+
 
 def _normalize_command(tool_input: dict | object) -> str:
     if not isinstance(tool_input, dict):
@@ -200,14 +226,27 @@ def main() -> None:
                 state["turn"]["verification"]["at"] = now_iso()
                 state["turn"]["verification"]["snapshot_signature"] = git_changed_file_signatures()
                 state["turn"]["verification"]["snapshot"] = signature_paths(state["turn"]["verification"]["snapshot_signature"])
+                task_id = state["turn"].get("current_task_id")
+                if isinstance(task_id, str) and task_id in state["turn"].get("task_ledgers", {}):
+                    ledger = ensure_task_ledger(state["turn"], task_id)
+                    ledger["verifications"].append(
+                        {
+                            "seq": event_seq,
+                            "command": command,
+                            "snapshot_signature": list(state["turn"]["verification"]["snapshot_signature"]),
+                        }
+                    )
 
         if command_is_commit(command_lower):
             pending_commit = state["turn"].get("pending_commit", {})
             pending_signature = pending_commit.get("snapshot_signature") if isinstance(pending_commit, dict) else []
+            head_before = str(pending_commit.get("head_before", "")) if isinstance(pending_commit, dict) else ""
             state["turn"]["commit"]["commands"].append(
                 {"at": now_iso(), "command": command, "exit_code": exit_code}
             )
             if exit_code == 0:
+                post_commit_signature = git_changed_file_signatures()
+                commit_hash = git_head_commit()
                 use_pending_signature = (
                     isinstance(pending_signature, list)
                     and bool(pending_signature)
@@ -216,16 +255,35 @@ def main() -> None:
                 state["turn"]["commit"]["done"] = True
                 state["turn"]["commit"]["last_seq"] = event_seq
                 state["turn"]["commit"]["at"] = now_iso()
-                state["turn"]["commit"]["snapshot_signature"] = pending_signature if use_pending_signature else git_changed_file_signatures()
+                state["turn"]["commit"]["snapshot_signature"] = pending_signature if use_pending_signature else post_commit_signature
                 state["turn"]["commit"]["snapshot"] = signature_paths(state["turn"]["commit"]["snapshot_signature"])
                 state["turn"]["commit"]["snapshot_from_pre_tool"] = bool(use_pending_signature)
+                task_id = state["turn"].get("current_task_id")
+                if isinstance(task_id, str) and task_id in state["turn"].get("task_ledgers", {}):
+                    ledger = ensure_task_ledger(state["turn"], task_id)
+                    ledger["commits"].append(
+                        {
+                            "seq": event_seq,
+                            "hash": commit_hash,
+                            "head_before": head_before,
+                            "first_parent": git_commit_first_parent(commit_hash),
+                            "snapshot_signature": list(
+                                pending_signature if use_pending_signature else state["turn"]["commit"]["snapshot_signature"]
+                            ),
+                            "post_snapshot_signature": list(post_commit_signature),
+                            "at": now_iso(),
+                        }
+                    )
                 if isinstance(pending_commit, dict):
                     state["turn"]["pending_commit"] = {
                         "seq": None,
                         "snapshot_signature": [],
+                        "head_before": "",
                     }
 
-            state["turn"]["pending_commit"] = {"seq": None, "snapshot_signature": []}
+            state["turn"]["pending_commit"] = {
+                "seq": None, "snapshot_signature": [], "head_before": "",
+            }
 
         pre_tool_signature = state["turn"].get("pre_tool_signature", {})
         if not isinstance(pre_tool_signature, dict):

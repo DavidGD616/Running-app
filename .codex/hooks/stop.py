@@ -23,6 +23,9 @@ from orchestrator_state import (
     signature_paths,
     git_changed_file_signatures,
     git_changed_files,
+    git_commit_first_parent,
+    git_head_commit,
+    git_is_ancestor,
     update_state,
 )
 
@@ -1152,6 +1155,19 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
     if not state.get("active"):
         return missing
 
+    task_ledgers = turn.get("task_ledgers")
+    if isinstance(task_ledgers, dict) and task_ledgers:
+        return _missing_task_ledger_requirements(turn)
+
+    # Legacy aggregate state remains readable, but a newly observed malformed
+    # coder/reviewer session cannot fall back to that compatibility path.
+    strict_start_violations = [
+        str(item.get("message"))
+        for item in turn.get("lifecycle_violations", [])
+        if isinstance(item, dict) and item.get("message")
+    ]
+    missing.extend(strict_start_violations)
+
     baseline_signature = turn.get("files_changed_signature_at_start", [])
     if not isinstance(baseline_signature, list):
         baseline_signature = []
@@ -1379,6 +1395,210 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
             missing.append("post-commit working tree includes uncommitted changes")
 
     return missing
+
+
+def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
+    """Validate every strict-name chunk independently.
+
+    Evidence is deliberately never borrowed between Task IDs.  This makes a
+    final aggregate review/commit unable to close earlier chunks.
+    """
+    missing: list[str] = []
+    ledgers = turn.get("task_ledgers", {})
+    seen_commit_hashes: dict[str, str] = {}
+    accepted_commit_seqs: dict[str, int] = {}
+    accepted_commits: dict[str, dict[str, Any]] = {}
+
+    coordinator_file_edits = any(
+        isinstance(event, dict) and event.get("actor") == "coordinator"
+        for event in turn.get("agents", {}).get("main_agent_file_edit_events", [])
+    )
+    if coordinator_file_edits:
+        missing.append("main agent performed file-edit tool actions while a coder pass was open")
+
+    for violation in turn.get("lifecycle_violations", []):
+        if isinstance(violation, dict) and violation.get("message"):
+            missing.append(str(violation["message"]))
+
+    for task_id, ledger in ledgers.items():
+        if not isinstance(ledger, dict):
+            continue
+        prefix = f"task {task_id}"
+        passes = [item for item in ledger.get("coder_passes", []) if isinstance(item, dict)]
+        completed = [item for item in passes if isinstance(item.get("stop_seq"), int)]
+        if not passes:
+            missing.append(f"{prefix} coder subagent not started")
+            continue
+        if len({item.get("agent_identity") for item in passes}) != len(passes):
+            missing.append(f"{prefix} reused a coder agent/session")
+        if not completed:
+            missing.append(f"{prefix} coder subagent has not completed a pass")
+            continue
+
+        latest = max(completed, key=lambda item: item["stop_seq"])
+        final_coder_seq = latest["stop_seq"]
+        changed = bool(ledger.get("changed"))
+        blocking_seq = ledger.get("blocking_review_seq")
+        if isinstance(blocking_seq, int):
+            remediation = [
+                item for item in completed
+                if isinstance(item.get("start_seq"), int)
+                and item["start_seq"] > blocking_seq
+            ]
+            if not remediation:
+                missing.append(f"{prefix} blocking review requires a brand-new coder remediation pass")
+            else:
+                final_coder_seq = max(item["stop_seq"] for item in remediation)
+
+        verifications = [
+            item for item in ledger.get("verifications", [])
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] > final_coder_seq
+        ]
+        if not verifications:
+            missing.append(f"{prefix} verification must run after its final coder pass")
+            verification_seq = None
+        else:
+            verification_seq = max(item["seq"] for item in verifications)
+            latest_verification = max(verifications, key=lambda item: item["seq"])
+            coder_snapshot = latest.get("stop_snapshot_signature")
+            verification_snapshot = latest_verification.get("snapshot_signature")
+            if (
+                isinstance(coder_snapshot, list) and coder_snapshot
+                and isinstance(verification_snapshot, list) and verification_snapshot
+                and not signatures_match(coder_snapshot, verification_snapshot)
+            ):
+                missing.append(f"{prefix} verification snapshot does not match final coder output")
+
+        reviews = [item for item in ledger.get("reviewer_passes", []) if isinstance(item, dict)]
+        if len({item.get("agent_identity") for item in reviews}) != len(reviews):
+            missing.append(f"{prefix} reused a reviewer agent/session")
+        approvals = [
+            item for item in reviews
+            if item.get("blocking") is False
+            and isinstance(item.get("seq"), int)
+            and isinstance(verification_seq, int)
+            and item["seq"] > verification_seq
+        ]
+        if not approvals:
+            missing.append(f"{prefix} needs a fresh non-blocking reviewer after verification")
+            approval_seq = None
+        else:
+            approval_seq = max(item["seq"] for item in approvals)
+            approval = max(approvals, key=lambda item: item["seq"])
+            review_snapshot = approval.get("snapshot_signature")
+            if (
+                verifications
+                and isinstance(review_snapshot, list) and review_snapshot
+                and isinstance(latest_verification.get("snapshot_signature"), list)
+                and latest_verification.get("snapshot_signature")
+                and not signatures_match(
+                    latest_verification["snapshot_signature"], review_snapshot
+                )
+            ):
+                missing.append(f"{prefix} reviewer snapshot does not match verified output")
+
+        if not changed:
+            continue
+        commits = [
+            item for item in ledger.get("commits", [])
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and isinstance(approval_seq, int) and item["seq"] > approval_seq
+        ]
+        if not commits:
+            missing.append(f"{prefix} requires its own task-sized commit after approval")
+            continue
+        commit = max(commits, key=lambda item: item["seq"])
+        accepted_commit_seqs[task_id] = commit["seq"]
+        accepted_commits[task_id] = commit
+        commit_hash = str(commit.get("hash", "")).strip()
+        baseline_head = str(ledger.get("baseline_head", "")).strip()
+        head_before = str(commit.get("head_before", "")).strip()
+        first_parent = str(commit.get("first_parent", "")).strip()
+        if not commit_hash:
+            missing.append(f"{prefix} commit hash not recorded")
+        elif baseline_head and head_before != baseline_head:
+            missing.append(f"{prefix} commit did not advance its recorded baseline HEAD")
+        elif baseline_head and commit_hash == baseline_head:
+            missing.append(f"{prefix} commit did not advance its recorded baseline HEAD")
+        elif head_before and commit_hash == head_before:
+            missing.append(f"{prefix} commit did not advance HEAD")
+        elif not head_before or first_parent != head_before:
+            missing.append(
+                f"{prefix} commit must be a normal first-parent child of its recorded pre-commit HEAD"
+            )
+        elif commit_hash in seen_commit_hashes and seen_commit_hashes[commit_hash] != task_id:
+            missing.append(
+                f"tasks {seen_commit_hashes[commit_hash]} and {task_id} cannot share aggregate commit {commit_hash}"
+            )
+        else:
+            seen_commit_hashes[commit_hash] = task_id
+
+        commit_snapshot = commit.get("snapshot_signature")
+        post_commit_snapshot = commit.get("post_snapshot_signature")
+        baseline_snapshot = ledger.get("baseline_signature")
+        verified_snapshot = (
+            latest_verification.get("snapshot_signature") if verifications else None
+        )
+        if not isinstance(commit_snapshot, list) or not commit_snapshot:
+            missing.append(f"{prefix} empty commit snapshot cannot satisfy task-sized commit gate")
+        elif (
+            isinstance(verified_snapshot, list)
+            and verified_snapshot
+            and not signatures_match(verified_snapshot, commit_snapshot)
+        ):
+            missing.append(f"{prefix} commit snapshot does not match verified coder output")
+        if (
+            isinstance(baseline_snapshot, list)
+            and isinstance(verified_snapshot, list)
+            and not changed_signatures_delta(baseline_snapshot, verified_snapshot)
+        ):
+            missing.append(f"{prefix} verified output has no task change beyond its baseline snapshot")
+        if (
+            isinstance(baseline_snapshot, list)
+            and isinstance(post_commit_snapshot, list)
+            and not signatures_match(baseline_snapshot, post_commit_snapshot)
+        ):
+            missing.append(f"{prefix} commit did not consume exactly the verified task change")
+
+    ordered_tasks: list[tuple[int, str, dict[str, Any]]] = []
+    for task_id, ledger in ledgers.items():
+        if not isinstance(ledger, dict):
+            continue
+        starts = [
+            item.get("start_seq") for item in ledger.get("coder_passes", [])
+            if isinstance(item, dict) and isinstance(item.get("start_seq"), int)
+        ]
+        if starts:
+            ordered_tasks.append((min(starts), task_id, ledger))
+    ordered_tasks.sort()
+    for index, (_, task_id, ledger) in enumerate(ordered_tasks[:-1]):
+        if not ledger.get("changed"):
+            continue
+        commit_seq = accepted_commit_seqs.get(task_id)
+        for later_start, later_task_id, _ in ordered_tasks[index + 1:]:
+            if not isinstance(commit_seq, int) or commit_seq >= later_start:
+                missing.append(
+                    f"task {later_task_id} started before changed task {task_id} received its approved task-sized commit"
+                )
+
+    # Real Git object IDs get a final live ancestry check. This catches a later
+    # amend/reset/rebase that removes a previously accepted task commit even if
+    # all task-local snapshots still look valid.
+    current_head = git_head_commit()
+    if re.fullmatch(r"[0-9a-fA-F]{40,64}", current_head):
+        for task_id, commit in accepted_commits.items():
+            commit_hash = str(commit.get("hash", "")).strip()
+            if not re.fullmatch(r"[0-9a-fA-F]{40,64}", commit_hash):
+                continue
+            recorded_parent = str(commit.get("first_parent", "")).strip()
+            actual_parent = git_commit_first_parent(commit_hash)
+            if actual_parent != recorded_parent:
+                missing.append(f"task {task_id} recorded commit parent does not match Git history")
+            if not git_is_ancestor(commit_hash, current_head):
+                missing.append(f"task {task_id} commit is no longer an ancestor of final HEAD")
+
+    return list(dict.fromkeys(missing))
 
 
 def main() -> None:

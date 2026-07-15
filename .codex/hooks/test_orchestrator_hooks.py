@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import io
 import json
+import subprocess
 import tempfile
 import unittest
 from pathlib import Path
@@ -17,7 +18,14 @@ import stop
 import pre_tool_use
 import post_tool_use
 import subagent_stop
+import subagent_start
 import user_prompt_submit
+
+
+VALID_OPAQUE_MESSAGE = (
+    "gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    "AAAAAAAAAAAAAAAAAAAAAA=="
+)
 
 
 class OrchestratorHookTests(unittest.TestCase):
@@ -53,6 +61,22 @@ class OrchestratorHookTests(unittest.TestCase):
 
     def _load_state(self) -> dict[str, Any]:
         return orchestrator_state.load_state()
+
+    def _git(self, repo: Path, *args: str) -> str:
+        return subprocess.check_output(
+            ["git", *args], cwd=repo, text=True, stderr=subprocess.STDOUT,
+        ).strip()
+
+    def _new_git_history_repo(self) -> tuple[Path, str]:
+        repo = Path(self._tempdir.name) / "history-repo"
+        repo.mkdir()
+        self._git(repo, "init", "-q")
+        self._git(repo, "config", "user.name", "Hook Tests")
+        self._git(repo, "config", "user.email", "hooks@example.test")
+        (repo / "history.txt").write_text("base\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "base")
+        return repo, self._git(repo, "rev-parse", "HEAD")
 
     def _set_active_turn_state(self, path_to_actor: dict[str, str] | None = None) -> None:
         turn = orchestrator_state.new_turn("orchestrator implement task with task id: TASK-BASE")
@@ -324,6 +348,62 @@ class OrchestratorHookTests(unittest.TestCase):
 
         return state
 
+    def _strict_ledger(
+        self,
+        task_id: str,
+        *,
+        coder_identity: str,
+        reviewer_identity: str,
+        commit_hash: str | None,
+        changed: bool = True,
+        offset: int = 0,
+        baseline_head: str | None = None,
+    ) -> dict[str, Any]:
+        recorded_head = baseline_head or f"base-{task_id}"
+        ledger = orchestrator_state.ensure_task_ledger({}, task_id)  # type: ignore[arg-type]
+        ledger.update(
+            {
+                "changed": changed,
+                "baseline_head": recorded_head,
+                "baseline_signature": [],
+                "coder_passes": [
+                    {
+                        "start_seq": offset + 1,
+                        "stop_seq": offset + 2,
+                        "agent_identity": coder_identity,
+                        "stop_snapshot_signature": [f"100|{task_id}.py|work"],
+                    }
+                ],
+                "verifications": [
+                    {
+                        "seq": offset + 3,
+                        "snapshot_signature": [f"100|{task_id}.py|work"],
+                        "post_snapshot_signature": [],
+                    }
+                ],
+                "reviewer_passes": [
+                    {
+                        "seq": offset + 4,
+                        "agent_identity": reviewer_identity,
+                        "blocking": False,
+                        "snapshot_signature": [f"100|{task_id}.py|work"],
+                    }
+                ],
+                "commits": (
+                    [{
+                        "seq": offset + 5,
+                        "hash": commit_hash,
+                        "head_before": recorded_head,
+                        "first_parent": recorded_head,
+                        "snapshot_signature": [f"100|{task_id}.py|work"],
+                    }]
+                    if commit_hash is not None
+                    else []
+                ),
+            }
+        )
+        return ledger
+
     def test_extract_task_id_from_nested_custom_tool_call_prefers_role(self) -> None:
         transcript_path = self._write_transcript(
             [
@@ -439,20 +519,10 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertEqual(0, recovered_count)
 
     def test_subagent_stop_persists_official_agent_transcript_path(self) -> None:
-        agent_transcript_path = self._write_transcript(
-            [
-                {
-                    "payload": {
-                        "type": "user_message",
-                        "message": (
-                            "Codex-Orchestrator-Internal-Subagent: reviewer\n"
-                            "Task ID: REVIEW-42"
-                        ),
-                    }
-                }
-            ]
+        coordinator_path, agent_transcript_path = self._write_correlated_role_transcripts(
+            "reviewer", "review_42", "reviewer__review_42",
         )
-        self._set_active_turn_state()
+        self._set_active_turn_state({str(coordinator_path): "coordinator"})
 
         event: dict[str, Any] = {
             "hook_event_name": "SubagentStop",
@@ -466,7 +536,7 @@ class OrchestratorHookTests(unittest.TestCase):
             self._run_hook(subagent_stop, event)
 
         reviewer_stop = self._load_state()["turn"]["agents"]["reviewer_stops"][-1]
-        self.assertEqual("REVIEW-42", reviewer_stop["task_id"])
+        self.assertEqual("review_42", reviewer_stop["task_id"])
         self.assertEqual(
             str(agent_transcript_path),
             reviewer_stop["agent_transcript_path"],
@@ -599,9 +669,10 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertFalse(coder_agents["main_agent_file_edit_detected"])
         self.assertEqual([], coder_agents.get("main_agent_file_edit_events", []))
 
-    def test_unmapped_coder_pre_tool_opens_one_recovered_pass_idempotently(self) -> None:
-        coder_path = self._write_role_transcript("coder", "RECOVER-101")
+    def test_non_strict_recovered_coder_pre_tool_records_violation_without_lifecycle_mutation(self) -> None:
+        coder_path = self._write_role_transcript("coder", "recovered_non_strict")
         self._set_unstarted_active_turn_state()
+        before = self._load_state()["turn"]
 
         with patch.object(
             pre_tool_use,
@@ -609,21 +680,81 @@ class OrchestratorHookTests(unittest.TestCase):
             return_value=["M_|app.py|before"],
         ):
             self._run_hook(pre_tool_use, self._pre_tool_event(coder_path))
-            self._run_hook(pre_tool_use, self._pre_tool_event(coder_path, "sed -n '1,20p' app.py"))
+
+        turn = self._load_state()["turn"]
+        self.assertTrue(any(
+            "new coder session must use strict name" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+        self.assertEqual(before["task_ledgers"], turn["task_ledgers"])
+        self.assertEqual(before["tool_call_actors"], turn["tool_call_actors"])
+        self.assertEqual(before["events"], turn["events"])
+
+    def test_invalid_strict_recovered_coder_prompt_does_not_mutate_lifecycle(self) -> None:
+        coordinator_path, coder_path = self._write_correlated_role_transcripts(
+            "coder",
+            "different_task",
+            "coder__recovered_strict__bad",
+        )
+        self._set_unstarted_active_turn_state(
+            {str(coordinator_path): "coordinator"},
+        )
+        before = self._load_state()["turn"]
+
+        with patch.object(pre_tool_use, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(pre_tool_use, self._pre_tool_event(coder_path))
+
+        turn = self._load_state()["turn"]
+        self.assertTrue(any(
+            "does not exactly match encoded" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+        self.assertEqual(before["task_ledgers"], turn["task_ledgers"])
+        self.assertEqual(before["tool_call_actors"], turn["tool_call_actors"])
+        self.assertEqual(before["events"], turn["events"])
+
+    def test_valid_strict_recovered_coder_pre_tool_opens_one_pass_idempotently(self) -> None:
+        task_id = "recovered_valid"
+        coordinator_path, coder_path = self._write_correlated_role_transcripts(
+            "coder",
+            task_id,
+            f"coder__{task_id}__one",
+        )
+        self._set_unstarted_active_turn_state(
+            {str(coordinator_path): "coordinator"},
+        )
+
+        with patch.object(
+            pre_tool_use,
+            "git_changed_file_signatures",
+            return_value=["M_|app.py|before"],
+        ):
+            self._run_hook(pre_tool_use, self._pre_tool_event(coder_path))
+            self._run_hook(
+                pre_tool_use,
+                self._pre_tool_event(coder_path, "sed -n '1,20p' app.py"),
+            )
 
         turn = self._load_state()["turn"]
         agents = turn["agents"]
         self.assertTrue(agents["coder_started"])
         self.assertFalse(agents["coder_stopped"])
         self.assertEqual("coder", turn["tool_call_actors"][str(coder_path)])
-        self.assertEqual("RECOVER-101", turn["current_task_id"])
+        self.assertEqual(task_id, turn["current_task_id"])
         self.assertEqual(1, len(agents["coder_passes"]))
         coder_pass = agents["coder_passes"][0]
         self.assertIsInstance(coder_pass["start_seq"], int)
-        self.assertEqual("RECOVER-101", coder_pass["start_task_id"])
+        self.assertEqual(task_id, coder_pass["start_task_id"])
         self.assertEqual(1, coder_pass["start_task_id_count"])
         self.assertTrue(coder_pass["start_snapshot_recorded"])
         self.assertEqual(["M_|app.py|before"], coder_pass["start_snapshot_signature"])
+        self.assertEqual(1, len(turn["task_ledgers"][task_id]["coder_passes"]))
 
     def test_plaintext_correlation_rejects_nested_agent_path_collision(self) -> None:
         coordinator_path, _ = self._write_correlated_role_transcripts(
@@ -695,7 +826,7 @@ class OrchestratorHookTests(unittest.TestCase):
                     task_id,
                     task_name,
                 )
-                opaque_spawn["tool_input"]["message"] = "gAAAAABopaqueEncryptedPayload"
+                opaque_spawn["tool_input"]["message"] = VALID_OPAQUE_MESSAGE
 
                 with patch.object(
                     pre_tool_use,
@@ -726,7 +857,7 @@ class OrchestratorHookTests(unittest.TestCase):
             "privacy_boundary",
             task_name,
         )
-        spawn_event["tool_input"]["message"] = "gAAAAABopaqueEncryptedPayload"
+        spawn_event["tool_input"]["message"] = VALID_OPAQUE_MESSAGE
         coder_event = self._pre_tool_event(coder_path)
         coder_event["tool_input"]["private"] = {"secret": marker}
         coder_event["unrelated"] = {"nested": [marker]}
@@ -896,12 +1027,10 @@ class OrchestratorHookTests(unittest.TestCase):
 
     def test_exact_root_child_correlation_wins_over_forked_parent_history(self) -> None:
         coordinator_path, coder_path = self._write_correlated_role_transcripts(
-            "coder",
-            "CURRENT-CODER",
-            "current_coder",
+            "coder", "current_coder", "coder__current_coder",
         )
         coder_path = self._write_spawned_subagent_transcript(
-            "current_coder",
+            "coder__current_coder",
             [
                 {
                     "payload": {
@@ -914,7 +1043,7 @@ class OrchestratorHookTests(unittest.TestCase):
                     }
                 }
             ],
-            parent_thread_id="coordinator-current_coder",
+            parent_thread_id="coordinator-coder__current_coder",
         )
         self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
 
@@ -924,7 +1053,7 @@ class OrchestratorHookTests(unittest.TestCase):
         turn = self._load_state()["turn"]
         self.assertEqual("coder", turn["tool_call_actors"][str(coder_path)])
         self.assertEqual(
-            "CURRENT-CODER",
+            "current_coder",
             turn["agents"]["coder_passes"][0]["start_task_id"],
         )
 
@@ -959,8 +1088,10 @@ class OrchestratorHookTests(unittest.TestCase):
         )
 
     def test_same_coder_transcript_followup_after_stop_opens_second_pass(self) -> None:
-        coder_path = self._write_role_transcript("coder", "RECOVER-202")
-        self._set_unstarted_active_turn_state()
+        coordinator_path, coder_path = self._write_correlated_role_transcripts(
+            "coder", "recover_202", "coder__recover_202",
+        )
+        self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
 
         with patch.object(pre_tool_use, "git_changed_file_signatures", return_value=[]):
             self._run_hook(pre_tool_use, self._pre_tool_event(coder_path))
@@ -980,19 +1111,22 @@ class OrchestratorHookTests(unittest.TestCase):
         ):
             self._run_hook(pre_tool_use, self._pre_tool_event(coder_path, "rg FIXME ."))
 
-        agents = self._load_state()["turn"]["agents"]
+        turn = self._load_state()["turn"]
+        agents = turn["agents"]
         self.assertEqual(2, len(agents["coder_passes"]))
         self.assertIsInstance(agents["coder_passes"][0]["stop_seq"], int)
         self.assertIsNone(agents["coder_passes"][1].get("stop_seq"))
-        self.assertEqual(
-            ["M_|app.py|pass-one"],
-            agents["coder_passes"][1]["start_snapshot_signature"],
-        )
         self.assertFalse(agents["coder_stopped"])
+        self.assertTrue(any(
+            "coder agent/session reused" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
 
     def test_transcript_only_coder_stop_closes_recovered_pass(self) -> None:
-        coder_path = self._write_role_transcript("coder", "RECOVER-303")
-        self._set_unstarted_active_turn_state()
+        coordinator_path, coder_path = self._write_correlated_role_transcripts(
+            "coder", "recover_303", "coder__recover_303",
+        )
+        self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
 
         with patch.object(pre_tool_use, "git_changed_file_signatures", return_value=[]):
             self._run_hook(pre_tool_use, self._pre_tool_event(coder_path))
@@ -1011,15 +1145,17 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertEqual(1, len(agents["coder_passes"]))
         coder_pass = agents["coder_passes"][0]
         self.assertIsInstance(coder_pass["stop_seq"], int)
-        self.assertEqual("RECOVER-303", coder_pass["stop_task_id"])
+        self.assertEqual("recover_303", coder_pass["stop_task_id"])
         self.assertEqual(1, coder_pass["stop_task_id_count"])
         self.assertEqual(str(coder_path), coder_pass["agent_transcript_path"])
 
     def test_transcript_only_reviewer_stop_records_strict_approval(self) -> None:
-        reviewer_path = self._write_role_transcript("reviewer", "RECOVER-404")
-        self._set_unstarted_active_turn_state()
+        coordinator_path, reviewer_path = self._write_correlated_role_transcripts(
+            "reviewer", "recover_404", "reviewer__recover_404",
+        )
+        self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
         state = self._load_state()
-        state["turn"]["current_task_id"] = "RECOVER-404"
+        state["turn"]["current_task_id"] = "recover_404"
         orchestrator_state.save_state(state, with_lock=False)
 
         with patch.object(
@@ -1039,7 +1175,7 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertTrue(agents["reviewer_stopped"])
         self.assertFalse(agents["reviewer_last_blocking"])
         reviewer_stop = agents["reviewer_stops"][-1]
-        self.assertEqual("RECOVER-404", reviewer_stop["task_id"])
+        self.assertEqual("recover_404", reviewer_stop["task_id"])
         self.assertEqual(1, reviewer_stop["task_id_count"])
         self.assertFalse(reviewer_stop["blocking"])
 
@@ -1173,7 +1309,12 @@ class OrchestratorHookTests(unittest.TestCase):
                 pre_tool_use,
                 self._pre_tool_event(coordinator_path, "git commit -m 'verified change'"),
             )
-        with patch.object(post_tool_use, "git_changed_file_signatures", return_value=[]):
+        with patch.object(post_tool_use, "git_changed_file_signatures", return_value=[]), patch.object(
+            post_tool_use, "git_head_commit", return_value="captured-gate-commit"
+        ), patch.object(
+            post_tool_use, "git_commit_first_parent",
+            return_value=orchestrator_state.git_head_commit(),
+        ):
             self._run_hook(
                 post_tool_use,
                 {
@@ -1186,21 +1327,20 @@ class OrchestratorHookTests(unittest.TestCase):
         state = self._load_state()
         self.assertEqual([], stop._missing_requirements(state, []))
 
-    def test_wrapped_spawn_event_records_identity_and_opens_coder_pass(self) -> None:
+    def test_authoritative_wrapped_spawn_event_records_identity_and_opens_coder_pass(self) -> None:
         coordinator_path = self._write_coordinator_transcript()
-        coder_path = self._write_spawned_subagent_transcript("wrapped_coder")
+        coder_path = self._write_spawned_subagent_transcript("coder__wrapped_coder")
         self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
         wrapped_event = {
             "hook_event_name": "PreToolUse",
-            "tool_name": "functions.exec",
+            "tool_name": "functions.collaboration.spawn_agent",
             "tool_input": {
-                "tool": "functions.collaboration.spawn_agent",
                 "arguments": json.dumps(
                     {
-                        "task_name": "wrapped_coder",
+                        "task_name": "coder__wrapped_coder",
                         "message": (
                             "Codex-Orchestrator-Internal-Subagent: coder\n"
-                            "Task ID: WRAPPED-CODER-101\n\n"
+                            "Task ID: wrapped_coder\n\n"
                             "Bounded task instructions."
                         ),
                     }
@@ -1217,25 +1357,25 @@ class OrchestratorHookTests(unittest.TestCase):
         evidence = turn["collaboration_spawn_evidence"]
         self.assertEqual(1, len(evidence))
         self.assertEqual("coder", evidence[0]["role"])
-        self.assertEqual("WRAPPED-CODER-101", evidence[0]["task_id"])
+        self.assertEqual("wrapped_coder", evidence[0]["task_id"])
         coder_pass = turn["agents"]["coder_passes"][0]
         self.assertIsInstance(coder_pass["start_seq"], int)
         self.assertTrue(coder_pass["start_snapshot_recorded"])
-        self.assertEqual("WRAPPED-CODER-101", coder_pass["start_task_id"])
+        self.assertEqual("wrapped_coder", coder_pass["start_task_id"])
         self.assertEqual(str(coder_path), coder_pass["agent_transcript_path"])
 
     def test_codex_hook_compact_collaboration_spawn_name_is_recognized(self) -> None:
         coordinator_path = self._write_coordinator_transcript()
-        coder_path = self._write_spawned_subagent_transcript("compact_coder")
+        coder_path = self._write_spawned_subagent_transcript("coder__compact_coder")
         self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
         event = {
             "hook_event_name": "PreToolUse",
             "tool_name": "collaborationspawn_agent",
             "tool_input": {
-                "task_name": "compact_coder",
+                "task_name": "coder__compact_coder",
                 "message": (
                     "Codex-Orchestrator-Internal-Subagent: coder\n"
-                    "Task ID: COMPACT-CODER-101"
+                    "Task ID: compact_coder"
                 ),
             },
             "raw": {"transcript_path": str(coordinator_path)},
@@ -1249,7 +1389,7 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertEqual("coder", turn["tool_call_actors"][str(coder_path)])
         coder_pass = turn["agents"]["coder_passes"][0]
         self.assertIsInstance(coder_pass["start_seq"], int)
-        self.assertEqual("COMPACT-CODER-101", coder_pass["start_task_id"])
+        self.assertEqual("compact_coder", coder_pass["start_task_id"])
         self.assertTrue(coder_pass["start_snapshot_recorded"])
 
     def test_opaque_spawn_uses_strict_encoded_task_name_and_safe_diagnostics(self) -> None:
@@ -1262,7 +1402,7 @@ class OrchestratorHookTests(unittest.TestCase):
             "tool_name": "collaborationspawn_agent",
             "tool_input": {
                 "task_name": task_name,
-                "message": "gAAAAABopaqueEncryptedPayload",
+                "message": VALID_OPAQUE_MESSAGE,
             },
             "raw": {"transcript_path": str(coordinator_path)},
         }
@@ -1276,9 +1416,9 @@ class OrchestratorHookTests(unittest.TestCase):
 
         spawn_turn = self._load_state()["turn"]
         spawn_details = spawn_turn["events"][-1]["details"]
-        self.assertEqual("opaque_string", spawn_details["message_kind"])
+        self.assertEqual("opaque_encrypted", spawn_details["message_kind"])
         self.assertTrue(spawn_details["task_name_present"])
-        self.assertNotIn("gAAAAABopaqueEncryptedPayload", json.dumps(spawn_details))
+        self.assertNotIn(VALID_OPAQUE_MESSAGE, json.dumps(spawn_details))
         self.assertEqual(
             {
                 "coordinator_transcript_path": str(coordinator_path),
@@ -1288,6 +1428,7 @@ class OrchestratorHookTests(unittest.TestCase):
                 "expected_agent_path": f"/root/{task_name}",
                 "expected_child_depth": 1,
                 "identity_source": "encoded_task_name",
+                "message_kind": "opaque_encrypted",
                 "role": "coder",
                 "seq": spawn_turn["collaboration_spawn_evidence"][0]["seq"],
                 "task_id": "pr27_hook_lifecycle_compat",
@@ -1316,6 +1457,7 @@ class OrchestratorHookTests(unittest.TestCase):
             ["M_|hook.py|before"],
             coder_pass["start_snapshot_signature"],
         )
+        self.assertEqual([], turn["lifecycle_violations"])
 
     def test_opaque_spawn_without_strict_encoding_remains_untrusted(self) -> None:
         coordinator_path = Path(self._tempdir.name) / "untrusted-coordinator.jsonl"
@@ -1325,7 +1467,7 @@ class OrchestratorHookTests(unittest.TestCase):
             "tool_name": "collaborationspawn_agent",
             "tool_input": {
                 "task_name": "ordinary_coder_name",
-                "message": "gAAAAABopaqueEncryptedPayload",
+                "message": VALID_OPAQUE_MESSAGE,
             },
             "raw": {"transcript_path": str(coordinator_path)},
         }
@@ -1335,9 +1477,71 @@ class OrchestratorHookTests(unittest.TestCase):
 
         turn = self._load_state()["turn"]
         details = turn["events"][-1]["details"]
-        self.assertEqual("opaque_string", details["message_kind"])
+        self.assertEqual("opaque_encrypted", details["message_kind"])
         self.assertTrue(details["task_name_present"])
         self.assertEqual([], turn["collaboration_spawn_evidence"])
+
+    def test_encoded_spawn_rejects_arbitrary_plaintext_and_malformed_opaque_values(self) -> None:
+        task_name = "coder__strict_task__nonce"
+        cases = (
+            ("hello", "invalid_plaintext"),
+            ("please implement this task", "invalid_plaintext"),
+            ("gAAAAABopaqueEncryptedPayload", "invalid_plaintext"),
+            ("", "missing"),
+            (None, "missing"),
+        )
+        for message, expected_kind in cases:
+            with self.subTest(message=message):
+                event = {
+                    "tool_name": "collaborationspawn_agent",
+                    "tool_input": {"task_name": task_name, "message": message},
+                }
+                self.assertIsNone(
+                    orchestrator_state.extract_collaboration_spawn_identity(event)
+                )
+                self.assertEqual(
+                    expected_kind,
+                    orchestrator_state.collaboration_spawn_diagnostics(event)["message_kind"],
+                )
+
+    def test_encoded_spawn_requires_exactly_one_matching_plaintext_task_id(self) -> None:
+        task_name = "coder__strict_task__nonce"
+        invalid_messages = (
+            "Codex-Orchestrator-Internal-Subagent: coder\nImplement it.",
+            (
+                "Codex-Orchestrator-Internal-Subagent: coder\n"
+                "Task ID: strict_task\nTask ID: strict_task"
+            ),
+            (
+                "Codex-Orchestrator-Internal-Subagent: coder\n"
+                "Task ID: strict_task\nTask ID: other_task"
+            ),
+            (
+                "Codex-Orchestrator-Internal-Subagent: coder\n"
+                "Task ID: other_task"
+            ),
+        )
+        for message in invalid_messages:
+            with self.subTest(message=message):
+                event = {
+                    "tool_name": "collaborationspawn_agent",
+                    "tool_input": {"task_name": task_name, "message": message},
+                }
+                self.assertIsNone(
+                    orchestrator_state.extract_collaboration_spawn_identity(event)
+                )
+
+        valid_event = {
+            "tool_name": "collaborationspawn_agent",
+            "tool_input": {
+                "task_name": task_name,
+                "message": VALID_OPAQUE_MESSAGE,
+            },
+        }
+        self.assertEqual(
+            ("coder", "strict_task", 1, task_name),
+            orchestrator_state.extract_collaboration_spawn_identity(valid_event),
+        )
 
     def test_encoded_task_name_rejects_ambiguous_or_conflicting_identity(self) -> None:
         conflicting_event = {
@@ -1354,7 +1558,7 @@ class OrchestratorHookTests(unittest.TestCase):
             "tool_name": "collaborationspawn_agent",
             "tool_input": {
                 "task_name": "ordinary_name",
-                "message": "gAAAAABopaqueEncryptedPayload",
+                "message": VALID_OPAQUE_MESSAGE,
                 "private_value": (
                     "Codex-Orchestrator-Internal-Subagent: coder\n"
                     "Task ID: MUST_NOT_BE_TRUSTED"
@@ -1428,7 +1632,7 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertEqual("missing", missing_details["message_kind"])
         self.assertTrue(missing_details["task_name_present"])
 
-    def test_nested_spawn_message_fallback_requires_exactly_one_task_id(self) -> None:
+    def test_nested_functions_exec_spawn_spoof_is_not_trusted(self) -> None:
         event = {
             "tool_name": "functions.exec",
             "tool_input": {
@@ -1448,7 +1652,8 @@ class OrchestratorHookTests(unittest.TestCase):
 
         identity = orchestrator_state.extract_collaboration_spawn_identity(event)
 
-        self.assertEqual(("coder", None, 2, "nested_coder"), identity)
+        self.assertIsNone(identity)
+        self.assertEqual({}, orchestrator_state.collaboration_spawn_diagnostics(event))
 
     def test_pre_tool_diagnostics_store_names_but_not_spawn_values(self) -> None:
         coordinator_path = Path(self._tempdir.name) / "diagnostic-coordinator.jsonl"
@@ -1475,7 +1680,7 @@ class OrchestratorHookTests(unittest.TestCase):
     def test_captured_spawn_stop_only_coder_remains_conservatively_blocked(self) -> None:
         coordinator_path = self._write_coordinator_transcript()
         coder_path = self._write_spawned_subagent_transcript(
-            "encrypted_stop_only",
+            "coder__captured_stop_only",
         )
         self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
         with patch.object(pre_tool_use, "git_changed_file_signatures", return_value=[]):
@@ -1484,8 +1689,8 @@ class OrchestratorHookTests(unittest.TestCase):
                 self._spawn_tool_event(
                     coordinator_path,
                     "coder",
-                    "CAPTURED-STOP-ONLY",
-                    "encrypted_stop_only",
+                    "captured_stop_only",
+                    "coder__captured_stop_only",
                 ),
             )
         with patch.object(
@@ -1503,9 +1708,12 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertIsNone(coder_pass["start_seq"])
         self.assertFalse(coder_pass["start_snapshot_recorded"])
         missing = stop._missing_requirements(state, ["M_|app.py|after"])
-        self.assertIn("relevant coder pass missing start sequence", missing)
         self.assertIn(
-            "relevant coder pass missing start snapshot recording evidence",
+            "task captured_stop_only verification must run after its final coder pass",
+            missing,
+        )
+        self.assertIn(
+            "task captured_stop_only needs a fresh non-blocking reviewer after verification",
             missing,
         )
 
@@ -1608,6 +1816,8 @@ class OrchestratorHookTests(unittest.TestCase):
         self.assertTrue(turn["verification"]["run"])
         self.assertEqual([], turn["verification"]["snapshot_signature"])
         self.assertFalse(turn["verification"]["snapshot"])
+        self.assertEqual({}, turn["task_ledgers"])
+        self.assertEqual({"coder": {}, "reviewer": {}}, turn["agent_identity_usage"])
 
     def test_stop_gate_ignores_unknown_main_agent_file_edit_without_coordinator_actor(self) -> None:
         state = self._build_stop_gate_state({"tool_name": "Bash", "actor": ""})
@@ -1625,6 +1835,520 @@ class OrchestratorHookTests(unittest.TestCase):
             "main agent performed file-edit tool actions while a coder pass was open",
             missing,
         )
+
+    def test_strict_two_chunks_require_distinct_agents_and_commits(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {
+            "chunk_one": self._strict_ledger(
+                "chunk_one", coder_identity="coder-1", reviewer_identity="reviewer-1",
+                commit_hash="hash-1",
+            ),
+            "chunk_two": self._strict_ledger(
+                "chunk_two", coder_identity="coder-2", reviewer_identity="reviewer-2",
+                commit_hash="hash-2", offset=10,
+            ),
+        }
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_strict_normal_sequential_two_commit_history_succeeds(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "history.txt").write_text("base\nchunk one\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "chunk one")
+        first_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "history.txt").write_text(
+            "base\nchunk one\nchunk two\n", encoding="utf-8"
+        )
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "chunk two")
+        second_hash = self._git(repo, "rev-parse", "HEAD")
+
+        turn = orchestrator_state.default_state()["turn"]
+        first = self._strict_ledger(
+            "chunk_one", coder_identity="coder-1", reviewer_identity="reviewer-1",
+            commit_hash=first_hash, baseline_head=base_hash,
+        )
+        second = self._strict_ledger(
+            "chunk_two", coder_identity="coder-2", reviewer_identity="reviewer-2",
+            commit_hash=second_hash, baseline_head=first_hash, offset=10,
+        )
+        turn["task_ledgers"] = {"chunk_one": first, "chunk_two": second}
+        with patch.object(orchestrator_state, "ROOT", repo):
+            self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_strict_second_task_commit_amend_is_rejected(self) -> None:
+        repo, base_hash = self._new_git_history_repo()
+        (repo / "history.txt").write_text("base\nchunk one\n", encoding="utf-8")
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "-m", "chunk one")
+        first_hash = self._git(repo, "rev-parse", "HEAD")
+        (repo / "history.txt").write_text(
+            "base\nchunk one\nchunk two\n", encoding="utf-8"
+        )
+        self._git(repo, "add", "history.txt")
+        self._git(repo, "commit", "-q", "--amend", "-m", "chunk two amended")
+        amended_hash = self._git(repo, "rev-parse", "HEAD")
+
+        turn = orchestrator_state.default_state()["turn"]
+        first = self._strict_ledger(
+            "chunk_one", coder_identity="coder-1", reviewer_identity="reviewer-1",
+            commit_hash=first_hash, baseline_head=base_hash,
+        )
+        second = self._strict_ledger(
+            "chunk_two", coder_identity="coder-2", reviewer_identity="reviewer-2",
+            commit_hash=amended_hash, baseline_head=first_hash, offset=10,
+        )
+        # The hook records Git's actual first parent after the amend, which is
+        # the pre-chunk base rather than the recorded pre-commit HEAD.
+        second["commits"][0]["first_parent"] = base_hash
+        turn["task_ledgers"] = {"chunk_one": first, "chunk_two": second}
+        with patch.object(orchestrator_state, "ROOT", repo):
+            missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any("normal first-parent child" in item for item in missing))
+        self.assertTrue(any("chunk_one commit is no longer an ancestor" in item for item in missing))
+
+    def test_strict_aggregate_commit_cannot_close_two_chunks(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {
+            "chunk_one": self._strict_ledger(
+                "chunk_one", coder_identity="coder-1", reviewer_identity="reviewer-1",
+                commit_hash="same-hash",
+            ),
+            "chunk_two": self._strict_ledger(
+                "chunk_two", coder_identity="coder-2", reviewer_identity="reviewer-2",
+                commit_hash="same-hash", offset=10,
+            ),
+        }
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any("cannot share aggregate commit" in item for item in missing))
+
+    def test_strict_second_chunk_before_first_commit_is_flagged(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        first_path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__a", thread_id="coder-thread-1"
+        )
+        second_path = self._write_spawned_subagent_transcript(
+            "coder__chunk_two__b", thread_id="coder-thread-2"
+        )
+        first = orchestrator_state.register_strict_agent_start(
+            turn, "coder", first_path, 1, []
+        )
+        self.assertIsNotNone(first)
+        turn["task_ledgers"]["chunk_one"]["changed"] = True
+        orchestrator_state.register_strict_agent_start(turn, "coder", second_path, 2, [])
+        self.assertTrue(
+            any("started before changed task chunk_one" in item["message"] for item in turn["lifecycle_violations"])
+        )
+
+    def test_strict_overlapping_coders_are_rejected_at_closure_after_late_change_discovery(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        first = self._strict_ledger(
+            "chunk_one", coder_identity="coder-1", reviewer_identity="reviewer-1",
+            commit_hash="hash-1",
+        )
+        second = self._strict_ledger(
+            "chunk_two", coder_identity="coder-2", reviewer_identity="reviewer-2",
+            commit_hash="hash-2", offset=2,
+        )
+        # chunk_two starts at seq 3 while chunk_one's approved commit is seq 5.
+        turn["task_ledgers"] = {"chunk_one": first, "chunk_two": second}
+        missing = stop._missing_task_ledger_requirements(turn)
+        self.assertTrue(any(
+            "task chunk_two started before changed task chunk_one received" in item
+            for item in missing
+        ))
+
+    def test_strict_coder_session_reuse_is_rejected(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__a", thread_id="same-coder-thread"
+        )
+        orchestrator_state.register_strict_agent_start(turn, "coder", path, 1, [])
+        orchestrator_state.register_strict_agent_start(turn, "coder", path, 2, [])
+        self.assertTrue(any("coder agent/session reused" in item["message"] for item in turn["lifecycle_violations"]))
+
+    def test_strict_coder_cannot_be_relabelled_for_another_chunk(self) -> None:
+        self._set_unstarted_active_turn_state()
+        path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__a", thread_id="coder-thread"
+        )
+        self._run_hook(
+            subagent_start,
+            {
+                "agent_type": "coder",
+                "prompt": (
+                    "Codex-Orchestrator-Internal-Subagent: coder\n"
+                    "Task ID: chunk_two\n"
+                ),
+                "agent_transcript_path": str(path),
+            },
+        )
+        violations = self._load_state()["turn"]["lifecycle_violations"]
+        self.assertTrue(any("does not exactly match encoded" in item["message"] for item in violations))
+
+    def test_strict_encoded_coder_requires_task_id_line(self) -> None:
+        self._set_unstarted_active_turn_state()
+        path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__missing", thread_id="missing-task-id"
+        )
+        self._run_hook(subagent_start, {
+            "agent_type": "coder",
+            "prompt": "Codex-Orchestrator-Internal-Subagent: coder\nImplement the chunk.",
+            "agent_transcript_path": str(path),
+        })
+        violations = self._load_state()["turn"]["lifecycle_violations"]
+        self.assertTrue(any("exactly one Task ID line" in item["message"] for item in violations))
+
+    def test_new_non_strict_coder_start_is_rejected_and_cannot_close_legacy_flow(self) -> None:
+        self._set_unstarted_active_turn_state()
+        before = self._load_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "ordinary_coder_name", thread_id="non-strict-coder-thread"
+        )
+        with patch.object(subagent_start, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(subagent_start, {
+                "agent_type": "coder",
+                "prompt": (
+                    "Codex-Orchestrator-Internal-Subagent: coder\n"
+                    "Task ID: strict_task"
+                ),
+                "agent_transcript_path": str(path),
+            })
+
+        state = self._load_state()
+        violation = (
+            "new coder session must use strict name "
+            "coder__<canonical_task_id>[__<nonce>] and matching Task ID evidence"
+        )
+        self.assertIn(
+            violation,
+            [item["message"] for item in state["turn"]["lifecycle_violations"]],
+        )
+        self.assertEqual({}, state["turn"]["task_ledgers"])
+        self.assertEqual(before["agents"], state["turn"]["agents"])
+        self.assertEqual(before["current_task_id"], state["turn"]["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], state["turn"]["agent_identity_usage"])
+        self.assertIn(violation, stop._missing_requirements(state, []))
+
+    def test_new_non_strict_reviewer_start_is_rejected(self) -> None:
+        self._set_unstarted_active_turn_state()
+        before = self._load_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "ordinary_reviewer_name", thread_id="non-strict-reviewer-thread"
+        )
+        self._run_hook(subagent_start, {
+            "agent_type": "reviewer",
+            "prompt": (
+                "Codex-Orchestrator-Internal-Subagent: reviewer\n"
+                "Task ID: strict_task"
+            ),
+            "agent_transcript_path": str(path),
+        })
+        violations = self._load_state()["turn"]["lifecycle_violations"]
+        self.assertTrue(any(
+            "new reviewer session must use strict name" in item["message"]
+            for item in violations
+        ))
+        turn = self._load_state()["turn"]
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+
+    def test_strict_encoded_coder_rejects_empty_nonopaque_start_prompt(self) -> None:
+        self._set_unstarted_active_turn_state()
+        before = self._load_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__empty", thread_id="empty-prompt-task-id"
+        )
+        self._run_hook(subagent_start, {
+            "agent_type": "coder",
+            "prompt": "",
+            "agent_transcript_path": str(path),
+        })
+        violations = self._load_state()["turn"]["lifecycle_violations"]
+        self.assertTrue(any("exactly one Task ID line" in item["message"] for item in violations))
+        turn = self._load_state()["turn"]
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+
+    def test_new_non_strict_coder_stop_blocks_without_mutating_legacy_lifecycle(self) -> None:
+        self._set_unstarted_active_turn_state()
+        before = self._load_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "ordinary_coder_name", thread_id="non-strict-stop-thread"
+        )
+
+        with patch.object(subagent_stop, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(subagent_stop, {
+                "hook_event_name": "SubagentStop",
+                "agent_type": "coder",
+                "last_assistant_message": "Task ID: strict_task\nCompleted.",
+                "agent_transcript_path": str(path),
+            })
+
+        state = self._load_state()
+        turn = state["turn"]
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+        self.assertTrue(any(
+            "new coder session must use strict name" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
+        self.assertTrue(stop._missing_requirements(state, []))
+
+    def test_invalid_reviewer_stop_cannot_record_approval_or_remediation(self) -> None:
+        self._set_unstarted_active_turn_state()
+        before = self._load_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "ordinary_reviewer_name", thread_id="non-strict-reviewer-stop-thread"
+        )
+
+        with patch.object(subagent_stop, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(subagent_stop, {
+                "hook_event_name": "SubagentStop",
+                "agent_type": "reviewer",
+                "last_assistant_message": (
+                    "Blocking issue remains.\n\n"
+                    "Overall Assessment: REQUEST_CHANGES"
+                ),
+                "agent_transcript_path": str(path),
+            })
+
+        state = self._load_state()
+        turn = state["turn"]
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+        self.assertTrue(any(
+            "new reviewer session must use strict name" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
+        self.assertTrue(stop._missing_requirements(state, []))
+
+    def test_strict_coder_stop_with_invalid_task_id_blocks_without_legacy_mutation(self) -> None:
+        coordinator_path, path = self._write_correlated_role_transcripts(
+            "coder", "wrong_task", "coder__strict_task__bad_stop",
+        )
+        self._set_unstarted_active_turn_state({str(coordinator_path): "coordinator"})
+        before = self._load_state()["turn"]
+
+        with patch.object(subagent_stop, "git_changed_file_signatures", return_value=[]):
+            self._run_hook(subagent_stop, {
+                "hook_event_name": "SubagentStop",
+                "agent_type": "coder",
+                "last_assistant_message": "Completed.",
+                "agent_transcript_path": str(path),
+            })
+
+        state = self._load_state()
+        turn = state["turn"]
+        self.assertEqual(before["agents"], turn["agents"])
+        self.assertEqual(before["current_task_id"], turn["current_task_id"])
+        self.assertEqual(before["agent_identity_usage"], turn["agent_identity_usage"])
+        self.assertTrue(any(
+            "does not exactly match encoded" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
+        self.assertTrue(stop._missing_requirements(state, []))
+
+    def test_strict_encoded_coder_rejects_duplicate_task_id_lines(self) -> None:
+        self._set_unstarted_active_turn_state()
+        path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__duplicate", thread_id="duplicate-task-id"
+        )
+        self._run_hook(subagent_start, {
+            "agent_type": "coder",
+            "prompt": (
+                "Codex-Orchestrator-Internal-Subagent: coder\n"
+                "Task ID: chunk_one\nTask ID: chunk_one\n"
+            ),
+            "agent_transcript_path": str(path),
+        })
+        violations = self._load_state()["turn"]["lifecycle_violations"]
+        self.assertTrue(any("exactly one Task ID line" in item["message"] for item in violations))
+
+    def test_strict_encoded_coder_rejects_conflicting_task_id_lines(self) -> None:
+        self._set_unstarted_active_turn_state()
+        path = self._write_spawned_subagent_transcript(
+            "coder__chunk_one__conflict", thread_id="conflicting-task-id"
+        )
+        self._run_hook(subagent_start, {
+            "agent_type": "coder",
+            "prompt": (
+                "Codex-Orchestrator-Internal-Subagent: coder\n"
+                "Task ID: chunk_one\nTask ID: chunk_two\n"
+            ),
+            "agent_transcript_path": str(path),
+        })
+        violations = self._load_state()["turn"]["lifecycle_violations"]
+        self.assertTrue(any("exactly one Task ID line" in item["message"] for item in violations))
+
+    def test_strict_identity_rejects_noncanonical_task_name(self) -> None:
+        path = self._write_spawned_subagent_transcript(
+            "coder__Chunk-One__a", thread_id="bad-task-thread"
+        )
+        self.assertIsNone(orchestrator_state.strict_agent_session_identity(path, "coder"))
+
+    def test_strict_reviewer_session_reuse_is_rejected(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        path = self._write_spawned_subagent_transcript(
+            "reviewer__chunk_one__a", thread_id="same-reviewer-thread"
+        )
+        orchestrator_state.register_strict_agent_start(turn, "reviewer", path, 1, [])
+        orchestrator_state.register_strict_agent_start(turn, "reviewer", path, 2, [])
+        self.assertTrue(any("reviewer agent/session reused" in item["message"] for item in turn["lifecycle_violations"]))
+
+    def test_strict_remediation_requires_new_coder_and_reviewer(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "repair_chunk", coder_identity="initial-coder", reviewer_identity="initial-reviewer",
+            commit_hash="repair-hash",
+        )
+        ledger["coder_passes"][0]["stop_seq"] = 2
+        ledger["reviewer_passes"] = [
+            {"seq": 4, "agent_identity": "blocking-reviewer", "blocking": True},
+            {"seq": 9, "agent_identity": "fresh-reviewer", "blocking": False},
+        ]
+        ledger["blocking_review_seq"] = 4
+        ledger["coder_passes"].append(
+            {
+                "start_seq": 5, "stop_seq": 6,
+                "agent_identity": "remediation-coder",
+                "stop_snapshot_signature": ["100|repair_chunk.py|work"],
+            }
+        )
+        ledger["verifications"] = [{
+            "seq": 7,
+            "snapshot_signature": ["100|repair_chunk.py|work"],
+        }]
+        ledger["reviewer_passes"][1]["snapshot_signature"] = [
+            "100|repair_chunk.py|work"
+        ]
+        ledger["commits"] = [{
+            "seq": 10, "hash": "repair-hash",
+            "head_before": "base-repair_chunk",
+            "first_parent": "base-repair_chunk",
+            "snapshot_signature": ["100|repair_chunk.py|work"],
+            "post_snapshot_signature": [],
+        }]
+        turn["task_ledgers"] = {"repair_chunk": ledger}
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+        ledger["coder_passes"][1]["agent_identity"] = "initial-coder"
+        self.assertTrue(any("reused a coder" in item for item in stop._missing_task_ledger_requirements(turn)))
+
+    def test_strict_encoded_name_without_correlated_opaque_evidence_is_rejected(self) -> None:
+        path = self._write_spawned_subagent_transcript(
+            "coder__opaque_chunk__nonce", thread_id="encrypted-thread",
+            extra_records=[{"payload": {"type": "encrypted_content", "blob": "opaque"}}],
+        )
+        identity = orchestrator_state.strict_agent_session_identity(path, "coder")
+        self.assertIsNotNone(identity)
+        self.assertEqual("opaque_chunk", identity["task_id"])
+        self.assertEqual("coder__opaque_chunk__nonce", identity["agent_name"])
+        turn = orchestrator_state.default_state()["turn"]
+        self.assertFalse(orchestrator_state.validate_strict_prompt_identity(turn, identity, ""))
+        self.assertTrue(any(
+            "exactly one Task ID line" in item["message"]
+            for item in turn["lifecycle_violations"]
+        ))
+
+    def test_strict_empty_or_unrelated_commit_cannot_close_chunk(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        empty = self._strict_ledger(
+            "empty_chunk", coder_identity="coder-empty", reviewer_identity="reviewer-empty",
+            commit_hash="empty-hash",
+        )
+        empty["commits"][0]["snapshot_signature"] = []
+        empty["commits"][0]["post_snapshot_signature"] = [
+            "100|empty_chunk.py|work"
+        ]
+        turn["task_ledgers"] = {"empty_chunk": empty}
+        self.assertTrue(any(
+            "empty commit snapshot" in item
+            for item in stop._missing_task_ledger_requirements(turn)
+        ))
+
+        unrelated = self._strict_ledger(
+            "unrelated_chunk", coder_identity="coder-other", reviewer_identity="reviewer-other",
+            commit_hash="unrelated-hash",
+        )
+        unrelated["commits"][0]["snapshot_signature"] = ["100|other.py|work"]
+        turn["task_ledgers"] = {"unrelated_chunk": unrelated}
+        self.assertTrue(any(
+            "commit snapshot does not match verified coder output" in item
+            for item in stop._missing_task_ledger_requirements(turn)
+        ))
+
+    def test_strict_commit_must_advance_task_baseline_head(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        ledger = self._strict_ledger(
+            "baseline_chunk", coder_identity="coder-base", reviewer_identity="reviewer-base",
+            commit_hash="new-hash",
+        )
+        ledger["commits"][0]["head_before"] = "unrelated-head"
+        turn["task_ledgers"] = {"baseline_chunk": ledger}
+        self.assertTrue(any(
+            "did not advance its recorded baseline HEAD" in item
+            for item in stop._missing_task_ledger_requirements(turn)
+        ))
+
+    def test_strict_unchanged_task_does_not_require_commit(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {
+            "audit_chunk": self._strict_ledger(
+                "audit_chunk", coder_identity="coder-a", reviewer_identity="reviewer-a",
+                commit_hash=None, changed=False,
+            )
+        }
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_strict_single_chunk_happy_path(self) -> None:
+        turn = orchestrator_state.default_state()["turn"]
+        turn["task_ledgers"] = {
+            "single_chunk": self._strict_ledger(
+                "single_chunk", coder_identity="coder-a", reviewer_identity="reviewer-a",
+                commit_hash="hash-a",
+            )
+        }
+        self.assertEqual([], stop._missing_task_ledger_requirements(turn))
+
+    def test_closure_hook_feedback_does_not_start_a_new_turn(self) -> None:
+        state = orchestrator_state.default_state()
+        state["active"] = True
+        state["turn"]["triggered"] = True
+        state["turn"]["turn_id"] = "existing-turn"
+        orchestrator_state.save_state(state, with_lock=False)
+        self._run_hook(
+            user_prompt_submit,
+            {
+                "prompt": (
+                    '<hook_prompt hook_run_id="stop:5:test">'
+                    "Orchestration closure gate failed: coder subagent not started; "
+                    "reviewer has not completed a non-blocking pass</hook_prompt>"
+                )
+            },
+        )
+        loaded = self._load_state()
+        self.assertTrue(loaded["active"])
+        self.assertEqual("existing-turn", loaded["turn"]["turn_id"])
+
+    def test_partial_task_ledger_state_is_hydrated(self) -> None:
+        legacy_state = {
+            "active": True,
+            "turn": {
+                "task_ledgers": {
+                    "legacy_chunk": {"changed": True, "coder_passes": None}
+                }
+            },
+        }
+        self.state_file.write_text(json.dumps(legacy_state), encoding="utf-8")
+        ledger = self._load_state()["turn"]["task_ledgers"]["legacy_chunk"]
+        self.assertEqual([], ledger["coder_passes"])
+        self.assertEqual([], ledger["reviewer_passes"])
+        self.assertEqual([], ledger["verifications"])
+        self.assertEqual([], ledger["commits"])
 
 
 if __name__ == "__main__":

@@ -10,7 +10,10 @@ sys.path.append(str(Path(__file__).resolve().parent))
 
 from orchestrator_state import (
     append_event,
+    changed_signatures_delta,
+    ensure_task_ledger,
     extract_event_transcript_path,
+    extract_internal_subagent_prompt_from_transcript,
     classify_agent,
     extract_task_id_from_subagent_transcript,
     extract_task_ids,
@@ -20,7 +23,11 @@ from orchestrator_state import (
     infer_internal_subagent_role_from_transcript,
     now_iso,
     parse_tool_exit_code,
+    record_lifecycle_violation,
+    register_strict_agent_start,
+    require_strict_agent_session_identity,
     update_state,
+    validate_strict_prompt_identity,
 )
 
 
@@ -375,6 +382,49 @@ def main() -> None:
         )
         state["turn"]["events"] = state["turn"]["events"][-40:]
 
+        strict_identity = None
+        if resolved_agent in {"coder", "reviewer"}:
+            if not agent_transcript_path:
+                record_lifecycle_violation(
+                    state["turn"], None,
+                    f"new {resolved_agent} session must use strict name "
+                    f"{resolved_agent}__<canonical_task_id>[__<nonce>] and matching Task ID evidence",
+                )
+                return
+            strict_identity = require_strict_agent_session_identity(
+                state["turn"], resolved_agent, agent_transcript_path
+            )
+            if strict_identity is None:
+                return
+
+            usage = state["turn"].setdefault("agent_identity_usage", {}).setdefault(
+                resolved_agent, {}
+            )
+            if strict_identity["identity"] not in usage:
+                strict_prompt = extract_internal_subagent_prompt_from_transcript(
+                    agent_transcript_path,
+                    agent=resolved_agent,
+                    coordinator_transcript_paths=coordinator_transcript_paths,
+                )
+                if not validate_strict_prompt_identity(
+                    state["turn"], strict_identity, strict_prompt,
+                ):
+                    return
+                strict_identity = register_strict_agent_start(
+                    state["turn"], resolved_agent, agent_transcript_path,
+                    event_seq, git_changed_file_signatures(),
+                )
+                if strict_identity is None:
+                    return
+            elif isinstance(usage.get(strict_identity["identity"]), dict) and usage[strict_identity["identity"]].get("stopped"):
+                record_lifecycle_violation(
+                    state["turn"], strict_identity["task_id"],
+                    f"{resolved_agent} agent/session reused; a brand-new {resolved_agent} is required for every pass",
+                )
+            usage_record = usage.get(strict_identity["identity"])
+            if isinstance(usage_record, dict):
+                usage_record["stopped"] = True
+
         if resolved_agent != "other" and agent_transcript_path:
             if actors.get(agent_transcript_path) != "coordinator":
                 actors[agent_transcript_path] = resolved_agent
@@ -389,6 +439,9 @@ def main() -> None:
                 coordinator_transcript_paths,
                 collaboration_spawn_evidence,
             )
+            if strict_identity is not None:
+                reviewer_task_id = strict_identity["task_id"]
+                reviewer_task_id_count = 1
             if blocking:
                 state["turn"]["agents"]["blocking_reviewer_seq"] = event_seq
                 state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = reviewer_snapshot_signature
@@ -426,6 +479,19 @@ def main() -> None:
             state["turn"]["agents"]["reviewer_last_seq"] = event_seq
             state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
             state["turn"]["agents"]["reviewer_last_blocking"] = blocking
+            if strict_identity is not None:
+                ledger = ensure_task_ledger(state["turn"], strict_identity["task_id"])
+                ledger["reviewer_passes"].append(
+                    {
+                        "seq": event_seq,
+                        "agent_identity": strict_identity["identity"],
+                        "agent_name": strict_identity["agent_name"],
+                        "blocking": blocking,
+                        "snapshot_signature": reviewer_snapshot_signature,
+                    }
+                )
+                if blocking:
+                    ledger["blocking_review_seq"] = event_seq
         elif resolved_agent == "coder":
             coder_snapshot_signature = git_changed_file_signatures()
             agents = state["turn"]["agents"]
@@ -475,6 +541,30 @@ def main() -> None:
                 state["turn"]["current_task_id"] = task_id
 
             agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
+
+            if strict_identity is not None:
+                task_id = strict_identity["task_id"]
+                task_id_count = 1
+                state["turn"]["current_task_id"] = task_id
+                ledger = ensure_task_ledger(state["turn"], task_id)
+                ledger_pass = next(
+                    (
+                        item for item in reversed(ledger["coder_passes"])
+                        if item.get("agent_identity") == strict_identity["identity"]
+                        and not isinstance(item.get("stop_seq"), int)
+                    ),
+                    None,
+                )
+                if ledger_pass is not None:
+                    ledger_pass["stop_seq"] = event_seq
+                    ledger_pass["stop_snapshot_signature"] = coder_snapshot_signature
+                    ledger_pass["changed"] = bool(
+                        changed_signatures_delta(
+                            ledger_pass.get("start_snapshot_signature", []),
+                            coder_snapshot_signature,
+                        )
+                    )
+                    ledger["changed"] = bool(ledger["changed"] or ledger_pass["changed"])
 
             if open_pass is not None:
                 open_pass["stop_seq"] = event_seq
