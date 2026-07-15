@@ -43,8 +43,40 @@ void main() {
 
     expect(find.text('Editar objetivo'), findsOneWidget);
     expect(find.text('Media Maratón'), findsOneWidget);
+    expect(find.text('Half Marathon'), findsNothing);
+    expect(find.text('18 oct 2026'), findsOneWidget);
+    expect(find.text('Oct 18, 2026'), findsNothing);
     expect(find.text('1:55:00'), findsOneWidget);
     expect(find.textContaining('Objetivo respaldado'), findsOneWidget);
+    expect(find.textContaining('Evidence-supported target'), findsNothing);
+  });
+
+  testWidgets('form and preview render consistently in English', (
+    tester,
+  ) async {
+    await tester.pumpWidget(_app(now: now));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Goal'), findsOneWidget);
+    expect(find.text('Editar objetivo'), findsNothing);
+    expect(find.text('Half Marathon'), findsOneWidget);
+    expect(find.text('Media Maratón'), findsNothing);
+    expect(find.text('Oct 18, 2026'), findsOneWidget);
+    expect(find.text('18 oct 2026'), findsNothing);
+    expect(find.text('Current target: 1:55:00'), findsOneWidget);
+    expect(find.text('Evidence-supported target: 1:58:00'), findsOneWidget);
+
+    await tester.tap(find.text('Preview changes'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Review Goal Changes'), findsOneWidget);
+    expect(find.text('Revisar cambios de objetivo'), findsNothing);
+    expect(find.text('Half Marathon'), findsNWidgets(2));
+    expect(find.text('Media Maratón'), findsNothing);
+    expect(find.text('Oct 18, 2026'), findsAtLeastNWidgets(2));
+    expect(find.text('18 oct 2026'), findsNothing);
+    expect(find.text('1:55:00'), findsOneWidget);
+    expect(find.text('1:53:20'), findsOneWidget);
   });
 
   testWidgets('initial load failure shows retry and recovers to form', (
@@ -185,6 +217,13 @@ void main() {
     expect(find.text('Sesiones eliminadas'), findsOneWidget);
     expect(find.text('Sesiones modificadas'), findsOneWidget);
     expect(find.text('Carrera Suave → Intervalos'), findsOneWidget);
+    expect(find.text('Review Goal Changes'), findsNothing);
+    expect(find.text('Media Maratón'), findsNWidgets(2));
+    expect(find.text('Half Marathon'), findsNothing);
+    expect(find.text('18 oct 2026'), findsAtLeastNWidgets(2));
+    expect(find.text('Oct 18, 2026'), findsNothing);
+    expect(find.text('1:55:00'), findsOneWidget);
+    expect(find.text('1:53:20'), findsOneWidget);
   });
 
   testWidgets('keep current goal returns to form without acceptance', (
@@ -211,6 +250,37 @@ void main() {
     await tester.tap(find.text('Keep current goal'));
     await tester.pumpAndSettle();
     expect(find.text('Edit Goal'), findsOneWidget);
+    expect(acceptCalls, 0);
+  });
+
+  testWidgets('system back from ready preview returns without acceptance', (
+    tester,
+  ) async {
+    var acceptCalls = 0;
+    await tester.pumpWidget(
+      _app(
+        now: now,
+        client: (_, {body}) async {
+          final action = (body as Map<String, dynamic>)['action'];
+          if (action == 'accept') acceptCalls++;
+          return FunctionResponse(
+            data: action == 'accept' ? _acceptance() : _proposal(),
+            status: 200,
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Preview changes'));
+    await tester.pumpAndSettle();
+    expect(find.text('Review Goal Changes'), findsOneWidget);
+
+    expect(await tester.binding.handlePopRoute(), isTrue);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit Goal'), findsOneWidget);
+    expect(find.text('Review Goal Changes'), findsNothing);
+    expect(find.text('1:55:00'), findsOneWidget);
     expect(acceptCalls, 0);
   });
 

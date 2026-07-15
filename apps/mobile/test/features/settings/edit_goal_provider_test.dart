@@ -201,6 +201,42 @@ void main() {
     },
   );
 
+  test(
+    'preview auth failure preserves exact draft and source without reconciliation',
+    () async {
+      var reconcileCount = 0;
+      final container = _container(
+        now: now,
+        client: (_, {body}) async => throw const FunctionException(
+          status: 401,
+          details: {'error': 'unauthorized'},
+        ),
+        reconciler: (_) async => reconcileCount++,
+      );
+      addTearDown(container.dispose);
+      final editing = await _editingState(container);
+      final editedDraft = editing.draft.copyWith(
+        race: RunnerGoalRace.tenK,
+        hasRaceDate: false,
+        clearRaceDate: true,
+        targetTime: const Duration(minutes: 47, seconds: 30),
+      );
+      container.read(editGoalProvider.notifier).updateDraft(editedDraft);
+
+      expect(
+        await container.read(editGoalProvider.notifier).preview(),
+        isFalse,
+      );
+
+      final failure = container.read(editGoalProvider) as EditGoalFailure;
+      expect(failure.reason, EditGoalFailureReason.auth);
+      expect(identical(failure.draft, editedDraft), isTrue);
+      expect(failure.sourcePlanId, editing.sourcePlanId);
+      expect(failure.proposal, isNull);
+      expect(reconcileCount, 0);
+    },
+  );
+
   test('stale and expired backend errors map distinctly', () async {
     final responses = <FunctionResponse>[
       FunctionResponse(data: {'error': 'source_plan_stale'}, status: 409),
@@ -304,6 +340,64 @@ void main() {
       expect(await container.read(editGoalProvider.notifier).apply(), isTrue);
       expect(container.read(editGoalProvider), isA<EditGoalSuccess>());
       expect(acceptCalls, 1);
+    },
+  );
+
+  test(
+    'accept auth failure preserves exact proposal and can retry successfully',
+    () async {
+      final acceptPayloads = <Object?>[];
+      var acceptCount = 0;
+      var reconcileCount = 0;
+      var successCount = 0;
+      final container = _container(
+        now: now,
+        client: (_, {body}) async {
+          final action = (body as Map<String, dynamic>)['action'];
+          if (action == 'preview') {
+            return FunctionResponse(data: _proposalJson(), status: 200);
+          }
+          acceptCount++;
+          acceptPayloads.add(body);
+          if (acceptCount == 1) {
+            throw const FunctionException(
+              status: 401,
+              details: {'error': 'missing_authorization'},
+            );
+          }
+          return FunctionResponse(data: _acceptanceJson(), status: 200);
+        },
+        reconciler: (_) async => reconcileCount++,
+      );
+      addTearDown(container.dispose);
+      final successSubscription = container.listen(editGoalProvider, (_, next) {
+        if (next is EditGoalSuccess) successCount++;
+      });
+      addTearDown(successSubscription.close);
+      await _editingState(container);
+      await container.read(editGoalProvider.notifier).preview();
+      final ready = container.read(editGoalProvider) as EditGoalPreviewReady;
+
+      expect(await container.read(editGoalProvider.notifier).apply(), isFalse);
+
+      final failure = container.read(editGoalProvider) as EditGoalFailure;
+      expect(failure.reason, EditGoalFailureReason.auth);
+      expect(identical(failure.draft, ready.draft), isTrue);
+      expect(failure.sourcePlanId, ready.sourcePlanId);
+      expect(identical(failure.proposal, ready.proposal), isTrue);
+      expect(reconcileCount, 0);
+      expect(successCount, 0);
+
+      expect(await container.read(editGoalProvider.notifier).apply(), isTrue);
+      expect(acceptPayloads, [
+        {'action': 'accept', 'proposalId': 'proposal-1'},
+        {'action': 'accept', 'proposalId': 'proposal-1'},
+      ]);
+      expect(reconcileCount, 1);
+      expect(successCount, 1);
+      final success = container.read(editGoalProvider) as EditGoalSuccess;
+      expect(success.acceptance.versionId, 'accepted-plan');
+      expect(success.acceptance.plan.id, 'accepted-plan');
     },
   );
 
