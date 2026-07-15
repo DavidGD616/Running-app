@@ -446,13 +446,14 @@ select throws_ok(
 -- Acceptance atomically changes the profile, plan set, and proposal state.
 select lives_ok(
   $$
+    create temporary table main_acceptance_response_snapshot as
     select *
-    from public.accept_goal_edit_proposal(
-      '10000000-0000-0000-0000-000000000001',
-      'main-proposal',
-      'main-accepted-plan',
-      '2026-07-14 11:00:00+00'
-    )
+      from public.accept_goal_edit_proposal(
+        '10000000-0000-0000-0000-000000000001',
+        'main-proposal',
+        'main-accepted-plan',
+        '2026-07-14 11:00:00+00'
+      )
   $$,
   'a pending proposal with an active source plan is accepted'
 );
@@ -571,6 +572,22 @@ join plan_versions as plan
 where proposal.id = 'main-proposal';
 
 -- A retry is deterministic: it returns the first plan and creates no second plan.
+select is(
+  (
+    select to_jsonb(retry_response)
+    from public.accept_goal_edit_proposal(
+      '10000000-0000-0000-0000-000000000001',
+      'main-proposal',
+      'main-retry-response-must-not-exist',
+      '2026-07-14 13:00:00+00'
+    ) as retry_response
+  ),
+  (
+    select to_jsonb(first_response)
+    from main_acceptance_response_snapshot as first_response
+  ),
+  'duplicate acceptance returns the immutable canonical acceptance response'
+);
 select is(
   (
     select new_plan_version_id
