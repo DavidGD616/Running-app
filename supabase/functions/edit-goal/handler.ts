@@ -19,12 +19,15 @@ type Goal = {
   race: SupportedRace;
   hasRaceDate: boolean;
   raceDate?: string;
-  targetTimeSeconds: number;
 };
 type SupportedRace = z.infer<typeof SupportedRaceSchema>;
+type EstimateConfidence = "high" | "medium" | "limited";
+type FitnessResult = z.infer<typeof FitnessResultSchema>;
 
 const DAY_MS = 86_400_000;
 const SHORT_NOTICE_DAYS = 28;
+const RACE_WEEK_DAYS = 6;
+const EVIDENCE_WINDOW_DAYS = 84;
 const SupportedRaceSchema = z.enum([
   "race_5k",
   "race_10k",
@@ -35,6 +38,13 @@ const DateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
   (value) => parseDateOnly(value) != null,
   "Invalid calendar date",
 );
+const FitnessResultSchema = z.object({
+  source: z.enum(["manual", "assessment"]),
+  distanceKm: z.number().positive().finite(),
+  elapsedSeconds: z.number().int().positive(),
+  recordedOn: DateOnlySchema,
+  hardEffort: z.boolean(),
+}).strict();
 
 export const PreviewRequestSchema = z.object({
   action: z.literal("preview"),
@@ -42,7 +52,7 @@ export const PreviewRequestSchema = z.object({
   race: SupportedRaceSchema,
   hasRaceDate: z.boolean(),
   raceDate: DateOnlySchema.nullish(),
-  targetTimeSeconds: z.number().int().positive(),
+  fitnessResult: FitnessResultSchema.optional(),
   localDate: DateOnlySchema,
   locale: z.enum(["en", "es"]),
 }).strict().superRefine((value, ctx) => {
@@ -63,11 +73,11 @@ export const PreviewRequestSchema = z.object({
   if (value.hasRaceDate && value.raceDate != null) {
     const local = parseDateOnly(value.localDate)!;
     const race = parseDateOnly(value.raceDate)!;
-    if ((race.getTime() - local.getTime()) / DAY_MS < 7) {
+    if ((race.getTime() - local.getTime()) / DAY_MS < 0) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["raceDate"],
-        message: "raceDate must be at least 7 calendar days after localDate",
+        message: "raceDate must not be before localDate",
       });
     }
   }
@@ -140,7 +150,35 @@ export type EditGoalDependencies = {
   randomId(): string;
 };
 
-export type GoalEditWarning = "short_notice" | "aggressive_target";
+export type GoalEditWarning =
+  | "short_notice"
+  | "race_week"
+  | "readiness_gap"
+  | "limited_evidence"
+  | "no_fixed_date";
+export type GoalEditRaceEstimate = {
+  centerTimeSeconds: number;
+  fasterTimeSeconds: number;
+  slowerTimeSeconds: number;
+  confidence: EstimateConfidence;
+  evidence: Array<{
+    source: "strava" | "manual" | "assessment";
+    recordedOn: string | null;
+    description: string;
+  }>;
+};
+
+export type GoalEditFitnessCheck = {
+  suggestedActivities: Array<{
+    recordedOn: string;
+    distanceKm: number;
+    elapsedSeconds: number;
+  }>;
+  benchmark: {
+    kind: "one_km_run" | "five_k_run";
+    safeDates: string[];
+  };
+};
 export type GoalEditSessionChange = {
   localDate: string;
   beforeSessionType: string | null;
@@ -225,28 +263,59 @@ async function previewGoal(
     hasRaceDate: request.hasRaceDate,
     ...(request.raceDate == null ? {} : { raceDate: request.raceDate }),
   };
-  const currentAccepted = isRecord(context.profile.acceptedRaceTarget)
-    ? context.profile.acceptedRaceTarget
-    : {};
-  const acceptedRaceTarget = {
-    distanceKm: raceDistanceKm(request.race),
-    primaryTimeMs: request.targetTimeSeconds * 1000,
-    ...(typeof currentAccepted.confidence === "string"
-      ? { confidence: currentAccepted.confidence }
-      : {}),
-    evidence: Array.isArray(currentAccepted.evidence)
-      ? currentAccepted.evidence
-      : [],
-  };
   let proposedProfile: JsonObject = {
     ...context.profile,
     goal: proposedGoal,
-    acceptedRaceTarget,
   };
   proposedProfile = addBackendEvidence(
     proposedProfile,
     context.stravaSummaries,
   );
+
+  const brief = buildCoachingBrief({
+    profileData: proposedProfile,
+    startDate: parseDateOnly(request.localDate)!,
+    raceDate: request.raceDate == null ? null : parseDateOnly(request.raceDate),
+    requestedRaceType: request.race,
+  });
+  const estimate = estimateFor({
+    request,
+    brief,
+    localDate: request.localDate,
+  });
+  if (estimate == null) {
+    return jsonResponse({
+      state: "fitness_check_required",
+      sourcePlanVersionId: request.sourcePlanVersionId,
+      fitnessCheck: buildFitnessCheck({
+        summaries: context.stravaSummaries,
+        sourcePlan: context.sourcePlan,
+        brief,
+        localDate: request.localDate,
+      }),
+    });
+  }
+
+  // The legacy field remains a generator compatibility seam. It is now the
+  // evidence-supported centre of an app-owned estimate, never user input.
+  const acceptedRaceTarget = {
+    distanceKm: raceDistanceKm(request.race),
+    primaryTimeMs: estimate.centerTimeSeconds * 1000,
+    confidence: estimate.confidence,
+    evidence: estimate.evidence,
+    estimate: {
+      centerTimeMs: estimate.centerTimeSeconds * 1000,
+      fasterTimeMs: estimate.fasterTimeSeconds * 1000,
+      slowerTimeMs: estimate.slowerTimeSeconds * 1000,
+      confidence: estimate.confidence,
+      generatedAt: dependencies.now().toISOString(),
+      estimatorVersion: 1,
+    },
+  };
+  proposedProfile = {
+    ...proposedProfile,
+    acceptedRaceTarget,
+  };
 
   const candidateResult = await dependencies.buildCandidate({
     profile: proposedProfile,
@@ -255,9 +324,13 @@ async function previewGoal(
   });
   if (candidateResult instanceof Response) return candidateResult;
 
+  const safeCandidate = applyRaceWeekSafety(
+    candidateResult as unknown as JsonObject,
+    request,
+  );
   const merged = mergeImmutableHistory({
     sourcePlan: context.sourcePlan,
-    candidatePlan: candidateResult as unknown as JsonObject,
+    candidatePlan: safeCandidate,
     localDate: request.localDate,
     activityLinkedSessionIds: context.activityLinkedSessionIds,
     skipAdjustmentSessionIds: context.skipAdjustmentSessionIds,
@@ -268,19 +341,7 @@ async function previewGoal(
     request.localDate,
     merged.preservedIds,
   );
-  const brief = buildCoachingBrief({
-    profileData: proposedProfile,
-    startDate: parseDateOnly(request.localDate)!,
-    raceDate: request.raceDate == null ? null : parseDateOnly(request.raceDate),
-    requestedRaceType: request.race,
-  });
-  const suggestedTargetTimeSeconds = brief.evidenceTarget.supported
-    ? brief.evidenceTarget.timeSec
-    : null;
-  const warnings = buildWarnings(
-    request,
-    suggestedTargetTimeSeconds,
-  );
+  const warnings = buildWarnings(request, estimate, brief.readinessLevel);
   const now = dependencies.now();
   const proposalId = dependencies.randomId();
   const expiresAt = new Date(now.getTime() + 30 * 60 * 1000).toISOString();
@@ -293,7 +354,7 @@ async function previewGoal(
     proposedProfileFragment: { acceptedRaceTarget },
     summary,
     warnings,
-    suggestedTargetTimeSeconds,
+    suggestedTargetTimeSeconds: estimate.centerTimeSeconds,
     createdAt: now.toISOString(),
     expiresAt,
   });
@@ -303,14 +364,11 @@ async function previewGoal(
     sourcePlanVersionId: request.sourcePlanVersionId,
     expiresAt: stored.expires_at,
     currentGoal: goalForResponse(context.profile),
-    proposedGoal: {
-      ...proposedGoal,
-      targetTimeSeconds: request.targetTimeSeconds,
-    },
+    proposedGoal,
     candidatePlan: merged.plan,
     summary,
     warnings,
-    suggestedTargetTimeSeconds,
+    raceEstimate: estimate,
   });
 }
 
@@ -333,25 +391,213 @@ async function acceptGoal(
 }
 
 export function buildWarnings(
-  request: Pick<
-    PreviewRequest,
-    "hasRaceDate" | "raceDate" | "localDate" | "targetTimeSeconds"
-  >,
-  suggestedTargetTimeSeconds: number | null,
+  request: Pick<PreviewRequest, "hasRaceDate" | "raceDate" | "localDate">,
+  estimate: GoalEditRaceEstimate,
+  readinessLevel: string,
 ): GoalEditWarning[] {
   const warnings: GoalEditWarning[] = [];
-  if (request.hasRaceDate && request.raceDate != null) {
+  if (!request.hasRaceDate) {
+    warnings.push("no_fixed_date");
+  } else if (request.raceDate != null) {
     const days = (parseDateOnly(request.raceDate)!.getTime() -
       parseDateOnly(request.localDate)!.getTime()) / DAY_MS;
-    if (days <= SHORT_NOTICE_DAYS) warnings.push("short_notice");
+    if (days <= RACE_WEEK_DAYS) {
+      warnings.push("race_week");
+    } else if (days <= SHORT_NOTICE_DAYS) {
+      warnings.push("short_notice");
+    }
   }
-  if (
-    suggestedTargetTimeSeconds != null &&
-    request.targetTimeSeconds < suggestedTargetTimeSeconds
-  ) {
-    warnings.push("aggressive_target");
-  }
+  if (readinessLevel === "underprepared") warnings.push("readiness_gap");
+  if (estimate.confidence === "limited") warnings.push("limited_evidence");
   return warnings;
+}
+
+function estimateFor(input: {
+  request: PreviewRequest;
+  brief: ReturnType<typeof buildCoachingBrief>;
+  localDate: string;
+}): GoalEditRaceEstimate | null {
+  const targetDistanceKm = raceDistanceKm(input.request.race);
+  const manual = input.request.fitnessResult;
+  let centerTimeSeconds: number | null;
+  let confidence: EstimateConfidence;
+  let evidence: GoalEditRaceEstimate["evidence"];
+  let manualWasCrossDistance = false;
+
+  if (manual != null) {
+    const recordedAt = parseDateOnly(manual.recordedOn)!;
+    const localDate = parseDateOnly(input.localDate)!;
+    const ageDays = (localDate.getTime() - recordedAt.getTime()) / DAY_MS;
+    if (!manual.hardEffort || ageDays < 0 || ageDays > EVIDENCE_WINDOW_DAYS) {
+      return null;
+    }
+    centerTimeSeconds = Math.round(
+      riegelSeconds(manual.elapsedSeconds, manual.distanceKm, targetDistanceKm),
+    );
+    manualWasCrossDistance = !sameDistance(manual.distanceKm, targetDistanceKm);
+    confidence = manualWasCrossDistance ? "medium" : "high";
+    evidence = [{
+      source: manual.source,
+      recordedOn: manual.recordedOn,
+      description: manual.source === "assessment"
+        ? "Completed Edit Goal assessment"
+        : "Recent hard running result",
+    }];
+  } else {
+    const target = input.brief.evidenceTarget;
+    if (!target.supported || target.timeSec == null || target.timeSec <= 0) {
+      return null;
+    }
+    centerTimeSeconds = target.timeSec;
+    confidence = target.confidence;
+    evidence = [{
+      source: target.source === "strava" ? "strava" : "manual",
+      recordedOn: null,
+      description: target.reason,
+    }];
+  }
+
+  if (centerTimeSeconds == null || centerTimeSeconds <= 0) return null;
+  if (input.request.race === "race_marathon" && manualWasCrossDistance) {
+    confidence = downgradeConfidence(confidence);
+  }
+  const band = confidence === "high"
+    ? { fast: 0.03, slow: 0.03 }
+    : confidence === "medium"
+    ? { fast: 0.06, slow: 0.06 }
+    : { fast: 0.08, slow: 0.12 };
+  const fasterTimeSeconds = Math.max(
+    1,
+    Math.round(centerTimeSeconds * (1 - band.fast)),
+  );
+  let slowerTimeSeconds = Math.max(
+    fasterTimeSeconds + 1,
+    Math.round(centerTimeSeconds * (1 + band.slow)),
+  );
+  if (input.request.race === "race_marathon" && manualWasCrossDistance) {
+    slowerTimeSeconds = Math.max(slowerTimeSeconds, centerTimeSeconds + 600);
+  }
+  return {
+    centerTimeSeconds,
+    fasterTimeSeconds,
+    slowerTimeSeconds,
+    confidence,
+    evidence,
+  };
+}
+
+function buildFitnessCheck(input: {
+  summaries: StravaActivitySummaryForEvidence[];
+  sourcePlan: JsonObject;
+  brief: ReturnType<typeof buildCoachingBrief>;
+  localDate: string;
+}): GoalEditFitnessCheck {
+  const local = parseDateOnly(input.localDate)!;
+  const suggestedActivities = input.summaries.flatMap((summary) => {
+    const row = summary as unknown as JsonObject;
+    const recordedAt = typeof row.recorded_at === "string"
+      ? row.recorded_at.slice(0, 10)
+      : null;
+    const distanceMeters = numberOrNull(row.distance_meters);
+    const elapsedSeconds = numberOrNull(row.moving_time_seconds) ??
+      numberOrNull(row.elapsed_time_seconds);
+    const activity = `${row.activity_type ?? ""} ${row.sport_type ?? ""}`
+      .toLowerCase();
+    if (
+      recordedAt == null || distanceMeters == null || elapsedSeconds == null ||
+      !activity.includes("run") || distanceMeters < 3000 ||
+      elapsedSeconds < 1200
+    ) return [];
+    const date = parseDateOnly(recordedAt);
+    if (date == null) return [];
+    const ageDays = (local.getTime() - date.getTime()) / DAY_MS;
+    if (ageDays < 0 || ageDays > EVIDENCE_WINDOW_DAYS) return [];
+    return [{
+      recordedOn: recordedAt,
+      distanceKm: Math.round((distanceMeters / 1000) * 100) / 100,
+      elapsedSeconds: Math.round(elapsedSeconds),
+    }];
+  }).slice(0, 3);
+
+  const kind = input.brief.recentLongRunKm >= 8 &&
+      input.brief.currentRunsPerWeek >= 2 &&
+      input.brief.readinessLevel !== "underprepared"
+    ? "five_k_run"
+    : "one_km_run";
+  return {
+    suggestedActivities,
+    benchmark: {
+      kind,
+      safeDates: safeAssessmentDates(input.sourcePlan, input.localDate),
+    },
+  };
+}
+
+function safeAssessmentDates(
+  sourcePlan: JsonObject,
+  localDate: string,
+): string[] {
+  const hardDates = sessionsFromPlan(sourcePlan)
+    .filter((session) => isHardOrLongSession(session))
+    .map((session) => session.date.slice(0, 10))
+    .map(parseDateOnly)
+    .filter((date): date is Date => date != null);
+  const start = parseDateOnly(localDate)!;
+  const safe: string[] = [];
+  for (let offset = 2; offset <= 14 && safe.length < 4; offset++) {
+    const candidate = new Date(start.getTime() + offset * DAY_MS);
+    const hasBuffer = hardDates.every((hardDate) =>
+      Math.abs(candidate.getTime() - hardDate.getTime()) / DAY_MS >= 2
+    );
+    if (hasBuffer) safe.push(dateOnly(candidate));
+  }
+  return safe;
+}
+
+function applyRaceWeekSafety(
+  candidatePlan: JsonObject,
+  request: Pick<PreviewRequest, "hasRaceDate" | "raceDate" | "localDate">,
+): JsonObject {
+  if (!request.hasRaceDate || request.raceDate == null) return candidatePlan;
+  const daysToRace = (parseDateOnly(request.raceDate)!.getTime() -
+    parseDateOnly(request.localDate)!.getTime()) / DAY_MS;
+  if (daysToRace > RACE_WEEK_DAYS) return candidatePlan;
+  const allowed = new Set(["restDay", "recoveryRun", "easyRun", "raceDay"]);
+  return {
+    ...candidatePlan,
+    sessions: sessionsFromPlan(candidatePlan).filter((session) =>
+      session.date.slice(0, 10) <= request.raceDate! &&
+      allowed.has(sessionType(session))
+    ),
+  };
+}
+
+function isHardOrLongSession(session: Session): boolean {
+  return new Set([
+    "longRun",
+    "tempoRun",
+    "thresholdRun",
+    "intervals",
+    "hillRepeats",
+    "fartlek",
+    "progressionRun",
+  ]).has(sessionType(session));
+}
+
+function riegelSeconds(
+  knownSeconds: number,
+  knownDistanceKm: number,
+  targetDistanceKm: number,
+): number {
+  return knownSeconds * Math.pow(targetDistanceKm / knownDistanceKm, 1.06);
+}
+
+function sameDistance(left: number, right: number): boolean {
+  return Math.abs(left - right) <= Math.max(0.1, right * 0.02);
+}
+
+function downgradeConfidence(value: EstimateConfidence): EstimateConfidence {
+  return value === "high" ? "medium" : "limited";
 }
 
 export function mergeImmutableHistory(input: {
@@ -368,7 +614,8 @@ export function mergeImmutableHistory(input: {
   const preserved = sourceSessions.filter((session) =>
     session.date.slice(0, 10) < input.localDate ||
     linked.has(session.id) || skipped.has(session.id) ||
-    session.status === "completed" || session.status === "skipped"
+    session.status === "completed" || session.status === "skipped" ||
+    session.status === "active"
   );
   const preservedIds = new Set(preserved.map((session) => session.id));
   const preservedDates = new Set(
@@ -819,16 +1066,7 @@ function nullableNumber(value: unknown): number | null {
 
 function goalForResponse(profile: JsonObject): Goal | JsonObject {
   const goal = isRecord(profile.goal) ? profile.goal : {};
-  const accepted = isRecord(profile.acceptedRaceTarget)
-    ? profile.acceptedRaceTarget
-    : {};
-  const primaryMs = typeof accepted.primaryTimeMs === "number"
-    ? accepted.primaryTimeMs
-    : null;
-  return {
-    ...goal,
-    targetTimeSeconds: primaryMs == null ? null : Math.round(primaryMs / 1000),
-  };
+  return goal;
 }
 
 function raceDistanceKm(race: SupportedRace): number {
@@ -849,12 +1087,20 @@ function parseDateOnly(value: string): Date | null {
     : null;
 }
 
+function dateOnly(value: Date): string {
+  return value.toISOString().slice(0, 10);
+}
+
 function isRecord(value: unknown): value is JsonObject {
   return value != null && typeof value === "object" && !Array.isArray(value);
 }
 
 function numberOr(value: unknown, fallback: number): number {
   return typeof value === "number" && Number.isFinite(value) ? value : fallback;
+}
+
+function numberOrNull(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 function stringValues(rows: unknown, key: string): string[] {

@@ -27,7 +27,8 @@ const profile = {
     experience: "experience_intermediate",
     weeklyVolume: "weekly_volume_3",
     longestRun: "longest_run_3",
-    benchmark: "benchmark_skip",
+    benchmark: "benchmark_10k",
+    benchmarkTimeMs: 3_600_000,
   },
   schedule: {
     trainingDays: 3,
@@ -76,7 +77,7 @@ Deno.test("preview schema strictly validates goal and date consistency", () => {
   );
   assertEquals(
     PreviewRequestSchema.safeParse(
-      previewBody({ raceDate: "2026-07-19" }),
+      previewBody({ raceDate: "2026-07-12" }),
     ).success,
     false,
   );
@@ -140,6 +141,57 @@ Deno.test("preview stores a proposal without invoking acceptance", async () => {
   assertEquals(storedUser, "token-user");
 });
 
+Deno.test("preview asks for a fitness check instead of guessing when evidence is insufficient", async () => {
+  const response = await createEditGoalHandler(fakeDependencies({
+    loadPreviewContext: async () => ({
+      profile: {
+        ...profile,
+        fitness: { ...profile.fitness, benchmark: "benchmark_skip" },
+      },
+      sourcePlan,
+      activityLinkedSessionIds: [],
+      skipAdjustmentSessionIds: [],
+      stravaSummaries: [],
+    }),
+  }))(request(previewBody()));
+
+  assertEquals(response.status, 200);
+  assertEquals((await response.json()).state, "fitness_check_required");
+});
+
+Deno.test("a recent hard manual result unlocks an estimate-backed proposal", async () => {
+  const response = await createEditGoalHandler(fakeDependencies({
+    loadPreviewContext: async () => ({
+      profile: {
+        ...profile,
+        fitness: { ...profile.fitness, benchmark: "benchmark_skip" },
+      },
+      sourcePlan,
+      activityLinkedSessionIds: [],
+      skipAdjustmentSessionIds: [],
+      stravaSummaries: [],
+    }),
+  }))(request(previewBody({
+    fitnessResult: {
+      source: "manual",
+      distanceKm: 5,
+      elapsedSeconds: 1_500,
+      recordedOn: "2026-07-10",
+      hardEffort: true,
+    },
+  })));
+
+  assertEquals(response.status, 200);
+  const json = await response.json();
+  assertEquals(json.raceEstimate.confidence, "medium");
+  assert(
+    json.raceEstimate.fasterTimeSeconds < json.raceEstimate.centerTimeSeconds,
+  );
+  assert(
+    json.raceEstimate.slowerTimeSeconds > json.raceEstimate.centerTimeSeconds,
+  );
+});
+
 Deno.test("immutable merge preserves terminal statuses without linkage rows", () => {
   const merged = mergeImmutableHistory({
     sourcePlan,
@@ -166,6 +218,27 @@ Deno.test("immutable merge preserves terminal statuses without linkage rows", ()
   );
   assertEquals(merged.plan.currentWeekNumber, 2);
   assertEquals(merged.plan.totalWeeks, 3);
+});
+
+Deno.test("immutable merge preserves a currently active session", () => {
+  const merged = mergeImmutableHistory({
+    sourcePlan: {
+      currentWeekNumber: 1,
+      sessions: [
+        session("active", "2026-07-13", "easyRun", 1, 5, 30, "active"),
+      ],
+    },
+    candidatePlan: {
+      sessions: [session("replacement", "2026-07-13", "intervals", 1, 6)],
+    },
+    localDate: "2026-07-13",
+    activityLinkedSessionIds: [],
+    skipAdjustmentSessionIds: [],
+  });
+  assertEquals(
+    (merged.plan.sessions as Record<string, unknown>[]).map((item) => item.id),
+    ["active"],
+  );
 });
 
 Deno.test("unknown missing and nonterminal statuses remain replaceable", () => {
@@ -219,24 +292,37 @@ Deno.test("merge avoids duplicate race-day info", () => {
   assertEquals((merged.plan.sessions as unknown[]).length, 1);
 });
 
-Deno.test("warnings include short notice and evidence-based aggressive target", () => {
+Deno.test("warnings describe timing, readiness, and confidence without a target-time warning", () => {
+  const estimate = {
+    centerTimeSeconds: 3_000,
+    fasterTimeSeconds: 2_820,
+    slowerTimeSeconds: 3_180,
+    confidence: "medium" as const,
+    evidence: [],
+  };
   assertEquals(
-    buildWarnings({
-      hasRaceDate: true,
-      raceDate: "2026-08-10",
-      localDate: "2026-07-13",
-      targetTimeSeconds: 2_900,
-    }, 3_000),
-    ["short_notice", "aggressive_target"],
+    buildWarnings(
+      {
+        hasRaceDate: true,
+        raceDate: "2026-08-10",
+        localDate: "2026-07-13",
+      },
+      estimate,
+      "prepared",
+    ),
+    ["short_notice"],
   );
   assertEquals(
-    buildWarnings({
-      hasRaceDate: false,
-      raceDate: null,
-      localDate: "2026-07-13",
-      targetTimeSeconds: 3_000,
-    }, 3_000),
-    [],
+    buildWarnings(
+      {
+        hasRaceDate: false,
+        raceDate: null,
+        localDate: "2026-07-13",
+      },
+      { ...estimate, confidence: "limited" },
+      "underprepared",
+    ),
+    ["no_fixed_date", "readiness_gap", "limited_evidence"],
   );
 });
 
@@ -513,7 +599,6 @@ function previewBody(overrides: Record<string, unknown> = {}) {
     race: "race_10k",
     hasRaceDate: true,
     raceDate: "2026-08-10",
-    targetTimeSeconds: 3_000,
     localDate: "2026-07-13",
     locale: "en",
     ...overrides,
