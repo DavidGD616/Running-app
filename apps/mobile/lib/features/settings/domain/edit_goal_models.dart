@@ -7,32 +7,38 @@ class EditGoalDraft {
     required this.race,
     required this.hasRaceDate,
     required this.raceDate,
-    required this.targetTime,
+    this.changes = const {},
+    this.fitnessResult,
+    this.assessment,
   });
 
-  factory EditGoalDraft.fromProfile({
-    required RunnerProfile profile,
-    required AcceptedRaceTarget acceptedRaceTarget,
-  }) {
+  factory EditGoalDraft.fromProfile({required RunnerProfile profile}) {
     return EditGoalDraft(
       race: profile.goal.race,
       hasRaceDate: profile.goal.hasRaceDate,
       raceDate: profile.goal.hasRaceDate ? profile.goal.raceDate : null,
-      targetTime: acceptedRaceTarget.primaryTime,
     );
   }
 
   final RunnerGoalRace race;
   final bool hasRaceDate;
   final DateTime? raceDate;
-  final Duration targetTime;
+  final Set<EditGoalChange> changes;
+  final EditGoalFitnessResult? fitnessResult;
+  final EditGoalAssessment? assessment;
+
+  bool get isChangeSelected => changes.isNotEmpty;
 
   EditGoalDraft copyWith({
     RunnerGoalRace? race,
     bool? hasRaceDate,
     DateTime? raceDate,
     bool clearRaceDate = false,
-    Duration? targetTime,
+    Set<EditGoalChange>? changes,
+    EditGoalFitnessResult? fitnessResult,
+    bool clearFitnessResult = false,
+    EditGoalAssessment? assessment,
+    bool clearAssessment = false,
   }) {
     final nextHasRaceDate = hasRaceDate ?? this.hasRaceDate;
     return EditGoalDraft(
@@ -41,7 +47,11 @@ class EditGoalDraft {
       raceDate: nextHasRaceDate
           ? (clearRaceDate ? null : raceDate ?? this.raceDate)
           : null,
-      targetTime: targetTime ?? this.targetTime,
+      changes: changes ?? this.changes,
+      fitnessResult: clearFitnessResult
+          ? null
+          : fitnessResult ?? this.fitnessResult,
+      assessment: clearAssessment ? null : assessment ?? this.assessment,
     );
   }
 
@@ -56,16 +66,174 @@ class EditGoalDraft {
       'race': race.key,
       'hasRaceDate': hasRaceDate,
       'raceDate': hasRaceDate ? _dateOnly(raceDate) : null,
-      'targetTimeSeconds': targetTime.inSeconds,
+      if (fitnessResult != null) 'fitnessResult': fitnessResult!.toJson(),
       'localDate': _dateOnly(localDate),
       'locale': locale == 'es' ? 'es' : 'en',
     };
+  }
+
+  Map<String, dynamic> toJson() => {
+    'race': race.key,
+    'hasRaceDate': hasRaceDate,
+    'raceDate': hasRaceDate ? _dateOnly(raceDate) : null,
+    'changes': changes.map((change) => change.key).toList(growable: false),
+    if (fitnessResult != null) 'fitnessResult': fitnessResult!.toJson(),
+    if (assessment != null) 'assessment': assessment!.toJson(),
+  };
+
+  factory EditGoalDraft.fromJson(Map<String, dynamic> json) {
+    final race = RunnerGoalRace.fromKey(_requiredString(json, 'race'));
+    final hasRaceDate = json['hasRaceDate'];
+    if (race == null || race == RunnerGoalRace.other || hasRaceDate is! bool) {
+      throw const FormatException('Invalid Edit Goal draft.');
+    }
+    final rawDate = json['raceDate'];
+    final raceDate = rawDate == null ? null : _parseDateOnly(rawDate);
+    if ((hasRaceDate && raceDate == null) ||
+        (!hasRaceDate && rawDate != null)) {
+      throw const FormatException('Invalid Edit Goal draft date.');
+    }
+    final rawChanges = json['changes'];
+    if (rawChanges is! List) {
+      throw const FormatException('Invalid Edit Goal changes.');
+    }
+    final changes = rawChanges.map(EditGoalChange.parse).toSet();
+    final rawFitness = json['fitnessResult'];
+    final rawAssessment = json['assessment'];
+    return EditGoalDraft(
+      race: race,
+      hasRaceDate: hasRaceDate,
+      raceDate: raceDate,
+      changes: changes,
+      fitnessResult: rawFitness == null
+          ? null
+          : EditGoalFitnessResult.fromJson(
+              _strictMap(rawFitness, 'fitness result'),
+            ),
+      assessment: rawAssessment == null
+          ? null
+          : EditGoalAssessment.fromJson(
+              _strictMap(rawAssessment, 'assessment'),
+            ),
+    );
+  }
+}
+
+enum EditGoalChange {
+  distance('distance'),
+  raceDate('race_date');
+
+  const EditGoalChange(this.key);
+  final String key;
+
+  static EditGoalChange parse(Object? value) {
+    for (final change in values) {
+      if (change.key == value) return change;
+    }
+    throw const FormatException('Invalid Edit Goal change.');
+  }
+}
+
+enum EditGoalFitnessSource {
+  manual('manual'),
+  assessment('assessment');
+
+  const EditGoalFitnessSource(this.key);
+  final String key;
+
+  static EditGoalFitnessSource parse(Object? value) {
+    for (final source in values) {
+      if (source.key == value) return source;
+    }
+    throw const FormatException('Invalid Edit Goal fitness source.');
+  }
+}
+
+class EditGoalFitnessResult {
+  const EditGoalFitnessResult({
+    required this.source,
+    required this.distanceKm,
+    required this.elapsed,
+    required this.recordedOn,
+    required this.hardEffort,
+  });
+
+  final EditGoalFitnessSource source;
+  final double distanceKm;
+  final Duration elapsed;
+  final DateTime recordedOn;
+  final bool hardEffort;
+
+  Map<String, dynamic> toJson() => {
+    'source': source.key,
+    'distanceKm': distanceKm,
+    'elapsedSeconds': elapsed.inSeconds,
+    'recordedOn': _dateOnly(recordedOn),
+    'hardEffort': hardEffort,
+  };
+
+  factory EditGoalFitnessResult.fromJson(Map<String, dynamic> json) {
+    final distanceKm = json['distanceKm'];
+    final elapsedSeconds = json['elapsedSeconds'];
+    final hardEffort = json['hardEffort'];
+    if (distanceKm is! num ||
+        !distanceKm.isFinite ||
+        distanceKm <= 0 ||
+        elapsedSeconds is! int ||
+        elapsedSeconds <= 0 ||
+        hardEffort is! bool) {
+      throw const FormatException('Invalid Edit Goal fitness result.');
+    }
+    return EditGoalFitnessResult(
+      source: EditGoalFitnessSource.parse(json['source']),
+      distanceKm: distanceKm.toDouble(),
+      elapsed: Duration(seconds: elapsedSeconds),
+      recordedOn: _parseDateOnly(json['recordedOn']),
+      hardEffort: hardEffort,
+    );
+  }
+}
+
+class EditGoalAssessment {
+  const EditGoalAssessment({
+    required this.id,
+    required this.kind,
+    required this.scheduledFor,
+    required this.safeDates,
+  });
+
+  final String id;
+  final String kind;
+  final DateTime scheduledFor;
+  final List<DateTime> safeDates;
+
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'kind': kind,
+    'scheduledFor': _dateOnly(scheduledFor),
+    'safeDates': safeDates.map(_dateOnly).toList(growable: false),
+  };
+
+  factory EditGoalAssessment.fromJson(Map<String, dynamic> json) {
+    final rawSafeDates = json['safeDates'];
+    if (rawSafeDates is! List) {
+      throw const FormatException('Invalid safe dates.');
+    }
+    return EditGoalAssessment(
+      id: _requiredString(json, 'id'),
+      kind: _requiredString(json, 'kind'),
+      scheduledFor: _parseDateOnly(json['scheduledFor']),
+      safeDates: rawSafeDates.map(_parseDateOnly).toList(growable: false),
+    );
   }
 }
 
 enum GoalEditWarning {
   shortNotice('short_notice'),
-  aggressiveTarget('aggressive_target');
+  raceWeek('race_week'),
+  readinessGap('readiness_gap'),
+  limitedEvidence('limited_evidence'),
+  noFixedDate('no_fixed_date');
 
   const GoalEditWarning(this.key);
   final String key;
@@ -83,19 +251,16 @@ class GoalEditGoal {
     required this.race,
     required this.hasRaceDate,
     required this.raceDate,
-    required this.targetTime,
   });
 
   final RunnerGoalRace race;
   final bool hasRaceDate;
   final DateTime? raceDate;
-  final Duration targetTime;
 
   factory GoalEditGoal.fromJson(Object? value) {
     final json = _strictMap(value, 'goal');
     final race = RunnerGoalRace.fromKey(_requiredString(json, 'race'));
     final hasRaceDate = json['hasRaceDate'];
-    final targetSeconds = _requiredPositiveInt(json, 'targetTimeSeconds');
     if (race == null || race == RunnerGoalRace.other || hasRaceDate is! bool) {
       throw const FormatException('Invalid goal edit goal.');
     }
@@ -109,7 +274,138 @@ class GoalEditGoal {
       race: race,
       hasRaceDate: hasRaceDate,
       raceDate: raceDate,
-      targetTime: Duration(seconds: targetSeconds),
+    );
+  }
+}
+
+class GoalEditRaceEstimate {
+  const GoalEditRaceEstimate({
+    required this.centerTime,
+    required this.fasterTime,
+    required this.slowerTime,
+    required this.confidence,
+    required this.evidence,
+  });
+
+  final Duration centerTime;
+  final Duration fasterTime;
+  final Duration slowerTime;
+  final String confidence;
+  final List<GoalEditEstimateEvidence> evidence;
+
+  factory GoalEditRaceEstimate.fromJson(Object? value) {
+    final json = _strictMap(value, 'race estimate');
+    final confidence = _requiredString(json, 'confidence');
+    if (!const {'high', 'medium', 'limited'}.contains(confidence)) {
+      throw const FormatException('Invalid race estimate confidence.');
+    }
+    final rawEvidence = json['evidence'];
+    if (rawEvidence is! List) {
+      throw const FormatException('Invalid race evidence.');
+    }
+    final center = _requiredPositiveInt(json, 'centerTimeSeconds');
+    final faster = _requiredPositiveInt(json, 'fasterTimeSeconds');
+    final slower = _requiredPositiveInt(json, 'slowerTimeSeconds');
+    if (faster >= center || slower <= center) {
+      throw const FormatException('Invalid race estimate range.');
+    }
+    return GoalEditRaceEstimate(
+      centerTime: Duration(seconds: center),
+      fasterTime: Duration(seconds: faster),
+      slowerTime: Duration(seconds: slower),
+      confidence: confidence,
+      evidence: rawEvidence
+          .map((item) => GoalEditEstimateEvidence.fromJson(item))
+          .toList(growable: false),
+    );
+  }
+}
+
+class GoalEditEstimateEvidence {
+  const GoalEditEstimateEvidence({
+    required this.source,
+    required this.recordedOn,
+    required this.description,
+  });
+
+  final String source;
+  final DateTime? recordedOn;
+  final String description;
+
+  factory GoalEditEstimateEvidence.fromJson(Object? value) {
+    final json = _strictMap(value, 'race estimate evidence');
+    final source = _requiredString(json, 'source');
+    if (!const {'strava', 'manual', 'assessment'}.contains(source)) {
+      throw const FormatException('Invalid race evidence source.');
+    }
+    final rawDate = json['recordedOn'];
+    return GoalEditEstimateEvidence(
+      source: source,
+      recordedOn: rawDate == null ? null : _parseDateOnly(rawDate),
+      description: _requiredString(json, 'description'),
+    );
+  }
+}
+
+class GoalEditFitnessCheck {
+  const GoalEditFitnessCheck({
+    required this.suggestedActivities,
+    required this.benchmarkKind,
+    required this.safeDates,
+  });
+
+  final List<GoalEditSuggestedActivity> suggestedActivities;
+  final String benchmarkKind;
+  final List<DateTime> safeDates;
+
+  factory GoalEditFitnessCheck.fromJson(Object? value) {
+    final json = _strictMap(value, 'fitness check');
+    final rawActivities = json['suggestedActivities'];
+    final benchmark = _strictMap(json['benchmark'], 'fitness benchmark');
+    final rawSafeDates = benchmark['safeDates'];
+    if (rawActivities is! List || rawSafeDates is! List) {
+      throw const FormatException('Invalid fitness check.');
+    }
+    final kind = _requiredString(benchmark, 'kind');
+    if (!const {'one_km_run', 'five_k_run'}.contains(kind)) {
+      throw const FormatException('Invalid fitness benchmark kind.');
+    }
+    return GoalEditFitnessCheck(
+      suggestedActivities: rawActivities
+          .map((item) => GoalEditSuggestedActivity.fromJson(item))
+          .toList(growable: false),
+      benchmarkKind: kind,
+      safeDates: rawSafeDates.map(_parseDateOnly).toList(growable: false),
+    );
+  }
+}
+
+class GoalEditSuggestedActivity {
+  const GoalEditSuggestedActivity({
+    required this.recordedOn,
+    required this.distanceKm,
+    required this.elapsed,
+  });
+
+  final DateTime recordedOn;
+  final double distanceKm;
+  final Duration elapsed;
+
+  factory GoalEditSuggestedActivity.fromJson(Object? value) {
+    final json = _strictMap(value, 'suggested activity');
+    final distance = json['distanceKm'];
+    final seconds = json['elapsedSeconds'];
+    if (distance is! num ||
+        !distance.isFinite ||
+        distance <= 0 ||
+        seconds is! int ||
+        seconds <= 0) {
+      throw const FormatException('Invalid suggested activity.');
+    }
+    return GoalEditSuggestedActivity(
+      recordedOn: _parseDateOnly(json['recordedOn']),
+      distanceKm: distance.toDouble(),
+      elapsed: Duration(seconds: seconds),
     );
   }
 }
@@ -272,7 +568,7 @@ class GoalEditProposal {
     required this.candidatePlan,
     required this.summary,
     required this.warnings,
-    required this.suggestedTargetTime,
+    required this.raceEstimate,
   });
 
   final String id;
@@ -283,7 +579,7 @@ class GoalEditProposal {
   final TrainingPlan candidatePlan;
   final GoalEditChangeSummary summary;
   final List<GoalEditWarning> warnings;
-  final Duration? suggestedTargetTime;
+  final GoalEditRaceEstimate raceEstimate;
 
   factory GoalEditProposal.fromJson(Object? value) {
     final json = _strictMap(value, 'proposal');
@@ -301,11 +597,6 @@ class GoalEditProposal {
         rawWarnings is! List) {
       throw const FormatException('Invalid goal edit proposal.');
     }
-    final suggestedSeconds = json['suggestedTargetTimeSeconds'];
-    if (suggestedSeconds != null &&
-        (suggestedSeconds is! int || suggestedSeconds <= 0)) {
-      throw const FormatException('Invalid suggested target time.');
-    }
     return GoalEditProposal(
       id: id,
       sourcePlanVersionId: sourceId,
@@ -315,9 +606,7 @@ class GoalEditProposal {
       candidatePlan: plan,
       summary: GoalEditChangeSummary.fromJson(json['summary']),
       warnings: rawWarnings.map(GoalEditWarning.parse).toList(growable: false),
-      suggestedTargetTime: suggestedSeconds == null
-          ? null
-          : Duration(seconds: suggestedSeconds),
+      raceEstimate: GoalEditRaceEstimate.fromJson(json['raceEstimate']),
     );
   }
 }

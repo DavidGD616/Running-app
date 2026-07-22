@@ -1,16 +1,13 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
-import 'package:running_app/features/profile/data/runner_profile_repository.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/settings/domain/edit_goal_models.dart';
 import 'package:running_app/features/settings/presentation/edit_goal_provider.dart';
-import 'package:running_app/features/training_plan/data/plan_version_repository.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../helpers/runner_profile_fixtures.dart';
 
@@ -23,633 +20,308 @@ void main() {
     preferences = await SharedPreferences.getInstance();
   });
 
-  group('Edit Goal evidence suggestion', () {
-    const halfMarathonEvidence = EditGoalEvidenceSuggestion(
-      race: RunnerGoalRace.halfMarathon,
-      targetTime: Duration(hours: 1, minutes: 58),
+  test('draft serializes only canonical choices and fitness evidence', () {
+    final draft = EditGoalDraft(
+      race: RunnerGoalRace.tenK,
+      hasRaceDate: false,
+      raceDate: null,
+      changes: const {EditGoalChange.distance, EditGoalChange.raceDate},
+      fitnessResult: EditGoalFitnessResult(
+        source: EditGoalFitnessSource.manual,
+        distanceKm: 5,
+        elapsed: const Duration(minutes: 24, seconds: 30),
+        recordedOn: DateTime(2026, 7, 10),
+        hardEffort: true,
+      ),
     );
 
-    test('keeps the evidence anchor unchanged', () {
-      final suggestion = halfMarathonEvidence.projectTo(
-        RunnerGoalRace.halfMarathon,
-      );
-
-      expect(identical(suggestion, halfMarathonEvidence), isTrue);
-      expect(suggestion?.targetTime, const Duration(hours: 1, minutes: 58));
-    });
-
-    test('projects supported races with the Riegel exponent', () {
-      expect(
-        halfMarathonEvidence.projectTo(RunnerGoalRace.fiveK)?.targetTime,
-        const Duration(minutes: 25, seconds: 39),
-      );
-      expect(
-        halfMarathonEvidence.projectTo(RunnerGoalRace.tenK)?.targetTime,
-        const Duration(minutes: 53, seconds: 29),
-      );
-      expect(
-        halfMarathonEvidence.projectTo(RunnerGoalRace.marathon)?.targetTime,
-        const Duration(hours: 4, minutes: 6, seconds: 1),
-      );
-    });
-
-    test('returns no projection for unsupported or non-positive evidence', () {
-      expect(halfMarathonEvidence.projectTo(RunnerGoalRace.other), isNull);
-      expect(
-        const EditGoalEvidenceSuggestion(
-          race: RunnerGoalRace.other,
-          targetTime: Duration(minutes: 30),
-        ).projectTo(RunnerGoalRace.fiveK),
-        isNull,
-      );
-      expect(
-        const EditGoalEvidenceSuggestion(
-          race: RunnerGoalRace.tenK,
-          targetTime: Duration.zero,
-        ).projectTo(RunnerGoalRace.fiveK),
-        isNull,
-      );
-    });
-
-    test('returns no projection when a positive result rounds to zero', () {
-      expect(
-        const EditGoalEvidenceSuggestion(
-          race: RunnerGoalRace.marathon,
-          targetTime: Duration(seconds: 1),
-        ).projectTo(RunnerGoalRace.fiveK),
-        isNull,
-      );
-    });
+    expect(EditGoalDraft.fromJson(draft.toJson()).race, RunnerGoalRace.tenK);
+    expect(
+      draft.previewPayload(
+        sourcePlanVersionId: 'plan-1',
+        localDate: now,
+        locale: 'es',
+      ),
+      {
+        'action': 'preview',
+        'sourcePlanVersionId': 'plan-1',
+        'race': 'race_10k',
+        'hasRaceDate': false,
+        'raceDate': null,
+        'fitnessResult': {
+          'source': 'manual',
+          'distanceKm': 5,
+          'elapsedSeconds': 1470,
+          'recordedOn': '2026-07-10',
+          'hardEffort': true,
+        },
+        'localDate': '2026-07-13',
+        'locale': 'es',
+      },
+    );
+    expect(draft.toJson().containsKey('targetTime'), isFalse);
   });
 
   test(
-    'initializes draft from persisted profile and accepted target',
+    'initializes an unselected edit draft without an editable target time',
     () async {
-      final container = _container(now: now);
+      final container = _container(now: now, preferences: preferences);
       addTearDown(container.dispose);
+
       final editing = await _editingState(container);
 
       expect(editing.draft.race, RunnerGoalRace.halfMarathon);
-      expect(editing.draft.hasRaceDate, isTrue);
-      expect(editing.draft.raceDate, DateTime(2026, 10, 18));
-      expect(editing.draft.targetTime, const Duration(hours: 1, minutes: 55));
+      expect(editing.draft.changes, isEmpty);
       expect(editing.sourcePlanId, 'active-plan');
     },
   );
 
+  test('persists draft choices locally for offline resume', () async {
+    final container = _container(now: now, preferences: preferences);
+    addTearDown(container.dispose);
+    final editing = await _editingState(container);
+
+    container
+        .read(editGoalProvider.notifier)
+        .updateDraft(
+          editing.draft.copyWith(
+            race: RunnerGoalRace.tenK,
+            changes: const {EditGoalChange.distance},
+          ),
+        );
+
+    await _waitFor(() => preferences.getString('edit_goal_draft_v2') != null);
+    final stored =
+        jsonDecode(preferences.getString('edit_goal_draft_v2')!)
+            as Map<String, dynamic>;
+    final data = stored['data'] as Map<String, dynamic>;
+    expect(data['race'], 'race_10k');
+    expect(data['changes'], ['distance']);
+  });
+
   test(
-    'preview sends exact canonical payload and does not reconcile caches',
+    'preview sends no target time and parses a server-derived range',
     () async {
-      final invocations = <_Invocation>[];
-      var reconcileCount = 0;
+      Object? capturedBody;
       final container = _container(
         now: now,
+        preferences: preferences,
         locale: 'es',
-        client: (name, {body}) async {
-          invocations.add(_Invocation(name, body));
+        client: (_, {body}) async {
+          capturedBody = body;
           return FunctionResponse(data: _proposalJson(), status: 200);
         },
-        reconciler: (_) async => reconcileCount++,
       );
       addTearDown(container.dispose);
-      await _editingState(container);
+      final editing = await _editingState(container);
+      container
+          .read(editGoalProvider.notifier)
+          .updateDraft(
+            editing.draft.copyWith(changes: const {EditGoalChange.raceDate}),
+          );
 
       expect(await container.read(editGoalProvider.notifier).preview(), isTrue);
-      expect(invocations.single.name, 'edit-goal');
-      expect(invocations.single.body, {
+      expect(capturedBody, {
         'action': 'preview',
         'sourcePlanVersionId': 'active-plan',
         'race': 'race_half_marathon',
         'hasRaceDate': true,
         'raceDate': '2026-10-18',
-        'targetTimeSeconds': 6900,
         'localDate': '2026-07-13',
         'locale': 'es',
       });
-      expect(reconcileCount, 0);
-      expect(container.read(editGoalProvider), isA<EditGoalPreviewReady>());
-    },
-  );
-
-  test(
-    'cancel returns to editing without invoking cache reconciliation',
-    () async {
-      var reconcileCount = 0;
-      final container = _container(
-        now: now,
-        client: (_, {body}) async =>
-            FunctionResponse(data: _proposalJson(), status: 200),
-        reconciler: (_) async => reconcileCount++,
-      );
-      addTearDown(container.dispose);
-      await _editingState(container);
-      await container.read(editGoalProvider.notifier).preview();
-
-      container.read(editGoalProvider.notifier).cancelPreview();
-
-      final editing = container.read(editGoalProvider) as EditGoalEditing;
-      expect(editing.draft.targetTime, const Duration(hours: 1, minutes: 55));
-      expect(reconcileCount, 0);
-    },
-  );
-
-  test('proposal parsing is strict and parses warnings and suggestion', () {
-    final proposal = GoalEditProposal.fromJson(_proposalJson());
-    expect(proposal.warnings, [
-      GoalEditWarning.shortNotice,
-      GoalEditWarning.aggressiveTarget,
-    ]);
-    expect(proposal.suggestedTargetTime, const Duration(seconds: 7100));
-    expect(proposal.summary.materiallyChangedUpcomingCount, 2);
-
-    expect(
-      () => GoalEditProposal.fromJson({
-        ..._proposalJson(),
-        'warnings': ['unknown_warning'],
-      }),
-      throwsFormatException,
-    );
-    expect(
-      () => GoalEditProposal.fromJson({
-        ..._proposalJson(),
-        'summary': {
-          ...(_proposalJson()['summary'] as Map<String, dynamic>),
-          'preservedCount': -1,
-        },
-      }),
-      throwsFormatException,
-    );
-  });
-
-  test(
-    'timeout preserves draft and maps to canonical timeout failure',
-    () async {
-      final container = _container(
-        now: now,
-        client: (_, {body}) async => throw TimeoutException('network timeout'),
-      );
-      addTearDown(container.dispose);
-      final editing = await _editingState(container);
-
-      expect(
-        await container.read(editGoalProvider.notifier).preview(),
-        isFalse,
-      );
-      final failure = container.read(editGoalProvider) as EditGoalFailure;
-      expect(failure.reason, EditGoalFailureReason.timeout);
-      expect(identical(failure.draft, editing.draft), isTrue);
-    },
-  );
-
-  test(
-    'preview auth failure preserves exact draft and source without reconciliation',
-    () async {
-      var reconcileCount = 0;
-      final container = _container(
-        now: now,
-        client: (_, {body}) async => throw const FunctionException(
-          status: 401,
-          details: {'error': 'unauthorized'},
-        ),
-        reconciler: (_) async => reconcileCount++,
-      );
-      addTearDown(container.dispose);
-      final editing = await _editingState(container);
-      final editedDraft = editing.draft.copyWith(
-        race: RunnerGoalRace.tenK,
-        hasRaceDate: false,
-        clearRaceDate: true,
-        targetTime: const Duration(minutes: 47, seconds: 30),
-      );
-      container.read(editGoalProvider.notifier).updateDraft(editedDraft);
-
-      expect(
-        await container.read(editGoalProvider.notifier).preview(),
-        isFalse,
-      );
-
-      final failure = container.read(editGoalProvider) as EditGoalFailure;
-      expect(failure.reason, EditGoalFailureReason.auth);
-      expect(identical(failure.draft, editedDraft), isTrue);
-      expect(failure.sourcePlanId, editing.sourcePlanId);
-      expect(failure.proposal, isNull);
-      expect(reconcileCount, 0);
-    },
-  );
-
-  test('stale and expired backend errors map distinctly', () async {
-    final responses = <FunctionResponse>[
-      FunctionResponse(data: {'error': 'source_plan_stale'}, status: 409),
-      FunctionResponse(data: {'error': 'proposal_expired'}, status: 409),
-    ];
-    final container = _container(
-      now: now,
-      client: (_, {body}) async => responses.removeAt(0),
-    );
-    addTearDown(container.dispose);
-    await _editingState(container);
-
-    await container.read(editGoalProvider.notifier).preview();
-    expect(
-      (container.read(editGoalProvider) as EditGoalFailure).reason,
-      EditGoalFailureReason.stale,
-    );
-    await container.read(editGoalProvider.notifier).preview();
-    expect(
-      (container.read(editGoalProvider) as EditGoalFailure).reason,
-      EditGoalFailureReason.expired,
-    );
-  });
-
-  test(
-    'accept sends proposal id only and reconciles authoritative caches',
-    () async {
-      final invocations = <_Invocation>[];
-      final container = _container(
-        now: now,
-        preferences: preferences,
-        client: (name, {body}) async {
-          invocations.add(_Invocation(name, body));
-          final action = (body as Map<String, dynamic>)['action'];
-          return action == 'preview'
-              ? FunctionResponse(data: _proposalJson(), status: 200)
-              : FunctionResponse(data: _acceptanceJson(), status: 200);
-        },
-      );
-      addTearDown(container.dispose);
-      await _editingState(container);
-      await container.read(editGoalProvider.notifier).preview();
-
-      expect(await container.read(editGoalProvider.notifier).apply(), isTrue);
-      expect(invocations.last.body, {
-        'action': 'accept',
-        'proposalId': 'proposal-1',
-      });
-      final success = container.read(editGoalProvider) as EditGoalSuccess;
-      expect(success.acceptance.versionId, 'accepted-plan');
-      expect(success.acceptance.plan.id, 'accepted-plan');
-
-      final profileCache = SharedPreferencesRunnerProfileRepository(
-        preferences,
-      );
-      final cachedProfile = profileCache.loadProfile();
-      final cachedDraft = profileCache.loadDraft();
-      expect(cachedProfile?.goal.race, RunnerGoalRace.tenK);
-      expect(cachedProfile?.goal.hasRaceDate, isFalse);
-      expect(cachedProfile?.goal.raceDate, isNull);
-      expect(cachedDraft?.goal.race, RunnerGoalRace.tenK);
-      expect(cachedDraft?.acceptedRaceTarget?.distanceKm, 10.0);
-      expect(
-        cachedDraft?.acceptedRaceTarget?.primaryTime,
-        const Duration(minutes: 46, seconds: 30),
-      );
-
-      final cachedPlan = SharedPreferencesPlanVersionRepository(
-        preferences,
-      ).loadActivePlanSync();
-      expect(cachedPlan?.id, 'accepted-plan');
-      final rawVersion =
-          jsonDecode(preferences.getString('active_plan_version_v1')!)
-              as Map<String, dynamic>;
-      expect(rawVersion['id'], 'accepted-plan');
-      expect(rawVersion['requestedBy'], 'edit_goal');
-      expect(rawVersion['isActive'], isTrue);
-    },
-  );
-
-  test(
-    'cache reconciliation failure does not roll back server success',
-    () async {
-      var acceptCalls = 0;
-      final container = _container(
-        now: now,
-        client: (_, {body}) async {
-          final action = (body as Map<String, dynamic>)['action'];
-          if (action == 'preview') {
-            return FunctionResponse(data: _proposalJson(), status: 200);
-          }
-          acceptCalls++;
-          return FunctionResponse(data: _acceptanceJson(), status: 200);
-        },
-        reconciler: (_) async => throw StateError('cache unavailable'),
-      );
-      addTearDown(container.dispose);
-      await _editingState(container);
-      await container.read(editGoalProvider.notifier).preview();
-
-      expect(await container.read(editGoalProvider.notifier).apply(), isTrue);
-      expect(container.read(editGoalProvider), isA<EditGoalSuccess>());
-      expect(acceptCalls, 1);
-    },
-  );
-
-  test(
-    'accept auth failure preserves exact proposal and can retry successfully',
-    () async {
-      final acceptPayloads = <Object?>[];
-      var acceptCount = 0;
-      var reconcileCount = 0;
-      var successCount = 0;
-      final container = _container(
-        now: now,
-        client: (_, {body}) async {
-          final action = (body as Map<String, dynamic>)['action'];
-          if (action == 'preview') {
-            return FunctionResponse(data: _proposalJson(), status: 200);
-          }
-          acceptCount++;
-          acceptPayloads.add(body);
-          if (acceptCount == 1) {
-            throw const FunctionException(
-              status: 401,
-              details: {'error': 'missing_authorization'},
-            );
-          }
-          return FunctionResponse(data: _acceptanceJson(), status: 200);
-        },
-        reconciler: (_) async => reconcileCount++,
-      );
-      addTearDown(container.dispose);
-      final successSubscription = container.listen(editGoalProvider, (_, next) {
-        if (next is EditGoalSuccess) successCount++;
-      });
-      addTearDown(successSubscription.close);
-      await _editingState(container);
-      await container.read(editGoalProvider.notifier).preview();
       final ready = container.read(editGoalProvider) as EditGoalPreviewReady;
-
-      expect(await container.read(editGoalProvider.notifier).apply(), isFalse);
-
-      final failure = container.read(editGoalProvider) as EditGoalFailure;
-      expect(failure.reason, EditGoalFailureReason.auth);
-      expect(identical(failure.draft, ready.draft), isTrue);
-      expect(failure.sourcePlanId, ready.sourcePlanId);
-      expect(identical(failure.proposal, ready.proposal), isTrue);
-      expect(reconcileCount, 0);
-      expect(successCount, 0);
-
-      expect(await container.read(editGoalProvider.notifier).apply(), isTrue);
-      expect(acceptPayloads, [
-        {'action': 'accept', 'proposalId': 'proposal-1'},
-        {'action': 'accept', 'proposalId': 'proposal-1'},
-      ]);
-      expect(reconcileCount, 1);
-      expect(successCount, 1);
-      final success = container.read(editGoalProvider) as EditGoalSuccess;
-      expect(success.acceptance.versionId, 'accepted-plan');
-      expect(success.acceptance.plan.id, 'accepted-plan');
+      expect(
+        ready.proposal.raceEstimate.centerTime,
+        const Duration(hours: 1, minutes: 55),
+      );
+      expect(ready.proposal.raceEstimate.confidence, 'high');
     },
   );
 
-  test('initial load failure can retry into editing state', () async {
-    var loadCount = 0;
+  test('requires a fitness check instead of inventing an estimate', () async {
     final container = _container(
       now: now,
-      loader: () async {
-        loadCount++;
-        if (loadCount == 1) throw StateError('storage unavailable');
-        return _initialData();
-      },
-    );
-    addTearDown(container.dispose);
-
-    final failure = await _failureState(container);
-    expect(failure.draft, isNull);
-    expect(failure.reason, EditGoalFailureReason.parse);
-
-    await container.read(editGoalProvider.notifier).retryInitialization();
-    final editing = await _editingState(container);
-    expect(editing.sourcePlanId, 'active-plan');
-    expect(loadCount, 2);
-  });
-
-  test('stale recovery reloads source id and preserves user draft', () async {
-    var loadCount = 0;
-    final invocations = <Map<String, dynamic>>[];
-    final container = _container(
-      now: now,
-      loader: () async {
-        loadCount++;
-        return _initialData(
-          activePlanId: loadCount == 1 ? 'active-plan' : 'fresh-plan',
-        );
-      },
-      client: (_, {body}) async {
-        final payload = body as Map<String, dynamic>;
-        invocations.add(payload);
-        if (invocations.length == 1) {
-          return FunctionResponse(
-            data: {'error': 'source_plan_stale'},
-            status: 409,
-          );
-        }
-        return FunctionResponse(
-          data: _proposalJson(sourcePlanId: 'fresh-plan'),
-          status: 200,
-        );
-      },
+      preferences: preferences,
+      client: (_, {body}) async =>
+          FunctionResponse(data: _fitnessCheckResponse(), status: 200),
     );
     addTearDown(container.dispose);
     final editing = await _editingState(container);
-    const target = Duration(minutes: 47, seconds: 30);
-    final userDraft = editing.draft.copyWith(
-      race: RunnerGoalRace.tenK,
-      hasRaceDate: false,
-      clearRaceDate: true,
-      targetTime: target,
-    );
-    container.read(editGoalProvider.notifier).updateDraft(userDraft);
+    container
+        .read(editGoalProvider.notifier)
+        .updateDraft(
+          editing.draft.copyWith(
+            changes: const {EditGoalChange.distance},
+            race: RunnerGoalRace.tenK,
+          ),
+        );
 
     expect(await container.read(editGoalProvider.notifier).preview(), isFalse);
-    expect(
-      (container.read(editGoalProvider) as EditGoalFailure).reason,
-      EditGoalFailureReason.stale,
-    );
-    expect(
-      await container.read(editGoalProvider.notifier).refreshAndPreview(),
-      isTrue,
-    );
-
-    expect(loadCount, 2);
-    expect(invocations.last, {
-      'action': 'preview',
-      'sourcePlanVersionId': 'fresh-plan',
-      'race': 'race_10k',
-      'hasRaceDate': false,
-      'raceDate': null,
-      'targetTimeSeconds': target.inSeconds,
-      'localDate': '2026-07-13',
-      'locale': 'en',
-    });
-    final ready = container.read(editGoalProvider) as EditGoalPreviewReady;
-    expect(ready.sourcePlanId, 'fresh-plan');
-    expect(ready.draft.race, RunnerGoalRace.tenK);
-    expect(ready.draft.hasRaceDate, isFalse);
-    expect(ready.draft.targetTime, target);
-  });
-
-  test('auto-dispose recreates fresh persisted state after success', () async {
-    var loadCount = 0;
-    final freshProfile = buildRunnerProfile().copyWith(
-      goal: const GoalProfile(
-        race: RunnerGoalRace.marathon,
-        hasRaceDate: false,
-      ),
-    );
-    final container = _container(
-      now: now,
-      keepProviderAlive: false,
-      loader: () async {
-        loadCount++;
-        return loadCount == 1
-            ? _initialData()
-            : EditGoalInitialData(
-                profile: freshProfile,
-                acceptedRaceTarget: const AcceptedRaceTarget(
-                  distanceKm: 42.195,
-                  primaryTime: Duration(hours: 3, minutes: 30),
-                ),
-                activePlanId: 'fresh-active-plan',
-              );
-      },
-      client: (_, {body}) async {
-        final action = (body as Map<String, dynamic>)['action'];
-        return FunctionResponse(
-          data: action == 'preview' ? _proposalJson() : _acceptanceJson(),
-          status: 200,
-        );
-      },
-      reconciler: (_) async {},
-    );
-    addTearDown(container.dispose);
-    final firstSubscription = container.listen(
-      editGoalProvider,
-      (_, _) {},
-      fireImmediately: true,
-    );
-    await _editingState(container);
-    await container.read(editGoalProvider.notifier).preview();
-    await container.read(editGoalProvider.notifier).apply();
-    expect(container.read(editGoalProvider), isA<EditGoalSuccess>());
-
-    firstSubscription.close();
-    await container.pump();
-    expect(container.exists(editGoalProvider), isFalse);
-
-    final reopenedSubscription = container.listen(
-      editGoalProvider,
-      (_, _) {},
-      fireImmediately: true,
-    );
-    addTearDown(reopenedSubscription.close);
-    final reopened = await _editingState(container);
-    expect(reopened.sourcePlanId, 'fresh-active-plan');
-    expect(reopened.draft.race, RunnerGoalRace.marathon);
-    expect(reopened.draft.targetTime, const Duration(hours: 3, minutes: 30));
-    expect(loadCount, 2);
+    final check =
+        container.read(editGoalProvider) as EditGoalFitnessCheckRequired;
+    expect(check.fitnessCheck.benchmarkKind, 'five_k_run');
+    expect(check.fitnessCheck.safeDates, [DateTime(2026, 7, 16)]);
   });
 
   test(
-    'ambiguous accept timeout retries same proposal and reconciles once',
+    'scheduling an assessment leaves the plan unchanged until a result',
     () async {
-      final acceptPayloads = <Object?>[];
-      var acceptCount = 0;
-      var successCount = 0;
+      final container = _container(now: now, preferences: preferences);
+      addTearDown(container.dispose);
+      final editing = await _editingState(container);
+      final check = GoalEditFitnessCheck.fromJson(
+        _fitnessCheckResponse()['fitnessCheck'],
+      );
+      container
+          .read(editGoalProvider.notifier)
+          .updateDraft(
+            editing.draft.copyWith(changes: const {EditGoalChange.distance}),
+          );
+
+      await container
+          .read(editGoalProvider.notifier)
+          .scheduleAssessment(check, DateTime(2026, 7, 16));
+      final pending =
+          container.read(editGoalProvider) as EditGoalAssessmentPending;
+      expect(pending.draft.assessment?.kind, 'five_k_run');
+      expect(pending.draft.fitnessResult, isNull);
+
+      container
+          .read(editGoalProvider.notifier)
+          .useFitnessResult(
+            EditGoalFitnessResult(
+              source: EditGoalFitnessSource.assessment,
+              distanceKm: 5,
+              elapsed: const Duration(minutes: 25),
+              recordedOn: DateTime(2026, 7, 16),
+              hardEffort: true,
+            ),
+          );
+      final updated = container.read(editGoalProvider) as EditGoalEditing;
+      expect(
+        updated.draft.fitnessResult?.source,
+        EditGoalFitnessSource.assessment,
+      );
+    },
+  );
+
+  test(
+    'stale preview rebuilds with the latest plan and retains selections',
+    () async {
+      var loads = 0;
+      final bodies = <Map<String, dynamic>>[];
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        loader: () async => _initialData(
+          activePlanId: ++loads == 1 ? 'active-plan' : 'fresh-plan',
+        ),
+        client: (_, {body}) async {
+          bodies.add(body! as Map<String, dynamic>);
+          if (bodies.length == 1) {
+            return FunctionResponse(
+              data: const {'error': 'source_plan_stale'},
+              status: 409,
+            );
+          }
+          return FunctionResponse(
+            data: _proposalJson(sourcePlanId: 'fresh-plan'),
+            status: 200,
+          );
+        },
+      );
+      addTearDown(container.dispose);
+      final editing = await _editingState(container);
+      container
+          .read(editGoalProvider.notifier)
+          .updateDraft(
+            editing.draft.copyWith(
+              race: RunnerGoalRace.tenK,
+              changes: const {EditGoalChange.distance},
+            ),
+          );
+
+      expect(
+        await container.read(editGoalProvider.notifier).preview(),
+        isFalse,
+      );
+      expect(
+        await container.read(editGoalProvider.notifier).refreshAndPreview(),
+        isTrue,
+      );
+      final ready = container.read(editGoalProvider) as EditGoalPreviewReady;
+      expect(ready.sourcePlanId, 'fresh-plan');
+      expect(ready.draft.race, RunnerGoalRace.tenK);
+      expect(ready.draft.changes, const {EditGoalChange.distance});
+      expect(bodies.last['sourcePlanVersionId'], 'fresh-plan');
+    },
+  );
+
+  test(
+    'apply uses only the proposal id, clears the draft, and exposes recap data',
+    () async {
+      final calls = <Object?>[];
       final container = _container(
         now: now,
         preferences: preferences,
         client: (_, {body}) async {
-          final action = (body as Map<String, dynamic>)['action'];
-          if (action == 'preview') {
-            return FunctionResponse(data: _proposalJson(), status: 200);
-          }
-          acceptCount++;
-          acceptPayloads.add(body);
-          if (acceptCount == 1) {
-            throw TimeoutException('response lost after commit');
-          }
-          return FunctionResponse(data: _acceptanceJson(), status: 200);
+          calls.add(body);
+          return FunctionResponse(
+            data: (body! as Map<String, dynamic>)['action'] == 'accept'
+                ? _acceptanceJson()
+                : _proposalJson(),
+            status: 200,
+          );
         },
       );
       addTearDown(container.dispose);
-      final successSubscription = container.listen(editGoalProvider, (_, next) {
-        if (next is EditGoalSuccess) successCount++;
-      });
-      addTearDown(successSubscription.close);
-      await _editingState(container);
+      final editing = await _editingState(container);
+      container
+          .read(editGoalProvider.notifier)
+          .updateDraft(
+            editing.draft.copyWith(changes: const {EditGoalChange.raceDate}),
+          );
       await container.read(editGoalProvider.notifier).preview();
 
-      expect(await container.read(editGoalProvider.notifier).apply(), isFalse);
-      final timeout = container.read(editGoalProvider) as EditGoalFailure;
-      expect(timeout.reason, EditGoalFailureReason.timeout);
-      expect(timeout.proposal?.id, 'proposal-1');
-      expect(timeout.draft?.targetTime, const Duration(hours: 1, minutes: 55));
-
       expect(await container.read(editGoalProvider.notifier).apply(), isTrue);
-      expect(acceptPayloads, [
-        {'action': 'accept', 'proposalId': 'proposal-1'},
-        {'action': 'accept', 'proposalId': 'proposal-1'},
-      ]);
-      expect(successCount, 1);
+      expect(calls.last, {'action': 'accept', 'proposalId': 'proposal-1'});
       final success = container.read(editGoalProvider) as EditGoalSuccess;
-      expect(success.acceptance.versionId, 'accepted-plan');
-      final profileCache = SharedPreferencesRunnerProfileRepository(
-        preferences,
-      );
-      expect(profileCache.loadProfile()?.goal.race, RunnerGoalRace.tenK);
-      expect(
-        profileCache.loadDraft()?.acceptedRaceTarget?.primaryTime,
-        const Duration(minutes: 46, seconds: 30),
-      );
-      expect(
-        SharedPreferencesPlanVersionRepository(
-          preferences,
-        ).loadActivePlanSync()?.id,
-        'accepted-plan',
-      );
+      expect(success.proposal.summary.preservedCount, 4);
+      expect(preferences.getString('edit_goal_draft_v2'), isNull);
     },
   );
 }
 
 ProviderContainer _container({
   required DateTime now,
+  required SharedPreferences preferences,
   String locale = 'en',
-  SharedPreferences? preferences,
   EditGoalFunctionClient? client,
-  EditGoalCacheReconciler? reconciler,
   EditGoalInitialDataLoader? loader,
-  bool keepProviderAlive = true,
 }) {
-  final profile = buildRunnerProfile();
   final container = ProviderContainer.test(
     overrides: [
+      sharedPreferencesProvider.overrideWithValue(preferences),
       editGoalClockProvider.overrideWithValue(() => now),
       editGoalLocaleCodeProvider.overrideWithValue(locale),
-      if (preferences != null)
-        sharedPreferencesProvider.overrideWithValue(preferences),
       editGoalInitialDataLoaderProvider.overrideWithValue(
-        loader ?? () async => _initialData(profile: profile),
+        loader ?? () async => _initialData(),
       ),
       editGoalFunctionClientProvider.overrideWithValue(
         client ??
             (_, {body}) async =>
                 FunctionResponse(data: _proposalJson(), status: 200),
       ),
-      if (reconciler != null)
-        editGoalCacheReconcilerProvider.overrideWithValue(reconciler)
-      else if (preferences == null)
-        editGoalCacheReconcilerProvider.overrideWithValue((_) async {}),
+      editGoalCacheReconcilerProvider.overrideWithValue((_) async {}),
     ],
   );
-  if (keepProviderAlive) {
-    container.listen(editGoalProvider, (_, _) {}, fireImmediately: true);
-  }
+  container.listen(editGoalProvider, (_, _) {}, fireImmediately: true);
   return container;
 }
 
 Future<EditGoalEditing> _editingState(ProviderContainer container) async {
-  container.read(editGoalProvider);
-  for (var attempt = 0; attempt < 20; attempt++) {
+  for (var attempt = 0; attempt < 40; attempt++) {
     final state = container.read(editGoalProvider);
     if (state is EditGoalEditing) return state;
     await Future<void>.delayed(Duration.zero);
@@ -657,26 +329,31 @@ Future<EditGoalEditing> _editingState(ProviderContainer container) async {
   throw StateError('Edit Goal did not initialize.');
 }
 
-Future<EditGoalFailure> _failureState(ProviderContainer container) async {
-  for (var attempt = 0; attempt < 20; attempt++) {
-    final state = container.read(editGoalProvider);
-    if (state is EditGoalFailure) return state;
+Future<void> _waitFor(bool Function() predicate) async {
+  for (var attempt = 0; attempt < 40; attempt++) {
+    if (predicate()) return;
     await Future<void>.delayed(Duration.zero);
   }
-  throw StateError('Edit Goal did not fail initialization.');
+  throw StateError('Expected asynchronous work to finish.');
 }
 
-EditGoalInitialData _initialData({
-  RunnerProfile? profile,
-  String activePlanId = 'active-plan',
-}) => EditGoalInitialData(
-  profile: profile ?? buildRunnerProfile(),
-  acceptedRaceTarget: const AcceptedRaceTarget(
-    distanceKm: 21.097,
-    primaryTime: Duration(hours: 1, minutes: 55),
-  ),
-  activePlanId: activePlanId,
-);
+EditGoalInitialData _initialData({String activePlanId = 'active-plan'}) =>
+    EditGoalInitialData(
+      profile: buildRunnerProfile(),
+      activePlanId: activePlanId,
+    );
+
+Map<String, dynamic> _fitnessCheckResponse() => {
+  'state': 'fitness_check_required',
+  'sourcePlanVersionId': 'active-plan',
+  'fitnessCheck': {
+    'suggestedActivities': <dynamic>[],
+    'benchmark': {
+      'kind': 'five_k_run',
+      'safeDates': ['2026-07-16'],
+    },
+  },
+};
 
 Map<String, dynamic> _proposalJson({String sourcePlanId = 'active-plan'}) => {
   'proposalId': 'proposal-1',
@@ -686,37 +363,42 @@ Map<String, dynamic> _proposalJson({String sourcePlanId = 'active-plan'}) => {
     'race': 'race_half_marathon',
     'hasRaceDate': true,
     'raceDate': '2026-10-18',
-    'targetTimeSeconds': 6900,
   },
   'proposedGoal': {
     'race': 'race_half_marathon',
     'hasRaceDate': true,
     'raceDate': '2026-10-18',
-    'targetTimeSeconds': 6900,
+  },
+  'raceEstimate': {
+    'centerTimeSeconds': 6900,
+    'fasterTimeSeconds': 6720,
+    'slowerTimeSeconds': 7080,
+    'confidence': 'high',
+    'evidence': [
+      {
+        'source': 'manual',
+        'recordedOn': '2026-07-10',
+        'description': 'Recent hard running result',
+      },
+    ],
   },
   'candidatePlan': _planJson('candidate-plan'),
   'summary': {
     'preservedCount': 4,
-    'addedUpcomingCount': 3,
-    'removedUpcomingCount': 1,
-    'materiallyChangedUpcomingCount': 2,
+    'addedUpcomingCount': 0,
+    'removedUpcomingCount': 0,
+    'materiallyChangedUpcomingCount': 0,
     'totalWeeks': 12,
     'endDate': '2026-10-18',
   },
-  'warnings': ['short_notice', 'aggressive_target'],
-  'suggestedTargetTimeSeconds': 7100,
+  'warnings': ['short_notice'],
 };
 
 Map<String, dynamic> _acceptanceJson() {
   final profile = buildRunnerProfile().toJson();
-  profile['goal'] = {
-    'race': 'race_10k',
-    'hasRaceDate': false,
-    'raceDate': null,
-  };
   profile['acceptedRaceTarget'] = const AcceptedRaceTarget(
-    distanceKm: 10,
-    primaryTime: Duration(minutes: 46, seconds: 30),
+    distanceKm: 21.097,
+    primaryTime: Duration(hours: 1, minutes: 55),
   ).toJson();
   return {
     'versionId': 'accepted-plan',
@@ -733,9 +415,3 @@ Map<String, dynamic> _planJson(String id) => {
   'currentWeekNumber': 3,
   'sessions': <Map<String, dynamic>>[],
 };
-
-class _Invocation {
-  const _Invocation(this.name, this.body);
-  final String name;
-  final Object? body;
-}

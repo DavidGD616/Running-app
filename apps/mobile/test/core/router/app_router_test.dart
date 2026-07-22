@@ -218,14 +218,9 @@ void main() {
                   () => DateTime(2026, 7, 13, 9),
             ),
             editGoalLocaleCodeProvider.overrideWithValue('en'),
-            editGoalEvidenceSuggestionProvider.overrideWithValue(null),
             editGoalInitialDataLoaderProvider.overrideWithValue(
               () async => EditGoalInitialData(
                 profile: buildRunnerProfile(),
-                acceptedRaceTarget: const AcceptedRaceTarget(
-                  distanceKm: 21.097,
-                  primaryTime: Duration(hours: 1, minutes: 55),
-                ),
                 activePlanId: 'plan-active',
               ),
             ),

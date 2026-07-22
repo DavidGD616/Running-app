@@ -16,6 +16,14 @@ import '../../../profile/domain/models/runner_profile.dart';
 import '../../domain/edit_goal_models.dart';
 import '../edit_goal_provider.dart';
 
+enum _EditGoalStep {
+  changes,
+  details,
+  fitness,
+  manualResult,
+  scheduleAssessment,
+}
+
 class EditGoalFormScreen extends ConsumerStatefulWidget {
   const EditGoalFormScreen({super.key});
 
@@ -24,12 +32,17 @@ class EditGoalFormScreen extends ConsumerStatefulWidget {
 }
 
 class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
+  _EditGoalStep _step = _EditGoalStep.changes;
+  final _distanceController = TextEditingController();
   final _timeController = TextEditingController();
-  bool _didPrefill = false;
-  String? _localValidationKey;
+  DateTime? _resultDate;
+  DateTime? _assessmentDate;
+  bool _hardEffort = true;
+  String? _validation;
 
   @override
   void dispose() {
+    _distanceController.dispose();
     _timeController.dispose();
     super.dispose();
   }
@@ -39,252 +52,745 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
     final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(editGoalProvider);
     final draft = _draft(state);
-    if (draft != null && !_didPrefill) {
-      _didPrefill = true;
-      _timeController.text = _formatTime(draft.targetTime);
-    }
-    final isPreviewing = state is EditGoalPreviewing;
-    final failure = state is EditGoalFailure ? state : null;
-    final evidenceSuggestion = ref.watch(editGoalEvidenceSuggestionProvider);
-    final selectedRaceSuggestion = evidenceSuggestion?.projectTo(
-      draft?.race ?? RunnerGoalRace.other,
-    );
+    final screen = switch (state) {
+      EditGoalLoading() => const Center(child: CircularProgressIndicator()),
+      EditGoalFailure(:final draft) when draft == null => _InitialLoadFailure(
+        message: _failureText(state.reason, l10n),
+        retryLabel: l10n.editGoalRetry,
+        onRetry: () =>
+            ref.read(editGoalProvider.notifier).retryInitialization(),
+      ),
+      EditGoalFitnessCheckRequired(:final fitnessCheck, :final draft) =>
+        _buildFitnessCheck(context, l10n, draft, fitnessCheck),
+      EditGoalAssessmentPending(:final draft) => _buildAssessmentPending(
+        context,
+        l10n,
+        draft,
+      ),
+      _ when draft != null => _buildEditing(context, l10n, draft, state),
+      _ => _InitialLoadFailure(
+        message: l10n.editGoalErrorParse,
+        retryLabel: l10n.editGoalRetry,
+        onRetry: () =>
+            ref.read(editGoalProvider.notifier).retryInitialization(),
+      ),
+    };
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.editGoalFormTitle),
-      body: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.screen,
-            AppSpacing.lg,
-            AppSpacing.screen,
-            AppSpacing.xl,
+      appBar: AppDetailHeaderBar(
+        title: l10n.editGoalFormTitle,
+        onBack: () {
+          if (_step != _EditGoalStep.changes) {
+            setState(() {
+              _step = _EditGoalStep.changes;
+              _validation = null;
+            });
+          } else {
+            context.pop();
+          }
+        },
+      ),
+      body: SafeArea(top: false, child: screen),
+    );
+  }
+
+  Widget _buildEditing(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft,
+    EditGoalState state,
+  ) {
+    return switch (_step) {
+      _EditGoalStep.changes => _buildChanges(context, l10n, draft),
+      _EditGoalStep.details => _buildDetails(context, l10n, draft, state),
+      _EditGoalStep.manualResult => _buildManualResult(
+        context,
+        l10n,
+        draft,
+        source: EditGoalFitnessSource.manual,
+      ),
+      _EditGoalStep.scheduleAssessment => const SizedBox.shrink(),
+      _EditGoalStep.fitness => const SizedBox.shrink(),
+    };
+  }
+
+  Widget _buildChanges(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft,
+  ) {
+    return _PageLayout(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.editGoalCurrentGoalLabel, style: AppTypography.labelLarge),
+          const SizedBox(height: AppSpacing.sm),
+          _CurrentGoalCard(draft: draft),
+          const SizedBox(height: AppSpacing.xl),
+          Text(
+            l10n.editGoalWhatChangedTitle,
+            style: AppTypography.headlineMedium,
           ),
-          child: state is EditGoalLoading
-              ? const Center(child: CircularProgressIndicator())
-              : draft == null
-              ? _InitialLoadFailure(
-                  message: failure == null
-                      ? l10n.editGoalErrorParse
-                      : _failureText(failure.reason, l10n),
-                  retryLabel: l10n.editGoalRetry,
-                  onRetry: () =>
-                      ref.read(editGoalProvider.notifier).retryInitialization(),
-                )
-              : Column(
-                  children: [
-                    Expanded(
-                      child: SingleChildScrollView(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.editGoalFormSubtitle,
-                              style: AppTypography.bodyLarge.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            SectionLabel(label: l10n.editGoalDistanceSection),
-                            const SizedBox(height: AppSpacing.md),
-                            Wrap(
-                              spacing: AppSpacing.sm,
-                              runSpacing: AppSpacing.sm,
-                              children: RunnerGoalRace.values
-                                  .where((race) => race != RunnerGoalRace.other)
-                                  .map(
-                                    (race) => _ChoiceChip(
-                                      label: _raceLabel(race, l10n),
-                                      selected: draft.race == race,
-                                      onTap: () =>
-                                          _update(draft.copyWith(race: race)),
-                                    ),
-                                  )
-                                  .toList(growable: false),
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            SectionLabel(label: l10n.editGoalFixedDateSection),
-                            const SizedBox(height: AppSpacing.md),
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: _ToggleCard(
-                                    label: l10n.yes,
-                                    selected: draft.hasRaceDate,
-                                    onTap: () => _update(
-                                      draft.copyWith(hasRaceDate: true),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: AppSpacing.md),
-                                Expanded(
-                                  child: _ToggleCard(
-                                    label: l10n.no,
-                                    selected: !draft.hasRaceDate,
-                                    onTap: () => _update(
-                                      draft.copyWith(
-                                        hasRaceDate: false,
-                                        clearRaceDate: true,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            if (draft.hasRaceDate) ...[
-                              const SizedBox(height: AppSpacing.md),
-                              _DateField(
-                                label: draft.raceDate == null
-                                    ? l10n.tapToSetDate
-                                    : DateFormat.yMMMd(
-                                        Localizations.localeOf(
-                                          context,
-                                        ).toLanguageTag(),
-                                      ).format(draft.raceDate!),
-                                onTap: () => _pickDate(draft),
-                              ),
-                              if (_localValidationKey == 'date') ...[
-                                const SizedBox(height: AppSpacing.xs),
-                                _ErrorText(l10n.editGoalDateMinimumError),
-                              ],
-                            ],
-                            const SizedBox(height: AppSpacing.xl),
-                            SectionLabel(label: l10n.editGoalTargetTimeSection),
-                            const SizedBox(height: AppSpacing.md),
-                            TextField(
-                              key: const Key('editGoalTargetTimeField'),
-                              controller: _timeController,
-                              keyboardType: TextInputType.datetime,
-                              style: AppTypography.bodyLarge,
-                              decoration: InputDecoration(
-                                hintText: l10n.editGoalTargetTimeHint,
-                                filled: true,
-                                fillColor: AppColors.backgroundCard,
-                                border: const OutlineInputBorder(
-                                  borderRadius: AppRadius.borderLg,
-                                  borderSide: BorderSide(
-                                    color: AppColors.borderDefault,
-                                  ),
-                                ),
-                                enabledBorder: const OutlineInputBorder(
-                                  borderRadius: AppRadius.borderLg,
-                                  borderSide: BorderSide(
-                                    color: AppColors.borderDefault,
-                                  ),
-                                ),
-                                focusedBorder: const OutlineInputBorder(
-                                  borderRadius: AppRadius.borderLg,
-                                  borderSide: BorderSide(
-                                    color: AppColors.accentPrimary,
-                                  ),
-                                ),
-                              ),
-                              onChanged: (_) => setState(() {
-                                _localValidationKey = null;
-                              }),
-                            ),
-                            const SizedBox(height: AppSpacing.sm),
-                            Text(
-                              l10n.editGoalCurrentTarget(
-                                _formatTime(draft.targetTime),
-                              ),
-                              style: AppTypography.caption.copyWith(
-                                color: AppColors.textSecondary,
-                              ),
-                            ),
-                            if (selectedRaceSuggestion != null)
-                              Text(
-                                l10n.editGoalSuggestedTarget(
-                                  _formatTime(
-                                    selectedRaceSuggestion.targetTime,
-                                  ),
-                                ),
-                                style: AppTypography.caption.copyWith(
-                                  color: AppColors.accentLight,
-                                ),
-                              ),
-                            if (_localValidationKey == 'time') ...[
-                              const SizedBox(height: AppSpacing.xs),
-                              _ErrorText(l10n.editGoalTimeError),
-                            ],
-                            if (failure != null) ...[
-                              const SizedBox(height: AppSpacing.lg),
-                              _ErrorText(_failureText(failure.reason, l10n)),
-                            ],
-                          ],
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.editGoalWhatChangedSubtitle,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _SelectCard(
+            key: const Key('editGoalDistanceChange'),
+            label: l10n.editGoalChangeDistanceTitle,
+            subtitle: l10n.editGoalChangeDistanceSubtitle,
+            selected: draft.changes.contains(EditGoalChange.distance),
+            onTap: () => _toggleChange(draft, EditGoalChange.distance),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SelectCard(
+            key: const Key('editGoalDateChange'),
+            label: l10n.editGoalChangeDateTitle,
+            subtitle: l10n.editGoalChangeDateSubtitle,
+            selected: draft.changes.contains(EditGoalChange.raceDate),
+            onTap: () => _toggleChange(draft, EditGoalChange.raceDate),
+          ),
+          const Spacer(),
+          AppButton(
+            key: const Key('editGoalChangesContinue'),
+            label: l10n.continueButton,
+            onPressed: !draft.isChangeSelected
+                ? null
+                : () => setState(() => _step = _EditGoalStep.details),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(
+            label: l10n.editGoalDiscard,
+            variant: AppButtonVariant.secondary,
+            onPressed: () async {
+              await ref.read(editGoalProvider.notifier).discard();
+              if (context.mounted) context.pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDetails(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft,
+    EditGoalState state,
+  ) {
+    final isPreviewing = state is EditGoalPreviewing;
+    final failure = state is EditGoalFailure ? state : null;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return _PageLayout(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.editGoalDetailsTitle, style: AppTypography.headlineMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.editGoalDetailsSubtitle,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (draft.changes.contains(EditGoalChange.distance)) ...[
+            const SizedBox(height: AppSpacing.xl),
+            SectionLabel(label: l10n.editGoalDistanceSection),
+            const SizedBox(height: AppSpacing.md),
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: RunnerGoalRace.values
+                  .where((race) => race != RunnerGoalRace.other)
+                  .map(
+                    (race) => _ChoiceChip(
+                      label: _raceLabel(race, l10n),
+                      selected: draft.race == race,
+                      onTap: () => _update(
+                        draft.copyWith(
+                          race: race,
+                          clearFitnessResult: true,
+                          clearAssessment: true,
                         ),
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
-                    AppButton(
-                      label: isPreviewing
-                          ? l10n.editGoalPreviewLoading
-                          : failure == null
-                          ? l10n.editGoalPreviewChanges
-                          : l10n.editGoalRetry,
-                      isLoading: isPreviewing,
-                      onPressed: isPreviewing ? null : () => _preview(draft),
+                  )
+                  .toList(growable: false),
+            ),
+          ],
+          if (draft.changes.contains(EditGoalChange.raceDate)) ...[
+            const SizedBox(height: AppSpacing.xl),
+            SectionLabel(label: l10n.editGoalFixedDateSection),
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: _ToggleCard(
+                    label: l10n.editGoalHasDate,
+                    selected: draft.hasRaceDate,
+                    onTap: () => _update(
+                      draft.copyWith(
+                        hasRaceDate: true,
+                        clearFitnessResult: true,
+                        clearAssessment: true,
+                      ),
                     ),
-                  ],
+                  ),
                 ),
-        ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _ToggleCard(
+                    label: l10n.editGoalNoDate,
+                    selected: !draft.hasRaceDate,
+                    onTap: () => _update(
+                      draft.copyWith(
+                        hasRaceDate: false,
+                        clearRaceDate: true,
+                        clearFitnessResult: true,
+                        clearAssessment: true,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (draft.hasRaceDate) ...[
+              const SizedBox(height: AppSpacing.md),
+              _DateField(
+                label: draft.raceDate == null
+                    ? l10n.tapToSetDate
+                    : DateFormat.yMMMd(locale).format(draft.raceDate!),
+                onTap: () => _pickRaceDate(draft),
+              ),
+            ] else ...[
+              const SizedBox(height: AppSpacing.md),
+              _InformationNote(text: l10n.editGoalNoDateNote),
+            ],
+          ],
+          if (state is EditGoalEditing && state.wasRebased) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _InformationNote(text: l10n.editGoalUpdatedSincePreview),
+          ],
+          if (_validation != null || failure != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _ErrorText(
+              _validation == 'date'
+                  ? l10n.editGoalDatePastError
+                  : failure == null
+                  ? l10n.editGoalErrorInvalid
+                  : _failureText(failure.reason, l10n),
+            ),
+          ],
+          const Spacer(),
+          AppButton(
+            key: const Key('editGoalReviewChanges'),
+            label: isPreviewing
+                ? l10n.editGoalPreviewLoading
+                : l10n.editGoalPreviewChanges,
+            isLoading: isPreviewing,
+            onPressed: isPreviewing ? null : () => _review(draft),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFitnessCheck(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft,
+    GoalEditFitnessCheck check,
+  ) {
+    if (_step == _EditGoalStep.manualResult) {
+      return _buildManualResult(
+        context,
+        l10n,
+        draft,
+        source: EditGoalFitnessSource.manual,
+      );
+    }
+    if (_step == _EditGoalStep.scheduleAssessment) {
+      return _buildScheduleAssessment(context, l10n, draft, check);
+    }
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return _PageLayout(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.editGoalFitnessCheckTitle,
+            style: AppTypography.headlineMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.editGoalFitnessCheckSubtitle,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          if (check.suggestedActivities.isNotEmpty) ...[
+            SectionLabel(label: l10n.editGoalRecommendedResult),
+            const SizedBox(height: AppSpacing.md),
+            ...check.suggestedActivities.map(
+              (activity) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                child: _SuggestedActivityCard(
+                  activity: activity,
+                  dateFormat: DateFormat.yMMMd(locale),
+                  onUse: () {
+                    ref
+                        .read(editGoalProvider.notifier)
+                        .useFitnessResult(
+                          EditGoalFitnessResult(
+                            source: EditGoalFitnessSource.manual,
+                            distanceKm: activity.distanceKm,
+                            elapsed: activity.elapsed,
+                            recordedOn: activity.recordedOn,
+                            hardEffort: true,
+                          ),
+                        );
+                    _review(_draft(ref.read(editGoalProvider))!);
+                  },
+                ),
+              ),
+            ),
+          ],
+          SectionLabel(label: l10n.editGoalOtherOptions),
+          const SizedBox(height: AppSpacing.md),
+          _SelectCard(
+            label: l10n.editGoalEnterResult,
+            subtitle: l10n.editGoalEnterResultSubtitle,
+            selected: false,
+            onTap: () => setState(() => _step = _EditGoalStep.manualResult),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _SelectCard(
+            label: l10n.editGoalScheduleBenchmark,
+            subtitle: l10n.editGoalScheduleBenchmarkSubtitle,
+            selected: false,
+            onTap: () =>
+                setState(() => _step = _EditGoalStep.scheduleAssessment),
+          ),
+          const Spacer(),
+          AppButton(
+            label: l10n.editGoalKeepCurrent,
+            variant: AppButtonVariant.secondary,
+            onPressed: () {
+              ref.read(editGoalProvider.notifier).cancelPreview();
+              setState(() => _step = _EditGoalStep.details);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildManualResult(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft, {
+    required EditGoalFitnessSource source,
+  }) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return _PageLayout(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.editGoalEnterResult, style: AppTypography.headlineMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.editGoalManualResultSubtitle,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          _InputLabel(label: l10n.editGoalResultDistance),
+          const SizedBox(height: AppSpacing.sm),
+          _TextInput(
+            key: const Key('editGoalResultDistance'),
+            controller: _distanceController,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            hint: l10n.editGoalResultDistanceHint,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _InputLabel(label: l10n.editGoalResultTime),
+          const SizedBox(height: AppSpacing.sm),
+          _TextInput(
+            key: const Key('editGoalResultTime'),
+            controller: _timeController,
+            keyboardType: TextInputType.datetime,
+            hint: l10n.editGoalResultTimeHint,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _InputLabel(label: l10n.editGoalResultDate),
+          const SizedBox(height: AppSpacing.sm),
+          _DateField(
+            label: _resultDate == null
+                ? l10n.tapToSetDate
+                : DateFormat.yMMMd(locale).format(_resultDate!),
+            onTap: _pickResultDate,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _InputLabel(label: l10n.editGoalHardEffortQuestion),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: [
+              Expanded(
+                child: _ToggleCard(
+                  label: l10n.yes,
+                  selected: _hardEffort,
+                  onTap: () => setState(() => _hardEffort = true),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: _ToggleCard(
+                  label: l10n.no,
+                  selected: !_hardEffort,
+                  onTap: () => setState(() => _hardEffort = false),
+                ),
+              ),
+            ],
+          ),
+          if (_validation != null) ...[
+            const SizedBox(height: AppSpacing.md),
+            _ErrorText(l10n.editGoalResultValidation),
+          ],
+          const Spacer(),
+          AppButton(
+            label: l10n.editGoalUseResult,
+            onPressed: () => _useManualResult(draft, source),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildScheduleAssessment(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft,
+    GoalEditFitnessCheck check,
+  ) {
+    final safeDates = check.safeDates;
+    _assessmentDate ??= safeDates.isEmpty ? null : safeDates.first;
+    return _PageLayout(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.editGoalBenchmarkTitle,
+            style: AppTypography.headlineMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            check.benchmarkKind == 'five_k_run'
+                ? l10n.editGoalBenchmarkFiveKExplanation
+                : l10n.editGoalBenchmarkOneKExplanation,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          SectionLabel(label: l10n.editGoalSafeDatesLabel),
+          const SizedBox(height: AppSpacing.md),
+          if (safeDates.isEmpty)
+            _InformationNote(text: l10n.editGoalNoSafeDates)
+          else
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: safeDates
+                  .map(
+                    (date) => _ChoiceChip(
+                      label: DateFormat.MMMd(
+                        Localizations.localeOf(context).toLanguageTag(),
+                      ).format(date),
+                      selected: _assessmentDate == date,
+                      onTap: () => setState(() => _assessmentDate = date),
+                    ),
+                  )
+                  .toList(growable: false),
+            ),
+          const SizedBox(height: AppSpacing.lg),
+          _InformationNote(text: l10n.editGoalBenchmarkPlanNote),
+          const Spacer(),
+          AppButton(
+            label: l10n.editGoalScheduleAssessmentButton,
+            onPressed: _assessmentDate == null
+                ? null
+                : () => ref
+                      .read(editGoalProvider.notifier)
+                      .scheduleAssessment(check, _assessmentDate!),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssessmentPending(
+    BuildContext context,
+    AppLocalizations l10n,
+    EditGoalDraft draft,
+  ) {
+    if (_step == _EditGoalStep.manualResult) {
+      return _buildManualResult(
+        context,
+        l10n,
+        draft,
+        source: EditGoalFitnessSource.assessment,
+      );
+    }
+    final assessment = draft.assessment!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return _PageLayout(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.editGoalInProgressTitle,
+            style: AppTypography.headlineMedium,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.editGoalInProgressSubtitle,
+            style: AppTypography.bodyLarge.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          _AssessmentCard(
+            assessment: assessment,
+            dateFormat: DateFormat.yMMMd(locale),
+          ),
+          const Spacer(),
+          AppButton(
+            label: l10n.editGoalEnterAssessmentResult,
+            onPressed: () => setState(() => _step = _EditGoalStep.manualResult),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(
+            label: l10n.editGoalUseAnotherResult,
+            variant: AppButtonVariant.secondary,
+            onPressed: () {
+              ref.read(editGoalProvider.notifier).cancelAssessment();
+              setState(() => _step = _EditGoalStep.manualResult);
+            },
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(
+            label: l10n.editGoalDiscard,
+            variant: AppButtonVariant.secondary,
+            onPressed: () async {
+              await ref.read(editGoalProvider.notifier).discard();
+              if (context.mounted) context.pop();
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleChange(EditGoalDraft draft, EditGoalChange change) {
+    final changes = {...draft.changes};
+    if (!changes.add(change)) changes.remove(change);
+    _update(
+      draft.copyWith(
+        changes: changes,
+        clearFitnessResult: true,
+        clearAssessment: true,
       ),
     );
   }
 
   void _update(EditGoalDraft draft) {
-    setState(() => _localValidationKey = null);
+    setState(() => _validation = null);
     ref.read(editGoalProvider.notifier).updateDraft(draft);
   }
 
-  Future<void> _pickDate(EditGoalDraft draft) async {
+  Future<void> _pickRaceDate(EditGoalDraft draft) async {
     final now = ref.read(editGoalClockProvider)();
-    final firstDate = DateTime(
-      now.year,
-      now.month,
-      now.day,
-    ).add(const Duration(days: 7));
-    final initial =
-        draft.raceDate != null && !draft.raceDate!.isBefore(firstDate)
-        ? draft.raceDate!
-        : firstDate;
+    final firstDate = DateTime(now.year, now.month, now.day);
     final selected = await showDatePicker(
       context: context,
-      initialDate: initial,
+      initialDate:
+          draft.raceDate != null && !draft.raceDate!.isBefore(firstDate)
+          ? draft.raceDate!
+          : firstDate,
       firstDate: firstDate,
       lastDate: firstDate.add(const Duration(days: 365 * 5)),
     );
     if (selected != null) _update(draft.copyWith(raceDate: selected));
   }
 
-  Future<void> _preview(EditGoalDraft draft) async {
-    final parsed = _parseTime(_timeController.text);
-    if (parsed == null) {
-      setState(() => _localValidationKey = 'time');
-      return;
-    }
+  Future<void> _pickResultDate() async {
+    final now = ref.read(editGoalClockProvider)();
+    final selected = await showDatePicker(
+      context: context,
+      initialDate: _resultDate ?? now,
+      firstDate: now.subtract(const Duration(days: 84)),
+      lastDate: now,
+    );
+    if (selected != null) setState(() => _resultDate = selected);
+  }
+
+  Future<void> _review(EditGoalDraft draft) async {
     final now = ref.read(editGoalClockProvider)();
     if (draft.hasRaceDate &&
         (draft.raceDate == null ||
-            draft.raceDate!.isBefore(
-              DateTime(
-                now.year,
-                now.month,
-                now.day,
-              ).add(const Duration(days: 7)),
-            ))) {
-      setState(() => _localValidationKey = 'date');
+            draft.raceDate!.isBefore(DateTime(now.year, now.month, now.day)))) {
+      setState(() => _validation = 'date');
       return;
     }
-    final updated = draft.copyWith(targetTime: parsed);
-    ref.read(editGoalProvider.notifier).updateDraft(updated);
     final ready = await ref.read(editGoalProvider.notifier).preview();
     if (ready && mounted) {
       context.push(RouteNames.settingsUpdatePlanEditGoalPreview);
     }
   }
+
+  void _useManualResult(EditGoalDraft draft, EditGoalFitnessSource source) {
+    final distance = double.tryParse(_distanceController.text.trim());
+    final elapsed = _parseDuration(_timeController.text);
+    final date = _resultDate;
+    if (distance == null || distance <= 0 || elapsed == null || date == null) {
+      setState(() => _validation = 'result');
+      return;
+    }
+    final result = EditGoalFitnessResult(
+      source: source,
+      distanceKm: distance,
+      elapsed: elapsed,
+      recordedOn: date,
+      hardEffort: _hardEffort,
+    );
+    ref.read(editGoalProvider.notifier).useFitnessResult(result);
+    final updated = _draft(ref.read(editGoalProvider));
+    if (updated != null) _review(updated);
+  }
+}
+
+class _PageLayout extends StatelessWidget {
+  const _PageLayout({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+    builder: (context, constraints) => SingleChildScrollView(
+      child: ConstrainedBox(
+        constraints: BoxConstraints(minHeight: constraints.maxHeight),
+        child: IntrinsicHeight(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.screen,
+              AppSpacing.lg,
+              AppSpacing.screen,
+              AppSpacing.xl,
+            ),
+            child: child,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+class _CurrentGoalCard extends StatelessWidget {
+  const _CurrentGoalCard({required this.draft});
+  final EditGoalDraft draft;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(_raceLabel(draft.race, l10n), style: AppTypography.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            draft.raceDate == null
+                ? l10n.editGoalNoFixedDate
+                : DateFormat.yMMMd(locale).format(draft.raceDate!),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SelectCard extends StatelessWidget {
+  const _SelectCard({
+    super.key,
+    required this.label,
+    required this.subtitle,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final String subtitle;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: AppRadius.borderLg,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.accentMuted : AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(
+          color: selected ? AppColors.accentPrimary : AppColors.borderDefault,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            selected ? Icons.check_circle : Icons.circle_outlined,
+            color: selected ? AppColors.accentPrimary : AppColors.textSecondary,
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(label, style: AppTypography.titleMedium),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  subtitle,
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _ChoiceChip extends StatelessWidget {
@@ -298,33 +804,32 @@ class _ChoiceChip extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.base,
-          vertical: AppSpacing.md,
-        ),
-        decoration: BoxDecoration(
-          color: selected ? AppColors.accentPrimary : AppColors.backgroundCard,
-          borderRadius: AppRadius.borderFull,
-          border: Border.all(
-            color: selected ? AppColors.accentPrimary : AppColors.borderDefault,
-          ),
-        ),
-        child: Text(
-          label,
-          style: AppTypography.labelMedium.copyWith(
-            color: selected
-                ? AppColors.backgroundPrimary
-                : AppColors.textSecondary,
-          ),
+  Widget build(BuildContext context) => InkWell(
+    onTap: onTap,
+    borderRadius: AppRadius.borderFull,
+    child: AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.base,
+        vertical: AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: selected ? AppColors.accentPrimary : AppColors.backgroundCard,
+        borderRadius: AppRadius.borderFull,
+        border: Border.all(
+          color: selected ? AppColors.accentPrimary : AppColors.borderDefault,
         ),
       ),
-    );
-  }
+      child: Text(
+        label,
+        style: AppTypography.labelMedium.copyWith(
+          color: selected
+              ? AppColors.backgroundPrimary
+              : AppColors.textSecondary,
+        ),
+      ),
+    ),
+  );
 }
 
 class _ToggleCard extends StatelessWidget {
@@ -338,8 +843,9 @@ class _ToggleCard extends StatelessWidget {
   final VoidCallback onTap;
 
   @override
-  Widget build(BuildContext context) => GestureDetector(
+  Widget build(BuildContext context) => InkWell(
     onTap: onTap,
+    borderRadius: AppRadius.borderLg,
     child: AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       height: 48,
@@ -378,6 +884,154 @@ class _DateField extends StatelessWidget {
   );
 }
 
+class _SuggestedActivityCard extends StatelessWidget {
+  const _SuggestedActivityCard({
+    required this.activity,
+    required this.dateFormat,
+    required this.onUse,
+  });
+  final GoalEditSuggestedActivity activity;
+  final DateFormat dateFormat;
+  final VoidCallback onUse;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.editGoalSuggestedActivity(
+              dateFormat.format(activity.recordedOn),
+              activity.distanceKm.toStringAsFixed(1),
+              _formatDuration(activity.elapsed),
+            ),
+            style: AppTypography.bodyLarge,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          AppButton(label: l10n.editGoalUseThisActivity, onPressed: onUse),
+        ],
+      ),
+    );
+  }
+}
+
+class _AssessmentCard extends StatelessWidget {
+  const _AssessmentCard({required this.assessment, required this.dateFormat});
+  final EditGoalAssessment assessment;
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final isFiveK = assessment.kind == 'five_k_run';
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.accentPrimary),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            isFiveK ? l10n.editGoalBenchmarkFiveK : l10n.editGoalBenchmarkOneK,
+            style: AppTypography.titleMedium,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            dateFormat.format(assessment.scheduledFor),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(
+            l10n.editGoalAssessmentScheduled,
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.accentLight,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TextInput extends StatelessWidget {
+  const _TextInput({
+    super.key,
+    required this.controller,
+    required this.keyboardType,
+    required this.hint,
+  });
+  final TextEditingController controller;
+  final TextInputType keyboardType;
+  final String hint;
+
+  @override
+  Widget build(BuildContext context) => TextField(
+    key: key,
+    controller: controller,
+    keyboardType: keyboardType,
+    style: AppTypography.bodyLarge,
+    decoration: InputDecoration(
+      hintText: hint,
+      filled: true,
+      fillColor: AppColors.backgroundCard,
+      border: const OutlineInputBorder(
+        borderRadius: AppRadius.borderLg,
+        borderSide: BorderSide(color: AppColors.borderDefault),
+      ),
+      enabledBorder: const OutlineInputBorder(
+        borderRadius: AppRadius.borderLg,
+        borderSide: BorderSide(color: AppColors.borderDefault),
+      ),
+      focusedBorder: const OutlineInputBorder(
+        borderRadius: AppRadius.borderLg,
+        borderSide: BorderSide(color: AppColors.accentPrimary),
+      ),
+    ),
+  );
+}
+
+class _InputLabel extends StatelessWidget {
+  const _InputLabel({required this.label});
+  final String label;
+
+  @override
+  Widget build(BuildContext context) =>
+      Text(label, style: AppTypography.labelLarge);
+}
+
+class _InformationNote extends StatelessWidget {
+  const _InformationNote({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpacing.base),
+    decoration: BoxDecoration(
+      color: AppColors.accentMuted,
+      borderRadius: AppRadius.borderLg,
+    ),
+    child: Text(
+      text,
+      style: AppTypography.bodyMedium.copyWith(color: AppColors.textPrimary),
+    ),
+  );
+}
+
 class _ErrorText extends StatelessWidget {
   const _ErrorText(this.text);
   final String text;
@@ -392,7 +1046,6 @@ class _InitialLoadFailure extends StatelessWidget {
     required this.retryLabel,
     required this.onRetry,
   });
-
   final String message;
   final String retryLabel;
   final Future<void> Function() onRetry;
@@ -416,11 +1069,13 @@ class _InitialLoadFailure extends StatelessWidget {
 
 EditGoalDraft? _draft(EditGoalState state) => switch (state) {
   EditGoalEditing(:final draft) ||
+  EditGoalFitnessCheckRequired(:final draft) ||
+  EditGoalAssessmentPending(:final draft) ||
   EditGoalPreviewing(:final draft) ||
   EditGoalPreviewReady(:final draft) ||
   EditGoalApplying(:final draft) => draft,
   EditGoalFailure(:final draft) => draft,
-  _ => null,
+  EditGoalLoading() || EditGoalSuccess() => null,
 };
 
 String _raceLabel(RunnerGoalRace race, AppLocalizations l10n) => switch (race) {
@@ -431,14 +1086,7 @@ String _raceLabel(RunnerGoalRace race, AppLocalizations l10n) => switch (race) {
   RunnerGoalRace.other => l10n.raceOther,
 };
 
-String _formatTime(Duration duration) {
-  final hours = duration.inHours;
-  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
-  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return '$hours:$minutes:$seconds';
-}
-
-Duration? _parseTime(String value) {
+Duration? _parseDuration(String value) {
   final parts = value.trim().split(':');
   if (parts.length != 3) return null;
   final hours = int.tryParse(parts[0]);
@@ -456,6 +1104,13 @@ Duration? _parseTime(String value) {
   }
   final duration = Duration(hours: hours, minutes: minutes, seconds: seconds);
   return duration > Duration.zero ? duration : null;
+}
+
+String _formatDuration(Duration duration) {
+  final hours = duration.inHours;
+  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
+  final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
+  return '$hours:$minutes:$seconds';
 }
 
 String _failureText(EditGoalFailureReason reason, AppLocalizations l10n) =>

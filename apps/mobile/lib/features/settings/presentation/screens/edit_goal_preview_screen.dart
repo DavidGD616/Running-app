@@ -14,6 +14,7 @@ import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../core/widgets/section_label.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../profile/domain/models/runner_profile.dart';
+import '../../../training_plan/domain/models/plan_week.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../user_preferences/domain/user_preferences.dart';
@@ -38,6 +39,9 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final state = ref.watch(editGoalProvider);
+    if (state case EditGoalSuccess(:final acceptance, :final proposal)) {
+      return _EditGoalSuccessScreen(acceptance: acceptance, proposal: proposal);
+    }
     final currentProposal = _proposal(state);
     if (currentProposal != null) _lastProposal = currentProposal;
     final proposal = currentProposal ?? _lastProposal;
@@ -97,6 +101,8 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
                         proposal: proposal,
                         dateFormat: dateFormat,
                       ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _RaceEstimateCard(estimate: proposal.raceEstimate),
                       if (proposal.warnings.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.lg),
                         ...proposal.warnings.map(
@@ -104,10 +110,7 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.sm,
                             ),
-                            child: _WarningBanner(
-                              warning: warning,
-                              suggestion: proposal.suggestedTargetTime,
-                            ),
+                            child: _WarningBanner(warning: warning),
                           ),
                         ),
                       ],
@@ -128,15 +131,24 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
                         ),
                       ],
                       const SizedBox(height: AppSpacing.xl),
-                      SectionLabel(label: l10n.editGoalScheduleSection),
+                      SectionLabel(label: l10n.editGoalNextTwoWeeks),
                       const SizedBox(height: AppSpacing.sm),
-                      ...proposal.candidatePlan.allWeeks.map(
-                        (week) => _WeekExpansion(
-                          weekNumber: week.weekNumber,
-                          sessions: week.sessions,
+                      ...proposal.candidatePlan.allWeeks
+                          .take(2)
+                          .map(
+                            (week) => _WeekExpansion(
+                              weekNumber: week.weekNumber,
+                              sessions: week.sessions,
+                              dateFormat: dateFormat,
+                            ),
+                          ),
+                      if (proposal.candidatePlan.allWeeks.length > 2) ...[
+                        const SizedBox(height: AppSpacing.sm),
+                        _FullPlanExpansion(
+                          weeks: proposal.candidatePlan.allWeeks.skip(2),
                           dateFormat: dateFormat,
                         ),
-                      ),
+                      ],
                       if (expired) ...[
                         const SizedBox(height: AppSpacing.md),
                         Text(
@@ -172,9 +184,7 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
                         final accepted = await ref
                             .read(editGoalProvider.notifier)
                             .apply();
-                        if (accepted && context.mounted) {
-                          context.go(RouteNames.plan);
-                        }
+                        if (accepted && context.mounted) setState(() {});
                       },
               ),
               const SizedBox(height: AppSpacing.sm),
@@ -291,8 +301,6 @@ class _GoalCard extends StatelessWidget {
                 : dateFormat.format(goal.raceDate!),
             style: AppTypography.caption,
           ),
-          const SizedBox(height: AppSpacing.xs),
-          Text(_formatTime(goal.targetTime), style: AppTypography.bodyLarge),
         ],
       ),
     );
@@ -300,9 +308,8 @@ class _GoalCard extends StatelessWidget {
 }
 
 class _WarningBanner extends StatelessWidget {
-  const _WarningBanner({required this.warning, required this.suggestion});
+  const _WarningBanner({required this.warning});
   final GoalEditWarning warning;
-  final Duration? suggestion;
 
   @override
   Widget build(BuildContext context) {
@@ -312,9 +319,21 @@ class _WarningBanner extends StatelessWidget {
         l10n.editGoalWarningShortNoticeTitle,
         l10n.editGoalWarningShortNoticeBody,
       ),
-      GoalEditWarning.aggressiveTarget => (
-        l10n.editGoalWarningAggressiveTitle,
-        l10n.editGoalWarningAggressiveBody,
+      GoalEditWarning.raceWeek => (
+        l10n.editGoalWarningRaceWeekTitle,
+        l10n.editGoalWarningRaceWeekBody,
+      ),
+      GoalEditWarning.readinessGap => (
+        l10n.editGoalWarningReadinessGapTitle,
+        l10n.editGoalWarningReadinessGapBody,
+      ),
+      GoalEditWarning.limitedEvidence => (
+        l10n.editGoalWarningLimitedEvidenceTitle,
+        l10n.editGoalWarningLimitedEvidenceBody,
+      ),
+      GoalEditWarning.noFixedDate => (
+        l10n.editGoalWarningNoFixedDateTitle,
+        l10n.editGoalWarningNoFixedDateBody,
       ),
     };
     return Container(
@@ -331,13 +350,61 @@ class _WarningBanner extends StatelessWidget {
           Text(title, style: AppTypography.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           Text(body, style: AppTypography.bodyMedium),
-          if (warning == GoalEditWarning.aggressiveTarget &&
-              suggestion != null) ...[
+        ],
+      ),
+    );
+  }
+}
+
+class _RaceEstimateCard extends StatelessWidget {
+  const _RaceEstimateCard({required this.estimate});
+  final GoalEditRaceEstimate estimate;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final confidence = switch (estimate.confidence) {
+      'high' => l10n.editGoalConfidenceHigh,
+      'medium' => l10n.editGoalConfidenceMedium,
+      _ => l10n.editGoalConfidenceLimited,
+    };
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: AppColors.accentMuted,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.accentPrimary),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(l10n.editGoalEstimateSection, style: AppTypography.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.editGoalEstimatedFinishRange(
+              _formatTime(estimate.fasterTime),
+              _formatTime(estimate.slowerTime),
+            ),
+            style: AppTypography.titleLarge,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            l10n.editGoalEstimateConfidence(confidence),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          if (estimate.evidence.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.md),
+            Text(l10n.editGoalEvidenceUsed, style: AppTypography.labelMedium),
             const SizedBox(height: AppSpacing.xs),
-            Text(
-              l10n.editGoalWarningSuggested(_formatTime(suggestion!)),
-              style: AppTypography.labelMedium.copyWith(
-                color: AppColors.warning,
+            ...estimate.evidence.map(
+              (item) => Text(
+                item.description,
+                style: AppTypography.bodyMedium.copyWith(
+                  color: AppColors.textSecondary,
+                ),
               ),
             ),
           ],
@@ -608,6 +675,138 @@ class _WeekExpansion extends StatelessWidget {
       ),
     );
   }
+}
+
+class _FullPlanExpansion extends StatelessWidget {
+  const _FullPlanExpansion({required this.weeks, required this.dateFormat});
+  final Iterable<PlanWeek> weeks;
+  final DateFormat dateFormat;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: ExpansionTile(
+        key: const Key('editGoalFullPlanExpansion'),
+        shape: const RoundedRectangleBorder(borderRadius: AppRadius.borderLg),
+        collapsedShape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.borderLg,
+        ),
+        title: Text(l10n.editGoalFullProposedPlan),
+        children: weeks
+            .map(
+              (week) => _WeekExpansion(
+                weekNumber: week.weekNumber,
+                sessions: week.sessions,
+                dateFormat: dateFormat,
+              ),
+            )
+            .toList(growable: false),
+      ),
+    );
+  }
+}
+
+class _EditGoalSuccessScreen extends StatelessWidget {
+  const _EditGoalSuccessScreen({
+    required this.acceptance,
+    required this.proposal,
+  });
+
+  final GoalEditAcceptance acceptance;
+  final GoalEditProposal proposal;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final dateFormat = DateFormat.yMMMd(locale);
+    final next =
+        acceptance.plan.sessions
+            .where(
+              (session) =>
+                  session.status == SessionStatus.today ||
+                  session.status == SessionStatus.upcoming,
+            )
+            .toList()
+          ..sort((a, b) => a.date.compareTo(b.date));
+    final nextSession = next.isEmpty ? null : next.first;
+    return Scaffold(
+      backgroundColor: AppColors.backgroundPrimary,
+      appBar: AppDetailHeaderBar(title: l10n.editGoalSuccessTitle),
+      body: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.screen,
+            AppSpacing.lg,
+            AppSpacing.screen,
+            AppSpacing.xl,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                l10n.editGoalSuccessTitle,
+                style: AppTypography.headlineMedium,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                l10n.editGoalSuccessSubtitle,
+                style: AppTypography.bodyLarge.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xl),
+              _RaceEstimateCard(estimate: proposal.raceEstimate),
+              const SizedBox(height: AppSpacing.lg),
+              _SuccessNote(
+                text: l10n.editGoalProgressPreserved(
+                  proposal.summary.preservedCount,
+                ),
+              ),
+              if (nextSession != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                _SuccessNote(
+                  text: l10n.editGoalNextWorkout(
+                    dateFormat.format(nextSession.date),
+                    _sessionLabel(nextSession.type, l10n),
+                  ),
+                ),
+              ],
+              const Spacer(),
+              AppButton(
+                label: l10n.editGoalViewPlan,
+                onPressed: () => context.go(RouteNames.plan),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SuccessNote extends StatelessWidget {
+  const _SuccessNote({required this.text});
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpacing.base),
+    decoration: BoxDecoration(
+      color: AppColors.backgroundCard,
+      borderRadius: AppRadius.borderLg,
+      border: Border.all(color: AppColors.borderDefault),
+    ),
+    child: Text(text, style: AppTypography.bodyLarge),
+  );
 }
 
 GoalEditProposal? _proposal(EditGoalState state) => switch (state) {

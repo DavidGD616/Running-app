@@ -7232,6 +7232,426 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This preview has expired and cannot be applied.'**
   String get editGoalPreviewExpired;
+
+  /// No description provided for @editGoalCurrentGoalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current goal'**
+  String get editGoalCurrentGoalLabel;
+
+  /// No description provided for @editGoalWhatChangedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What changed?'**
+  String get editGoalWhatChangedTitle;
+
+  /// No description provided for @editGoalWhatChangedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose only the parts of your goal you want to update.'**
+  String get editGoalWhatChangedSubtitle;
+
+  /// No description provided for @editGoalChangeDistanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Race distance'**
+  String get editGoalChangeDistanceTitle;
+
+  /// No description provided for @editGoalChangeDistanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Train for a different race distance.'**
+  String get editGoalChangeDistanceSubtitle;
+
+  /// No description provided for @editGoalChangeDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Race date'**
+  String get editGoalChangeDateTitle;
+
+  /// No description provided for @editGoalChangeDateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Move, add, or remove your race date.'**
+  String get editGoalChangeDateSubtitle;
+
+  /// No description provided for @editGoalDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
+  String get editGoalDiscard;
+
+  /// No description provided for @editGoalDetailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update your goal'**
+  String get editGoalDetailsTitle;
+
+  /// No description provided for @editGoalDetailsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We will build a new plan around these changes while keeping your completed progress.'**
+  String get editGoalDetailsSubtitle;
+
+  /// No description provided for @editGoalHasDate.
+  ///
+  /// In en, this message translates to:
+  /// **'I have a date'**
+  String get editGoalHasDate;
+
+  /// No description provided for @editGoalNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed date'**
+  String get editGoalNoDate;
+
+  /// No description provided for @editGoalNoDateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'We will use a standard build without a race-specific taper.'**
+  String get editGoalNoDateNote;
+
+  /// No description provided for @editGoalUpdatedSincePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Your active plan changed, so this preview will be rebuilt from the latest plan.'**
+  String get editGoalUpdatedSincePreview;
+
+  /// No description provided for @editGoalDatePastError.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose today or a future race date.'**
+  String get editGoalDatePastError;
+
+  /// No description provided for @editGoalFitnessCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s ground this in your running'**
+  String get editGoalFitnessCheckTitle;
+
+  /// No description provided for @editGoalFitnessCheckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We need one recent hard effort before we estimate this goal. You can use a recent run, enter a result, or schedule a benchmark.'**
+  String get editGoalFitnessCheckSubtitle;
+
+  /// No description provided for @editGoalRecommendedResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested recent results'**
+  String get editGoalRecommendedResult;
+
+  /// No description provided for @editGoalOtherOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Other options'**
+  String get editGoalOtherOptions;
+
+  /// No description provided for @editGoalEnterResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a recent result'**
+  String get editGoalEnterResult;
+
+  /// No description provided for @editGoalEnterResultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a recent hard running effort you trust.'**
+  String get editGoalEnterResultSubtitle;
+
+  /// No description provided for @editGoalScheduleBenchmark.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a benchmark'**
+  String get editGoalScheduleBenchmark;
+
+  /// No description provided for @editGoalScheduleBenchmarkSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a safe date for a separate fitness check.'**
+  String get editGoalScheduleBenchmarkSubtitle;
+
+  /// No description provided for @editGoalManualResultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a recent hard effort. This sets an estimate range; it does not change your workout paces directly.'**
+  String get editGoalManualResultSubtitle;
+
+  /// No description provided for @editGoalResultDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get editGoalResultDistance;
+
+  /// No description provided for @editGoalResultDistanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilometers, for example 5'**
+  String get editGoalResultDistanceHint;
+
+  /// No description provided for @editGoalResultTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get editGoalResultTime;
+
+  /// No description provided for @editGoalResultTimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'HH:MM:SS'**
+  String get editGoalResultTimeHint;
+
+  /// No description provided for @editGoalResultDate.
+  ///
+  /// In en, this message translates to:
+  /// **'When did you run it?'**
+  String get editGoalResultDate;
+
+  /// No description provided for @editGoalHardEffortQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Was this a hard, sustained effort?'**
+  String get editGoalHardEffortQuestion;
+
+  /// No description provided for @editGoalResultValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive distance, a time in HH:MM:SS, and the date of a hard effort.'**
+  String get editGoalResultValidation;
+
+  /// No description provided for @editGoalUseResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this result'**
+  String get editGoalUseResult;
+
+  /// No description provided for @editGoalBenchmarkTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule a fitness check'**
+  String get editGoalBenchmarkTitle;
+
+  /// No description provided for @editGoalBenchmarkFiveKExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'A controlled 5K gives us the clearest current fitness signal. This is separate from your training plan.'**
+  String get editGoalBenchmarkFiveKExplanation;
+
+  /// No description provided for @editGoalBenchmarkOneKExplanation.
+  ///
+  /// In en, this message translates to:
+  /// **'A controlled 1K is the safer short fitness check right now. This is separate from your training plan.'**
+  String get editGoalBenchmarkOneKExplanation;
+
+  /// No description provided for @editGoalSafeDatesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended dates'**
+  String get editGoalSafeDatesLabel;
+
+  /// No description provided for @editGoalNoSafeDates.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no safe benchmark dates in this plan right now. Enter a recent result instead.'**
+  String get editGoalNoSafeDates;
+
+  /// No description provided for @editGoalBenchmarkPlanNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling this does not add or replace a session in your active plan.'**
+  String get editGoalBenchmarkPlanNote;
+
+  /// No description provided for @editGoalScheduleAssessmentButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule fitness check'**
+  String get editGoalScheduleAssessmentButton;
+
+  /// No description provided for @editGoalInProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness check scheduled'**
+  String get editGoalInProgressTitle;
+
+  /// No description provided for @editGoalInProgressSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current plan stays unchanged. Add the result when you have completed it to continue editing your goal.'**
+  String get editGoalInProgressSubtitle;
+
+  /// No description provided for @editGoalEnterAssessmentResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter fitness check result'**
+  String get editGoalEnterAssessmentResult;
+
+  /// No description provided for @editGoalUseAnotherResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Use another recent result'**
+  String get editGoalUseAnotherResult;
+
+  /// No description provided for @editGoalSuggestedActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {distance} km in {time}'**
+  String editGoalSuggestedActivity(String date, String distance, String time);
+
+  /// No description provided for @editGoalUseThisActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this result'**
+  String get editGoalUseThisActivity;
+
+  /// No description provided for @editGoalBenchmarkFiveK.
+  ///
+  /// In en, this message translates to:
+  /// **'5K fitness check'**
+  String get editGoalBenchmarkFiveK;
+
+  /// No description provided for @editGoalBenchmarkOneK.
+  ///
+  /// In en, this message translates to:
+  /// **'1K fitness check'**
+  String get editGoalBenchmarkOneK;
+
+  /// No description provided for @editGoalAssessmentScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled separately from your plan'**
+  String get editGoalAssessmentScheduled;
+
+  /// No description provided for @editGoalEstimateSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated finish range'**
+  String get editGoalEstimateSection;
+
+  /// No description provided for @editGoalEstimatedFinishRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{faster} to {slower}'**
+  String editGoalEstimatedFinishRange(String faster, String slower);
+
+  /// No description provided for @editGoalEstimateConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'{confidence} confidence from your recent evidence'**
+  String editGoalEstimateConfidence(String confidence);
+
+  /// No description provided for @editGoalConfidenceHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get editGoalConfidenceHigh;
+
+  /// No description provided for @editGoalConfidenceMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get editGoalConfidenceMedium;
+
+  /// No description provided for @editGoalConfidenceLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited'**
+  String get editGoalConfidenceLimited;
+
+  /// No description provided for @editGoalEvidenceUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'Evidence used'**
+  String get editGoalEvidenceUsed;
+
+  /// No description provided for @editGoalNextTwoWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Your next two weeks'**
+  String get editGoalNextTwoWeeks;
+
+  /// No description provided for @editGoalFullProposedPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'View the rest of the proposed plan'**
+  String get editGoalFullProposedPlan;
+
+  /// No description provided for @editGoalWarningRaceWeekTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Race-week plan'**
+  String get editGoalWarningRaceWeekTitle;
+
+  /// No description provided for @editGoalWarningRaceWeekBody.
+  ///
+  /// In en, this message translates to:
+  /// **'With less than a week to go, the update focuses on recovery, a short shakeout, and race-day guidance.'**
+  String get editGoalWarningRaceWeekBody;
+
+  /// No description provided for @editGoalWarningReadinessGapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness check'**
+  String get editGoalWarningReadinessGapTitle;
+
+  /// No description provided for @editGoalWarningReadinessGapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan keeps the build conservative while your recent training catches up with this goal.'**
+  String get editGoalWarningReadinessGapBody;
+
+  /// No description provided for @editGoalWarningLimitedEvidenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited evidence'**
+  String get editGoalWarningLimitedEvidenceTitle;
+
+  /// No description provided for @editGoalWarningLimitedEvidenceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your estimated range is intentionally wide until we have more recent hard-effort data.'**
+  String get editGoalWarningLimitedEvidenceBody;
+
+  /// No description provided for @editGoalWarningNoFixedDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible timing'**
+  String get editGoalWarningNoFixedDateTitle;
+
+  /// No description provided for @editGoalWarningNoFixedDateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan uses a standard build and does not schedule a race-specific taper.'**
+  String get editGoalWarningNoFixedDateBody;
+
+  /// No description provided for @editGoalSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your updated plan is ready'**
+  String get editGoalSuccessTitle;
+
+  /// No description provided for @editGoalSuccessSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your completed progress is preserved. The new plan starts from your next unfinished session.'**
+  String get editGoalSuccessSubtitle;
+
+  /// No description provided for @editGoalProgressPreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} completed or skipped sessions preserved'**
+  String editGoalProgressPreserved(int count);
+
+  /// No description provided for @editGoalNextWorkout.
+  ///
+  /// In en, this message translates to:
+  /// **'Next workout: {date} · {workout}'**
+  String editGoalNextWorkout(String date, String workout);
+
+  /// No description provided for @editGoalViewPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'View plan'**
+  String get editGoalViewPlan;
 }
 
 class _AppLocalizationsDelegate

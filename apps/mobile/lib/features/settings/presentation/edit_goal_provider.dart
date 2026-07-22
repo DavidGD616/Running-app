@@ -1,20 +1,21 @@
 import 'dart:async';
-import 'dart:math' as math;
+import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/persistence/shared_preferences_provider.dart';
+import '../../../core/config/supabase_config.dart';
 import '../../../core/supabase/supabase_client_provider.dart';
 import '../../auth/presentation/auth_state_provider.dart';
 import '../../localization/presentation/locale_provider.dart';
 import '../../profile/data/runner_profile_repository.dart';
 import '../../profile/domain/models/runner_profile.dart';
 import '../../profile/presentation/runner_profile_provider.dart';
-import '../../training_plan/data/supabase_plan_version_repository.dart';
 import '../../training_plan/data/plan_version_repository.dart';
+import '../../training_plan/data/supabase_plan_version_repository.dart';
 import '../../training_plan/domain/models/plan_version.dart';
-import '../../training_plan/domain/models/training_plan.dart';
 import '../../training_plan/presentation/training_plan_provider.dart';
 import '../domain/edit_goal_models.dart';
 
@@ -27,13 +28,181 @@ typedef EditGoalCacheReconciler =
 class EditGoalInitialData {
   const EditGoalInitialData({
     required this.profile,
-    required this.acceptedRaceTarget,
     required this.activePlanId,
   });
 
   final RunnerProfile profile;
-  final AcceptedRaceTarget acceptedRaceTarget;
   final String activePlanId;
+}
+
+class StoredEditGoalDraft {
+  const StoredEditGoalDraft({
+    required this.draft,
+    required this.sourcePlanId,
+    required this.status,
+    required this.revision,
+    required this.updatedAt,
+  });
+
+  final EditGoalDraft draft;
+  final String sourcePlanId;
+  final String status;
+  final int revision;
+  final DateTime updatedAt;
+
+  Map<String, dynamic> toJson() => {
+    'sourcePlanVersionId': sourcePlanId,
+    'data': draft.toJson(),
+    'status': status,
+    'revision': revision,
+    'updatedAt': updatedAt.toIso8601String(),
+  };
+
+  factory StoredEditGoalDraft.fromJson(Map<String, dynamic> json) {
+    final data = json['data'];
+    final revision = json['revision'];
+    final updatedAt = DateTime.tryParse(json['updatedAt'] as String? ?? '');
+    if (data is! Map ||
+        revision is! int ||
+        revision <= 0 ||
+        updatedAt == null) {
+      throw const FormatException('Invalid stored Edit Goal draft.');
+    }
+    return StoredEditGoalDraft(
+      draft: EditGoalDraft.fromJson(
+        data.map((key, value) => MapEntry('$key', value)),
+      ),
+      sourcePlanId: _requiredNonEmptyString(json['sourcePlanVersionId']),
+      status: _requiredNonEmptyString(json['status']),
+      revision: revision,
+      updatedAt: updatedAt,
+    );
+  }
+}
+
+class EditGoalDraftStore {
+  EditGoalDraftStore({
+    required SharedPreferences preferences,
+    required SupabaseClient? client,
+    required User? user,
+  }) : _preferences = preferences,
+       _client = client,
+       _user = user;
+
+  static const _storageKey = 'edit_goal_draft_v2';
+
+  final SharedPreferences _preferences;
+  final SupabaseClient? _client;
+  final User? _user;
+
+  Future<StoredEditGoalDraft?> load() async {
+    final local = _loadLocal();
+    if (_user == null || _client == null) return local;
+    try {
+      final row = await _client
+          .from('goal_edit_drafts')
+          .select('source_plan_version_id,data,status,revision,updated_at')
+          .eq('user_id', _user.id)
+          .maybeSingle();
+      if (row == null) return local;
+      final remote = StoredEditGoalDraft.fromJson({
+        'sourcePlanVersionId': row['source_plan_version_id'],
+        'data': row['data'],
+        'status': row['status'],
+        'revision': row['revision'],
+        'updatedAt': row['updated_at'],
+      });
+      if (local == null || remote.updatedAt.isAfter(local.updatedAt)) {
+        await _saveLocal(remote);
+        return remote;
+      }
+    } catch (_) {
+      // Local persistence keeps the edit resumable while a device is offline
+      // or a migration has not reached the current backend yet.
+    }
+    return local;
+  }
+
+  Future<void> save({
+    required EditGoalDraft draft,
+    required String sourcePlanId,
+    required String status,
+    required int revision,
+    required DateTime updatedAt,
+  }) async {
+    final stored = StoredEditGoalDraft(
+      draft: draft,
+      sourcePlanId: sourcePlanId,
+      status: status,
+      revision: revision,
+      updatedAt: updatedAt,
+    );
+    await _saveLocal(stored);
+    if (_user == null || _client == null) return;
+    try {
+      await _client.from('goal_edit_drafts').upsert({
+        'user_id': _user.id,
+        'source_plan_version_id': sourcePlanId,
+        'data': draft.toJson(),
+        'status': status,
+        'revision': revision,
+        'updated_at': updatedAt.toUtc().toIso8601String(),
+      }, onConflict: 'user_id');
+      final assessment = draft.assessment;
+      if (assessment != null) {
+        await _client.from('goal_edit_assessments').upsert({
+          'id': assessment.id,
+          'user_id': _user.id,
+          'draft_user_id': _user.id,
+          'kind': assessment.kind,
+          'scheduled_for': _dateOnly(assessment.scheduledFor),
+          'safe_dates': assessment.safeDates
+              .map(_dateOnly)
+              .toList(growable: false),
+          'status': draft.fitnessResult == null ? 'scheduled' : 'completed',
+          if (draft.fitnessResult != null) ...{
+            'result': draft.fitnessResult!.toJson(),
+            'completed_at': updatedAt.toUtc().toIso8601String(),
+          },
+          'updated_at': updatedAt.toUtc().toIso8601String(),
+        }, onConflict: 'id');
+      }
+    } catch (_) {
+      // A later save retries the remote copy. The local record is already the
+      // source of truth for this device and must not be discarded.
+    }
+  }
+
+  Future<void> discard() async {
+    await _preferences.remove(_storageKey);
+    if (_user == null || _client == null) return;
+    try {
+      await _client.from('goal_edit_drafts').delete().eq('user_id', _user.id);
+    } catch (_) {
+      // Deliberately best-effort: the user should still be able to leave the
+      // flow offline, and the next authenticated session retries cleanup.
+    }
+  }
+
+  StoredEditGoalDraft? _loadLocal() {
+    final raw = _preferences.getString(_storageKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is Map) {
+        return StoredEditGoalDraft.fromJson(
+          decoded.map((key, value) => MapEntry('$key', value)),
+        );
+      }
+    } catch (_) {
+      // A corrupt local cache should not block opening the flow.
+    }
+    return null;
+  }
+
+  Future<void> _saveLocal(StoredEditGoalDraft draft) async {
+    await _preferences.setString(_storageKey, jsonEncode(draft.toJson()));
+  }
 }
 
 final editGoalFunctionClientProvider = Provider<EditGoalFunctionClient>((ref) {
@@ -41,115 +210,38 @@ final editGoalFunctionClientProvider = Provider<EditGoalFunctionClient>((ref) {
   return (name, {body}) => client.functions.invoke(name, body: body);
 });
 
-final editGoalClockProvider = Provider<DateTime Function()>((ref) {
-  return DateTime.now;
-});
+final editGoalClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
 
 final editGoalLocaleCodeProvider = Provider<String>((ref) {
   return ref.watch(localeProvider).value?.languageCode == 'es' ? 'es' : 'en';
 });
 
-class EditGoalEvidenceSuggestion {
-  const EditGoalEvidenceSuggestion({
-    required this.race,
-    required this.targetTime,
-  });
-
-  final RunnerGoalRace race;
-  final Duration targetTime;
-
-  EditGoalEvidenceSuggestion? projectTo(RunnerGoalRace targetRace) {
-    if (targetTime <= Duration.zero) return null;
-    final sourceDistanceKm = _canonicalRaceDistanceKm(race);
-    final targetDistanceKm = _canonicalRaceDistanceKm(targetRace);
-    if (sourceDistanceKm == null || targetDistanceKm == null) return null;
-    if (targetRace == race) return this;
-
-    const riegelExponent = 1.06;
-    final projectedSeconds =
-        targetTime.inSeconds *
-        math.pow(targetDistanceKm / sourceDistanceKm, riegelExponent);
-    if (!projectedSeconds.isFinite || projectedSeconds <= 0) return null;
-    final roundedSeconds = projectedSeconds.round();
-    if (roundedSeconds <= 0) return null;
-    return EditGoalEvidenceSuggestion(
-      race: targetRace,
-      targetTime: Duration(seconds: roundedSeconds),
-    );
-  }
-}
-
-double? _canonicalRaceDistanceKm(RunnerGoalRace race) => switch (race) {
-  RunnerGoalRace.fiveK => 5,
-  RunnerGoalRace.tenK => 10,
-  RunnerGoalRace.halfMarathon => 21.0975,
-  RunnerGoalRace.marathon => 42.195,
-  RunnerGoalRace.other => null,
-};
-
-final editGoalEvidenceSuggestionProvider =
-    Provider<EditGoalEvidenceSuggestion?>((ref) {
-      final plan = ref.watch(trainingPlanProvider).value;
-      final targetTime = plan?.evidenceTarget?.time;
-      if (plan == null || targetTime == null || targetTime <= Duration.zero) {
-        return null;
-      }
-      final race = switch (plan.raceType) {
-        TrainingPlanRaceType.fiveK => RunnerGoalRace.fiveK,
-        TrainingPlanRaceType.tenK => RunnerGoalRace.tenK,
-        TrainingPlanRaceType.halfMarathon => RunnerGoalRace.halfMarathon,
-        TrainingPlanRaceType.marathon => RunnerGoalRace.marathon,
-        TrainingPlanRaceType.other => RunnerGoalRace.other,
-      };
-      if (_canonicalRaceDistanceKm(race) == null) return null;
-      return EditGoalEvidenceSuggestion(race: race, targetTime: targetTime);
-    });
+final editGoalDraftStoreProvider = Provider<EditGoalDraftStore>((ref) {
+  return EditGoalDraftStore(
+    preferences: ref.watch(sharedPreferencesProvider),
+    client: SupabaseConfig.isConfigured
+        ? ref.watch(supabaseClientProvider)
+        : null,
+    user: ref.watch(currentUserProvider),
+  );
+});
 
 final editGoalInitialDataLoaderProvider = Provider<EditGoalInitialDataLoader>((
   ref,
 ) {
   return () async {
-    final profileRepository = ref.read(runnerProfileRepositoryProvider);
-    final planRepository = ref.read(planVersionRepositoryProvider);
-    final profile = await profileRepository.loadProfileAsync();
-    final plan = await planRepository.loadActivePlanAsync();
+    final profile = await ref
+        .read(runnerProfileRepositoryProvider)
+        .loadProfileAsync();
+    final plan = await ref
+        .read(planVersionRepositoryProvider)
+        .loadActivePlanAsync();
     if (profile == null || plan == null) {
       throw const FormatException('Missing persisted Edit Goal data.');
     }
-
-    AcceptedRaceTarget? acceptedRaceTarget;
-    final user = ref.read(currentUserProvider);
-    if (user != null) {
-      try {
-        final row = await ref
-            .read(supabaseClientProvider)
-            .from('runner_profiles')
-            .select('data')
-            .eq('user_id', user.id)
-            .maybeSingle();
-        final data = _mapFromDynamic(row?['data']);
-        final rawTarget = data['acceptedRaceTarget'];
-        if (rawTarget is Map) {
-          acceptedRaceTarget = AcceptedRaceTarget.fromJson(
-            rawTarget.map((key, value) => MapEntry('$key', value)),
-          );
-        }
-      } catch (_) {
-        // Fall through to the persisted draft cache when remote profile data
-        // is temporarily unavailable.
-      }
-    }
-    acceptedRaceTarget ??= (await profileRepository.loadDraftAsync(
-      refresh: false,
-    ))?.acceptedRaceTarget;
-    if (acceptedRaceTarget == null) {
-      throw const FormatException('Missing accepted race target.');
-    }
-    return EditGoalInitialData(
-      profile: profile,
-      acceptedRaceTarget: acceptedRaceTarget,
-      activePlanId: plan.id,
-    );
+    return EditGoalInitialData(profile: profile, activePlanId: plan.id);
   };
 });
 
@@ -162,7 +254,6 @@ final editGoalCacheReconcilerProvider = Provider<EditGoalCacheReconciler>((
       ref.read(sharedPreferencesProvider),
     );
     final planCache = ref.read(sharedPreferencesPlanVersionRepositoryProvider);
-
     try {
       await profileCache.cacheProfile(acceptance.profile);
       await profileCache.saveDraft(
@@ -173,7 +264,6 @@ final editGoalCacheReconcilerProvider = Provider<EditGoalCacheReconciler>((
     } catch (error) {
       firstError = error;
     }
-
     try {
       await planCache.saveActivePlan(
         PlanVersion(
@@ -187,9 +277,6 @@ final editGoalCacheReconcilerProvider = Provider<EditGoalCacheReconciler>((
     } catch (error) {
       firstError ??= error;
     }
-
-    // Both accepted response caches are attempted before consumers reload.
-    // Reload errors do not erase the accepted fallback written above.
     ref.invalidate(runnerProfileProvider);
     ref.invalidate(trainingPlanProvider);
     try {
@@ -229,7 +316,35 @@ class EditGoalLoading extends EditGoalState {
 }
 
 class EditGoalEditing extends EditGoalState {
-  const EditGoalEditing({required this.draft, required this.sourcePlanId});
+  const EditGoalEditing({
+    required this.draft,
+    required this.sourcePlanId,
+    this.wasRebased = false,
+  });
+
+  final EditGoalDraft draft;
+  final String sourcePlanId;
+  final bool wasRebased;
+}
+
+class EditGoalFitnessCheckRequired extends EditGoalState {
+  const EditGoalFitnessCheckRequired({
+    required this.draft,
+    required this.sourcePlanId,
+    required this.fitnessCheck,
+  });
+
+  final EditGoalDraft draft;
+  final String sourcePlanId;
+  final GoalEditFitnessCheck fitnessCheck;
+}
+
+class EditGoalAssessmentPending extends EditGoalState {
+  const EditGoalAssessmentPending({
+    required this.draft,
+    required this.sourcePlanId,
+  });
+
   final EditGoalDraft draft;
   final String sourcePlanId;
 }
@@ -263,8 +378,9 @@ class EditGoalApplying extends EditGoalState {
 }
 
 class EditGoalSuccess extends EditGoalState {
-  const EditGoalSuccess({required this.acceptance});
+  const EditGoalSuccess({required this.acceptance, required this.proposal});
   final GoalEditAcceptance acceptance;
+  final GoalEditProposal proposal;
 }
 
 class EditGoalFailure extends EditGoalState {
@@ -281,6 +397,8 @@ class EditGoalFailure extends EditGoalState {
 }
 
 class EditGoalNotifier extends Notifier<EditGoalState> {
+  int _revision = 1;
+
   @override
   EditGoalState build() {
     Future.microtask(initialize);
@@ -292,21 +410,33 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
     state = const EditGoalLoading();
     try {
       final initial = await ref.read(editGoalInitialDataLoaderProvider)();
+      final stored = await ref.read(editGoalDraftStoreProvider).load();
       if (!ref.mounted) return;
-      state = EditGoalEditing(
-        draft: EditGoalDraft.fromProfile(
-          profile: initial.profile,
-          acceptedRaceTarget: initial.acceptedRaceTarget,
-        ),
-        sourcePlanId: initial.activePlanId,
-      );
+      final draft =
+          stored?.draft ?? EditGoalDraft.fromProfile(profile: initial.profile);
+      _revision = stored?.revision ?? 1;
+      final wasRebased =
+          stored != null && stored.sourcePlanId != initial.activePlanId;
+      if (draft.assessment != null && draft.fitnessResult == null) {
+        state = EditGoalAssessmentPending(
+          draft: draft,
+          sourcePlanId: initial.activePlanId,
+        );
+      } else {
+        state = EditGoalEditing(
+          draft: draft,
+          sourcePlanId: initial.activePlanId,
+          wasRebased: wasRebased,
+        );
+      }
     } catch (_) {
-      if (!ref.mounted) return;
-      state = const EditGoalFailure(
-        draft: null,
-        sourcePlanId: null,
-        reason: EditGoalFailureReason.parse,
-      );
+      if (ref.mounted) {
+        state = const EditGoalFailure(
+          draft: null,
+          sourcePlanId: null,
+          reason: EditGoalFailureReason.parse,
+        );
+      }
     }
   }
 
@@ -316,6 +446,56 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
     final sourcePlanId = _sourcePlanId(state);
     if (sourcePlanId == null) return;
     state = EditGoalEditing(draft: draft, sourcePlanId: sourcePlanId);
+    unawaited(_persist(draft, sourcePlanId, status: 'editing'));
+  }
+
+  Future<void> scheduleAssessment(
+    GoalEditFitnessCheck check,
+    DateTime date,
+  ) async {
+    final draft = _draft(state);
+    final sourcePlanId = _sourcePlanId(state);
+    if (draft == null ||
+        sourcePlanId == null ||
+        !check.safeDates.contains(date)) {
+      return;
+    }
+    final assessment = EditGoalAssessment(
+      id: 'goal-edit-${ref.read(editGoalClockProvider)().microsecondsSinceEpoch}',
+      kind: check.benchmarkKind,
+      scheduledFor: date,
+      safeDates: check.safeDates,
+    );
+    final updated = draft.copyWith(assessment: assessment);
+    await _persist(updated, sourcePlanId, status: 'assessment_pending');
+    if (ref.mounted) {
+      state = EditGoalAssessmentPending(
+        draft: updated,
+        sourcePlanId: sourcePlanId,
+      );
+    }
+  }
+
+  void cancelAssessment() {
+    final draft = _draft(state);
+    final sourcePlanId = _sourcePlanId(state);
+    if (draft == null || sourcePlanId == null) return;
+    final updated = draft.copyWith(clearAssessment: true);
+    updateDraft(updated);
+  }
+
+  void useFitnessResult(EditGoalFitnessResult result) {
+    final draft = _draft(state);
+    final sourcePlanId = _sourcePlanId(state);
+    if (draft == null || sourcePlanId == null) return;
+    final updated = draft.copyWith(fitnessResult: result);
+    state = EditGoalEditing(draft: updated, sourcePlanId: sourcePlanId);
+    unawaited(_persist(updated, sourcePlanId, status: 'editing'));
+  }
+
+  Future<void> discard() async {
+    await ref.read(editGoalDraftStoreProvider).discard();
+    await initialize();
   }
 
   Future<bool> preview() async {
@@ -331,12 +511,13 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
     final previousSourcePlanId = _sourcePlanId(state);
     final previousProposal = _proposal(state);
     try {
-      // Reload every persisted input so recovery observes the latest active
-      // plan. The returned profile/target validate persistence but must not
-      // replace the user's in-progress draft.
       final initial = await ref.read(editGoalInitialDataLoaderProvider)();
       if (!ref.mounted) return false;
-      state = EditGoalEditing(draft: draft, sourcePlanId: initial.activePlanId);
+      state = EditGoalEditing(
+        draft: draft,
+        sourcePlanId: initial.activePlanId,
+        wasRebased: previousSourcePlanId != initial.activePlanId,
+      );
       return _previewDraft(draft, initial.activePlanId);
     } catch (_) {
       if (ref.mounted) {
@@ -361,6 +542,7 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
       return false;
     }
     state = EditGoalPreviewing(draft: draft, sourcePlanId: sourcePlanId);
+    await _persist(draft, sourcePlanId, status: 'editing');
     try {
       final response = await ref
           .read(editGoalFunctionClientProvider)(
@@ -376,16 +558,32 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
         _setFailure(draft, sourcePlanId, _mapResponseFailure(response));
         return false;
       }
-      final proposal = GoalEditProposal.fromJson(response.data);
+      final data = _mapFromDynamic(response.data);
+      if (data['state'] == 'fitness_check_required') {
+        final fitnessCheck = GoalEditFitnessCheck.fromJson(
+          data['fitnessCheck'],
+        );
+        if (ref.mounted) {
+          state = EditGoalFitnessCheckRequired(
+            draft: draft,
+            sourcePlanId: sourcePlanId,
+            fitnessCheck: fitnessCheck,
+          );
+        }
+        return false;
+      }
+      final proposal = GoalEditProposal.fromJson(data);
       if (proposal.sourcePlanVersionId != sourcePlanId) {
         throw const FormatException('Mismatched proposal source plan.');
       }
-      if (!ref.mounted) return true;
-      state = EditGoalPreviewReady(
-        draft: draft,
-        sourcePlanId: sourcePlanId,
-        proposal: proposal,
-      );
+      await _persist(draft, sourcePlanId, status: 'proposal_ready');
+      if (ref.mounted) {
+        state = EditGoalPreviewReady(
+          draft: draft,
+          sourcePlanId: sourcePlanId,
+          proposal: proposal,
+        );
+      }
       return true;
     } on TimeoutException {
       _setFailure(draft, sourcePlanId, EditGoalFailureReason.timeout);
@@ -436,10 +634,13 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
       try {
         await ref.read(editGoalCacheReconcilerProvider)(acceptance);
       } catch (_) {
-        // The server commit is authoritative. Provider invalidation/reload is
-        // retained and no compensating local or remote write is attempted.
+        // The committed response remains authoritative even if a local cache
+        // reload fails. No compensating remote write is attempted.
       }
-      if (ref.mounted) state = EditGoalSuccess(acceptance: acceptance);
+      await ref.read(editGoalDraftStoreProvider).discard();
+      if (ref.mounted) {
+        state = EditGoalSuccess(acceptance: acceptance, proposal: proposal);
+      }
       return true;
     } on TimeoutException {
       _setFailure(
@@ -473,6 +674,23 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
     return false;
   }
 
+  Future<void> _persist(
+    EditGoalDraft draft,
+    String sourcePlanId, {
+    required String status,
+  }) async {
+    _revision++;
+    await ref
+        .read(editGoalDraftStoreProvider)
+        .save(
+          draft: draft,
+          sourcePlanId: sourcePlanId,
+          status: status,
+          revision: _revision,
+          updatedAt: ref.read(editGoalClockProvider)(),
+        );
+  }
+
   void _setFailure(
     EditGoalDraft draft,
     String sourcePlanId,
@@ -496,20 +714,24 @@ final editGoalProvider =
 
 EditGoalDraft? _draft(EditGoalState state) => switch (state) {
   EditGoalEditing(:final draft) ||
+  EditGoalFitnessCheckRequired(:final draft) ||
+  EditGoalAssessmentPending(:final draft) ||
   EditGoalPreviewing(:final draft) ||
   EditGoalPreviewReady(:final draft) ||
   EditGoalApplying(:final draft) => draft,
   EditGoalFailure(:final draft) => draft,
-  _ => null,
+  EditGoalSuccess() || EditGoalLoading() => null,
 };
 
 String? _sourcePlanId(EditGoalState state) => switch (state) {
   EditGoalEditing(:final sourcePlanId) ||
+  EditGoalFitnessCheckRequired(:final sourcePlanId) ||
+  EditGoalAssessmentPending(:final sourcePlanId) ||
   EditGoalPreviewing(:final sourcePlanId) ||
   EditGoalPreviewReady(:final sourcePlanId) ||
   EditGoalApplying(:final sourcePlanId) => sourcePlanId,
   EditGoalFailure(:final sourcePlanId) => sourcePlanId,
-  _ => null,
+  EditGoalSuccess() || EditGoalLoading() => null,
 };
 
 GoalEditProposal? _proposal(EditGoalState state) => switch (state) {
@@ -520,7 +742,7 @@ GoalEditProposal? _proposal(EditGoalState state) => switch (state) {
 };
 
 bool _validDraft(EditGoalDraft draft, DateTime now) {
-  if (draft.race == RunnerGoalRace.other || draft.targetTime <= Duration.zero) {
+  if (!draft.isChangeSelected || draft.race == RunnerGoalRace.other) {
     return false;
   }
   if (!draft.hasRaceDate) return draft.raceDate == null;
@@ -528,7 +750,7 @@ bool _validDraft(EditGoalDraft draft, DateTime now) {
   if (raceDate == null) return false;
   final today = DateTime(now.year, now.month, now.day);
   final raceDay = DateTime(raceDate.year, raceDate.month, raceDate.day);
-  return !raceDay.isBefore(today.add(const Duration(days: 7)));
+  return !raceDay.isBefore(today);
 }
 
 bool _successful(FunctionResponse response) =>
@@ -558,9 +780,11 @@ EditGoalFailureReason _mapResponseFailure(FunctionResponse response) {
 }
 
 EditGoalFailureReason _mapFunctionException(FunctionException error) {
-  final details = _mapFromDynamic(error.details);
   return _mapResponseFailure(
-    FunctionResponse(data: details, status: error.status),
+    FunctionResponse(
+      data: _mapFromDynamic(error.details),
+      status: error.status,
+    ),
   );
 }
 
@@ -571,3 +795,15 @@ Map<String, dynamic> _mapFromDynamic(Object? value) {
   }
   return const {};
 }
+
+String _requiredNonEmptyString(Object? value) {
+  if (value is! String || value.isEmpty) {
+    throw const FormatException('Missing persisted Edit Goal value.');
+  }
+  return value;
+}
+
+String _dateOnly(DateTime value) =>
+    '${value.year.toString().padLeft(4, '0')}-'
+    '${value.month.toString().padLeft(2, '0')}-'
+    '${value.day.toString().padLeft(2, '0')}';
