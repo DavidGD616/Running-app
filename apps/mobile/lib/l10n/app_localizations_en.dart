@@ -3870,29 +3870,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editGoalFixedDateSection => 'Fixed race date';
 
   @override
-  String get editGoalTargetTimeSection => 'Target time';
-
-  @override
-  String get editGoalTargetTimeHint => 'HH:MM:SS';
-
-  @override
-  String editGoalCurrentTarget(String time) {
-    return 'Current target: $time';
-  }
-
-  @override
-  String editGoalSuggestedTarget(String time) {
-    return 'Evidence-supported target: $time';
-  }
-
-  @override
-  String get editGoalDateMinimumError =>
-      'Choose a date at least 7 days from today.';
-
-  @override
-  String get editGoalTimeError => 'Enter a positive target time as HH:MM:SS.';
-
-  @override
   String get editGoalPreviewChanges => 'Preview changes';
 
   @override
@@ -3948,18 +3925,6 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get editGoalWarningShortNoticeBody =>
       'Your race is within 4 weeks. The plan will prioritize a safer build and taper.';
-
-  @override
-  String get editGoalWarningAggressiveTitle => 'Aggressive target';
-
-  @override
-  String get editGoalWarningAggressiveBody =>
-      'This target is faster than your current evidence supports.';
-
-  @override
-  String editGoalWarningSuggested(String time) {
-    return 'Safer target: $time';
-  }
 
   @override
   String get editGoalImpactSection => 'Plan impact';

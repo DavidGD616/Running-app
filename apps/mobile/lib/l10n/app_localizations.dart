@@ -6969,42 +6969,6 @@ abstract class AppLocalizations {
   /// **'Fixed race date'**
   String get editGoalFixedDateSection;
 
-  /// No description provided for @editGoalTargetTimeSection.
-  ///
-  /// In en, this message translates to:
-  /// **'Target time'**
-  String get editGoalTargetTimeSection;
-
-  /// No description provided for @editGoalTargetTimeHint.
-  ///
-  /// In en, this message translates to:
-  /// **'HH:MM:SS'**
-  String get editGoalTargetTimeHint;
-
-  /// No description provided for @editGoalCurrentTarget.
-  ///
-  /// In en, this message translates to:
-  /// **'Current target: {time}'**
-  String editGoalCurrentTarget(String time);
-
-  /// No description provided for @editGoalSuggestedTarget.
-  ///
-  /// In en, this message translates to:
-  /// **'Evidence-supported target: {time}'**
-  String editGoalSuggestedTarget(String time);
-
-  /// No description provided for @editGoalDateMinimumError.
-  ///
-  /// In en, this message translates to:
-  /// **'Choose a date at least 7 days from today.'**
-  String get editGoalDateMinimumError;
-
-  /// No description provided for @editGoalTimeError.
-  ///
-  /// In en, this message translates to:
-  /// **'Enter a positive target time as HH:MM:SS.'**
-  String get editGoalTimeError;
-
   /// No description provided for @editGoalPreviewChanges.
   ///
   /// In en, this message translates to:
@@ -7112,24 +7076,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your race is within 4 weeks. The plan will prioritize a safer build and taper.'**
   String get editGoalWarningShortNoticeBody;
-
-  /// No description provided for @editGoalWarningAggressiveTitle.
-  ///
-  /// In en, this message translates to:
-  /// **'Aggressive target'**
-  String get editGoalWarningAggressiveTitle;
-
-  /// No description provided for @editGoalWarningAggressiveBody.
-  ///
-  /// In en, this message translates to:
-  /// **'This target is faster than your current evidence supports.'**
-  String get editGoalWarningAggressiveBody;
-
-  /// No description provided for @editGoalWarningSuggested.
-  ///
-  /// In en, this message translates to:
-  /// **'Safer target: {time}'**
-  String editGoalWarningSuggested(String time);
 
   /// No description provided for @editGoalImpactSection.
   ///

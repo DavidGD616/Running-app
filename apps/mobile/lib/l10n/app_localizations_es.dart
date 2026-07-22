@@ -3900,29 +3900,6 @@ class AppLocalizationsEs extends AppLocalizations {
   String get editGoalFixedDateSection => 'Fecha de carrera fija';
 
   @override
-  String get editGoalTargetTimeSection => 'Tiempo objetivo';
-
-  @override
-  String get editGoalTargetTimeHint => 'HH:MM:SS';
-
-  @override
-  String editGoalCurrentTarget(String time) {
-    return 'Objetivo actual: $time';
-  }
-
-  @override
-  String editGoalSuggestedTarget(String time) {
-    return 'Objetivo respaldado por tus datos: $time';
-  }
-
-  @override
-  String get editGoalDateMinimumError =>
-      'Elige una fecha a al menos 7 días de hoy.';
-
-  @override
-  String get editGoalTimeError => 'Introduce un tiempo positivo como HH:MM:SS.';
-
-  @override
   String get editGoalPreviewChanges => 'Vista previa de cambios';
 
   @override
@@ -3983,18 +3960,6 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get editGoalWarningShortNoticeBody =>
       'Tu carrera es dentro de 4 semanas. El plan priorizará una progresión y una descarga más seguras.';
-
-  @override
-  String get editGoalWarningAggressiveTitle => 'Objetivo exigente';
-
-  @override
-  String get editGoalWarningAggressiveBody =>
-      'Este objetivo es más rápido de lo que respaldan tus datos actuales.';
-
-  @override
-  String editGoalWarningSuggested(String time) {
-    return 'Objetivo más seguro: $time';
-  }
 
   @override
   String get editGoalImpactSection => 'Impacto en el plan';
