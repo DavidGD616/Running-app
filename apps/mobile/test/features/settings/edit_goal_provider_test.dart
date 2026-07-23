@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -137,6 +138,41 @@ void main() {
     final data = stored['data'] as Map<String, dynamic>;
     expect(data['race'], 'race_10k');
     expect(data['changes'], ['distance']);
+  });
+
+  test('serializes rapid draft saves in revision order', () async {
+    final store = _ControlledDraftStore(preferences);
+    addTearDown(store.releaseAll);
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      store: store,
+    );
+    addTearDown(container.dispose);
+    final editing = await _editingState(container);
+    final notifier = container.read(editGoalProvider.notifier);
+
+    notifier.updateDraft(
+      editing.draft.copyWith(
+        race: RunnerGoalRace.tenK,
+        changes: const {EditGoalChange.distance},
+      ),
+    );
+    notifier.updateDraft(
+      editing.draft.copyWith(
+        race: RunnerGoalRace.fiveK,
+        changes: const {EditGoalChange.distance},
+      ),
+    );
+
+    await _waitFor(() => store.savedDrafts.length == 1);
+    expect(store.savedDrafts.single.race, RunnerGoalRace.tenK);
+
+    store.releaseNext();
+    await _waitFor(() => store.savedDrafts.length == 2);
+    expect(store.savedDrafts.last.race, RunnerGoalRace.fiveK);
+    expect(store.revisions, [2, 3]);
+    store.releaseNext();
   });
 
   test(
@@ -342,6 +378,7 @@ ProviderContainer _container({
   String locale = 'en',
   EditGoalFunctionClient? client,
   EditGoalInitialDataLoader? loader,
+  EditGoalDraftStore? store,
 }) {
   final container = ProviderContainer.test(
     overrides: [
@@ -357,10 +394,48 @@ ProviderContainer _container({
                 FunctionResponse(data: _proposalJson(), status: 200),
       ),
       editGoalCacheReconcilerProvider.overrideWithValue((_) async {}),
+      if (store != null) editGoalDraftStoreProvider.overrideWithValue(store),
     ],
   );
   container.listen(editGoalProvider, (_, _) {}, fireImmediately: true);
   return container;
+}
+
+class _ControlledDraftStore extends EditGoalDraftStore {
+  _ControlledDraftStore(SharedPreferences preferences)
+    : super(preferences: preferences, client: null, userId: null);
+
+  final savedDrafts = <EditGoalDraft>[];
+  final revisions = <int>[];
+  final _releases = <Completer<void>>[];
+
+  @override
+  Future<StoredEditGoalDraft?> load() async => null;
+
+  @override
+  Future<void> save({
+    required EditGoalDraft draft,
+    required String sourcePlanId,
+    required String status,
+    required int revision,
+    required DateTime updatedAt,
+  }) {
+    savedDrafts.add(draft);
+    revisions.add(revision);
+    final release = Completer<void>();
+    _releases.add(release);
+    return release.future;
+  }
+
+  void releaseNext() {
+    _releases.firstWhere((release) => !release.isCompleted).complete();
+  }
+
+  void releaseAll() {
+    for (final release in _releases) {
+      if (!release.isCompleted) release.complete();
+    }
+  }
 }
 
 Future<EditGoalEditing> _editingState(ProviderContainer container) async {

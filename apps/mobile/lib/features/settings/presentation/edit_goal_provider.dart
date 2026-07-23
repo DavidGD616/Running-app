@@ -411,6 +411,7 @@ class EditGoalFailure extends EditGoalState {
 
 class EditGoalNotifier extends Notifier<EditGoalState> {
   int _revision = 1;
+  Future<void> _persistenceTail = Future<void>.value();
 
   @override
   EditGoalState build() {
@@ -509,6 +510,7 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
   }
 
   Future<void> discard() async {
+    await _drainPersistence();
     await ref.read(editGoalDraftStoreProvider).discard();
     await initialize();
   }
@@ -693,17 +695,35 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
     EditGoalDraft draft,
     String sourcePlanId, {
     required String status,
-  }) async {
-    _revision++;
-    await ref
-        .read(editGoalDraftStoreProvider)
-        .save(
-          draft: draft,
-          sourcePlanId: sourcePlanId,
-          status: status,
-          revision: _revision,
-          updatedAt: ref.read(editGoalClockProvider)(),
-        );
+  }) {
+    final revision = ++_revision;
+    final updatedAt = ref.read(editGoalClockProvider)();
+    final store = ref.read(editGoalDraftStoreProvider);
+    final previous = _persistenceTail;
+    final next = () async {
+      try {
+        await previous;
+      } catch (_) {
+        // A failed local write must not poison later saves.
+      }
+      await store.save(
+        draft: draft,
+        sourcePlanId: sourcePlanId,
+        status: status,
+        revision: revision,
+        updatedAt: updatedAt,
+      );
+    }();
+    _persistenceTail = next;
+    return next;
+  }
+
+  Future<void> _drainPersistence() async {
+    try {
+      await _persistenceTail;
+    } catch (_) {
+      // Discard still needs to remove the draft after a failed save.
+    }
   }
 
   void _setFailure(
