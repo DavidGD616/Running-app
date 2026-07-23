@@ -4,6 +4,43 @@ import 'package:running_app/features/settings/domain/edit_goal_models.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 
 void main() {
+  test('race estimate parses only canonical evidence reason keys', () {
+    final estimate = GoalEditRaceEstimate.fromJson({
+      'centerTimeSeconds': 1500,
+      'fasterTimeSeconds': 1450,
+      'slowerTimeSeconds': 1550,
+      'confidence': 'high',
+      'evidence': [
+        {
+          'source': 'manual',
+          'recordedOn': '2026-07-10',
+          'reason': 'manual_recent_hard_result',
+        },
+      ],
+    });
+
+    expect(
+      estimate.evidence.single.reason,
+      GoalEditEvidenceReason.manualRecentHardResult,
+    );
+    expect(
+      () => GoalEditRaceEstimate.fromJson({
+        'centerTimeSeconds': 1500,
+        'fasterTimeSeconds': 1450,
+        'slowerTimeSeconds': 1550,
+        'confidence': 'high',
+        'evidence': [
+          {
+            'source': 'manual',
+            'recordedOn': '2026-07-10',
+            'description': 'Recent hard running result',
+          },
+        ],
+      }),
+      throwsFormatException,
+    );
+  });
+
   test('deselecting a goal field restores its original value and payload', () {
     final originalGoal = GoalEditGoal(
       race: RunnerGoalRace.halfMarathon,

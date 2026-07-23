@@ -226,6 +226,25 @@ void main() {
     expect(find.text('Week 1'), findsNothing);
     expect(find.text('Week 2'), findsNothing);
   });
+
+  testWidgets('Spanish preview localizes canonical evidence reasons', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(now: now, preferences: preferences, locale: const Locale('es')),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('editGoalDateChange')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editGoalChangesContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editGoalReviewChanges')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Resultado reciente de esfuerzo intenso'), findsOneWidget);
+    expect(find.text('Recent hard running result'), findsNothing);
+  });
 }
 
 Widget _app({
@@ -327,7 +346,7 @@ Map<String, dynamic> _proposal({Map<String, dynamic>? candidatePlan}) => {
       {
         'source': 'manual',
         'recordedOn': '2026-07-10',
-        'description': 'Recent hard running result',
+        'reason': 'manual_recent_hard_result',
       },
     ],
   },

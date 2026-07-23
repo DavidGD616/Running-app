@@ -177,12 +177,32 @@ Deno.test("a recent hard manual result unlocks an estimate-backed proposal", asy
   assertEquals(response.status, 200);
   const json = await response.json();
   assertEquals(json.raceEstimate.confidence, "medium");
+  assertEquals(json.raceEstimate.evidence, [{
+    source: "manual",
+    recordedOn: "2026-07-10",
+    reason: "manual_recent_hard_result",
+  }]);
   assert(
     json.raceEstimate.fasterTimeSeconds < json.raceEstimate.centerTimeSeconds,
   );
   assert(
     json.raceEstimate.slowerTimeSeconds > json.raceEstimate.centerTimeSeconds,
   );
+});
+
+Deno.test("assessment evidence uses a canonical reason key", async () => {
+  const response = await createEditGoalHandler(fakeDependencies())(request(
+    previewBody({
+      fitnessResult: { ...recentHardResult(), source: "assessment" },
+    }),
+  ));
+
+  const json = await response.json();
+  assertEquals(json.raceEstimate.evidence, [{
+    source: "assessment",
+    recordedOn: "2026-07-10",
+    reason: "completed_assessment",
+  }]);
 });
 
 Deno.test("a recent easy result remains behind the fitness check", async () => {

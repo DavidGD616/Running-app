@@ -7509,6 +7509,18 @@ abstract class AppLocalizations {
   /// **'Evidence used'**
   String get editGoalEvidenceUsed;
 
+  /// No description provided for @editGoalEvidenceManualRecentHardResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent hard running result'**
+  String get editGoalEvidenceManualRecentHardResult;
+
+  /// No description provided for @editGoalEvidenceCompletedAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed fitness check'**
+  String get editGoalEvidenceCompletedAssessment;
+
   /// No description provided for @editGoalNextTwoWeeks.
   ///
   /// In en, this message translates to:

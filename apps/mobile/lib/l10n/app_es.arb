@@ -1734,6 +1734,8 @@
   "editGoalConfidenceMedium": "Media",
   "editGoalConfidenceLimited": "Limitada",
   "editGoalEvidenceUsed": "Datos utilizados",
+  "editGoalEvidenceManualRecentHardResult": "Resultado reciente de esfuerzo intenso",
+  "editGoalEvidenceCompletedAssessment": "Prueba de forma completada",
   "editGoalNextTwoWeeks": "Tus próximas dos semanas",
   "editGoalFullProposedPlan": "Ver el resto del plan propuesto",
   "editGoalWarningRaceWeekTitle": "Plan de semana de carrera",

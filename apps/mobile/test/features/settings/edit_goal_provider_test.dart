@@ -421,7 +421,7 @@ Map<String, dynamic> _proposalJson({String sourcePlanId = 'active-plan'}) => {
       {
         'source': 'manual',
         'recordedOn': '2026-07-10',
-        'description': 'Recent hard running result',
+        'reason': 'manual_recent_hard_result',
       },
     ],
   },

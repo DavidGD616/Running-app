@@ -3771,6 +3771,8 @@
   "editGoalConfidenceMedium": "Medium",
   "editGoalConfidenceLimited": "Limited",
   "editGoalEvidenceUsed": "Evidence used",
+  "editGoalEvidenceManualRecentHardResult": "Recent hard running result",
+  "editGoalEvidenceCompletedAssessment": "Completed fitness check",
   "editGoalNextTwoWeeks": "Your next two weeks",
   "editGoalFullProposedPlan": "View the rest of the proposed plan",
   "editGoalWarningRaceWeekTitle": "Race-week plan",

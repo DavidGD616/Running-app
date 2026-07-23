@@ -4183,6 +4183,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get editGoalEvidenceUsed => 'Evidence used';
 
   @override
+  String get editGoalEvidenceManualRecentHardResult =>
+      'Recent hard running result';
+
+  @override
+  String get editGoalEvidenceCompletedAssessment => 'Completed fitness check';
+
+  @override
   String get editGoalNextTwoWeeks => 'Your next two weeks';
 
   @override

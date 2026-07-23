@@ -391,16 +391,31 @@ class GoalEditRaceEstimate {
   }
 }
 
+enum GoalEditEvidenceReason {
+  manualRecentHardResult('manual_recent_hard_result'),
+  completedAssessment('completed_assessment');
+
+  const GoalEditEvidenceReason(this.key);
+  final String key;
+
+  static GoalEditEvidenceReason parse(Object? value) {
+    for (final reason in values) {
+      if (reason.key == value) return reason;
+    }
+    throw const FormatException('Invalid race evidence reason.');
+  }
+}
+
 class GoalEditEstimateEvidence {
   const GoalEditEstimateEvidence({
     required this.source,
     required this.recordedOn,
-    required this.description,
+    required this.reason,
   });
 
   final String source;
   final DateTime? recordedOn;
-  final String description;
+  final GoalEditEvidenceReason reason;
 
   factory GoalEditEstimateEvidence.fromJson(Object? value) {
     final json = _strictMap(value, 'race estimate evidence');
@@ -412,7 +427,7 @@ class GoalEditEstimateEvidence {
     return GoalEditEstimateEvidence(
       source: source,
       recordedOn: rawDate == null ? null : _parseDateOnly(rawDate),
-      description: _requiredString(json, 'description'),
+      reason: GoalEditEvidenceReason.parse(json['reason']),
     );
   }
 }

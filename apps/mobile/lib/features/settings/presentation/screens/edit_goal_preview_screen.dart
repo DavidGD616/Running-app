@@ -402,7 +402,7 @@ class _RaceEstimateCard extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             ...estimate.evidence.map(
               (item) => Text(
-                item.description,
+                _evidenceReasonLabel(item.reason, l10n),
                 style: AppTypography.bodyMedium.copyWith(
                   color: AppColors.textSecondary,
                 ),
@@ -839,6 +839,16 @@ String _raceLabel(RunnerGoalRace race, AppLocalizations l10n) => switch (race) {
   RunnerGoalRace.halfMarathon => l10n.raceHalfMarathon,
   RunnerGoalRace.marathon => l10n.raceMarathon,
   RunnerGoalRace.other => l10n.raceOther,
+};
+
+String _evidenceReasonLabel(
+  GoalEditEvidenceReason reason,
+  AppLocalizations l10n,
+) => switch (reason) {
+  GoalEditEvidenceReason.manualRecentHardResult =>
+    l10n.editGoalEvidenceManualRecentHardResult,
+  GoalEditEvidenceReason.completedAssessment =>
+    l10n.editGoalEvidenceCompletedAssessment,
 };
 
 String _sessionLabel(SessionType type, AppLocalizations l10n) => switch (type) {

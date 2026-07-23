@@ -4220,6 +4220,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get editGoalEvidenceUsed => 'Datos utilizados';
 
   @override
+  String get editGoalEvidenceManualRecentHardResult =>
+      'Resultado reciente de esfuerzo intenso';
+
+  @override
+  String get editGoalEvidenceCompletedAssessment =>
+      'Prueba de forma completada';
+
+  @override
   String get editGoalNextTwoWeeks => 'Tus próximas dos semanas';
 
   @override

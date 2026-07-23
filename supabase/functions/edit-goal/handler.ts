@@ -23,6 +23,9 @@ type Goal = {
 type SupportedRace = z.infer<typeof SupportedRaceSchema>;
 type EstimateConfidence = "high" | "medium" | "limited";
 type FitnessResult = z.infer<typeof FitnessResultSchema>;
+type GoalEditEvidenceReason =
+  | "manual_recent_hard_result"
+  | "completed_assessment";
 
 const DAY_MS = 86_400_000;
 const SHORT_NOTICE_DAYS = 28;
@@ -164,7 +167,7 @@ export type GoalEditRaceEstimate = {
   evidence: Array<{
     source: "strava" | "manual" | "assessment";
     recordedOn: string | null;
-    description: string;
+    reason: GoalEditEvidenceReason;
   }>;
 };
 
@@ -438,9 +441,9 @@ function estimateFor(input: {
   evidence = [{
     source: manual.source,
     recordedOn: manual.recordedOn,
-    description: manual.source === "assessment"
-      ? "Completed Edit Goal assessment"
-      : "Recent hard running result",
+    reason: manual.source === "assessment"
+      ? "completed_assessment"
+      : "manual_recent_hard_result",
   }];
 
   if (centerTimeSeconds == null || centerTimeSeconds <= 0) return null;
