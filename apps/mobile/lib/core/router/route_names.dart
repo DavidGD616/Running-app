@@ -36,6 +36,8 @@ abstract class RouteNames {
   static const settingsIntegrations = '/settings/integrations';
   static const settingsUpdatePlan = '/settings/update-plan';
   static const settingsUpdatePlanEditGoal = '/settings/update-plan/edit-goal';
+  static const settingsUpdatePlanEditGoalPreview =
+      '/settings/update-plan/edit-goal/preview';
   static const settingsUpdatePlanEditGoalForm =
       '/settings/update-plan/edit-goal/form';
   static const settingsUpdatePlanEditGoalSchedule =

@@ -3885,4 +3885,399 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get adaptationStatusFailed => 'Falló';
+
+  @override
+  String get editGoalFormTitle => 'Editar objetivo';
+
+  @override
+  String get editGoalFormSubtitle =>
+      'Actualiza la carrera para la que ya entrenas. Tu progreso completado se mantiene.';
+
+  @override
+  String get editGoalDistanceSection => 'Distancia de carrera';
+
+  @override
+  String get editGoalFixedDateSection => 'Fecha de carrera fija';
+
+  @override
+  String get editGoalPreviewChanges => 'Vista previa de cambios';
+
+  @override
+  String get editGoalPreviewLoading =>
+      'Creando la vista previa de tu plan actualizado…';
+
+  @override
+  String get editGoalRetry => 'Intentar de nuevo';
+
+  @override
+  String get editGoalErrorAuth =>
+      'Inicia sesión de nuevo para editar tu objetivo.';
+
+  @override
+  String get editGoalErrorInvalid =>
+      'Revisa los detalles del objetivo e inténtalo de nuevo.';
+
+  @override
+  String get editGoalErrorTimeout =>
+      'La vista previa tardó demasiado. Inténtalo de nuevo.';
+
+  @override
+  String get editGoalErrorStale =>
+      'Tu plan activo cambió. Genera una vista previa nueva.';
+
+  @override
+  String get editGoalErrorExpired =>
+      'Esta vista previa caducó. Genera una nueva.';
+
+  @override
+  String get editGoalErrorConflict =>
+      'Esta vista previa ya no se puede aplicar.';
+
+  @override
+  String get editGoalErrorParse => 'No pudimos leer el plan actualizado.';
+
+  @override
+  String get editGoalErrorGeneric => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get editGoalPreviewTitle => 'Revisar cambios del objetivo';
+
+  @override
+  String get editGoalComparisonSection => 'Comparación del objetivo';
+
+  @override
+  String get editGoalCurrentLabel => 'Actual';
+
+  @override
+  String get editGoalProposedLabel => 'Propuesto';
+
+  @override
+  String get editGoalNoFixedDate => 'Sin fecha fija';
+
+  @override
+  String get editGoalWarningShortNoticeTitle => 'Ventana de preparación corta';
+
+  @override
+  String get editGoalWarningShortNoticeBody =>
+      'Tu carrera es dentro de 4 semanas. El plan priorizará una progresión y una descarga más seguras.';
+
+  @override
+  String get editGoalImpactSection => 'Impacto en el plan';
+
+  @override
+  String get editGoalAddedDetailsSection => 'Sesiones añadidas';
+
+  @override
+  String get editGoalRemovedDetailsSection => 'Sesiones eliminadas';
+
+  @override
+  String get editGoalChangedDetailsSection => 'Sesiones modificadas';
+
+  @override
+  String editGoalPreservedCount(int count) {
+    return '$count sesiones conservadas';
+  }
+
+  @override
+  String editGoalAddedCount(int count) {
+    return '$count sesiones añadidas';
+  }
+
+  @override
+  String editGoalRemovedCount(int count) {
+    return '$count sesiones eliminadas';
+  }
+
+  @override
+  String editGoalChangedCount(int count) {
+    return '$count sesiones cambiadas';
+  }
+
+  @override
+  String editGoalTotalWeeks(int count) {
+    return '$count semanas en total';
+  }
+
+  @override
+  String editGoalEndsOn(String date) {
+    return 'Termina el $date';
+  }
+
+  @override
+  String get editGoalScheduleSection => 'Calendario propuesto';
+
+  @override
+  String editGoalWeekLabel(int week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String editGoalSessionLine(String date, String session) {
+    return '$date · $session';
+  }
+
+  @override
+  String get editGoalApplyChanges => 'Aplicar cambios';
+
+  @override
+  String get editGoalKeepCurrent => 'Mantener objetivo actual';
+
+  @override
+  String get editGoalFreshPreview => 'Generar una vista previa nueva';
+
+  @override
+  String get editGoalPreviewExpired =>
+      'Esta vista previa caducó y no se puede aplicar.';
+
+  @override
+  String get editGoalCurrentGoalLabel => 'Tu objetivo actual';
+
+  @override
+  String get editGoalWhatChangedTitle => '¿Qué cambió?';
+
+  @override
+  String get editGoalWhatChangedSubtitle =>
+      'Elige solo las partes de tu objetivo que quieres actualizar.';
+
+  @override
+  String get editGoalChangeDistanceTitle => 'Distancia de carrera';
+
+  @override
+  String get editGoalChangeDistanceSubtitle =>
+      'Entrena para una distancia de carrera distinta.';
+
+  @override
+  String get editGoalChangeDateTitle => 'Fecha de carrera';
+
+  @override
+  String get editGoalChangeDateSubtitle =>
+      'Cambia, añade o elimina la fecha de tu carrera.';
+
+  @override
+  String get editGoalDiscard => 'Descartar cambios';
+
+  @override
+  String get editGoalDetailsTitle => 'Actualiza tu objetivo';
+
+  @override
+  String get editGoalDetailsSubtitle =>
+      'Crearemos un nuevo plan para estos cambios y conservaremos tu progreso completado.';
+
+  @override
+  String get editGoalHasDate => 'Tengo una fecha';
+
+  @override
+  String get editGoalNoDate => 'Sin fecha fija';
+
+  @override
+  String get editGoalNoDateNote =>
+      'Usaremos una preparación estándar sin una descarga específica para la carrera.';
+
+  @override
+  String get editGoalUpdatedSincePreview =>
+      'Tu plan activo cambió, así que la vista previa se recreará con el plan más reciente.';
+
+  @override
+  String get editGoalDatePastError =>
+      'Elige hoy o una fecha futura para la carrera.';
+
+  @override
+  String get editGoalFitnessCheckTitle => 'Basemos esto en tus carreras';
+
+  @override
+  String get editGoalFitnessCheckSubtitle =>
+      'Necesitamos un esfuerzo duro reciente antes de estimar este objetivo. Puedes usar una carrera reciente, introducir un resultado o programar una prueba.';
+
+  @override
+  String get editGoalRecommendedResult => 'Resultados recientes sugeridos';
+
+  @override
+  String get editGoalOtherOptions => 'Otras opciones';
+
+  @override
+  String get editGoalEnterResult => 'Introduce un resultado reciente';
+
+  @override
+  String get editGoalEnterResultSubtitle =>
+      'Añade un esfuerzo duro reciente en el que confíes.';
+
+  @override
+  String get editGoalScheduleBenchmark => 'Programar una prueba';
+
+  @override
+  String get editGoalScheduleBenchmarkSubtitle =>
+      'Elige una fecha segura para una prueba de forma independiente.';
+
+  @override
+  String get editGoalManualResultSubtitle =>
+      'Usa un esfuerzo duro reciente. Esto crea un rango estimado; no cambia directamente los ritmos de tus entrenamientos.';
+
+  @override
+  String get editGoalResultDistance => 'Distancia';
+
+  @override
+  String get editGoalResultDistanceHint => 'Kilómetros, por ejemplo 5';
+
+  @override
+  String get editGoalResultTime => 'Tiempo';
+
+  @override
+  String get editGoalResultTimeHint => 'HH:MM:SS';
+
+  @override
+  String get editGoalResultDate => '¿Cuándo lo corriste?';
+
+  @override
+  String get editGoalHardEffortQuestion => '¿Fue un esfuerzo duro y sostenido?';
+
+  @override
+  String get editGoalResultValidation =>
+      'Introduce una distancia positiva, un tiempo HH:MM:SS y la fecha de un esfuerzo duro.';
+
+  @override
+  String get editGoalUseResult => 'Usar este resultado';
+
+  @override
+  String get editGoalBenchmarkTitle => 'Programar una prueba de forma';
+
+  @override
+  String get editGoalBenchmarkFiveKExplanation =>
+      'Un 5K controlado nos da la señal más clara de tu forma actual. Es independiente de tu plan de entrenamiento.';
+
+  @override
+  String get editGoalBenchmarkOneKExplanation =>
+      'Un 1K controlado es la prueba corta de forma más segura ahora. Es independiente de tu plan de entrenamiento.';
+
+  @override
+  String get editGoalSafeDatesLabel => 'Fechas recomendadas';
+
+  @override
+  String get editGoalNoSafeDates =>
+      'No hay fechas seguras para una prueba en este plan ahora. Introduce un resultado reciente en su lugar.';
+
+  @override
+  String get editGoalBenchmarkPlanNote =>
+      'Programarla no añade ni sustituye una sesión de tu plan activo.';
+
+  @override
+  String get editGoalScheduleAssessmentButton => 'Programar prueba de forma';
+
+  @override
+  String get editGoalInProgressTitle => 'Prueba de forma programada';
+
+  @override
+  String get editGoalInProgressSubtitle =>
+      'Tu plan actual no cambia. Añade el resultado cuando la completes para continuar editando tu objetivo.';
+
+  @override
+  String get editGoalEnterAssessmentResult =>
+      'Introducir resultado de la prueba';
+
+  @override
+  String get editGoalUseAnotherResult => 'Usar otro resultado reciente';
+
+  @override
+  String editGoalSuggestedActivity(String date, String distance, String time) {
+    return '$date · $distance km en $time';
+  }
+
+  @override
+  String get editGoalUseThisActivity => 'Usar este resultado';
+
+  @override
+  String get editGoalBenchmarkFiveK => 'Prueba de forma de 5K';
+
+  @override
+  String get editGoalBenchmarkOneK => 'Prueba de forma de 1K';
+
+  @override
+  String get editGoalAssessmentScheduled =>
+      'Programada de forma independiente de tu plan';
+
+  @override
+  String get editGoalEstimateSection => 'Rango de tiempo estimado';
+
+  @override
+  String editGoalEstimatedFinishRange(String faster, String slower) {
+    return '$faster a $slower';
+  }
+
+  @override
+  String editGoalEstimateConfidence(String confidence) {
+    return 'Confianza $confidence según tus datos recientes';
+  }
+
+  @override
+  String get editGoalConfidenceHigh => 'Alta';
+
+  @override
+  String get editGoalConfidenceMedium => 'Media';
+
+  @override
+  String get editGoalConfidenceLimited => 'Limitada';
+
+  @override
+  String get editGoalEvidenceUsed => 'Datos utilizados';
+
+  @override
+  String get editGoalEvidenceManualRecentHardResult =>
+      'Resultado reciente de esfuerzo intenso';
+
+  @override
+  String get editGoalEvidenceCompletedAssessment =>
+      'Prueba de forma completada';
+
+  @override
+  String get editGoalNextTwoWeeks => 'Tus próximas dos semanas';
+
+  @override
+  String get editGoalFullProposedPlan => 'Ver el resto del plan propuesto';
+
+  @override
+  String get editGoalWarningRaceWeekTitle => 'Plan de semana de carrera';
+
+  @override
+  String get editGoalWarningRaceWeekBody =>
+      'Con menos de una semana, la actualización se centra en recuperación, una activación corta y guía para el día de la carrera.';
+
+  @override
+  String get editGoalWarningReadinessGapTitle => 'Revisión de preparación';
+
+  @override
+  String get editGoalWarningReadinessGapBody =>
+      'El plan mantiene una progresión prudente mientras tu entrenamiento reciente alcanza este objetivo.';
+
+  @override
+  String get editGoalWarningLimitedEvidenceTitle => 'Datos limitados';
+
+  @override
+  String get editGoalWarningLimitedEvidenceBody =>
+      'El rango estimado es deliberadamente amplio hasta contar con más datos de esfuerzos duros recientes.';
+
+  @override
+  String get editGoalWarningNoFixedDateTitle => 'Tiempo flexible';
+
+  @override
+  String get editGoalWarningNoFixedDateBody =>
+      'Este plan usa una preparación estándar y no programa una descarga específica para la carrera.';
+
+  @override
+  String get editGoalSuccessTitle => 'Tu plan actualizado está listo';
+
+  @override
+  String get editGoalSuccessSubtitle =>
+      'Tu progreso completado se conserva. El nuevo plan comienza en tu próxima sesión sin terminar.';
+
+  @override
+  String editGoalProgressPreserved(int count) {
+    return '$count sesiones completadas u omitidas conservadas';
+  }
+
+  @override
+  String editGoalNextWorkout(String date, String workout) {
+    return 'Próximo entrenamiento: $date · $workout';
+  }
+
+  @override
+  String get editGoalViewPlan => 'Ver plan';
 }

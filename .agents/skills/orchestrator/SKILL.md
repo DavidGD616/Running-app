@@ -16,12 +16,16 @@ When triggered, run the full orchestration workflow.
 - Use at least one subagent for implementation-turn work unless the user explicitly disables automation.
 - Do not self-delegate to the main agent for orchestrator-triggered implementation.
 - Use one implementation coder subagent at a time.
+- Spawn a brand-new coder for every plan chunk. Never reuse a coder with `followup_task` for another chunk.
 - Coder must use model: `gpt-5.3-codex-spark`.
-- Reviewer is mandatory before completion.
+- Spawn a brand-new reviewer for every chunk and every re-review. Never reuse a reviewer agent.
 - Main Codex coordinates build work; it must not edit code or apply reviewer fixes itself during orchestrator-triggered implementation turns (policy rule).
-- Every coder prompt must name exactly one task/chunk with a stable `Task ID:` and bounded file/module scope.
-- Blocking review findings require a new coder remediation pass -> verify -> re-review loop.
-- Commit is required after verification success when files changed and the user did not decline commit.
+- Assign every chunk one canonical task ID matching `[a-z0-9]+(?:_[a-z0-9]+)*` (lowercase snake case).
+- Include exactly one `Task ID: <task-id>` line in each coder and reviewer prompt, using that canonical value unchanged.
+- Name collaboration tasks `coder__<task-id>` and `reviewer__<task-id>` with the same canonical value so encrypted prompts remain hook-detectable. Only a fresh remediation or re-review agent may append a final `__<lower_snake_case_nonce>` suffix; the suffix distinguishes the agent and never changes the prompt's `Task ID:`.
+- Assign every blocking review remediation pass to a brand-new coder with the blocker's `Task ID:` and bounded reviewed scope.
+- Complete each chunk independently: fresh coder -> verification -> fresh reviewer -> approval/remediation loop -> task-sized commit. Start the next chunk only after that commit succeeds.
+- Do not substitute a plan-wide aggregate review or commit for any per-chunk gate.
 - Where hook evidence is present, the local gate tracks best-effort main-agent file-edit activity during an open coder pass and will block stop if detected.
 - Absence of hook evidence does not prove no edits occurred; always treat this as a policy/investigation risk, not a hook-enforced guarantee.
 
@@ -31,25 +35,29 @@ When triggered, run the full orchestration workflow.
 2. Run roles sequentially unless scope demands extra exploration:
    - `explorer` (read-only) for baseline ownership/behavior and risks.
    - `researcher` only when external library/API/CLI/cloud docs are needed.
-   - `coder` for exactly one bounded file set.
+   - a fresh `coder` for exactly one bounded file set.
    - `verification` before reviewer.
-   - `reviewer` after verification.
+   - a fresh `reviewer` after verification.
 3. Main Codex evaluates diff and reviewer output, but sends all code changes and blocker remediation to coder subagents.
-4. Continue until non-blocking completion criteria are met.
+4. Commit the approved chunk before selecting the next chunk.
+5. Continue until every chunk independently meets the completion gates.
 
 ## Evidence-First Completion Gates
 
 Before final answer on implementation turns, require:
 
 1. Orchestration trigger detected.
-2. Coder subagent activity recorded.
-3. Reviewer completed on the coder work.
-4. If reviewer blocked, a new coder remediation pass completed after the blocking review.
-5. Required verification command(s) run after final coder edits.
-6. Reviewer re-check passed after final verification (or explicit no blockers).
-7. Task-sized commit made when files changed and commit requested.
+2. A fresh coder subagent recorded for each chunk and remediation pass.
+3. Required verification command(s) passed after the chunk's final coder edits.
+4. A fresh reviewer completed after verification for each review and re-review.
+5. If review blocked, a fresh remediation coder completed after the blocking review using the same `Task ID:` and bounded scope.
+6. Reviewer approval recorded for the chunk after final verification.
+7. A task-sized commit recorded for the approved chunk when files changed and commit was not declined.
+8. Every chunk completed these gates before the next chunk started.
 
 If gates are unmet, continue the orchestration loop rather than finalizing.
+
+In the final handoff, list every chunk with its coder identity, verification evidence, reviewer verdict, and commit hash.
 
 ## Roles
 

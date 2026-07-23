@@ -30,6 +30,14 @@ Rules:
 
 Use for one bounded implementation task.
 
+Agent lifecycle:
+- Spawn a brand-new coder for every plan chunk and every remediation pass.
+- Run only one coder at a time.
+- Never reuse a coder with `followup_task` for another chunk or remediation.
+- Use one canonical task ID matching `[a-z0-9]+(?:_[a-z0-9]+)*` for the chunk.
+- Name the initial task `coder__<task-id>` so encrypted prompts remain hook-detectable.
+- Give a remediation agent only a final `__<lower_snake_case_nonce>` suffix, for example `coder__edit_goal_form__remediation_1`. Keep the prompt's single `Task ID: edit_goal_form` unchanged.
+
 Model:
 - Use `gpt-5.3-codex-spark` for coder agents unless the user explicitly asks
   for a different coder model.
@@ -38,7 +46,7 @@ Coder prompt must include:
 - exact sentinel line first (first non-empty line): `Codex-Orchestrator-Internal-Subagent: <role>` where role is the subagent role (for example `reviewer` or `coder`)
 - repository path
 - branch/context if relevant
-- stable `Task ID:` for the one plan task/chunk being implemented
+- exactly one `Task ID: <task-id>` line for the one plan chunk, using its canonical task ID unchanged
 - exact owned files or module boundary
 - expected behavior
 - tests to add or update
@@ -46,12 +54,20 @@ Coder prompt must include:
 - instruction that they are not alone in the codebase
 - instruction not to revert unrelated or user-made changes
 
-Keep write scopes disjoint across unrelated coders. Remediation coders for a blocking review must use the same `Task ID:` as the original coder pass and may edit only within the reviewed task scope.
+Keep write scopes disjoint across unrelated coders. Remediation coders for a blocking review must use the blocker's `Task ID:` and may edit only within the bounded reviewed scope.
 
 ## Reviewer
 
 Use after implementation and before final/commit when risk is non-trivial.
 Reviewer prompts must start with the sentinel line `Codex-Orchestrator-Internal-Subagent: <role>` before task instructions.
+Include exactly one `Task ID: <task-id>` line using the chunk's canonical task ID unchanged.
+
+Agent lifecycle:
+- Spawn a brand-new reviewer for every chunk and every re-review.
+- Never reuse a reviewer agent.
+- Use the chunk's canonical task ID matching `[a-z0-9]+(?:_[a-z0-9]+)*`.
+- Name the initial task `reviewer__<task-id>` so encrypted prompts remain hook-detectable.
+- Give a re-reviewer only a final `__<lower_snake_case_nonce>` suffix, for example `reviewer__edit_goal_form__rereview_1`. Keep the prompt's single `Task ID: edit_goal_form` unchanged.
 
 Ask reviewers to check:
 - correctness against the user request
@@ -68,6 +84,8 @@ Require a machine-readable overall verdict in the final paragraph using exactly 
 - `Overall Assessment: REQUEST_CHANGES`
 - `Overall Assessment: NEEDS_DISCUSSION`
 If no findings, this still requires `Overall Assessment: APPROVE` and residual risk.
+
+Approve and commit each chunk independently. Never treat a plan-wide aggregate review or commit as a replacement for a chunk's reviewer approval and task-sized commit.
 
 ## Scribe
 

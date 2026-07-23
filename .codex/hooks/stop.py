@@ -14,6 +14,7 @@ from orchestrator_state import (
     command_is_commit,
     command_match_verification,
     changed_signatures_delta,
+    extract_internal_subagent_prompt_from_transcript,
     extract_task_ids_from_prompt_lines,
     extract_task_ids,
     recover_successful_exec_calls_from_transcript,
@@ -23,7 +24,16 @@ from orchestrator_state import (
     signature_paths,
     git_changed_file_signatures,
     git_changed_files,
+    git_commit_first_parent,
+    git_head_commit,
+    git_is_ancestor,
+    infer_internal_subagent_role_from_transcript,
+    strict_agent_session_identity,
     update_state,
+)
+from subagent_stop import (
+    EXACT_NON_BLOCKING_FINDINGS_TEXT,
+    looks_blocking as reviewer_text_looks_blocking,
 )
 
 
@@ -32,13 +42,10 @@ INTERNAL_SUBAGENT_PROMPT_SENTINEL_MARKER = re.compile(
 )
 
 
-REVIEWER_APPROVAL_LINE_PATTERN = re.compile(
-    r"(?im)^\s*Overall Assessment:\s*APPROVE\s*$"
-)
-REVIEWER_NON_BLOCKING_FINDINGS_PATTERN = re.compile(
-    r"\bno\s+blocking\s+findings\b",
-    re.IGNORECASE,
-)
+LEGACY_REVIEWER_NO_FINDINGS_TEXT = EXACT_NON_BLOCKING_FINDINGS_TEXT
+MAX_LEGACY_REVIEWER_TRANSCRIPT_BYTES = 8 * 1024 * 1024
+MAX_LEGACY_REVIEWER_TRANSCRIPT_RECORDS = 10_000
+MAX_LEGACY_REVIEWER_TRANSCRIPT_LINE_BYTES = 1024 * 1024
 SUBAGENT_TASK_ID_PROMPT_LINE_PATTERN = re.compile(
     r"(?im)^\s*(?:[-*]\s*)?task\s*id\s*:\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*$",
     re.IGNORECASE,
@@ -56,6 +63,265 @@ def _normalize_reviewer_stops(value: Any) -> list[dict[str, Any]]:
     if not isinstance(value, list):
         return []
     return [item for item in value if isinstance(item, dict)]
+
+
+def _response_message_text(payload: dict[str, Any]) -> str | None:
+    if payload.get("type") != "message" or payload.get("role") != "assistant":
+        return None
+    if payload.get("phase") not in ("final", "final_answer"):
+        return None
+
+    content = payload.get("content")
+    if not isinstance(content, list) or len(content) != 1:
+        return None
+    item = content[0]
+    if not isinstance(item, dict) or item.get("type") not in ("output_text", "text"):
+        return None
+    value = item.get("text")
+    return value if isinstance(value, str) and value.strip() else None
+
+
+def _legacy_reviewer_final_text_from_transcript(value: Any) -> str | None:
+    """Read one bounded official JSONL transcript and return its final answer.
+
+    The parser deliberately recognizes only terminal agent-message shapes. It
+    never joins message fragments or falls back to arbitrary transcript text.
+    Any malformed record makes the transcript unusable as approval evidence.
+    """
+    if not isinstance(value, str) or not value.strip():
+        return None
+
+    path = Path(value).expanduser()
+    try:
+        if path.suffix != ".jsonl" or not path.is_file() or path.is_symlink():
+            return None
+        if path.stat().st_size > MAX_LEGACY_REVIEWER_TRANSCRIPT_BYTES:
+            return None
+
+        event_final: str | None = None
+        response_final: str | None = None
+        task_complete_final: str | None = None
+        with path.open("r", encoding="utf-8") as handle:
+            for record_count, line in enumerate(handle, start=1):
+                if record_count > MAX_LEGACY_REVIEWER_TRANSCRIPT_RECORDS:
+                    return None
+                if len(line.encode("utf-8")) > MAX_LEGACY_REVIEWER_TRANSCRIPT_LINE_BYTES:
+                    return None
+                record = json.loads(line)
+                if not isinstance(record, dict):
+                    return None
+                payload = record.get("payload")
+                if not isinstance(payload, dict):
+                    continue
+
+                if record.get("type") == "event_msg":
+                    payload_type = payload.get("type")
+                    if payload_type == "agent_message" and payload.get("phase") in (
+                        "final", "final_answer",
+                    ):
+                        message = payload.get("message")
+                        if isinstance(message, str) and message.strip():
+                            event_final = message
+                    elif payload_type == "task_complete":
+                        message = payload.get("last_agent_message")
+                        if isinstance(message, str) and message.strip():
+                            task_complete_final = message
+                elif record.get("type") == "response_item":
+                    message = _response_message_text(payload)
+                    if message is not None:
+                        response_final = message
+    except (OSError, UnicodeError, json.JSONDecodeError, ValueError):
+        return None
+
+    return task_complete_final or response_final or event_final
+
+
+def _coordinator_transcript_paths(turn: dict[str, Any]) -> list[str]:
+    actors = turn.get("tool_call_actors", {})
+    if not isinstance(actors, dict):
+        return []
+    return [
+        path for path, role in actors.items()
+        if isinstance(path, str) and path.strip() and role == "coordinator"
+    ]
+
+
+def _reviewer_transcript_has_correlated_provenance(
+    turn: dict[str, Any],
+    task_id: str,
+    reviewer_stop: dict[str, Any],
+    reviewer_pass: dict[str, Any],
+    transcript_path: str,
+    *,
+    require_persisted_start: bool,
+) -> bool:
+    """Require role, task, session, spawn, and (for legacy) start correlation."""
+    identity = strict_agent_session_identity(transcript_path, "reviewer")
+    if not isinstance(identity, dict) or identity.get("task_id") != task_id:
+        return False
+    if reviewer_pass.get("agent_identity") != identity.get("identity"):
+        return False
+    pass_name = reviewer_pass.get("agent_name")
+    if isinstance(pass_name, str) and pass_name != identity.get("agent_name"):
+        return False
+
+    coordinator_paths = _coordinator_transcript_paths(turn)
+    spawn_evidence = turn.get("collaboration_spawn_evidence", [])
+    if not isinstance(spawn_evidence, list):
+        return False
+    inferred_role = infer_internal_subagent_role_from_transcript(
+        transcript_path,
+        coordinator_transcript_paths=coordinator_paths,
+        collaboration_spawn_evidence=spawn_evidence,
+    )
+    recovered_task_id, recovered_count = extract_task_id_from_subagent_transcript(
+        transcript_path,
+        agent="reviewer",
+        coordinator_transcript_paths=coordinator_paths,
+        collaboration_spawn_evidence=spawn_evidence,
+    )
+    if (
+        inferred_role != "reviewer"
+        or recovered_task_id != task_id
+        or recovered_count != 1
+    ):
+        return False
+
+    # If a plaintext internal prompt exists, it must independently carry the
+    # reviewer sentinel and exactly one matching canonical Task ID. Opaque
+    # prompts are accepted only through the spawn/session correlation above.
+    prompt = extract_internal_subagent_prompt_from_transcript(
+        transcript_path,
+        agent="reviewer",
+        coordinator_transcript_paths=coordinator_paths,
+    )
+    if prompt:
+        if extract_task_ids_from_prompt_lines(prompt) != [task_id]:
+            return False
+        if infer_internal_subagent_role_from_transcript(
+            transcript_path,
+            coordinator_transcript_paths=coordinator_paths,
+            collaboration_spawn_evidence=spawn_evidence,
+        ) != "reviewer":
+            return False
+
+    if not require_persisted_start:
+        return True
+
+    stop_seq = reviewer_stop.get("seq")
+    correlated_spawn = any(
+        isinstance(evidence, dict)
+        and evidence.get("role") == "reviewer"
+        and evidence.get("task_id") == task_id
+        and evidence.get("task_id_count") == 1
+        and evidence.get("task_name") == identity.get("agent_name")
+        and evidence.get("expected_agent_path") == identity.get("agent_path")
+        and evidence.get("coordinator_thread_id") == identity.get("parent_thread_id")
+        and evidence.get("expected_child_depth") == identity.get("depth")
+        and isinstance(evidence.get("seq"), int)
+        and isinstance(stop_seq, int)
+        and evidence["seq"] < stop_seq
+        for evidence in spawn_evidence
+    )
+    if not correlated_spawn:
+        return False
+    usage = turn.get("agent_identity_usage", {})
+    reviewer_usage = usage.get("reviewer", {}) if isinstance(usage, dict) else {}
+    start = reviewer_usage.get(identity["identity"]) if isinstance(reviewer_usage, dict) else None
+    if not isinstance(start, dict):
+        return False
+    return (
+        start.get("task_id") == task_id
+        and start.get("seq") == stop_seq
+        and start.get("stopped") is True
+    )
+
+
+def _reviewer_approval_transcript_path(
+    turn: dict[str, Any],
+    task_id: str,
+    reviewer_stop: dict[str, Any],
+    reviewer_pass: dict[str, Any],
+) -> str | None:
+    official_path = reviewer_stop.get("official_agent_transcript_path")
+    pass_official_path = reviewer_pass.get("official_agent_transcript_path")
+    if (
+        isinstance(official_path, str)
+        and official_path.strip()
+        and official_path == pass_official_path
+        and _reviewer_transcript_has_correlated_provenance(
+            turn, task_id, reviewer_stop, reviewer_pass, official_path,
+            require_persisted_start=False,
+        )
+    ):
+        return official_path
+
+    # The sole generic-path compatibility exception is the known seq-973
+    # record, which predates the distinct official field. Approval prose alone
+    # is insufficient: persisted reviewer start/session/spawn evidence must
+    # all identify this exact role, task, sequence, and transcript.
+    generic_path = reviewer_stop.get("agent_transcript_path")
+    if (
+        reviewer_stop.get("seq") == 973
+        and isinstance(generic_path, str)
+        and generic_path.strip()
+        and _reviewer_transcript_has_correlated_provenance(
+            turn, task_id, reviewer_stop, reviewer_pass, generic_path,
+            require_persisted_start=True,
+        )
+    ):
+        return generic_path
+    return None
+
+
+def _normalized_ledger_reviewer_passes(
+    turn: dict[str, Any], task_id: str, ledger: dict[str, Any],
+) -> list[dict[str, Any]]:
+    """Normalize one legacy false blocker without mutating persisted state.
+
+    Older hook versions classified the unambiguous phrase "No blocking or
+    non-blocking findings" as blocking because a generic substring pattern
+    matched ``blocking findings``.  A matching reviewer-stop record provides
+    task, sequence, and snapshot evidence. Only the current strict terminal
+    APPROVE contract or the exact historical no-findings sentence can repair
+    a legacy pass.
+    """
+    passes = [
+        dict(item) for item in ledger.get("reviewer_passes", [])
+        if isinstance(item, dict)
+    ]
+    reviewer_stops = _normalize_reviewer_stops(
+        turn.get("agents", {}).get("reviewer_stops", [])
+        if isinstance(turn.get("agents"), dict) else []
+    )
+    stops_by_seq = {
+        item.get("seq"): item
+        for item in reviewer_stops
+        if isinstance(item.get("seq"), int)
+        and item.get("task_id") == task_id
+        and item.get("task_id_count") == 1
+    }
+
+    for reviewer_pass in passes:
+        if reviewer_pass.get("blocking") is not True:
+            continue
+        reviewer_stop = stops_by_seq.get(reviewer_pass.get("seq"))
+        if not isinstance(reviewer_stop, dict):
+            continue
+        transcript_path = _reviewer_approval_transcript_path(
+            turn, task_id, reviewer_stop, reviewer_pass,
+        )
+        if transcript_path:
+            final_text = _legacy_reviewer_final_text_from_transcript(transcript_path)
+            is_non_blocking = bool(
+                final_text and not reviewer_text_looks_blocking(final_text)
+            )
+        else:
+            is_non_blocking = False
+        if is_non_blocking:
+            reviewer_pass["blocking"] = False
+
+    return passes
 
 
 def _latest_reviewer_stop(reviewer_stops: list[dict[str, Any]]) -> dict[str, Any] | None:
@@ -208,11 +474,7 @@ def _find_reviewer_approval_seq(
         if task_id and not _task_text_matches(merged_text, task_id):
             continue
 
-        if REVIEWER_APPROVAL_LINE_PATTERN.search(merged_text):
-            marker_seq = index
-            break
-
-        if REVIEWER_NON_BLOCKING_FINDINGS_PATTERN.search(merged_text):
+        if not reviewer_text_looks_blocking(merged_text):
             marker_seq = index
             break
 
@@ -1152,6 +1414,19 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
     if not state.get("active"):
         return missing
 
+    task_ledgers = turn.get("task_ledgers")
+    if isinstance(task_ledgers, dict) and task_ledgers:
+        return _missing_task_ledger_requirements(turn)
+
+    # Legacy aggregate state remains readable, but a newly observed malformed
+    # coder/reviewer session cannot fall back to that compatibility path.
+    strict_start_violations = [
+        str(item.get("message"))
+        for item in turn.get("lifecycle_violations", [])
+        if isinstance(item, dict) and item.get("message")
+    ]
+    missing.extend(strict_start_violations)
+
     baseline_signature = turn.get("files_changed_signature_at_start", [])
     if not isinstance(baseline_signature, list):
         baseline_signature = []
@@ -1379,6 +1654,735 @@ def _missing_requirements(state: dict[str, Any], current_signature: list[str]) -
             missing.append("post-commit working tree includes uncommitted changes")
 
     return missing
+
+
+def _validated_headless_restart_chain(
+    coder_passes: list[dict[str, Any]], baseline_head: str,
+) -> list[dict[str, Any]]:
+    """Return a restart chain only when a later coder validates its baseline.
+
+    Older hook versions did not always record ``start_head``.  A commit made
+    after such a pass cannot supply that missing evidence: the commit belongs
+    to the same cycle and would make the check self-authorizing.  Recovery is
+    allowed only when a later coder records the active baseline and its start
+    snapshot continues the preceding coder's stop snapshot without a gap.
+    """
+    ordered = sorted(coder_passes, key=lambda item: item["start_seq"])
+    if len(ordered) < 2:
+        return []
+    first = ordered[0]
+    if str(first.get("start_head", "")).strip():
+        return []
+    if not isinstance(first.get("start_snapshot_signature"), list):
+        return []
+    later = ordered[1:]
+    if any(
+        str(item.get("start_head", "")).strip() != baseline_head
+        for item in later
+    ):
+        return []
+    if not all(
+        isinstance(left.get("stop_snapshot_signature"), list)
+        and isinstance(right.get("start_snapshot_signature"), list)
+        and signatures_match(
+            left["stop_snapshot_signature"], right["start_snapshot_signature"],
+        )
+        for left, right in zip(ordered, ordered[1:])
+    ):
+        return []
+    return ordered
+
+
+def _approved_same_task_commits_before(
+    ledger: dict[str, Any], before_seq: int,
+    reviewer_passes: list[dict[str, Any]] | None = None,
+    active_history_commits: list[dict[str, Any]] | None = None,
+) -> list[dict[str, Any]]:
+    """Return the uninterrupted approved commit chain preceding a coder pass."""
+    baseline_head = str(ledger.get("baseline_head", "")).strip()
+    expected_head = baseline_head
+    previous_commit_seq = -1
+    accepted: list[dict[str, Any]] = []
+
+    reference_passes = [
+        item for item in ledger.get("coder_passes", [])
+        if isinstance(item, dict) and isinstance(item.get("start_seq"), int)
+        and item["start_seq"] <= before_seq
+    ]
+    reference_pass = (
+        max(reference_passes, key=lambda item: item["start_seq"])
+        if reference_passes else None
+    )
+    reference_head = (
+        str(reference_pass.get("start_head", "")).strip()
+        if reference_pass else ""
+    ) or git_head_commit()
+
+    commits = sorted(
+        (
+            item for item in ledger.get("commits", [])
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] < before_seq
+            and _commit_is_in_active_ancestry(item, reference_head)
+        ),
+        key=lambda item: item["seq"],
+    )
+    passes = [
+        item for item in ledger.get("coder_passes", [])
+        if isinstance(item, dict) and isinstance(item.get("start_seq"), int)
+        and isinstance(item.get("stop_seq"), int)
+    ]
+    verifications = [
+        item for item in ledger.get("verifications", [])
+        if isinstance(item, dict) and isinstance(item.get("seq"), int)
+    ]
+    reviews = [
+        item for item in (
+            reviewer_passes
+            if reviewer_passes is not None
+            else ledger.get("reviewer_passes", [])
+        )
+        if isinstance(item, dict) and isinstance(item.get("seq"), int)
+    ]
+    history_commits = [
+        item for item in (active_history_commits or [])
+        if isinstance(item, dict) and isinstance(item.get("seq"), int)
+        and str(item.get("hash", "")).strip()
+    ]
+
+    for commit in commits:
+        commit_seq = commit["seq"]
+        cycle_boundary_seq = previous_commit_seq
+        inferred_external_restart = False
+        commit_head_before = str(commit.get("head_before", "")).strip()
+        external_baselines = [
+            item for item in history_commits
+            if item["seq"] < commit_seq
+            and str(item.get("hash", "")).strip() == commit_head_before
+            and _commit_is_in_active_ancestry(item, reference_head)
+        ]
+        if (
+            not accepted
+            and commit_head_before
+            and commit_head_before != expected_head
+            and external_baselines
+        ):
+            external_baseline = max(external_baselines, key=lambda item: item["seq"])
+            cycle_boundary_seq = external_baseline["seq"]
+            expected_head = commit_head_before
+            inferred_external_restart = True
+
+        cycle_passes = [
+            item for item in passes
+            if cycle_boundary_seq < item["start_seq"]
+            and item["stop_seq"] < commit_seq
+        ]
+        if not cycle_passes:
+            break
+        coder_pass = max(cycle_passes, key=lambda item: item["stop_seq"])
+        first_coder_pass = min(cycle_passes, key=lambda item: item["start_seq"])
+
+        cycle_reviews = [
+            item for item in reviews
+            if cycle_boundary_seq < item["seq"] < commit_seq
+        ]
+        if not cycle_reviews:
+            break
+        approval = max(cycle_reviews, key=lambda item: item["seq"])
+        if approval.get("blocking") is not False:
+            break
+
+        blocking_reviews = [
+            item for item in cycle_reviews if item.get("blocking") is True
+        ]
+        if blocking_reviews:
+            latest_blocker = max(blocking_reviews, key=lambda item: item["seq"])
+            if coder_pass["start_seq"] <= latest_blocker["seq"]:
+                break
+
+        verified = [
+            item for item in verifications
+            if coder_pass["stop_seq"] < item["seq"] < approval["seq"]
+        ]
+        if not verified:
+            break
+        verification = max(verified, key=lambda item: item["seq"])
+
+        coder_snapshot = coder_pass.get("stop_snapshot_signature")
+        verification_snapshot = verification.get("snapshot_signature")
+        review_snapshot = approval.get("snapshot_signature")
+        commit_snapshot = commit.get("snapshot_signature")
+        post_commit_snapshot = commit.get("post_snapshot_signature")
+        coder_start_snapshot = first_coder_pass.get("start_snapshot_signature")
+        cycle_baseline_snapshot = (
+            coder_start_snapshot
+            if isinstance(coder_start_snapshot, list)
+            else ledger.get("baseline_signature")
+        )
+        snapshots = (
+            coder_snapshot, verification_snapshot, review_snapshot, commit_snapshot,
+        )
+        if not all(isinstance(snapshot, list) and snapshot for snapshot in snapshots):
+            break
+        if not (
+            signatures_match(coder_snapshot, verification_snapshot)
+            and signatures_match(verification_snapshot, review_snapshot)
+            and signatures_match(verification_snapshot, commit_snapshot)
+        ):
+            break
+        if (
+            not isinstance(cycle_baseline_snapshot, list)
+            or not isinstance(post_commit_snapshot, list)
+            or not signatures_match(cycle_baseline_snapshot, post_commit_snapshot)
+        ):
+            break
+
+        coder_start_head = str(coder_pass.get("start_head", "")).strip()
+        commit_hash = str(commit.get("hash", "")).strip()
+        head_before = str(commit.get("head_before", "")).strip()
+        first_parent = str(commit.get("first_parent", "")).strip()
+        if coder_start_head and coder_start_head != expected_head:
+            break
+        first_start_head = str(first_coder_pass.get("start_head", "")).strip()
+        if (
+            inferred_external_restart
+            and not first_start_head
+        ):
+            intervening_history = [
+                item for item in history_commits
+                if cycle_boundary_seq < item["seq"] < commit_seq
+                and str(item.get("hash", "")).strip() != commit_head_before
+                and _commit_is_in_active_ancestry(item, reference_head)
+            ]
+            if (
+                not _validated_headless_restart_chain(cycle_passes, expected_head)
+                or intervening_history
+            ):
+                break
+        if (
+            not commit_hash
+            or not expected_head
+            or head_before != expected_head
+            or first_parent != head_before
+            or commit_hash == head_before
+        ):
+            break
+
+        # Synthetic ledgers use descriptive hashes and cannot be checked against
+        # Git. For real object IDs, never trust recorded parent metadata alone:
+        # require both the actual first parent and live ancestry to agree with
+        # the uninterrupted task baseline.
+        real_hash = re.compile(r"[0-9a-fA-F]{40,64}").fullmatch
+        if real_hash(commit_hash) and real_hash(expected_head) and real_hash(first_parent):
+            if git_commit_first_parent(commit_hash) != first_parent:
+                break
+            if not git_is_ancestor(expected_head, commit_hash):
+                break
+
+        accepted.append(commit)
+        previous_commit_seq = commit_seq
+        expected_head = commit_hash
+
+    return accepted
+
+
+_REAL_GIT_HASH_PATTERN = re.compile(r"[0-9a-fA-F]{40,64}")
+_ORDERING_VIOLATION_PATTERN = re.compile(
+    r"^task [a-z0-9_]+ started before changed task [a-z0-9_]+ "
+    r"received its approved(?: task-sized)? commit$"
+)
+
+
+def _is_real_git_hash(value: Any) -> bool:
+    return bool(_REAL_GIT_HASH_PATTERN.fullmatch(str(value or "").strip()))
+
+
+def _commit_is_in_active_ancestry(
+    commit: dict[str, Any], reference_head: str,
+) -> bool:
+    """Treat synthetic fixtures as active; prove real commits by live ancestry."""
+    commit_hash = str(commit.get("hash", "")).strip()
+    if not (_is_real_git_hash(commit_hash) and _is_real_git_hash(reference_head)):
+        return True
+    return git_is_ancestor(commit_hash, reference_head)
+
+
+def _head_is_active_ancestor(candidate: str, reference_head: str) -> bool:
+    if not (_is_real_git_hash(candidate) and _is_real_git_hash(reference_head)):
+        return candidate == reference_head
+    return git_is_ancestor(candidate, reference_head)
+
+
+def _cycle_context(
+    ledger: dict[str, Any], final_coder: dict[str, Any], current_head: str,
+    reviewer_passes: list[dict[str, Any]] | None = None,
+    active_history_commits: list[dict[str, Any]] | None = None,
+) -> dict[str, Any]:
+    """Locate the accepted active-history cycle containing ``final_coder``.
+
+    A rewritten-away attempt is excluded only when Git can prove that its real
+    commit is absent from both the recovery coder's start ancestry and final
+    ancestry. Synthetic records remain strict because their ancestry cannot be
+    independently established.
+    """
+    final_start_seq = final_coder.get("start_seq")
+    cycle_end_seq = (
+        final_start_seq
+        if isinstance(final_start_seq, int)
+        else final_coder.get("stop_seq")
+    )
+    if not isinstance(cycle_end_seq, int):
+        cycle_end_seq = 2**63 - 1
+    final_start_head = str(final_coder.get("start_head", "")).strip()
+    ancestry_head = final_start_head or current_head
+    prior_commits = [
+        item for item in ledger.get("commits", [])
+        if isinstance(item, dict) and isinstance(item.get("seq"), int)
+        and isinstance(final_start_seq, int) and item["seq"] < final_start_seq
+        and str(item.get("hash", "")).strip()
+        and (
+            _commit_is_in_active_ancestry(item, ancestry_head)
+            or _commit_is_in_active_ancestry(item, current_head)
+        )
+    ]
+    approved_prior = (
+        _approved_same_task_commits_before(
+            ledger, final_start_seq, reviewer_passes=reviewer_passes,
+            active_history_commits=active_history_commits,
+        )
+        if isinstance(final_start_seq, int) else []
+    )
+    approved_prior = [
+        item for item in approved_prior
+        if _commit_is_in_active_ancestry(item, current_head)
+    ]
+    prior_commit = (
+        max(approved_prior, key=lambda item: item["seq"])
+        if approved_prior else None
+    )
+    prior_commit_hash = str(prior_commit.get("hash", "")).strip() if prior_commit else ""
+    baseline_head = str(ledger.get("baseline_head", "")).strip()
+
+    restarted = bool(
+        final_start_head
+        and baseline_head
+        and _is_real_git_hash(final_start_head)
+        and _is_real_git_hash(baseline_head)
+        and not _head_is_active_ancestor(baseline_head, final_start_head)
+        and not prior_commits
+    )
+    cycle_baseline_head = (
+        prior_commit_hash
+        or (final_start_head if restarted else baseline_head)
+    )
+    prior_boundary = prior_commit["seq"] if prior_commit else -1
+    restart_boundary = prior_boundary
+    if restarted and active_history_commits:
+        matching_baselines = [
+            item for item in active_history_commits
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] < cycle_end_seq
+            and str(item.get("hash", "")).strip() == cycle_baseline_head
+            and _commit_is_in_active_ancestry(item, current_head)
+        ]
+        if matching_baselines:
+            restart_boundary = max(
+                matching_baselines, key=lambda item: item["seq"]
+            )["seq"]
+    restart_passes = [
+        item for item in ledger.get("coder_passes", [])
+        if isinstance(item, dict)
+        and isinstance(item.get("start_seq"), int)
+        and isinstance(item.get("stop_seq"), int)
+        and restart_boundary < item["start_seq"] <= cycle_end_seq
+    ]
+    validated_headless_chain = (
+        _validated_headless_restart_chain(restart_passes, cycle_baseline_head)
+        if restarted else []
+    )
+    candidates = [
+        item for item in ledger.get("coder_passes", [])
+        if isinstance(item, dict) and isinstance(item.get("start_seq"), int)
+        and prior_boundary < item["start_seq"] <= cycle_end_seq
+        and (
+            item is final_coder
+            or item in validated_headless_chain
+            or (
+                not restarted
+                and not str(item.get("start_head", "")).strip()
+            )
+            or str(item.get("start_head", "")).strip() == cycle_baseline_head
+        )
+    ]
+    first_coder = (
+        min(candidates, key=lambda item: item["start_seq"])
+        if candidates else final_coder
+    )
+    first_snapshot = first_coder.get("start_snapshot_signature")
+    baseline_snapshot = (
+        first_snapshot
+        if isinstance(first_snapshot, list)
+        else ledger.get("baseline_signature")
+    )
+    return {
+        "active_prior_commits": prior_commits,
+        "approved_prior_commits": approved_prior,
+        "prior_commit": prior_commit,
+        "baseline_head": cycle_baseline_head,
+        "baseline_snapshot": baseline_snapshot,
+        "effective_start_seq": first_coder.get("start_seq"),
+        "restarted": restarted,
+    }
+
+
+def _authorizing_task_tuple(
+    final_coder: dict[str, Any],
+    verifications: list[dict[str, Any]],
+    reviews: list[dict[str, Any]],
+    commits: list[dict[str, Any]],
+) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]] | None:
+    """Select verification -> approval -> commit evidence for one coder cycle.
+
+    Evidence recorded after a commit is diagnostic only. It cannot replace or
+    invalidate the pre-commit verification and approval that authorized that
+    commit, and it cannot retroactively authorize an earlier commit.
+    """
+    coder_stop_seq = final_coder.get("stop_seq")
+    coder_snapshot = final_coder.get("stop_snapshot_signature")
+    if not isinstance(coder_stop_seq, int):
+        return None
+
+    candidates: list[
+        tuple[dict[str, Any], dict[str, Any], dict[str, Any]]
+    ] = []
+    for commit in commits:
+        commit_seq = commit.get("seq")
+        if not isinstance(commit_seq, int) or commit_seq <= coder_stop_seq:
+            continue
+        eligible_reviews = [
+            item for item in reviews
+            if isinstance(item.get("seq"), int)
+            and coder_stop_seq < item["seq"] < commit_seq
+        ]
+        if not eligible_reviews:
+            continue
+        approval = max(eligible_reviews, key=lambda item: item["seq"])
+        approval_seq = approval["seq"]
+        if approval.get("blocking") is not False:
+            continue
+        eligible_verifications = [
+            item for item in verifications
+            if isinstance(item.get("seq"), int)
+            and coder_stop_seq < item["seq"] < approval_seq
+        ]
+        if not eligible_verifications:
+            continue
+        verification = max(eligible_verifications, key=lambda item: item["seq"])
+        snapshots = (
+            coder_snapshot,
+            verification.get("snapshot_signature"),
+            approval.get("snapshot_signature"),
+            commit.get("snapshot_signature"),
+        )
+        if not all(
+            isinstance(snapshot, list) and snapshot for snapshot in snapshots
+        ):
+            continue
+        if all(
+            signatures_match(snapshots[0], snapshot)
+            for snapshot in snapshots[1:]
+        ):
+            candidates.append((verification, approval, commit))
+
+    if not candidates:
+        return None
+    return max(candidates, key=lambda item: item[2]["seq"])
+
+
+def _missing_task_ledger_requirements(turn: dict[str, Any]) -> list[str]:
+    """Validate every strict-name chunk independently.
+
+    Evidence is deliberately never borrowed between Task IDs.  This makes a
+    final aggregate review/commit unable to close earlier chunks.
+    """
+    missing: list[str] = []
+    ledgers = turn.get("task_ledgers", {})
+    seen_commit_hashes: dict[str, str] = {}
+    accepted_commit_seqs: dict[str, int] = {}
+    accepted_commits: dict[str, dict[str, Any]] = {}
+
+    coordinator_file_edits = any(
+        isinstance(event, dict) and event.get("actor") == "coordinator"
+        for event in turn.get("agents", {}).get("main_agent_file_edit_events", [])
+    )
+    if coordinator_file_edits:
+        missing.append("main agent performed file-edit tool actions while a coder pass was open")
+
+    for violation in turn.get("lifecycle_violations", []):
+        if isinstance(violation, dict) and violation.get("message"):
+            message = str(violation["message"])
+            # Ordering is re-derived below from the effective active-history
+            # cycle. A permanently recorded warning from abandoned history
+            # must not make recovery impossible.
+            if not _ORDERING_VIOLATION_PATTERN.fullmatch(message):
+                missing.append(message)
+
+    current_head = git_head_commit()
+    effective_starts: dict[str, int] = {}
+    active_history_commits = [
+        commit
+        for candidate_ledger in ledgers.values()
+        if isinstance(candidate_ledger, dict)
+        for commit in candidate_ledger.get("commits", [])
+        if isinstance(commit, dict)
+        and _commit_is_in_active_ancestry(commit, current_head)
+    ]
+
+    for task_id, ledger in ledgers.items():
+        if not isinstance(ledger, dict):
+            continue
+        prefix = f"task {task_id}"
+        passes = [item for item in ledger.get("coder_passes", []) if isinstance(item, dict)]
+        completed = [item for item in passes if isinstance(item.get("stop_seq"), int)]
+        if not passes:
+            missing.append(f"{prefix} coder subagent not started")
+            continue
+        if len({item.get("agent_identity") for item in passes}) != len(passes):
+            missing.append(f"{prefix} reused a coder agent/session")
+        if not completed:
+            missing.append(f"{prefix} coder subagent has not completed a pass")
+            continue
+
+        latest = max(completed, key=lambda item: item["stop_seq"])
+        final_coder_seq = latest["stop_seq"]
+        changed = bool(ledger.get("changed"))
+        reviews = _normalized_ledger_reviewer_passes(turn, task_id, ledger)
+        blocking_reviews = [
+            item for item in reviews
+            if item.get("blocking") is True and isinstance(item.get("seq"), int)
+        ]
+        blocking_seq = (
+            max(item["seq"] for item in blocking_reviews)
+            if blocking_reviews else None
+        )
+        if isinstance(blocking_seq, int):
+            remediation = [
+                item for item in completed
+                if isinstance(item.get("start_seq"), int)
+                and item["start_seq"] > blocking_seq
+            ]
+            if not remediation:
+                missing.append(f"{prefix} blocking review requires a brand-new coder remediation pass")
+            else:
+                latest = max(remediation, key=lambda item: item["stop_seq"])
+                final_coder_seq = latest["stop_seq"]
+
+        cycle = _cycle_context(
+            ledger, latest, current_head, reviewer_passes=reviews,
+            active_history_commits=active_history_commits,
+        )
+        effective_start_seq = cycle.get("effective_start_seq")
+        if isinstance(effective_start_seq, int):
+            effective_starts[task_id] = effective_start_seq
+
+        all_verifications = [
+            item for item in ledger.get("verifications", [])
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] > final_coder_seq
+        ]
+        all_commits = [
+            item for item in ledger.get("commits", [])
+            if isinstance(item, dict) and isinstance(item.get("seq"), int)
+            and item["seq"] > final_coder_seq
+        ]
+        authorizing_tuple = _authorizing_task_tuple(
+            latest, all_verifications, reviews, all_commits,
+        ) if changed else None
+        commit_not_authorized = bool(changed and all_commits and authorizing_tuple is None)
+        if authorizing_tuple is not None:
+            latest_verification, approval, commit = authorizing_tuple
+            verifications = [latest_verification]
+            verification_seq = latest_verification["seq"]
+            approvals = [approval]
+            approval_seq = approval["seq"]
+            commits = [commit]
+        else:
+            commit_ceiling = min(
+                (item["seq"] for item in all_commits), default=2**63 - 1,
+            )
+            verifications = [
+                item for item in all_verifications if item["seq"] < commit_ceiling
+            ]
+        if not verifications:
+            missing.append(f"{prefix} verification must run after its final coder pass")
+            verification_seq = None
+        else:
+            if authorizing_tuple is None:
+                verification_seq = max(item["seq"] for item in verifications)
+                latest_verification = max(verifications, key=lambda item: item["seq"])
+            coder_snapshot = latest.get("stop_snapshot_signature")
+            verification_snapshot = latest_verification.get("snapshot_signature")
+            if (
+                isinstance(coder_snapshot, list) and coder_snapshot
+                and isinstance(verification_snapshot, list) and verification_snapshot
+                and not signatures_match(coder_snapshot, verification_snapshot)
+            ):
+                missing.append(f"{prefix} verification snapshot does not match final coder output")
+
+        if len({item.get("agent_identity") for item in reviews}) != len(reviews):
+            missing.append(f"{prefix} reused a reviewer agent/session")
+        if authorizing_tuple is None:
+            approval_ceiling = min(
+                (item["seq"] for item in all_commits), default=2**63 - 1,
+            )
+            approvals = [
+                item for item in reviews
+                if item.get("blocking") is False
+                and isinstance(item.get("seq"), int)
+                and isinstance(verification_seq, int)
+                and verification_seq < item["seq"] < approval_ceiling
+            ]
+        if not approvals:
+            missing.append(f"{prefix} needs a fresh non-blocking reviewer after verification")
+            approval_seq = None
+        else:
+            if authorizing_tuple is None:
+                approval_seq = max(item["seq"] for item in approvals)
+                approval = max(approvals, key=lambda item: item["seq"])
+            review_snapshot = approval.get("snapshot_signature")
+            if (
+                verifications
+                and isinstance(review_snapshot, list) and review_snapshot
+                and isinstance(latest_verification.get("snapshot_signature"), list)
+                and latest_verification.get("snapshot_signature")
+                and not signatures_match(
+                    latest_verification["snapshot_signature"], review_snapshot
+                )
+            ):
+                missing.append(f"{prefix} reviewer snapshot does not match verified output")
+
+        if not changed:
+            continue
+        if authorizing_tuple is None:
+            # Preserve detailed commit diagnostics, but temporal proximity
+            # alone still cannot authorize this candidate.
+            commits = [
+                item for item in all_commits
+                if isinstance(approval_seq, int) and item["seq"] > approval_seq
+            ]
+        if not commits:
+            missing.append(f"{prefix} requires its own task-sized commit after approval")
+            continue
+        if authorizing_tuple is None:
+            commit = min(commits, key=lambda item: item["seq"])
+        accepted_commit_seqs[task_id] = commit["seq"]
+        accepted_commits[task_id] = commit
+        commit_hash = str(commit.get("hash", "")).strip()
+        final_coder_start_seq = latest.get("start_seq")
+        prior_commits = cycle["active_prior_commits"]
+        approved_prior_commits = cycle["approved_prior_commits"]
+        prior_commit = cycle["prior_commit"]
+        prior_commit_hash = str(prior_commit.get("hash", "")).strip() if prior_commit else ""
+        if prior_commits:
+            latest_prior_commit = max(prior_commits, key=lambda item: item["seq"])
+            if (
+                prior_commit is None
+                or latest_prior_commit["seq"] != prior_commit["seq"]
+                or str(latest_prior_commit.get("hash", "")).strip() != prior_commit_hash
+            ):
+                missing.append(
+                    f"{prefix} sequential baseline includes an unapproved same-task commit"
+                )
+        coder_start_head = str(latest.get("start_head", "")).strip()
+        cycle_baseline_head = str(cycle["baseline_head"] or "")
+        if coder_start_head and coder_start_head != cycle_baseline_head:
+            missing.append(
+                f"{prefix} coder start HEAD is not its previously approved same-task baseline"
+            )
+        head_before = str(commit.get("head_before", "")).strip()
+        first_parent = str(commit.get("first_parent", "")).strip()
+        if not commit_hash:
+            missing.append(f"{prefix} commit hash not recorded")
+        elif cycle_baseline_head and head_before != cycle_baseline_head:
+            missing.append(f"{prefix} commit did not advance its recorded baseline HEAD")
+        elif cycle_baseline_head and commit_hash == cycle_baseline_head:
+            missing.append(f"{prefix} commit did not advance its recorded baseline HEAD")
+        elif head_before and commit_hash == head_before:
+            missing.append(f"{prefix} commit did not advance HEAD")
+        elif not head_before or first_parent != head_before:
+            missing.append(
+                f"{prefix} commit must be a normal first-parent child of its recorded pre-commit HEAD"
+            )
+        elif commit_hash in seen_commit_hashes and seen_commit_hashes[commit_hash] != task_id:
+            missing.append(
+                f"tasks {seen_commit_hashes[commit_hash]} and {task_id} cannot share aggregate commit {commit_hash}"
+            )
+        else:
+            seen_commit_hashes[commit_hash] = task_id
+
+        commit_snapshot = commit.get("snapshot_signature")
+        post_commit_snapshot = commit.get("post_snapshot_signature")
+        baseline_snapshot = cycle["baseline_snapshot"]
+        verified_snapshot = (
+            latest_verification.get("snapshot_signature") if verifications else None
+        )
+        if not isinstance(commit_snapshot, list) or not commit_snapshot:
+            missing.append(f"{prefix} empty commit snapshot cannot satisfy task-sized commit gate")
+        elif (
+            isinstance(verified_snapshot, list)
+            and verified_snapshot
+            and not signatures_match(verified_snapshot, commit_snapshot)
+        ):
+            missing.append(f"{prefix} commit snapshot does not match verified coder output")
+        if (
+            isinstance(baseline_snapshot, list)
+            and isinstance(verified_snapshot, list)
+            and not changed_signatures_delta(baseline_snapshot, verified_snapshot)
+        ):
+            missing.append(f"{prefix} verified output has no task change beyond its baseline snapshot")
+        if (
+            isinstance(baseline_snapshot, list)
+            and isinstance(post_commit_snapshot, list)
+            and not signatures_match(baseline_snapshot, post_commit_snapshot)
+        ):
+            missing.append(f"{prefix} commit did not consume exactly the verified task change")
+        if commit_not_authorized:
+            missing.append(f"{prefix} requires its own task-sized commit after approval")
+
+    ordered_tasks: list[tuple[int, str, dict[str, Any]]] = []
+    for task_id, ledger in ledgers.items():
+        if not isinstance(ledger, dict):
+            continue
+        effective_start = effective_starts.get(task_id)
+        if isinstance(effective_start, int):
+            ordered_tasks.append((effective_start, task_id, ledger))
+    ordered_tasks.sort()
+    for index, (_, task_id, ledger) in enumerate(ordered_tasks[:-1]):
+        if not ledger.get("changed"):
+            continue
+        commit_seq = accepted_commit_seqs.get(task_id)
+        for later_start, later_task_id, _ in ordered_tasks[index + 1:]:
+            if not isinstance(commit_seq, int) or commit_seq >= later_start:
+                missing.append(
+                    f"task {later_task_id} started before changed task {task_id} received its approved task-sized commit"
+                )
+
+    # Real Git object IDs get a final live ancestry check. This catches a later
+    # amend/reset/rebase that removes a previously accepted task commit even if
+    # all task-local snapshots still look valid.
+    if re.fullmatch(r"[0-9a-fA-F]{40,64}", current_head):
+        for task_id, commit in accepted_commits.items():
+            commit_hash = str(commit.get("hash", "")).strip()
+            if not re.fullmatch(r"[0-9a-fA-F]{40,64}", commit_hash):
+                continue
+            recorded_parent = str(commit.get("first_parent", "")).strip()
+            actual_parent = git_commit_first_parent(commit_hash)
+            if actual_parent != recorded_parent:
+                missing.append(f"task {task_id} recorded commit parent does not match Git history")
+            if not git_is_ancestor(commit_hash, current_head):
+                missing.append(f"task {task_id} commit is no longer an ancestor of final HEAD")
+
+    return list(dict.fromkeys(missing))
 
 
 def main() -> None:

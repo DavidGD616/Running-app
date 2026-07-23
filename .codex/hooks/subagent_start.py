@@ -12,7 +12,12 @@ from orchestrator_state import (
     extract_task_ids_from_prompt_lines,
     extract_prompt_text,
     extract_task_id_from_subagent_transcript,
+    extract_event_transcript_path,
     git_changed_file_signatures,
+    record_lifecycle_violation,
+    register_strict_agent_start,
+    require_strict_agent_session_identity,
+    validate_strict_prompt_identity,
     update_state,
 )
 
@@ -42,13 +47,40 @@ def main() -> None:
 
     task_id_count = len(task_ids) if task_ids else 0
     snapshot_signature = git_changed_file_signatures()
+    transcript_path = extract_event_transcript_path(event)
 
     def apply_state(state):
+        nonlocal task_id, task_id_count
         if not state.get("active"):
             return
 
         if state["turn"].get("triggered"):
             seq = append_event(state, "SubagentStart", {"agent": agent, "task_id": task_id, "raw": event})
+            strict_identity = None
+            if agent in {"coder", "reviewer"}:
+                if transcript_path:
+                    strict_identity = require_strict_agent_session_identity(
+                        state["turn"], agent, transcript_path,
+                    )
+                else:
+                    record_lifecycle_violation(
+                        state["turn"], None,
+                        f"new {agent} session must use strict name "
+                        f"{agent}__<canonical_task_id>[__<nonce>] and matching Task ID evidence",
+                    )
+                if strict_identity is None:
+                    return
+                if not validate_strict_prompt_identity(
+                    state["turn"], strict_identity, prompt_text,
+                ):
+                    return
+                strict_identity = register_strict_agent_start(
+                    state["turn"], agent, transcript_path, seq, snapshot_signature
+                )
+                if strict_identity is None:
+                    return
+                task_id = strict_identity["task_id"]
+                task_id_count = 1
             if agent == "coder":
                 state["turn"]["agents"]["coder_started"] = True
                 state["turn"]["agents"]["coder_stopped"] = False
@@ -62,10 +94,14 @@ def main() -> None:
                         "start_task_id_count": task_id_count,
                         "start_snapshot_signature": snapshot_signature,
                         "start_snapshot_recorded": True,
+                        "agent_identity": strict_identity["identity"] if strict_identity else None,
+                        "agent_transcript_path": transcript_path,
                     }
                 )
                 state["turn"]["agents"]["coder_last_task_id"] = task_id if task_id_count == 1 else None
-                if task_id and not state["turn"].get("current_task_id"):
+                if task_id and (
+                    strict_identity is not None or not state["turn"].get("current_task_id")
+                ):
                     state["turn"]["current_task_id"] = task_id
                 remediation_after_seq = state["turn"]["agents"].get("remediation_required_after_seq")
                 if isinstance(remediation_after_seq, int) and seq > remediation_after_seq:

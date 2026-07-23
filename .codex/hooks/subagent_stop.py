@@ -10,7 +10,10 @@ sys.path.append(str(Path(__file__).resolve().parent))
 
 from orchestrator_state import (
     append_event,
+    changed_signatures_delta,
+    ensure_task_ledger,
     extract_event_transcript_path,
+    extract_internal_subagent_prompt_from_transcript,
     classify_agent,
     extract_task_id_from_subagent_transcript,
     extract_task_ids,
@@ -20,7 +23,11 @@ from orchestrator_state import (
     infer_internal_subagent_role_from_transcript,
     now_iso,
     parse_tool_exit_code,
+    record_lifecycle_violation,
+    register_strict_agent_start,
+    require_strict_agent_session_identity,
     update_state,
+    validate_strict_prompt_identity,
 )
 
 
@@ -35,6 +42,10 @@ BLOCKING_PATTERNS = [
     r"\bmust be addressed",
     r"\bneeds? to be fixed\b",
     r"\bneeds? fixing\b",
+    r"\bfollow[- ]?up\s+(?:is\s+)?required\b",
+    r"\baction\s+required\b",
+    r"\brequired\s+action\s*:",
+    r"\brequired\s+follow[- ]?up\s*:",
     r"\bblocking\s+(?:issue|issues|finding|findings|blocker|blockers)\b",
     r"\bi cannot approve this yet\b",
     r"\bnot approved until tests are added\b",
@@ -44,12 +55,8 @@ BLOCKING_PATTERNS = [
 OVERALL_ASSESSMENT_LINE_PATTERN = re.compile(
     r"^Overall Assessment: (APPROVE|REQUEST_CHANGES|NEEDS_DISCUSSION)$"
 )
-NON_BLOCKING_APPROVE_TRAILING_PATTERNS = (
-    r"\bno\s+blocking\s+findings\b",
-    r"\bno\s+pending\s+fixes?\s+remain\b",
-    r"\ball\s+issues\s+resolved\s+after\s+remediation\b",
-    r"\bissues\s+resolved\s+after\s+remediation\b",
-    r"\bno\s+critical\s+issues\b.*\bno\s+major\s+issues\b",
+EXACT_NON_BLOCKING_FINDINGS_TEXT = (
+    "No blocking or non-blocking findings at ≥80% confidence."
 )
 SEVERITY_FINDING_HEADER_RE = re.compile(
     r"^\s*(?:[-*]\s*)?(?:#{1,6}\s*)?"
@@ -228,6 +235,11 @@ def _normalize_assessment_line(value: str) -> str:
     return re.sub(r"\s+", " ", (value or "").strip().lower())
 
 
+def _is_exact_non_blocking_findings_line(value: str) -> bool:
+    normalized = re.sub(r"^\s*(?:[-*+]\s+|\d+[.)]\s+)", "", value or "")
+    return normalized.strip() == EXACT_NON_BLOCKING_FINDINGS_TEXT
+
+
 def _is_explicit_no_issue_value(value: str) -> bool:
     normalized = re.sub(r"\s+", " ", (value or "").strip().lower()).strip()
     if not normalized:
@@ -261,6 +273,8 @@ def _has_blocking_severity_findings(value: str) -> bool:
             if not body_line:
                 index += 1
                 continue
+            if OVERALL_ASSESSMENT_LINE_PATTERN.match(body_line):
+                break
             if REVIEW_SECTION_HEADER_RE.match(body_line):
                 break
             if not _is_explicit_no_issue_value(body_line):
@@ -271,14 +285,14 @@ def _has_blocking_severity_findings(value: str) -> bool:
 
 def _has_blocking_approve_followups(value: str) -> bool:
     for raw_line in (value or "").splitlines():
+        if _is_exact_non_blocking_findings_line(raw_line):
+            continue
         normalized = _normalize_assessment_line(raw_line)
         if not normalized:
             continue
+        if OVERALL_ASSESSMENT_LINE_PATTERN.match(raw_line.strip()):
+            continue
         if _is_explicit_no_issue_value(normalized):
-            continue
-        if any(re.search(pattern, normalized) for pattern in NON_BLOCKING_APPROVE_TRAILING_PATTERNS):
-            continue
-        if "no blocking findings" in normalized:
             continue
         if any(re.search(pattern, normalized) for pattern in BLOCKING_PATTERNS):
             return True
@@ -306,12 +320,10 @@ def looks_blocking(text: str) -> bool:
     if final_paragraph[0] != "Overall Assessment: APPROVE":
         return True
 
-    review_body = "\n".join(lines[:verdict_line_index])
-    if _has_blocking_severity_findings(review_body):
+    if _has_blocking_severity_findings(text):
         return True
-    if _has_blocking_approve_followups(review_body):
+    if _has_blocking_approve_followups(text):
         return True
-
     return False
 
 
@@ -364,16 +376,64 @@ def main() -> None:
             if inferred_agent:
                 resolved_agent = inferred_agent
 
+        stop_event_details = {
+            "agent": resolved_agent,
+            "summary_excerpt": summary[:200],
+            "agent_transcript_path": agent_transcript_path,
+        }
+        if resolved_agent == "reviewer" and official_agent_transcript_path:
+            stop_event_details["official_agent_transcript_path"] = (
+                official_agent_transcript_path
+            )
         event_seq = append_event(
             state,
             "SubagentStop",
-            {
-                "agent": resolved_agent,
-                "summary_excerpt": summary[:200],
-                "agent_transcript_path": agent_transcript_path,
-            },
+            stop_event_details,
         )
         state["turn"]["events"] = state["turn"]["events"][-40:]
+
+        strict_identity = None
+        if resolved_agent in {"coder", "reviewer"}:
+            if not agent_transcript_path:
+                record_lifecycle_violation(
+                    state["turn"], None,
+                    f"new {resolved_agent} session must use strict name "
+                    f"{resolved_agent}__<canonical_task_id>[__<nonce>] and matching Task ID evidence",
+                )
+                return
+            strict_identity = require_strict_agent_session_identity(
+                state["turn"], resolved_agent, agent_transcript_path
+            )
+            if strict_identity is None:
+                return
+
+            usage = state["turn"].setdefault("agent_identity_usage", {}).setdefault(
+                resolved_agent, {}
+            )
+            if strict_identity["identity"] not in usage:
+                strict_prompt = extract_internal_subagent_prompt_from_transcript(
+                    agent_transcript_path,
+                    agent=resolved_agent,
+                    coordinator_transcript_paths=coordinator_transcript_paths,
+                )
+                if not validate_strict_prompt_identity(
+                    state["turn"], strict_identity, strict_prompt,
+                ):
+                    return
+                strict_identity = register_strict_agent_start(
+                    state["turn"], resolved_agent, agent_transcript_path,
+                    event_seq, git_changed_file_signatures(),
+                )
+                if strict_identity is None:
+                    return
+            elif isinstance(usage.get(strict_identity["identity"]), dict) and usage[strict_identity["identity"]].get("stopped"):
+                record_lifecycle_violation(
+                    state["turn"], strict_identity["task_id"],
+                    f"{resolved_agent} agent/session reused; a brand-new {resolved_agent} is required for every pass",
+                )
+            usage_record = usage.get(strict_identity["identity"])
+            if isinstance(usage_record, dict):
+                usage_record["stopped"] = True
 
         if resolved_agent != "other" and agent_transcript_path:
             if actors.get(agent_transcript_path) != "coordinator":
@@ -389,6 +449,9 @@ def main() -> None:
                 coordinator_transcript_paths,
                 collaboration_spawn_evidence,
             )
+            if strict_identity is not None:
+                reviewer_task_id = strict_identity["task_id"]
+                reviewer_task_id_count = 1
             if blocking:
                 state["turn"]["agents"]["blocking_reviewer_seq"] = event_seq
                 state["turn"]["agents"]["blocking_reviewer_snapshot_signature"] = reviewer_snapshot_signature
@@ -411,21 +474,42 @@ def main() -> None:
             if not isinstance(reviewer_stops, list):
                 reviewer_stops = []
                 state["turn"]["agents"]["reviewer_stops"] = reviewer_stops
+            reviewer_stop_record = {
+                "at": now_iso(),
+                "text": summary[:400],
+                "blocking": blocking,
+                "seq": event_seq,
+                "task_id": reviewer_task_id if reviewer_task_id_count == 1 else None,
+                "task_id_count": reviewer_task_id_count,
+                "agent_transcript_path": agent_transcript_path,
+                "snapshot_signature": reviewer_snapshot_signature,
+            }
+            if official_agent_transcript_path:
+                reviewer_stop_record["official_agent_transcript_path"] = (
+                    official_agent_transcript_path
+                )
             state["turn"]["agents"]["reviewer_stops"].append(
-                {
-                    "at": now_iso(),
-                    "text": summary[:400],
-                    "blocking": blocking,
-                    "seq": event_seq,
-                    "task_id": reviewer_task_id if reviewer_task_id_count == 1 else None,
-                    "task_id_count": reviewer_task_id_count,
-                    "agent_transcript_path": agent_transcript_path,
-                    "snapshot_signature": reviewer_snapshot_signature,
-                }
+                reviewer_stop_record
             )
             state["turn"]["agents"]["reviewer_last_seq"] = event_seq
             state["turn"]["agents"]["reviewer_last_snapshot_signature"] = reviewer_snapshot_signature
             state["turn"]["agents"]["reviewer_last_blocking"] = blocking
+            if strict_identity is not None:
+                ledger = ensure_task_ledger(state["turn"], strict_identity["task_id"])
+                reviewer_pass_record = {
+                    "seq": event_seq,
+                    "agent_identity": strict_identity["identity"],
+                    "agent_name": strict_identity["agent_name"],
+                    "blocking": blocking,
+                    "snapshot_signature": reviewer_snapshot_signature,
+                }
+                if official_agent_transcript_path:
+                    reviewer_pass_record["official_agent_transcript_path"] = (
+                        official_agent_transcript_path
+                    )
+                ledger["reviewer_passes"].append(reviewer_pass_record)
+                if blocking:
+                    ledger["blocking_review_seq"] = event_seq
         elif resolved_agent == "coder":
             coder_snapshot_signature = git_changed_file_signatures()
             agents = state["turn"]["agents"]
@@ -475,6 +559,30 @@ def main() -> None:
                 state["turn"]["current_task_id"] = task_id
 
             agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
+
+            if strict_identity is not None:
+                task_id = strict_identity["task_id"]
+                task_id_count = 1
+                state["turn"]["current_task_id"] = task_id
+                ledger = ensure_task_ledger(state["turn"], task_id)
+                ledger_pass = next(
+                    (
+                        item for item in reversed(ledger["coder_passes"])
+                        if item.get("agent_identity") == strict_identity["identity"]
+                        and not isinstance(item.get("stop_seq"), int)
+                    ),
+                    None,
+                )
+                if ledger_pass is not None:
+                    ledger_pass["stop_seq"] = event_seq
+                    ledger_pass["stop_snapshot_signature"] = coder_snapshot_signature
+                    ledger_pass["changed"] = bool(
+                        changed_signatures_delta(
+                            ledger_pass.get("start_snapshot_signature", []),
+                            coder_snapshot_signature,
+                        )
+                    )
+                    ledger["changed"] = bool(ledger["changed"] or ledger_pass["changed"])
 
             if open_pass is not None:
                 open_pass["stop_seq"] = event_seq

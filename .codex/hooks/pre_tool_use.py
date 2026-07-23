@@ -13,10 +13,14 @@ from orchestrator_state import (
     command_is_commit,
     extract_collaboration_spawn_identity,
     extract_event_transcript_path,
-    extract_task_id_from_subagent_transcript,
+    extract_internal_subagent_prompt_from_transcript,
     git_changed_file_signatures,
+    git_head_commit,
     infer_internal_subagent_role_from_transcript,
     now_iso,
+    register_strict_agent_start,
+    require_strict_agent_session_identity,
+    validate_strict_prompt_identity,
     update_state,
     tool_may_edit_files,
 )
@@ -64,6 +68,7 @@ def main() -> None:
             turn["tool_call_actors"] = actors
 
         actor = ""
+        inferred_actor_pending = False
         spawn_evidence = turn.get("collaboration_spawn_evidence")
         if not isinstance(spawn_evidence, list):
             spawn_evidence = []
@@ -83,7 +88,7 @@ def main() -> None:
                 )
                 if inferred_actor:
                     actor = inferred_actor
-                    actors[str(transcript_path)] = inferred_actor
+                    inferred_actor_pending = True
 
         signature_snapshot: list[str] | None = None
 
@@ -107,12 +112,26 @@ def main() -> None:
                 for path, mapped_actor in actors.items()
                 if mapped_actor == "coordinator"
             ]
-            task_id, task_id_count = extract_task_id_from_subagent_transcript(
+            strict_identity = require_strict_agent_session_identity(
+                turn, "coder", transcript_path,
+            )
+            if strict_identity is None:
+                return
+            strict_prompt = extract_internal_subagent_prompt_from_transcript(
                 transcript_path,
                 agent="coder",
                 coordinator_transcript_paths=coordinator_transcript_paths,
-                collaboration_spawn_evidence=spawn_evidence,
             )
+            if not validate_strict_prompt_identity(
+                turn,
+                strict_identity,
+                strict_prompt,
+                record_task_violation=False,
+            ):
+                return
+
+            task_id = strict_identity["task_id"]
+            task_id_count = 1
             start_snapshot_signature = current_signature()
             start_seq = append_event(
                 state,
@@ -124,6 +143,13 @@ def main() -> None:
                     "recovered_from_pre_tool": True,
                 },
             )
+            strict_identity = register_strict_agent_start(
+                turn, "coder", transcript_path, start_seq, start_snapshot_signature
+            )
+            if strict_identity is None:
+                return
+            if inferred_actor_pending:
+                actors[str(transcript_path)] = actor
             agents["coder_started"] = True
             agents["coder_stopped"] = False
             agents["coder_start_seq"] = start_seq
@@ -140,6 +166,7 @@ def main() -> None:
                     "start_snapshot_recorded": True,
                     "agent_transcript_path": str(transcript_path),
                     "recovered_from_pre_tool": True,
+                    "agent_identity": strict_identity["identity"] if strict_identity else None,
                 }
             )
             agents["coder_last_task_id"] = task_id if task_id_count == 1 else None
@@ -152,6 +179,8 @@ def main() -> None:
                 agents["remediation_coder_task_id"] = (
                     task_id if task_id_count == 1 else None
                 )
+        elif inferred_actor_pending:
+            actors[str(transcript_path)] = actor
 
         spawn_diagnostics = collaboration_spawn_diagnostics(event)
         event_details = {
@@ -198,6 +227,7 @@ def main() -> None:
                         == "plaintext_sentinel"
                         else "encoded_task_name"
                     ),
+                    "message_kind": spawn_diagnostics.get("message_kind"),
                 }
                 evidence_record.update(session_boundary)
                 spawn_evidence.append(evidence_record)
@@ -221,6 +251,7 @@ def main() -> None:
             state["turn"]["pending_commit"] = {
                 "seq": event_seq,
                 "snapshot_signature": current_signature(),
+                "head_before": git_head_commit(),
                 "at": command[:40],
             }
 
