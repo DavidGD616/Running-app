@@ -84,25 +84,35 @@ class EditGoalDraftStore {
   EditGoalDraftStore({
     required SharedPreferences preferences,
     required SupabaseClient? client,
-    required User? user,
+    required String? userId,
   }) : _preferences = preferences,
        _client = client,
-       _user = user;
+       _userId = userId;
 
-  static const _storageKey = 'edit_goal_draft_v2';
+  static const _storageKeyPrefix = 'edit_goal_draft_v2';
+
+  static String storageKeyForUser(String? userId) {
+    final normalizedUserId = userId?.trim();
+    return normalizedUserId == null || normalizedUserId.isEmpty
+        ? '${_storageKeyPrefix}_guest'
+        : '${_storageKeyPrefix}_$normalizedUserId';
+  }
 
   final SharedPreferences _preferences;
   final SupabaseClient? _client;
-  final User? _user;
+  final String? _userId;
+
+  String get _storageKey => storageKeyForUser(_userId);
 
   Future<StoredEditGoalDraft?> load() async {
     final local = _loadLocal();
-    if (_user == null || _client == null) return local;
+    final userId = _userId;
+    if (userId == null || _client == null) return local;
     try {
       final row = await _client
           .from('goal_edit_drafts')
           .select('source_plan_version_id,data,status,revision,updated_at')
-          .eq('user_id', _user.id)
+          .eq('user_id', userId)
           .maybeSingle();
       if (row == null) return local;
       final remote = StoredEditGoalDraft.fromJson({
@@ -138,10 +148,11 @@ class EditGoalDraftStore {
       updatedAt: updatedAt,
     );
     await _saveLocal(stored);
-    if (_user == null || _client == null) return;
+    final userId = _userId;
+    if (userId == null || _client == null) return;
     try {
       await _client.from('goal_edit_drafts').upsert({
-        'user_id': _user.id,
+        'user_id': userId,
         'source_plan_version_id': sourcePlanId,
         'data': draft.toJson(),
         'status': status,
@@ -152,8 +163,8 @@ class EditGoalDraftStore {
       if (assessment != null) {
         await _client.from('goal_edit_assessments').upsert({
           'id': assessment.id,
-          'user_id': _user.id,
-          'draft_user_id': _user.id,
+          'user_id': userId,
+          'draft_user_id': userId,
           'kind': assessment.kind,
           'scheduled_for': _dateOnly(assessment.scheduledFor),
           'safe_dates': assessment.safeDates
@@ -175,9 +186,10 @@ class EditGoalDraftStore {
 
   Future<void> discard() async {
     await _preferences.remove(_storageKey);
-    if (_user == null || _client == null) return;
+    final userId = _userId;
+    if (userId == null || _client == null) return;
     try {
-      await _client.from('goal_edit_drafts').delete().eq('user_id', _user.id);
+      await _client.from('goal_edit_drafts').delete().eq('user_id', userId);
     } catch (_) {
       // Deliberately best-effort: the user should still be able to leave the
       // flow offline, and the next authenticated session retries cleanup.
@@ -219,12 +231,13 @@ final editGoalLocaleCodeProvider = Provider<String>((ref) {
 });
 
 final editGoalDraftStoreProvider = Provider<EditGoalDraftStore>((ref) {
+  final userId = ref.watch(currentUserProvider)?.id;
   return EditGoalDraftStore(
     preferences: ref.watch(sharedPreferencesProvider),
     client: SupabaseConfig.isConfigured
         ? ref.watch(supabaseClientProvider)
         : null,
-    user: ref.watch(currentUserProvider),
+    userId: userId,
   );
 });
 

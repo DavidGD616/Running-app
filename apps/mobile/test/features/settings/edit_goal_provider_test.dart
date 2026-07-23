@@ -62,6 +62,36 @@ void main() {
     expect(draft.toJson().containsKey('targetTime'), isFalse);
   });
 
+  test('local drafts are isolated by authenticated account', () async {
+    final draft = EditGoalDraft(
+      race: RunnerGoalRace.tenK,
+      hasRaceDate: true,
+      raceDate: DateTime(2026, 10, 18),
+      changes: const {EditGoalChange.distance},
+    );
+    final userAStore = EditGoalDraftStore(
+      preferences: preferences,
+      client: null,
+      userId: 'user-a',
+    );
+    final userBStore = EditGoalDraftStore(
+      preferences: preferences,
+      client: null,
+      userId: 'user-b',
+    );
+
+    await userAStore.save(
+      draft: draft,
+      sourcePlanId: 'user-a-plan',
+      status: 'editing',
+      revision: 1,
+      updatedAt: now,
+    );
+
+    expect(await userBStore.load(), isNull);
+    expect((await userAStore.load())?.draft.race, RunnerGoalRace.tenK);
+  });
+
   test(
     'initializes an unselected edit draft without an editable target time',
     () async {
@@ -90,10 +120,10 @@ void main() {
           ),
         );
 
-    await _waitFor(() => preferences.getString('edit_goal_draft_v2') != null);
+    final storageKey = EditGoalDraftStore.storageKeyForUser(null);
+    await _waitFor(() => preferences.getString(storageKey) != null);
     final stored =
-        jsonDecode(preferences.getString('edit_goal_draft_v2')!)
-            as Map<String, dynamic>;
+        jsonDecode(preferences.getString(storageKey)!) as Map<String, dynamic>;
     final data = stored['data'] as Map<String, dynamic>;
     expect(data['race'], 'race_10k');
     expect(data['changes'], ['distance']);
@@ -288,7 +318,10 @@ void main() {
       expect(calls.last, {'action': 'accept', 'proposalId': 'proposal-1'});
       final success = container.read(editGoalProvider) as EditGoalSuccess;
       expect(success.proposal.summary.preservedCount, 4);
-      expect(preferences.getString('edit_goal_draft_v2'), isNull);
+      expect(
+        preferences.getString(EditGoalDraftStore.storageKeyForUser(null)),
+        isNull,
+      );
     },
   );
 }
