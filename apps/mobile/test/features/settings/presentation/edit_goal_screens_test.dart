@@ -192,6 +192,40 @@ void main() {
     );
     expect(find.text('View plan'), findsOneWidget);
   });
+
+  testWidgets('next two weeks starts from the current plan week', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _app(
+        now: now,
+        preferences: preferences,
+        client: (_, {body}) async => FunctionResponse(
+          data: _proposal(
+            candidatePlan: _plan(
+              'candidate-plan',
+              currentWeekNumber: 5,
+              totalWeeks: 7,
+            ),
+          ),
+          status: 200,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Race date').first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editGoalChangesContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editGoalReviewChanges')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Week 5'), findsOneWidget);
+    expect(find.text('Week 6'), findsOneWidget);
+    expect(find.text('Week 1'), findsNothing);
+    expect(find.text('Week 2'), findsNothing);
+  });
 }
 
 Widget _app({
@@ -278,7 +312,7 @@ Map<String, dynamic> _fitnessCheckResponse({
   },
 };
 
-Map<String, dynamic> _proposal() => {
+Map<String, dynamic> _proposal({Map<String, dynamic>? candidatePlan}) => {
   'proposalId': 'proposal-1',
   'sourcePlanVersionId': 'active-plan',
   'expiresAt': '2026-07-13T17:15:00.000Z',
@@ -297,7 +331,7 @@ Map<String, dynamic> _proposal() => {
       },
     ],
   },
-  'candidatePlan': _plan('candidate-plan'),
+  'candidatePlan': candidatePlan ?? _plan('candidate-plan'),
   'summary': {
     'preservedCount': 4,
     'addedUpcomingCount': 0,
@@ -328,14 +362,18 @@ Map<String, dynamic> _acceptance() {
   };
 }
 
-Map<String, dynamic> _plan(String id) => {
+Map<String, dynamic> _plan(
+  String id, {
+  int currentWeekNumber = 1,
+  int totalWeeks = 3,
+}) => {
   'schemaVersion': 1,
   'id': id,
   'raceType': 'halfMarathon',
-  'totalWeeks': 3,
-  'currentWeekNumber': 1,
+  'totalWeeks': totalWeeks,
+  'currentWeekNumber': currentWeekNumber,
   'sessions': [
-    for (var week = 1; week <= 3; week++)
+    for (var week = 1; week <= totalWeeks; week++)
       {
         'schemaVersion': 1,
         'id': 'session-$week',

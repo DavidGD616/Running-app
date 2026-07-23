@@ -69,6 +69,7 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
     final dateFormat = DateFormat.yMMMd(locale);
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
+    final upcomingWeeks = _upcomingWeeks(proposal);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -133,7 +134,7 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
                       const SizedBox(height: AppSpacing.xl),
                       SectionLabel(label: l10n.editGoalNextTwoWeeks),
                       const SizedBox(height: AppSpacing.sm),
-                      ...proposal.candidatePlan.allWeeks
+                      ...upcomingWeeks
                           .take(2)
                           .map(
                             (week) => _WeekExpansion(
@@ -142,10 +143,10 @@ class _EditGoalPreviewScreenState extends ConsumerState<EditGoalPreviewScreen> {
                               dateFormat: dateFormat,
                             ),
                           ),
-                      if (proposal.candidatePlan.allWeeks.length > 2) ...[
+                      if (upcomingWeeks.length > 2) ...[
                         const SizedBox(height: AppSpacing.sm),
                         _FullPlanExpansion(
-                          weeks: proposal.candidatePlan.allWeeks.skip(2),
+                          weeks: upcomingWeeks.skip(2),
                           dateFormat: dateFormat,
                         ),
                       ],
@@ -860,6 +861,13 @@ bool _hasChangeDetails(GoalEditChangeSummary summary) =>
     summary.addedUpcomingSessions.isNotEmpty ||
     summary.removedUpcomingSessions.isNotEmpty ||
     summary.materiallyChangedUpcomingSessions.isNotEmpty;
+
+List<PlanWeek> _upcomingWeeks(GoalEditProposal proposal) {
+  final currentWeek = proposal.candidatePlan.currentWeekNumber;
+  return proposal.candidatePlan.allWeeks
+      .where((week) => week.weekNumber >= currentWeek)
+      .toList(growable: false);
+}
 
 String _changeMetrics({
   required int? durationMinutes,
