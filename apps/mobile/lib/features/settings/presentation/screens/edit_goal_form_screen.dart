@@ -647,7 +647,10 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
   }
 
   void _useManualResult(EditGoalDraft draft, EditGoalFitnessSource source) {
-    final distance = double.tryParse(_distanceController.text.trim());
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final distance = NumberFormat.decimalPattern(
+      locale,
+    ).tryParse(_distanceController.text.trim())?.toDouble();
     final elapsed = _parseDuration(_timeController.text);
     final date = _resultDate;
     if (distance == null ||
@@ -671,10 +674,12 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
   }
 
   void _prefillSuggestedActivity(GoalEditSuggestedActivity activity) {
+    final locale = Localizations.localeOf(context).toLanguageTag();
     setState(() {
-      _distanceController.text = activity.distanceKm
-          .toStringAsFixed(2)
-          .replaceFirst(RegExp(r'\.?0+$'), '');
+      _distanceController.text = NumberFormat(
+        '0.##',
+        locale,
+      ).format(activity.distanceKm);
       _timeController.text = _formatDuration(activity.elapsed);
       _resultDate = activity.recordedOn;
       _hardEffort = null;
@@ -906,6 +911,7 @@ class _SuggestedActivityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
     return Container(
       padding: const EdgeInsets.all(AppSpacing.base),
       decoration: BoxDecoration(
@@ -919,7 +925,7 @@ class _SuggestedActivityCard extends StatelessWidget {
           Text(
             l10n.editGoalSuggestedActivity(
               dateFormat.format(activity.recordedOn),
-              activity.distanceKm.toStringAsFixed(1),
+              NumberFormat('0.0', locale).format(activity.distanceKm),
               _formatDuration(activity.elapsed),
             ),
             style: AppTypography.bodyLarge,

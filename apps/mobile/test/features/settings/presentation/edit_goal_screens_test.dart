@@ -121,6 +121,57 @@ void main() {
     expect(find.text('Review Goal Changes'), findsOneWidget);
   });
 
+  testWidgets('Spanish fitness results use locale-aware decimal distances', (
+    tester,
+  ) async {
+    final bodies = <Map<String, dynamic>>[];
+    await tester.pumpWidget(
+      _app(
+        now: now,
+        preferences: preferences,
+        locale: const Locale('es'),
+        client: (_, {body}) async {
+          bodies.add(body! as Map<String, dynamic>);
+          return FunctionResponse(
+            data: bodies.length == 1
+                ? _fitnessCheckResponse(includeSuggestedActivity: true)
+                : _proposal(),
+            status: 200,
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('editGoalDistanceChange')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editGoalChangesContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editGoalReviewChanges')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('5,0 km'), findsOneWidget);
+    await tester.tap(find.text('Usar este resultado').first);
+    await tester.pumpAndSettle();
+    expect(
+      tester.widget<TextField>(find.byType(TextField).first).controller!.text,
+      '5',
+    );
+
+    await tester.enterText(find.byType(TextField).first, '5,5');
+    await tester.tap(find.text('Sí'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Usar este resultado'));
+    await tester.tap(find.text('Usar este resultado'));
+    await tester.pumpAndSettle();
+
+    expect(bodies, hasLength(2));
+    expect(
+      (bodies.last['fitnessResult'] as Map<String, dynamic>)['distanceKm'],
+      5.5,
+    );
+  });
+
   testWidgets('deselecting distance restores it before preview', (
     tester,
   ) async {
