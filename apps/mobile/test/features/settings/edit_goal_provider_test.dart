@@ -22,6 +22,11 @@ void main() {
 
   test('draft serializes only canonical choices and fitness evidence', () {
     final draft = EditGoalDraft(
+      originalGoal: GoalEditGoal(
+        race: RunnerGoalRace.tenK,
+        hasRaceDate: false,
+        raceDate: null,
+      ),
       race: RunnerGoalRace.tenK,
       hasRaceDate: false,
       raceDate: null,
@@ -64,6 +69,11 @@ void main() {
 
   test('local drafts are isolated by authenticated account', () async {
     final draft = EditGoalDraft(
+      originalGoal: GoalEditGoal(
+        race: RunnerGoalRace.tenK,
+        hasRaceDate: true,
+        raceDate: DateTime(2026, 10, 18),
+      ),
       race: RunnerGoalRace.tenK,
       hasRaceDate: true,
       raceDate: DateTime(2026, 10, 18),

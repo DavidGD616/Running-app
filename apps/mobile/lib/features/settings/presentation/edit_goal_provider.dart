@@ -425,8 +425,10 @@ class EditGoalNotifier extends Notifier<EditGoalState> {
       final initial = await ref.read(editGoalInitialDataLoaderProvider)();
       final stored = await ref.read(editGoalDraftStoreProvider).load();
       if (!ref.mounted) return;
+      final originalGoal = GoalEditGoal.fromProfile(initial.profile);
       final draft =
-          stored?.draft ?? EditGoalDraft.fromProfile(profile: initial.profile);
+          (stored?.draft ?? EditGoalDraft.fromProfile(profile: initial.profile))
+              .withOriginalGoal(originalGoal);
       _revision = stored?.revision ?? 1;
       final wasRebased =
           stored != null && stored.sourcePlanId != initial.activePlanId;
@@ -755,11 +757,12 @@ GoalEditProposal? _proposal(EditGoalState state) => switch (state) {
 };
 
 bool _validDraft(EditGoalDraft draft, DateTime now) {
-  if (!draft.isChangeSelected || draft.race == RunnerGoalRace.other) {
+  final goal = draft.effectiveGoal;
+  if (!draft.isChangeSelected || goal.race == RunnerGoalRace.other) {
     return false;
   }
-  if (!draft.hasRaceDate) return draft.raceDate == null;
-  final raceDate = draft.raceDate;
+  if (!goal.hasRaceDate) return goal.raceDate == null;
+  final raceDate = goal.raceDate;
   if (raceDate == null) return false;
   final today = DateTime(now.year, now.month, now.day);
   final raceDay = DateTime(raceDate.year, raceDate.month, raceDate.day);

@@ -599,15 +599,7 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
   }
 
   void _toggleChange(EditGoalDraft draft, EditGoalChange change) {
-    final changes = {...draft.changes};
-    if (!changes.add(change)) changes.remove(change);
-    _update(
-      draft.copyWith(
-        changes: changes,
-        clearFitnessResult: true,
-        clearAssessment: true,
-      ),
-    );
+    _update(draft.toggleChange(change));
   }
 
   void _update(EditGoalDraft draft) {
@@ -709,6 +701,7 @@ class _CurrentGoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final goal = draft.originalGoal;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.base),
@@ -720,12 +713,12 @@ class _CurrentGoalCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(_raceLabel(draft.race, l10n), style: AppTypography.titleMedium),
+          Text(_raceLabel(goal.race, l10n), style: AppTypography.titleMedium),
           const SizedBox(height: AppSpacing.xs),
           Text(
-            draft.raceDate == null
+            goal.raceDate == null
                 ? l10n.editGoalNoFixedDate
-                : DateFormat.yMMMd(locale).format(draft.raceDate!),
+                : DateFormat.yMMMd(locale).format(goal.raceDate!),
             style: AppTypography.bodyMedium.copyWith(
               color: AppColors.textSecondary,
             ),

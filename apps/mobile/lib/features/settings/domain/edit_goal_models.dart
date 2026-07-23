@@ -4,6 +4,7 @@ import '../../training_plan/domain/models/training_plan.dart';
 
 class EditGoalDraft {
   const EditGoalDraft({
+    required this.originalGoal,
     required this.race,
     required this.hasRaceDate,
     required this.raceDate,
@@ -13,13 +14,16 @@ class EditGoalDraft {
   });
 
   factory EditGoalDraft.fromProfile({required RunnerProfile profile}) {
+    final originalGoal = GoalEditGoal.fromProfile(profile);
     return EditGoalDraft(
-      race: profile.goal.race,
-      hasRaceDate: profile.goal.hasRaceDate,
-      raceDate: profile.goal.hasRaceDate ? profile.goal.raceDate : null,
+      originalGoal: originalGoal,
+      race: originalGoal.race,
+      hasRaceDate: originalGoal.hasRaceDate,
+      raceDate: originalGoal.raceDate,
     );
   }
 
+  final GoalEditGoal originalGoal;
   final RunnerGoalRace race;
   final bool hasRaceDate;
   final DateTime? raceDate;
@@ -30,6 +34,7 @@ class EditGoalDraft {
   bool get isChangeSelected => changes.isNotEmpty;
 
   EditGoalDraft copyWith({
+    GoalEditGoal? originalGoal,
     RunnerGoalRace? race,
     bool? hasRaceDate,
     DateTime? raceDate,
@@ -42,6 +47,7 @@ class EditGoalDraft {
   }) {
     final nextHasRaceDate = hasRaceDate ?? this.hasRaceDate;
     return EditGoalDraft(
+      originalGoal: originalGoal ?? this.originalGoal,
       race: race ?? this.race,
       hasRaceDate: nextHasRaceDate,
       raceDate: nextHasRaceDate
@@ -55,17 +61,57 @@ class EditGoalDraft {
     );
   }
 
+  EditGoalDraft toggleChange(EditGoalChange change) {
+    final nextChanges = {...changes};
+    final selected = nextChanges.add(change);
+    if (!selected) nextChanges.remove(change);
+
+    return copyWith(
+      changes: nextChanges,
+      race: !selected && change == EditGoalChange.distance
+          ? originalGoal.race
+          : race,
+      hasRaceDate: !selected && change == EditGoalChange.raceDate
+          ? originalGoal.hasRaceDate
+          : hasRaceDate,
+      raceDate: !selected && change == EditGoalChange.raceDate
+          ? originalGoal.raceDate
+          : raceDate,
+      clearRaceDate:
+          !selected &&
+          change == EditGoalChange.raceDate &&
+          !originalGoal.hasRaceDate,
+      clearFitnessResult: true,
+      clearAssessment: true,
+    );
+  }
+
+  EditGoalDraft withOriginalGoal(GoalEditGoal value) {
+    return copyWith(originalGoal: value);
+  }
+
+  GoalEditGoal get effectiveGoal {
+    final changesDistance = changes.contains(EditGoalChange.distance);
+    final changesRaceDate = changes.contains(EditGoalChange.raceDate);
+    return GoalEditGoal(
+      race: changesDistance ? race : originalGoal.race,
+      hasRaceDate: changesRaceDate ? hasRaceDate : originalGoal.hasRaceDate,
+      raceDate: changesRaceDate ? raceDate : originalGoal.raceDate,
+    );
+  }
+
   Map<String, dynamic> previewPayload({
     required String sourcePlanVersionId,
     required DateTime localDate,
     required String locale,
   }) {
+    final goal = effectiveGoal;
     return {
       'action': 'preview',
       'sourcePlanVersionId': sourcePlanVersionId,
-      'race': race.key,
-      'hasRaceDate': hasRaceDate,
-      'raceDate': hasRaceDate ? _dateOnly(raceDate) : null,
+      'race': goal.race.key,
+      'hasRaceDate': goal.hasRaceDate,
+      'raceDate': goal.hasRaceDate ? _dateOnly(goal.raceDate) : null,
       if (fitnessResult != null) 'fitnessResult': fitnessResult!.toJson(),
       'localDate': _dateOnly(localDate),
       'locale': locale == 'es' ? 'es' : 'en',
@@ -73,6 +119,7 @@ class EditGoalDraft {
   }
 
   Map<String, dynamic> toJson() => {
+    'originalGoal': originalGoal.toJson(),
     'race': race.key,
     'hasRaceDate': hasRaceDate,
     'raceDate': hasRaceDate ? _dateOnly(raceDate) : null,
@@ -100,7 +147,16 @@ class EditGoalDraft {
     final changes = rawChanges.map(EditGoalChange.parse).toSet();
     final rawFitness = json['fitnessResult'];
     final rawAssessment = json['assessment'];
+    final currentGoal = GoalEditGoal(
+      race: race,
+      hasRaceDate: hasRaceDate,
+      raceDate: raceDate,
+    );
+    final rawOriginalGoal = json['originalGoal'];
     return EditGoalDraft(
+      originalGoal: rawOriginalGoal == null
+          ? currentGoal
+          : GoalEditGoal.fromJson(rawOriginalGoal),
       race: race,
       hasRaceDate: hasRaceDate,
       raceDate: raceDate,
@@ -256,6 +312,20 @@ class GoalEditGoal {
   final RunnerGoalRace race;
   final bool hasRaceDate;
   final DateTime? raceDate;
+
+  factory GoalEditGoal.fromProfile(RunnerProfile profile) {
+    return GoalEditGoal(
+      race: profile.goal.race,
+      hasRaceDate: profile.goal.hasRaceDate,
+      raceDate: profile.goal.hasRaceDate ? profile.goal.raceDate : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() => {
+    'race': race.key,
+    'hasRaceDate': hasRaceDate,
+    'raceDate': hasRaceDate ? _dateOnly(raceDate) : null,
+  };
 
   factory GoalEditGoal.fromJson(Object? value) {
     final json = _strictMap(value, 'goal');

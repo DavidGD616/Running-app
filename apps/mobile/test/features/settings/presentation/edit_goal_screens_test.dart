@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
 import 'package:running_app/core/router/route_names.dart';
+import 'package:running_app/core/widgets/app_header_bar.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/settings/presentation/edit_goal_provider.dart';
 import 'package:running_app/features/settings/presentation/screens/edit_goal_form_screen.dart';
@@ -64,6 +65,48 @@ void main() {
     expect(find.text('Let’s ground this in your running'), findsOneWidget);
     expect(find.text('Schedule a benchmark'), findsOneWidget);
     expect(find.textContaining('target time'), findsNothing);
+  });
+
+  testWidgets('deselecting distance restores it before preview', (
+    tester,
+  ) async {
+    Object? capturedBody;
+    await tester.pumpWidget(
+      _app(
+        now: now,
+        preferences: preferences,
+        client: (_, {body}) async {
+          capturedBody = body;
+          return FunctionResponse(data: _proposal(), status: 200);
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Race distance').first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editGoalChangesContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Marathon'));
+    await tester.pump();
+
+    tester
+        .widget<AppDetailHeaderBar>(find.byType(AppDetailHeaderBar))
+        .onBack!();
+    await tester.pump();
+    await tester.tap(find.text('Race distance').first);
+    await tester.pump();
+    await tester.tap(find.text('Race date').first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editGoalChangesContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editGoalReviewChanges')));
+    await tester.pumpAndSettle();
+
+    expect(
+      (capturedBody! as Map<String, dynamic>)['race'],
+      'race_half_marathon',
+    );
   });
 
   testWidgets('shows the range, two-week preview, and success recap', (

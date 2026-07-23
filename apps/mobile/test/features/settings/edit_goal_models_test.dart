@@ -1,8 +1,66 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/settings/domain/edit_goal_models.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 
 void main() {
+  test('deselecting a goal field restores its original value and payload', () {
+    final originalGoal = GoalEditGoal(
+      race: RunnerGoalRace.halfMarathon,
+      hasRaceDate: true,
+      raceDate: DateTime(2026, 10, 18),
+    );
+    final changed = EditGoalDraft(
+      originalGoal: originalGoal,
+      race: RunnerGoalRace.marathon,
+      hasRaceDate: false,
+      raceDate: null,
+      changes: const {EditGoalChange.distance, EditGoalChange.raceDate},
+    );
+
+    final distanceDeselected = changed.toggleChange(EditGoalChange.distance);
+    final allDeselected = distanceDeselected.toggleChange(
+      EditGoalChange.raceDate,
+    );
+
+    expect(distanceDeselected.race, RunnerGoalRace.halfMarathon);
+    expect(distanceDeselected.hasRaceDate, isFalse);
+    expect(allDeselected.race, RunnerGoalRace.halfMarathon);
+    expect(allDeselected.hasRaceDate, isTrue);
+    expect(allDeselected.raceDate, DateTime(2026, 10, 18));
+    expect(
+      allDeselected.previewPayload(
+        sourcePlanVersionId: 'plan-1',
+        localDate: DateTime(2026, 7, 13),
+        locale: 'en',
+      ),
+      containsPair('race', 'race_half_marathon'),
+    );
+  });
+
+  test('preview payload ignores stale values for unselected fields', () {
+    final draft = EditGoalDraft(
+      originalGoal: GoalEditGoal(
+        race: RunnerGoalRace.halfMarathon,
+        hasRaceDate: true,
+        raceDate: DateTime(2026, 10, 18),
+      ),
+      race: RunnerGoalRace.marathon,
+      hasRaceDate: false,
+      raceDate: null,
+      changes: const {EditGoalChange.raceDate},
+    );
+
+    final payload = draft.previewPayload(
+      sourcePlanVersionId: 'plan-1',
+      localDate: DateTime(2026, 7, 13),
+      locale: 'en',
+    );
+
+    expect(payload['race'], 'race_half_marathon');
+    expect(payload['hasRaceDate'], isFalse);
+  });
+
   test('summary strictly parses canonical chronological session details', () {
     final summary = GoalEditChangeSummary.fromJson(_summary());
 
