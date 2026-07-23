@@ -280,7 +280,6 @@ async function previewGoal(
   });
   const estimate = estimateFor({
     request,
-    brief,
     localDate: request.localDate,
   });
   if (estimate == null) {
@@ -414,48 +413,35 @@ export function buildWarnings(
 
 function estimateFor(input: {
   request: PreviewRequest;
-  brief: ReturnType<typeof buildCoachingBrief>;
   localDate: string;
 }): GoalEditRaceEstimate | null {
   const targetDistanceKm = raceDistanceKm(input.request.race);
   const manual = input.request.fitnessResult;
+  if (manual == null) return null;
+
   let centerTimeSeconds: number | null;
   let confidence: EstimateConfidence;
   let evidence: GoalEditRaceEstimate["evidence"];
   let manualWasCrossDistance = false;
 
-  if (manual != null) {
-    const recordedAt = parseDateOnly(manual.recordedOn)!;
-    const localDate = parseDateOnly(input.localDate)!;
-    const ageDays = (localDate.getTime() - recordedAt.getTime()) / DAY_MS;
-    if (!manual.hardEffort || ageDays < 0 || ageDays > EVIDENCE_WINDOW_DAYS) {
-      return null;
-    }
-    centerTimeSeconds = Math.round(
-      riegelSeconds(manual.elapsedSeconds, manual.distanceKm, targetDistanceKm),
-    );
-    manualWasCrossDistance = !sameDistance(manual.distanceKm, targetDistanceKm);
-    confidence = manualWasCrossDistance ? "medium" : "high";
-    evidence = [{
-      source: manual.source,
-      recordedOn: manual.recordedOn,
-      description: manual.source === "assessment"
-        ? "Completed Edit Goal assessment"
-        : "Recent hard running result",
-    }];
-  } else {
-    const target = input.brief.evidenceTarget;
-    if (!target.supported || target.timeSec == null || target.timeSec <= 0) {
-      return null;
-    }
-    centerTimeSeconds = target.timeSec;
-    confidence = target.confidence;
-    evidence = [{
-      source: target.source === "strava" ? "strava" : "manual",
-      recordedOn: null,
-      description: target.reason,
-    }];
+  const recordedAt = parseDateOnly(manual.recordedOn)!;
+  const localDate = parseDateOnly(input.localDate)!;
+  const ageDays = (localDate.getTime() - recordedAt.getTime()) / DAY_MS;
+  if (!manual.hardEffort || ageDays < 0 || ageDays > EVIDENCE_WINDOW_DAYS) {
+    return null;
   }
+  centerTimeSeconds = Math.round(
+    riegelSeconds(manual.elapsedSeconds, manual.distanceKm, targetDistanceKm),
+  );
+  manualWasCrossDistance = !sameDistance(manual.distanceKm, targetDistanceKm);
+  confidence = manualWasCrossDistance ? "medium" : "high";
+  evidence = [{
+    source: manual.source,
+    recordedOn: manual.recordedOn,
+    description: manual.source === "assessment"
+      ? "Completed Edit Goal assessment"
+      : "Recent hard running result",
+  }];
 
   if (centerTimeSeconds == null || centerTimeSeconds <= 0) return null;
   if (input.request.race === "race_marathon" && manualWasCrossDistance) {

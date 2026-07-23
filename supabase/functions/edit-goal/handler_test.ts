@@ -131,7 +131,9 @@ Deno.test("preview stores a proposal without invoking acceptance", async () => {
       throw new Error("must not activate during preview");
     },
   });
-  const response = await createEditGoalHandler(deps)(request(previewBody()));
+  const response = await createEditGoalHandler(deps)(request(previewBody({
+    fitnessResult: recentHardResult(),
+  })));
   assertEquals(response.status, 200);
   const json = await response.json();
   assertEquals(json.proposalId, "fixed-id");
@@ -141,13 +143,10 @@ Deno.test("preview stores a proposal without invoking acceptance", async () => {
   assertEquals(storedUser, "token-user");
 });
 
-Deno.test("preview asks for a fitness check instead of guessing when evidence is insufficient", async () => {
+Deno.test("undated stored benchmark cannot bypass the fitness check", async () => {
   const response = await createEditGoalHandler(fakeDependencies({
     loadPreviewContext: async () => ({
-      profile: {
-        ...profile,
-        fitness: { ...profile.fitness, benchmark: "benchmark_skip" },
-      },
+      profile,
       sourcePlan,
       activityLinkedSessionIds: [],
       skipAdjustmentSessionIds: [],
@@ -172,13 +171,7 @@ Deno.test("a recent hard manual result unlocks an estimate-backed proposal", asy
       stravaSummaries: [],
     }),
   }))(request(previewBody({
-    fitnessResult: {
-      source: "manual",
-      distanceKm: 5,
-      elapsedSeconds: 1_500,
-      recordedOn: "2026-07-10",
-      hardEffort: true,
-    },
+    fitnessResult: recentHardResult(),
   })));
 
   assertEquals(response.status, 200);
@@ -190,6 +183,17 @@ Deno.test("a recent hard manual result unlocks an estimate-backed proposal", asy
   assert(
     json.raceEstimate.slowerTimeSeconds > json.raceEstimate.centerTimeSeconds,
   );
+});
+
+Deno.test("a recent easy result remains behind the fitness check", async () => {
+  const response = await createEditGoalHandler(fakeDependencies())(request(
+    previewBody({
+      fitnessResult: { ...recentHardResult(), hardEffort: false },
+    }),
+  ));
+
+  assertEquals(response.status, 200);
+  assertEquals((await response.json()).state, "fitness_check_required");
 });
 
 Deno.test("immutable merge preserves terminal statuses without linkage rows", () => {
@@ -602,6 +606,16 @@ function previewBody(overrides: Record<string, unknown> = {}) {
     localDate: "2026-07-13",
     locale: "en",
     ...overrides,
+  };
+}
+
+function recentHardResult() {
+  return {
+    source: "manual",
+    distanceKm: 5,
+    elapsedSeconds: 1_500,
+    recordedOn: "2026-07-10",
+    hardEffort: true,
   };
 }
 

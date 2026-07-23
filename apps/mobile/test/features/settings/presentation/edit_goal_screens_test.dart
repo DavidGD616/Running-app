@@ -67,6 +67,60 @@ void main() {
     expect(find.textContaining('target time'), findsNothing);
   });
 
+  testWidgets('suggested activity requires explicit hard-effort confirmation', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      _app(
+        now: now,
+        preferences: preferences,
+        client: (_, {body}) async {
+          calls++;
+          return FunctionResponse(
+            data: calls == 1
+                ? _fitnessCheckResponse(includeSuggestedActivity: true)
+                : _proposal(),
+            status: 200,
+          );
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Race distance').first);
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('editGoalChangesContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('editGoalReviewChanges')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Use this result').first);
+    await tester.pumpAndSettle();
+
+    expect(calls, 1);
+    expect(find.text('Was this a hard, sustained effort?'), findsOneWidget);
+    expect(find.text('Enter a recent result'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Use this result'));
+    await tester.tap(find.text('Use this result'));
+    await tester.pump();
+    expect(calls, 1);
+    expect(
+      find.text(
+        'Enter a positive distance, a time in HH:MM:SS, and the date of a hard effort.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.text('Yes'));
+    await tester.pump();
+    await tester.ensureVisible(find.text('Use this result'));
+    await tester.tap(find.text('Use this result'));
+    await tester.pumpAndSettle();
+    expect(calls, 2);
+    expect(find.text('Review Goal Changes'), findsOneWidget);
+  });
+
   testWidgets('deselecting distance restores it before preview', (
     tester,
   ) async {
@@ -202,11 +256,21 @@ Widget _app({
   );
 }
 
-Map<String, dynamic> _fitnessCheckResponse() => {
+Map<String, dynamic> _fitnessCheckResponse({
+  bool includeSuggestedActivity = false,
+}) => {
   'state': 'fitness_check_required',
   'sourcePlanVersionId': 'active-plan',
   'fitnessCheck': {
-    'suggestedActivities': <dynamic>[],
+    'suggestedActivities': includeSuggestedActivity
+        ? [
+            {
+              'recordedOn': '2026-07-10',
+              'distanceKm': 5.0,
+              'elapsedSeconds': 1500,
+            },
+          ]
+        : <dynamic>[],
     'benchmark': {
       'kind': 'five_k_run',
       'safeDates': ['2026-07-16'],

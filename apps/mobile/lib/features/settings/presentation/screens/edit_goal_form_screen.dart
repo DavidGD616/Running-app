@@ -37,7 +37,7 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
   final _timeController = TextEditingController();
   DateTime? _resultDate;
   DateTime? _assessmentDate;
-  bool _hardEffort = true;
+  bool? _hardEffort;
   String? _validation;
 
   @override
@@ -343,20 +343,7 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
                 child: _SuggestedActivityCard(
                   activity: activity,
                   dateFormat: DateFormat.yMMMd(locale),
-                  onUse: () {
-                    ref
-                        .read(editGoalProvider.notifier)
-                        .useFitnessResult(
-                          EditGoalFitnessResult(
-                            source: EditGoalFitnessSource.manual,
-                            distanceKm: activity.distanceKm,
-                            elapsed: activity.elapsed,
-                            recordedOn: activity.recordedOn,
-                            hardEffort: true,
-                          ),
-                        );
-                    _review(_draft(ref.read(editGoalProvider))!);
-                  },
+                  onUse: () => _prefillSuggestedActivity(activity),
                 ),
               ),
             ),
@@ -367,7 +354,11 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
             label: l10n.editGoalEnterResult,
             subtitle: l10n.editGoalEnterResultSubtitle,
             selected: false,
-            onTap: () => setState(() => _step = _EditGoalStep.manualResult),
+            onTap: () => setState(() {
+              _hardEffort = null;
+              _validation = null;
+              _step = _EditGoalStep.manualResult;
+            }),
           ),
           const SizedBox(height: AppSpacing.md),
           _SelectCard(
@@ -445,7 +436,7 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
               Expanded(
                 child: _ToggleCard(
                   label: l10n.yes,
-                  selected: _hardEffort,
+                  selected: _hardEffort == true,
                   onTap: () => setState(() => _hardEffort = true),
                 ),
               ),
@@ -453,7 +444,7 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
               Expanded(
                 child: _ToggleCard(
                   label: l10n.no,
-                  selected: !_hardEffort,
+                  selected: _hardEffort == false,
                   onTap: () => setState(() => _hardEffort = false),
                 ),
               ),
@@ -573,7 +564,11 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
           const Spacer(),
           AppButton(
             label: l10n.editGoalEnterAssessmentResult,
-            onPressed: () => setState(() => _step = _EditGoalStep.manualResult),
+            onPressed: () => setState(() {
+              _hardEffort = null;
+              _validation = null;
+              _step = _EditGoalStep.manualResult;
+            }),
           ),
           const SizedBox(height: AppSpacing.sm),
           AppButton(
@@ -581,7 +576,11 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
             variant: AppButtonVariant.secondary,
             onPressed: () {
               ref.read(editGoalProvider.notifier).cancelAssessment();
-              setState(() => _step = _EditGoalStep.manualResult);
+              setState(() {
+                _hardEffort = null;
+                _validation = null;
+                _step = _EditGoalStep.manualResult;
+              });
             },
           ),
           const SizedBox(height: AppSpacing.sm),
@@ -651,7 +650,11 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
     final distance = double.tryParse(_distanceController.text.trim());
     final elapsed = _parseDuration(_timeController.text);
     final date = _resultDate;
-    if (distance == null || distance <= 0 || elapsed == null || date == null) {
+    if (distance == null ||
+        distance <= 0 ||
+        elapsed == null ||
+        date == null ||
+        _hardEffort != true) {
       setState(() => _validation = 'result');
       return;
     }
@@ -660,11 +663,24 @@ class _EditGoalFormScreenState extends ConsumerState<EditGoalFormScreen> {
       distanceKm: distance,
       elapsed: elapsed,
       recordedOn: date,
-      hardEffort: _hardEffort,
+      hardEffort: true,
     );
     ref.read(editGoalProvider.notifier).useFitnessResult(result);
     final updated = _draft(ref.read(editGoalProvider));
     if (updated != null) _review(updated);
+  }
+
+  void _prefillSuggestedActivity(GoalEditSuggestedActivity activity) {
+    setState(() {
+      _distanceController.text = activity.distanceKm
+          .toStringAsFixed(2)
+          .replaceFirst(RegExp(r'\.?0+$'), '');
+      _timeController.text = _formatDuration(activity.elapsed);
+      _resultDate = activity.recordedOn;
+      _hardEffort = null;
+      _validation = null;
+      _step = _EditGoalStep.manualResult;
+    });
   }
 }
 
