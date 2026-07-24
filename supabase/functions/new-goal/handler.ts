@@ -19,6 +19,12 @@ type Goal = {
   hasRaceDate: boolean;
   raceDate?: string;
 };
+type CanonicalEvidence = {
+  metric: string;
+  date: string;
+  value: number;
+  unit: string;
+};
 type SupportedRace = z.infer<typeof SupportedRaceSchema>;
 type EstimateConfidence = "high" | "medium" | "limited";
 type NewGoalPlanMode =
@@ -35,6 +41,56 @@ const DAY_MS = 86_400_000;
 const SHORT_NOTICE_DAYS = 28;
 const RACE_SUPPORT_DAYS = 6;
 const EVIDENCE_WINDOW_DAYS = 84;
+const LOCAL_DATE_DRIFT_TOLERANCE_DAYS = 2;
+const RACE_SUPPORT_ALLOWED_SESSION_TYPES = new Set([
+  "restDay",
+  "recoveryRun",
+  "easyRun",
+  "raceDay",
+]);
+
+const WeekdaySchema = z.enum([
+  "day_mon",
+  "day_tue",
+  "day_wed",
+  "day_thu",
+  "day_fri",
+  "day_sat",
+  "day_sun",
+]);
+const TimeSlotSchema = z.enum([
+  "time_20_min",
+  "time_30_min",
+  "time_45_min",
+  "time_60_min",
+  "time_75_plus_min",
+  "time_90_min",
+  "time_2_plus_hours",
+]);
+const TimeOfDaySchema = z.enum([
+  "time_of_day_early_morning",
+  "time_of_day_morning",
+  "time_of_day_afternoon",
+  "time_of_day_evening",
+  "time_of_day_no_preference",
+]);
+const PlanPreferenceSchema = z.enum([
+  "plan_safest",
+  "plan_balanced",
+  "plan_performance",
+]);
+const PainLevelSchema = z.enum([
+  "pain_no",
+  "pain_mild",
+  "pain_moderate",
+  "pain_severe",
+]);
+const InjuryHistorySchema = z.enum([
+  "injury_no",
+  "injury_once",
+  "injury_multiple",
+]);
+const HealthConditionSchema = z.enum(["yes", "no"]);
 
 const SupportedRaceSchema = z.enum([
   "race_5k",
@@ -44,60 +100,101 @@ const SupportedRaceSchema = z.enum([
 ]);
 const LocaleSchema = z.enum(["en", "es"]);
 const DateOnlySchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(
-  (value) => parseDateOnly(value) != null,
+  (value: string) => parseDateOnly(value) != null,
   "Invalid calendar date",
 );
-const BaseRequestSchema = z.object({
+const FitnessResultSchema = z.object({
+  source: z.enum(["manual", "assessment"]),
+  distanceKm: z.number().positive().finite(),
+  elapsedSeconds: z.number().int().positive(),
+  recordedOn: DateOnlySchema,
+  hardEffort: z.boolean(),
+}).strict();
+const ReviewedScheduleSchema = z.object({
+  planStartDate: DateOnlySchema.optional(),
+  trainingDays: z.number().int().min(1).max(7).optional(),
+  longRunDay: WeekdaySchema.optional(),
+  weekdayTime: TimeSlotSchema.optional(),
+  weekendTime: TimeSlotSchema.optional(),
+  hardDays: z.array(WeekdaySchema).optional().refine(
+    (days) => days == null || new Set(days).size === days.length,
+    "hardDays must contain unique weekdays",
+  ),
+  preferredTimeOfDay: TimeOfDaySchema.optional(),
+}).strict();
+const ReviewedTrainingPreferencesSchema = z.object({
+  planPreference: PlanPreferenceSchema,
+}).strict();
+const ReviewedHealthSchema = z.object({
+  painLevel: PainLevelSchema,
+  injuryHistory: InjuryHistorySchema,
+  hasHealthConditions: HealthConditionSchema,
+}).strict();
+const BaseRequestFieldsSchema = z.object({
   sourcePlanVersionId: z.string().min(1),
   race: SupportedRaceSchema,
   hasRaceDate: z.boolean(),
   raceDate: DateOnlySchema.nullish(),
   planStartDate: DateOnlySchema,
+  localDate: DateOnlySchema.optional(),
   locale: LocaleSchema,
-  fitnessResult: z.object({
-    source: z.enum(["manual", "assessment"]),
-    distanceKm: z.number().positive().finite(),
-    elapsedSeconds: z.number().int().positive(),
-    recordedOn: DateOnlySchema,
-    hardEffort: z.boolean(),
-  }).strict().nullable().optional(),
-}).strict().superRefine((value, ctx) => {
-  if (value.hasRaceDate && value.raceDate == null) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["raceDate"],
-      message: "raceDate is required when hasRaceDate is true",
-    });
-  }
-  if (!value.hasRaceDate && value.raceDate != null) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      path: ["raceDate"],
-      message: "raceDate must be omitted when hasRaceDate is false",
-    });
-  }
-  if (value.hasRaceDate && value.raceDate != null) {
-    const start = parseDateOnly(value.planStartDate)!;
-    const race = parseDateOnly(value.raceDate)!;
-    if (race.getTime() < start.getTime()) {
+  fitnessResult: FitnessResultSchema.nullable().optional(),
+  schedule: ReviewedScheduleSchema.optional(),
+  trainingPreferences: ReviewedTrainingPreferencesSchema.optional(),
+  health: ReviewedHealthSchema.optional(),
+  healthChanged: z.boolean().optional(),
+});
+const buildPlanRequestSchema = (action: "recommend" | "preview") =>
+  BaseRequestFieldsSchema.extend({
+    action: z.literal(action),
+  }).strict().superRefine((
+    value: z.infer<typeof BaseRequestFieldsSchema>,
+    ctx: z.RefinementCtx,
+  ) => {
+    if (value.hasRaceDate && value.raceDate == null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["raceDate"],
-        message: "raceDate must not be before planStartDate",
+        message: "raceDate is required when hasRaceDate is true",
       });
     }
-  }
-});
+    if (!value.hasRaceDate && value.raceDate != null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["raceDate"],
+        message: "raceDate must be omitted when hasRaceDate is false",
+      });
+    }
+    if (value.hasRaceDate && value.raceDate != null) {
+      const planStartDate = parseDateOnly(value.planStartDate)!;
+      const race = parseDateOnly(value.raceDate)!;
+      if (race.getTime() < planStartDate.getTime()) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["raceDate"],
+          message: "raceDate must not be before planStartDate",
+        });
+      }
+    }
+    if (value.health != null && value.healthChanged !== true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["healthChanged"],
+        message: "healthChanged must be true when health is provided",
+      });
+    }
+    if (value.healthChanged === true && value.health == null) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["health"],
+        message: "health must be provided when healthChanged is true",
+      });
+    }
+  });
 
-export const RecommendRequestSchema = z.object({
-  action: z.literal("recommend"),
-  ...BaseRequestSchema.shape,
-});
+export const RecommendRequestSchema = buildPlanRequestSchema("recommend");
 
-export const PreviewRequestSchema = z.object({
-  action: z.literal("preview"),
-  ...BaseRequestSchema.shape,
-});
+export const PreviewRequestSchema = buildPlanRequestSchema("preview");
 
 export const AcceptRequestSchema = z.object({
   action: z.literal("accept"),
@@ -120,8 +217,8 @@ export type NewGoalRecommendationTimeline = {
   endDate: string;
   weeks: number;
   hasRaceDate: boolean;
-  raceDate?: string;
-  daysToRace?: number;
+  raceDate: string | null;
+  daysToRace: number;
 };
 export type NewGoalRaceEstimate = {
   centerTimeSeconds: number;
@@ -220,18 +317,34 @@ export function createNewGoalHandler(
     const rawBody = await request.json().catch(() => null);
     const parsed = NewGoalRequestSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonResponse({ error: "invalid_request", detail: parsed.error.format() }, 400);
+      return jsonResponse({
+        error: "invalid_request",
+        detail: parsed.error.format(),
+      }, 400);
     }
 
     try {
       const typed = parsed.data;
+      if (typed.action !== "accept" && typed.localDate != null) {
+        const localDateValidation = validateRequestLocalDate(
+          typed.localDate,
+          dependencies.now(),
+        );
+        if (localDateValidation != null) {
+          return localDateValidation;
+        }
+      }
       if (typed.action === "recommend") {
-        return await recommendGoal(dependencies, userId, typed);
+        return await recommendGoal(
+          dependencies,
+          userId,
+          typed as RecommendRequest,
+        );
       }
       if (typed.action === "preview") {
-        return await previewGoal(dependencies, userId, typed);
+        return await previewGoal(dependencies, userId, typed as PreviewRequest);
       }
-      return await acceptGoal(dependencies, userId, typed);
+      return await acceptGoal(dependencies, userId, typed as AcceptRequest);
     } catch (error) {
       const mapped = mapRpcError(error);
       if (mapped != null) {
@@ -248,12 +361,13 @@ async function recommendGoal(
   userId: string,
   request: RecommendRequest,
 ): Promise<Response> {
+  const localDate = requestLocalDate(request);
   const context = await dependencies.loadPreviewContext(
     userId,
     request.sourcePlanVersionId,
   );
   if (context == null) {
-    return jsonResponse({ error: "source_plan_not_found" }, 409);
+    return jsonResponse({ error: "source_plan_stale" }, 409);
   }
 
   const proposedGoal: Goal = {
@@ -265,24 +379,25 @@ async function recommendGoal(
   const recommendation = buildRecommendation(
     request,
     context.sourcePlan,
-    context.profile,
-    request.planStartDate,
+    mergedProfileForRequest(context.profile, request),
+    localDate,
   );
   const estimate = estimateRaceTarget({
     request,
-    localDate: request.planStartDate,
+    localDate,
     stravaSummaries: context.stravaSummaries,
   });
-  const currentGoal = context.profile.goal;
 
   if (estimate == null) {
     const brief = buildCoachingBrief({
       profileData: {
-        ...context.profile,
+        ...mergedProfileForRequest(context.profile, request),
         goal: proposedGoal,
       },
       startDate: parseDateOnly(request.planStartDate)!,
-      raceDate: recommendation.raceDate,
+      raceDate: request.raceDate == null
+        ? null
+        : parseDateOnly(request.raceDate),
       requestedRaceType: request.race,
     });
     return jsonResponse({
@@ -312,12 +427,13 @@ async function previewGoal(
   userId: string,
   request: PreviewRequest,
 ): Promise<Response> {
+  const localDate = requestLocalDate(request);
   const context = await dependencies.loadPreviewContext(
     userId,
     request.sourcePlanVersionId,
   );
   if (context == null) {
-    return jsonResponse({ error: "source_plan_not_found" }, 409);
+    return jsonResponse({ error: "source_plan_stale" }, 409);
   }
 
   const proposedGoal: Goal = {
@@ -325,27 +441,30 @@ async function previewGoal(
     hasRaceDate: request.hasRaceDate,
     ...(request.raceDate == null ? {} : { raceDate: request.raceDate }),
   };
+  const mergedProfile = mergedProfileForRequest(context.profile, request);
 
   const recommendation = buildRecommendation(
     request,
     context.sourcePlan,
-    context.profile,
-    request.planStartDate,
+    mergedProfile,
+    localDate,
   );
   const estimate = estimateRaceTarget({
     request,
-    localDate: request.planStartDate,
+    localDate,
     stravaSummaries: context.stravaSummaries,
   });
 
   if (estimate == null) {
     const brief = buildCoachingBrief({
       profileData: {
-        ...context.profile,
+        ...mergedProfile,
         goal: proposedGoal,
       },
       startDate: parseDateOnly(request.planStartDate)!,
-      raceDate: recommendation.raceDate,
+      raceDate: request.raceDate == null
+        ? null
+        : parseDateOnly(request.raceDate),
       requestedRaceType: request.race,
     });
     return jsonResponse({
@@ -363,7 +482,7 @@ async function previewGoal(
   }
 
   const proposedProfile = addBackendEvidence({
-    ...context.profile,
+    ...mergedProfile,
     goal: proposedGoal,
   }, context.stravaSummaries);
   const acceptedRaceTarget = buildAcceptedRaceTarget({
@@ -375,6 +494,7 @@ async function previewGoal(
 
   const generationProfile = {
     ...proposedProfile,
+    acceptedRaceTarget,
     schedule: mergePlanStartDate(proposedProfile, request.planStartDate),
   } as CandidateProfile;
 
@@ -386,6 +506,14 @@ async function previewGoal(
   if (candidateResult instanceof Response) {
     return candidateResult;
   }
+  const safeCandidatePlan = recommendation.mode === "race_support"
+    ? applyRaceSupportSafety(candidateResult as JsonObject, {
+      hasRaceDate: request.hasRaceDate,
+      raceDate: request.raceDate,
+      planStartDate: request.planStartDate,
+      localDate,
+    })
+    : candidateResult as JsonObject;
 
   const now = dependencies.now();
   const proposalId = dependencies.randomId();
@@ -394,16 +522,13 @@ async function previewGoal(
     userId,
     proposalId,
     sourcePlanVersionId: request.sourcePlanVersionId,
-    candidatePlan: candidateResult as JsonObject,
+    candidatePlan: safeCandidatePlan,
     proposedGoal,
     proposedProfileFragment: buildAllowedProfileFragment({
-      profile: context.profile,
+      profile: mergedProfile,
       proposalProfile: acceptedRaceTarget == null ? {} : { acceptedRaceTarget },
       requestedPlanStartDate: request.planStartDate,
-      includeSchedule: true,
-      includeTrainingPreferences: true,
-      includeHealth: true,
-  }),
+    }),
     changeSummary: {
       sourceGoal: goalForResponse(context.profile),
       proposedGoal,
@@ -417,15 +542,24 @@ async function previewGoal(
     sourceProfileUpdatedAt: context.profileUpdatedAt,
   });
 
+  const summary = {
+    sourceGoal: goalForResponse(context.profile),
+    proposedGoal,
+    recommendationMode: recommendation.mode,
+  };
+
   return jsonResponse({
     sourceGoal: goalForResponse(context.profile),
     proposedGoal,
     recommendation,
     raceEstimate: estimate,
+    currentGoal: goalForResponse(context.profile),
+    summary,
     proposalId: stored.id,
     sourcePlanVersionId: request.sourcePlanVersionId,
     expiresAt: stored.expires_at,
-    candidatePlan: candidateResult,
+    candidatePlan: safeCandidatePlan,
+    warnings: [recommendation.mode],
   });
 }
 
@@ -449,13 +583,51 @@ async function acceptGoal(
   });
 }
 
-function raceDistanceKm(race: SupportedRace): number {
+function requestLocalDate(request: RecommendRequest | PreviewRequest): string {
+  return request.localDate ?? request.planStartDate;
+}
+
+function mergedProfileForRequest(
+  profile: JsonObject,
+  request: RecommendRequest | PreviewRequest,
+): JsonObject {
+  const baseSchedule = isRecord(profile.schedule) ? profile.schedule : {};
+  const baseTrainingPreferences = isRecord(profile.trainingPreferences)
+    ? profile.trainingPreferences
+    : {};
+  const baseHealth = isRecord(profile.health) ? profile.health : {};
+  const reviewedSchedule = isRecord(request.schedule) ? request.schedule : {};
+  const reviewedTrainingPreferences = isRecord(request.trainingPreferences)
+    ? request.trainingPreferences
+    : {};
+  const reviewedHealth = isRecord(request.health) ? request.health : {};
+
   return {
+    ...profile,
+    schedule: {
+      ...baseSchedule,
+      ...reviewedSchedule,
+      planStartDate: request.planStartDate,
+    },
+    trainingPreferences: {
+      ...baseTrainingPreferences,
+      ...reviewedTrainingPreferences,
+    },
+    health: {
+      ...baseHealth,
+      ...(request.healthChanged === true ? reviewedHealth : {}),
+    },
+  };
+}
+
+function raceDistanceKm(race: SupportedRace): number {
+  const map: Record<SupportedRace, number> = {
     race_5k: 5,
     race_10k: 10,
     race_half_marathon: 21.0975,
     race_marathon: 42.195,
-  }[race];
+  };
+  return map[race];
 }
 
 function buildRecommendation(
@@ -464,7 +636,8 @@ function buildRecommendation(
   profile: JsonObject,
   localDate: string,
 ): NewGoalRecommendationTimeline {
-  const startDate = parseDateOnly(localDate)!;
+  const planStartDate = parseDateOnly(request.planStartDate)!;
+  const localStartDate = parseDateOnly(localDate)!;
   const hasRaceDate = request.hasRaceDate;
   const brief = buildCoachingBrief({
     profileData: {
@@ -475,7 +648,7 @@ function buildRecommendation(
         ...(request.raceDate == null ? {} : { raceDate: request.raceDate }),
       },
     },
-    startDate,
+    startDate: planStartDate,
     raceDate: parseDateOnly(request.raceDate ?? "") ?? null,
     requestedRaceType: request.race,
   });
@@ -484,23 +657,34 @@ function buildRecommendation(
     return {
       mode: "no_fixed_date",
       startDate: request.planStartDate,
-      endDate: addDays(startDate, baseWeeks * 7 - 1),
+      endDate: addDays(planStartDate, baseWeeks * 7 - 1),
       weeks: baseWeeks,
       hasRaceDate: false,
+      raceDate: null,
+      daysToRace: 0,
     };
   }
 
-  const raceDate = parseDateOnly(request.raceDate!)!;
-  const daysToRace = Math.max(0, Math.round((raceDate.getTime() - startDate.getTime()) /
-    DAY_MS));
+  const raceDate = parseDateOnly(request.raceDate ?? "")!;
+  const daysToRace = Math.max(
+    0,
+    Math.round(
+      (raceDate.getTime() - localStartDate.getTime()) /
+        DAY_MS,
+    ),
+  );
+  const planStartDaysToRace = Math.max(
+    0,
+    Math.round((raceDate.getTime() - planStartDate.getTime()) / DAY_MS),
+  );
   if (daysToRace <= RACE_SUPPORT_DAYS) {
     return {
       mode: "race_support",
       startDate: request.planStartDate,
       endDate: request.raceDate!,
-      weeks: sourcePlanDurationWeeks(sourcePlan, daysToRace),
+      weeks: sourcePlanDurationWeeks(sourcePlan, planStartDaysToRace),
       hasRaceDate: true,
-      raceDate: request.raceDate,
+      raceDate: request.raceDate ?? null,
       daysToRace,
     };
   }
@@ -509,9 +693,9 @@ function buildRecommendation(
       mode: "short_fixed_date",
       startDate: request.planStartDate,
       endDate: request.raceDate!,
-      weeks: sourcePlanDurationWeeks(sourcePlan, daysToRace),
+      weeks: sourcePlanDurationWeeks(sourcePlan, planStartDaysToRace),
       hasRaceDate: true,
-      raceDate: request.raceDate,
+      raceDate: request.raceDate ?? null,
       daysToRace,
     };
   }
@@ -519,22 +703,25 @@ function buildRecommendation(
     mode: "standard",
     startDate: request.planStartDate,
     endDate: request.raceDate!,
-    weeks: sourcePlanDurationWeeks(sourcePlan, daysToRace),
+    weeks: sourcePlanDurationWeeks(sourcePlan, planStartDaysToRace),
     hasRaceDate: true,
-    raceDate: request.raceDate,
+    raceDate: request.raceDate ?? null,
     daysToRace,
   };
 }
 
-function sourcePlanDurationWeeks(sourcePlan: JsonObject, daysToRace: number): number {
-  const rawCurrentWeek = numberOrNull((sourcePlan.currentWeekNumber as unknown)) ?? 1;
+function sourcePlanDurationWeeks(
+  sourcePlan: JsonObject,
+  daysToRace: number,
+): number {
   return Math.max(
     1,
     Math.min(
       18,
-      daysToRace > 0 ? Math.ceil(daysToRace / 7) : Math.max(1, rawCurrentWeek),
-    numberOr(sourcePlan.totalWeeks, 1),
-  ));
+      daysToRace > 0 ? Math.ceil(daysToRace / 7) : 1,
+      numberOr(sourcePlan.totalWeeks, 18),
+    ),
+  );
 }
 
 export function estimateRaceTarget(input: {
@@ -576,8 +763,13 @@ function estimateFromManual(input: {
   if (!targetSeconds || targetSeconds <= 0) return null;
 
   const band = source.source === "assessment" ? 0.05 : 0.03;
-  let confidence: EstimateConfidence = source.source === "assessment" ? "medium" : "high";
-  if (input.race === "race_marathon" && !sameDistance(source.distanceKm, targetDistanceKm)) {
+  let confidence: EstimateConfidence = source.source === "assessment"
+    ? "medium"
+    : "high";
+  if (
+    input.race === "race_marathon" &&
+    !sameDistance(source.distanceKm, targetDistanceKm)
+  ) {
     confidence = "medium";
   }
   const faster = Math.max(1, Math.round(targetSeconds * (1 - band)));
@@ -605,6 +797,12 @@ function estimateFromStrava(input: {
   const targetDistanceKm = raceDistanceKm(input.race);
   const localDate = parseDateOnly(input.localDate);
   if (localDate == null) return null;
+  type ParsedSummary = {
+    recordedAt: Date;
+    distanceKm: number;
+    timeSeconds: number;
+    type: string;
+  };
   const parsed = input.summaries
     .map((summary) => {
       const recordedAt = parseDateOnly(trimDate(summary.recorded_at));
@@ -612,7 +810,11 @@ function estimateFromStrava(input: {
       const moving = finiteNumber(summary.moving_time_seconds);
       const elapsed = finiteNumber(summary.elapsed_time_seconds);
       const timeSeconds = moving ?? elapsed;
-      const type = summary.activity_type ?? summary.sport_type;
+      const type = typeof summary.activity_type === "string"
+        ? summary.activity_type
+        : typeof summary.sport_type === "string"
+        ? summary.sport_type
+        : null;
       return {
         recordedAt,
         distanceKm: distance == null ? null : distance / 1000,
@@ -620,28 +822,33 @@ function estimateFromStrava(input: {
         type,
       };
     })
-    .filter((row): row is {
-      recordedAt: Date;
-      distanceKm: number;
-      timeSeconds: number;
-      type: unknown;
-    } =>
+    .filter((row): row is ParsedSummary =>
       row.recordedAt != null &&
       row.distanceKm != null &&
       row.distanceKm >= 1 &&
+      row.timeSeconds != null &&
       row.timeSeconds > 0 &&
+      row.type != null &&
       isRunType(row.type) &&
-      row.recordedAt.getTime() <= localDate.getTime())
+      row.recordedAt.getTime() <= localDate.getTime()
+    )
     .filter((row) =>
-      (localDate.getTime() - row.recordedAt.getTime()) / DAY_MS <= EVIDENCE_WINDOW_DAYS
+      (localDate.getTime() - row.recordedAt.getTime()) / DAY_MS <=
+        EVIDENCE_WINDOW_DAYS
     )
     .map((row) => ({
       recordedOn: toDateOnly(row.recordedAt),
-      estimatedSeconds: riegelSeconds(row.timeSeconds, row.distanceKm, targetDistanceKm),
+      estimatedSeconds: riegelSeconds(
+        row.timeSeconds,
+        row.distanceKm,
+        targetDistanceKm,
+      ),
       isSameDistance: sameDistance(row.distanceKm, targetDistanceKm),
       recordedAt: row.recordedAt.getTime(),
     }))
-    .filter((row) => Number.isFinite(row.estimatedSeconds) && row.estimatedSeconds > 0)
+    .filter((row) =>
+      Number.isFinite(row.estimatedSeconds) && row.estimatedSeconds > 0
+    )
     .sort((a, b) => b.recordedAt - a.recordedAt);
 
   if (parsed.length === 0) return null;
@@ -654,10 +861,15 @@ function estimateFromStrava(input: {
   const hasSameDistance = parsed.some((entry) => entry.isSameDistance);
   let confidence: EstimateConfidence = hasSameDistance
     ? "medium"
-    : parsed.length >= 3 ? "medium" : "limited";
+    : parsed.length >= 3
+    ? "medium"
+    : "limited";
   const band = confidence === "medium" ? 0.06 : 0.1;
   const faster = Math.max(1, Math.round(centerTimeSeconds * (1 - band)));
-  const slower = Math.max(faster + 1, Math.round(centerTimeSeconds * (1 + band)));
+  const slower = Math.max(
+    faster + 1,
+    Math.round(centerTimeSeconds * (1 + band)),
+  );
   return {
     centerTimeSeconds,
     fasterTimeSeconds: faster,
@@ -675,9 +887,6 @@ function buildAllowedProfileFragment(input: {
   profile: JsonObject;
   proposalProfile: JsonObject;
   requestedPlanStartDate: string;
-  includeSchedule: boolean;
-  includeTrainingPreferences: boolean;
-  includeHealth: boolean;
 }): JsonObject {
   const fragment: JsonObject = {};
 
@@ -685,19 +894,185 @@ function buildAllowedProfileFragment(input: {
   if (accepted != null) {
     fragment.acceptedRaceTarget = accepted;
   }
-  if (input.includeSchedule && isRecord(input.profile.schedule)) {
+  if (isRecord(input.profile.schedule)) {
     fragment.schedule = {
       ...(input.profile.schedule as JsonObject),
       planStartDate: input.requestedPlanStartDate,
     };
   }
-  if (input.includeTrainingPreferences && isRecord(input.profile.trainingPreferences)) {
+  if (isRecord(input.profile.trainingPreferences)) {
     fragment.trainingPreferences = input.profile.trainingPreferences;
   }
-  if (input.includeHealth && isRecord(input.profile.health)) {
+  if (isRecord(input.profile.health)) {
     fragment.health = input.profile.health;
   }
   return fragment;
+}
+
+function applyRaceSupportSafety(
+  candidatePlan: JsonObject,
+  request: Pick<
+    PreviewRequest,
+    "hasRaceDate" | "raceDate" | "planStartDate" | "localDate"
+  >,
+): JsonObject {
+  if (!request.hasRaceDate || request.raceDate == null) return candidatePlan;
+  const parsedRaceDate = parseDateOnly(request.raceDate);
+  const parsedLocalDate = parseDateOnly(
+    request.localDate ?? request.planStartDate,
+  );
+  const parsedPlanStartDate = parseDateOnly(request.planStartDate);
+  if (
+    parsedRaceDate == null ||
+    parsedLocalDate == null ||
+    parsedPlanStartDate == null
+  ) return candidatePlan;
+  const supportStartDate = parsedLocalDate < parsedPlanStartDate
+    ? parsedPlanStartDate
+    : parsedLocalDate;
+  const daysToRace = (parsedRaceDate.getTime() - parsedLocalDate.getTime()) /
+    DAY_MS;
+  if (daysToRace > RACE_SUPPORT_DAYS) return candidatePlan;
+
+  const planSessions = Array.isArray(candidatePlan.sessions)
+    ? candidatePlan.sessions
+    : [];
+  const sessionsById = new Map(
+    planSessions.filter(isRecord).map((session) => [
+      String(session.id),
+      session,
+    ]),
+  );
+  const kept = dedupeSessionsByDateType(
+    sessionsFromPlan(candidatePlan).flatMap((session) => {
+      const candidateSession = sessionsById.get(session.id);
+      if (candidateSession == null) return [];
+      const sessionDate = parseDateOnly(session.date.slice(0, 10));
+      const sessionType = session.type;
+      if (
+        sessionDate == null ||
+        sessionDate.getTime() < supportStartDate.getTime() ||
+        sessionDate.getTime() > parsedRaceDate.getTime()
+      ) {
+        return [];
+      }
+      if (!RACE_SUPPORT_ALLOWED_SESSION_TYPES.has(sessionType)) return [];
+      const weekNumber = weekIndex(session.date, request.planStartDate);
+      if (weekNumber < 1) return [];
+      return [{
+        ...candidateSession,
+        type: sessionType,
+        weekNumber,
+      }];
+    }),
+  );
+  const typedKeptSessions = kept as Array<
+    { id: string; date: string; type: string }
+  >;
+  const hasStructuredSafety =
+    hasRaceSupportSafetyStructure(typedKeptSessions) &&
+    typedKeptSessions.every((session) =>
+      RACE_SUPPORT_ALLOWED_SESSION_TYPES.has(session.type)
+    );
+  if (hasStructuredSafety) {
+    return {
+      ...candidatePlan,
+      sessions: typedKeptSessions,
+    };
+  }
+
+  const fallbackSessions = buildDeterministicRaceSupportSessions(
+    supportStartDate,
+    parsedRaceDate,
+  );
+  return {
+    ...candidatePlan,
+    sessions: fallbackSessions.map((session) => ({
+      ...session,
+      weekNumber: Math.max(
+        1,
+        weekIndex(String(session.date), request.planStartDate),
+      ),
+    })),
+  };
+}
+
+function dedupeSessionsByDateType(sessions: JsonObject[]): JsonObject[] {
+  const seen = new Set<string>();
+  return sessions.filter((session) => {
+    if (!isRecord(session)) return false;
+    const date = typeof session.date === "string"
+      ? session.date.slice(0, 10)
+      : "";
+    const type = typeof session.type === "string" ? session.type : "";
+    const key = `${date}|${type}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function hasRaceSupportSafetyStructure(
+  sessions: { id: string; date: string; type: string }[],
+): boolean {
+  if (sessions.length === 0) return false;
+  const types = new Set(sessions.map((session) => session.type));
+  return types.has("restDay") && types.has("easyRun") &&
+    types.has("raceDay");
+}
+
+function buildDeterministicRaceSupportSessions(
+  planStartDate: Date,
+  raceDate: Date,
+): JsonObject[] {
+  const fallbackSessions: JsonObject[] = [];
+  if (planStartDate.getTime() <= raceDate.getTime()) {
+    fallbackSessions.push({
+      id: "race-support-rest",
+      date: toDateOnly(planStartDate),
+      type: "restDay",
+      distanceKm: 0,
+      durationMinutes: 30,
+    });
+  }
+
+  const easyDate = new Date(
+    Math.min(
+      planStartDate.getTime() + DAY_MS,
+      raceDate.getTime() - DAY_MS,
+    ),
+  );
+  const easyDateOnly = toDateOnly(easyDate);
+  if (
+    easyDate.getTime() < raceDate.getTime() &&
+    easyDate.getTime() >= planStartDate.getTime() - DAY_MS &&
+    easyDateOnly !== toDateOnly(planStartDate)
+  ) {
+    fallbackSessions.push({
+      id: "race-support-easy",
+      date: easyDateOnly,
+      type: "easyRun",
+      distanceKm: 5,
+      durationMinutes: 30,
+    });
+  }
+
+  fallbackSessions.push({
+    id: "race-support-race-day",
+    date: toDateOnly(raceDate),
+    type: "raceDay",
+    distanceKm: 0,
+    durationMinutes: 30,
+  });
+
+  return dedupeSessionsByDateType(fallbackSessions);
+}
+
+function weekIndex(date: string, planStartDate: string): number {
+  const planned = parseDateOnly(planStartDate);
+  const current = parseDateOnly(date);
+  if (planned == null || current == null) return 1;
+  return Math.floor((current.getTime() - planned.getTime()) / (DAY_MS * 7)) + 1;
 }
 
 function buildAcceptedRaceTarget(input: {
@@ -718,9 +1093,47 @@ function buildAcceptedRaceTarget(input: {
       generatedAt: input.generatedAt.toISOString(),
       estimatorVersion: 1,
     },
-    evidence: input.estimate.evidence,
+    evidence: buildAcceptedRaceTargetEvidence(input.estimate),
     planStartDate: input.localDate,
   };
+}
+
+function buildAcceptedRaceTargetEvidence(
+  estimate: NewGoalRaceEstimate,
+): CanonicalEvidence[] {
+  return estimate.evidence
+    .filter((entry) => entry.recordedOn != null)
+    .map((entry) => ({
+      metric: `${entry.source}_${entry.reason}`,
+      date: entry.recordedOn!,
+      value: estimate.centerTimeSeconds,
+      unit: "seconds",
+    }));
+}
+
+function validateRequestLocalDate(
+  localDate: string,
+  now: Date,
+): Response | null {
+  const serverDate = parseDateOnly(toDateOnly(now));
+  const requestedDate = parseDateOnly(localDate);
+  if (serverDate == null || requestedDate == null) {
+    return null;
+  }
+  const driftDays = Math.abs(
+    (requestedDate.getTime() - serverDate.getTime()) / DAY_MS,
+  );
+  if (driftDays <= LOCAL_DATE_DRIFT_TOLERANCE_DAYS) {
+    return null;
+  }
+  return jsonResponse({
+    error: "invalid_request",
+    detail: [{
+      path: ["localDate"],
+      message:
+        `localDate must be within ${LOCAL_DATE_DRIFT_TOLERANCE_DAYS} days of server date`,
+    }],
+  }, 400);
 }
 
 export function buildFitnessCheck(input: {
@@ -748,7 +1161,8 @@ export function buildFitnessCheck(input: {
     const distanceMeters = numberOrNull(row.distance_meters);
     const elapsedSeconds = numberOrNull(row.elapsed_time_seconds) ??
       numberOrNull(row.moving_time_seconds);
-    const activity = `${row.activity_type ?? ""} ${row.sport_type ?? ""}`.toLowerCase();
+    const activity = `${row.activity_type ?? ""} ${row.sport_type ?? ""}`
+      .toLowerCase();
     if (
       recordedAt == null ||
       distanceMeters == null ||
@@ -770,10 +1184,11 @@ export function buildFitnessCheck(input: {
     }];
   }).slice(0, 3);
 
-  const benchmarkKind: "one_km_run" | "five_k_run" = input.brief.recentLongRunKm >= 8 &&
+  const benchmarkKind: "one_km_run" | "five_k_run" =
+    input.brief.recentLongRunKm >= 8 &&
       input.brief.currentRunsPerWeek >= 2
-    ? "five_k_run"
-    : "one_km_run";
+      ? "five_k_run"
+      : "one_km_run";
 
   return {
     suggestedActivities,
@@ -784,7 +1199,10 @@ export function buildFitnessCheck(input: {
   };
 }
 
-function safeAssessmentDates(sourcePlan: JsonObject, localDate: string): string[] {
+function safeAssessmentDates(
+  sourcePlan: JsonObject,
+  localDate: string,
+): string[] {
   const hardDates = sessionsFromPlan(sourcePlan).filter((session) =>
     isHardOrLongSession(session)
   ).map((session) => session.date.slice(0, 10)).map(parseDateOnly).filter(
@@ -818,7 +1236,10 @@ function dateOnlyFromDateOnly(value: string, offsetDays: number): string {
   return addDays(parseDateOnly(value) ?? new Date(), offsetDays);
 }
 
-function mergePlanStartDate(profile: JsonObject, planStartDate: string): JsonObject {
+function mergePlanStartDate(
+  profile: JsonObject,
+  planStartDate: string,
+): JsonObject {
   const schedule = isRecord(profile.schedule) ? profile.schedule : {};
   return {
     ...schedule,
@@ -832,9 +1253,8 @@ function goalForResponse(profile: JsonObject): Goal {
   const hasRaceDate = typeof goal.hasRaceDate === "boolean"
     ? goal.hasRaceDate
     : false;
-  const raceDate = hasRaceDate ? typeof goal.raceDate === "string"
-    ? goal.raceDate
-    : undefined
+  const raceDate = hasRaceDate
+    ? typeof goal.raceDate === "string" ? goal.raceDate : undefined
     : undefined;
   return {
     race,
@@ -855,7 +1275,11 @@ export function mapRpcError(
     ["new_goal_source_profile_stale", "source_profile_stale", 409],
     ["new_goal_source_plan_stale", "source_plan_stale", 409],
     ["new_goal_source_plan_not_active", "source_plan_stale", 409],
-    ["new_goal_profile_fragment_restricted", "proposal_fragment_restricted", 400],
+    [
+      "new_goal_profile_fragment_restricted",
+      "proposal_fragment_restricted",
+      400,
+    ],
     ["new_goal_runner_profile_not_found", "profile_not_found", 404],
     ["new_goal_invalid_expiry", "invalid_expiry", 400],
   ];
@@ -879,7 +1303,8 @@ export function createProductionDependencies(
     },
     async loadPreviewContext(userId, sourcePlanVersionId) {
       const [profileResult, planResult, summaryResult] = await Promise.all([
-        admin.from("runner_profiles").select("data,schema_version,updated_at").eq("user_id", userId).maybeSingle(),
+        admin.from("runner_profiles").select("data,schema_version,updated_at")
+          .eq("user_id", userId).maybeSingle(),
         admin.from("plan_versions").select("id,data").eq("user_id", userId)
           .eq("id", sourcePlanVersionId)
           .eq("is_active", true).maybeSingle(),
@@ -896,16 +1321,17 @@ export function createProductionDependencies(
       const profileUpdatedAt = typeof profileRow?.updated_at === "string"
         ? profileRow.updated_at
         : profileRow?.updated_at instanceof Date
-          ? profileRow.updated_at.toISOString()
-          : null;
+        ? profileRow.updated_at.toISOString()
+        : null;
       const profileSchemaVersion = isInteger(profileRow?.schema_version)
         ? profileRow.schema_version
         : null;
-      if (!isRecord(profileRow?.data) ||
-          !isRecord(profileUpdatedAt) ||
-          !isInteger(profileSchemaVersion) ||
-          !isRecord(planResult.data?.data) ||
-          !isString(planResult.data?.id)
+      if (
+        !isRecord(profileRow?.data) ||
+        !isString(profileUpdatedAt) ||
+        !isInteger(profileSchemaVersion) ||
+        !isRecord(planResult.data?.data) ||
+        !isString(planResult.data?.id)
       ) {
         return null;
       }
@@ -915,21 +1341,24 @@ export function createProductionDependencies(
         sourcePlan: planResult.data.data,
         profileSchemaVersion,
         profileUpdatedAt,
-        stravaSummaries: (summaryResult.data ?? []) as StravaActivitySummaryForEvidence[],
+        stravaSummaries:
+          (summaryResult.data ?? []) as StravaActivitySummaryForEvidence[],
       };
     },
     async buildCandidate({ profile, planStartDate, locale }) {
-      const generationStartedAt = parseDateOnly(planStartDate)!;
-      const generatedStart = planStartDate;
-      const generatedProfile = {
+      const generationProfile: CandidateProfile = {
         ...profile,
         schedule: isRecord(profile.schedule)
           ? { ...(profile.schedule as JsonObject), planStartDate }
           : { planStartDate },
       };
-      const goal = isRecord(generatedProfile.goal) ? generatedProfile.goal : {};
+      const generationStartedAt = parseDateOnly(planStartDate)!;
+      const generatedStart = planStartDate;
+      const goal = isRecord(generationProfile.goal)
+        ? generationProfile.goal
+        : {};
       const brief = buildCoachingBrief({
-        profileData: generatedProfile,
+        profileData: generationProfile,
         startDate: generationStartedAt,
         raceDate: parseDateOnly(
           isRecord(goal) && typeof goal.raceDate === "string"
@@ -938,18 +1367,23 @@ export function createProductionDependencies(
         ),
         requestedRaceType: typeof goal.race === "string" ? goal.race : null,
       });
-      const sanitized = sanitizeProfileForOpenAi(generatedProfile as unknown as JsonObject);
+      const sanitized = sanitizeProfileForOpenAi(
+        generationProfile as unknown as JsonObject,
+      );
+      const sanitizedFitness = isRecord((sanitized as JsonObject).fitness)
+        ? (sanitized as JsonObject).fitness
+        : {};
       return await buildCandidatePlan({
-        generationProfileWithPlanStartDate: generatedProfile as CandidateProfile,
+        generationProfileWithPlanStartDate: generationProfile,
         sanitizedGenerationProfile: sanitized as CandidateProfile,
         generationStartedAt,
         resolvedPlanStartDate: generatedStart,
         locale,
         coachingBrief: brief,
         expectedWeeks: brief.planLengthWeeks,
-        stravaSnapshotSource: isRecord((sanitized as JsonObject).fitness)
-          ? isRecord((sanitized as JsonObject).fitness!.stravaCoachingProfile)
-            ? sanitized.fitness.stravaCoachingProfile
+        stravaSnapshotSource: isRecord(sanitizedFitness)
+          ? isRecord(sanitizedFitness.stravaCoachingProfile)
+            ? sanitizedFitness.stravaCoachingProfile
             : undefined
           : undefined,
       });
@@ -972,7 +1406,10 @@ export function createProductionDependencies(
       });
       if (error != null) throw error;
       const row = Array.isArray(data) ? data[0] : data;
-      if (!isRecord(row) || typeof row.id !== "string" || typeof row.expires_at !== "string") {
+      if (
+        !isRecord(row) || typeof row.id !== "string" ||
+        typeof row.expires_at !== "string"
+      ) {
         throw new Error("Invalid store_new_goal_proposal response");
       }
       return row as StoredProposal;
@@ -1038,9 +1475,12 @@ function addBackendEvidence(
   };
 }
 
-function sessionsFromPlan(plan: JsonObject): { id: string; date: string; type: string }[] {
+function sessionsFromPlan(
+  plan: JsonObject,
+): { id: string; date: string; type: string }[] {
   if (!Array.isArray(plan.sessions)) return [];
-  return plan.sessions.filter((session) => isRecord(session) &&
+  return plan.sessions.filter((session) =>
+    isRecord(session) &&
     typeof session.id === "string" &&
     typeof session.date === "string" &&
     parseDateOnly(session.date.slice(0, 10)) != null
@@ -1061,28 +1501,6 @@ function isHardOrLongSession(session: { type: string }): boolean {
     "fartlek",
     "progressionRun",
   ]).has(session.type);
-}
-
-function buildCoachingSummary(profile: JsonObject, request: NewGoalRequest): ReturnType<
-  typeof buildCoachingBrief
-> | null {
-  const goal = {
-    race: request.race,
-    hasRaceDate: request.hasRaceDate,
-    ...(request.raceDate == null ? {} : { raceDate: request.raceDate }),
-  };
-  try {
-    return buildCoachingBrief({
-      profileData: { ...profile, goal },
-      startDate: parseDateOnly(request.planStartDate) ?? new Date(),
-      raceDate: request.raceDate == null
-        ? null
-        : parseDateOnly(request.raceDate),
-      requestedRaceType: request.race,
-    });
-  } catch (_) {
-    return null;
-  }
 }
 
 function parseDateOnly(value: string): Date | null {
@@ -1135,10 +1553,20 @@ function finiteNumber(value: unknown): number | null {
 
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
-  if (isRecord(error) && typeof error.message === "string") return error.message;
+  if (isRecord(error) && typeof error.message === "string") {
+    return error.message;
+  }
   return String(error);
 }
 
 function isSupportedRace(value: unknown): value is SupportedRace {
-  return typeof value === "string" && SupportedRaceSchema.safeParse(value).success;
+  return typeof value === "string" &&
+    SupportedRaceSchema.safeParse(value).success;
+}
+
+function evidenceValue(
+  evidence: readonly { metric: string; value: number }[],
+  metric: string,
+): number | undefined {
+  return evidence.find((row) => row.metric === metric)?.value;
 }
