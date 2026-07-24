@@ -707,6 +707,7 @@ Deno.test("preview race-support fallback starts at max(localDate, planStartDate)
         expires_at: input.expiresAt,
       };
     },
+    now: () => new Date("2026-07-18T12:00:00.000Z"),
   }))(request(previewBody({
     fitnessResult: manualResult(),
     hasRaceDate: true,
