@@ -881,7 +881,7 @@ class NewGoalNotifier extends Notifier<NewGoalState> {
         _setFailure(draft, sourcePlanId, NewGoalFailureReason.parse);
         return false;
       }
-      if (_isExpired(proposal.expiresAt)) {
+      if (_isExpired(proposal.expiresAt, ref.read(newGoalClockProvider)())) {
         _setFailure(draft, sourcePlanId, NewGoalFailureReason.expired);
         return false;
       }

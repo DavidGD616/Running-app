@@ -321,6 +321,52 @@ void main() {
     },
   );
 
+  test(
+    'preview expiration uses injected clock, while apply still uses injected clock too',
+    () async {
+      final calls = <Object?>[];
+      final hostNow = DateTime.now();
+      final injectedNow = hostNow.subtract(const Duration(days: 30));
+      final proposalExpiresAt = hostNow.subtract(const Duration(days: 1));
+
+      final container = _container(
+        now: injectedNow,
+        preferences: preferences,
+        client: (_, {body}) async {
+          calls.add(body);
+          final action = (body! as Map<String, dynamic>)['action'];
+          if (action == 'recommend') {
+            return FunctionResponse(data: _recommendationJson(), status: 200);
+          }
+          if (action == 'preview') {
+            return FunctionResponse(
+              data: _proposalJson(
+                expiresAt: proposalExpiresAt.toIso8601String(),
+              ),
+              status: 200,
+            );
+          }
+          if (action == 'accept') {
+            return FunctionResponse(data: _acceptanceJson(), status: 200);
+          }
+          return FunctionResponse(data: {'error': 'invalid'}, status: 400);
+        },
+      );
+      addTearDown(container.dispose);
+      final editing = await _editingState(container);
+      container
+          .read(newGoalProvider.notifier)
+          .updateDraft(editing.draft.copyWith(planStartDate: injectedNow));
+
+      expect(await container.read(newGoalProvider.notifier).recommend(), isTrue);
+      expect(await container.read(newGoalProvider.notifier).preview(), isTrue);
+      expect(container.read(newGoalProvider), isA<NewGoalProposalReady>());
+      expect(calls, hasLength(2));
+      expect(await container.read(newGoalProvider.notifier).apply(), isTrue);
+      expect(container.read(newGoalProvider), isA<NewGoalSuccess>());
+    },
+  );
+
   test('apply sends accept action and clears draft storage', () async {
     final calls = <Object?>[];
     final container = _container(
@@ -476,10 +522,13 @@ Map<String, dynamic> _fitnessCheckResponse() => {
   },
 };
 
-Map<String, dynamic> _proposalJson({String sourcePlanId = 'active-plan'}) => {
+Map<String, dynamic> _proposalJson({
+  String sourcePlanId = 'active-plan',
+  String? expiresAt,
+}) => {
   'proposalId': 'proposal-1',
   'sourcePlanVersionId': sourcePlanId,
-  'expiresAt': '2099-12-31T23:59:59.000Z',
+  'expiresAt': expiresAt ?? '2099-12-31T23:59:59.000Z',
   'sourceGoal': {
     'race': 'race_half_marathon',
     'hasRaceDate': true,
