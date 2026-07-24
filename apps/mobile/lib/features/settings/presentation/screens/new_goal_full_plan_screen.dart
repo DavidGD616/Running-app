@@ -4,10 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../full_plan/presentation/screens/full_plan_screen.dart';
 import '../new_goal_provider.dart';
 
-_candidatePlanFromState(NewGoalState state) {
+TrainingPlan? _candidatePlanFromState(NewGoalState state) {
   return switch (state) {
     NewGoalProposalReady(:final proposal) => proposal.candidatePlan,
     NewGoalApplying(:final proposal) => proposal.candidatePlan,
