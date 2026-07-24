@@ -804,10 +804,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get scheduleTitle => 'Your Schedule';
 
   @override
+  String get settingsNewGoalScheduleSection => 'Schedule';
+
+  @override
   String get scheduleSubtitle => 'Tell us when you can realistically train.';
 
   @override
   String get scheduleStartDateLabel => 'Plan start date';
+
+  @override
+  String get scheduleStartDate => 'Pick start date';
 
   @override
   String get scheduleStartDateToday => 'Today';
@@ -929,6 +935,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get timeOfDayNoPreference => 'No preference';
+
+  @override
+  String get preferredTimeOfDayLabel => 'Preferred time of day';
 
   @override
   String get healthTitle => 'Health & Injury';

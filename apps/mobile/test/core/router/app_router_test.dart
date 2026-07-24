@@ -2,13 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:running_app/core/persistence/shared_preferences_provider.dart';
+import 'package:running_app/core/widgets/app_button.dart';
 import 'package:running_app/features/onboarding/presentation/onboarding_provider.dart';
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/settings/presentation/edit_goal_provider.dart';
 import 'package:running_app/features/settings/presentation/screens/edit_goal_form_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_health_evidence_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_intro_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_preferences_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_race_date_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_schedule_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_review_screen.dart';
 import 'package:running_app/features/settings/presentation/screens/settings_goal_intro_screen.dart';
 import 'package:running_app/features/user_preferences/data/supabase_user_preferences_repository.dart';
+import 'package:running_app/features/settings/presentation/new_goal_provider.dart';
+import 'package:running_app/features/settings/domain/new_goal_models.dart';
+import 'package:running_app/features/training_plan/domain/models/session_type.dart';
+import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
+import 'package:running_app/features/training_plan/domain/models/training_session.dart';
 import 'package:running_app/core/router/app_router.dart';
 import 'package:running_app/core/router/route_names.dart';
 import 'package:running_app/l10n/app_localizations.dart';
@@ -21,7 +34,145 @@ class _TestOnboardingNotifier extends OnboardingNotifier {
   Future<RunnerProfileDraft> build() async => const RunnerProfileDraft();
 }
 
+class _StaticNewGoalNotifier extends NewGoalNotifier {
+  _StaticNewGoalNotifier(this._state);
+
+  final NewGoalState _state;
+
+  @override
+  NewGoalState build() => _state;
+}
+
+RunnerProfile _newGoalProfileWithPlanStart({required DateTime date}) {
+  final profile = buildRunnerProfile();
+  return profile.copyWith(
+    schedule: ScheduleProfile(
+      trainingDays: profile.schedule.trainingDays,
+      longRunDay: profile.schedule.longRunDay,
+      weekdayTime: profile.schedule.weekdayTime,
+      weekendTime: profile.schedule.weekendTime,
+      hardDays: profile.schedule.hardDays,
+      preferredTimeOfDay: profile.schedule.preferredTimeOfDay,
+      planStartDate: date,
+    ),
+  );
+}
+
+NewGoalDraft? _draftFromState(NewGoalState state) => switch (state) {
+  NewGoalEditing(:final draft) => draft,
+  NewGoalRecommendationLoading(:final draft) => draft,
+  NewGoalProposalLoading(:final draft) => draft,
+  NewGoalProposalReady(:final draft) => draft,
+  NewGoalFitnessCheckRequired(:final draft) => draft,
+  NewGoalAssessmentPending(:final draft) => draft,
+  NewGoalRecommendationReady(:final draft) => draft,
+  NewGoalApplying(:final draft) => draft,
+  NewGoalFailure(:final draft) => draft,
+  NewGoalLoading() => null,
+  NewGoalSuccess() => null,
+};
+
+TrainingPlan _proposalTrainingPlanFixture({
+  DateTime? sessionDate,
+  double distanceKm = 5.5,
+  int durationMinutes = 95,
+}) {
+  final resolvedSessionDate = sessionDate ?? DateTime(2026, 7, 23);
+  return TrainingPlan(
+    id: 'proposal-plan-1',
+    raceType: TrainingPlanRaceType.halfMarathon,
+    totalWeeks: 12,
+    currentWeekNumber: 1,
+    sessions: [
+      TrainingSession(
+        id: 'proposal-session-1',
+        date: resolvedSessionDate,
+        type: SessionType.easyRun,
+        status: SessionStatus.upcoming,
+        distanceKm: distanceKm,
+        durationMinutes: durationMinutes,
+      ),
+    ],
+  );
+}
+
+NewGoalGoal _proposalGoalFixture() {
+  return NewGoalGoal(
+    race: RunnerGoalRace.halfMarathon,
+    hasRaceDate: true,
+    raceDate: DateTime(2026, 10, 18),
+  );
+}
+
+NewGoalRecommendation _proposalRecommendationFixture(NewGoalGoal goal) {
+  return NewGoalRecommendation(
+    sourceGoal: goal,
+    proposedGoal: goal,
+    timelineMode: 'short_term',
+    timelineDate: DateTime(2026, 7, 23),
+    timelineWeeks: 12,
+    timelineEndDate: DateTime(2026, 10, 15),
+    timelineHasRaceDate: true,
+    timelineRaceDate: DateTime(2026, 10, 18),
+    daysToRace: 87,
+  );
+}
+
+NewGoalProposal _proposalFixture({
+  NewGoalGoal? goal,
+  TrainingPlan? candidatePlan,
+}) {
+  final resolvedGoal = goal ?? _proposalGoalFixture();
+  final resolvedPlan = candidatePlan ?? _proposalTrainingPlanFixture();
+  return NewGoalProposal(
+    id: 'proposal-1',
+    sourcePlanVersionId: 'active-plan',
+    expiresAt: DateTime(2026, 12, 31),
+    sourceGoal: resolvedGoal,
+    currentGoal: resolvedGoal,
+    proposedGoal: resolvedGoal,
+    candidatePlan: resolvedPlan,
+    summary: const {},
+    warnings: const [],
+  );
+}
+
+NewGoalState _proposalReadyStateFixture() {
+  final proposal = _proposalFixture();
+  final goal = proposal.currentGoal;
+  return NewGoalProposalReady(
+    draft: NewGoalDraft.fromProfile(
+      profile: _newGoalProfileWithPlanStart(
+        date: DateTime(2026, 7, 31),
+      ),
+    ),
+    sourcePlanId: 'active-plan',
+    recommendation: _proposalRecommendationFixture(goal),
+    proposal: proposal,
+  );
+}
+
+NewGoalState _successStateFixture() {
+  final proposal = _proposalFixture();
+  return NewGoalSuccess(
+    acceptance: NewGoalAcceptance(
+      versionId: 'acceptance-1',
+      plan: proposal.candidatePlan,
+      profile: _newGoalProfileWithPlanStart(
+        date: DateTime(2026, 7, 31),
+      ),
+    ),
+    proposal: proposal,
+  );
+}
+
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  setUpAll(() async {
+    await initializeDateFormatting('en');
+    await initializeDateFormatting('es');
+  });
+
   test('loading bootstrap keeps the splash route active', () {
     final redirect = resolveAppRedirect(
       matchedLocation: RouteNames.splash,
@@ -256,8 +407,253 @@ void main() {
       appRouter.go(RouteNames.settingsUpdatePlanNewGoal);
       await tester.pumpAndSettle();
 
-      expect(find.byType(SettingsGoalIntroScreen), findsOneWidget);
+      expect(find.byType(NewGoalIntroScreen), findsOneWidget);
       expect(find.byType(EditGoalFormScreen), findsNothing);
     },
   );
+
+  testWidgets(
+    'New Goal input flow advances through race, schedule, training, health, and summary',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            userPreferencesRepositoryProvider.overrideWithValue(
+              SharedPreferencesUserPreferencesRepository(prefs),
+            ),
+            appBootstrapStateProvider.overrideWithValue(
+              AppBootstrapState.authenticatedReady,
+            ),
+            newGoalInitialDataLoaderProvider.overrideWithValue(
+              () async => NewGoalInitialData(
+                profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
+                activePlanId: 'active-plan',
+              ),
+            ),
+            newGoalClockProvider.overrideWithValue(
+              () => DateTime(2026, 7, 31),
+            ),
+            newGoalLocaleCodeProvider.overrideWithValue('en'),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(appRouterProvider);
+              return MaterialApp.router(
+                locale: const Locale('en'),
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('en'), Locale('es')],
+                routerConfig: appRouter,
+              );
+            },
+          ),
+        ),
+      );
+      final appRouter = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      ).read(appRouterProvider);
+
+      appRouter.go(RouteNames.settingsUpdatePlanNewGoalForm);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NewGoalRaceDateScreen), findsOneWidget);
+      await tester.tap(find.widgetWithText(AppButton, 'Continue'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NewGoalScheduleScreen), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Continue'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NewGoalPreferencesScreen), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Continue'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NewGoalHealthEvidenceScreen), findsOneWidget);
+
+      await tester.tap(find.widgetWithText(AppButton, 'Continue'));
+      await tester.pumpAndSettle();
+      expect(find.byType(NewGoalReviewScreen), findsOneWidget);
+    },
+  );
+
+  testWidgets('New Goal draft-backed values persist after back navigation', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalInitialDataLoaderProvider.overrideWithValue(
+            () async => NewGoalInitialData(
+              profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
+              activePlanId: 'active-plan',
+            ),
+          ),
+          newGoalClockProvider.overrideWithValue(() => DateTime(2026, 7, 31)),
+          newGoalLocaleCodeProvider.overrideWithValue('en'),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+    final container = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    );
+    final appRouter = container.read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalForm);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewGoalRaceDateScreen), findsOneWidget);
+
+    await tester.tap(find.text('5K'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('No'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(AppButton, 'Continue'));
+    await tester.pumpAndSettle();
+    expect(find.byType(NewGoalScheduleScreen), findsOneWidget);
+
+    appRouter.pop();
+    await tester.pumpAndSettle();
+
+    final draft = _draftFromState(container.read(newGoalProvider));
+    expect(draft, isNotNull);
+    expect(draft!.race, RunnerGoalRace.fiveK);
+    expect(draft.hasRaceDate, isFalse);
+  });
+
+  testWidgets(
+    'Proposal mode renders Spanish session values with locale-aware formatting',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            userPreferencesRepositoryProvider.overrideWithValue(
+              SharedPreferencesUserPreferencesRepository(prefs),
+            ),
+            appBootstrapStateProvider.overrideWithValue(
+              AppBootstrapState.authenticatedReady,
+            ),
+            newGoalProvider.overrideWith(
+              () => _StaticNewGoalNotifier(_proposalReadyStateFixture()),
+            ),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(appRouterProvider);
+              return MaterialApp.router(
+                locale: const Locale('es'),
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('en'), Locale('es')],
+                routerConfig: appRouter,
+              );
+            },
+          ),
+        ),
+      );
+      final appRouter = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      ).read(appRouterProvider);
+
+      appRouter.go(RouteNames.settingsUpdatePlanNewGoalProposal);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('Carrera Suave'), findsOneWidget);
+      expect(find.textContaining('5,5'), findsOneWidget);
+      expect(find.textContaining('1h 35m'), findsOneWidget);
+    },
+  );
+
+  testWidgets('Success secondary CTA routes to the plan tab', (tester) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalProvider.overrideWith(
+            () => _StaticNewGoalNotifier(_successStateFixture()),
+          ),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+    final appRouter = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    ).read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalReady);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.widgetWithText(AppButton, 'View Plan'));
+    await tester.pumpAndSettle();
+
+    expect(
+      appRouter.routerDelegate.currentConfiguration.uri.path,
+      RouteNames.plan,
+    );
+  });
 }

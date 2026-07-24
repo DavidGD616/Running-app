@@ -626,11 +626,17 @@
   "scheduleTitle": "Your Schedule",
   "@scheduleTitle": { "description": "Heading on the schedule screen" },
 
+  "settingsNewGoalScheduleSection": "Schedule",
+  "@settingsNewGoalScheduleSection": { "description": "Label for the schedule details step in the new-goal settings flow" },
+
   "scheduleSubtitle": "Tell us when you can realistically train.",
   "@scheduleSubtitle": { "description": "Subtitle on the schedule screen" },
 
   "scheduleStartDateLabel": "Plan start date",
   "@scheduleStartDateLabel": { "description": "Label for the onboarding plan start date section" },
+
+  "scheduleStartDate": "Pick start date",
+  "@scheduleStartDate": { "description": "Schedule screen hint for date field" },
 
   "scheduleStartDateToday": "Today",
   "@scheduleStartDateToday": { "description": "Onboarding plan start date option" },
@@ -762,6 +768,9 @@
 
   "timeOfDayNoPreference": "No preference",
   "@timeOfDayNoPreference": { "description": "Time of day chip: no preference" },
+
+  "preferredTimeOfDayLabel": "Preferred time of day",
+  "@preferredTimeOfDayLabel": { "description": "Section label on schedule screen" },
 
   "healthTitle": "Health & Injury",
   "@healthTitle": { "description": "Heading on the health & injury screen" },

@@ -1507,6 +1507,12 @@ abstract class AppLocalizations {
   /// **'Your Schedule'**
   String get scheduleTitle;
 
+  /// Label for the schedule details step in the new-goal settings flow
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule'**
+  String get settingsNewGoalScheduleSection;
+
   /// Subtitle on the schedule screen
   ///
   /// In en, this message translates to:
@@ -1518,6 +1524,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Plan start date'**
   String get scheduleStartDateLabel;
+
+  /// Schedule screen hint for date field
+  ///
+  /// In en, this message translates to:
+  /// **'Pick start date'**
+  String get scheduleStartDate;
 
   /// Onboarding plan start date option
   ///
@@ -1752,6 +1764,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No preference'**
   String get timeOfDayNoPreference;
+
+  /// Section label on schedule screen
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred time of day'**
+  String get preferredTimeOfDayLabel;
 
   /// Heading on the health & injury screen
   ///

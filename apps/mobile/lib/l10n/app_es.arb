@@ -256,8 +256,11 @@
   "yourBenchmarkTime": "Tu tiempo de referencia",
 
   "scheduleTitle": "Tu Horario",
+  "settingsNewGoalScheduleSection": "Horario",
+  "@settingsNewGoalScheduleSection": { "description": "Etiqueta del paso de programación del flujo de nuevo objetivo en ajustes" },
   "scheduleSubtitle": "Cuéntanos cuándo puedes entrenar de forma realista.",
   "scheduleStartDateLabel": "Inicio del plan",
+  "scheduleStartDate": "Selecciona la fecha de inicio",
   "scheduleStartDateToday": "Hoy",
   "scheduleStartDateTomorrow": "Mañana",
   "scheduleStartDateNextMonday": "Próximo lunes",
@@ -313,6 +316,8 @@
   "timeOfDayAfternoon": "Tarde",
   "timeOfDayEvening": "Noche",
   "timeOfDayNoPreference": "Sin preferencia",
+
+  "preferredTimeOfDayLabel": "Hora preferida del día",
 
   "healthTitle": "Salud y Lesiones",
   "healthSubtitle": "Ayúdanos a entender tus limitaciones para que tu plan sea seguro.",

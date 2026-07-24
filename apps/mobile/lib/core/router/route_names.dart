@@ -53,16 +53,30 @@ abstract class RouteNames {
   static const settingsUpdatePlanNewGoal = '/settings/update-plan/new-goal';
   static const settingsUpdatePlanNewGoalForm =
       '/settings/update-plan/new-goal/form';
+  static const settingsUpdatePlanNewGoalHealth =
+      '/settings/update-plan/new-goal/health';
   static const settingsUpdatePlanNewGoalSchedule =
       '/settings/update-plan/new-goal/schedule';
   static const settingsUpdatePlanNewGoalTraining =
       '/settings/update-plan/new-goal/training';
   static const settingsUpdatePlanNewGoalSummary =
-      '/settings/update-plan/new-goal/summary';
+      '/settings/update-plan/new-goal/recommendation';
+  static const settingsUpdatePlanNewGoalRecommendation =
+      settingsUpdatePlanNewGoalSummary;
   static const settingsUpdatePlanNewGoalGenerating =
-      '/settings/update-plan/new-goal/generating';
+      '/settings/update-plan/new-goal/fitness';
+  static const settingsUpdatePlanNewGoalFitness =
+      settingsUpdatePlanNewGoalGenerating;
+  static const settingsUpdatePlanNewGoalManualResult =
+      '/settings/update-plan/new-goal/manual-result';
+  static const settingsUpdatePlanNewGoalProposal =
+      '/settings/update-plan/new-goal/proposal';
+  static const settingsUpdatePlanNewGoalFullPlan =
+      '/settings/update-plan/new-goal/full-plan';
   static const settingsUpdatePlanNewGoalReady =
-      '/settings/update-plan/new-goal/ready';
+      '/settings/update-plan/new-goal/success';
+  static const settingsUpdatePlanNewGoalSuccess =
+      settingsUpdatePlanNewGoalReady;
   static const settingsUpdatePlanSchedule = '/settings/update-plan/schedule';
   static const settingsLanguage = '/settings/language';
   static const settingsUnits = '/settings/units';
