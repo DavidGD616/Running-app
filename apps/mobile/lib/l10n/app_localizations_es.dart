@@ -2530,6 +2530,229 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newGoalEnterRecentResult => 'Introduce un resultado reciente';
 
   @override
+  String get newGoalReviewChangesTitle => 'Revisar cambios';
+
+  @override
+  String newGoalReviewChangesSubtitle(String flowLabel) {
+    return 'Revisa los detalles de $flowLabel y tus preferencias de entrenamiento antes de guardarlos.';
+  }
+
+  @override
+  String get newGoalSummaryGoalSection => 'Objetivo';
+
+  @override
+  String get newGoalSummaryTrainingSection => 'Preferencias de entrenamiento';
+
+  @override
+  String get newGoalAcceptChanges => 'Guardar cambios';
+
+  @override
+  String get newGoalViewPlan => 'Ver plan';
+
+  @override
+  String get newGoalErrorAuth =>
+      'Vuelve a iniciar sesión para continuar con este objetivo.';
+
+  @override
+  String get newGoalErrorInvalid =>
+      'Revisa los detalles del objetivo y vuelve a intentarlo.';
+
+  @override
+  String get newGoalErrorTimeout =>
+      'La vista previa tardó demasiado. Inténtalo de nuevo.';
+
+  @override
+  String get newGoalErrorStale =>
+      'Tu plan activo cambió. Genera una vista previa nueva.';
+
+  @override
+  String get newGoalErrorExpired =>
+      'Esta vista previa caducó. Genera una nueva.';
+
+  @override
+  String get newGoalErrorConflict =>
+      'Esta vista previa ya no se puede aplicar.';
+
+  @override
+  String get newGoalErrorParse => 'No pudimos leer el plan propuesto.';
+
+  @override
+  String get newGoalErrorGeneric => 'Algo salió mal. Inténtalo de nuevo.';
+
+  @override
+  String get newGoalNoDate => 'Sin fecha fija';
+
+  @override
+  String get newGoalDiscard => 'Descartar borrador';
+
+  @override
+  String get newGoalPreviewLoading =>
+      'Creando la vista previa de tu plan propuesto…';
+
+  @override
+  String get newGoalNoFixedDate => 'Sin fecha fija';
+
+  @override
+  String get newGoalReplaceCurrentPlan => '¿Reemplazar plan actual?';
+
+  @override
+  String get newGoalReplaceCurrentPlanSubtitle =>
+      'Esto aplicará el plan candidato y reemplazará tu plan activo actual.';
+
+  @override
+  String get newGoalFullPlanTitle => 'Plan propuesto';
+
+  @override
+  String newGoalFullPlanNote(int count) {
+    return 'Este es el plan candidato completo de $count semanas generado a partir de tus preferencias y objetivo. Las sesiones completadas ya registradas permanecen conservadas.';
+  }
+
+  @override
+  String get newGoalComparisonSection => 'Comparación del objetivo';
+
+  @override
+  String get newGoalCurrentGoalLabel => 'Tu objetivo actual';
+
+  @override
+  String get newGoalProposedLabel => 'Objetivo propuesto';
+
+  @override
+  String newGoalEndsOn(String date) {
+    return 'Termina el $date';
+  }
+
+  @override
+  String newGoalTotalWeeks(int count) {
+    return '$count semanas en total';
+  }
+
+  @override
+  String newGoalEstimatedFinishRange(String faster, String slower) {
+    return '$faster a $slower';
+  }
+
+  @override
+  String newGoalEstimateConfidence(String confidence) {
+    return 'Confianza $confidence según tus datos recientes';
+  }
+
+  @override
+  String get newGoalImpactSection => 'Impacto en el plan';
+
+  @override
+  String get newGoalNextTwoWeeks => 'Tus próximas dos semanas';
+
+  @override
+  String get newGoalRecommendedResult => 'Resultados recientes sugeridos';
+
+  @override
+  String get newGoalSafeDatesLabel => 'Fechas recomendadas';
+
+  @override
+  String get newGoalNoSafeDates =>
+      'No hay fechas seguras para una prueba en este plan ahora. Introduce un resultado reciente en su lugar.';
+
+  @override
+  String get newGoalNoDateNote =>
+      'Usaremos una preparación estándar sin una descarga específica para la carrera.';
+
+  @override
+  String get newGoalScheduleAssessmentButton => 'Programar prueba de forma';
+
+  @override
+  String get newGoalRetry => 'Intentar de nuevo';
+
+  @override
+  String get newGoalInProgressTitle => 'Prueba de forma programada';
+
+  @override
+  String get newGoalInProgressSubtitle =>
+      'Tu plan actual no cambia. Añade el resultado cuando la hayas completado para continuar con el objetivo.';
+
+  @override
+  String get newGoalPreviewExpired =>
+      'Esta vista previa caducó y no se puede aplicar.';
+
+  @override
+  String get newGoalFreshPreview => 'Generar una vista previa nueva';
+
+  @override
+  String get newGoalFullPlanUnavailable =>
+      'Aún no hay un plan propuesto para este objetivo. Regresa y genera una propuesta primero.';
+
+  @override
+  String get newGoalSuccessTitle => 'Tu plan está listo';
+
+  @override
+  String get newGoalSuccessSubtitle =>
+      'Tus sesiones completadas se conservan. El nuevo plan comienza en tu próxima sesión sin terminar.';
+
+  @override
+  String get newGoalViewFullPlan => 'Ver plan completo';
+
+  @override
+  String newGoalWeekLabel(int week) {
+    return 'Semana $week';
+  }
+
+  @override
+  String newGoalPreservedCount(int count) {
+    return '$count sesiones conservadas';
+  }
+
+  @override
+  String newGoalSuggestedActivity(String date, String distance, String time) {
+    return '$date · $distance km en $time';
+  }
+
+  @override
+  String get newGoalUseThisActivity => 'Usar este resultado';
+
+  @override
+  String get newGoalConfidenceHigh => 'Alta';
+
+  @override
+  String get newGoalConfidenceMedium => 'Media';
+
+  @override
+  String get newGoalConfidenceLimited => 'Limitada';
+
+  @override
+  String get newGoalWarningShortNoticeTitle => 'Ventana de preparación corta';
+
+  @override
+  String get newGoalWarningShortNoticeBody =>
+      'Tu carrera es dentro de 4 semanas. El plan priorizará una progresión y una descarga más seguras.';
+
+  @override
+  String get newGoalWarningRaceWeekTitle => 'Plan de semana de carrera';
+
+  @override
+  String get newGoalWarningRaceWeekBody =>
+      'Con menos de una semana, la actualización se centra en recuperación, una activación corta y guía para el día de la carrera.';
+
+  @override
+  String get newGoalWarningReadinessGapTitle => 'Revisión de preparación';
+
+  @override
+  String get newGoalWarningReadinessGapBody =>
+      'El plan mantiene una progresión prudente mientras tu entrenamiento reciente alcanza este objetivo.';
+
+  @override
+  String get newGoalWarningLimitedEvidenceTitle => 'Datos limitados';
+
+  @override
+  String get newGoalWarningLimitedEvidenceBody =>
+      'El rango estimado es deliberadamente amplio hasta contar con más datos de esfuerzos duros recientes.';
+
+  @override
+  String get newGoalWarningNoFixedDateTitle => 'Tiempo flexible';
+
+  @override
+  String get newGoalWarningNoFixedDateBody =>
+      'Este plan usa una preparación estándar y no programa una descarga específica para la carrera.';
+
+  @override
   String get settingsPreferencesSection => 'Preferencias';
 
   @override

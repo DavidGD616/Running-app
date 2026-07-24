@@ -2511,6 +2511,224 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newGoalEnterRecentResult => 'Enter a recent result';
 
   @override
+  String get newGoalReviewChangesTitle => 'Review changes';
+
+  @override
+  String newGoalReviewChangesSubtitle(String flowLabel) {
+    return 'Review your $flowLabel details and training preferences before saving them.';
+  }
+
+  @override
+  String get newGoalSummaryGoalSection => 'Goal';
+
+  @override
+  String get newGoalSummaryTrainingSection => 'Training preferences';
+
+  @override
+  String get newGoalAcceptChanges => 'Save changes';
+
+  @override
+  String get newGoalViewPlan => 'View Plan';
+
+  @override
+  String get newGoalErrorAuth => 'Sign in again to continue with this goal.';
+
+  @override
+  String get newGoalErrorInvalid => 'Check the goal details and try again.';
+
+  @override
+  String get newGoalErrorTimeout => 'The preview took too long. Try again.';
+
+  @override
+  String get newGoalErrorStale =>
+      'Your active plan changed. Generate a fresh preview.';
+
+  @override
+  String get newGoalErrorExpired =>
+      'This preview expired. Generate a fresh one.';
+
+  @override
+  String get newGoalErrorConflict => 'This preview can no longer be applied.';
+
+  @override
+  String get newGoalErrorParse => 'We could not read the proposed plan.';
+
+  @override
+  String get newGoalErrorGeneric => 'Something went wrong. Try again.';
+
+  @override
+  String get newGoalNoDate => 'No fixed date';
+
+  @override
+  String get newGoalDiscard => 'Discard draft changes';
+
+  @override
+  String get newGoalPreviewLoading => 'Building your proposed plan preview…';
+
+  @override
+  String get newGoalNoFixedDate => 'No fixed date';
+
+  @override
+  String get newGoalReplaceCurrentPlan => 'Replace current plan?';
+
+  @override
+  String get newGoalReplaceCurrentPlanSubtitle =>
+      'This will apply the candidate plan and replace your currently active plan.';
+
+  @override
+  String get newGoalFullPlanTitle => 'Proposed plan';
+
+  @override
+  String newGoalFullPlanNote(int count) {
+    return 'This is the full $count-week candidate plan generated from your settings and goal update. Complete sessions already marked as done remain preserved.';
+  }
+
+  @override
+  String get newGoalComparisonSection => 'Goal comparison';
+
+  @override
+  String get newGoalCurrentGoalLabel => 'Your current goal';
+
+  @override
+  String get newGoalProposedLabel => 'Proposed goal';
+
+  @override
+  String newGoalEndsOn(String date) {
+    return 'Ends $date';
+  }
+
+  @override
+  String newGoalTotalWeeks(int count) {
+    return '$count total weeks';
+  }
+
+  @override
+  String newGoalEstimatedFinishRange(String faster, String slower) {
+    return '$faster to $slower';
+  }
+
+  @override
+  String newGoalEstimateConfidence(String confidence) {
+    return 'Confidence $confidence based on your recent data';
+  }
+
+  @override
+  String get newGoalImpactSection => 'Plan impact';
+
+  @override
+  String get newGoalNextTwoWeeks => 'Your next two weeks';
+
+  @override
+  String get newGoalRecommendedResult => 'Suggested recent results';
+
+  @override
+  String get newGoalSafeDatesLabel => 'Recommended dates';
+
+  @override
+  String get newGoalNoSafeDates =>
+      'There are no safe benchmark dates in this plan right now. Enter a recent result instead.';
+
+  @override
+  String get newGoalNoDateNote =>
+      'We will use a standard build without a race-specific taper.';
+
+  @override
+  String get newGoalScheduleAssessmentButton => 'Schedule fitness check';
+
+  @override
+  String get newGoalRetry => 'Try again';
+
+  @override
+  String get newGoalInProgressTitle => 'Fitness check scheduled';
+
+  @override
+  String get newGoalInProgressSubtitle =>
+      'Your current plan stays unchanged. Add the result when you have completed it to continue creating your plan.';
+
+  @override
+  String get newGoalPreviewExpired =>
+      'This preview has expired and cannot be applied.';
+
+  @override
+  String get newGoalFreshPreview => 'Generate a fresh preview';
+
+  @override
+  String get newGoalFullPlanUnavailable =>
+      'No proposal plan is available for this goal yet. Return and generate one first.';
+
+  @override
+  String get newGoalSuccessTitle => 'Your plan is ready';
+
+  @override
+  String get newGoalSuccessSubtitle =>
+      'Your completed sessions are preserved. The new plan starts at your next unfinished session.';
+
+  @override
+  String get newGoalViewFullPlan => 'View full plan';
+
+  @override
+  String newGoalWeekLabel(int week) {
+    return 'Week $week';
+  }
+
+  @override
+  String newGoalPreservedCount(int count) {
+    return '$count sessions preserved';
+  }
+
+  @override
+  String newGoalSuggestedActivity(String date, String distance, String time) {
+    return '$date · $distance km in $time';
+  }
+
+  @override
+  String get newGoalUseThisActivity => 'Use this result';
+
+  @override
+  String get newGoalConfidenceHigh => 'High';
+
+  @override
+  String get newGoalConfidenceMedium => 'Medium';
+
+  @override
+  String get newGoalConfidenceLimited => 'Limited';
+
+  @override
+  String get newGoalWarningShortNoticeTitle => 'Short preparation window';
+
+  @override
+  String get newGoalWarningShortNoticeBody =>
+      'Your race is within 4 weeks. The plan will prioritize a safer build and taper.';
+
+  @override
+  String get newGoalWarningRaceWeekTitle => 'Race week plan';
+
+  @override
+  String get newGoalWarningRaceWeekBody =>
+      'With less than one week, this update emphasizes recovery, a short activation, and race-day guidance.';
+
+  @override
+  String get newGoalWarningReadinessGapTitle => 'Readiness gap';
+
+  @override
+  String get newGoalWarningReadinessGapBody =>
+      'The plan keeps a conservative progression while your recent training catches up to this goal.';
+
+  @override
+  String get newGoalWarningLimitedEvidenceTitle => 'Limited evidence';
+
+  @override
+  String get newGoalWarningLimitedEvidenceBody =>
+      'The estimated range is intentionally broader until more hard-effort data is available.';
+
+  @override
+  String get newGoalWarningNoFixedDateTitle => 'Flexible timeline';
+
+  @override
+  String get newGoalWarningNoFixedDateBody =>
+      'This plan uses a standard build and does not include a race-specific taper.';
+
+  @override
   String get settingsPreferencesSection => 'Preferences';
 
   @override

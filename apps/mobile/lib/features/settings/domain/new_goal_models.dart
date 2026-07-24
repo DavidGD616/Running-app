@@ -735,6 +735,8 @@ class NewGoalProposal {
     required this.candidatePlan,
     required this.summary,
     this.warnings = const [],
+    this.recommendation,
+    this.raceEstimate,
   });
 
   final String id;
@@ -746,6 +748,8 @@ class NewGoalProposal {
   final TrainingPlan candidatePlan;
   final Map<String, dynamic> summary;
   final List<String> warnings;
+  final NewGoalRecommendation? recommendation;
+  final NewGoalRecommendationEstimate? raceEstimate;
 
   factory NewGoalProposal.fromJson(Object? value) {
     final json = _strictMap(value, 'proposal');
@@ -777,6 +781,26 @@ class NewGoalProposal {
     final summary = summaryValue == null
         ? const <String, dynamic>{}
         : summaryValue.map((key, value) => MapEntry('$key', value));
+    final rawRecommendation = json['recommendation'];
+    final recommendation = rawRecommendation == null
+        ? null
+        : () {
+            try {
+              return NewGoalRecommendation.fromJson(rawRecommendation);
+            } catch (_) {
+              return null;
+            }
+          }();
+    final rawRaceEstimate = json['raceEstimate'];
+    final raceEstimate = rawRaceEstimate == null
+        ? null
+        : () {
+            try {
+              return NewGoalRecommendationEstimate.fromJson(rawRaceEstimate);
+            } catch (_) {
+              return null;
+            }
+          }();
 
     if (rawWarnings != null && rawWarnings is! List) {
       throw const FormatException('Invalid proposal warnings.');
@@ -792,6 +816,8 @@ class NewGoalProposal {
       candidatePlan: candidatePlan,
       summary: summary,
       warnings: (rawWarnings ?? const []).cast<String>(),
+      recommendation: recommendation,
+      raceEstimate: raceEstimate,
     );
   }
 }

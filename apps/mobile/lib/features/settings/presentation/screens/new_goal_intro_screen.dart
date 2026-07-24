@@ -39,9 +39,9 @@ class _NewGoalIntroScreenState extends ConsumerState<NewGoalIntroScreen> {
   };
 
   bool _hasRestoredDraft(NewGoalState state) => switch (state) {
-        NewGoalEditing(:final hasRestoredDraft) => hasRestoredDraft,
-        _ => false,
-      };
+    NewGoalEditing(:final hasRestoredDraft) => hasRestoredDraft,
+    _ => false,
+  };
 
   Future<void> _continue() async {
     context.push(RouteNames.settingsUpdatePlanNewGoalForm);
@@ -103,7 +103,7 @@ class _NewGoalIntroScreenState extends ConsumerState<NewGoalIntroScreen> {
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 AppButton(
-                  label: l10n.editGoalKeepCurrent,
+                  label: l10n.continueButton,
                   onPressed: () =>
                       ref.read(newGoalProvider.notifier).retryInitialization(),
                 ),
@@ -116,10 +116,10 @@ class _NewGoalIntroScreenState extends ConsumerState<NewGoalIntroScreen> {
 
     final raceLabel = OnboardingValues.localizeRace(draft.race.key, l10n);
     final dateLabel = draft.effectiveGoal.hasRaceDate && draft.raceDate != null
-        ? DateFormat.yMMMd(Localizations.localeOf(context).toLanguageTag()).format(
-              draft.raceDate!,
-            )
-        : l10n.editGoalNoDate;
+        ? DateFormat.yMMMd(
+            Localizations.localeOf(context).toLanguageTag(),
+          ).format(draft.raceDate!)
+        : l10n.newGoalNoDate;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -176,22 +176,16 @@ class _NewGoalIntroScreenState extends ConsumerState<NewGoalIntroScreen> {
                 ),
               ),
               if (hasRestoredDraft) ...[
-                AppButton(
-                  label: l10n.continueButton,
-                  onPressed: _continue,
-                ),
+                AppButton(label: l10n.continueButton, onPressed: _continue),
                 const SizedBox(height: AppSpacing.sm),
                 AppButton(
-                  label: l10n.editGoalDiscard,
+                  label: l10n.newGoalDiscard,
                   variant: AppButtonVariant.secondary,
                   onPressed: _isStartingOver ? null : _startOver,
                   isLoading: _isStartingOver,
                 ),
               ] else
-                AppButton(
-                  label: l10n.setGoalButton,
-                  onPressed: _continue,
-                ),
+                AppButton(label: l10n.setGoalButton, onPressed: _continue),
             ],
           ),
         ),

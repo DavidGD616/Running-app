@@ -4637,6 +4637,378 @@ abstract class AppLocalizations {
   /// **'Enter a recent result'**
   String get newGoalEnterRecentResult;
 
+  /// No description provided for @newGoalReviewChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review changes'**
+  String get newGoalReviewChangesTitle;
+
+  /// No description provided for @newGoalReviewChangesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review your {flowLabel} details and training preferences before saving them.'**
+  String newGoalReviewChangesSubtitle(String flowLabel);
+
+  /// No description provided for @newGoalSummaryGoalSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal'**
+  String get newGoalSummaryGoalSection;
+
+  /// No description provided for @newGoalSummaryTrainingSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Training preferences'**
+  String get newGoalSummaryTrainingSection;
+
+  /// No description provided for @newGoalAcceptChanges.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get newGoalAcceptChanges;
+
+  /// No description provided for @newGoalViewPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'View Plan'**
+  String get newGoalViewPlan;
+
+  /// No description provided for @newGoalErrorAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again to continue with this goal.'**
+  String get newGoalErrorAuth;
+
+  /// No description provided for @newGoalErrorInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Check the goal details and try again.'**
+  String get newGoalErrorInvalid;
+
+  /// No description provided for @newGoalErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The preview took too long. Try again.'**
+  String get newGoalErrorTimeout;
+
+  /// No description provided for @newGoalErrorStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Your active plan changed. Generate a fresh preview.'**
+  String get newGoalErrorStale;
+
+  /// No description provided for @newGoalErrorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview expired. Generate a fresh one.'**
+  String get newGoalErrorExpired;
+
+  /// No description provided for @newGoalErrorConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview can no longer be applied.'**
+  String get newGoalErrorConflict;
+
+  /// No description provided for @newGoalErrorParse.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not read the proposed plan.'**
+  String get newGoalErrorParse;
+
+  /// No description provided for @newGoalErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get newGoalErrorGeneric;
+
+  /// No description provided for @newGoalNoDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed date'**
+  String get newGoalNoDate;
+
+  /// No description provided for @newGoalDiscard.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard draft changes'**
+  String get newGoalDiscard;
+
+  /// No description provided for @newGoalPreviewLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Building your proposed plan preview…'**
+  String get newGoalPreviewLoading;
+
+  /// No description provided for @newGoalNoFixedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed date'**
+  String get newGoalNoFixedDate;
+
+  /// No description provided for @newGoalReplaceCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace current plan?'**
+  String get newGoalReplaceCurrentPlan;
+
+  /// No description provided for @newGoalReplaceCurrentPlanSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This will apply the candidate plan and replace your currently active plan.'**
+  String get newGoalReplaceCurrentPlanSubtitle;
+
+  /// No description provided for @newGoalFullPlanTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed plan'**
+  String get newGoalFullPlanTitle;
+
+  /// No description provided for @newGoalFullPlanNote.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the full {count}-week candidate plan generated from your settings and goal update. Complete sessions already marked as done remain preserved.'**
+  String newGoalFullPlanNote(int count);
+
+  /// No description provided for @newGoalComparisonSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Goal comparison'**
+  String get newGoalComparisonSection;
+
+  /// No description provided for @newGoalCurrentGoalLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current goal'**
+  String get newGoalCurrentGoalLabel;
+
+  /// No description provided for @newGoalProposedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Proposed goal'**
+  String get newGoalProposedLabel;
+
+  /// No description provided for @newGoalEndsOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String newGoalEndsOn(String date);
+
+  /// No description provided for @newGoalTotalWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} total weeks'**
+  String newGoalTotalWeeks(int count);
+
+  /// No description provided for @newGoalEstimatedFinishRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{faster} to {slower}'**
+  String newGoalEstimatedFinishRange(String faster, String slower);
+
+  /// No description provided for @newGoalEstimateConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Confidence {confidence} based on your recent data'**
+  String newGoalEstimateConfidence(String confidence);
+
+  /// No description provided for @newGoalImpactSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan impact'**
+  String get newGoalImpactSection;
+
+  /// No description provided for @newGoalNextTwoWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Your next two weeks'**
+  String get newGoalNextTwoWeeks;
+
+  /// No description provided for @newGoalRecommendedResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Suggested recent results'**
+  String get newGoalRecommendedResult;
+
+  /// No description provided for @newGoalSafeDatesLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended dates'**
+  String get newGoalSafeDatesLabel;
+
+  /// No description provided for @newGoalNoSafeDates.
+  ///
+  /// In en, this message translates to:
+  /// **'There are no safe benchmark dates in this plan right now. Enter a recent result instead.'**
+  String get newGoalNoSafeDates;
+
+  /// No description provided for @newGoalNoDateNote.
+  ///
+  /// In en, this message translates to:
+  /// **'We will use a standard build without a race-specific taper.'**
+  String get newGoalNoDateNote;
+
+  /// No description provided for @newGoalScheduleAssessmentButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule fitness check'**
+  String get newGoalScheduleAssessmentButton;
+
+  /// No description provided for @newGoalRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get newGoalRetry;
+
+  /// No description provided for @newGoalInProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Fitness check scheduled'**
+  String get newGoalInProgressTitle;
+
+  /// No description provided for @newGoalInProgressSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current plan stays unchanged. Add the result when you have completed it to continue creating your plan.'**
+  String get newGoalInProgressSubtitle;
+
+  /// No description provided for @newGoalPreviewExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This preview has expired and cannot be applied.'**
+  String get newGoalPreviewExpired;
+
+  /// No description provided for @newGoalFreshPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Generate a fresh preview'**
+  String get newGoalFreshPreview;
+
+  /// No description provided for @newGoalFullPlanUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'No proposal plan is available for this goal yet. Return and generate one first.'**
+  String get newGoalFullPlanUnavailable;
+
+  /// No description provided for @newGoalSuccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan is ready'**
+  String get newGoalSuccessTitle;
+
+  /// No description provided for @newGoalSuccessSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your completed sessions are preserved. The new plan starts at your next unfinished session.'**
+  String get newGoalSuccessSubtitle;
+
+  /// No description provided for @newGoalViewFullPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'View full plan'**
+  String get newGoalViewFullPlan;
+
+  /// No description provided for @newGoalWeekLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week}'**
+  String newGoalWeekLabel(int week);
+
+  /// No description provided for @newGoalPreservedCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions preserved'**
+  String newGoalPreservedCount(int count);
+
+  /// No description provided for @newGoalSuggestedActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {distance} km in {time}'**
+  String newGoalSuggestedActivity(String date, String distance, String time);
+
+  /// No description provided for @newGoalUseThisActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this result'**
+  String get newGoalUseThisActivity;
+
+  /// No description provided for @newGoalConfidenceHigh.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get newGoalConfidenceHigh;
+
+  /// No description provided for @newGoalConfidenceMedium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get newGoalConfidenceMedium;
+
+  /// No description provided for @newGoalConfidenceLimited.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited'**
+  String get newGoalConfidenceLimited;
+
+  /// No description provided for @newGoalWarningShortNoticeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Short preparation window'**
+  String get newGoalWarningShortNoticeTitle;
+
+  /// No description provided for @newGoalWarningShortNoticeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your race is within 4 weeks. The plan will prioritize a safer build and taper.'**
+  String get newGoalWarningShortNoticeBody;
+
+  /// No description provided for @newGoalWarningRaceWeekTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Race week plan'**
+  String get newGoalWarningRaceWeekTitle;
+
+  /// No description provided for @newGoalWarningRaceWeekBody.
+  ///
+  /// In en, this message translates to:
+  /// **'With less than one week, this update emphasizes recovery, a short activation, and race-day guidance.'**
+  String get newGoalWarningRaceWeekBody;
+
+  /// No description provided for @newGoalWarningReadinessGapTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Readiness gap'**
+  String get newGoalWarningReadinessGapTitle;
+
+  /// No description provided for @newGoalWarningReadinessGapBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The plan keeps a conservative progression while your recent training catches up to this goal.'**
+  String get newGoalWarningReadinessGapBody;
+
+  /// No description provided for @newGoalWarningLimitedEvidenceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Limited evidence'**
+  String get newGoalWarningLimitedEvidenceTitle;
+
+  /// No description provided for @newGoalWarningLimitedEvidenceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The estimated range is intentionally broader until more hard-effort data is available.'**
+  String get newGoalWarningLimitedEvidenceBody;
+
+  /// No description provided for @newGoalWarningNoFixedDateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible timeline'**
+  String get newGoalWarningNoFixedDateTitle;
+
+  /// No description provided for @newGoalWarningNoFixedDateBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan uses a standard build and does not include a race-specific taper.'**
+  String get newGoalWarningNoFixedDateBody;
+
   /// Preferences section header
   ///
   /// In en, this message translates to:

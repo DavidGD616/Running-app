@@ -664,6 +664,18 @@ class NewGoalNotifier extends Notifier<NewGoalState> {
     updateDraft(updated);
   }
 
+  void cancelPreview() {
+    final draft = _draft(state);
+    final sourcePlanId = _sourcePlanId(state);
+    final recommendation = _recommendation(state);
+    if (draft == null || sourcePlanId == null || recommendation == null) return;
+    state = NewGoalRecommendationReady(
+      draft: draft,
+      sourcePlanId: sourcePlanId,
+      recommendation: recommendation,
+    );
+  }
+
   void clearFitnessResult() {
     final draft = _draft(state);
     final sourcePlanId = _sourcePlanId(state);

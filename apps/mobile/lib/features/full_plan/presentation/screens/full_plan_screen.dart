@@ -27,12 +27,21 @@ import '../../../user_preferences/presentation/user_preferences_provider.dart';
 // ── Screen ────────────────────────────────────────────────────────────────────
 
 class FullPlanScreen extends ConsumerWidget {
-  const FullPlanScreen({super.key});
+  const FullPlanScreen({super.key, this.trainingPlan, this.title, this.note});
+
+  final TrainingPlan? trainingPlan;
+  final String? title;
+  final String? note;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context)!;
-    final plan = ref.watch(trainingPlanProvider).value;
+    final plan =
+        trainingPlan ??
+        () {
+          final activePlan = ref.watch(trainingPlanProvider);
+          return activePlan.value;
+        }();
     final unitSystem =
         ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
 
@@ -40,17 +49,20 @@ class FullPlanScreen extends ConsumerWidget {
       return Scaffold(
         backgroundColor: AppColors.backgroundPrimary,
         appBar: AppDetailHeaderBar(
-          title: l10n.fullPlanTitle,
+          title: title ?? l10n.fullPlanTitle,
           onBack: () => Navigator.of(context).maybePop(),
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
 
+    final resolvedTitle = title ?? l10n.fullPlanTitle;
+    final resolvedNote = note ?? l10n.fullPlanNote;
+
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
       appBar: AppDetailHeaderBar(
-        title: l10n.fullPlanTitle,
+        title: resolvedTitle,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: SafeArea(
@@ -65,7 +77,7 @@ class FullPlanScreen extends ConsumerWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _PlanNote(l10n: l10n),
+              _PlanNote(note: resolvedNote, l10n: l10n),
 
               const SizedBox(height: AppSpacing.xl),
 
@@ -99,8 +111,9 @@ class FullPlanScreen extends ConsumerWidget {
 // ── Plan note ─────────────────────────────────────────────────────────────────
 
 class _PlanNote extends StatelessWidget {
-  const _PlanNote({required this.l10n});
+  const _PlanNote({required this.note, required this.l10n});
 
+  final String note;
   final AppLocalizations l10n;
 
   @override
@@ -135,9 +148,7 @@ class _PlanNote extends StatelessWidget {
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(l10n.fullPlanNote, style: AppTypography.bodyMedium),
-          ),
+          Expanded(child: Text(note, style: AppTypography.bodyMedium)),
         ],
       ),
     );
