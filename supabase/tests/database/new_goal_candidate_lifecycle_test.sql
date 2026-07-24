@@ -58,7 +58,11 @@ values
   (
     '10000000-0000-0000-0000-000000000007',
     1,
-    '{"goal":{"race":"half_marathon"}}'::jsonb
+    '{
+      "goal":{"race":"half_marathon"},
+      "marker":"draft-original",
+      "displayName":"Draft Runner"
+    }'::jsonb
   );
 
 insert into plan_versions (
@@ -208,6 +212,32 @@ select col_not_null(
 select col_not_null(
   'public',
   'new_goal_proposals',
+  'source_profile_schema_version',
+  'source profile schema version is required'
+);
+select col_type_is(
+  'public',
+  'new_goal_proposals',
+  'source_profile_schema_version',
+  'integer',
+  'source profile schema version is an integer'
+);
+select col_not_null(
+  'public',
+  'new_goal_proposals',
+  'source_profile_updated_at',
+  'source profile timestamp is required'
+);
+select col_type_is(
+  'public',
+  'new_goal_proposals',
+  'source_profile_updated_at',
+  'timestamp with time zone',
+  'source profile timestamp is a timestamptz'
+);
+select col_not_null(
+  'public',
+  'new_goal_proposals',
   'candidate_plan',
   'candidate plan is required'
 );
@@ -271,7 +301,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz)',
+    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz,integer,timestamptz)',
     'EXECUTE'
   ),
   'authenticated users cannot execute the proposal storage RPC'
@@ -287,7 +317,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'anon',
-    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz)',
+    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz,integer,timestamptz)',
     'EXECUTE'
   ),
   'anonymous users cannot execute the proposal storage RPC'
@@ -303,7 +333,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz)',
+    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz,integer,timestamptz)',
     'EXECUTE'
   ),
   'service role can execute the proposal storage RPC'
@@ -506,14 +536,14 @@ select throws_ok(
   'anonymous users cannot read proposal rows'
 );
 select is(current_user, 'anon', 'anonymous assertions run as anon');
-select ok(
-  not has_function_privilege(
-    current_user,
-    'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz)',
-    'EXECUTE'
-  ),
-  'the anonymous client context cannot execute the storage RPC'
-);
+  select ok(
+    not has_function_privilege(
+      current_user,
+      'public.store_new_goal_proposal(uuid,text,text,jsonb,jsonb,jsonb,jsonb,jsonb,integer,timestamptz,timestamptz,integer,timestamptz)',
+      'EXECUTE'
+    ),
+    'the anonymous client context cannot execute the storage RPC'
+  );
 select ok(
   not has_function_privilege(
     current_user,
@@ -597,21 +627,25 @@ select is(
 );
 select throws_ok(
   $$
-    insert into new_goal_proposals (
-      id,
-      user_id,
-      source_plan_version_id,
-      candidate_plan,
-      proposed_goal,
-      status
-    ) values (
-      'main-proposal-conflict',
-      '10000000-0000-0000-0000-000000000001',
-      'main-source',
-      '{}'::jsonb,
-      '{}'::jsonb,
-      'pending'
-    )
+  insert into new_goal_proposals (
+    id,
+    user_id,
+    source_plan_version_id,
+    source_profile_schema_version,
+    source_profile_updated_at,
+    candidate_plan,
+    proposed_goal,
+    status
+  ) values (
+    'main-proposal-conflict',
+    '10000000-0000-0000-0000-000000000001',
+    'main-source',
+    1,
+    now() - interval '15 minutes',
+    '{}'::jsonb,
+    '{}'::jsonb,
+    'pending'
+  )
   $$,
   '23505',
   'duplicate key value violates unique constraint "new_goal_proposals_one_pending_per_user"',
@@ -636,6 +670,187 @@ select throws_ok(
   'P0001',
   'new_goal_source_plan_not_active',
   'proposal storage rejects an inactive source plan'
+);
+select throws_ok(
+  $$
+    select public.store_new_goal_proposal(
+      '10000000-0000-0000-0000-000000000007',
+      'draft-profile-fragment-rejected',
+      'draft-source',
+      '{"id":"draft-fragment-candidate","weeks":[]}'::jsonb,
+      '{"race":"half_marathon","targetSeconds":12000}'::jsonb,
+      '{"acceptedRaceTarget":{"distance":"half_marathon","targetSeconds":12000},"identity":{"tamper":true}}'::jsonb,
+      '{}'::jsonb,
+      '[]'::jsonb,
+      null,
+      now(),
+      now() + interval '15 minutes'
+    )
+  $$,
+  'P0001',
+  'new_goal_profile_fragment_restricted',
+  'proposal storage rejects disallowed profile fragment keys'
+);
+select throws_ok(
+  $$
+    select public.store_new_goal_proposal(
+      '10000000-0000-0000-0000-000000000007',
+      'draft-profile-stale-storage',
+      'draft-source',
+      '{"id":"draft-stale-storage-candidate","weeks":[]}'::jsonb,
+      '{"race":"marathon"}'::jsonb,
+      '{}'::jsonb,
+      '{}'::jsonb,
+      '[]'::jsonb,
+      null,
+      now(),
+      now() + interval '15 minutes',
+      1,
+      '2000-01-01 00:00:00+00'::timestamptz
+    )
+  $$,
+  'P0001',
+  'new_goal_source_profile_stale',
+  'proposal storage rejects a stale profile snapshot'
+);
+select lives_ok(
+  $$
+    select public.store_new_goal_proposal(
+      '10000000-0000-0000-0000-000000000007',
+      'draft-profile-fields',
+      'draft-source',
+      '{"id":"draft-fields-candidate","weeks":[]}'::jsonb,
+      '{"race":"marathon","targetSeconds":12000}'::jsonb,
+      '{
+        "acceptedRaceTarget":{"distance":"marathon","targetSeconds":12000},
+        "schedule":{"days":["mon","fri"],"timezone":"America/Los_Angeles"},
+        "trainingPreferences":{"intervalsPerWeek":2,"notes":"marathon prep"},
+        "health":{"restingHR":48}
+      }'::jsonb,
+      '{}'::jsonb,
+      '[]'::jsonb,
+      null,
+      now(),
+      now() + interval '15 minutes'
+    )
+  $$,
+  'a proposal with only allowed profile fragment keys is accepted by storage'
+);
+select lives_ok(
+  $$
+    select *
+      from public.accept_new_goal_proposal(
+        '10000000-0000-0000-0000-000000000007',
+        'draft-profile-fields',
+        'draft-fields-plan',
+        '2026-07-15 12:00:00+00'
+      )
+  $$,
+  'draft profile fragment fields are accepted with a pending proposal'
+);
+select is(
+  (
+    select data -> 'goal'
+    from runner_profiles
+    where user_id = '10000000-0000-0000-0000-000000000007'
+  ),
+  '{"race":"marathon","targetSeconds":12000}'::jsonb,
+  'draft profile acceptance updates goal'
+);
+select is(
+  (
+    select data -> 'acceptedRaceTarget'
+    from runner_profiles
+    where user_id = '10000000-0000-0000-0000-000000000007'
+  ),
+  '{"distance":"marathon","targetSeconds":12000}'::jsonb,
+  'draft profile acceptance updates acceptedRaceTarget'
+);
+select is(
+  (
+    select data -> 'schedule'
+    from runner_profiles
+    where user_id = '10000000-0000-0000-0000-000000000007'
+  ),
+  '{"days":["mon","fri"],"timezone":"America/Los_Angeles"}'::jsonb,
+  'draft profile acceptance updates schedule'
+);
+select is(
+  (
+    select data -> 'trainingPreferences'
+    from runner_profiles
+    where user_id = '10000000-0000-0000-0000-000000000007'
+  ),
+  '{"intervalsPerWeek":2,"notes":"marathon prep"}'::jsonb,
+  'draft profile acceptance updates trainingPreferences'
+);
+select is(
+  (
+    select data -> 'health'
+    from runner_profiles
+    where user_id = '10000000-0000-0000-0000-000000000007'
+  ),
+  '{"restingHR":48}'::jsonb,
+  'draft profile acceptance updates health'
+);
+select is(
+  (
+    select data - 'goal' - 'acceptedRaceTarget' - 'schedule' - 'trainingPreferences' - 'health' - 'updatedAt'
+    from runner_profiles
+    where user_id = '10000000-0000-0000-0000-000000000007'
+  ),
+  '{"marker":"draft-original","displayName":"Draft Runner"}'::jsonb,
+  'draft profile acceptance preserves unrelated profile fields'
+);
+select lives_ok(
+  $$
+    select public.store_new_goal_proposal(
+      '10000000-0000-0000-0000-000000000007',
+      'draft-profile-stale-accept',
+      'draft-source',
+      '{"id":"draft-stale-accept-candidate","weeks":[]}'::jsonb,
+      '{"race":"5k"}'::jsonb,
+      '{}'::jsonb,
+      '{}'::jsonb,
+      '[]'::jsonb,
+      null,
+      now(),
+      now() + interval '20 minutes'
+    )
+  $$,
+  'a proposal can be stored before its source profile changes'
+);
+update runner_profiles
+  set schema_version = schema_version + 1
+  where user_id = '10000000-0000-0000-0000-000000000007';
+select throws_ok(
+  $$
+    select * from public.accept_new_goal_proposal(
+      '10000000-0000-0000-0000-000000000007',
+      'draft-profile-stale-accept',
+      'draft-stale-accept-plan',
+      now()
+    )
+  $$,
+  'P0001',
+  'new_goal_source_profile_stale',
+  'acceptance rejects a proposal after source profile schema changes'
+);
+select is(
+  (
+    select status from new_goal_proposals where id = 'draft-profile-stale-accept'
+  ),
+  'pending',
+  'failed stale-profile acceptance does not change proposal status'
+);
+select is(
+  (
+    select count(*)::integer
+    from plan_versions
+    where id = 'draft-stale-accept-plan'
+  ),
+  0,
+  'stale-profile acceptance inserts no candidate plan'
 );
 
 -- Acceptance atomically changes profile, plan set, and proposal state.

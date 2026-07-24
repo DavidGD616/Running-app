@@ -89,6 +89,8 @@ create table if not exists public.new_goal_proposals (
   id                       text primary key,
   user_id                  uuid references auth.users(id) on delete cascade not null,
   source_plan_version_id   text references public.plan_versions(id) on delete cascade not null,
+  source_profile_schema_version integer not null,
+  source_profile_updated_at timestamptz not null,
   candidate_plan           jsonb not null,
   proposed_goal            jsonb not null,
   proposed_profile_fragment jsonb not null default '{}'::jsonb,
@@ -196,7 +198,9 @@ create or replace function public.store_new_goal_proposal(
   p_warnings jsonb,
   p_suggested_target_seconds integer default null,
   p_created_at timestamptz default now(),
-  p_expires_at timestamptz default null
+  p_expires_at timestamptz default null,
+  p_source_profile_schema_version integer default null,
+  p_source_profile_updated_at timestamptz default null
 ) returns public.new_goal_proposals
 language plpgsql
 security definer
@@ -205,11 +209,30 @@ as $$
 declare
   v_source_plan_id text;
   v_expires_at timestamptz;
+  v_profile_schema_version integer;
+  v_profile_updated_at timestamptz;
   v_proposal public.new_goal_proposals%rowtype;
 begin
   perform pg_catalog.pg_advisory_xact_lock(
     pg_catalog.hashtextextended(p_user_id::text, 0)
   );
+
+  if exists (
+    select 1
+      from pg_catalog.jsonb_object_keys(
+        coalesce(p_proposed_profile_fragment, '{}'::jsonb)
+      ) as key_name
+     where key_name not in (
+       'acceptedRaceTarget',
+       'schedule',
+       'trainingPreferences',
+       'health'
+     )
+  ) then
+    raise exception using
+      message = 'new_goal_profile_fragment_restricted',
+      errcode = 'P0001';
+  end if;
 
   select plan.id
     into v_source_plan_id
@@ -235,6 +258,34 @@ begin
       errcode = 'P0001';
   end if;
 
+  select
+    profile.schema_version,
+    profile.updated_at
+    into v_profile_schema_version, v_profile_updated_at
+    from public.runner_profiles as profile
+   where profile.user_id = p_user_id
+   for update;
+
+  if not found then
+    raise exception using
+      message = 'new_goal_runner_profile_not_found',
+      errcode = 'P0001';
+  end if;
+
+  if p_source_profile_schema_version is not null
+     and p_source_profile_schema_version is distinct from v_profile_schema_version then
+    raise exception using
+      message = 'new_goal_source_profile_stale',
+      errcode = 'P0001';
+  end if;
+
+  if p_source_profile_updated_at is not null
+     and p_source_profile_updated_at is distinct from v_profile_updated_at then
+    raise exception using
+      message = 'new_goal_source_profile_stale',
+      errcode = 'P0001';
+  end if;
+
   update public.new_goal_proposals
      set status = 'expired'
    where user_id = p_user_id
@@ -251,6 +302,8 @@ begin
     id,
     user_id,
     source_plan_version_id,
+    source_profile_schema_version,
+    source_profile_updated_at,
     candidate_plan,
     proposed_goal,
     proposed_profile_fragment,
@@ -264,6 +317,8 @@ begin
     p_proposal_id,
     p_user_id,
     p_source_plan_version_id,
+    v_profile_schema_version,
+    v_profile_updated_at,
     p_candidate_plan,
     p_proposed_goal,
     coalesce(p_proposed_profile_fragment, '{}'::jsonb),
@@ -291,6 +346,8 @@ revoke all on function public.store_new_goal_proposal(
   jsonb,
   integer,
   timestamptz,
+  timestamptz,
+  integer,
   timestamptz
 ) from public, anon, authenticated;
 
@@ -305,6 +362,8 @@ grant execute on function public.store_new_goal_proposal(
   jsonb,
   integer,
   timestamptz,
+  timestamptz,
+  integer,
   timestamptz
 ) to service_role;
 
@@ -325,6 +384,8 @@ as $$
 declare
   v_proposal public.new_goal_proposals%rowtype;
   v_profile_data jsonb;
+  v_profile_schema_version integer;
+  v_profile_updated_at timestamptz;
   v_source_plan_id text;
   v_plan_data jsonb;
   v_accepted_at timestamptz;
@@ -410,8 +471,11 @@ begin
 
   v_accepted_at := pg_catalog.transaction_timestamp();
 
-  select profile.data
-    into v_profile_data
+  select
+    profile.schema_version,
+    profile.updated_at,
+    profile.data
+    into v_profile_schema_version, v_profile_updated_at, v_profile_data
     from public.runner_profiles as profile
    where profile.user_id = p_user_id
    for update;
@@ -419,6 +483,18 @@ begin
   if not found then
     raise exception using
       message = 'new_goal_runner_profile_not_found',
+      errcode = 'P0001';
+  end if;
+
+  if v_profile_schema_version is distinct from v_proposal.source_profile_schema_version then
+    raise exception using
+      message = 'new_goal_source_profile_stale',
+      errcode = 'P0001';
+  end if;
+
+  if v_profile_updated_at is distinct from v_proposal.source_profile_updated_at then
+    raise exception using
+      message = 'new_goal_source_profile_stale',
       errcode = 'P0001';
   end if;
 
@@ -451,6 +527,30 @@ begin
     ),
     true
   );
+  if v_proposal.proposed_profile_fragment ? 'schedule' then
+    v_profile_data := jsonb_set(
+      v_profile_data,
+      '{schedule}',
+      v_proposal.proposed_profile_fragment -> 'schedule',
+      true
+    );
+  end if;
+  if v_proposal.proposed_profile_fragment ? 'trainingPreferences' then
+    v_profile_data := jsonb_set(
+      v_profile_data,
+      '{trainingPreferences}',
+      v_proposal.proposed_profile_fragment -> 'trainingPreferences',
+      true
+    );
+  end if;
+  if v_proposal.proposed_profile_fragment ? 'health' then
+    v_profile_data := jsonb_set(
+      v_profile_data,
+      '{health}',
+      v_proposal.proposed_profile_fragment -> 'health',
+      true
+    );
+  end if;
   v_profile_data := jsonb_set(
     v_profile_data,
     '{updatedAt}',
