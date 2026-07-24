@@ -2484,6 +2484,52 @@ class AppLocalizationsEs extends AppLocalizations {
       'Define las preferencias de entrenamiento que quieres usar con este objetivo.';
 
   @override
+  String get newGoalManualResultTitle => 'Introduce un resultado reciente';
+
+  @override
+  String get newGoalManualResultSubtitle =>
+      'Usa un esfuerzo duro reciente. Esto crea un rango estimado; no cambia directamente los ritmos de tus entrenamientos.';
+
+  @override
+  String get newGoalResultDistance => 'Distancia';
+
+  @override
+  String get newGoalResultDistanceHint => 'Kilómetros, por ejemplo 5';
+
+  @override
+  String get newGoalResultTime => 'Tiempo';
+
+  @override
+  String get newGoalResultTimeHint => 'HH:MM:SS';
+
+  @override
+  String get newGoalResultDate => '¿Cuándo lo corriste?';
+
+  @override
+  String get newGoalHardEffortQuestion => '¿Fue un esfuerzo duro y sostenido?';
+
+  @override
+  String get newGoalManualResultValidation =>
+      'Introduce una distancia positiva, un tiempo HH:MM:SS y la fecha de un esfuerzo duro.';
+
+  @override
+  String get newGoalManualResultSubmissionError =>
+      'No se pudo usar ese resultado. Vuelve a intentarlo.';
+
+  @override
+  String get newGoalManualResultUseButton => 'Usar este resultado';
+
+  @override
+  String get newGoalFitnessCheckTitle => 'Basemos esto en tus carreras';
+
+  @override
+  String get newGoalFitnessCheckSubtitle =>
+      'Necesitamos un esfuerzo duro reciente antes de estimar este objetivo. Puedes usar una carrera reciente, introducir un resultado o programar una prueba.';
+
+  @override
+  String get newGoalEnterRecentResult => 'Introduce un resultado reciente';
+
+  @override
   String get settingsPreferencesSection => 'Preferencias';
 
   @override

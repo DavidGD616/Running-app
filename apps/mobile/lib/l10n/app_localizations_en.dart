@@ -2465,6 +2465,52 @@ class AppLocalizationsEn extends AppLocalizations {
       'Set the training preferences you want to use with this goal.';
 
   @override
+  String get newGoalManualResultTitle => 'Enter a recent result';
+
+  @override
+  String get newGoalManualResultSubtitle =>
+      'Use a recent hard effort. This sets an estimate range; it does not change your workout paces directly.';
+
+  @override
+  String get newGoalResultDistance => 'Distance';
+
+  @override
+  String get newGoalResultDistanceHint => 'Kilometers, for example 5';
+
+  @override
+  String get newGoalResultTime => 'Time';
+
+  @override
+  String get newGoalResultTimeHint => 'HH:MM:SS';
+
+  @override
+  String get newGoalResultDate => 'When did you run it?';
+
+  @override
+  String get newGoalHardEffortQuestion => 'Was this a hard, sustained effort?';
+
+  @override
+  String get newGoalManualResultValidation =>
+      'Enter a positive distance, a time in HH:MM:SS, and the date of a hard effort.';
+
+  @override
+  String get newGoalManualResultSubmissionError =>
+      'That result could not be used yet. Please try again.';
+
+  @override
+  String get newGoalManualResultUseButton => 'Use this result';
+
+  @override
+  String get newGoalFitnessCheckTitle => 'Let’s ground this in your running';
+
+  @override
+  String get newGoalFitnessCheckSubtitle =>
+      'We need one recent hard effort before we estimate this goal. You can use a recent run, enter a result, or schedule a benchmark.';
+
+  @override
+  String get newGoalEnterRecentResult => 'Enter a recent result';
+
+  @override
   String get settingsPreferencesSection => 'Preferences';
 
   @override

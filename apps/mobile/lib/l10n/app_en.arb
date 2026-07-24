@@ -2372,6 +2372,21 @@
   "settingsNewGoalIntroPointTraining": "Set the training preferences you want to use with this goal.",
   "@settingsNewGoalIntroPointTraining": { "description": "Training preferences explainer item for new goal intro screen" },
 
+  "newGoalManualResultTitle": "Enter a recent result",
+  "newGoalManualResultSubtitle": "Use a recent hard effort. This sets an estimate range; it does not change your workout paces directly.",
+  "newGoalResultDistance": "Distance",
+  "newGoalResultDistanceHint": "Kilometers, for example 5",
+  "newGoalResultTime": "Time",
+  "newGoalResultTimeHint": "HH:MM:SS",
+  "newGoalResultDate": "When did you run it?",
+  "newGoalHardEffortQuestion": "Was this a hard, sustained effort?",
+  "newGoalManualResultValidation": "Enter a positive distance, a time in HH:MM:SS, and the date of a hard effort.",
+  "newGoalManualResultSubmissionError": "That result could not be used yet. Please try again.",
+  "newGoalManualResultUseButton": "Use this result",
+  "newGoalFitnessCheckTitle": "Let’s ground this in your running",
+  "newGoalFitnessCheckSubtitle": "We need one recent hard effort before we estimate this goal. You can use a recent run, enter a result, or schedule a benchmark.",
+  "newGoalEnterRecentResult": "Enter a recent result",
+
   "settingsPreferencesSection": "Preferences",
   "@settingsPreferencesSection": { "description": "Preferences section header" },
 

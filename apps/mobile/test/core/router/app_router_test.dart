@@ -9,6 +9,7 @@ import 'package:running_app/features/onboarding/presentation/onboarding_provider
 import 'package:running_app/features/profile/domain/models/runner_profile.dart';
 import 'package:running_app/features/settings/presentation/edit_goal_provider.dart';
 import 'package:running_app/features/settings/presentation/screens/edit_goal_form_screen.dart';
+import 'package:running_app/features/settings/presentation/screens/new_goal_manual_result_screen.dart';
 import 'package:running_app/features/settings/presentation/screens/new_goal_health_evidence_screen.dart';
 import 'package:running_app/features/settings/presentation/screens/new_goal_intro_screen.dart';
 import 'package:running_app/features/settings/presentation/screens/new_goal_preferences_screen.dart';
@@ -41,6 +42,53 @@ class _StaticNewGoalNotifier extends NewGoalNotifier {
 
   @override
   NewGoalState build() => _state;
+}
+
+class _ManualResultSubmissionNotifier extends NewGoalNotifier {
+  _ManualResultSubmissionNotifier();
+
+  final List<String> callLog = [];
+
+  @override
+  NewGoalState build() => _fitnessCheckStateFixture(
+    now: DateTime(2026, 7, 23),
+    sourcePlanId: 'active-plan',
+  );
+
+  @override
+  void useFitnessResult(NewGoalFitnessResult result) {
+    callLog.add('useFitnessResult');
+    final current = state;
+    if (current is NewGoalFitnessCheckRequired) {
+      state = NewGoalEditing(
+        draft: current.draft.copyWith(
+          fitnessResult: result,
+          clearFitnessResult: false,
+          assessment: null,
+          clearAssessment: true,
+        ),
+        sourcePlanId: current.sourcePlanId,
+        hasRestoredDraft: false,
+      );
+    }
+  }
+
+  @override
+  Future<bool> recommend() async {
+    callLog.add('recommend');
+    final current = state;
+    if (current is NewGoalEditing) {
+      state = NewGoalRecommendationReady(
+        draft: current.draft,
+        sourcePlanId: current.sourcePlanId,
+        recommendation: _proposalRecommendationFixture(
+          current.draft.effectiveGoal,
+        ),
+      );
+      return true;
+    }
+    return false;
+  }
 }
 
 RunnerProfile _newGoalProfileWithPlanStart({required DateTime date}) {
@@ -137,14 +185,45 @@ NewGoalProposal _proposalFixture({
   );
 }
 
+NewGoalFitnessCheck _fitnessCheckFixture() {
+  return NewGoalFitnessCheck(
+    suggestedActivities: [
+      NewGoalFitnessSuggestedActivity(
+        distanceKm: 8.0,
+        elapsed: Duration(minutes: 42),
+        recordedOn: DateTime(2026, 8, 1),
+      ),
+    ],
+    benchmarkKind: 'five_k_run',
+    safeDates: [DateTime(2026, 8, 2)],
+  );
+}
+
+NewGoalFitnessCheckRequired _fitnessCheckStateFixture({
+  NewGoalDraft? draft,
+  String sourcePlanId = 'active-plan',
+  DateTime? now,
+}) {
+  final resolvedDraft =
+      draft ??
+      NewGoalDraft.fromProfile(
+        profile: _newGoalProfileWithPlanStart(
+          date: now ?? DateTime(2026, 7, 23),
+        ),
+      );
+  return NewGoalFitnessCheckRequired(
+    draft: resolvedDraft,
+    sourcePlanId: sourcePlanId,
+    fitnessCheck: _fitnessCheckFixture(),
+  );
+}
+
 NewGoalState _proposalReadyStateFixture() {
   final proposal = _proposalFixture();
   final goal = proposal.currentGoal;
   return NewGoalProposalReady(
     draft: NewGoalDraft.fromProfile(
-      profile: _newGoalProfileWithPlanStart(
-        date: DateTime(2026, 7, 31),
-      ),
+      profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
     ),
     sourcePlanId: 'active-plan',
     recommendation: _proposalRecommendationFixture(goal),
@@ -158,9 +237,7 @@ NewGoalState _successStateFixture() {
     acceptance: NewGoalAcceptance(
       versionId: 'acceptance-1',
       plan: proposal.candidatePlan,
-      profile: _newGoalProfileWithPlanStart(
-        date: DateTime(2026, 7, 31),
-      ),
+      profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
     ),
     proposal: proposal,
   );
@@ -430,13 +507,13 @@ void main() {
             ),
             newGoalInitialDataLoaderProvider.overrideWithValue(
               () async => NewGoalInitialData(
-                profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
+                profile: _newGoalProfileWithPlanStart(
+                  date: DateTime(2026, 7, 31),
+                ),
                 activePlanId: 'active-plan',
               ),
             ),
-            newGoalClockProvider.overrideWithValue(
-              () => DateTime(2026, 7, 31),
-            ),
+            newGoalClockProvider.overrideWithValue(() => DateTime(2026, 7, 31)),
             newGoalLocaleCodeProvider.overrideWithValue('en'),
           ],
           child: Consumer(
@@ -483,6 +560,230 @@ void main() {
     },
   );
 
+  testWidgets('New goal manual-result route renders a dedicated form', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalProvider.overrideWith(
+            () => _StaticNewGoalNotifier(_fitnessCheckStateFixture()),
+          ),
+          newGoalLocaleCodeProvider.overrideWithValue('en'),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+    final appRouter = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    ).read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalManualResult);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewGoalManualResultScreen), findsOneWidget);
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(NewGoalManualResultScreen)),
+    )!;
+    expect(find.text(l10n.newGoalManualResultTitle), findsAtLeastNWidgets(1));
+    expect(find.text(l10n.newGoalResultDistance), findsOneWidget);
+    expect(find.text(l10n.newGoalResultTime), findsOneWidget);
+    expect(find.text(l10n.newGoalResultDate), findsOneWidget);
+    expect(find.text(l10n.newGoalHardEffortQuestion), findsOneWidget);
+    expect(
+      find.widgetWithText(AppButton, l10n.newGoalManualResultUseButton),
+      findsAtLeastNWidgets(1),
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('newGoalManualResultDistanceField')),
+        matching: find.byType(TextField),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('newGoalManualResultTimeField')),
+        matching: find.byType(TextField),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.byKey(const Key('newGoalManualResultDateField')),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets(
+    'Fitness check screen exposes manual-result flow and opens dedicated entry form',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            userPreferencesRepositoryProvider.overrideWithValue(
+              SharedPreferencesUserPreferencesRepository(prefs),
+            ),
+            appBootstrapStateProvider.overrideWithValue(
+              AppBootstrapState.authenticatedReady,
+            ),
+            newGoalProvider.overrideWith(
+              () => _StaticNewGoalNotifier(_fitnessCheckStateFixture()),
+            ),
+            newGoalLocaleCodeProvider.overrideWithValue('en'),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(appRouterProvider);
+              return MaterialApp.router(
+                locale: const Locale('en'),
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('en'), Locale('es')],
+                routerConfig: appRouter,
+              );
+            },
+          ),
+        ),
+      );
+      final appRouter = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      ).read(appRouterProvider);
+
+      appRouter.go(RouteNames.settingsUpdatePlanNewGoalSummary);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('newGoalManualResultShortcut')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NewGoalManualResultScreen), findsOneWidget);
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(NewGoalManualResultScreen)),
+      )!;
+      expect(find.byType(NewGoalManualResultScreen), findsOneWidget);
+      expect(find.text(l10n.newGoalEnterRecentResult), findsAtLeastNWidgets(1));
+    },
+  );
+
+  testWidgets(
+    'Manual result submit uses provider boundary and navigates to recommendation',
+    (tester) async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+      final notifier = _ManualResultSubmissionNotifier();
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+            userPreferencesRepositoryProvider.overrideWithValue(
+              SharedPreferencesUserPreferencesRepository(prefs),
+            ),
+            appBootstrapStateProvider.overrideWithValue(
+              AppBootstrapState.authenticatedReady,
+            ),
+            newGoalProvider.overrideWith(() => notifier),
+            newGoalClockProvider.overrideWithValue(() => DateTime(2026, 7, 23)),
+            newGoalLocaleCodeProvider.overrideWithValue('en'),
+          ],
+          child: Consumer(
+            builder: (context, ref, _) {
+              final appRouter = ref.watch(appRouterProvider);
+              return MaterialApp.router(
+                locale: const Locale('en'),
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                supportedLocales: const [Locale('en'), Locale('es')],
+                routerConfig: appRouter,
+              );
+            },
+          ),
+        ),
+      );
+
+      final appRouter = ProviderScope.containerOf(
+        tester.element(find.byType(MaterialApp)),
+      ).read(appRouterProvider);
+
+      appRouter.go(RouteNames.settingsUpdatePlanNewGoalManualResult);
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byType(NewGoalManualResultScreen)),
+      )!;
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(const Key('newGoalManualResultDistanceField')),
+          matching: find.byType(TextField),
+        ),
+        '10',
+      );
+      await tester.enterText(
+        find.descendant(
+          of: find.byKey(const Key('newGoalManualResultTimeField')),
+          matching: find.byType(TextField),
+        ),
+        '00:45:00',
+      );
+      await tester.tap(find.byKey(const Key('newGoalManualResultDateField')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('OK'));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('newGoalManualResultHardEffortYes')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('newGoalManualResultHardEffortYes')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.widgetWithText(AppButton, l10n.newGoalManualResultUseButton),
+      );
+      await tester.pumpAndSettle();
+
+      expect(notifier.callLog, equals(['useFitnessResult', 'recommend']));
+      expect(find.byType(NewGoalReviewScreen), findsOneWidget);
+      expect(find.byType(NewGoalManualResultScreen), findsNothing);
+    },
+  );
+
   testWidgets('New Goal draft-backed values persist after back navigation', (
     tester,
   ) async {
@@ -501,7 +802,9 @@ void main() {
           ),
           newGoalInitialDataLoaderProvider.overrideWithValue(
             () async => NewGoalInitialData(
-              profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
+              profile: _newGoalProfileWithPlanStart(
+                date: DateTime(2026, 7, 31),
+              ),
               activePlanId: 'active-plan',
             ),
           ),

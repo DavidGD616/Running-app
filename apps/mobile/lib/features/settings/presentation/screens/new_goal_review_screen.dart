@@ -22,20 +22,19 @@ import '../../../profile/domain/models/runner_profile.dart';
 import '../../domain/new_goal_models.dart';
 import '../new_goal_provider.dart';
 
-enum NewGoalReviewMode {
-  recommendation,
-  fitness,
-  proposal,
-  success,
-}
+enum NewGoalReviewMode { recommendation, fitness, proposal, success }
 
 class NewGoalReviewScreen extends ConsumerStatefulWidget {
-  const NewGoalReviewScreen({super.key, this.mode = NewGoalReviewMode.recommendation});
+  const NewGoalReviewScreen({
+    super.key,
+    this.mode = NewGoalReviewMode.recommendation,
+  });
 
   final NewGoalReviewMode mode;
 
   @override
-  ConsumerState<NewGoalReviewScreen> createState() => _NewGoalReviewScreenState();
+  ConsumerState<NewGoalReviewScreen> createState() =>
+      _NewGoalReviewScreenState();
 }
 
 class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
@@ -79,13 +78,16 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
     }
   }
 
-  Future<void> _useSuggestedActivity(NewGoalFitnessSuggestedActivity activity) async {
-    ref.read(newGoalProvider.notifier).useFitnessResult(
+  Future<void> _useSuggestedActivity(
+    NewGoalFitnessSuggestedActivity activity,
+  ) async {
+    final notifier = ref.read(newGoalProvider.notifier);
+    notifier.useFitnessResult(
       NewGoalFitnessResult(
         source: NewGoalFitnessSource.manual,
         distanceKm: activity.distanceKm,
         elapsed: activity.elapsed,
-        recordedOn: activity.recordedOn,
+        recordedOn: _normalizeDateOnly(activity.recordedOn),
         hardEffort: true,
       ),
     );
@@ -104,7 +106,10 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
     }
   }
 
-  Future<void> _confirmApply(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _confirmApply(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
@@ -128,7 +133,11 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
     }
   }
 
-  bool _requiresFreshPreview(NewGoalState state, NewGoalProposal? proposal, DateTime now) {
+  bool _requiresFreshPreview(
+    NewGoalState state,
+    NewGoalProposal? proposal,
+    DateTime now,
+  ) {
     if (proposal == null) return false;
     if (proposal.expiresAt.isBefore(now)) return true;
     if (state is NewGoalFailure) {
@@ -141,7 +150,9 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
 
   String _failureText(NewGoalState state, AppLocalizations l10n) {
     if (state is NewGoalFailure) {
-      if (state.reason == NewGoalFailureReason.auth) return l10n.editGoalErrorAuth;
+      if (state.reason == NewGoalFailureReason.auth) {
+        return l10n.editGoalErrorAuth;
+      }
       if (state.reason == NewGoalFailureReason.invalidInput) {
         return l10n.editGoalErrorInvalid;
       }
@@ -217,7 +228,8 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
           }
         },
         onSecondary: () {
-          if (state is NewGoalFailure && state.reason == NewGoalFailureReason.invalidInput) {
+          if (state is NewGoalFailure &&
+              state.reason == NewGoalFailureReason.invalidInput) {
             _recommend();
           } else {
             context.pop();
@@ -253,7 +265,8 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
       );
     }
 
-    if (widget.mode == NewGoalReviewMode.fitness && state is NewGoalFitnessCheckRequired) {
+    if (widget.mode == NewGoalReviewMode.fitness &&
+        state is NewGoalFitnessCheckRequired) {
       return _FitnessCheckScreen(
         l10n: l10n,
         check: state.fitnessCheck,
@@ -345,9 +358,7 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
             padding: const EdgeInsets.all(AppSpacing.screen),
             child: Text(
               _failureText(state, l10n),
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.error,
-              ),
+              style: AppTypography.bodyMedium.copyWith(color: AppColors.error),
             ),
           ),
         ),
@@ -386,7 +397,12 @@ class _LoadingRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
-            child: Text(label, style: AppTypography.bodyLarge.copyWith(color: AppColors.textSecondary)),
+            child: Text(
+              label,
+              style: AppTypography.bodyLarge.copyWith(
+                color: AppColors.textSecondary,
+              ),
+            ),
           ),
           Text(
             value,
@@ -442,7 +458,9 @@ class _DraftSummaryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.settingsReviewChangesSubtitle(l10n.settingsNewGoal),
+                        l10n.settingsReviewChangesSubtitle(
+                          l10n.settingsNewGoal,
+                        ),
                         style: AppTypography.bodyLarge.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -458,9 +476,12 @@ class _DraftSummaryScreen extends StatelessWidget {
                           ),
                           _LoadingRow(
                             label: l10n.raceDateLabel,
-                            value: draft.effectiveGoal.hasRaceDate &&
+                            value:
+                                draft.effectiveGoal.hasRaceDate &&
                                     draft.effectiveGoal.raceDate != null
-                                ? dateFormat.format(draft.effectiveGoal.raceDate!)
+                                ? dateFormat.format(
+                                    draft.effectiveGoal.raceDate!,
+                                  )
                                 : l10n.editGoalNoDate,
                           ),
                           _LoadingRow(
@@ -506,14 +527,14 @@ class _DraftSummaryScreen extends StatelessWidget {
                             value: draft.schedule.hardDays.isEmpty
                                 ? '—'
                                 : draft.schedule.hardDays
-                                    .map(
-                                      (day) => OnboardingValues.localizeDay(
-                                        day.key,
-                                        l10n,
-                                      ),
-                                    )
-                                    .toList(growable: false)
-                                    .join(', '),
+                                      .map(
+                                        (day) => OnboardingValues.localizeDay(
+                                          day.key,
+                                          l10n,
+                                        ),
+                                      )
+                                      .toList(growable: false)
+                                      .join(', '),
                           ),
                           _LoadingRow(
                             label: l10n.planPreferenceLabel,
@@ -601,9 +622,12 @@ class _RecommendationReadyScreen extends StatelessWidget {
                           ),
                           _LoadingRow(
                             label: l10n.raceDateLabel,
-                            value: recommendation.sourceGoal.hasRaceDate &&
+                            value:
+                                recommendation.sourceGoal.hasRaceDate &&
                                     recommendation.sourceGoal.raceDate != null
-                                ? dateFormat.format(recommendation.sourceGoal.raceDate!)
+                                ? dateFormat.format(
+                                    recommendation.sourceGoal.raceDate!,
+                                  )
                                 : l10n.editGoalNoFixedDate,
                           ),
                         ],
@@ -618,24 +642,28 @@ class _RecommendationReadyScreen extends StatelessWidget {
                             value: startDate,
                           ),
                           _LoadingRow(
-                            label: l10n.editGoalEndsOn(dateFormat.format(recommendation.timelineEndDate)),
-                            value: l10n.editGoalTotalWeeks(recommendation.timelineWeeks),
+                            label: l10n.editGoalEndsOn(
+                              dateFormat.format(recommendation.timelineEndDate),
+                            ),
+                            value: l10n.editGoalTotalWeeks(
+                              recommendation.timelineWeeks,
+                            ),
                           ),
                         ],
                       ),
                       if (recommendation.estimate != null) ...[
                         const SizedBox(height: AppSpacing.xl),
-                          Text(
-                            l10n.editGoalEstimatedFinishRange(
-                              _formatDuration(
-                                recommendation.estimate!.fasterTime,
-                                l10n,
-                              ),
-                              _formatDuration(
-                                recommendation.estimate!.slowerTime,
-                                l10n,
-                              ),
+                        Text(
+                          l10n.editGoalEstimatedFinishRange(
+                            _formatDuration(
+                              recommendation.estimate!.fasterTime,
+                              l10n,
                             ),
+                            _formatDuration(
+                              recommendation.estimate!.slowerTime,
+                              l10n,
+                            ),
+                          ),
                           style: AppTypography.bodyLarge.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -643,7 +671,10 @@ class _RecommendationReadyScreen extends StatelessWidget {
                         const SizedBox(height: AppSpacing.xs),
                         Text(
                           l10n.editGoalEstimateConfidence(
-                            _estimateConfidence(recommendation.estimate!.confidence, l10n),
+                            _estimateConfidence(
+                              recommendation.estimate!.confidence,
+                              l10n,
+                            ),
                           ),
                           style: AppTypography.bodyMedium.copyWith(
                             color: AppColors.textSecondary,
@@ -696,7 +727,7 @@ class _FitnessCheckScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.editGoalFitnessCheckTitle),
+      appBar: AppDetailHeaderBar(title: l10n.newGoalFitnessCheckTitle),
       body: SafeArea(
         top: false,
         child: Padding(
@@ -714,18 +745,35 @@ class _FitnessCheckScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.editGoalFitnessCheckSubtitle,
+                        l10n.newGoalFitnessCheckSubtitle,
                         style: AppTypography.bodyLarge.copyWith(
                           color: AppColors.textSecondary,
                         ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
+                      AppButton(
+                        key: const Key('newGoalManualResultShortcut'),
+                        label: l10n.newGoalEnterRecentResult,
+                        variant: AppButtonVariant.secondary,
+                        isLoading: isBusy,
+                        onPressed: isBusy
+                            ? null
+                            : () {
+                                context.push(
+                                  RouteNames
+                                      .settingsUpdatePlanNewGoalManualResult,
+                                );
+                              },
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
                       if (check.suggestedActivities.isNotEmpty) ...[
                         SectionLabel(label: l10n.editGoalRecommendedResult),
                         const SizedBox(height: AppSpacing.sm),
                         ...check.suggestedActivities.map(
                           (activity) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.md,
+                            ),
                             child: _SuggestedActivityCard(
                               l10n: l10n,
                               locale: locale,
@@ -741,15 +789,17 @@ class _FitnessCheckScreen extends StatelessWidget {
                       if (safeDates.isEmpty)
                         Text(l10n.editGoalNoSafeDates)
                       else
-                        ...safeDates
-                            .map(
-                              (date) => Padding(
-                                padding: const EdgeInsets.only(
-                                  bottom: AppSpacing.sm,
-                                ),
-                                child: _InfoCard(text: date, color: AppColors.backgroundCard),
-                              ),
+                        ...safeDates.map(
+                          (date) => Padding(
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
                             ),
+                            child: _InfoCard(
+                              text: date,
+                              color: AppColors.backgroundCard,
+                            ),
+                          ),
+                        ),
                       const SizedBox(height: AppSpacing.xl),
                       if (draft?.hasRaceDate == false)
                         Text(
@@ -799,7 +849,7 @@ class _AssessmentPendingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.editGoalFitnessCheckTitle),
+      appBar: AppDetailHeaderBar(title: l10n.newGoalFitnessCheckTitle),
       body: SafeArea(
         top: false,
         child: Padding(
@@ -917,11 +967,10 @@ class _ProposalScreen extends StatelessWidget {
                         const SizedBox(height: AppSpacing.lg),
                         ...proposal!.warnings.map(
                           (warning) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                            child: _WarningRow(
-                              l10n: l10n,
-                              warning: warning,
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
                             ),
+                            child: _WarningRow(l10n: l10n, warning: warning),
                           ),
                         ),
                       ],
@@ -930,23 +979,24 @@ class _ProposalScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                       _InfoCard(
                         color: AppColors.accentMuted,
-                        text: l10n.editGoalTotalWeeks(proposal!.candidatePlan.totalWeeks),
+                        text: l10n.editGoalTotalWeeks(
+                          proposal!.candidatePlan.totalWeeks,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       SectionLabel(label: l10n.editGoalNextTwoWeeks),
                       const SizedBox(height: AppSpacing.sm),
-                      ...previewWeeks
-                          .map(
-                            (week) => Padding(
-                              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-                              child: _WeekExpansion(
-                                l10n: l10n,
-                                dateFormat: dateFormat,
-                                week: week,
-                                initiallyExpanded: true,
-                              ),
-                            ),
+                      ...previewWeeks.map(
+                        (week) => Padding(
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                          child: _WeekExpansion(
+                            l10n: l10n,
+                            dateFormat: dateFormat,
+                            week: week,
+                            initiallyExpanded: true,
                           ),
+                        ),
+                      ),
                       if (extraWeeks.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.sm),
                         ExpansionTile(
@@ -994,7 +1044,9 @@ class _ProposalScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               AppButton(
-                label: needsFreshPreview ? l10n.editGoalRetry : l10n.editGoalKeepCurrent,
+                label: needsFreshPreview
+                    ? l10n.editGoalRetry
+                    : l10n.editGoalKeepCurrent,
                 variant: AppButtonVariant.secondary,
                 isLoading: isBusy,
                 onPressed: isBusy ? null : onSecondary,
@@ -1127,7 +1179,9 @@ class _GoalCard extends StatelessWidget {
         color: highlighted ? AppColors.accentMuted : AppColors.backgroundCard,
         borderRadius: AppRadius.borderLg,
         border: Border.all(
-          color: highlighted ? AppColors.accentPrimary : AppColors.borderDefault,
+          color: highlighted
+              ? AppColors.accentPrimary
+              : AppColors.borderDefault,
         ),
       ),
       child: Column(
@@ -1135,16 +1189,23 @@ class _GoalCard extends StatelessWidget {
         children: [
           Text(
             label,
-            style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
           const SizedBox(height: AppSpacing.sm),
-          Text(_goalLabel(goal, AppLocalizations.of(context)!), style: AppTypography.titleMedium),
+          Text(
+            _goalLabel(goal, AppLocalizations.of(context)!),
+            style: AppTypography.titleMedium,
+          ),
           const SizedBox(height: AppSpacing.xs),
           Text(
             goal.hasRaceDate && goal.raceDate != null
                 ? dateFormat.format(goal.raceDate!)
                 : l10n(context).editGoalNoDate,
-            style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+            style: AppTypography.bodyMedium.copyWith(
+              color: AppColors.textSecondary,
+            ),
           ),
         ],
       ),
@@ -1205,30 +1266,32 @@ class _WeekExpansion extends StatelessWidget {
       title: Text(l10n.editGoalWeekLabel(week.weekNumber)),
       subtitle: Text(
         l10n.editGoalPreservedCount(sessionCount),
-        style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+        style: AppTypography.bodyMedium.copyWith(
+          color: AppColors.textSecondary,
+        ),
       ),
       children: week.sessions.isEmpty
           ? [
-              const SizedBox(
-                height: 8,
-              ),
+              const SizedBox(height: 8),
               Padding(
                 padding: const EdgeInsets.only(bottom: AppSpacing.base),
                 child: Text(
                   l10n.no,
-                  style: AppTypography.bodyMedium.copyWith(color: AppColors.textSecondary),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
                 ),
               ),
             ]
           : week.sessions
-              .map(
-                (session) => _SessionLineItem(
-                  dateFormat: dateFormat,
-                  session: session,
-                  l10n: l10n,
-                ),
-              )
-              .toList(growable: false),
+                .map(
+                  (session) => _SessionLineItem(
+                    dateFormat: dateFormat,
+                    session: session,
+                    l10n: l10n,
+                  ),
+                )
+                .toList(growable: false),
     );
   }
 }
@@ -1246,7 +1309,8 @@ class _SessionLineItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final baseLine = '${dateFormat.format(session.date)} · ${_sessionLabel(session.type, l10n)}';
+    final baseLine =
+        '${dateFormat.format(session.date)} · ${_sessionLabel(session.type, l10n)}';
     final locale = Localizations.localeOf(context).toLanguageTag();
     final details = _sessionDetails(
       session: session,
@@ -1357,7 +1421,9 @@ String _sessionDetails({
     final distanceFormatter = NumberFormat.decimalPattern(locale)
       ..minimumFractionDigits = 0
       ..maximumFractionDigits = 1;
-    values.add('${distanceFormatter.format(session.distanceKm)} ${l10n.unitKm}');
+    values.add(
+      '${distanceFormatter.format(session.distanceKm)} ${l10n.unitKm}',
+    );
   }
   if (session.durationMinutes != null) {
     values.add(UnitFormatter.formatDuration(session.durationMinutes!, l10n));
@@ -1375,7 +1441,9 @@ String _formatDuration(Duration duration, AppLocalizations l10n) {
   final hours = duration.inHours;
   final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
   final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
-  return hours == 0 ? '$minutes:$seconds' : '$hours${l10n.progressHourUnit} $minutes:$seconds';
+  return hours == 0
+      ? '$minutes:$seconds'
+      : '$hours${l10n.progressHourUnit} $minutes:$seconds';
 }
 
 List<PlanWeek> _proposalWeeks(NewGoalProposal proposal) {
@@ -1408,19 +1476,34 @@ NewGoalProposal? _proposalFromState(NewGoalState state) {
 
 (String, String) _warningContent(String warning, AppLocalizations l10n) {
   if (warning == 'short_notice') {
-    return (l10n.editGoalWarningShortNoticeTitle, l10n.editGoalWarningShortNoticeBody);
+    return (
+      l10n.editGoalWarningShortNoticeTitle,
+      l10n.editGoalWarningShortNoticeBody,
+    );
   }
   if (warning == 'race_week') {
-    return (l10n.editGoalWarningRaceWeekTitle, l10n.editGoalWarningRaceWeekBody);
+    return (
+      l10n.editGoalWarningRaceWeekTitle,
+      l10n.editGoalWarningRaceWeekBody,
+    );
   }
   if (warning == 'readiness_gap') {
-    return (l10n.editGoalWarningReadinessGapTitle, l10n.editGoalWarningReadinessGapBody);
+    return (
+      l10n.editGoalWarningReadinessGapTitle,
+      l10n.editGoalWarningReadinessGapBody,
+    );
   }
   if (warning == 'limited_evidence') {
-    return (l10n.editGoalWarningLimitedEvidenceTitle, l10n.editGoalWarningLimitedEvidenceBody);
+    return (
+      l10n.editGoalWarningLimitedEvidenceTitle,
+      l10n.editGoalWarningLimitedEvidenceBody,
+    );
   }
   if (warning == 'no_fixed_date') {
-    return (l10n.editGoalWarningNoFixedDateTitle, l10n.editGoalWarningNoFixedDateBody);
+    return (
+      l10n.editGoalWarningNoFixedDateTitle,
+      l10n.editGoalWarningNoFixedDateBody,
+    );
   }
   return (warning, warning);
 }
@@ -1432,3 +1515,6 @@ String _goalLabel(NewGoalGoal goal, AppLocalizations l10n) {
   if (goal.race == RunnerGoalRace.marathon) return l10n.raceMarathon;
   return l10n.raceOther;
 }
+
+DateTime _normalizeDateOnly(DateTime value) =>
+    DateTime(value.year, value.month, value.day);

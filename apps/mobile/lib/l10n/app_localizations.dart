@@ -4553,6 +4553,90 @@ abstract class AppLocalizations {
   /// **'Set the training preferences you want to use with this goal.'**
   String get settingsNewGoalIntroPointTraining;
 
+  /// No description provided for @newGoalManualResultTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a recent result'**
+  String get newGoalManualResultTitle;
+
+  /// No description provided for @newGoalManualResultSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use a recent hard effort. This sets an estimate range; it does not change your workout paces directly.'**
+  String get newGoalManualResultSubtitle;
+
+  /// No description provided for @newGoalResultDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get newGoalResultDistance;
+
+  /// No description provided for @newGoalResultDistanceHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Kilometers, for example 5'**
+  String get newGoalResultDistanceHint;
+
+  /// No description provided for @newGoalResultTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get newGoalResultTime;
+
+  /// No description provided for @newGoalResultTimeHint.
+  ///
+  /// In en, this message translates to:
+  /// **'HH:MM:SS'**
+  String get newGoalResultTimeHint;
+
+  /// No description provided for @newGoalResultDate.
+  ///
+  /// In en, this message translates to:
+  /// **'When did you run it?'**
+  String get newGoalResultDate;
+
+  /// No description provided for @newGoalHardEffortQuestion.
+  ///
+  /// In en, this message translates to:
+  /// **'Was this a hard, sustained effort?'**
+  String get newGoalHardEffortQuestion;
+
+  /// No description provided for @newGoalManualResultValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a positive distance, a time in HH:MM:SS, and the date of a hard effort.'**
+  String get newGoalManualResultValidation;
+
+  /// No description provided for @newGoalManualResultSubmissionError.
+  ///
+  /// In en, this message translates to:
+  /// **'That result could not be used yet. Please try again.'**
+  String get newGoalManualResultSubmissionError;
+
+  /// No description provided for @newGoalManualResultUseButton.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this result'**
+  String get newGoalManualResultUseButton;
+
+  /// No description provided for @newGoalFitnessCheckTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let’s ground this in your running'**
+  String get newGoalFitnessCheckTitle;
+
+  /// No description provided for @newGoalFitnessCheckSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We need one recent hard effort before we estimate this goal. You can use a recent run, enter a result, or schedule a benchmark.'**
+  String get newGoalFitnessCheckSubtitle;
+
+  /// No description provided for @newGoalEnterRecentResult.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a recent result'**
+  String get newGoalEnterRecentResult;
+
   /// Preferences section header
   ///
   /// In en, this message translates to:
