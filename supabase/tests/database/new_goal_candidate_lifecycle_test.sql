@@ -348,14 +348,15 @@ select ok(
 );
 
 -- Draft and assessment RLS scope.
+set local role authenticated;
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000007', true);
 select lives_ok(
   $$
     insert into public.new_goal_drafts (user_id, source_plan_version_id, data, status)
-    values ('10000000-0000-0000-0000-000000000007', 'draft-source', '{"stage":"draft-a"}'::jsonb, 'editing')
+    values ('10000000-0000-0000-0000-000000000007', 'draft-source', '{"stage":"draft-owner"}'::jsonb, 'editing')
   $$,
   'draft fixtures can be stored by owners'
 );
-set local role authenticated;
 select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000005', true);
 select lives_ok(
   $$
@@ -371,7 +372,65 @@ select throws_ok(
   $$,
   '42501',
   'insufficient_privilege',
-  'authenticated user A cannot insert another user\'s draft'
+  'authenticated user A cannot insert another user\'s draft with a known victim plan'
+);
+select throws_ok(
+  $$
+    insert into public.new_goal_drafts (user_id, source_plan_version_id, data)
+    values ('10000000-0000-0000-0000-000000000006', 'nonexistent-source', '{"from":"blocked-unknown-plan"}'::jsonb)
+  $$,
+  '42501',
+  'insufficient_privilege',
+  'authenticated user A cannot insert another user\'s draft with an unknown plan'
+);
+select throws_ok(
+  $$
+    insert into public.new_goal_drafts (
+      user_id,
+      source_plan_version_id,
+      data
+    ) values (
+      '10000000-0000-0000-0000-000000000005',
+      'rls-source-b',
+      '{"from":"cross-plan-blocked-upsert"}'::jsonb
+  )
+    on conflict (user_id)
+    do update set
+      source_plan_version_id = excluded.source_plan_version_id,
+      data = excluded.data
+  $$,
+  '42501',
+  'new_goal_draft_source_plan_not_owned',
+  'authenticated user A cannot upsert with another user\'s source plan'
+);
+select throws_ok(
+  $$
+    update public.new_goal_drafts
+       set source_plan_version_id = 'rls-source-b',
+           data = '{"from":"direct-update-blocked"}'::jsonb
+     where user_id = '10000000-0000-0000-0000-000000000005'
+  $$,
+  '42501',
+  'new_goal_draft_source_plan_not_owned',
+  'authenticated user A cannot switch its draft to another user\'s source plan via direct UPDATE'
+);
+select lives_ok(
+  $$
+    insert into public.new_goal_drafts (
+      user_id,
+      source_plan_version_id,
+      data
+    ) values (
+      '10000000-0000-0000-0000-000000000005',
+      'rls-source-a',
+      '{"from":"owned-upsert"}'::jsonb
+    )
+    on conflict (user_id)
+    do update set
+      source_plan_version_id = excluded.source_plan_version_id,
+      data = excluded.data
+  $$,
+  'authenticated user A can upsert its own draft using its source plan'
 );
 select throws_ok(
   $$

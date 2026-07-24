@@ -33,6 +33,41 @@ revoke all on table public.new_goal_drafts from public, anon;
 grant select, insert, update, delete on table public.new_goal_drafts to authenticated;
 grant all on table public.new_goal_drafts to service_role;
 
+create or replace function public.enforce_new_goal_draft_source_plan_ownership()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  -- Service-role callers are trusted and may write any draft row for backend tasks.
+  if coalesce(auth.role(), '') <> 'service_role'
+     and auth.uid() is distinct from NEW.user_id then
+    raise exception using
+      message = 'insufficient_privilege',
+      errcode = '42501';
+  end if;
+
+  if not exists (
+    select 1
+      from public.plan_versions as plan
+     where plan.id = NEW.source_plan_version_id
+       and plan.user_id = NEW.user_id
+  ) then
+    raise exception using
+      message = 'new_goal_draft_source_plan_not_owned',
+      errcode = '42501';
+  end if;
+
+  return new;
+end;
+$$;
+
+drop trigger if exists new_goal_drafts_source_plan_ownership_guard on public.new_goal_drafts;
+create trigger new_goal_drafts_source_plan_ownership_guard
+  before insert or update on public.new_goal_drafts
+  for each row execute function public.enforce_new_goal_draft_source_plan_ownership();
+
 create table if not exists public.new_goal_assessments (
   id              text primary key,
   user_id         uuid references auth.users(id) on delete cascade not null,
