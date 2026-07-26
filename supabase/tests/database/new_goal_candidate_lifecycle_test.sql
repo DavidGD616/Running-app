@@ -372,7 +372,7 @@ select throws_ok(
   $$,
   '42501',
   'insufficient_privilege',
-  'authenticated user A cannot insert another user\'s draft with a known victim plan'
+  'authenticated user A cannot insert another user''s draft with a known victim plan'
 );
 select throws_ok(
   $$
@@ -381,7 +381,7 @@ select throws_ok(
   $$,
   '42501',
   'insufficient_privilege',
-  'authenticated user A cannot insert another user\'s draft with an unknown plan'
+  'authenticated user A cannot insert another user''s draft with an unknown plan'
 );
 select throws_ok(
   $$
@@ -401,7 +401,7 @@ select throws_ok(
   $$,
   '42501',
   'new_goal_draft_source_plan_not_owned',
-  'authenticated user A cannot upsert with another user\'s source plan'
+  'authenticated user A cannot upsert with another user''s source plan'
 );
 select throws_ok(
   $$
@@ -412,7 +412,7 @@ select throws_ok(
   $$,
   '42501',
   'new_goal_draft_source_plan_not_owned',
-  'authenticated user A cannot switch its draft to another user\'s source plan via direct UPDATE'
+  'authenticated user A cannot switch its draft to another user''s source plan via direct UPDATE'
 );
 select lives_ok(
   $$
@@ -451,8 +451,8 @@ select throws_ok(
     )
   $$,
   '42501',
-  'insufficient_privilege',
-  'authenticated user A cannot create another user\'s assessment draft'
+  'new row violates row-level security policy for table "new_goal_assessments"',
+  'authenticated user A cannot create another user''s assessment draft'
 );
 select lives_ok(
   $$
@@ -480,7 +480,7 @@ select is(
   (
     select user_id::text
     from public.new_goal_drafts
-    where data ->> 'from' = 'a'
+    where data ->> 'from' = 'owned-upsert'
   ),
   '10000000-0000-0000-0000-000000000005',
   'draft write uses authenticated identity'
@@ -505,11 +505,13 @@ select throws_ok(
     )
   $$,
   '23514',
-  'check constraint new_goal_assessments_kind_check',
+  'new row for relation "new_goal_assessments" violates check constraint "new_goal_assessments_kind_check"',
   'invalid assessment kind is rejected'
 );
 
 -- Proposal storage lifecycle and user scope.
+reset role;
+set local role service_role;
 select lives_ok(
   $$
     select public.store_new_goal_proposal(
@@ -866,7 +868,7 @@ select lives_ok(
     select public.store_new_goal_proposal(
       '10000000-0000-0000-0000-000000000007',
       'draft-profile-stale-accept',
-      'draft-source',
+      'draft-fields-plan',
       '{"id":"draft-stale-accept-candidate","weeks":[]}'::jsonb,
       '{"race":"5k"}'::jsonb,
       '{}'::jsonb,
@@ -948,7 +950,7 @@ select is(
   (
     select data - 'goal' - 'acceptedRaceTarget' - 'updatedAt'
     from runner_profiles
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
   ),
   '{"preferences":{"units":"metric","days":["tue","thu"]},"displayName":"Main Runner","nested":{"preserve":true}}'::jsonb,
   'acceptance preserves unrelated profile fields'
@@ -962,7 +964,7 @@ select is(
   (
     select to_jsonb(updated_at) #>> '{}'
     from runner_profiles
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
   ),
   'embedded profile timestamp matches the row timestamp'
 );
@@ -970,7 +972,7 @@ select is(
   (
     select data -> 'nested'
     from runner_profiles
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
   ),
   '{"preserve":true}'::jsonb,
   'acceptance preserves nested profile values'
@@ -1087,7 +1089,7 @@ select is(
   (
     select updated_at
     from runner_profiles
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
   ),
   (select profile_updated_at from new_goal_main_acceptance_snapshot),
   'duplicate acceptance preserves profile timestamp'
@@ -1106,7 +1108,7 @@ select is(
   (
     select generated_at
     from plan_versions
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
       and is_active = true
   ),
   (select active_plan_generated_at from new_goal_main_acceptance_snapshot),
@@ -1116,7 +1118,7 @@ select is(
   (
     select data
     from plan_versions
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
       and is_active = true
   ),
   (select active_plan_data from new_goal_main_acceptance_snapshot),
@@ -1135,7 +1137,7 @@ select is(
   (
     select count(*)::integer
     from plan_versions
-    where user_id = '10000000-0000-0000-000000000001'
+    where user_id = '10000000-0000-0000-0000-000000000001'
       and is_active = true
   ),
   1,
