@@ -153,6 +153,34 @@ class _ApplyTransitionNotifier extends NewGoalNotifier {
   }
 }
 
+class _ApplyTrackingProposalNotifier extends NewGoalNotifier {
+  _ApplyTrackingProposalNotifier(this._state);
+
+  final NewGoalState _state;
+  bool applyCalled = false;
+
+  @override
+  NewGoalState build() => _state;
+
+  @override
+  Future<bool> apply() async {
+    applyCalled = true;
+    if (state is NewGoalProposalReady) {
+      final current = state as NewGoalProposalReady;
+      state = NewGoalSuccess(
+        acceptance: NewGoalAcceptance(
+          versionId: 'acceptance-test',
+          plan: current.proposal.candidatePlan,
+          profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 24)),
+        ),
+        proposal: current.proposal,
+      );
+      return true;
+    }
+    return false;
+  }
+}
+
 RunnerProfile _newGoalProfileWithPlanStart({required DateTime date}) {
   final profile = buildRunnerProfile();
   return profile.copyWith(
@@ -1202,7 +1230,9 @@ void main() {
       tester.element(find.byType(NewGoalRecommendationScreen)),
     )!;
 
-    await tester.tap(find.widgetWithText(AppButton, l10n.newGoalAcceptChanges));
+    await tester.tap(
+      find.widgetWithText(AppButton, l10n.newGoalBuildPlanPreview),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(NewGoalProposalScreen), findsOneWidget);
@@ -1260,7 +1290,9 @@ void main() {
       tester.element(find.byType(NewGoalProposalScreen)),
     )!;
 
-    await tester.tap(find.widgetWithText(AppButton, l10n.newGoalAcceptChanges));
+    await tester.tap(
+      find.widgetWithText(AppButton, l10n.newGoalReplaceCurrentPlan),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.widgetWithText(TextButton, l10n.yes));
     await tester.pumpAndSettle();
@@ -1269,6 +1301,69 @@ void main() {
     expect(
       appRouter.routerDelegate.currentConfiguration.uri.path,
       RouteNames.settingsUpdatePlanNewGoalReady,
+    );
+  });
+
+  testWidgets('Keep current plan from proposal does not apply proposal', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final notifier = _ApplyTrackingProposalNotifier(
+      _proposalReadyStateFixture(),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalProvider.overrideWith(() => notifier),
+          newGoalClockProvider.overrideWithValue(() => DateTime(2026, 7, 31)),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+    final appRouter = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    ).read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalProposal);
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(NewGoalProposalScreen)),
+    )!;
+
+    await tester.tap(
+      find.widgetWithText(AppButton, l10n.newGoalKeepCurrentPlan),
+    );
+    await tester.pumpAndSettle();
+
+    expect(notifier.applyCalled, isFalse);
+    expect(
+      appRouter.routerDelegate.currentConfiguration.uri.path,
+      RouteNames.settingsUpdatePlanNewGoalSummary,
     );
   });
 
@@ -1321,7 +1416,9 @@ void main() {
     final l10n = AppLocalizations.of(
       tester.element(find.byType(NewGoalProposalScreen)),
     )!;
-    await tester.tap(find.widgetWithText(AppButton, l10n.newGoalViewFullPlan));
+    await tester.tap(
+      find.widgetWithText(AppButton, l10n.newGoalViewFullProposedPlan),
+    );
     await tester.pumpAndSettle();
 
     expect(find.byType(NewGoalFullPlanScreen), findsOneWidget);

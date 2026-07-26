@@ -1210,7 +1210,9 @@ NewGoalFailureReason _mapResponseFailure(FunctionResponse response) {
   if (error == 'proposal_expired' || error == 'recommendation_expired') {
     return NewGoalFailureReason.expired;
   }
-  if (error == 'source_plan_stale' || error == 'proposal_not_found') {
+  if (error == 'source_plan_stale' ||
+      error == 'source_profile_stale' ||
+      error == 'proposal_not_found') {
     return NewGoalFailureReason.stale;
   }
   if (response.status == 409 || error == 'proposal_not_pending') {

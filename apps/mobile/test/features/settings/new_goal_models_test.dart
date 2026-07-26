@@ -158,6 +158,30 @@ void main() {
     expect(proposal.warnings, isEmpty);
   });
 
+  test(
+    'proposal parser reads nested server recommendation timeline and outer race estimate',
+    () {
+      final proposal = NewGoalProposal.fromJson(_proposalNestedTimelineJson());
+      expect(proposal.recommendation, isNotNull);
+      expect(proposal.raceEstimate, isNotNull);
+      expect(
+        proposal.recommendation!.sourceGoal.race,
+        RunnerGoalRace.halfMarathon,
+      );
+      expect(
+        proposal.recommendation!.proposedGoal.race,
+        RunnerGoalRace.halfMarathon,
+      );
+      expect(proposal.recommendation!.timelineMode, 'abbreviated');
+      expect(proposal.recommendation!.timelineWeeks, 10);
+      expect(proposal.recommendation!.timelineDate, DateTime(2026, 8, 1));
+      expect(proposal.recommendation!.timelineEndDate, DateTime(2026, 10, 9));
+      expect(proposal.recommendation!.timelineHasRaceDate, isTrue);
+      expect(proposal.raceEstimate!.source, 'manual');
+      expect(proposal.raceEstimate!.slowerTime, const Duration(minutes: 68));
+    },
+  );
+
   test('fitness result payloads persist without target time', () {
     final result = NewGoalFitnessResult(
       source: NewGoalFitnessSource.assessment,
@@ -266,6 +290,66 @@ Map<String, dynamic> _proposalJson() => {
     'totalWeeks': 12,
     'currentWeekNumber': 1,
     'sessions': <Map<String, dynamic>>[],
+  },
+  'recommendation': {
+    'mode': 'long_term',
+    'startDate': '2026-07-23',
+    'endDate': '2026-10-15',
+    'weeks': 12,
+    'hasRaceDate': true,
+    'raceDate': '2026-10-18',
+    'daysToRace': 87,
+  },
+  'raceEstimate': {
+    'centerTimeSeconds': 3600,
+    'fasterTimeSeconds': 3500,
+    'slowerTimeSeconds': 3900,
+    'confidence': 'high',
+    'evidence': [
+      {
+        'source': 'race_estimator',
+        'recordedOn': '2026-07-20',
+        'reason': 'model_derived',
+      },
+    ],
+  },
+};
+
+Map<String, dynamic> _proposalNestedTimelineJson() => {
+  'proposalId': 'proposal-2',
+  'sourcePlanVersionId': 'active-plan',
+  'expiresAt': '2099-12-31T23:59:59Z',
+  'sourceGoal': {'race': 'race_half_marathon', 'hasRaceDate': false},
+  'proposedGoal': {
+    'race': 'race_half_marathon',
+    'hasRaceDate': true,
+    'raceDate': '2026-10-18',
+  },
+  'candidatePlan': {
+    'schemaVersion': 1,
+    'id': 'candidate-plan',
+    'raceType': 'halfMarathon',
+    'totalWeeks': 12,
+    'currentWeekNumber': 1,
+    'sessions': <Map<String, dynamic>>[],
+  },
+  'recommendation': {
+    'timeline': {
+      'mode': 'abbreviated',
+      'startDate': '2026-08-01',
+      'endDate': '2026-10-09',
+      'weeks': 10,
+      'hasRaceDate': true,
+      'raceDate': '2026-10-18',
+    },
+  },
+  'raceEstimate': {
+    'centerTimeSeconds': 3900,
+    'fasterTimeSeconds': 3720,
+    'slowerTimeSeconds': 4080,
+    'confidence': 'medium',
+    'source': 'manual',
+    'recordedOn': '2026-07-20',
   },
 };
 

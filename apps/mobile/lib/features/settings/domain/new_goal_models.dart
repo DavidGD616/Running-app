@@ -781,26 +781,22 @@ class NewGoalProposal {
     final summary = summaryValue == null
         ? const <String, dynamic>{}
         : summaryValue.map((key, value) => MapEntry('$key', value));
-    final rawRecommendation = json['recommendation'];
-    final recommendation = rawRecommendation == null
-        ? null
-        : () {
-            try {
-              return NewGoalRecommendation.fromJson(rawRecommendation);
-            } catch (_) {
-              return null;
-            }
-          }();
+    final rawRecommendation = _requiredMap(
+      json['recommendation'],
+      'recommendation',
+    );
+    final recommendation = NewGoalRecommendation.fromJson({
+      'sourceGoal': rawCurrentGoal,
+      'proposedGoal': rawProposedGoal,
+      ...rawRecommendation,
+    });
+
     final rawRaceEstimate = json['raceEstimate'];
     final raceEstimate = rawRaceEstimate == null
         ? null
-        : () {
-            try {
-              return NewGoalRecommendationEstimate.fromJson(rawRaceEstimate);
-            } catch (_) {
-              return null;
-            }
-          }();
+        : NewGoalRecommendationEstimate.fromJson(
+            _strictMap(rawRaceEstimate, 'raceEstimate'),
+          );
 
     if (rawWarnings != null && rawWarnings is! List) {
       throw const FormatException('Invalid proposal warnings.');
@@ -956,12 +952,24 @@ Map<String, dynamic> _extractTimelineFromMap(Map<String, dynamic> map) {
     return _extractTimeline(nestedTimeline);
   }
 
-  final mode = map['mode'] ?? map['timelineMode'];
-  final startDate = map['startDate'] ?? map['date'] ?? map['timelineDate'];
-  final weeks = map['weeks'] ?? map['timelineWeeks'];
+  final mode = map['mode'] ?? map['timelineMode'] ?? map['planMode'];
+  final startDate =
+      map['startDate'] ??
+      map['date'] ??
+      map['timelineDate'] ??
+      map['planStartDate'];
+  final weeks =
+      map['weeks'] ?? map['timelineWeeks'] ?? map['proposedTimelineWeeks'];
   final endDate = map['endDate'];
-  final hasRaceDate = map['hasRaceDate'];
+  final rawHasRaceDate = map['hasRaceDate'];
   final raceDate = map['raceDate'];
+  final bool hasRaceDate = rawHasRaceDate == null
+      ? (raceDate != null)
+      : rawHasRaceDate is bool
+      ? rawHasRaceDate
+      : () {
+          throw const FormatException('Invalid timeline hasRaceDate.');
+        }();
   final daysToRace = map['daysToRace'];
   if (mode is! String || mode.isEmpty) {
     throw const FormatException('Invalid timeline mode.');
@@ -978,7 +986,7 @@ Map<String, dynamic> _extractTimelineFromMap(Map<String, dynamic> map) {
     'date': startDate,
     'weeks': weeks,
     'endDate': endDate ?? _dateFromStartAndWeeks(startDate, weeks),
-    'hasRaceDate': hasRaceDate ?? false,
+    'hasRaceDate': hasRaceDate,
     'raceDate': raceDate,
     'daysToRace': daysToRace,
   };

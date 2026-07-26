@@ -2519,6 +2519,12 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get newGoalReviewYourSetup => 'Review your setup';
+
+  @override
+  String get newGoalBuildPlanPreview => 'Build proposed plan preview';
+
+  @override
   String get newGoalSummaryGoalSection => 'Goal';
 
   @override
@@ -2576,7 +2582,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'This will apply the candidate plan and replace your currently active plan.';
 
   @override
-  String get newGoalFullPlanTitle => 'Proposed plan';
+  String get newGoalFullPlanTitle => 'Full proposed plan';
 
   @override
   String newGoalFullPlanNote(int count) {
@@ -2591,6 +2597,64 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newGoalProposedLabel => 'Proposed goal';
+
+  @override
+  String get newGoalProposalTitle => 'New plan preview';
+
+  @override
+  String get newGoalProposalTimelineTitle => 'Plan timeline';
+
+  @override
+  String get newGoalProposalTimelineStart => 'Start date';
+
+  @override
+  String get newGoalProposalTimelineEnd => 'End date';
+
+  @override
+  String get newGoalProposalTimelineWeeks => 'Weeks';
+
+  @override
+  String get newGoalProposalTimelineMode => 'Timeline mode';
+
+  @override
+  String get newGoalProposalEstimateTitle => 'Estimated finish window';
+
+  @override
+  String newGoalProposalPlanSummary(int weekCount, int sessionCount) {
+    return '$weekCount week plan with $sessionCount sessions';
+  }
+
+  @override
+  String get newGoalProposalConsequences => 'Impact on your current plan';
+
+  @override
+  String get newGoalProposalConsequencesBody =>
+      'Your completed progress is preserved. Remaining workouts in your current plan are replaced only after you approve this new plan.';
+
+  @override
+  String get newGoalProposalModeLongTerm => 'Long-term';
+
+  @override
+  String get newGoalProposalModeShortTerm => 'Short-term';
+
+  @override
+  String get newGoalProposalModeMediumTerm => 'Medium-term';
+
+  @override
+  String get newGoalProposalModeStandard => 'Standard';
+
+  @override
+  String get newGoalProposalModeAbbreviated => 'Abbreviated';
+
+  @override
+  String get newGoalProposalModeRaceSupport => 'Race support';
+
+  @override
+  String get newGoalKeepCurrentPlan => 'Keep current plan';
+
+  @override
+  String get newGoalReplaceCurrentPlanBody =>
+      'Your completed progress is kept and will not be restored if changed. After you approve, remaining current-plan workouts are replaced with your candidate plan, and this action cannot be undone.';
 
   @override
   String newGoalEndsOn(String date) {
@@ -2664,7 +2728,43 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your completed sessions are preserved. The new plan starts at your next unfinished session.';
 
   @override
+  String newGoalSuccessPreservedProgress(int count) {
+    return '$count completed sessions preserved';
+  }
+
+  @override
+  String newGoalSuccessNextSession(String date, String sessionType) {
+    return 'Next session: $date · $sessionType';
+  }
+
+  @override
   String get newGoalViewFullPlan => 'View full plan';
+
+  @override
+  String get newGoalViewFullProposedPlan => 'View full proposed plan';
+
+  @override
+  String newGoalEstimateSource(String source) {
+    return 'Source: $source';
+  }
+
+  @override
+  String get newGoalEstimateSourceRaceEstimator =>
+      'Estimated from your recent race-target model.';
+
+  @override
+  String get newGoalEstimateSourceManual =>
+      'Estimated from your manual result.';
+
+  @override
+  String get newGoalEstimateSourceStrava => 'Estimated from your Strava data.';
+
+  @override
+  String get newGoalEstimateSourceServer =>
+      'Estimated from the server recommendation.';
+
+  @override
+  String get newGoalEstimateSourceUnknown => 'estimated from your profile';
 
   @override
   String newGoalWeekLabel(int week) {

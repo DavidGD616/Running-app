@@ -2389,6 +2389,8 @@
   "newGoalReviewChangesTitle": "Review changes",
   "newGoalReviewChangesSubtitle": "Review your {flowLabel} details and training preferences before saving them.",
   "@newGoalReviewChangesSubtitle": { "placeholders": { "flowLabel": { "type": "String" } } },
+  "newGoalReviewYourSetup": "Review your setup",
+  "newGoalBuildPlanPreview": "Build proposed plan preview",
   "newGoalSummaryGoalSection": "Goal",
   "newGoalSummaryTrainingSection": "Training preferences",
   "newGoalAcceptChanges": "Save changes",
@@ -2407,7 +2409,7 @@
   "newGoalNoFixedDate": "No fixed date",
   "newGoalReplaceCurrentPlan": "Replace current plan?",
   "newGoalReplaceCurrentPlanSubtitle": "This will apply the candidate plan and replace your currently active plan.",
-  "newGoalFullPlanTitle": "Proposed plan",
+  "newGoalFullPlanTitle": "Full proposed plan",
   "newGoalFullPlanNote": "This is the full {count}-week candidate plan generated from your settings and goal update. Complete sessions already marked as done remain preserved.",
   "@newGoalFullPlanNote": {
     "placeholders": {
@@ -2419,6 +2421,30 @@
   "newGoalComparisonSection": "Goal comparison",
   "newGoalCurrentGoalLabel": "Your current goal",
   "newGoalProposedLabel": "Proposed goal",
+  "newGoalProposalTitle": "New plan preview",
+  "newGoalProposalTimelineTitle": "Plan timeline",
+  "newGoalProposalTimelineStart": "Start date",
+  "newGoalProposalTimelineEnd": "End date",
+  "newGoalProposalTimelineWeeks": "Weeks",
+  "newGoalProposalTimelineMode": "Timeline mode",
+  "newGoalProposalEstimateTitle": "Estimated finish window",
+  "newGoalProposalPlanSummary": "{weekCount} week plan with {sessionCount} sessions",
+  "@newGoalProposalPlanSummary": {
+    "placeholders": {
+      "weekCount": { "type": "int" },
+      "sessionCount": { "type": "int" }
+    }
+  },
+  "newGoalProposalConsequences": "Impact on your current plan",
+  "newGoalProposalConsequencesBody": "Your completed progress is preserved. Remaining workouts in your current plan are replaced only after you approve this new plan.",
+  "newGoalProposalModeLongTerm": "Long-term",
+  "newGoalProposalModeShortTerm": "Short-term",
+  "newGoalProposalModeMediumTerm": "Medium-term",
+  "newGoalProposalModeStandard": "Standard",
+  "newGoalProposalModeAbbreviated": "Abbreviated",
+  "newGoalProposalModeRaceSupport": "Race support",
+  "newGoalKeepCurrentPlan": "Keep current plan",
+  "newGoalReplaceCurrentPlanBody": "Your completed progress is kept and will not be restored if changed. After you approve, remaining current-plan workouts are replaced with your candidate plan, and this action cannot be undone.",
   "newGoalEndsOn": "Ends {date}",
   "@newGoalEndsOn": { "placeholders": { "date": { "type": "String" } } },
   "newGoalTotalWeeks": "{count} total weeks",
@@ -2442,7 +2468,32 @@
   "newGoalFullPlanUnavailable": "No proposal plan is available for this goal yet. Return and generate one first.",
   "newGoalSuccessTitle": "Your plan is ready",
   "newGoalSuccessSubtitle": "Your completed sessions are preserved. The new plan starts at your next unfinished session.",
+  "newGoalSuccessPreservedProgress": "{count} completed sessions preserved",
+  "@newGoalSuccessPreservedProgress": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "newGoalSuccessNextSession": "Next session: {date} · {sessionType}",
+  "@newGoalSuccessNextSession": {
+    "placeholders": {
+      "date": { "type": "String" },
+      "sessionType": { "type": "String" }
+    }
+  },
   "newGoalViewFullPlan": "View full plan",
+  "newGoalViewFullProposedPlan": "View full proposed plan",
+  "newGoalEstimateSource": "Source: {source}",
+  "@newGoalEstimateSource": {
+    "placeholders": {
+      "source": { "type": "String" }
+    }
+  },
+  "newGoalEstimateSourceRaceEstimator": "Estimated from your recent race-target model.",
+  "newGoalEstimateSourceManual": "Estimated from your manual result.",
+  "newGoalEstimateSourceStrava": "Estimated from your Strava data.",
+  "newGoalEstimateSourceServer": "Estimated from the server recommendation.",
+  "newGoalEstimateSourceUnknown": "estimated from your profile",
   "newGoalWeekLabel": "Week {week}",
   "@newGoalWeekLabel": { "placeholders": { "week": { "type": "int" } } },
   "newGoalPreservedCount": "{count} sessions preserved",

@@ -358,7 +358,10 @@ void main() {
           .read(newGoalProvider.notifier)
           .updateDraft(editing.draft.copyWith(planStartDate: injectedNow));
 
-      expect(await container.read(newGoalProvider.notifier).recommend(), isTrue);
+      expect(
+        await container.read(newGoalProvider.notifier).recommend(),
+        isTrue,
+      );
       expect(await container.read(newGoalProvider.notifier).preview(), isTrue);
       expect(container.read(newGoalProvider), isA<NewGoalProposalReady>());
       expect(calls, hasLength(2));
@@ -416,6 +419,54 @@ void main() {
       isNull,
     );
   });
+
+  test(
+    'apply returns stale state when source profile has become stale',
+    () async {
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        client: (_, {body}) async {
+          final action = (body! as Map<String, dynamic>)['action'];
+          if (action == 'recommend') {
+            return FunctionResponse(data: _recommendationJson(), status: 200);
+          }
+          if (action == 'preview') {
+            return FunctionResponse(data: _proposalJson(), status: 200);
+          }
+          if (action == 'accept') {
+            return FunctionResponse(
+              data: {'error': 'source_profile_stale'},
+              status: 409,
+            );
+          }
+          return FunctionResponse(data: {'error': 'invalid'}, status: 400);
+        },
+      );
+      addTearDown(container.dispose);
+      final editing = await _editingState(container);
+
+      container
+          .read(newGoalProvider.notifier)
+          .updateDraft(
+            editing.draft.copyWith(planStartDate: DateTime(2026, 7, 20)),
+          );
+
+      expect(
+        await container.read(newGoalProvider.notifier).recommend(),
+        isTrue,
+      );
+      expect(await container.read(newGoalProvider.notifier).preview(), isTrue);
+      expect(container.read(newGoalProvider), isA<NewGoalProposalReady>());
+
+      expect(await container.read(newGoalProvider.notifier).apply(), isFalse);
+      final state = container.read(newGoalProvider);
+      expect(state, isA<NewGoalFailure>());
+      expect((state as NewGoalFailure).reason, NewGoalFailureReason.stale);
+      expect((state).draft, isNotNull);
+      expect((state).proposal, isNotNull);
+    },
+  );
 }
 
 ProviderContainer _container({
@@ -541,6 +592,28 @@ Map<String, dynamic> _proposalJson({
   },
   'candidatePlan': _planJson('candidate-plan'),
   'warnings': ['short_notice'],
+  'recommendation': {
+    'mode': 'long_term',
+    'startDate': '2026-07-23',
+    'endDate': '2026-10-15',
+    'weeks': 12,
+    'hasRaceDate': true,
+    'raceDate': '2026-10-18',
+    'daysToRace': 87,
+  },
+  'raceEstimate': {
+    'centerTimeSeconds': 3600,
+    'fasterTimeSeconds': 3500,
+    'slowerTimeSeconds': 3900,
+    'confidence': 'high',
+    'evidence': [
+      {
+        'source': 'race_estimator',
+        'recordedOn': '2026-07-20',
+        'reason': 'model_derived',
+      },
+    ],
+  },
 };
 
 Map<String, dynamic> _recommendationJson() => {

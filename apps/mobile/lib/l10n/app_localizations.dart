@@ -4649,6 +4649,18 @@ abstract class AppLocalizations {
   /// **'Review your {flowLabel} details and training preferences before saving them.'**
   String newGoalReviewChangesSubtitle(String flowLabel);
 
+  /// No description provided for @newGoalReviewYourSetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Review your setup'**
+  String get newGoalReviewYourSetup;
+
+  /// No description provided for @newGoalBuildPlanPreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Build proposed plan preview'**
+  String get newGoalBuildPlanPreview;
+
   /// No description provided for @newGoalSummaryGoalSection.
   ///
   /// In en, this message translates to:
@@ -4760,7 +4772,7 @@ abstract class AppLocalizations {
   /// No description provided for @newGoalFullPlanTitle.
   ///
   /// In en, this message translates to:
-  /// **'Proposed plan'**
+  /// **'Full proposed plan'**
   String get newGoalFullPlanTitle;
 
   /// No description provided for @newGoalFullPlanNote.
@@ -4786,6 +4798,114 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Proposed goal'**
   String get newGoalProposedLabel;
+
+  /// No description provided for @newGoalProposalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New plan preview'**
+  String get newGoalProposalTitle;
+
+  /// No description provided for @newGoalProposalTimelineTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan timeline'**
+  String get newGoalProposalTimelineTitle;
+
+  /// No description provided for @newGoalProposalTimelineStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start date'**
+  String get newGoalProposalTimelineStart;
+
+  /// No description provided for @newGoalProposalTimelineEnd.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get newGoalProposalTimelineEnd;
+
+  /// No description provided for @newGoalProposalTimelineWeeks.
+  ///
+  /// In en, this message translates to:
+  /// **'Weeks'**
+  String get newGoalProposalTimelineWeeks;
+
+  /// No description provided for @newGoalProposalTimelineMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Timeline mode'**
+  String get newGoalProposalTimelineMode;
+
+  /// No description provided for @newGoalProposalEstimateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated finish window'**
+  String get newGoalProposalEstimateTitle;
+
+  /// No description provided for @newGoalProposalPlanSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{weekCount} week plan with {sessionCount} sessions'**
+  String newGoalProposalPlanSummary(int weekCount, int sessionCount);
+
+  /// No description provided for @newGoalProposalConsequences.
+  ///
+  /// In en, this message translates to:
+  /// **'Impact on your current plan'**
+  String get newGoalProposalConsequences;
+
+  /// No description provided for @newGoalProposalConsequencesBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your completed progress is preserved. Remaining workouts in your current plan are replaced only after you approve this new plan.'**
+  String get newGoalProposalConsequencesBody;
+
+  /// No description provided for @newGoalProposalModeLongTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Long-term'**
+  String get newGoalProposalModeLongTerm;
+
+  /// No description provided for @newGoalProposalModeShortTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Short-term'**
+  String get newGoalProposalModeShortTerm;
+
+  /// No description provided for @newGoalProposalModeMediumTerm.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium-term'**
+  String get newGoalProposalModeMediumTerm;
+
+  /// No description provided for @newGoalProposalModeStandard.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard'**
+  String get newGoalProposalModeStandard;
+
+  /// No description provided for @newGoalProposalModeAbbreviated.
+  ///
+  /// In en, this message translates to:
+  /// **'Abbreviated'**
+  String get newGoalProposalModeAbbreviated;
+
+  /// No description provided for @newGoalProposalModeRaceSupport.
+  ///
+  /// In en, this message translates to:
+  /// **'Race support'**
+  String get newGoalProposalModeRaceSupport;
+
+  /// No description provided for @newGoalKeepCurrentPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep current plan'**
+  String get newGoalKeepCurrentPlan;
+
+  /// No description provided for @newGoalReplaceCurrentPlanBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your completed progress is kept and will not be restored if changed. After you approve, remaining current-plan workouts are replaced with your candidate plan, and this action cannot be undone.'**
+  String get newGoalReplaceCurrentPlanBody;
 
   /// No description provided for @newGoalEndsOn.
   ///
@@ -4901,11 +5021,65 @@ abstract class AppLocalizations {
   /// **'Your completed sessions are preserved. The new plan starts at your next unfinished session.'**
   String get newGoalSuccessSubtitle;
 
+  /// No description provided for @newGoalSuccessPreservedProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} completed sessions preserved'**
+  String newGoalSuccessPreservedProgress(int count);
+
+  /// No description provided for @newGoalSuccessNextSession.
+  ///
+  /// In en, this message translates to:
+  /// **'Next session: {date} · {sessionType}'**
+  String newGoalSuccessNextSession(String date, String sessionType);
+
   /// No description provided for @newGoalViewFullPlan.
   ///
   /// In en, this message translates to:
   /// **'View full plan'**
   String get newGoalViewFullPlan;
+
+  /// No description provided for @newGoalViewFullProposedPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'View full proposed plan'**
+  String get newGoalViewFullProposedPlan;
+
+  /// No description provided for @newGoalEstimateSource.
+  ///
+  /// In en, this message translates to:
+  /// **'Source: {source}'**
+  String newGoalEstimateSource(String source);
+
+  /// No description provided for @newGoalEstimateSourceRaceEstimator.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated from your recent race-target model.'**
+  String get newGoalEstimateSourceRaceEstimator;
+
+  /// No description provided for @newGoalEstimateSourceManual.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated from your manual result.'**
+  String get newGoalEstimateSourceManual;
+
+  /// No description provided for @newGoalEstimateSourceStrava.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated from your Strava data.'**
+  String get newGoalEstimateSourceStrava;
+
+  /// No description provided for @newGoalEstimateSourceServer.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimated from the server recommendation.'**
+  String get newGoalEstimateSourceServer;
+
+  /// No description provided for @newGoalEstimateSourceUnknown.
+  ///
+  /// In en, this message translates to:
+  /// **'estimated from your profile'**
+  String get newGoalEstimateSourceUnknown;
 
   /// No description provided for @newGoalWeekLabel.
   ///

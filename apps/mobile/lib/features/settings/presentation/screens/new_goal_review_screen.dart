@@ -16,6 +16,7 @@ import '../../../../core/utils/unit_formatter.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../../onboarding/presentation/onboarding_values.dart';
 import '../../../training_plan/domain/models/plan_week.dart';
+import '../../../training_plan/domain/models/training_plan.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../profile/domain/models/runner_profile.dart';
@@ -151,7 +152,7 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(l10n.newGoalReplaceCurrentPlan),
-        content: Text(l10n.newGoalReplaceCurrentPlanSubtitle),
+        content: Text(l10n.newGoalReplaceCurrentPlanBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
@@ -173,6 +174,13 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
   void _keepCurrentGoal(BuildContext context) {
     if (_isActionRunning || _isRefreshing) return;
     ref.read(newGoalProvider.notifier).cancelPreview();
+    _navigateIfNeeded(
+      GoRouter.of(context),
+      RouteNames.settingsUpdatePlanNewGoalSummary,
+    );
+  }
+
+  void _reviewCurrentSetup(BuildContext context) {
     _navigateIfNeeded(
       GoRouter.of(context),
       RouteNames.settingsUpdatePlanNewGoalSummary,
@@ -288,14 +296,8 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
             await _confirmApply(context, l10n);
           }
         },
-        onSecondary: () {
-          if (state is NewGoalFailure &&
-              state.reason == NewGoalFailureReason.invalidInput) {
-            _recommend(context);
-          } else {
-            _keepCurrentGoal(context);
-          }
-        },
+        onKeepCurrent: () => _keepCurrentGoal(context),
+        onFullPlan: () => _openFullPlan(context),
         failureText: state is NewGoalFailure ? _failureText(state, l10n) : null,
       );
     }
@@ -315,13 +317,8 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
             await _confirmApply(context, l10n);
           }
         },
-        onSecondary: () {
-          if (_requiresFreshPreview(state, activeProposal, now)) {
-            _recommend(context);
-          } else {
-            _openFullPlan(context);
-          }
-        },
+        onKeepCurrent: () => _keepCurrentGoal(context),
+        onFullPlan: () => _openFullPlan(context),
         failureText: state is NewGoalFailure ? _failureText(state, l10n) : null,
       );
     }
@@ -357,6 +354,7 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
         recommendation: state.recommendation,
         isBusy: isBusy,
         onPrimary: () => _preview(context),
+        onSecondary: () => _reviewCurrentSetup(context),
       );
     }
 
@@ -389,16 +387,8 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
             await _confirmApply(context, l10n);
           }
         },
-        onSecondary: () {
-          if (state is NewGoalFailure &&
-              (state.reason == NewGoalFailureReason.stale ||
-                  state.reason == NewGoalFailureReason.expired ||
-                  state.reason == NewGoalFailureReason.conflict)) {
-            _recommend(context);
-          } else {
-            _keepCurrentGoal(context);
-          }
-        },
+        onKeepCurrent: () => _keepCurrentGoal(context),
+        onFullPlan: () => _openFullPlan(context),
         failureText: state is NewGoalFailure ? _failureText(state, l10n) : null,
       );
     }
@@ -413,7 +403,7 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
     if (draft == null && state is NewGoalFailure) {
       return Scaffold(
         backgroundColor: AppColors.backgroundPrimary,
-        appBar: AppDetailHeaderBar(title: l10n.newGoalReviewChangesTitle),
+        appBar: AppDetailHeaderBar(title: l10n.newGoalReviewYourSetup),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.screen),
@@ -501,7 +491,7 @@ class _DraftSummaryScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.newGoalReviewChangesTitle),
+      appBar: AppDetailHeaderBar(title: l10n.newGoalReviewYourSetup),
       body: SafeArea(
         top: false,
         child: Padding(
@@ -519,7 +509,7 @@ class _DraftSummaryScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.newGoalReviewChangesSubtitle(l10n.settingsNewGoal),
+                        l10n.newGoalReviewYourSetup,
                         style: AppTypography.bodyLarge.copyWith(
                           color: AppColors.textSecondary,
                         ),
@@ -621,7 +611,7 @@ class _DraftSummaryScreen extends StatelessWidget {
               AppButton(
                 label: state is NewGoalRecommendationLoading
                     ? l10n.newGoalPreviewLoading
-                    : l10n.newGoalAcceptChanges,
+                    : l10n.newGoalBuildPlanPreview,
                 isLoading: isBusy,
                 onPressed: isBusy ? null : onPrimary,
               ),
@@ -639,12 +629,14 @@ class _RecommendationReadyScreen extends StatelessWidget {
     required this.recommendation,
     required this.isBusy,
     required this.onPrimary,
+    required this.onSecondary,
   });
 
   final AppLocalizations l10n;
   final NewGoalRecommendation recommendation;
   final bool isBusy;
   final Future<void> Function() onPrimary;
+  final VoidCallback onSecondary;
 
   @override
   Widget build(BuildContext context) {
@@ -654,7 +646,7 @@ class _RecommendationReadyScreen extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.newGoalReviewChangesTitle),
+      appBar: AppDetailHeaderBar(title: l10n.newGoalReviewYourSetup),
       body: SafeArea(
         top: false,
         child: Padding(
@@ -746,7 +738,16 @@ class _RecommendationReadyScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.lg),
               AppButton(
-                label: l10n.newGoalAcceptChanges,
+                label: l10n.newGoalReviewYourSetup,
+                variant: AppButtonVariant.secondary,
+                isLoading: isBusy,
+                onPressed: isBusy ? null : onSecondary,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppButton(
+                label: isBusy
+                    ? l10n.newGoalPreviewLoading
+                    : l10n.newGoalBuildPlanPreview,
                 isLoading: isBusy,
                 onPressed: isBusy ? null : onPrimary,
               ),
@@ -955,7 +956,8 @@ class _ProposalScreen extends StatelessWidget {
     required this.needsFreshPreview,
     required this.isBusy,
     required this.onPrimary,
-    required this.onSecondary,
+    required this.onKeepCurrent,
+    required this.onFullPlan,
     this.failureText,
   });
 
@@ -966,7 +968,8 @@ class _ProposalScreen extends StatelessWidget {
   final bool needsFreshPreview;
   final bool isBusy;
   final Future<void> Function() onPrimary;
-  final VoidCallback onSecondary;
+  final VoidCallback onKeepCurrent;
+  final VoidCallback onFullPlan;
   final String? failureText;
 
   @override
@@ -994,10 +997,12 @@ class _ProposalScreen extends StatelessWidget {
     final dateFormat = DateFormat.yMMMd(locale);
     final weeks = _proposalWeeks(proposal!);
     final previewWeeks = weeks.take(2).toList(growable: false);
+    final recommendation = proposal!.recommendation;
+    final estimate = proposal!.raceEstimate;
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.newGoalReviewChangesTitle),
+      appBar: AppDetailHeaderBar(title: l10n.newGoalProposalTitle),
       body: SafeArea(
         top: false,
         child: Padding(
@@ -1032,14 +1037,68 @@ class _ProposalScreen extends StatelessWidget {
                           ),
                         ),
                       ],
+                      if (recommendation != null) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        SectionLabel(label: l10n.newGoalProposalTimelineTitle),
+                        const SizedBox(height: AppSpacing.sm),
+                        SettingsCard(
+                          children: [
+                            _LoadingRow(
+                              label: l10n.newGoalProposalTimelineStart,
+                              value: dateFormat.format(
+                                recommendation.timelineDate,
+                              ),
+                            ),
+                            _LoadingRow(
+                              label: l10n.newGoalProposalTimelineEnd,
+                              value: dateFormat.format(
+                                recommendation.timelineEndDate,
+                              ),
+                            ),
+                            _LoadingRow(
+                              label: l10n.newGoalProposalTimelineWeeks,
+                              value: l10n.newGoalTotalWeeks(
+                                recommendation.timelineWeeks,
+                              ),
+                            ),
+                            _LoadingRow(
+                              label: l10n.newGoalProposalTimelineMode,
+                              value: _proposalModeLabel(
+                                recommendation.timelineMode,
+                                l10n,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (estimate != null) ...[
+                        const SizedBox(height: AppSpacing.xl),
+                        SectionLabel(label: l10n.newGoalProposalEstimateTitle),
+                        const SizedBox(height: AppSpacing.sm),
+                        _InfoCard(
+                          color: AppColors.accentMuted,
+                          text:
+                              '${l10n.newGoalEstimatedFinishRange(_formatDuration(estimate.fasterTime, l10n), _formatDuration(estimate.slowerTime, l10n))}\n'
+                              '${l10n.newGoalEstimateConfidence(_estimateConfidence(estimate.confidence, l10n))}\n'
+                              '${_estimateSourceLabel(estimate.source, l10n)}',
+                        ),
+                      ],
                       const SizedBox(height: AppSpacing.xl),
                       SectionLabel(label: l10n.newGoalImpactSection),
                       const SizedBox(height: AppSpacing.sm),
                       _InfoCard(
                         color: AppColors.accentMuted,
-                        text: l10n.newGoalTotalWeeks(
+                        text: l10n.newGoalProposalPlanSummary(
                           proposal!.candidatePlan.totalWeeks,
+                          proposal!.candidatePlan.sessions.length,
                         ),
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      SectionLabel(label: l10n.newGoalProposalConsequences),
+                      const SizedBox(height: AppSpacing.sm),
+                      _InfoCard(
+                        color: AppColors.backgroundCard,
+                        text: l10n.newGoalProposalConsequencesBody,
                       ),
                       const SizedBox(height: AppSpacing.lg),
                       SectionLabel(label: l10n.newGoalNextTwoWeeks),
@@ -1081,18 +1140,23 @@ class _ProposalScreen extends StatelessWidget {
               AppButton(
                 label: needsFreshPreview
                     ? l10n.newGoalFreshPreview
-                    : l10n.newGoalAcceptChanges,
+                    : l10n.newGoalReplaceCurrentPlan,
                 isLoading: isBusy,
                 onPressed: isBusy ? null : onPrimary,
               ),
               const SizedBox(height: AppSpacing.sm),
               AppButton(
-                label: needsFreshPreview
-                    ? l10n.newGoalRetry
-                    : l10n.newGoalViewFullPlan,
+                label: l10n.newGoalKeepCurrentPlan,
                 variant: AppButtonVariant.secondary,
                 isLoading: isBusy,
-                onPressed: isBusy ? null : onSecondary,
+                onPressed: isBusy ? null : onKeepCurrent,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppButton(
+                label: l10n.newGoalViewFullProposedPlan,
+                variant: AppButtonVariant.secondary,
+                isLoading: isBusy,
+                onPressed: isBusy ? null : onFullPlan,
               ),
             ],
           ),
@@ -1111,6 +1175,9 @@ class _SuccessScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final locale = Localizations.localeOf(context).toLanguageTag();
+    final dateFormat = DateFormat.yMMMd(locale);
+    final nextSession = _nextSessionFromPlan(acceptance.plan);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -1138,6 +1205,28 @@ class _SuccessScreen extends StatelessWidget {
                 '${l10n.goalRaceLabel}: ${_goalLabel(proposal.proposedGoal, l10n)}',
                 style: AppTypography.titleMedium,
               ),
+              if (proposal.raceEstimate != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                _InfoCard(
+                  color: AppColors.accentMuted,
+                  text:
+                      '${l10n.newGoalEstimatedFinishRange(_formatDuration(proposal.raceEstimate!.fasterTime, l10n), _formatDuration(proposal.raceEstimate!.slowerTime, l10n))}\n'
+                      '${l10n.newGoalEstimateConfidence(_estimateConfidence(proposal.raceEstimate!.confidence, l10n))}\n'
+                      '${_estimateSourceLabel(proposal.raceEstimate!.source, l10n)}',
+                ),
+              ],
+              if (nextSession != null) ...[
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  l10n.newGoalSuccessNextSession(
+                    dateFormat.format(nextSession.date),
+                    _sessionLabel(nextSession.type, l10n),
+                  ),
+                  style: AppTypography.bodyMedium.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               const Spacer(),
               AppButton(
@@ -1475,6 +1564,46 @@ String _formatDuration(Duration duration, AppLocalizations l10n) {
   return hours == 0
       ? '$minutes:$seconds'
       : '$hours${l10n.progressHourUnit} $minutes:$seconds';
+}
+
+String _estimateSourceLabel(String? source, AppLocalizations l10n) {
+  if (source == 'race_estimator') {
+    return l10n.newGoalEstimateSourceRaceEstimator;
+  }
+  if (source == 'manual') {
+    return l10n.newGoalEstimateSourceManual;
+  }
+  if (source == 'strava') {
+    return l10n.newGoalEstimateSourceStrava;
+  }
+  if (source == 'server') {
+    return l10n.newGoalEstimateSourceServer;
+  }
+  return l10n.newGoalEstimateSourceUnknown;
+}
+
+TrainingSession? _nextSessionFromPlan(TrainingPlan plan) =>
+    plan.nextUpcomingSession;
+
+String _proposalModeLabel(String timelineMode, AppLocalizations l10n) {
+  if (timelineMode == 'standard') return l10n.newGoalProposalModeStandard;
+  if (timelineMode == 'abbreviated') {
+    return l10n.newGoalProposalModeAbbreviated;
+  }
+  if (timelineMode == 'race_support') {
+    return l10n.newGoalProposalModeRaceSupport;
+  }
+  if (timelineMode == 'long_term') return l10n.newGoalProposalModeLongTerm;
+  if (timelineMode == 'short_term') return l10n.newGoalProposalModeShortTerm;
+  if (timelineMode == 'medium_term') return l10n.newGoalProposalModeMediumTerm;
+
+  if (timelineMode.isEmpty) return '';
+  final words = timelineMode.split('_').where((word) => word.isNotEmpty);
+  return words
+      .map(
+        (word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
+      )
+      .join(' ');
 }
 
 List<PlanWeek> _proposalWeeks(NewGoalProposal proposal) {
