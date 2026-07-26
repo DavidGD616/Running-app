@@ -51,29 +51,56 @@ class _StaticNewGoalNotifier extends NewGoalNotifier {
 }
 
 class _ManualResultSubmissionNotifier extends NewGoalNotifier {
-  _ManualResultSubmissionNotifier();
+  _ManualResultSubmissionNotifier({this.withAssessment = false});
 
+  final bool withAssessment;
   final List<String> callLog = [];
+  NewGoalFitnessResult? lastResult;
 
   @override
-  NewGoalState build() => _fitnessCheckStateFixture(
-    now: DateTime(2026, 7, 23),
-    sourcePlanId: 'active-plan',
-  );
+  NewGoalState build() {
+    final fitnessState = _fitnessCheckStateFixture(
+      now: DateTime(2026, 7, 23),
+      sourcePlanId: 'active-plan',
+    );
+    if (!withAssessment) return fitnessState;
+    return NewGoalAssessmentPending(
+      draft: fitnessState.draft.copyWith(
+        assessment: NewGoalAssessment(
+          id: 'assessment-1',
+          kind: fitnessState.fitnessCheck.benchmarkKind,
+          scheduledFor: DateTime(2026, 7, 23),
+          safeDates: fitnessState.fitnessCheck.safeDates,
+        ),
+      ),
+      sourcePlanId: fitnessState.sourcePlanId,
+    );
+  }
 
   @override
   void useFitnessResult(NewGoalFitnessResult result) {
     callLog.add('useFitnessResult');
+    lastResult = result;
     final current = state;
-    if (current is NewGoalFitnessCheckRequired) {
+    if (current is NewGoalFitnessCheckRequired ||
+        current is NewGoalAssessmentPending) {
+      final draft = switch (current) {
+        NewGoalFitnessCheckRequired(:final draft) => draft,
+        NewGoalAssessmentPending(:final draft) => draft,
+        _ => throw StateError('Unexpected state.'),
+      };
+      final sourcePlanId = switch (current) {
+        NewGoalFitnessCheckRequired(:final sourcePlanId) => sourcePlanId,
+        NewGoalAssessmentPending(:final sourcePlanId) => sourcePlanId,
+        _ => throw StateError('Unexpected state.'),
+      };
       state = NewGoalEditing(
-        draft: current.draft.copyWith(
+        draft: draft.copyWith(
           fitnessResult: result,
           clearFitnessResult: false,
-          assessment: null,
-          clearAssessment: true,
+          clearAssessment: result.source != NewGoalFitnessSource.assessment,
         ),
-        sourcePlanId: current.sourcePlanId,
+        sourcePlanId: sourcePlanId,
         hasRestoredDraft: false,
       );
     }
@@ -308,6 +335,7 @@ NewGoalFitnessCheckRequired _fitnessCheckStateFixture({
         profile: _newGoalProfileWithPlanStart(
           date: now ?? DateTime(2026, 7, 23),
         ),
+        today: now ?? DateTime(2026, 7, 23),
       );
   return NewGoalFitnessCheckRequired(
     draft: resolvedDraft,
@@ -322,6 +350,7 @@ NewGoalState _proposalReadyStateFixture({NewGoalProposal? proposal}) {
   return NewGoalProposalReady(
     draft: NewGoalDraft.fromProfile(
       profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
+      today: DateTime(2026, 7, 31),
     ),
     sourcePlanId: 'active-plan',
     recommendation: _proposalRecommendationFixture(goal),
@@ -333,6 +362,7 @@ NewGoalState _recommendationReadyStateFixture() {
   final goal = _proposalGoalFixture();
   final draft = NewGoalDraft.fromProfile(
     profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
+    today: DateTime(2026, 7, 31),
   );
   return NewGoalRecommendationReady(
     draft: draft,
@@ -808,11 +838,11 @@ void main() {
   );
 
   testWidgets(
-    'Manual result submit uses provider boundary and navigates to recommendation',
+    'Pending assessment result completes through the manual result boundary',
     (tester) async {
       SharedPreferences.setMockInitialValues({});
       final prefs = await SharedPreferences.getInstance();
-      final notifier = _ManualResultSubmissionNotifier();
+      final notifier = _ManualResultSubmissionNotifier(withAssessment: true);
 
       await tester.pumpWidget(
         ProviderScope(
@@ -851,7 +881,10 @@ void main() {
         tester.element(find.byType(MaterialApp)),
       ).read(appRouterProvider);
 
-      appRouter.go(RouteNames.settingsUpdatePlanNewGoalManualResult);
+      appRouter.go(RouteNames.settingsUpdatePlanNewGoalSummary);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('newGoalAssessmentEnterResult')));
       await tester.pumpAndSettle();
 
       final l10n = AppLocalizations.of(
@@ -889,6 +922,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(notifier.callLog, equals(['useFitnessResult', 'recommend']));
+      expect(notifier.lastResult?.source, NewGoalFitnessSource.assessment);
       expect(find.byType(NewGoalRecommendationScreen), findsOneWidget);
       expect(find.byType(NewGoalManualResultScreen), findsNothing);
     },
@@ -1704,9 +1738,15 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(NewGoalFullPlanScreen), findsOneWidget);
+    expect(appRouter.canPop(), isTrue);
+
+    appRouter.pop();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewGoalProposalScreen), findsOneWidget);
     expect(
       appRouter.routerDelegate.currentConfiguration.uri.path,
-      RouteNames.settingsUpdatePlanNewGoalFullPlan,
+      RouteNames.settingsUpdatePlanNewGoalProposal,
     );
 
     await tester.pumpWidget(

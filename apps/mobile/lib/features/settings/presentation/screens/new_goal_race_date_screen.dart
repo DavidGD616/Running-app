@@ -92,7 +92,9 @@ class _NewGoalRaceDateScreenState extends ConsumerState<NewGoalRaceDateScreen> {
     if (!_canContinue || _isSubmitting) return;
     setState(() => _isSubmitting = true);
     try {
-      await ref.read(newGoalProvider.notifier).setRace(
+      await ref
+          .read(newGoalProvider.notifier)
+          .setRace(
             race: _selectedRace!,
             hasRaceDate: _hasRaceDate!,
             raceDate: _raceDate,
@@ -137,15 +139,18 @@ class _NewGoalRaceDateScreenState extends ConsumerState<NewGoalRaceDateScreen> {
 
     final locale = Localizations.localeOf(context).toLanguageTag();
     final dateFormat = DateFormat.yMMMd(locale);
-    final races = [
-      OnboardingValues.race5k,
-      OnboardingValues.race10k,
-      OnboardingValues.raceHalfMarathon,
-      OnboardingValues.raceMarathon,
-    ].map((raceKey) {
-      final label = OnboardingValues.localizeRace(raceKey, l10n);
-      return (key: raceKey, label: label);
-    }).toList(growable: false);
+    final races =
+        [
+              OnboardingValues.race5k,
+              OnboardingValues.race10k,
+              OnboardingValues.raceHalfMarathon,
+              OnboardingValues.raceMarathon,
+            ]
+            .map((raceKey) {
+              final label = OnboardingValues.localizeRace(raceKey, l10n);
+              return (key: raceKey, label: label);
+            })
+            .toList(growable: false);
 
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
@@ -171,13 +176,10 @@ class _NewGoalRaceDateScreenState extends ConsumerState<NewGoalRaceDateScreen> {
                       const SizedBox(height: AppSpacing.md),
                       ...races.map(
                         (race) => Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: AppSpacing.sm,
-                          ),
+                          padding: const EdgeInsets.only(bottom: AppSpacing.sm),
                           child: _RaceCard(
                             label: race.label,
-                            selected:
-                                _selectedRace?.key == race.key,
+                            selected: _selectedRace?.key == race.key,
                             onTap: () {
                               setState(() {
                                 _selectedRace = switch (race.key) {
@@ -299,9 +301,7 @@ class _RaceCard extends StatelessWidget {
               width: 20,
               height: 20,
               colorFilter: ColorFilter.mode(
-                selected
-                    ? AppColors.textPrimary
-                    : AppColors.textSecondary,
+                selected ? AppColors.textPrimary : AppColors.textSecondary,
                 BlendMode.srcIn,
               ),
             ),

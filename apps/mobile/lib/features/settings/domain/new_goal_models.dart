@@ -326,7 +326,10 @@ class NewGoalDraft {
   NewGoalGoal get effectiveGoal =>
       NewGoalGoal(race: race, hasRaceDate: hasRaceDate, raceDate: raceDate);
 
-  factory NewGoalDraft.fromProfile({required RunnerProfile profile}) {
+  factory NewGoalDraft.fromProfile({
+    required RunnerProfile profile,
+    required DateTime today,
+  }) {
     return NewGoalDraft(
       race: profile.goal.race,
       hasRaceDate: profile.goal.hasRaceDate,
@@ -341,7 +344,7 @@ class NewGoalDraft {
         hasHealthConditions: profile.health.hasHealthConditions,
         recordedOn: null,
       ),
-    );
+    ).normalizePlanStartDate(today);
   }
 
   factory NewGoalDraft.fromJson(Map<String, dynamic> json) {
@@ -444,6 +447,29 @@ class NewGoalDraft {
           : (fitnessResult ?? this.fitnessResult),
       assessment: clearAssessment ? null : (assessment ?? this.assessment),
     );
+  }
+
+  bool hasValidPlanStartDate(DateTime today) {
+    final start = planStartDate;
+    if (start == null) return false;
+
+    final normalizedToday = DateTime(today.year, today.month, today.day);
+    final normalizedStart = DateTime(start.year, start.month, start.day);
+    if (normalizedStart.isBefore(normalizedToday)) return false;
+
+    final deadline = hasRaceDate ? raceDate : null;
+    if (deadline == null) return true;
+    final normalizedDeadline = DateTime(
+      deadline.year,
+      deadline.month,
+      deadline.day,
+    );
+    return !normalizedStart.isAfter(normalizedDeadline);
+  }
+
+  NewGoalDraft normalizePlanStartDate(DateTime today) {
+    if (planStartDate == null || hasValidPlanStartDate(today)) return this;
+    return copyWith(clearPlanStartDate: true);
   }
 
   NewGoalDraft withHealthChanged(

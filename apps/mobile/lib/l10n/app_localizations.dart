@@ -5033,6 +5033,12 @@ abstract class AppLocalizations {
   /// **'Your current plan stays unchanged. Add the result when you have completed it to continue creating your plan.'**
   String get newGoalInProgressSubtitle;
 
+  /// No description provided for @newGoalCancelAssessment.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel fitness check'**
+  String get newGoalCancelAssessment;
+
   /// No description provided for @newGoalPreviewExpired.
   ///
   /// In en, this message translates to:

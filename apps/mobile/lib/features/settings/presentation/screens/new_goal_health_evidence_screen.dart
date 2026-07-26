@@ -61,7 +61,10 @@ class _NewGoalHealthEvidenceScreenState
     final provider = ref.read(newGoalProvider.notifier);
     setState(() => _isSubmitting = true);
     try {
-      if (_isDirty && _painLevel != null && _injuryHistory != null && _healthConditions != null) {
+      if (_isDirty &&
+          _painLevel != null &&
+          _injuryHistory != null &&
+          _healthConditions != null) {
         await provider.setHealthSnapshot(
           NewGoalHealthSnapshot(
             painLevel: _painLevelChoice,
@@ -302,19 +305,21 @@ class _SegmentedControl extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      children: options.entries.map((entry) {
-        final isSelected = selected == entry.key;
-        return Expanded(
-          child: Padding(
-            padding: const EdgeInsets.only(right: AppSpacing.sm),
-            child: _ToggleButton(
-              label: entry.value,
-              isSelected: isSelected,
-              onTap: () => onSelect(entry.key),
-            ),
-          ),
-        );
-      }).toList(growable: false),
+      children: options.entries
+          .map((entry) {
+            final isSelected = selected == entry.key;
+            return Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(right: AppSpacing.sm),
+                child: _ToggleButton(
+                  label: entry.value,
+                  isSelected: isSelected,
+                  onTap: () => onSelect(entry.key),
+                ),
+              ),
+            );
+          })
+          .toList(growable: false),
     );
   }
 }
@@ -350,9 +355,7 @@ class _ToggleButton extends StatelessWidget {
         child: Text(
           label,
           style: AppTypography.titleMedium.copyWith(
-            color: isSelected
-                ? AppColors.textPrimary
-                : AppColors.textSecondary,
+            color: isSelected ? AppColors.textPrimary : AppColors.textSecondary,
           ),
         ),
       ),

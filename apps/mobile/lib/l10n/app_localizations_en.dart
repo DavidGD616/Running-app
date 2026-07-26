@@ -2733,6 +2733,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your current plan stays unchanged. Add the result when you have completed it to continue creating your plan.';
 
   @override
+  String get newGoalCancelAssessment => 'Cancel fitness check';
+
+  @override
   String get newGoalPreviewExpired =>
       'This preview has expired and cannot be applied.';
 

@@ -2470,6 +2470,7 @@
   "newGoalRetry": "Try again",
   "newGoalInProgressTitle": "Fitness check scheduled",
   "newGoalInProgressSubtitle": "Your current plan stays unchanged. Add the result when you have completed it to continue creating your plan.",
+  "newGoalCancelAssessment": "Cancel fitness check",
   "newGoalPreviewExpired": "This preview has expired and cannot be applied.",
   "newGoalFreshPreview": "Generate a fresh preview",
   "newGoalFullPlanUnavailable": "No proposal plan is available for this goal yet. Return and generate one first.",

@@ -190,10 +190,7 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
 
   void _openFullPlan(BuildContext context) {
     if (_isActionRunning || _isRefreshing) return;
-    _navigateIfNeeded(
-      GoRouter.of(context),
-      RouteNames.settingsUpdatePlanNewGoalFullPlan,
-    );
+    GoRouter.of(context).push(RouteNames.settingsUpdatePlanNewGoalFullPlan);
   }
 
   bool _requiresFreshPreview(
@@ -342,8 +339,12 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
         l10n: l10n,
         draft: draft,
         isBusy: isBusy,
-        onCancel: () {
-          ref.read(newGoalProvider.notifier).cancelAssessment();
+        onEnterResult: () {
+          context.push(RouteNames.settingsUpdatePlanNewGoalManualResult);
+        },
+        onCancel: () async {
+          await ref.read(newGoalProvider.notifier).cancelAssessment();
+          if (!context.mounted) return;
           context.pop();
         },
       );
@@ -898,13 +899,15 @@ class _AssessmentPendingScreen extends StatelessWidget {
     required this.l10n,
     required this.draft,
     required this.isBusy,
+    required this.onEnterResult,
     required this.onCancel,
   });
 
   final AppLocalizations l10n;
   final NewGoalDraft? draft;
   final bool isBusy;
-  final VoidCallback onCancel;
+  final VoidCallback onEnterResult;
+  final Future<void> Function() onCancel;
 
   @override
   Widget build(BuildContext context) {
@@ -936,8 +939,15 @@ class _AssessmentPendingScreen extends StatelessWidget {
               ),
               const Spacer(),
               AppButton(
-                label: l10n.continueButton,
+                key: const Key('newGoalAssessmentEnterResult'),
+                label: l10n.newGoalEnterRecentResult,
                 isLoading: isBusy,
+                onPressed: isBusy ? null : onEnterResult,
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              AppButton(
+                label: l10n.newGoalCancelAssessment,
+                variant: AppButtonVariant.secondary,
                 onPressed: isBusy ? null : onCancel,
               ),
             ],

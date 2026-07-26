@@ -32,6 +32,62 @@ void main() {
     expect(editing.sourcePlanId, 'active-plan');
   });
 
+  test('fresh draft clears a profile plan start before today', () async {
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      loader: () async => NewGoalInitialData(
+        profile: _profileWithPlanStart(DateTime(2026, 7, 12)),
+        activePlanId: 'active-plan',
+      ),
+    );
+    addTearDown(container.dispose);
+
+    final editing = await _editingState(container);
+
+    expect(editing.draft.planStartDate, isNull);
+  });
+
+  test('restored draft clears a plan start after its race date', () async {
+    final store = NewGoalDraftStore(
+      preferences: preferences,
+      client: null,
+      userId: null,
+    );
+    final invalidDraft = NewGoalDraft(
+      race: RunnerGoalRace.tenK,
+      hasRaceDate: true,
+      raceDate: DateTime(2026, 8, 1),
+      planStartDate: DateTime(2026, 8, 2),
+      schedule: const NewGoalSchedule(
+        trainingDays: 4,
+        longRunDay: WeekdayChoice.sunday,
+        weekdayTime: TimeSlot.min45,
+        weekendTime: TimeSlot.min90,
+        hardDays: {WeekdayChoice.tuesday, WeekdayChoice.thursday},
+      ),
+      planPreference: PlanPreferenceChoice.balanced,
+      healthChanged: false,
+    );
+    await store.save(
+      draft: invalidDraft,
+      sourcePlanId: 'active-plan',
+      status: NewGoalDraftStatus.editing.key,
+      revision: 3,
+      updatedAt: now,
+    );
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      store: store,
+    );
+    addTearDown(container.dispose);
+
+    final editing = await _editingState(container);
+
+    expect(editing.draft.planStartDate, isNull);
+  });
+
   test('local drafts are isolated by authenticated account', () async {
     final draft = NewGoalDraft(
       race: RunnerGoalRace.tenK,
@@ -284,7 +340,7 @@ void main() {
   });
 
   test(
-    'assessment scheduling and replacement clears stale fitness result state',
+    'assessment result retains assessment identity for completion persistence',
     () async {
       final container = _container(now: now, preferences: preferences);
       addTearDown(container.dispose);
@@ -316,6 +372,23 @@ void main() {
       final editingState = container.read(newGoalProvider) as NewGoalEditing;
       expect(
         editingState.draft.fitnessResult?.source,
+        NewGoalFitnessSource.assessment,
+      );
+      expect(editingState.draft.assessment?.kind, 'five_k_run');
+
+      await _waitFor(
+        () =>
+            preferences.getString(NewGoalDraftStore.storageKeyForUser(null)) !=
+            null,
+      );
+      final stored = await NewGoalDraftStore(
+        preferences: preferences,
+        client: null,
+        userId: null,
+      ).load();
+      expect(stored?.draft.assessment?.kind, 'five_k_run');
+      expect(
+        stored?.draft.fitnessResult?.source,
         NewGoalFitnessSource.assessment,
       );
     },
@@ -417,6 +490,76 @@ void main() {
     expect(
       preferences.getString(NewGoalDraftStore.storageKeyForUser(null)),
       isNull,
+    );
+  });
+
+  test('apply retries the same proposal after a timeout', () async {
+    final acceptedProposalIds = <String>[];
+    var acceptAttempts = 0;
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      client: (_, {body}) async {
+        final payload = body! as Map<String, dynamic>;
+        switch (payload['action']) {
+          case 'recommend':
+            return FunctionResponse(data: _recommendationJson(), status: 200);
+          case 'preview':
+            return FunctionResponse(data: _proposalJson(), status: 200);
+          case 'accept':
+            acceptedProposalIds.add(payload['proposalId']! as String);
+            acceptAttempts += 1;
+            if (acceptAttempts == 1) {
+              throw TimeoutException('accept response was lost');
+            }
+            return FunctionResponse(data: _acceptanceJson(), status: 200);
+        }
+        return FunctionResponse(data: {'error': 'invalid'}, status: 400);
+      },
+    );
+    addTearDown(container.dispose);
+    final editing = await _editingState(container);
+    container
+        .read(newGoalProvider.notifier)
+        .updateDraft(
+          editing.draft.copyWith(planStartDate: DateTime(2026, 7, 20)),
+        );
+    final notifier = container.read(newGoalProvider.notifier);
+    expect(await notifier.recommend(), isTrue);
+    expect(await notifier.preview(), isTrue);
+
+    expect(await notifier.apply(), isFalse);
+    final failure = container.read(newGoalProvider) as NewGoalFailure;
+    expect(failure.reason, NewGoalFailureReason.timeout);
+    expect(failure.proposal?.id, 'proposal-1');
+
+    expect(await notifier.apply(), isTrue);
+    expect(container.read(newGoalProvider), isA<NewGoalSuccess>());
+    expect(acceptedProposalIds, ['proposal-1', 'proposal-1']);
+  });
+
+  test('recommend rejects plan starts outside the valid goal window', () async {
+    final container = _container(now: now, preferences: preferences);
+    addTearDown(container.dispose);
+    final editing = await _editingState(container);
+    final notifier = container.read(newGoalProvider.notifier);
+
+    notifier.updateDraft(
+      editing.draft.copyWith(planStartDate: DateTime(2026, 7, 12)),
+    );
+    expect(await notifier.recommend(), isFalse);
+    expect(
+      (container.read(newGoalProvider) as NewGoalFailure).reason,
+      NewGoalFailureReason.invalidInput,
+    );
+
+    notifier.updateDraft(
+      editing.draft.copyWith(planStartDate: DateTime(2026, 10, 19)),
+    );
+    expect(await notifier.recommend(), isFalse);
+    expect(
+      (container.read(newGoalProvider) as NewGoalFailure).reason,
+      NewGoalFailureReason.invalidInput,
     );
   });
 
@@ -560,6 +703,21 @@ NewGoalInitialData _initialData({String activePlanId = 'active-plan'}) =>
       profile: buildRunnerProfile(),
       activePlanId: activePlanId,
     );
+
+RunnerProfile _profileWithPlanStart(DateTime planStartDate) {
+  final profile = buildRunnerProfile();
+  return profile.copyWith(
+    schedule: ScheduleProfile(
+      trainingDays: profile.schedule.trainingDays,
+      longRunDay: profile.schedule.longRunDay,
+      weekdayTime: profile.schedule.weekdayTime,
+      weekendTime: profile.schedule.weekendTime,
+      hardDays: profile.schedule.hardDays,
+      preferredTimeOfDay: profile.schedule.preferredTimeOfDay,
+      planStartDate: planStartDate,
+    ),
+  );
+}
 
 Map<String, dynamic> _fitnessCheckResponse() => {
   'state': 'fitness_check_required',

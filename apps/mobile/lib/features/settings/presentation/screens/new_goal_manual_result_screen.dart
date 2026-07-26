@@ -87,9 +87,15 @@ class _NewGoalManualResultScreenState
 
     setState(() => _isSubmitting = true);
     try {
+      final currentState = ref.read(newGoalProvider);
+      final source = switch (currentState) {
+        NewGoalAssessmentPending(:final draft) when draft.assessment != null =>
+          NewGoalFitnessSource.assessment,
+        _ => NewGoalFitnessSource.manual,
+      };
       notifier.useFitnessResult(
         NewGoalFitnessResult(
-          source: NewGoalFitnessSource.manual,
+          source: source,
           distanceKm: distance,
           elapsed: elapsed,
           recordedOn: normalizedDate,

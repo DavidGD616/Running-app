@@ -1044,6 +1044,7 @@
   "newGoalRetry": "Intentar de nuevo",
   "newGoalInProgressTitle": "Prueba de forma programada",
   "newGoalInProgressSubtitle": "Tu plan actual no cambia. Añade el resultado cuando la hayas completado para continuar con el objetivo.",
+  "newGoalCancelAssessment": "Cancelar prueba de forma",
   "newGoalPreviewExpired": "Esta vista previa caducó y no se puede aplicar.",
   "newGoalFreshPreview": "Generar una vista previa nueva",
   "newGoalSuccessTitle": "Tu plan está listo",

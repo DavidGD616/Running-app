@@ -123,8 +123,7 @@ class _NewGoalPreferencesScreenState
                         final option = entry.value;
                         return Padding(
                           padding: EdgeInsets.only(
-                            bottom: entry.key ==
-                                    preferenceOptions.length - 1
+                            bottom: entry.key == preferenceOptions.length - 1
                                 ? 0
                                 : AppSpacing.md,
                           ),
@@ -156,7 +155,9 @@ class _NewGoalPreferencesScreenState
                               .read(newGoalProvider.notifier)
                               .setPlanPreference(selected);
                           if (!context.mounted) return;
-                          context.push(RouteNames.settingsUpdatePlanNewGoalHealth);
+                          context.push(
+                            RouteNames.settingsUpdatePlanNewGoalHealth,
+                          );
                         } finally {
                           if (mounted) {
                             setState(() => _isSubmitting = false);

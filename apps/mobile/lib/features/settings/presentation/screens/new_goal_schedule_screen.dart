@@ -26,8 +26,7 @@ class NewGoalScheduleScreen extends ConsumerStatefulWidget {
       _NewGoalScheduleScreenState();
 }
 
-class _NewGoalScheduleScreenState
-    extends ConsumerState<NewGoalScheduleScreen> {
+class _NewGoalScheduleScreenState extends ConsumerState<NewGoalScheduleScreen> {
   bool _initialized = false;
   bool _isSubmitting = false;
   String? _trainingDays;
@@ -35,6 +34,7 @@ class _NewGoalScheduleScreenState
   String? _weekdayTime;
   String? _weekendTime;
   DateTime? _planStartDate;
+  DateTime? _raceDate;
   final Set<String> _hardDays = {};
   String? _preferredTimeOfDay;
 
@@ -58,6 +58,7 @@ class _NewGoalScheduleScreenState
     _weekdayTime = draft.schedule.weekdayTime.key;
     _weekendTime = draft.schedule.weekendTime.key;
     _planStartDate = draft.planStartDate;
+    _raceDate = draft.hasRaceDate ? draft.raceDate : null;
     _preferredTimeOfDay = draft.schedule.preferredTimeOfDay?.key;
     _hardDays
       ..clear()
@@ -65,21 +66,40 @@ class _NewGoalScheduleScreenState
   }
 
   bool get _canContinue {
+    final planStartDate = _planStartDate;
+    if (planStartDate == null) return false;
+    final now = ref.read(newGoalClockProvider)();
+    final today = DateTime(now.year, now.month, now.day);
+    final start = DateTime(
+      planStartDate.year,
+      planStartDate.month,
+      planStartDate.day,
+    );
+    if (start.isBefore(today)) return false;
+    final raceDate = _raceDate;
+    if (raceDate != null && start.isAfter(raceDate)) return false;
+
     return _trainingDays != null &&
         _longRunDay != null &&
         _weekdayTime != null &&
-        _weekendTime != null &&
-        _planStartDate != null;
+        _weekendTime != null;
   }
 
   Future<void> _pickPlanStartDate() async {
     final bounds = buildPlanStartDatePickerBounds(
       clock: ref.read(newGoalClockProvider)(),
     );
+    final raceDate = _raceDate;
+    final lastDate =
+        raceDate != null &&
+            !raceDate.isBefore(bounds.firstDate) &&
+            raceDate.isBefore(bounds.lastDate)
+        ? raceDate
+        : bounds.lastDate;
     final initialDate = pickInitialDate(
       selectedDate: _planStartDate,
       minDate: bounds.firstDate,
-      maxDate: bounds.lastDate,
+      maxDate: lastDate,
       fallbackDate: bounds.fallbackDate,
     );
 
@@ -87,7 +107,7 @@ class _NewGoalScheduleScreenState
       context: context,
       initialDate: initialDate,
       firstDate: bounds.firstDate,
-      lastDate: bounds.lastDate,
+      lastDate: lastDate,
       builder: (context, child) => Theme(
         data: Theme.of(context).copyWith(
           colorScheme: const ColorScheme.dark(
@@ -238,7 +258,8 @@ class _NewGoalScheduleScreenState
                               (days) => _SelectChip(
                                 label: days,
                                 selected: _trainingDays == days,
-                                onTap: () => setState(() => _trainingDays = days),
+                                onTap: () =>
+                                    setState(() => _trainingDays = days),
                               ),
                             )
                             .toList(growable: false),
@@ -279,9 +300,8 @@ class _NewGoalScheduleScreenState
                                   l10n,
                                 ),
                                 selected: _weekdayTime == time,
-                                onTap: () => setState(
-                                  () => _weekdayTime = time,
-                                ),
+                                onTap: () =>
+                                    setState(() => _weekdayTime = time),
                               ),
                             )
                             .toList(growable: false),
@@ -303,9 +323,8 @@ class _NewGoalScheduleScreenState
                                   l10n,
                                 ),
                                 selected: _weekendTime == time,
-                                onTap: () => setState(
-                                  () => _weekendTime = time,
-                                ),
+                                onTap: () =>
+                                    setState(() => _weekendTime = time),
                               ),
                             )
                             .toList(growable: false),
@@ -417,9 +436,7 @@ class _SelectChip extends StatelessWidget {
           color: selected ? AppColors.accentMuted : AppColors.backgroundCard,
           borderRadius: AppRadius.borderLg,
           border: Border.all(
-            color: selected
-                ? AppColors.accentPrimary
-                : AppColors.borderDefault,
+            color: selected ? AppColors.accentPrimary : AppColors.borderDefault,
           ),
         ),
         child: Text(

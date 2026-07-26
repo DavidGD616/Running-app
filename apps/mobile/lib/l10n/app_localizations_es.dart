@@ -2758,6 +2758,9 @@ class AppLocalizationsEs extends AppLocalizations {
       'Tu plan actual no cambia. Añade el resultado cuando la hayas completado para continuar con el objetivo.';
 
   @override
+  String get newGoalCancelAssessment => 'Cancelar prueba de forma';
+
+  @override
   String get newGoalPreviewExpired =>
       'Esta vista previa caducó y no se puede aplicar.';
 

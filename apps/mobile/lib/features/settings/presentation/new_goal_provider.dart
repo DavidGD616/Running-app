@@ -143,6 +143,26 @@ class NewGoalDraftStore {
     }
   }
 
+  Future<void> cancelAssessment({
+    required String assessmentId,
+    required DateTime updatedAt,
+  }) async {
+    if (_client == null || _userId == null) return;
+
+    try {
+      await _client
+          .from('new_goal_assessments')
+          .update({
+            'status': 'cancelled',
+            'updated_at': updatedAt.toUtc().toIso8601String(),
+          })
+          .eq('id', assessmentId)
+          .eq('user_id', _userId);
+    } catch (_) {
+      // Cancellation remains available offline; remote sync is best-effort.
+    }
+  }
+
   Future<void> discard() async {
     await _preferences.remove(_storageKey);
     if (_client == null || _userId == null) return;
@@ -442,11 +462,15 @@ class NewGoalNotifier extends Notifier<NewGoalState> {
     try {
       final initial = await ref.read(newGoalInitialDataLoaderProvider)();
       final stored = await ref.read(newGoalDraftStoreProvider).load();
-      final baseDraft = NewGoalDraft.fromProfile(profile: initial.profile);
+      final today = ref.read(newGoalClockProvider)();
+      final baseDraft = NewGoalDraft.fromProfile(
+        profile: initial.profile,
+        today: today,
+      );
 
       final mergedDraft = stored == null
           ? baseDraft
-          : _coalesceDraft(stored.draft, baseDraft);
+          : _coalesceDraft(stored.draft, baseDraft, today);
       final sourcePlanId = initial.activePlanId;
       _revision = stored?.revision ?? 1;
       final wasRebased = stored != null && stored.sourcePlanId != sourcePlanId;
@@ -597,11 +621,13 @@ class NewGoalNotifier extends Notifier<NewGoalState> {
     final sourcePlanId = _sourcePlanId(state);
     if (draft == null || sourcePlanId == null) return;
 
+    final completesAssessment =
+        result.source == NewGoalFitnessSource.assessment &&
+        draft.assessment != null;
     final updated = draft.copyWith(
       fitnessResult: result,
       clearFitnessResult: false,
-      assessment: null,
-      clearAssessment: true,
+      clearAssessment: !completesAssessment,
     );
 
     state = NewGoalEditing(
@@ -652,16 +678,27 @@ class NewGoalNotifier extends Notifier<NewGoalState> {
     );
   }
 
-  void cancelAssessment() {
+  Future<void> cancelAssessment() async {
     final draft = _draft(state);
     final sourcePlanId = _sourcePlanId(state);
     if (draft == null || sourcePlanId == null) return;
+
+    final assessment = draft.assessment;
+    if (assessment != null) {
+      await ref
+          .read(newGoalDraftStoreProvider)
+          .cancelAssessment(
+            assessmentId: assessment.id,
+            updatedAt: ref.read(newGoalClockProvider)(),
+          );
+      if (!ref.mounted) return;
+    }
 
     final updated = draft.copyWith(
       clearAssessment: true,
       clearFitnessResult: true,
     );
-    updateDraft(updated);
+    await _applyDraft(updated, sourcePlanId);
   }
 
   void cancelPreview() {
@@ -1063,15 +1100,24 @@ class NewGoalNotifier extends Notifier<NewGoalState> {
   NewGoalDraft _coalesceDraft(
     NewGoalDraft storedDraft,
     NewGoalDraft defaultDraft,
+    DateTime today,
   ) {
-    return storedDraft.copyWith(
-      planStartDate: storedDraft.planStartDate ?? defaultDraft.planStartDate,
-    );
+    final planStartDate =
+        storedDraft.planStartDate ?? defaultDraft.planStartDate;
+    return storedDraft
+        .copyWith(
+          planStartDate: planStartDate,
+          clearPlanStartDate: planStartDate == null,
+        )
+        .normalizePlanStartDate(today);
   }
 
   Future<NewGoalDraft> _freshDraft() async {
     final initial = await ref.read(newGoalInitialDataLoaderProvider)();
-    return NewGoalDraft.fromProfile(profile: initial.profile);
+    return NewGoalDraft.fromProfile(
+      profile: initial.profile,
+      today: ref.read(newGoalClockProvider)(),
+    );
   }
 
   Future<String> _latestSourcePlanId() async {
@@ -1157,13 +1203,13 @@ NewGoalRecommendation? _recommendation(NewGoalState state) => switch (state) {
   NewGoalProposalLoading(:final recommendation) => recommendation,
   NewGoalProposalReady(:final recommendation) => recommendation,
   NewGoalApplying(:final recommendation) => recommendation,
+  NewGoalFailure(:final proposal) => proposal?.recommendation,
   NewGoalRecommendationLoading() => null,
   NewGoalLoading() ||
   NewGoalEditing() ||
   NewGoalFitnessCheckRequired() ||
   NewGoalAssessmentPending() ||
-  NewGoalSuccess() ||
-  NewGoalFailure() => null,
+  NewGoalSuccess() => null,
 };
 
 bool _hasRestoredDraft(NewGoalState state) => switch (state) {
@@ -1176,7 +1222,7 @@ bool _validDraft(NewGoalDraft draft, DateTime now) {
   if (goal.race == RunnerGoalRace.other) return false;
   if (!goal.hasRaceDate && goal.raceDate != null) return false;
   if (goal.hasRaceDate && goal.raceDate == null) return false;
-  if (draft.planStartDate == null) return false;
+  if (!draft.hasValidPlanStartDate(now)) return false;
 
   final today = DateTime(now.year, now.month, now.day);
   if (goal.hasRaceDate &&
