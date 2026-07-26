@@ -1011,9 +1011,18 @@ void main() {
       appRouter.go(RouteNames.settingsUpdatePlanNewGoalProposal);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('Carrera Suave'), findsOneWidget);
-      expect(find.textContaining('5,5'), findsOneWidget);
-      expect(find.textContaining('1h 35m'), findsOneWidget);
+      expect(
+        find.byWidgetPredicate(
+          (widget) =>
+              widget is Text &&
+              widget.data != null &&
+              widget.data!.contains('23 jul 2026') &&
+              widget.data!.contains('Carrera Suave') &&
+              widget.data!.contains('5,5') &&
+              widget.data!.contains('1h 35m'),
+        ),
+        findsOneWidget,
+      );
     },
   );
 
