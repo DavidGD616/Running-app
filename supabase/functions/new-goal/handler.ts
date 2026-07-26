@@ -136,7 +136,7 @@ const BaseRequestFieldsSchema = z.object({
   hasRaceDate: z.boolean(),
   raceDate: DateOnlySchema.nullish(),
   planStartDate: DateOnlySchema,
-  localDate: DateOnlySchema.optional(),
+  localDate: DateOnlySchema,
   locale: LocaleSchema,
   fitnessResult: FitnessResultSchema.nullable().optional(),
   schedule: ReviewedScheduleSchema.optional(),
@@ -165,10 +165,26 @@ const buildPlanRequestSchema = (action: "recommend" | "preview") =>
         message: "raceDate must be omitted when hasRaceDate is false",
       });
     }
+    const planStartDate = parseDateOnly(value.planStartDate);
+    const localDate = parseDateOnly(value.localDate);
+    if (
+      planStartDate != null &&
+      localDate != null &&
+      planStartDate.getTime() < localDate.getTime()
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["planStartDate"],
+        message: "planStartDate must not be before localDate",
+      });
+    }
     if (value.hasRaceDate && value.raceDate != null) {
-      const planStartDate = parseDateOnly(value.planStartDate)!;
-      const race = parseDateOnly(value.raceDate)!;
-      if (race.getTime() < planStartDate.getTime()) {
+      const race = parseDateOnly(value.raceDate);
+      if (
+        race != null &&
+        planStartDate != null &&
+        race.getTime() < planStartDate.getTime()
+      ) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ["raceDate"],
@@ -378,7 +394,6 @@ async function recommendGoal(
 
   const recommendation = buildRecommendation(
     request,
-    context.sourcePlan,
     mergedProfileForRequest(context.profile, request),
     localDate,
   );
@@ -445,7 +460,6 @@ async function previewGoal(
 
   const recommendation = buildRecommendation(
     request,
-    context.sourcePlan,
     mergedProfile,
     localDate,
   );
@@ -584,7 +598,7 @@ async function acceptGoal(
 }
 
 function requestLocalDate(request: RecommendRequest | PreviewRequest): string {
-  return request.localDate ?? request.planStartDate;
+  return request.localDate;
 }
 
 function mergedProfileForRequest(
@@ -632,7 +646,6 @@ function raceDistanceKm(race: SupportedRace): number {
 
 function buildRecommendation(
   request: RecommendRequest | PreviewRequest,
-  sourcePlan: JsonObject,
   profile: JsonObject,
   localDate: string,
 ): NewGoalRecommendationTimeline {
@@ -673,16 +686,12 @@ function buildRecommendation(
         DAY_MS,
     ),
   );
-  const planStartDaysToRace = Math.max(
-    0,
-    Math.round((raceDate.getTime() - planStartDate.getTime()) / DAY_MS),
-  );
   if (daysToRace <= RACE_SUPPORT_DAYS) {
     return {
       mode: "race_support",
       startDate: request.planStartDate,
       endDate: request.raceDate!,
-      weeks: sourcePlanDurationWeeks(sourcePlan, planStartDaysToRace),
+      weeks: baseWeeks,
       hasRaceDate: true,
       raceDate: request.raceDate ?? null,
       daysToRace,
@@ -693,7 +702,7 @@ function buildRecommendation(
       mode: "short_fixed_date",
       startDate: request.planStartDate,
       endDate: request.raceDate!,
-      weeks: sourcePlanDurationWeeks(sourcePlan, planStartDaysToRace),
+      weeks: baseWeeks,
       hasRaceDate: true,
       raceDate: request.raceDate ?? null,
       daysToRace,
@@ -703,25 +712,11 @@ function buildRecommendation(
     mode: "standard",
     startDate: request.planStartDate,
     endDate: request.raceDate!,
-    weeks: sourcePlanDurationWeeks(sourcePlan, planStartDaysToRace),
+    weeks: baseWeeks,
     hasRaceDate: true,
     raceDate: request.raceDate ?? null,
     daysToRace,
   };
-}
-
-function sourcePlanDurationWeeks(
-  sourcePlan: JsonObject,
-  daysToRace: number,
-): number {
-  return Math.max(
-    1,
-    Math.min(
-      18,
-      daysToRace > 0 ? Math.ceil(daysToRace / 7) : 1,
-      numberOr(sourcePlan.totalWeeks, 18),
-    ),
-  );
 }
 
 export function estimateRaceTarget(input: {
@@ -859,7 +854,7 @@ function estimateFromStrava(input: {
     estimates.sort((a, b) => a - b)[Math.floor(estimates.length / 2)],
   );
   const hasSameDistance = parsed.some((entry) => entry.isSameDistance);
-  let confidence: EstimateConfidence = hasSameDistance
+  const confidence: EstimateConfidence = hasSameDistance
     ? "medium"
     : parsed.length >= 3
     ? "medium"
@@ -1036,16 +1031,11 @@ function buildDeterministicRaceSupportSessions(
     });
   }
 
-  const easyDate = new Date(
-    Math.min(
-      planStartDate.getTime() + DAY_MS,
-      raceDate.getTime() - DAY_MS,
-    ),
-  );
+  const easyDate = new Date(planStartDate.getTime() + DAY_MS);
   const easyDateOnly = toDateOnly(easyDate);
   if (
     easyDate.getTime() < raceDate.getTime() &&
-    easyDate.getTime() >= planStartDate.getTime() - DAY_MS &&
+    easyDate.getTime() >= planStartDate.getTime() &&
     easyDateOnly !== toDateOnly(planStartDate)
   ) {
     fallbackSessions.push({
@@ -1226,14 +1216,6 @@ function toDateOnly(from: Date): string {
 
 function addDays(from: Date, days: number): string {
   return toDateOnly(new Date(from.getTime() + days * DAY_MS));
-}
-
-function dateOnlyFromMaybe(value: string): string {
-  return parseDateOnly(value)?.toISOString().slice(0, 10) ?? value;
-}
-
-function dateOnlyFromDateOnly(value: string, offsetDays: number): string {
-  return addDays(parseDateOnly(value) ?? new Date(), offsetDays);
 }
 
 function mergePlanStartDate(
@@ -1537,10 +1519,6 @@ function isString(value: unknown): value is string {
 
 function isInteger(value: unknown): value is number {
   return typeof value === "number" && Number.isInteger(value);
-}
-
-function numberOr(value: unknown, fallback: number): number {
-  return typeof value === "number" && Number.isFinite(value) ? value : fallback;
 }
 
 function numberOrNull(value: unknown): number | null {

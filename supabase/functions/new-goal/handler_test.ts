@@ -1,3 +1,5 @@
+// deno-lint-ignore-file require-await
+
 import {
   AcceptRequestSchema,
   createNewGoalHandler,
@@ -7,10 +9,7 @@ import {
   RecommendRequestSchema,
 } from "./handler.ts";
 import type { CandidatePlan } from "../generate-plan/candidate-builder.ts";
-import {
-  assert,
-  assertEquals,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
+import { assert, assertEquals } from "@std/assert";
 
 const profile = {
   goal: { race: "race_10k", hasRaceDate: true, raceDate: "2026-10-01" },
@@ -54,6 +53,27 @@ const candidatePlan = {
 Deno.test("recommend and preview schema validate supported races and plan dates", () => {
   assert(RecommendRequestSchema.safeParse(recommendBody()).success);
   assert(PreviewRequestSchema.safeParse(previewBody()).success);
+  const missingLocalDate: Record<string, unknown> = recommendBody();
+  delete missingLocalDate.localDate;
+  assertEquals(
+    RecommendRequestSchema.safeParse(missingLocalDate).success,
+    false,
+  );
+  assertEquals(
+    RecommendRequestSchema.safeParse({
+      ...recommendBody(),
+      planStartDate: "2026-07-12",
+      localDate: "2026-07-13",
+    }).success,
+    false,
+  );
+  assertEquals(
+    RecommendRequestSchema.safeParse({
+      ...recommendBody(),
+      localDate: "not-a-date",
+    }).success,
+    false,
+  );
   assertEquals(
     RecommendRequestSchema.safeParse({ ...previewBody(), race: "race_half" })
       .success,
@@ -230,6 +250,24 @@ Deno.test("recommend returns estimate-backed guidance when fitness evidence exis
     recordedOn: "2026-07-10",
     reason: "manual_recent_hard_result",
   }]);
+});
+
+Deno.test("dated recommendation length matches the new goal window", async () => {
+  const response = await createNewGoalHandler(fakeDependencies({
+    buildCandidate: async () => {
+      throw new Error("recommend should not generate a candidate");
+    },
+  }))(request(recommendBody({
+    race: "race_marathon",
+    raceDate: "2026-11-02",
+    fitnessResult: manualResult(),
+  })));
+
+  assertEquals(response.status, 200);
+  const json = await response.json();
+  assertEquals(json.recommendation.mode, "standard");
+  assertEquals(json.recommendation.weeks, 16);
+  assertEquals(json.recommendation.endDate, "2026-11-02");
 });
 
 Deno.test("recommend falls back to fitness_check_required when no usable evidence", async () => {
@@ -686,6 +724,41 @@ Deno.test("preview builds deterministic race-support fallback when filtered sess
   );
 });
 
+Deno.test("same-day race-support fallback never schedules before plan start", async () => {
+  const response = await createNewGoalHandler(fakeDependencies({
+    buildCandidate: async () => {
+      return {
+        ...candidatePlan,
+        sessions: [
+          session("unsafe", "2026-07-12", "tempoRun", 1, 7),
+        ],
+      } as unknown as CandidatePlan;
+    },
+  }))(request(previewBody({
+    fitnessResult: manualResult(),
+    hasRaceDate: true,
+    planStartDate: "2026-07-13",
+    raceDate: "2026-07-13",
+    localDate: "2026-07-13",
+  })));
+
+  assertEquals(response.status, 200);
+  const json = await response.json();
+  const sessions = json.candidatePlan.sessions as Array<{
+    type: string;
+    date: string;
+  }>;
+  assertEquals(json.recommendation.mode, "race_support");
+  assertEquals(
+    sessions.map((session) => session.type),
+    ["restDay", "raceDay"],
+  );
+  assertEquals(
+    sessions.every((session) => session.date >= "2026-07-13"),
+    true,
+  );
+});
+
 Deno.test("preview race-support fallback starts at max(localDate, planStartDate)", async () => {
   let stored: unknown = null;
   const response = await createNewGoalHandler(fakeDependencies({
@@ -768,7 +841,7 @@ Deno.test("accept calls acceptance seam and returns accepted version payload", a
     storeProposal: async () => {
       throw new Error("accept should not store proposal");
     },
-    acceptProposal: async (userId, proposalId, versionId, generatedAt) => {
+    acceptProposal: async (userId, proposalId, versionId, _generatedAt) => {
       acceptCount++;
       assertEquals(userId, "token-user");
       assertEquals(proposalId, "proposal-1");
@@ -866,6 +939,7 @@ function previewBody(overrides: Record<string, unknown> = {}) {
     hasRaceDate: true,
     raceDate: "2026-08-10",
     planStartDate: "2026-07-13",
+    localDate: "2026-07-13",
     locale: "en",
     ...overrides,
   };
@@ -879,6 +953,7 @@ function recommendBody(overrides: Record<string, unknown> = {}) {
     hasRaceDate: true,
     raceDate: "2026-08-10",
     planStartDate: "2026-07-13",
+    localDate: "2026-07-13",
     locale: "en",
     ...overrides,
   };
