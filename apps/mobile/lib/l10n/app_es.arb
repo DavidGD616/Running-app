@@ -1001,6 +1001,13 @@
   "newGoalProposalTimelineEnd": "Fecha de fin",
   "newGoalProposalTimelineWeeks": "Semanas",
   "newGoalProposalTimelineMode": "Modo del cronograma",
+  "newGoalProposalRhythmTitle": "Ritmo semanal",
+  "newGoalProposalRhythmSummary": "Primera semana propuesta",
+  "newGoalProposalRhythmNoSessions": "No hay sesiones de entrenamiento programadas en la primera semana",
+  "newGoalProposalPhaseStrategyTitle": "Estrategia por fases",
+  "newGoalProposalNoPhaseStrategy": "La estrategia de fases no está disponible para este plan",
+  "newGoalProposalModeShortFixedDate": "Fecha fija corta",
+  "newGoalProposalModeNoFixedDate": "Sin fecha fija",
   "newGoalProposalEstimateTitle": "Ventana estimada de finalización",
   "newGoalProposalPlanSummary": "{weekCount} semanas de plan con {sessionCount} sesiones",
   "@newGoalProposalPlanSummary": {

@@ -17,6 +17,7 @@ import '../../../../l10n/app_localizations.dart';
 import '../../../onboarding/presentation/onboarding_values.dart';
 import '../../../training_plan/domain/models/plan_week.dart';
 import '../../../training_plan/domain/models/training_plan.dart';
+import '../../../training_plan/domain/models/professional_plan_metadata.dart';
 import '../../../training_plan/domain/models/session_type.dart';
 import '../../../training_plan/domain/models/training_session.dart';
 import '../../../profile/domain/models/runner_profile.dart';
@@ -1071,6 +1072,32 @@ class _ProposalScreen extends StatelessWidget {
                           ],
                         ),
                       ],
+                      const SizedBox(height: AppSpacing.xl),
+                      SectionLabel(label: l10n.newGoalProposalRhythmTitle),
+                      const SizedBox(height: AppSpacing.sm),
+                      SettingsCard(
+                        children: [
+                          _LoadingRow(
+                            label: l10n.newGoalProposalRhythmSummary,
+                            value: _proposalRhythmSummary(
+                              proposal!,
+                              l10n,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.lg),
+                      SectionLabel(
+                        label: l10n.newGoalProposalPhaseStrategyTitle,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _InfoCard(
+                        color: AppColors.backgroundCard,
+                        text: _proposalPhaseSummary(
+                          proposal!,
+                          l10n,
+                        ),
+                      ),
                       if (estimate != null) ...[
                         const SizedBox(height: AppSpacing.xl),
                         SectionLabel(label: l10n.newGoalProposalEstimateTitle),
@@ -1610,6 +1637,60 @@ String _proposalModeLabel(String timelineMode, AppLocalizations l10n) {
         (word) => '${word[0].toUpperCase()}${word.substring(1).toLowerCase()}',
       )
       .join(' ');
+}
+
+String _proposalRhythmSummary(NewGoalProposal proposal, AppLocalizations l10n) {
+  final weeks = _proposalWeeksFromPlan(proposal);
+  if (weeks.isEmpty) return l10n.newGoalProposalRhythmNoSessions;
+
+  final counts = <SessionType, int>{};
+  for (final session in weeks.first.sessions) {
+    if (session.type == SessionType.restDay) continue;
+    counts[session.type] = (counts[session.type] ?? 0) + 1;
+  }
+
+  if (counts.isEmpty) return l10n.newGoalProposalRhythmNoSessions;
+  final ordered = counts.entries.toList()
+    ..sort((left, right) => right.value.compareTo(left.value));
+  return ordered
+      .map((entry) => '${entry.value}× ${_sessionLabel(entry.key, l10n)}')
+      .join(' · ');
+}
+
+String _proposalPhaseSummary(NewGoalProposal proposal, AppLocalizations l10n) {
+  final phaseStrategy = proposal.candidatePlan.phaseStrategy;
+  if (phaseStrategy.isEmpty) {
+    return l10n.newGoalProposalNoPhaseStrategy;
+  }
+
+  return phaseStrategy
+      .take(4)
+      .map(
+        (phase) => l10n.planMetadataPhaseWeeks(
+          _proposalPhaseLabel(phase.phase, l10n),
+          phase.weeks,
+        ),
+      )
+      .join(' · ');
+}
+
+String _proposalPhaseLabel(CoachingPhase phase, AppLocalizations l10n) {
+  return switch (phase) {
+    CoachingPhase.base => l10n.planMetadataPhaseBase,
+    CoachingPhase.build => l10n.planMetadataPhaseBuild,
+    CoachingPhase.specific => l10n.planMetadataPhaseSpecific,
+    CoachingPhase.peak => l10n.planMetadataPhasePeak,
+    CoachingPhase.taperRace => l10n.planMetadataPhaseTaperRace,
+    CoachingPhase.safeBuild => l10n.planMetadataPhaseSafeBuild,
+    CoachingPhase.unsupportedFallback => l10n.planMetadataPhaseUnsupportedFallback,
+  };
+}
+
+List<PlanWeek> _proposalWeeksFromPlan(NewGoalProposal proposal) {
+  final currentWeek = proposal.candidatePlan.currentWeekNumber;
+  return proposal.candidatePlan.allWeeks
+      .where((week) => week.weekNumber >= currentWeek)
+      .toList(growable: false);
 }
 
 List<PlanWeek> _proposalWeeks(NewGoalProposal proposal) {

@@ -2427,6 +2427,13 @@
   "newGoalProposalTimelineEnd": "End date",
   "newGoalProposalTimelineWeeks": "Weeks",
   "newGoalProposalTimelineMode": "Timeline mode",
+  "newGoalProposalRhythmTitle": "Weekly rhythm",
+  "newGoalProposalRhythmSummary": "First proposed week",
+  "newGoalProposalRhythmNoSessions": "No scheduled training sessions in the first week",
+  "newGoalProposalPhaseStrategyTitle": "Phase strategy",
+  "newGoalProposalNoPhaseStrategy": "Phase strategy is unavailable for this plan",
+  "newGoalProposalModeShortFixedDate": "Short fixed date",
+  "newGoalProposalModeNoFixedDate": "No fixed date",
   "newGoalProposalEstimateTitle": "Estimated finish window",
   "newGoalProposalPlanSummary": "{weekCount} week plan with {sessionCount} sessions",
   "@newGoalProposalPlanSummary": {
