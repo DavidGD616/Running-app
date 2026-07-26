@@ -1079,10 +1079,7 @@ class _ProposalScreen extends StatelessWidget {
                         children: [
                           _LoadingRow(
                             label: l10n.newGoalProposalRhythmSummary,
-                            value: _proposalRhythmSummary(
-                              proposal!,
-                              l10n,
-                            ),
+                            value: _proposalRhythmSummary(proposal!, l10n),
                           ),
                         ],
                       ),
@@ -1093,10 +1090,7 @@ class _ProposalScreen extends StatelessWidget {
                       const SizedBox(height: AppSpacing.sm),
                       _InfoCard(
                         color: AppColors.backgroundCard,
-                        text: _proposalPhaseSummary(
-                          proposal!,
-                          l10n,
-                        ),
+                        text: _proposalPhaseSummary(proposal!, l10n),
                       ),
                       if (estimate != null) ...[
                         const SizedBox(height: AppSpacing.xl),
@@ -1651,7 +1645,11 @@ String _proposalRhythmSummary(NewGoalProposal proposal, AppLocalizations l10n) {
 
   if (counts.isEmpty) return l10n.newGoalProposalRhythmNoSessions;
   final ordered = counts.entries.toList()
-    ..sort((left, right) => right.value.compareTo(left.value));
+    ..sort(
+      (left, right) => right.value.compareTo(left.value) == 0
+          ? left.key.index.compareTo(right.key.index)
+          : right.value.compareTo(left.value),
+    );
   return ordered
       .map((entry) => '${entry.value}× ${_sessionLabel(entry.key, l10n)}')
       .join(' · ');
@@ -1682,7 +1680,8 @@ String _proposalPhaseLabel(CoachingPhase phase, AppLocalizations l10n) {
     CoachingPhase.peak => l10n.planMetadataPhasePeak,
     CoachingPhase.taperRace => l10n.planMetadataPhaseTaperRace,
     CoachingPhase.safeBuild => l10n.planMetadataPhaseSafeBuild,
-    CoachingPhase.unsupportedFallback => l10n.planMetadataPhaseUnsupportedFallback,
+    CoachingPhase.unsupportedFallback =>
+      l10n.planMetadataPhaseUnsupportedFallback,
   };
 }
 

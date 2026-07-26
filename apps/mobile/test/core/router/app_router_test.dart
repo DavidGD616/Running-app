@@ -28,6 +28,7 @@ import 'package:running_app/features/settings/domain/new_goal_models.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
 import 'package:running_app/features/training_plan/domain/models/training_plan.dart';
 import 'package:running_app/features/training_plan/domain/models/training_session.dart';
+import 'package:running_app/features/training_plan/domain/models/professional_plan_metadata.dart';
 import 'package:running_app/core/router/app_router.dart';
 import 'package:running_app/core/router/route_names.dart';
 import 'package:running_app/l10n/app_localizations.dart';
@@ -214,23 +215,29 @@ TrainingPlan _proposalTrainingPlanFixture({
   DateTime? sessionDate,
   double distanceKm = 5.5,
   int durationMinutes = 95,
+  List<TrainingSession>? sessions,
+  List<PhaseStrategy>? phaseStrategy,
 }) {
   final resolvedSessionDate = sessionDate ?? DateTime(2026, 7, 23);
+  final resolvedSessions =
+      sessions ??
+      [
+        TrainingSession(
+          id: 'proposal-session-1',
+          date: resolvedSessionDate,
+          type: SessionType.easyRun,
+          status: SessionStatus.upcoming,
+          distanceKm: distanceKm,
+          durationMinutes: durationMinutes,
+        ),
+      ];
   return TrainingPlan(
     id: 'proposal-plan-1',
     raceType: TrainingPlanRaceType.halfMarathon,
     totalWeeks: 12,
     currentWeekNumber: 1,
-    sessions: [
-      TrainingSession(
-        id: 'proposal-session-1',
-        date: resolvedSessionDate,
-        type: SessionType.easyRun,
-        status: SessionStatus.upcoming,
-        distanceKm: distanceKm,
-        durationMinutes: durationMinutes,
-      ),
-    ],
+    sessions: resolvedSessions,
+    phaseStrategy: phaseStrategy ?? const <PhaseStrategy>[],
   );
 }
 
@@ -308,16 +315,16 @@ NewGoalFitnessCheckRequired _fitnessCheckStateFixture({
   );
 }
 
-NewGoalState _proposalReadyStateFixture() {
-  final proposal = _proposalFixture();
-  final goal = proposal.currentGoal;
+NewGoalState _proposalReadyStateFixture({NewGoalProposal? proposal}) {
+  final resolvedProposal = proposal ?? _proposalFixture();
+  final goal = resolvedProposal.currentGoal;
   return NewGoalProposalReady(
     draft: NewGoalDraft.fromProfile(
       profile: _newGoalProfileWithPlanStart(date: DateTime(2026, 7, 31)),
     ),
     sourcePlanId: 'active-plan',
     recommendation: _proposalRecommendationFixture(goal),
-    proposal: proposal,
+    proposal: resolvedProposal,
   );
 }
 
@@ -1301,6 +1308,197 @@ void main() {
     expect(
       appRouter.routerDelegate.currentConfiguration.uri.path,
       RouteNames.settingsUpdatePlanNewGoalReady,
+    );
+  });
+
+  testWidgets('Recommendation secondary CTA routes back into setup form', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalProvider.overrideWith(
+            () => _StaticNewGoalNotifier(_recommendationReadyStateFixture()),
+          ),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+    final appRouter = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    ).read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalSummary);
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(NewGoalRecommendationScreen)),
+    )!;
+
+    await tester.tap(
+      find.widgetWithText(AppButton, l10n.newGoalReviewYourSetup),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NewGoalRaceDateScreen), findsOneWidget);
+    expect(
+      appRouter.routerDelegate.currentConfiguration.uri.path,
+      RouteNames.settingsUpdatePlanNewGoalForm,
+    );
+  });
+
+  testWidgets('Proposal screen renders rhythm summary and phase strategy', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+    final proposal = _proposalFixture(
+      candidatePlan: _proposalTrainingPlanFixture(
+        phaseStrategy: const [
+          PhaseStrategy(phase: CoachingPhase.base, weeks: 3),
+          PhaseStrategy(phase: CoachingPhase.build, weeks: 4),
+          PhaseStrategy(phase: CoachingPhase.specific, weeks: 5),
+        ],
+        sessions: [
+          TrainingSession(
+            id: 'proposal-session-1',
+            date: DateTime(2026, 7, 24),
+            type: SessionType.easyRun,
+            status: SessionStatus.upcoming,
+            distanceKm: 6.4,
+            durationMinutes: 52,
+          ),
+          TrainingSession(
+            id: 'proposal-session-2',
+            date: DateTime(2026, 7, 24),
+            type: SessionType.easyRun,
+            status: SessionStatus.upcoming,
+            distanceKm: 6.4,
+            durationMinutes: 52,
+          ),
+          TrainingSession(
+            id: 'proposal-session-3',
+            date: DateTime(2026, 7, 25),
+            type: SessionType.longRun,
+            status: SessionStatus.upcoming,
+            distanceKm: 16.4,
+            durationMinutes: 94,
+          ),
+          TrainingSession(
+            id: 'proposal-session-4',
+            date: DateTime(2026, 7, 26),
+            type: SessionType.intervals,
+            status: SessionStatus.upcoming,
+          ),
+        ],
+      ),
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalProvider.overrideWith(
+            () => _StaticNewGoalNotifier(
+              _proposalReadyStateFixture(proposal: proposal),
+            ),
+          ),
+          newGoalClockProvider.overrideWithValue(() => DateTime(2026, 7, 31)),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+
+    final appRouter = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    ).read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalProposal);
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(NewGoalProposalScreen)),
+    )!;
+
+    expect(
+      find.textContaining('2× ${l10n.weeklyPlanSessionEasyRun}'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('1× ${l10n.weeklyPlanSessionLongRun}'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining('1× ${l10n.weeklyPlanSessionIntervals}'),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        l10n.planMetadataPhaseWeeks(l10n.planMetadataPhaseBase, 3),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        l10n.planMetadataPhaseWeeks(l10n.planMetadataPhaseBuild, 4),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.textContaining(
+        l10n.planMetadataPhaseWeeks(l10n.planMetadataPhaseSpecific, 5),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      appRouter.routerDelegate.currentConfiguration.uri.path,
+      RouteNames.settingsUpdatePlanNewGoalProposal,
     );
   });
 
