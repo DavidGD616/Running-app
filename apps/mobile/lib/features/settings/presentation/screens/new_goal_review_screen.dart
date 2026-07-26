@@ -183,7 +183,7 @@ class _NewGoalReviewScreenState extends ConsumerState<NewGoalReviewScreen> {
   void _reviewCurrentSetup(BuildContext context) {
     _navigateIfNeeded(
       GoRouter.of(context),
-      RouteNames.settingsUpdatePlanNewGoalSummary,
+      RouteNames.settingsUpdatePlanNewGoalForm,
     );
   }
 
@@ -1596,6 +1596,12 @@ String _proposalModeLabel(String timelineMode, AppLocalizations l10n) {
   if (timelineMode == 'long_term') return l10n.newGoalProposalModeLongTerm;
   if (timelineMode == 'short_term') return l10n.newGoalProposalModeShortTerm;
   if (timelineMode == 'medium_term') return l10n.newGoalProposalModeMediumTerm;
+  if (timelineMode == 'short_fixed_date') {
+    return l10n.newGoalProposalModeShortFixedDate;
+  }
+  if (timelineMode == 'no_fixed_date') {
+    return l10n.newGoalProposalModeNoFixedDate;
+  }
 
   if (timelineMode.isEmpty) return '';
   final words = timelineMode.split('_').where((word) => word.isNotEmpty);
