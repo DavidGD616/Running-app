@@ -266,6 +266,7 @@ NewGoalRecommendation _proposalRecommendationFixture(NewGoalGoal goal) {
 NewGoalProposal _proposalFixture({
   NewGoalGoal? goal,
   TrainingPlan? candidatePlan,
+  List<String> warnings = const [],
 }) {
   final resolvedGoal = goal ?? _proposalGoalFixture();
   final resolvedPlan = candidatePlan ?? _proposalTrainingPlanFixture();
@@ -278,7 +279,7 @@ NewGoalProposal _proposalFixture({
     proposedGoal: resolvedGoal,
     candidatePlan: resolvedPlan,
     summary: const {},
-    warnings: const [],
+    warnings: warnings,
   );
 }
 
@@ -1509,6 +1510,80 @@ void main() {
       appRouter.routerDelegate.currentConfiguration.uri.path,
       RouteNames.settingsUpdatePlanNewGoalProposal,
     );
+  });
+
+  testWidgets('Proposal screen localizes backend warning tokens', (
+    tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({});
+    final prefs = await SharedPreferences.getInstance();
+
+    final proposal = _proposalFixture(
+      warnings: const [
+        'short_fixed_date',
+        'race_support',
+        'no_fixed_date',
+        'standard',
+        'mystery_mode',
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          sharedPreferencesProvider.overrideWithValue(prefs),
+          userPreferencesRepositoryProvider.overrideWithValue(
+            SharedPreferencesUserPreferencesRepository(prefs),
+          ),
+          appBootstrapStateProvider.overrideWithValue(
+            AppBootstrapState.authenticatedReady,
+          ),
+          newGoalProvider.overrideWith(
+            () => _StaticNewGoalNotifier(
+              _proposalReadyStateFixture(proposal: proposal),
+            ),
+          ),
+          newGoalClockProvider.overrideWithValue(() => DateTime(2026, 7, 31)),
+        ],
+        child: Consumer(
+          builder: (context, ref, _) {
+            final appRouter = ref.watch(appRouterProvider);
+            return MaterialApp.router(
+              locale: const Locale('en'),
+              localizationsDelegates: const [
+                AppLocalizations.delegate,
+                GlobalMaterialLocalizations.delegate,
+                GlobalWidgetsLocalizations.delegate,
+                GlobalCupertinoLocalizations.delegate,
+              ],
+              supportedLocales: const [Locale('en'), Locale('es')],
+              routerConfig: appRouter,
+            );
+          },
+        ),
+      ),
+    );
+
+    final appRouter = ProviderScope.containerOf(
+      tester.element(find.byType(MaterialApp)),
+    ).read(appRouterProvider);
+
+    appRouter.go(RouteNames.settingsUpdatePlanNewGoalProposal);
+    await tester.pumpAndSettle();
+
+    final l10n = AppLocalizations.of(
+      tester.element(find.byType(NewGoalProposalScreen)),
+    )!;
+
+    expect(find.text(l10n.newGoalWarningShortNoticeTitle), findsOneWidget);
+    expect(find.text(l10n.newGoalWarningRaceWeekTitle), findsOneWidget);
+    expect(find.text(l10n.newGoalWarningNoFixedDateTitle), findsOneWidget);
+    expect(find.text(l10n.newGoalWarningUnknownTitle), findsOneWidget);
+
+    expect(find.textContaining('short_fixed_date'), findsNothing);
+    expect(find.textContaining('race_support'), findsNothing);
+    expect(find.textContaining('no_fixed_date'), findsNothing);
+    expect(find.textContaining('mystery_mode'), findsNothing);
   });
 
   testWidgets('Keep current plan from proposal does not apply proposal', (

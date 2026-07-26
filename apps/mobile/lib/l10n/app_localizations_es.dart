@@ -2878,6 +2878,13 @@ class AppLocalizationsEs extends AppLocalizations {
       'Este plan usa una preparación estándar y no programa una descarga específica para la carrera.';
 
   @override
+  String get newGoalWarningUnknownTitle => 'Nota de planificación';
+
+  @override
+  String get newGoalWarningUnknownBody =>
+      'Este plan incluye una recomendación de cronograma que no se pudo traducir. Revisa los detalles antes de aplicar.';
+
+  @override
   String get settingsPreferencesSection => 'Preferencias';
 
   @override

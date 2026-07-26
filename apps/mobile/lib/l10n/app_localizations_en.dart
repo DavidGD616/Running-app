@@ -2852,6 +2852,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'This plan uses a standard build and does not include a race-specific taper.';
 
   @override
+  String get newGoalWarningUnknownTitle => 'Timing note';
+
+  @override
+  String get newGoalWarningUnknownBody =>
+      'This plan includes a timing recommendation that could not be localized. Review the details before you apply.';
+
+  @override
   String get settingsPreferencesSection => 'Preferences';
 
   @override

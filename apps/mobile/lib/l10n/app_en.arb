@@ -2521,6 +2521,8 @@
   "newGoalWarningLimitedEvidenceBody": "The estimated range is intentionally broader until more hard-effort data is available.",
   "newGoalWarningNoFixedDateTitle": "Flexible timeline",
   "newGoalWarningNoFixedDateBody": "This plan uses a standard build and does not include a race-specific taper.",
+  "newGoalWarningUnknownTitle": "Timing note",
+  "newGoalWarningUnknownBody": "This plan includes a timing recommendation that could not be localized. Review the details before you apply.",
 
   "settingsPreferencesSection": "Preferences",
   "@settingsPreferencesSection": { "description": "Preferences section header" },

@@ -1029,12 +1029,18 @@ class _ProposalScreen extends StatelessWidget {
                       ),
                       if (proposal!.warnings.isNotEmpty) ...[
                         const SizedBox(height: AppSpacing.lg),
-                        ...proposal!.warnings.map(
-                          (warning) => Padding(
+                        ..._proposalWarningContents(
+                          warnings: proposal!.warnings,
+                          l10n: l10n,
+                        ).map(
+                          (warningContent) => Padding(
                             padding: const EdgeInsets.only(
                               bottom: AppSpacing.sm,
                             ),
-                            child: _WarningRow(l10n: l10n, warning: warning),
+                            child: _WarningRow(
+                              title: warningContent.$1,
+                              body: warningContent.$2,
+                            ),
                           ),
                         ),
                       ],
@@ -1357,15 +1363,13 @@ class _GoalCard extends StatelessWidget {
 }
 
 class _WarningRow extends StatelessWidget {
-  const _WarningRow({required this.l10n, required this.warning});
+  const _WarningRow({required this.title, required this.body});
 
-  final AppLocalizations l10n;
-  final String warning;
+  final String title;
+  final String body;
 
   @override
   Widget build(BuildContext context) {
-    final warningContent = _warningContent(warning, l10n);
-
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.base),
@@ -1377,9 +1381,9 @@ class _WarningRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(warningContent.$1, style: AppTypography.titleMedium),
+          Text(title, style: AppTypography.titleMedium),
           const SizedBox(height: AppSpacing.xs),
-          Text(warningContent.$2, style: AppTypography.bodyMedium),
+          Text(body, style: AppTypography.bodyMedium),
         ],
       ),
     );
@@ -1720,12 +1724,34 @@ NewGoalProposal? _proposalFromState(NewGoalState state) {
   return null;
 }
 
-(String, String) _warningContent(String warning, AppLocalizations l10n) {
+List<(String, String)> _proposalWarningContents({
+  required List<String> warnings,
+  required AppLocalizations l10n,
+}) {
+  final entries = <(String, String)>[];
+  for (final warning in warnings) {
+    final content = _warningContent(warning, l10n);
+    if (content != null) entries.add(content);
+  }
+  return entries;
+}
+
+(String, String)? _warningContent(String warning, AppLocalizations l10n) {
+  if (warning == 'standard') return null;
   if (warning == 'short_notice') {
     return (
       l10n.newGoalWarningShortNoticeTitle,
       l10n.newGoalWarningShortNoticeBody,
     );
+  }
+  if (warning == 'short_fixed_date') {
+    return (
+      l10n.newGoalWarningShortNoticeTitle,
+      l10n.newGoalWarningShortNoticeBody,
+    );
+  }
+  if (warning == 'race_support') {
+    return (l10n.newGoalWarningRaceWeekTitle, l10n.newGoalWarningRaceWeekBody);
   }
   if (warning == 'race_week') {
     return (l10n.newGoalWarningRaceWeekTitle, l10n.newGoalWarningRaceWeekBody);
@@ -1748,7 +1774,7 @@ NewGoalProposal? _proposalFromState(NewGoalState state) {
       l10n.newGoalWarningNoFixedDateBody,
     );
   }
-  return (warning, warning);
+  return (l10n.newGoalWarningUnknownTitle, l10n.newGoalWarningUnknownBody);
 }
 
 String _goalLabel(NewGoalGoal goal, AppLocalizations l10n) {

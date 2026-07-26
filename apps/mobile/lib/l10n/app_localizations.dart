@@ -5225,6 +5225,18 @@ abstract class AppLocalizations {
   /// **'This plan uses a standard build and does not include a race-specific taper.'**
   String get newGoalWarningNoFixedDateBody;
 
+  /// No description provided for @newGoalWarningUnknownTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Timing note'**
+  String get newGoalWarningUnknownTitle;
+
+  /// No description provided for @newGoalWarningUnknownBody.
+  ///
+  /// In en, this message translates to:
+  /// **'This plan includes a timing recommendation that could not be localized. Review the details before you apply.'**
+  String get newGoalWarningUnknownBody;
+
   /// Preferences section header
   ///
   /// In en, this message translates to:

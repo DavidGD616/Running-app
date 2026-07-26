@@ -1094,6 +1094,8 @@
   "newGoalWarningLimitedEvidenceBody": "El rango estimado es deliberadamente amplio hasta contar con más datos de esfuerzos duros recientes.",
   "newGoalWarningNoFixedDateTitle": "Tiempo flexible",
   "newGoalWarningNoFixedDateBody": "Este plan usa una preparación estándar y no programa una descarga específica para la carrera.",
+  "newGoalWarningUnknownTitle": "Nota de planificación",
+  "newGoalWarningUnknownBody": "Este plan incluye una recomendación de cronograma que no se pudo traducir. Revisa los detalles antes de aplicar.",
 
   "settingsPreferencesSection": "Preferencias",
   "settingsLanguage": "Idioma",
