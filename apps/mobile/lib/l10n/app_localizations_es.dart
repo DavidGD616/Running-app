@@ -2642,6 +2642,29 @@ class AppLocalizationsEs extends AppLocalizations {
   String get newGoalProposalTimelineMode => 'Modo del cronograma';
 
   @override
+  String get newGoalProposalRhythmTitle => 'Ritmo semanal';
+
+  @override
+  String get newGoalProposalRhythmSummary => 'Primera semana propuesta';
+
+  @override
+  String get newGoalProposalRhythmNoSessions =>
+      'No hay sesiones de entrenamiento programadas en la primera semana';
+
+  @override
+  String get newGoalProposalPhaseStrategyTitle => 'Estrategia por fases';
+
+  @override
+  String get newGoalProposalNoPhaseStrategy =>
+      'La estrategia de fases no está disponible para este plan';
+
+  @override
+  String get newGoalProposalModeShortFixedDate => 'Fecha fija corta';
+
+  @override
+  String get newGoalProposalModeNoFixedDate => 'Sin fecha fija';
+
+  @override
   String get newGoalProposalEstimateTitle => 'Ventana estimada de finalización';
 
   @override

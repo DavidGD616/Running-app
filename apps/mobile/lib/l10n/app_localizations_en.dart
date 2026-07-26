@@ -2617,6 +2617,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newGoalProposalTimelineMode => 'Timeline mode';
 
   @override
+  String get newGoalProposalRhythmTitle => 'Weekly rhythm';
+
+  @override
+  String get newGoalProposalRhythmSummary => 'First proposed week';
+
+  @override
+  String get newGoalProposalRhythmNoSessions =>
+      'No scheduled training sessions in the first week';
+
+  @override
+  String get newGoalProposalPhaseStrategyTitle => 'Phase strategy';
+
+  @override
+  String get newGoalProposalNoPhaseStrategy =>
+      'Phase strategy is unavailable for this plan';
+
+  @override
+  String get newGoalProposalModeShortFixedDate => 'Short fixed date';
+
+  @override
+  String get newGoalProposalModeNoFixedDate => 'No fixed date';
+
+  @override
   String get newGoalProposalEstimateTitle => 'Estimated finish window';
 
   @override

@@ -4835,6 +4835,48 @@ abstract class AppLocalizations {
   /// **'Timeline mode'**
   String get newGoalProposalTimelineMode;
 
+  /// No description provided for @newGoalProposalRhythmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly rhythm'**
+  String get newGoalProposalRhythmTitle;
+
+  /// No description provided for @newGoalProposalRhythmSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'First proposed week'**
+  String get newGoalProposalRhythmSummary;
+
+  /// No description provided for @newGoalProposalRhythmNoSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'No scheduled training sessions in the first week'**
+  String get newGoalProposalRhythmNoSessions;
+
+  /// No description provided for @newGoalProposalPhaseStrategyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Phase strategy'**
+  String get newGoalProposalPhaseStrategyTitle;
+
+  /// No description provided for @newGoalProposalNoPhaseStrategy.
+  ///
+  /// In en, this message translates to:
+  /// **'Phase strategy is unavailable for this plan'**
+  String get newGoalProposalNoPhaseStrategy;
+
+  /// No description provided for @newGoalProposalModeShortFixedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Short fixed date'**
+  String get newGoalProposalModeShortFixedDate;
+
+  /// No description provided for @newGoalProposalModeNoFixedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'No fixed date'**
+  String get newGoalProposalModeNoFixedDate;
+
   /// No description provided for @newGoalProposalEstimateTitle.
   ///
   /// In en, this message translates to:
