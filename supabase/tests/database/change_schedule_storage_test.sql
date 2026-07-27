@@ -72,6 +72,7 @@ select has_table('public', 'change_schedule_activations', 'activation table exis
 select col_not_null('public', 'change_schedule_availability_versions', 'id', 'availability version id is required');
 select col_not_null('public', 'change_schedule_availability_versions', 'user_id', 'availability version owner is required');
 select col_not_null('public', 'change_schedule_drafts', 'source_plan_version_id', 'draft source plan is required');
+select col_not_null('public', 'change_schedule_drafts', 'effective_week', 'draft effective week is required');
 select col_not_null('public', 'change_schedule_proposals', 'source_plan_version_id', 'proposal source plan is required');
 select col_not_null('public', 'change_schedule_proposals', 'source_profile_schema_version', 'proposal profile schema version is required');
 select col_not_null('public', 'change_schedule_proposals', 'source_profile_updated_at', 'proposal profile timestamp is required');
@@ -130,6 +131,17 @@ select is(
   ),
   1,
   'the draft owner-manage policy exists'
+);
+select is(
+  (
+    select count(*)::integer
+    from pg_constraint
+   where conrelid = 'public.change_schedule_drafts'::regclass
+     and conname = 'change_schedule_drafts_effective_week_check'
+     and contype = 'c'
+  ),
+  1,
+  'draft effective-week constraint exists'
 );
 select is(
   (
@@ -460,6 +472,126 @@ select lives_ok(
   $$,
   'owner can persist a change-schedule draft for an active source plan'
 );
+
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000002', true);
+select lives_ok(
+  $$
+    insert into public.change_schedule_drafts (
+      user_id,
+      source_plan_version_id,
+      proposed_availability,
+      status,
+      effective_week
+    ) values (
+      '10000000-0000-0000-0000-000000000002',
+      'peer-source',
+      '{
+        "days": [
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days": 4,
+        "primary_long_run_weekday": 1,
+        "same_day_run_strength_preference": "separate_sessions"
+      }'::jsonb,
+      'editing',
+      'next'
+    )
+  $$,
+  'owner can persist a change-schedule draft for the next effective week'
+);
+select is(
+  (
+    select effective_week
+      from public.change_schedule_drafts
+     where user_id = '10000000-0000-0000-0000-000000000002'
+  ),
+  'next',
+  'draft stores effective_week for next-cycle scheduling'
+);
+
+delete from public.change_schedule_drafts
+ where user_id = '10000000-0000-0000-0000-000000000002';
+
+select lives_ok(
+  $$
+    insert into public.change_schedule_drafts (
+      user_id,
+      source_plan_version_id,
+      proposed_availability,
+      status
+    ) values (
+      '10000000-0000-0000-0000-000000000002',
+      'peer-source',
+      '{
+        "days": [
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days": 4,
+        "primary_long_run_weekday": 1,
+        "same_day_run_strength_preference": "separate_sessions"
+      }'::jsonb,
+      'editing'
+    )
+  $$,
+  'owner can persist a change-schedule draft using default effective_week'
+);
+select is(
+  (
+    select effective_week
+      from public.change_schedule_drafts
+     where user_id = '10000000-0000-0000-0000-000000000002'
+  ),
+  'current',
+  'draft default effective_week is current'
+);
+delete from public.change_schedule_drafts
+ where user_id = '10000000-0000-0000-0000-000000000002';
+
+select throws_ok(
+  $$
+    insert into public.change_schedule_drafts (
+      user_id,
+      source_plan_version_id,
+      proposed_availability,
+      status,
+      effective_week
+    ) values (
+      '10000000-0000-0000-0000-000000000002',
+      'peer-source',
+      '{
+        "days": [
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days": 4,
+        "primary_long_run_weekday": 1,
+        "same_day_run_strength_preference": "separate_sessions"
+      }'::jsonb,
+      'editing',
+      'future'
+  )
+  $$,
+  '23514'
+);
+
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000001', true);
 select throws_ok(
   $$
     insert into public.change_schedule_drafts (
