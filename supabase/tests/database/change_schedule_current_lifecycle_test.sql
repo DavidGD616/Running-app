@@ -2083,6 +2083,16 @@ values (
   'scheduled'
 );
 
+select is(
+  (
+    select proposal_id
+      from public.change_schedule_activations
+     where id = 'activation-immediate-retire'
+  ),
+  null::text,
+  'legacy scheduled activation remains unlinked before current-week retirement'
+);
+
 select lives_ok(
   $$
     select public.store_change_schedule_proposal(
@@ -2135,17 +2145,37 @@ select is(
   (
     select status
     from public.change_schedule_activations
-    where id = 'activation-immediate-retire'
+   where id = 'activation-immediate-retire'
   ),
   'superseded',
   'scheduled activation is terminally superseded when current-week acceptance runs'
+);
+
+select is(
+  (
+    select proposal_id
+    from public.change_schedule_activations
+   where id = 'activation-immediate-retire'
+  ),
+  'proposal-immediate-chain-retire',
+  'scheduled activation is linked to scheduled proposal after current-week retirement'
+);
+
+select is(
+  (
+    select proposal_id = 'proposal-current-week-now-with-scheduled-chain'
+      from public.change_schedule_activations
+     where id = 'activation-immediate-retire'
+  ),
+  false,
+  'scheduled activation backlink is not rebound to the accepted pending proposal'
 );
 
 select ok(
   (
     select superseded_at is not null
     from public.change_schedule_activations
-    where id = 'activation-immediate-retire'
+   where id = 'activation-immediate-retire'
   ),
   'scheduled activation is timestamped as superseded'
 );
@@ -2210,6 +2240,1275 @@ select is(
   true,
   'newly accepted plan is active after immediate acceptance'
 );
+
+-- Current-week acceptance succeeds when a scheduled chain is already linked to a scheduled proposal.
+set local role postgres;
+insert into auth.users (id, email)
+values
+  ('10000000-0000-0000-0000-000000000009', 'change-schedule-linked-proposal@example.test');
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+
+insert into runner_profiles (user_id, schema_version, updated_at, data)
+values (
+  '10000000-0000-0000-0000-000000000009',
+  1,
+  '2026-01-01 00:00:00+00',
+  '{"goal":{"race":"10k"}}'::jsonb
+);
+
+insert into plan_versions (
+  id,
+  user_id,
+  generated_at,
+  requested_by,
+  is_active,
+  schema_version,
+  data
+ ) values (
+  'active-source-current-linked',
+  '10000000-0000-0000-0000-000000000009',
+  '2026-07-20 09:00:00+00',
+  'onboarding',
+  true,
+  1,
+  '{"id":"active-source-current-linked","weeks":[{"week":1}]}'::jsonb
+),
+(
+  'scheduled-candidate-current-linked',
+  '10000000-0000-0000-0000-000000000009',
+  '2026-07-20 09:10:00+00',
+  'onboarding',
+  false,
+  1,
+  '{"id":"scheduled-candidate-current-linked","weeks":[{"week":1}]}'::jsonb
+);
+
+insert into public.change_schedule_availability_versions (
+  id,
+  user_id,
+  lifecycle_state,
+  effective_from,
+  target_running_days,
+  primary_long_run_weekday,
+  same_day_run_strength_preference,
+  availability_data
+) values (
+  'active-availability-current-linked',
+  '10000000-0000-0000-0000-000000000009',
+  'active',
+  '2026-07-27',
+  4,
+  1,
+  'separate_sessions',
+  '{
+    "days": [
+      {"day":1,"available":true},
+      {"day":2,"available":true},
+      {"day":3,"available":true},
+      {"day":4,"available":true},
+      {"day":5,"available":false},
+      {"day":6,"available":false},
+      {"day":7,"available":false}
+    ],
+    "target_running_days": 4,
+    "primary_long_run_weekday": 1,
+    "same_day_run_strength_preference": "separate_sessions"
+  }'::jsonb
+),
+(
+  'scheduled-availability-current-linked',
+  '10000000-0000-0000-0000-000000000009',
+  'scheduled',
+  '2026-07-20',
+  4,
+  1,
+  'separate_sessions',
+  '{
+    "days": [
+      {"day":1,"available":true},
+      {"day":2,"available":true},
+      {"day":3,"available":true},
+      {"day":4,"available":true},
+      {"day":5,"available":false},
+      {"day":6,"available":false},
+      {"day":7,"available":false}
+    ],
+    "target_running_days": 4,
+    "primary_long_run_weekday": 1,
+    "same_day_run_strength_preference": "separate_sessions"
+  }'::jsonb
+);
+
+insert into public.change_schedule_proposals (
+  id,
+  user_id,
+  source_plan_version_id,
+  source_profile_schema_version,
+  source_profile_updated_at,
+  proposed_availability,
+  candidate_plan,
+  impact,
+  effective_from,
+  status,
+  scheduled_plan_version_id,
+  created_at,
+  updated_at,
+  expires_at
+) values (
+  'proposal-current-linked-scheduled',
+  '10000000-0000-0000-0000-000000000009',
+  'active-source-current-linked',
+  1,
+  '2026-01-01 00:00:00+00',
+  '{
+    "days":[
+      {"day":1,"available":true},
+      {"day":2,"available":true},
+      {"day":3,"available":true},
+      {"day":4,"available":true},
+      {"day":5,"available":false},
+      {"day":6,"available":false},
+      {"day":7,"available":false}
+    ],
+    "target_running_days":4,
+    "primary_long_run_weekday":1,
+    "same_day_run_strength_preference":"separate_sessions"
+  }'::jsonb,
+  '{"id":"scheduled-candidate-current-linked","weeks":[{"week":1}]}'::jsonb,
+  '{}'::jsonb,
+  '2026-07-20',
+  'scheduled',
+  'scheduled-candidate-current-linked',
+  '2026-07-20 09:20:00+00',
+  '2026-07-20 09:20:00+00',
+  '2026-07-20 10:00:00+00'
+);
+
+insert into public.change_schedule_activations (
+  id,
+  user_id,
+  source_plan_version_id,
+  queued_candidate_plan_version_id,
+  availability_version_id,
+  effective_from,
+  status,
+  proposal_id
+) values (
+  'activation-current-linked',
+  '10000000-0000-0000-0000-000000000009',
+  'active-source-current-linked',
+  'scheduled-candidate-current-linked',
+  'scheduled-availability-current-linked',
+  '2026-07-20',
+  'scheduled',
+  'proposal-current-linked-scheduled'
+);
+
+select is(
+  (
+    select proposal_id
+    from public.change_schedule_activations
+   where id = 'activation-current-linked'
+  ),
+  'proposal-current-linked-scheduled',
+  'explicitly linked scheduled activation starts tied to its scheduled proposal'
+);
+
+select lives_ok(
+  $$
+    select public.store_change_schedule_proposal(
+      '10000000-0000-0000-0000-000000000009',
+      'proposal-current-linked-now',
+      'active-source-current-linked',
+      '{"id":"candidate-current-linked-now","weeks":[{"week":1}]}'::jsonb,
+      '{}'::jsonb,
+      '{
+        "days":[
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days":4,
+        "primary_long_run_weekday":1,
+        "same_day_run_strength_preference":"separate_sessions"
+      }'::jsonb,
+      '2026-07-13',
+      '2026-07-13 10:20:00+00',
+      null,
+      1,
+      '2026-01-01 00:00:00+00'
+    )
+  $$,
+  'service role stores a pending proposal while a linked scheduled chain is queued'
+);
+
+select lives_ok(
+  $$
+    create temporary table change_schedule_accept_with_scheduled_chain_linked as
+    select *
+      from public.accept_change_schedule_proposal_now(
+        '10000000-0000-0000-0000-000000000009',
+        'proposal-current-linked-now',
+        'accepted-plan-current-linked',
+        'accepted-availability-current-linked',
+        '2026-07-13 10:25:00+00',
+        '2026-07-13 10:25:00+00'
+      );
+  $$,
+  'service role accepts pending current-week proposal while retiring linked scheduled chain'
+);
+
+select is(
+  (
+    select status
+    from public.change_schedule_activations
+   where id = 'activation-current-linked'
+  ),
+  'superseded',
+  'linked scheduled activation is terminally superseded when current-week acceptance runs'
+);
+
+select is(
+  (
+    select proposal_id
+    from public.change_schedule_activations
+   where id = 'activation-current-linked'
+  ),
+  'proposal-current-linked-scheduled',
+  'linked scheduled activation keeps its original scheduled proposal after retirement'
+);
+
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-current-linked-scheduled'
+  ),
+  'superseded',
+  'exact-match linked scheduled proposal is terminally superseded'
+);
+
+select is(
+  (
+    select scheduled_plan_version_id
+    from public.change_schedule_proposals
+    where id = 'proposal-current-linked-scheduled'
+  ),
+  null::text,
+  'linked scheduled proposal clears scheduled plan reference'
+);
+
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-current-linked-now'
+  ),
+  'accepted',
+  'pending proposal is accepted during linked-chain retirement'
+);
+
+select is(
+  (
+    select proposal_id = 'proposal-current-linked-now'
+      from public.change_schedule_activations
+     where id = 'activation-current-linked'
+  ),
+  false,
+  'linked scheduled chain does not rebind to the accepted pending proposal'
+);
+
+select is(
+  (
+    select lifecycle_state
+    from public.change_schedule_availability_versions
+    where id = 'scheduled-availability-current-linked'
+  ),
+  'scheduled',
+  'scheduled availability stays scheduled after linked-chain retirement'
+);
+
+-- Immediate acceptance fails when a scheduled activation with null proposal_id has no exact chain match.
+savepoint current_week_immediate_zero_exact_match;
+set local role postgres;
+insert into auth.users (id, email)
+values
+  ('10000000-0000-0000-0000-000000000006', 'change-schedule-zero-match@example.test');
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+
+insert into runner_profiles (user_id, schema_version, updated_at, data)
+values (
+  '10000000-0000-0000-0000-000000000006',
+  1,
+  '2026-01-01 00:00:00+00',
+  '{"goal":{"race":"10k"}}'::jsonb
+);
+
+insert into plan_versions (
+  id,
+  user_id,
+  generated_at,
+  requested_by,
+  is_active,
+  schema_version,
+  data
+) values
+  (
+    'active-source-current-zero-match',
+    '10000000-0000-0000-0000-000000000006',
+    '2026-07-20 09:00:00+00',
+    'onboarding',
+    true,
+    1,
+    '{"id":"active-source-current-zero-match","weeks":[]}'::jsonb
+  ),
+  (
+    'scheduled-candidate-current-zero-match',
+    '10000000-0000-0000-0000-000000000006',
+    '2026-07-20 09:05:00+00',
+    'onboarding',
+    false,
+    1,
+    '{"id":"scheduled-candidate-current-zero-match","weeks":[]}'::jsonb
+  ),
+  (
+    'source-plan-current-zero-match-wrong',
+    '10000000-0000-0000-0000-000000000006',
+    '2026-07-20 09:10:00+00',
+    'onboarding',
+    false,
+    1,
+    '{"id":"source-plan-current-zero-match-wrong","weeks":[]}'::jsonb
+  );
+
+insert into public.change_schedule_availability_versions (
+  id,
+  user_id,
+  lifecycle_state,
+  effective_from,
+  target_running_days,
+  primary_long_run_weekday,
+  same_day_run_strength_preference,
+  availability_data
+) values
+  (
+    'active-availability-current-zero-match',
+    '10000000-0000-0000-0000-000000000006',
+    'active',
+    '2026-07-27',
+    4,
+    1,
+    'separate_sessions',
+    '{
+      "days": [
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days": 4,
+      "primary_long_run_weekday": 1,
+      "same_day_run_strength_preference": "separate_sessions"
+    }'::jsonb
+  ),
+  (
+    'scheduled-availability-current-zero-match',
+    '10000000-0000-0000-0000-000000000006',
+    'scheduled',
+    '2026-07-20',
+    4,
+    1,
+    'separate_sessions',
+    '{
+      "days": [
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days": 4,
+      "primary_long_run_weekday": 1,
+      "same_day_run_strength_preference": "separate_sessions"
+    }'::jsonb
+  );
+
+insert into public.change_schedule_proposals (
+  id,
+  user_id,
+  source_plan_version_id,
+  source_profile_schema_version,
+  source_profile_updated_at,
+  proposed_availability,
+  candidate_plan,
+  impact,
+  effective_from,
+  status,
+  scheduled_plan_version_id,
+  created_at,
+  updated_at,
+  expires_at
+) values (
+  'proposal-scheduled-current-zero-match',
+  '10000000-0000-0000-0000-000000000006',
+  'active-source-current-zero-match',
+  1,
+  '2026-01-01 00:00:00+00',
+  '{
+    "days":[
+      {"day":1,"available":true},
+      {"day":2,"available":true},
+      {"day":3,"available":true},
+      {"day":4,"available":true},
+      {"day":5,"available":false},
+      {"day":6,"available":false},
+      {"day":7,"available":false}
+    ],
+    "target_running_days":4,
+    "primary_long_run_weekday":1,
+    "same_day_run_strength_preference":"separate_sessions"
+  }'::jsonb,
+  '{"id":"scheduled-candidate-current-zero-match","weeks":[]}'::jsonb,
+  '{}'::jsonb,
+  '2026-07-27',
+  'scheduled',
+  'scheduled-candidate-current-zero-match',
+  '2026-07-20 09:15:00+00',
+  '2026-07-20 09:15:00+00',
+  '2026-07-20 10:00:00+00'
+);
+
+insert into public.change_schedule_activations (
+  id,
+  user_id,
+  source_plan_version_id,
+  queued_candidate_plan_version_id,
+  availability_version_id,
+  effective_from,
+  status
+) values (
+  'activation-current-zero-match',
+  '10000000-0000-0000-0000-000000000006',
+  'active-source-current-zero-match',
+  'scheduled-candidate-current-zero-match',
+  'scheduled-availability-current-zero-match',
+  '2026-07-20',
+  'scheduled'
+);
+
+select lives_ok(
+  $$
+    select public.store_change_schedule_proposal(
+      '10000000-0000-0000-0000-000000000006',
+      'proposal-current-zero-match',
+      'active-source-current-zero-match',
+      '{"id":"candidate-current-zero-match","weeks":[]}'::jsonb,
+      '{}'::jsonb,
+      '{
+        "days":[
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days":4,
+        "primary_long_run_weekday":1,
+        "same_day_run_strength_preference":"separate_sessions"
+      }'::jsonb,
+      '2026-07-27',
+      '2026-07-27 09:40:00+00',
+      null,
+      1,
+      '2026-01-01 00:00:00+00'
+    );
+  $$,
+  'service role stores a pending proposal while scheduled chain has zero exact matches'
+);
+
+select throws_ok(
+  $$
+    select * from public.accept_change_schedule_proposal_now(
+      '10000000-0000-0000-0000-000000000006',
+      'proposal-current-zero-match',
+      'accepted-plan-current-zero-match',
+      'accepted-availability-current-zero-match',
+      '2026-07-27 10:00:00+00',
+      '2026-07-27 10:00:00+00'
+    )
+  $$,
+  'P0001',
+  'change_schedule_proposal_inconsistent',
+  'current-week acceptance fails when scheduled chain has no exact proposal match'
+);
+
+select is(
+  (
+    select status
+    from public.change_schedule_activations
+    where id = 'activation-current-zero-match'
+  ),
+  'scheduled',
+  'zero-match scheduled chain keeps scheduled activation state'
+);
+select is(
+  (
+    select proposal_id
+    from public.change_schedule_activations
+    where id = 'activation-current-zero-match'
+  ),
+  null::text,
+  'zero-match scheduled chain keeps existing null proposal_id'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-scheduled-current-zero-match'
+  ),
+  'scheduled',
+  'zero-match mismatch scheduled proposal remains scheduled'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-current-zero-match'
+  ),
+  'pending',
+  'zero-match pending proposal remains pending after chain mismatch'
+);
+select is(
+  (
+    select is_active
+    from public.plan_versions
+    where id = 'active-source-current-zero-match'
+  ),
+  true,
+  'zero-match acceptance failure keeps source plan active'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.plan_versions
+    where id = 'accepted-plan-current-zero-match'
+  ),
+  0,
+  'zero-match acceptance failure does not create accepted plan'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.change_schedule_availability_versions
+    where id = 'accepted-availability-current-zero-match'
+  ),
+  0,
+  'zero-match acceptance failure does not create accepted availability'
+);
+select is(
+  (
+    select lifecycle_state
+    from public.change_schedule_availability_versions
+    where id = 'scheduled-availability-current-zero-match'
+  ),
+  'scheduled',
+  'zero-match scheduled availability remains scheduled'
+);
+
+-- Immediate acceptance fails when a null-linked scheduled activation has multiple exact matches.
+savepoint current_week_immediate_ambiguous_match;
+set local role postgres;
+drop index if exists public.change_schedule_proposals_one_scheduled_plan_per_user;
+
+set local role postgres;
+insert into auth.users (id, email)
+values
+  ('10000000-0000-0000-0000-000000000007', 'change-schedule-multiple-match@example.test');
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+
+insert into runner_profiles (user_id, schema_version, updated_at, data)
+values (
+  '10000000-0000-0000-0000-000000000007',
+  1,
+  '2026-01-01 00:00:00+00',
+  '{"goal":{"race":"10k"}}'::jsonb
+);
+
+insert into plan_versions (
+  id,
+  user_id,
+  generated_at,
+  requested_by,
+  is_active,
+  schema_version,
+  data
+) values
+  (
+    'active-source-current-ambiguous',
+    '10000000-0000-0000-0000-000000000007',
+    '2026-07-20 10:00:00+00',
+    'onboarding',
+    true,
+    1,
+    '{"id":"active-source-current-ambiguous","weeks":[]}'::jsonb
+  ),
+  (
+    'scheduled-candidate-current-ambiguous',
+    '10000000-0000-0000-0000-000000000007',
+    '2026-07-20 10:05:00+00',
+    'onboarding',
+    false,
+    1,
+    '{"id":"scheduled-candidate-current-ambiguous","weeks":[]}'::jsonb
+  );
+
+insert into public.change_schedule_availability_versions (
+  id,
+  user_id,
+  lifecycle_state,
+  effective_from,
+  target_running_days,
+  primary_long_run_weekday,
+  same_day_run_strength_preference,
+  availability_data
+) values
+  (
+    'active-availability-current-ambiguous',
+    '10000000-0000-0000-0000-000000000007',
+    'active',
+    '2026-07-27',
+    4,
+    1,
+    'separate_sessions',
+    '{
+      "days": [
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days": 4,
+      "primary_long_run_weekday": 1,
+      "same_day_run_strength_preference": "separate_sessions"
+    }'::jsonb
+  ),
+  (
+    'scheduled-availability-current-ambiguous',
+    '10000000-0000-0000-0000-000000000007',
+    'scheduled',
+    '2026-07-20',
+    4,
+    1,
+    'separate_sessions',
+    '{
+      "days": [
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days": 4,
+      "primary_long_run_weekday": 1,
+      "same_day_run_strength_preference": "separate_sessions"
+    }'::jsonb
+  );
+
+insert into public.change_schedule_proposals (
+  id,
+  user_id,
+  source_plan_version_id,
+  source_profile_schema_version,
+  source_profile_updated_at,
+  proposed_availability,
+  candidate_plan,
+  impact,
+  effective_from,
+  status,
+  scheduled_plan_version_id,
+  created_at,
+  updated_at,
+  expires_at
+) values
+  (
+    'proposal-scheduled-current-ambiguous-a',
+    '10000000-0000-0000-0000-000000000007',
+    'active-source-current-ambiguous',
+    1,
+    '2026-01-01 00:00:00+00',
+    '{
+      "days":[
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days":4,
+      "primary_long_run_weekday":1,
+      "same_day_run_strength_preference":"separate_sessions"
+    }'::jsonb,
+    '{"id":"scheduled-candidate-current-ambiguous","weeks":[]}'::jsonb,
+    '{}'::jsonb,
+    '2026-07-20',
+    'scheduled',
+    'scheduled-candidate-current-ambiguous',
+    '2026-07-20 10:10:00+00',
+    '2026-07-20 10:10:00+00',
+    '2026-07-20 11:00:00+00'
+  ),
+  (
+    'proposal-scheduled-current-ambiguous-b',
+    '10000000-0000-0000-0000-000000000007',
+    'active-source-current-ambiguous',
+    1,
+    '2026-01-01 00:00:00+00',
+    '{
+      "days":[
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days":4,
+      "primary_long_run_weekday":1,
+      "same_day_run_strength_preference":"separate_sessions"
+    }'::jsonb,
+    '{"id":"scheduled-candidate-current-ambiguous","weeks":[]}'::jsonb,
+    '{}'::jsonb,
+    '2026-07-20',
+    'scheduled',
+    'scheduled-candidate-current-ambiguous',
+    '2026-07-20 10:20:00+00',
+    '2026-07-20 10:20:00+00',
+    '2026-07-20 11:00:00+00'
+  );
+
+insert into public.change_schedule_activations (
+  id,
+  user_id,
+  source_plan_version_id,
+  queued_candidate_plan_version_id,
+  availability_version_id,
+  effective_from,
+  status
+) values (
+  'activation-current-ambiguous',
+  '10000000-0000-0000-0000-000000000007',
+  'active-source-current-ambiguous',
+  'scheduled-candidate-current-ambiguous',
+  'scheduled-availability-current-ambiguous',
+  '2026-07-20',
+  'scheduled'
+);
+
+select lives_ok(
+  $$
+    select public.store_change_schedule_proposal(
+      '10000000-0000-0000-0000-000000000007',
+      'proposal-current-ambiguous',
+      'active-source-current-ambiguous',
+      '{"id":"candidate-current-ambiguous","weeks":[]}'::jsonb,
+      '{}'::jsonb,
+      '{
+        "days":[
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days":4,
+        "primary_long_run_weekday":1,
+        "same_day_run_strength_preference":"separate_sessions"
+      }'::jsonb,
+      '2026-07-27',
+      '2026-07-27 10:30:00+00',
+      null,
+      1,
+      '2026-01-01 00:00:00+00'
+    );
+  $$,
+  'service role stores a pending proposal while scheduled chain is ambiguous'
+);
+
+select throws_ok(
+  $$
+    select * from public.accept_change_schedule_proposal_now(
+      '10000000-0000-0000-0000-000000000007',
+      'proposal-current-ambiguous',
+      'accepted-plan-current-ambiguous',
+      'accepted-availability-current-ambiguous',
+      '2026-07-27 10:40:00+00',
+      '2026-07-27 10:40:00+00'
+    )
+  $$,
+  'P0001',
+  'change_schedule_activation_proposal_ambiguous',
+  'current-week acceptance fails when scheduled chain has multiple exact matches'
+);
+
+select is(
+  (
+    select status
+    from public.change_schedule_activations
+    where id = 'activation-current-ambiguous'
+  ),
+  'scheduled',
+  'ambiguous scheduled chain keeps scheduled activation state'
+);
+select is(
+  (
+    select proposal_id
+    from public.change_schedule_activations
+    where id = 'activation-current-ambiguous'
+  ),
+  null::text,
+  'ambiguous scheduled chain keeps null proposal_id'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-scheduled-current-ambiguous-a'
+  ),
+  'scheduled',
+  'ambiguous scheduled candidate A stays scheduled'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-scheduled-current-ambiguous-b'
+  ),
+  'scheduled',
+  'ambiguous scheduled candidate B stays scheduled'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-current-ambiguous'
+  ),
+  'pending',
+  'ambiguous rejection keeps pending proposal pending'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.plan_versions
+    where id = 'accepted-plan-current-ambiguous'
+  ),
+  0,
+  'ambiguous rejection does not create accepted plan'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.change_schedule_availability_versions
+    where id = 'accepted-availability-current-ambiguous'
+  ),
+  0,
+  'ambiguous rejection does not create accepted availability'
+);
+
+rollback to savepoint current_week_immediate_ambiguous_match;
+
+-- Immediate acceptance fails when a null-linked scheduled chain is explicitly linked to a mismatched proposal.
+savepoint current_week_immediate_wrong_linked_proposal;
+set local role service_role;
+set local role postgres;
+insert into auth.users (id, email)
+values
+  ('10000000-0000-0000-0000-000000000008', 'change-schedule-wrong-proposal-link@example.test');
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+
+insert into runner_profiles (user_id, schema_version, updated_at, data)
+values (
+  '10000000-0000-0000-0000-000000000008',
+  1,
+  '2026-01-01 00:00:00+00',
+  '{"goal":{"race":"10k"}}'::jsonb
+);
+
+insert into plan_versions (
+  id,
+  user_id,
+  generated_at,
+  requested_by,
+  is_active,
+  schema_version,
+  data
+) values
+  (
+    'active-source-current-wrong-link',
+    '10000000-0000-0000-0000-000000000008',
+    '2026-07-20 11:00:00+00',
+    'onboarding',
+    true,
+    1,
+    '{"id":"active-source-current-wrong-link","weeks":[]}'::jsonb
+  ),
+  (
+    'scheduled-candidate-current-wrong-link',
+    '10000000-0000-0000-0000-000000000008',
+    '2026-07-20 11:05:00+00',
+    'onboarding',
+    false,
+    1,
+    '{"id":"scheduled-candidate-current-wrong-link","weeks":[]}'::jsonb
+  ),
+  (
+    'scheduled-candidate-current-wrong-link-mismatch',
+    '10000000-0000-0000-0000-000000000008',
+    '2026-07-20 11:15:00+00',
+    'onboarding',
+    false,
+    1,
+    '{"id":"scheduled-candidate-current-wrong-link-mismatch","weeks":[]}'::jsonb
+  ),
+  (
+    'source-plan-current-wrong-link-mismatch',
+    '10000000-0000-0000-0000-000000000008',
+    '2026-07-20 11:10:00+00',
+    'onboarding',
+    false,
+    1,
+    '{"id":"source-plan-current-wrong-link-mismatch","weeks":[]}'::jsonb
+  );
+
+insert into public.change_schedule_availability_versions (
+  id,
+  user_id,
+  lifecycle_state,
+  effective_from,
+  target_running_days,
+  primary_long_run_weekday,
+  same_day_run_strength_preference,
+  availability_data
+) values (
+  'active-availability-current-wrong-link',
+  '10000000-0000-0000-0000-000000000008',
+  'active',
+  '2026-07-27',
+  4,
+  1,
+  'separate_sessions',
+  '{
+    "days": [
+      {"day":1,"available":true},
+      {"day":2,"available":true},
+      {"day":3,"available":true},
+      {"day":4,"available":true},
+      {"day":5,"available":false},
+      {"day":6,"available":false},
+      {"day":7,"available":false}
+    ],
+    "target_running_days": 4,
+    "primary_long_run_weekday": 1,
+    "same_day_run_strength_preference": "separate_sessions"
+  }'::jsonb
+);
+
+insert into public.change_schedule_availability_versions (
+  id,
+  user_id,
+  lifecycle_state,
+  effective_from,
+  target_running_days,
+  primary_long_run_weekday,
+  same_day_run_strength_preference,
+  availability_data
+) values (
+  'scheduled-availability-current-wrong-link',
+  '10000000-0000-0000-0000-000000000008',
+  'scheduled',
+  '2026-07-20',
+  4,
+  1,
+  'separate_sessions',
+  '{
+    "days": [
+      {"day":1,"available":true},
+      {"day":2,"available":true},
+      {"day":3,"available":true},
+      {"day":4,"available":true},
+      {"day":5,"available":false},
+      {"day":6,"available":false},
+      {"day":7,"available":false}
+    ],
+    "target_running_days": 4,
+    "primary_long_run_weekday": 1,
+    "same_day_run_strength_preference": "separate_sessions"
+  }'::jsonb
+);
+
+insert into public.change_schedule_proposals (
+  id,
+  user_id,
+  source_plan_version_id,
+  source_profile_schema_version,
+  source_profile_updated_at,
+  proposed_availability,
+  candidate_plan,
+  impact,
+  effective_from,
+  status,
+  scheduled_plan_version_id,
+  created_at,
+  updated_at,
+  expires_at
+) values
+  (
+    'proposal-scheduled-current-wrong-link-correct',
+    '10000000-0000-0000-0000-000000000008',
+    'active-source-current-wrong-link',
+    1,
+    '2026-01-01 00:00:00+00',
+    '{
+      "days":[
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days":4,
+      "primary_long_run_weekday":1,
+    "same_day_run_strength_preference":"separate_sessions"
+    }'::jsonb,
+    '{"id":"scheduled-candidate-current-wrong-link","weeks":[]}'::jsonb,
+    '{}'::jsonb,
+    '2026-07-20',
+    'scheduled',
+    'scheduled-candidate-current-wrong-link',
+    '2026-07-20 11:20:00+00',
+    '2026-07-20 11:20:00+00',
+    '2026-07-20 12:00:00+00'
+  ),
+  (
+    'proposal-scheduled-current-wrong-link-mismatch',
+    '10000000-0000-0000-0000-000000000008',
+    'active-source-current-wrong-link',
+    1,
+    '2026-01-01 00:00:00+00',
+    '{
+      "days":[
+        {"day":1,"available":true},
+        {"day":2,"available":true},
+        {"day":3,"available":true},
+        {"day":4,"available":true},
+        {"day":5,"available":false},
+        {"day":6,"available":false},
+        {"day":7,"available":false}
+      ],
+      "target_running_days":4,
+      "primary_long_run_weekday":1,
+    "same_day_run_strength_preference":"separate_sessions"
+    }'::jsonb,
+    '{"id":"scheduled-candidate-current-wrong-link","weeks":[]}'::jsonb,
+    '{}'::jsonb,
+    '2026-07-20',
+    'scheduled',
+    'scheduled-candidate-current-wrong-link-mismatch',
+  '2026-07-20 11:25:00+00',
+  '2026-07-20 11:25:00+00',
+  '2026-07-20 12:00:00+00'
+);
+
+set local role postgres;
+alter table public.change_schedule_activations
+  disable trigger change_schedule_activations_integrity;
+set local role service_role;
+
+insert into public.change_schedule_activations (
+  id,
+  user_id,
+  source_plan_version_id,
+  queued_candidate_plan_version_id,
+  availability_version_id,
+  effective_from,
+  status,
+  proposal_id
+) values (
+  'activation-current-wrong-link',
+  '10000000-0000-0000-0000-000000000008',
+  'active-source-current-wrong-link',
+  'scheduled-candidate-current-wrong-link-mismatch',
+  'scheduled-availability-current-wrong-link',
+  '2026-07-20',
+  'scheduled',
+  'proposal-scheduled-current-wrong-link-correct'
+);
+
+set local role postgres;
+alter table public.change_schedule_activations
+  enable trigger change_schedule_activations_integrity;
+set local role service_role;
+
+select lives_ok(
+  $$
+    select public.store_change_schedule_proposal(
+      '10000000-0000-0000-0000-000000000008',
+      'proposal-current-wrong-link',
+      'active-source-current-wrong-link',
+      '{"id":"candidate-current-wrong-link","weeks":[]}'::jsonb,
+      '{}'::jsonb,
+      '{
+        "days":[
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days":4,
+        "primary_long_run_weekday":1,
+      "same_day_run_strength_preference":"separate_sessions"
+      }'::jsonb,
+      '2026-07-27',
+      '2026-07-27 11:30:00+00',
+      null,
+      1,
+      '2026-01-01 00:00:00+00'
+    );
+  $$,
+  'service role stores a pending proposal while scheduled chain has a wrong linked proposal'
+);
+
+select throws_ok(
+  $$
+    select * from public.accept_change_schedule_proposal_now(
+      '10000000-0000-0000-0000-000000000008',
+      'proposal-current-wrong-link',
+      'accepted-plan-current-wrong-link',
+      'accepted-availability-current-wrong-link',
+      '2026-07-27 11:40:00+00',
+      '2026-07-27 11:40:00+00'
+    )
+  $$,
+  'P0001',
+  'change_schedule_proposal_inconsistent',
+  'current-week acceptance fails when scheduled activation links to wrong proposal chain'
+);
+
+select is(
+  (
+    select status
+    from public.change_schedule_activations
+    where id = 'activation-current-wrong-link'
+  ),
+  'scheduled',
+  'wrong-linked scheduled chain keeps scheduled activation'
+);
+select is(
+  (
+    select proposal_id
+    from public.change_schedule_activations
+    where id = 'activation-current-wrong-link'
+  ),
+  'proposal-scheduled-current-wrong-link-correct',
+  'wrong-linked scheduled chain keeps explicit proposal binding'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-scheduled-current-wrong-link-mismatch'
+  ),
+  'scheduled',
+  'wrong-linked mismatch proposal remains scheduled'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-current-wrong-link'
+  ),
+  'pending',
+  'wrong-link rejection keeps pending proposal pending'
+);
+select is(
+  (
+    select status
+    from public.change_schedule_proposals
+    where id = 'proposal-scheduled-current-wrong-link-correct'
+  ),
+  'scheduled',
+  'exact-match scheduled proposal is preserved when wrong linked proposal mismatch occurs'
+);
+select is(
+  (
+    select is_active
+    from public.plan_versions
+    where id = 'active-source-current-wrong-link'
+  ),
+  true,
+  'wrong-link acceptance failure keeps source plan active'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.plan_versions
+    where id = 'accepted-plan-current-wrong-link'
+  ),
+  0,
+  'wrong-link rejection does not create accepted plan'
+);
+select is(
+  (
+    select count(*)::integer
+    from public.change_schedule_availability_versions
+    where id = 'accepted-availability-current-wrong-link'
+  ),
+  0,
+  'wrong-link rejection does not create accepted availability'
+);
+select is(
+  (
+    select lifecycle_state
+    from public.change_schedule_availability_versions
+    where id = 'scheduled-availability-current-wrong-link'
+  ),
+  'scheduled',
+  'wrong-linked scheduled availability remains scheduled'
+);
+
+rollback to savepoint current_week_immediate_zero_exact_match;
+
+-- Restore fixture state after null-chain scenario tests.
+set local role service_role;
 
 -- RLS remains owner-scoped.
 set local role authenticated;
