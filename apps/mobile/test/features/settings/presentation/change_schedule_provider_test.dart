@@ -731,11 +731,11 @@ void main() {
   });
 
   test(
-    'undo from success uses the actual proposal id and waits for cache reconciliation',
+    'undo accepts the production response ids only after cache reconciliation',
     () async {
       final calls = <Map<String, dynamic>>[];
       final reconciliation = Completer<void>();
-      String? reconciledProposalId;
+      ChangeScheduleUndoneResponse? reconciled;
       final container = _container(
         now: now,
         preferences: preferences,
@@ -753,7 +753,7 @@ void main() {
           };
         },
         undoCacheReconciler: (undone) async {
-          reconciledProposalId = undone.proposalId;
+          reconciled = undone;
           await reconciliation.future;
         },
       );
@@ -774,7 +774,14 @@ void main() {
       await _waitFor(() => calls.any((call) => call['action'] == 'undo'));
       expect(calls.last, {'action': 'undo', 'proposalId': 'proposal-preview-1'});
       expect(container.read(changeScheduleProvider), isA<ChangeScheduleApplying>());
-      expect(reconciledProposalId, 'proposal-preview-1');
+      expect(reconciled?.proposalId, 'proposal-preview-1');
+      expect(reconciled?.priorPlanVersionId, 'plan-previous');
+      expect(reconciled?.priorAvailabilityVersionId, 'availability-previous');
+      expect(reconciled?.restoredPlanVersionId, 'plan-accepted-1');
+      expect(
+        reconciled?.restoredAvailabilityVersionId,
+        'availability-accepted',
+      );
       expect(
         container.read(changeScheduleProvider),
         isNot(isA<ChangeScheduleUndone>()),
@@ -783,6 +790,298 @@ void main() {
       reconciliation.complete();
       expect(await undo, isTrue);
       expect(container.read(changeScheduleProvider), isA<ChangeScheduleUndone>());
+    },
+  );
+
+  test(
+    'undo rejects ids inconsistent with the accepted lifecycle and reloads',
+    () async {
+      var lifecycleLoads = 0;
+      var cacheReconciled = false;
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        lifecycleLoader: (_) async {
+          lifecycleLoads += 1;
+          return const ChangeScheduleLifecycleUnavailable();
+        },
+        client: (_, {body}) async {
+          final payload = body! as Map<String, dynamic>;
+          return switch (payload['action']) {
+            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'accept_now' => FunctionResponse(
+              data: _acceptedResponse(),
+              status: 200,
+            ),
+            'undo' => FunctionResponse(
+              data: {
+                ..._undoneResponse(),
+                'restoredPlanVersionId': 'different-accepted-plan',
+              },
+              status: 200,
+            ),
+            _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+          };
+        },
+        undoCacheReconciler: (_) async {
+          cacheReconciled = true;
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(changeScheduleProvider.notifier);
+
+      await _editingState(container);
+      expect(await notifier.preview(), isTrue);
+      expect(await notifier.acceptNow(), isTrue);
+      expect(await notifier.undo(), isFalse);
+
+      final failure = container.read(changeScheduleProvider);
+      expect(failure, isA<ChangeScheduleFailure>());
+      expect((failure as ChangeScheduleFailure).reason, ChangeScheduleFailureReason.stale);
+      expect(failure.action, ChangeScheduleAction.undo);
+      expect(cacheReconciled, isFalse);
+
+      expect(notifier.recoverFromFailure(), isTrue);
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleLoading>());
+      await _editingState(container);
+      expect(lifecycleLoads, 2);
+      expect(container.read(changeScheduleProvider), isNot(isA<ChangeScheduleSuccess>()));
+    },
+  );
+
+  test(
+    'undo rejects a legacy response with omitted lifecycle proof and reloads authoritatively',
+    () async {
+      var authoritativeLoads = 0;
+      var cacheReconciled = false;
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        authoritativeLoader: () async {
+          authoritativeLoads += 1;
+          return _initialData(activePlanId: 'plan-previous');
+        },
+        lifecycleLoader: (_) async => const ChangeScheduleLifecycleUnavailable(),
+        client: (_, {body}) async {
+          final payload = body! as Map<String, dynamic>;
+          return switch (payload['action']) {
+            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'accept_now' => FunctionResponse(
+              data: {
+                ..._acceptedResponse(),
+                'priorActivePlanVersionId': null,
+                'priorActiveAvailabilityVersionId': null,
+                'acceptedAvailabilityVersionId': null,
+              },
+              status: 200,
+            ),
+            'undo' => FunctionResponse(
+              data: {
+                'proposalId': 'proposal-preview-1',
+                'priorPlanVersionId': 'plan-accepted-1',
+                'priorAvailabilityVersionId': 'availability-accepted',
+              },
+              status: 200,
+            ),
+            _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+          };
+        },
+        undoCacheReconciler: (_) async {
+          cacheReconciled = true;
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(changeScheduleProvider.notifier);
+
+      await _editingState(container);
+      expect(await notifier.preview(), isTrue);
+      expect(await notifier.acceptNow(), isTrue);
+      final accepted =
+          container.read(changeScheduleProvider) as ChangeScheduleSuccess;
+      expect(accepted.acceptance.versionId, 'plan-accepted-1');
+      expect(
+        accepted.acceptance.priorActivePlanVersionId,
+        isNull,
+      );
+
+      expect(await notifier.undo(), isFalse);
+      final failure = container.read(changeScheduleProvider);
+      expect(failure, isA<ChangeScheduleFailure>());
+      expect((failure as ChangeScheduleFailure).reason, ChangeScheduleFailureReason.stale);
+      expect(failure.action, ChangeScheduleAction.undo);
+      expect(cacheReconciled, isFalse);
+      expect(container.read(changeScheduleProvider), isNot(isA<ChangeScheduleUndone>()));
+
+      expect(notifier.recoverFromFailure(), isTrue);
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleLoading>());
+      final recovered = await _editingState(container);
+      expect(authoritativeLoads, 1);
+      expect(recovered.sourcePlanId, 'plan-previous');
+      expect(container.read(changeScheduleProvider), isNot(isA<ChangeScheduleSuccess>()));
+    },
+  );
+
+  test(
+    'undo rejects an omitted deactivation proof and reloads authoritatively',
+    () async {
+      var authoritativeLoads = 0;
+      var cacheReconciled = false;
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        authoritativeLoader: () async {
+          authoritativeLoads += 1;
+          return _initialData(activePlanId: 'plan-previous');
+        },
+        lifecycleLoader: (_) async => const ChangeScheduleLifecycleUnavailable(),
+        client: (_, {body}) async {
+          final payload = body! as Map<String, dynamic>;
+          return switch (payload['action']) {
+            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'accept_now' => FunctionResponse(
+              data: _acceptedResponse(),
+              status: 200,
+            ),
+            'undo' => FunctionResponse(
+              data: {
+                'proposalId': 'proposal-preview-1',
+                'priorPlanVersionId': 'plan-previous',
+                'priorAvailabilityVersionId': 'availability-previous',
+              },
+              status: 200,
+            ),
+            _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+          };
+        },
+        undoCacheReconciler: (_) async {
+          cacheReconciled = true;
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(changeScheduleProvider.notifier);
+
+      await _editingState(container);
+      expect(await notifier.preview(), isTrue);
+      expect(await notifier.acceptNow(), isTrue);
+      expect(await notifier.undo(), isFalse);
+
+      final failure = container.read(changeScheduleProvider);
+      expect(failure, isA<ChangeScheduleFailure>());
+      expect((failure as ChangeScheduleFailure).reason, ChangeScheduleFailureReason.stale);
+      expect(failure.action, ChangeScheduleAction.undo);
+      expect(cacheReconciled, isFalse);
+      expect(container.read(changeScheduleProvider), isNot(isA<ChangeScheduleUndone>()));
+
+      expect(notifier.recoverFromFailure(), isTrue);
+      final recovered = await _editingState(container);
+      expect(authoritativeLoads, 1);
+      expect(recovered.sourcePlanId, 'plan-previous');
+      expect(container.read(changeScheduleProvider), isNot(isA<ChangeScheduleSuccess>()));
+    },
+  );
+
+  test(
+    'undo reloads instead of retrying after authoritative active ids mismatch',
+    () async {
+      var lifecycleLoads = 0;
+      var authoritativeLoads = 0;
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        authoritativeLoader: () async {
+          authoritativeLoads += 1;
+          return _initialData(activePlanId: 'plan-previous');
+        },
+        lifecycleLoader: (_) async {
+          lifecycleLoads += 1;
+          return const ChangeScheduleLifecycleUnavailable();
+        },
+        client: (_, {body}) async {
+          final payload = body! as Map<String, dynamic>;
+          return switch (payload['action']) {
+            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'accept_now' => FunctionResponse(
+              data: _acceptedResponse(),
+              status: 200,
+            ),
+            'undo' => FunctionResponse(data: _undoneResponse(), status: 200),
+            _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+          };
+        },
+        undoCacheReconciler: (_) async {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(changeScheduleProvider.notifier);
+
+      await _editingState(container);
+      expect(await notifier.preview(), isTrue);
+      expect(await notifier.acceptNow(), isTrue);
+      expect(await notifier.undo(), isFalse);
+
+      final failure = container.read(changeScheduleProvider);
+      expect(failure, isA<ChangeScheduleFailure>());
+      expect((failure as ChangeScheduleFailure).reason, ChangeScheduleFailureReason.stale);
+      expect(failure.action, ChangeScheduleAction.undo);
+
+      expect(notifier.recoverFromFailure(), isTrue);
+      await _editingState(container);
+      expect(authoritativeLoads, 1);
+      expect(lifecycleLoads, 2);
+      final recovered =
+          container.read(changeScheduleProvider) as ChangeScheduleEditing;
+      expect(recovered.sourcePlanId, 'plan-previous');
+    },
+  );
+
+  test(
+    'undo reloads authoritatively when post-mutation reconciliation fails',
+    () async {
+      var lifecycleLoads = 0;
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        lifecycleLoader: (_) async {
+          lifecycleLoads += 1;
+          return const ChangeScheduleLifecycleUnavailable();
+        },
+        client: (_, {body}) async {
+          final payload = body! as Map<String, dynamic>;
+          return switch (payload['action']) {
+            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'accept_now' => FunctionResponse(
+              data: _acceptedResponse(),
+              status: 200,
+            ),
+            'undo' => FunctionResponse(data: _undoneResponse(), status: 200),
+            _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+          };
+        },
+        undoCacheReconciler: (_) async {
+          throw StateError('authoritative refresh failed');
+        },
+      );
+      addTearDown(container.dispose);
+      final notifier = container.read(changeScheduleProvider.notifier);
+
+      await _editingState(container);
+      expect(await notifier.preview(), isTrue);
+      expect(await notifier.acceptNow(), isTrue);
+      expect(await notifier.undo(), isFalse);
+
+      final failure = container.read(changeScheduleProvider);
+      expect(failure, isA<ChangeScheduleFailure>());
+      expect((failure as ChangeScheduleFailure).reason, ChangeScheduleFailureReason.stale);
+      expect(failure.action, ChangeScheduleAction.undo);
+
+      expect(notifier.recoverFromFailure(), isTrue);
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleLoading>());
+      await _editingState(container);
+      expect(lifecycleLoads, 2);
+      expect(container.read(changeScheduleProvider), isNot(isA<ChangeScheduleSuccess>()));
     },
   );
 
@@ -1149,6 +1448,7 @@ ProviderContainer _container({
   required SharedPreferences preferences,
   ChangeScheduleFunctionClient? client,
   ChangeScheduleInitialDataLoader? loader,
+  ChangeScheduleInitialDataLoader? authoritativeLoader,
   ChangeScheduleLifecycleLoader? lifecycleLoader,
   ChangeScheduleDraftStore? store,
   ChangeScheduleCacheReconciler? cacheReconciler,
@@ -1162,6 +1462,10 @@ ProviderContainer _container({
       changeScheduleInitialDataLoaderProvider.overrideWithValue(
         loader ?? () async => _initialData(),
       ),
+      if (authoritativeLoader != null)
+        changeScheduleAuthoritativeInitialDataLoaderProvider.overrideWithValue(
+          authoritativeLoader,
+        ),
       changeScheduleLifecycleLoaderProvider.overrideWithValue(
         lifecycleLoader ?? (_) async => const ChangeScheduleLifecycleUnavailable(),
       ),
@@ -1480,6 +1784,8 @@ Map<String, dynamic> _undoneResponse({String id = 'proposal-preview-1'}) => {
   'proposalId': id,
   'priorPlanVersionId': 'plan-previous',
   'priorAvailabilityVersionId': 'availability-previous',
-  'restoredPlanVersionId': 'plan-restored',
-  'restoredAvailabilityVersionId': 'availability-restored',
+  // Despite the historical wire names, these identify the accepted artifacts
+  // that undo just deactivated/cancelled.
+  'restoredPlanVersionId': 'plan-accepted-1',
+  'restoredAvailabilityVersionId': 'availability-accepted',
 };

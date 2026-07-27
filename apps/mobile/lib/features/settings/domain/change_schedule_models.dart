@@ -1222,18 +1222,33 @@ class ChangeScheduleUndoneResponse {
   });
 
   final String proposalId;
-  final String? priorPlanVersionId;
-  final String? priorAvailabilityVersionId;
+  /// The plan reactivated by the undo.
+  final String priorPlanVersionId;
+
+  /// The availability version reactivated by the undo.
+  final String priorAvailabilityVersionId;
+
+  /// The accepted plan just deactivated by the undo, when the server returns
+  /// it. The legacy wire name is retained for compatibility with the Edge
+  /// Function response.
   final String? restoredPlanVersionId;
+
+  /// The accepted availability just cancelled by the undo, when the server
+  /// returns it. The legacy wire name is retained for compatibility with the
+  /// Edge Function response.
   final String? restoredAvailabilityVersionId;
 
   static ChangeScheduleUndoneResponse fromJson(Object? raw) {
     final map = _strictMap(raw);
     return ChangeScheduleUndoneResponse(
       proposalId: _requiredString(map['proposalId'], 'proposalId'),
-      priorPlanVersionId: _optionalNullableString(map['priorPlanVersionId']),
-      priorAvailabilityVersionId: _optionalNullableString(
+      priorPlanVersionId: _requiredString(
+        map['priorPlanVersionId'],
+        'priorPlanVersionId',
+      ),
+      priorAvailabilityVersionId: _requiredString(
         map['priorAvailabilityVersionId'],
+        'priorAvailabilityVersionId',
       ),
       restoredPlanVersionId: _optionalNullableString(
         map['restoredPlanVersionId'],

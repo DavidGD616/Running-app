@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -195,6 +197,8 @@ void main() {
     tester,
   ) async {
     final calls = <Map<String, dynamic>>[];
+    final reconciliation = Completer<void>();
+    ChangeScheduleUndoneResponse? reconciled;
     Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
         Future.value(ChangeScheduleLifecycleAvailable(
       ChangeScheduleLifecycleData(
@@ -221,14 +225,28 @@ void main() {
             status: 200,
           );
         },
+        undoCacheReconciler: (undone) async {
+          reconciled = undone;
+          await reconciliation.future;
+        },
       ),
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('changeScheduleUndo')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('changeScheduleUndo')));
-    await tester.pumpAndSettle();
+    await tester.pump();
     expect(calls.single, {'action': 'undo', 'proposalId': 'proposal-accepted-1'});
+    expect(reconciled?.proposalId, 'proposal-accepted-1');
+    expect(reconciled?.priorPlanVersionId, 'plan-previous');
+    expect(reconciled?.priorAvailabilityVersionId, 'availability-previous');
+    expect(reconciled?.restoredPlanVersionId, 'plan-accepted-1');
+    expect(reconciled?.restoredAvailabilityVersionId, 'availability-accepted');
+    expect(find.text('Undoing your schedule change…'), findsOneWidget);
+    expect(find.text('Schedule change undone'), findsNothing);
+
+    reconciliation.complete();
+    await tester.pumpAndSettle();
     expect(find.text('Schedule change undone'), findsOneWidget);
   });
 
@@ -530,6 +548,6 @@ Map<String, dynamic> _undoneResponse({String id = 'proposal-preview-1'}) => {
   'proposalId': id,
   'priorPlanVersionId': 'plan-previous',
   'priorAvailabilityVersionId': 'availability-previous',
-  'restoredPlanVersionId': 'plan-restored',
-  'restoredAvailabilityVersionId': 'availability-restored',
+  'restoredPlanVersionId': 'plan-accepted-1',
+  'restoredAvailabilityVersionId': 'availability-accepted',
 };

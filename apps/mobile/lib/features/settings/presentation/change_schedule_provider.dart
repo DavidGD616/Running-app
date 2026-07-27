@@ -80,6 +80,15 @@ class ChangeScheduleActivationReconciliationException implements Exception {
   final ChangeScheduleFailureReason reason;
 }
 
+/// Signals that the server accepted an undo but the app could not prove the
+/// resulting lifecycle from authoritative reads. Callers must reload instead
+/// of returning to the now-unsafe accepted state and retrying the undo.
+class ChangeScheduleUndoReconciliationException implements Exception {
+  const ChangeScheduleUndoReconciliationException(this.reason);
+
+  final ChangeScheduleFailureReason reason;
+}
+
 enum ChangeScheduleAction {
   accept('accept_now'),
   schedule('schedule'),
@@ -274,6 +283,76 @@ final changeScheduleInitialDataLoaderProvider =
         if (profile == null || activePlan == null) {
           throw const FormatException(
             'Missing persisted change schedule source data.',
+          );
+        }
+
+        return ChangeScheduleInitialData(
+          profile: profile,
+          activePlan: activePlan,
+        );
+      };
+    });
+
+/// Reads the source plan and profile directly from Supabase for recovery after
+/// a lifecycle mutation succeeded but local reconciliation could not prove its
+/// result. It intentionally avoids repositories because they may fall back to
+/// stale local caches.
+final changeScheduleAuthoritativeInitialDataLoaderProvider =
+    Provider<ChangeScheduleInitialDataLoader>((ref) {
+      return () async {
+        if (!SupabaseConfig.isConfigured) {
+          return ref.read(changeScheduleInitialDataLoaderProvider)();
+        }
+
+        final userId = ref.read(currentUserProvider)?.id;
+        if (userId == null || userId.trim().isEmpty) {
+          throw const FormatException(
+            'Missing authenticated change schedule recovery source.',
+          );
+        }
+
+        final client = ref.read(supabaseClientProvider);
+        final activePlanRow = _mapFromDynamic(
+          await client
+              .from('plan_versions')
+              .select('id,is_active,data')
+              .eq('user_id', userId)
+              .eq('is_active', true)
+              .maybeSingle(),
+        );
+        final activePlanId = activePlanRow['id'];
+        final activePlan = TrainingPlan.fromJson(
+          _mapFromDynamic(activePlanRow['data']),
+        );
+        if (activePlanId is! String ||
+            activePlanId.isEmpty ||
+            activePlanRow['is_active'] != true ||
+            activePlan == null ||
+            activePlan.id != activePlanId) {
+          throw const FormatException(
+            'Invalid authoritative change schedule active plan.',
+          );
+        }
+
+        final profileRow = _mapFromDynamic(
+          await client
+              .from('runner_profiles')
+              .select('schema_version,updated_at,completed_onboarding_at,data')
+              .eq('user_id', userId)
+              .maybeSingle(),
+        );
+        final profileData = Map<String, dynamic>.from(
+          _mapFromDynamic(profileRow['data']),
+        );
+        profileData['schemaVersion'] ??= profileRow['schema_version'];
+        profileData['updatedAt'] ??= _dateTimeString(profileRow['updated_at']);
+        profileData['completedOnboardingAt'] ??= _dateTimeString(
+          profileRow['completed_onboarding_at'],
+        );
+        final profile = RunnerProfile.fromJson(profileData);
+        if (profile == null) {
+          throw const FormatException(
+            'Invalid authoritative change schedule runner profile.',
           );
         }
 
@@ -512,46 +591,161 @@ final changeScheduleActivationCacheReconcilerProvider =
 
 final changeScheduleUndoCacheReconcilerProvider =
     Provider<ChangeScheduleUndoCacheReconciler>((ref) {
-      return (_) async {
-        Object? failure;
-
-        try {
-          final activePlan = await ref
-              .read(planVersionRepositoryProvider)
-              .loadActivePlanAsync();
-          if (activePlan == null) {
-            throw const FormatException('Missing restored active plan.');
-          }
-        } catch (error) {
-          failure = error;
+      return (undone) async {
+        if (!SupabaseConfig.isConfigured) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        }
+        final userId = ref.read(currentUserProvider)?.id;
+        if (userId == null || userId.trim().isEmpty) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
         }
 
-        try {
-          final profile = await ref
-              .read(runnerProfileRepositoryProvider)
-              .loadProfileAsync();
-          if (profile == null) {
-            throw const FormatException('Missing restored runner profile.');
-          }
-        } catch (error) {
-          failure ??= error;
+        final client = ref.read(supabaseClientProvider);
+
+        final activePlanRow = _mapFromDynamic(
+          await client
+              .from('plan_versions')
+              .select('id,generated_at,requested_by,is_active,data')
+              .eq('user_id', userId)
+              .eq('is_active', true)
+              .maybeSingle(),
+        );
+        final activePlanId = activePlanRow['id'];
+        if (activePlanId is! String ||
+            activePlanId != undone.priorPlanVersionId ||
+            activePlanRow['is_active'] != true) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
         }
+
+        final activeAvailabilityRow = _mapFromDynamic(
+          await client
+              .from('change_schedule_availability_versions')
+              .select('id,lifecycle_state')
+              .eq('user_id', userId)
+              .eq('lifecycle_state', 'active')
+              .maybeSingle(),
+        );
+        final activeAvailabilityId = activeAvailabilityRow['id'];
+        if (activeAvailabilityId is! String ||
+            activeAvailabilityId != undone.priorAvailabilityVersionId ||
+            activeAvailabilityRow['lifecycle_state'] != 'active') {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        }
+
+        final cancelledPlanVersionId = undone.restoredPlanVersionId;
+        if (cancelledPlanVersionId != null) {
+          final cancelledPlanRow = _mapFromDynamic(
+            await client
+                .from('plan_versions')
+                .select('id,is_active')
+                .eq('user_id', userId)
+                .eq('id', cancelledPlanVersionId)
+                .maybeSingle(),
+          );
+          if (cancelledPlanRow['id'] != cancelledPlanVersionId ||
+              cancelledPlanRow['is_active'] != false) {
+            throw const ChangeScheduleUndoReconciliationException(
+              ChangeScheduleFailureReason.stale,
+            );
+          }
+        }
+
+        final cancelledAvailabilityVersionId =
+            undone.restoredAvailabilityVersionId;
+        if (cancelledAvailabilityVersionId != null) {
+          final cancelledAvailabilityRow = _mapFromDynamic(
+            await client
+                .from('change_schedule_availability_versions')
+                .select('id,lifecycle_state')
+                .eq('user_id', userId)
+                .eq('id', cancelledAvailabilityVersionId)
+                .maybeSingle(),
+          );
+          if (cancelledAvailabilityRow['id'] !=
+                  cancelledAvailabilityVersionId ||
+              cancelledAvailabilityRow['lifecycle_state'] != 'cancelled') {
+            throw const ChangeScheduleUndoReconciliationException(
+              ChangeScheduleFailureReason.stale,
+            );
+          }
+        }
+
+        final activePlan = TrainingPlan.fromJson(
+          _mapFromDynamic(activePlanRow['data']),
+        );
+        final generatedAt = _dateTimeFromDynamic(activePlanRow['generated_at']);
+        final requestedBy = activePlanRow['requested_by'];
+        if (activePlan == null ||
+            activePlan.id != undone.priorPlanVersionId ||
+            generatedAt == null ||
+            requestedBy is! String ||
+            requestedBy.isEmpty) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        }
+
+        final profileRow = _mapFromDynamic(
+          await client
+              .from('runner_profiles')
+              .select('schema_version,updated_at,completed_onboarding_at,data')
+              .eq('user_id', userId)
+              .maybeSingle(),
+        );
+        final profileData = Map<String, dynamic>.from(
+          _mapFromDynamic(profileRow['data']),
+        );
+        profileData['schemaVersion'] ??= profileRow['schema_version'];
+        profileData['updatedAt'] ??= _dateTimeString(profileRow['updated_at']);
+        profileData['completedOnboardingAt'] ??= _dateTimeString(
+          profileRow['completed_onboarding_at'],
+        );
+        final profile = RunnerProfile.fromJson(profileData);
+        if (profile == null) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        }
+
+        // Only cache after every remote read proves the post-undo lifecycle.
+        await ref
+            .read(sharedPreferencesPlanVersionRepositoryProvider)
+            .saveActivePlan(
+              PlanVersion(
+                id: activePlanId,
+                generatedAt: generatedAt,
+                requestedBy: requestedBy,
+                isActive: true,
+                plan: activePlan,
+              ),
+            );
+        await SharedPreferencesRunnerProfileRepository(
+          ref.read(sharedPreferencesProvider),
+        ).cacheProfile(profile);
 
         ref.invalidate(runnerProfileProvider);
         ref.invalidate(trainingPlanProvider);
-        try {
-          await ref.read(runnerProfileProvider.future);
-        } catch (error) {
-          failure ??= error;
-        }
-        try {
-          await ref.read(trainingPlanProvider.future);
-        } catch (error) {
-          failure ??= error;
+
+        final refreshedProfile = await ref.read(runnerProfileProvider.future);
+        if (refreshedProfile == null) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
         }
 
-        if (failure != null) {
-          throw failure;
+        final refreshedPlan = await ref.read(trainingPlanProvider.future);
+        if (refreshedPlan.id != undone.priorPlanVersionId) {
+          throw const ChangeScheduleUndoReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
         }
       };
     });
@@ -566,11 +760,14 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
     return const ChangeScheduleLoading();
   }
 
-  Future<void> initialize() async {
+  Future<void> initialize({bool authoritative = false}) async {
     if (!ref.mounted) return;
     state = const ChangeScheduleLoading();
     try {
-      final initial = await ref.read(changeScheduleInitialDataLoaderProvider)();
+      final initialLoader = authoritative
+          ? ref.read(changeScheduleAuthoritativeInitialDataLoaderProvider)
+          : ref.read(changeScheduleInitialDataLoaderProvider);
+      final initial = await initialLoader();
       final now = ref.read(changeScheduleClockProvider)();
       final activePlan = initial.activePlan;
       final sourcePlanId = activePlan.id;
@@ -634,7 +831,9 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
     }
 
     if (failure.reason.requiresAuthoritativeReload) {
-      unawaited(initialize());
+      unawaited(
+        initialize(authoritative: failure.action == ChangeScheduleAction.undo),
+      );
       return true;
     }
 
@@ -1238,18 +1437,32 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         return false;
       }
 
-      final data = _mapFromDynamic(response.data);
-      final undone = ChangeScheduleUndoneResponse.fromJson(data);
-      if (undone.proposalId != proposalId) {
-        throw const FormatException('Undo response proposal mismatch.');
+      try {
+        final data = _mapFromDynamic(response.data);
+        final undone = ChangeScheduleUndoneResponse.fromJson(data);
+        _validateUndoneResponse(
+          undone,
+          proposalId: proposalId,
+          acceptance: acceptance,
+        );
+        await _cacheUndone(undone);
+        if (!ref.mounted) return false;
+        state = ChangeScheduleUndone(
+          draft: draft,
+          sourcePlanId: sourcePlanId,
+          undone: undone,
+        );
+        return true;
+      } on ChangeScheduleUndoReconciliationException {
+        rethrow;
+      } catch (_) {
+        // The mutation already returned success. Without a valid response and
+        // authoritative reconciliation, returning to the accepted state would
+        // make a second undo unsafe.
+        throw const ChangeScheduleUndoReconciliationException(
+          ChangeScheduleFailureReason.stale,
+        );
       }
-      await _cacheUndone(undone);
-      state = ChangeScheduleUndone(
-        draft: draft,
-        sourcePlanId: sourcePlanId,
-        undone: undone,
-      );
-      return true;
     } on TimeoutException {
       _setFailure(
         draft,
@@ -1264,6 +1477,15 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         _mapFunctionException(error),
+        preview: preview,
+        acceptance: acceptance,
+        action: ChangeScheduleAction.undo,
+      );
+    } on ChangeScheduleUndoReconciliationException catch (error) {
+      _setFailure(
+        draft,
+        sourcePlanId,
+        error.reason,
         preview: preview,
         acceptance: acceptance,
         action: ChangeScheduleAction.undo,
@@ -1586,6 +1808,53 @@ void _validateActivatedResponse(
       activated.acceptedPlanVersionId!.isEmpty ||
       activated.acceptedPlanVersionId != scheduled.scheduledPlanVersionId) {
     throw const FormatException('Invalid activated change schedule response.');
+  }
+}
+
+void _validateUndoneResponse(
+  ChangeScheduleUndoneResponse undone, {
+  required String proposalId,
+  required ChangeScheduleAcceptedResponse acceptance,
+}) {
+  final expectedPriorPlanVersionId = acceptance.priorActivePlanVersionId;
+  final expectedPriorAvailabilityVersionId =
+      acceptance.priorActiveAvailabilityVersionId;
+  final expectedAcceptedAvailabilityVersionId =
+      acceptance.acceptedAvailabilityVersionId;
+
+  final deactivatedPlanVersionId = undone.restoredPlanVersionId;
+  final cancelledAvailabilityVersionId = undone.restoredAvailabilityVersionId;
+
+  final hasCompleteAcceptedLifecycle =
+      acceptance.versionId.isNotEmpty &&
+      expectedPriorPlanVersionId != null &&
+      expectedPriorPlanVersionId.isNotEmpty &&
+      expectedPriorAvailabilityVersionId != null &&
+      expectedPriorAvailabilityVersionId.isNotEmpty &&
+      expectedAcceptedAvailabilityVersionId != null &&
+      expectedAcceptedAvailabilityVersionId.isNotEmpty;
+  final hasCompleteUndoProof =
+      proposalId.isNotEmpty &&
+      undone.proposalId.isNotEmpty &&
+      undone.priorPlanVersionId.isNotEmpty &&
+      undone.priorAvailabilityVersionId.isNotEmpty &&
+      deactivatedPlanVersionId != null &&
+      deactivatedPlanVersionId.isNotEmpty &&
+      cancelledAvailabilityVersionId != null &&
+      cancelledAvailabilityVersionId.isNotEmpty;
+
+  if (!hasCompleteAcceptedLifecycle ||
+      !hasCompleteUndoProof ||
+      undone.proposalId != proposalId ||
+      expectedPriorPlanVersionId == acceptance.versionId ||
+      expectedPriorAvailabilityVersionId == expectedAcceptedAvailabilityVersionId ||
+      undone.priorPlanVersionId != expectedPriorPlanVersionId ||
+      undone.priorAvailabilityVersionId != expectedPriorAvailabilityVersionId ||
+      deactivatedPlanVersionId != acceptance.versionId ||
+      cancelledAvailabilityVersionId != expectedAcceptedAvailabilityVersionId ||
+      undone.priorPlanVersionId == deactivatedPlanVersionId ||
+      undone.priorAvailabilityVersionId == cancelledAvailabilityVersionId) {
+    throw const FormatException('Invalid undone change schedule response.');
   }
 }
 
