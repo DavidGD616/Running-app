@@ -30,9 +30,18 @@ import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/weekly_plan/presentation/screens/weekly_plan_screen.dart';
 import '../../features/progress/presentation/screens/progress_screen.dart';
 import '../../features/settings/presentation/screens/settings_screen.dart';
-import '../../features/settings/presentation/screens/settings_goal_intro_screen.dart';
-import '../../features/settings/presentation/screens/settings_goal_review_screen.dart';
 import '../../features/settings/presentation/screens/settings_update_plan_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_manual_result_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_health_evidence_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_intro_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_recommendation_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_fitness_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_proposal_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_success_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_preferences_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_race_date_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_schedule_screen.dart';
+import '../../features/settings/presentation/screens/new_goal_full_plan_screen.dart';
 import '../../features/settings/presentation/screens/settings_language_screen.dart';
 import '../../features/settings/presentation/screens/settings_units_screen.dart';
 import '../../features/settings/presentation/screens/settings_account_screen.dart';
@@ -347,40 +356,47 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoal,
-        builder: (context, state) =>
-            const SettingsGoalIntroScreen(mode: SettingsGoalIntroMode.newGoal),
+        builder: (context, state) => const NewGoalIntroScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoalForm,
-        builder: (context, state) =>
-            const GoalScreen(mode: GoalFlowMode.newGoal),
+        builder: (context, state) => const NewGoalRaceDateScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoalSchedule,
-        builder: (context, state) =>
-            const ScheduleScreen(mode: ScheduleFlowMode.newGoal),
+        builder: (context, state) => const NewGoalScheduleScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoalTraining,
-        builder: (context, state) => const TrainingPreferencesScreen(
-          mode: TrainingPreferencesFlowMode.newGoal,
-        ),
+        builder: (context, state) => const NewGoalPreferencesScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.settingsUpdatePlanNewGoalHealth,
+        builder: (context, state) => const NewGoalHealthEvidenceScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoalSummary,
-        builder: (context, state) => const SettingsGoalReviewScreen(
-          mode: SettingsGoalReviewMode.newGoal,
-        ),
+        builder: (context, state) => const NewGoalRecommendationScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoalGenerating,
-        builder: (context, state) =>
-            const PlanGenerationScreen(mode: PlanGenerationFlowMode.newGoal),
+        builder: (context, state) => const NewGoalFitnessScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.settingsUpdatePlanNewGoalManualResult,
+        builder: (context, state) => const NewGoalManualResultScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.settingsUpdatePlanNewGoalProposal,
+        builder: (context, state) => const NewGoalProposalScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.settingsUpdatePlanNewGoalFullPlan,
+        builder: (context, state) => const NewGoalFullPlanScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanNewGoalReady,
-        builder: (context, state) =>
-            const PlanReadyScreen(mode: PlanReadyFlowMode.newGoal),
+        builder: (context, state) => const NewGoalSuccessScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanSchedule,
