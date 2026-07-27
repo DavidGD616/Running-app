@@ -765,17 +765,15 @@ export function createProductionDependencies(
         : null;
     },
     async loadPreviewContext(userId) {
-      const [profileResult, planResult, activityResult] = await Promise.all([
+      const [profileResult, planResult] = await Promise.all([
         admin.from("runner_profiles").select("data,schema_version,updated_at")
           .eq("user_id", userId).maybeSingle(),
         admin.from("plan_versions").select("id,data")
           .eq("user_id", userId)
           .eq("is_active", true).maybeSingle(),
-        admin.from("activity_records").select("linked_session_id")
-          .eq("user_id", userId),
       ]);
 
-      for (const result of [profileResult, planResult, activityResult]) {
+      for (const result of [profileResult, planResult]) {
         if (result.error != null) throw result.error;
       }
 
@@ -797,6 +795,12 @@ export function createProductionDependencies(
       ) {
         return null;
       }
+
+      const activityResult = await admin.from("activity_records")
+        .select("linked_session_id")
+        .eq("user_id", userId)
+        .eq("plan_version_id", planRow.id);
+      if (activityResult.error != null) throw activityResult.error;
 
       const immutableSessionIds = new Set<string>();
       for (const row of (activityResult.data ?? [])) {

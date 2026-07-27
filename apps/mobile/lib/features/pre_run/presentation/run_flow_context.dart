@@ -47,11 +47,13 @@ class RunFlowSessionContext {
     required this.warmUpMinutes,
     required this.coolDownMinutes,
     this.paceZones,
+    this.planVersionId,
   });
 
   factory RunFlowSessionContext.fromSession(
     TrainingSession session, {
     StravaPaceZones? paceZones,
+    String? planVersionId,
   }) {
     return RunFlowSessionContext(
       sessionId: session.id,
@@ -71,6 +73,7 @@ class RunFlowSessionContext {
       warmUpMinutes: session.warmUpMinutes,
       coolDownMinutes: session.coolDownMinutes,
       paceZones: paceZones,
+      planVersionId: planVersionId,
     );
   }
 
@@ -93,6 +96,7 @@ class RunFlowSessionContext {
       'warmUpMinutes': warmUpMinutes,
       'coolDownMinutes': coolDownMinutes,
       if (paceZones != null) 'paceZones': paceZones!.toJson(),
+      if (planVersionId != null) 'planVersionId': planVersionId,
     };
   }
 
@@ -144,6 +148,7 @@ class RunFlowSessionContext {
               Map<String, dynamic>.from(json['paceZones'] as Map),
             )
           : null,
+      planVersionId: json['planVersionId'] as String?,
     );
   }
 
@@ -164,6 +169,7 @@ class RunFlowSessionContext {
   final int? warmUpMinutes;
   final int? coolDownMinutes;
   final StravaPaceZones? paceZones;
+  final String? planVersionId;
 
   bool get isRest => sessionType.isRest;
   bool get hasStructuredWorkout =>
@@ -208,9 +214,14 @@ class PreRunArgs {
   factory PreRunArgs.fromSession(
     TrainingSession session, {
     StravaPaceZones? paceZones,
+    String? planVersionId,
   }) {
     return PreRunArgs(
-      session: RunFlowSessionContext.fromSession(session, paceZones: paceZones),
+      session: RunFlowSessionContext.fromSession(
+        session,
+        paceZones: paceZones,
+        planVersionId: planVersionId,
+      ),
     );
   }
 

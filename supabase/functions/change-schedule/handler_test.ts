@@ -469,7 +469,23 @@ Deno.test("production dependencies read auth claims and forward verified user id
       error: null,
     },
     activity_records: {
-      data: [{ linked_session_id: "session-1" }],
+      data: [
+        {
+          user_id: "verified-user",
+          linked_session_id: "session-1",
+          plan_version_id: "source-plan",
+        },
+        {
+          user_id: "verified-user",
+          linked_session_id: "other-plan-session",
+          plan_version_id: "other-plan",
+        },
+        {
+          user_id: "verified-user",
+          linked_session_id: "legacy-session",
+          plan_version_id: null,
+        },
+      ],
       error: null,
     },
   };
@@ -477,6 +493,7 @@ Deno.test("production dependencies read auth claims and forward verified user id
   const adminClient = {
     from(table: string) {
       const result = (adminRows as Record<string, { data: unknown; error: unknown }>)[table];
+      const filters = new Map<string, unknown>();
       const query = {
         select(columns?: string) {
           selectCalls.push({ table, columns });
@@ -484,13 +501,26 @@ Deno.test("production dependencies read auth claims and forward verified user id
         },
         eq(column: string, value: unknown) {
           eqCalls.push({ table, column, value });
+          filters.set(column, value);
           return query;
         },
         maybeSingle: async () => {
           return result;
         },
         then(resolve: (value: unknown) => unknown, reject?: (reason: unknown) => unknown) {
-          return Promise.resolve(result).then(resolve, reject);
+          const filteredResult = table === "activity_records" &&
+              Array.isArray(result.data)
+            ? {
+              ...result,
+              data: result.data.filter((row) => {
+                if (row == null || typeof row !== "object") return false;
+                return Array.from(filters.entries()).every(([column, value]) =>
+                  (row as Record<string, unknown>)[column] === value
+                );
+              }),
+            }
+            : result;
+          return Promise.resolve(filteredResult).then(resolve, reject);
         },
       };
       return query;
@@ -551,9 +581,18 @@ Deno.test("production dependencies read auth claims and forward verified user id
     selectCalls.find((call) => call.table === "plan_versions")?.columns,
     "id,data",
   );
+  assertEquals(context?.immutableSessionIds, ["session-1"]);
 
   const seenReadUserIds = eqCalls.filter((row) => row.column === "user_id").map((row) => row.value);
   assertEquals(seenReadUserIds.includes("verified-user"), true);
+  assertEquals(
+    eqCalls.some((row) =>
+      row.table === "activity_records" &&
+      row.column === "plan_version_id" &&
+      row.value === "source-plan"
+    ),
+    true,
+  );
 
   await dependencies.acceptProposalNow(
     userId ?? "",

@@ -61,21 +61,26 @@ void main() {
   Widget wrapWithPlanAndRouter(
     TrainingPlan plan, {
     Locale locale = const Locale('en'),
+    String initialLocation = RouteNames.fullPlan,
+    Widget? initialScreen,
+    ValueChanged<SessionDetailArgs>? onSessionDetail,
   }) {
     final router = GoRouter(
-      initialLocation: RouteNames.fullPlan,
+      initialLocation: initialLocation,
       routes: [
         GoRoute(
-          path: RouteNames.fullPlan,
-          builder: (context, state) => const FullPlanScreen(),
+          path: initialLocation,
+          builder: (context, state) => initialScreen ?? const FullPlanScreen(),
         ),
         GoRoute(
           path: RouteNames.sessionDetail,
           builder: (context, state) {
             final args = state.extra as SessionDetailArgs;
+            onSessionDetail?.call(args);
             return SessionDetailScreen(
               session: args.session,
               showStartWorkout: false,
+              planVersionId: args.planVersionId,
             );
           },
         ),
@@ -232,6 +237,81 @@ void main() {
     expect(find.text(l10n.raceDayInfoTitle), findsWidgets);
     expect(find.text('Start controlled, finish strong.'), findsOneWidget);
     expect(find.text(l10n.sessionDetailStartWorkout), findsNothing);
+  });
+
+  testWidgets('full plan session navigation captures the active plan id', (
+    tester,
+  ) async {
+    final plan = TrainingPlan(
+      id: 'full-plan-provenance',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 1,
+      sessions: [
+        TrainingSession(
+          id: 'full-plan-run',
+          date: DateTime(2026, 6, 1),
+          type: SessionType.easyRun,
+          status: SessionStatus.upcoming,
+          weekNumber: 1,
+          distanceKm: 8,
+          durationMinutes: 45,
+        ),
+      ],
+    );
+    SessionDetailArgs? receivedArgs;
+
+    await tester.pumpWidget(
+      wrapWithPlanAndRouter(
+        plan,
+        onSessionDetail: (args) => receivedArgs = args,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SessionRow));
+    await tester.pumpAndSettle();
+
+    expect(receivedArgs?.planVersionId, plan.id);
+  });
+
+  testWidgets('weekly plan session navigation captures the active plan id', (
+    tester,
+  ) async {
+    final weekStart = currentWeekStart();
+    final plan = TrainingPlan(
+      id: 'weekly-plan-provenance',
+      raceType: TrainingPlanRaceType.halfMarathon,
+      totalWeeks: 12,
+      currentWeekNumber: 1,
+      sessions: [
+        TrainingSession(
+          id: 'weekly-plan-run',
+          date: weekStart.add(const Duration(days: 1)),
+          type: SessionType.easyRun,
+          status: SessionStatus.upcoming,
+          weekNumber: 1,
+          distanceKm: 8,
+          durationMinutes: 45,
+        ),
+      ],
+    );
+    SessionDetailArgs? receivedArgs;
+
+    await tester.pumpWidget(
+      wrapWithPlanAndRouter(
+        plan,
+        initialLocation: RouteNames.plan,
+        initialScreen: const WeeklyPlanScreen(),
+        onSessionDetail: (args) => receivedArgs = args,
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(SessionRow));
+    await tester.pumpAndSettle();
+
+    expect(receivedArgs?.planVersionId, plan.id);
   });
 
   testWidgets('weekly plan view does not render legacy support sessions', (

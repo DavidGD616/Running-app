@@ -113,6 +113,7 @@ abstract class ActivityRecord {
     this.actualElevationGainMeters,
     this.perceivedEffort,
     this.linkedSessionId,
+    this.planVersionId,
     this.notes,
   });
 
@@ -130,6 +131,7 @@ abstract class ActivityRecord {
   final int? actualElevationGainMeters;
   final ActivityPerceivedEffort? perceivedEffort;
   final String? linkedSessionId;
+  final String? planVersionId;
   final String? notes;
 
   bool get hasLinkedSession =>
@@ -161,6 +163,7 @@ abstract class ActivityRecord {
     int? actualElevationGainMeters,
     ActivityPerceivedEffort? perceivedEffort,
     String? linkedSessionId,
+    String? planVersionId,
     String? notes,
   });
 
@@ -186,6 +189,7 @@ class RunActivity extends ActivityRecord {
     super.actualElevationGainMeters,
     super.perceivedEffort,
     super.linkedSessionId,
+    super.planVersionId,
     super.notes,
   }) : super(kind: ActivityKind.run);
 
@@ -214,6 +218,7 @@ class RunActivity extends ActivityRecord {
         _stringOrNull(json['perceivedEffort']),
       ),
       linkedSessionId: _stringOrNull(json['linkedSessionId']),
+      planVersionId: _stringOrNull(json['planVersionId']),
       notes: _stringOrNull(json['notes']),
     );
   }
@@ -232,6 +237,7 @@ class RunActivity extends ActivityRecord {
     int? actualElevationGainMeters,
     ActivityPerceivedEffort? perceivedEffort,
     String? linkedSessionId,
+    String? planVersionId,
     String? notes,
   }) {
     assert(kind == null || kind == ActivityKind.run);
@@ -248,6 +254,7 @@ class RunActivity extends ActivityRecord {
           actualElevationGainMeters ?? this.actualElevationGainMeters,
       perceivedEffort: perceivedEffort ?? this.perceivedEffort,
       linkedSessionId: linkedSessionId ?? this.linkedSessionId,
+      planVersionId: planVersionId ?? this.planVersionId,
       notes: notes ?? this.notes,
     );
   }
@@ -268,6 +275,7 @@ class RunActivity extends ActivityRecord {
       'actualElevationGainMeters': actualElevationGainMeters,
       'perceivedEffort': perceivedEffort?.key,
       'linkedSessionId': linkedSessionId,
+      'planVersionId': planVersionId,
       'notes': notes,
     };
   }

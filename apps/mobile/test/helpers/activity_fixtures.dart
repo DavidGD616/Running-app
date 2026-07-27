@@ -7,6 +7,7 @@ RunActivity buildRunActivity({
   required String id,
   required DateTime recordedAt,
   String? linkedSessionId,
+  String? planVersionId,
   ActivitySource source = ActivitySource.manual,
   ActivityCompletionStatus completionStatus =
       ActivityCompletionStatus.completed,
@@ -30,6 +31,7 @@ RunActivity buildRunActivity({
     actualElevationGainMeters: actualElevationGainMeters,
     perceivedEffort: perceivedEffort,
     linkedSessionId: linkedSessionId,
+    planVersionId: planVersionId,
     notes: notes,
   );
 }

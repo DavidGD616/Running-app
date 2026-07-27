@@ -95,6 +95,7 @@ class FullPlanScreen extends ConsumerWidget {
                   child: _WeekCard(
                     week: week,
                     currentWeekNumber: plan.currentWeekNumber,
+                    planVersionId: plan.id,
                     l10n: l10n,
                     unitSystem: unitSystem,
                   ),
@@ -215,12 +216,14 @@ class _WeekCard extends StatefulWidget {
   const _WeekCard({
     required this.week,
     required this.currentWeekNumber,
+    required this.planVersionId,
     required this.l10n,
     required this.unitSystem,
   });
 
   final PlanWeek week;
   final int currentWeekNumber;
+  final String planVersionId;
   final AppLocalizations l10n;
   final UnitSystem unitSystem;
 
@@ -461,6 +464,7 @@ class _WeekCardState extends State<_WeekCard> {
                                   RouteNames.sessionDetail,
                                   extra: SessionDetailArgs(
                                     session: row.session,
+                                    planVersionId: widget.planVersionId,
                                   ),
                                 ),
                         ),

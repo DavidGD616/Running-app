@@ -418,6 +418,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return SessionDetailScreen(
             session: args.session,
             showStartWorkout: args.showStartWorkout,
+            planVersionId: args.planVersionId,
           );
         },
       ),

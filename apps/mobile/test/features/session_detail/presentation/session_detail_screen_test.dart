@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:running_app/core/router/route_names.dart';
+import 'package:running_app/features/pre_run/presentation/run_flow_context.dart';
 import 'package:running_app/features/session_detail/presentation/screens/session_detail_screen.dart';
 import 'package:running_app/features/training_plan/domain/models/training_session.dart';
 import 'package:running_app/features/training_plan/domain/models/session_type.dart';
@@ -26,6 +29,23 @@ class _TestTrainingPlanNotifier extends TrainingPlanNotifier {
 
   @override
   Future<TrainingPlan> build() async => fixedPlan;
+}
+
+class _MutableTrainingPlanNotifier extends TrainingPlanNotifier {
+  _MutableTrainingPlanNotifier(this.initialPlan);
+
+  final TrainingPlan initialPlan;
+
+  @override
+  Future<TrainingPlan> build() async => initialPlan;
+
+  void replaceWith(TrainingPlan plan) {
+    state = AsyncData(plan);
+  }
+
+  void setUnresolved() {
+    state = const AsyncLoading();
+  }
 }
 
 void main() {
@@ -52,6 +72,26 @@ void main() {
         ],
         supportedLocales: const [Locale('en'), Locale('es')],
         home: SessionDetailScreen(session: session, showStartWorkout: false),
+      ),
+    );
+  }
+
+  Widget wrapWithRouter({
+    required GoRouter router,
+    required _MutableTrainingPlanNotifier notifier,
+  }) {
+    return ProviderScope(
+      overrides: [trainingPlanProvider.overrideWith(() => notifier)],
+      child: MaterialApp.router(
+        routerConfig: router,
+        locale: const Locale('en'),
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en'), Locale('es')],
       ),
     );
   }
@@ -504,4 +544,147 @@ void main() {
     expect(find.text(l10n.sessionDetailStartWorkout), findsNothing);
     expect(find.byIcon(Icons.more_horiz), findsNothing);
   });
+
+  testWidgets(
+    'starting from a stale session-detail route keeps its captured plan id',
+    (tester) async {
+      final session = buildPlannedRunSession(
+        id: 'stale-plan-session',
+        date: DateTime(2026, 4, 20, 7, 30),
+        status: SessionStatus.today,
+      );
+      final oldPlan = TrainingPlan(
+        id: 'plan-version-old',
+        raceType: TrainingPlanRaceType.halfMarathon,
+        totalWeeks: 12,
+        currentWeekNumber: 4,
+        sessions: [session],
+      );
+      final newPlan = TrainingPlan(
+        id: 'plan-version-new',
+        raceType: TrainingPlanRaceType.halfMarathon,
+        totalWeeks: 12,
+        currentWeekNumber: 4,
+        sessions: [session.copyWith(distanceKm: 12)],
+      );
+      final notifier = _MutableTrainingPlanNotifier(oldPlan);
+      PreRunArgs? receivedArgs;
+      final router = GoRouter(
+        initialLocation: RouteNames.today,
+        routes: [
+          GoRoute(
+            path: RouteNames.today,
+            builder: (_, _) => const Scaffold(body: SizedBox()),
+          ),
+          GoRoute(
+            path: RouteNames.sessionDetail,
+            builder: (context, state) {
+              final args = state.extra as SessionDetailArgs;
+              return SessionDetailScreen(
+                session: args.session,
+                showStartWorkout: args.showStartWorkout,
+                planVersionId: args.planVersionId,
+              );
+            },
+          ),
+          GoRoute(
+            path: RouteNames.preRun,
+            builder: (_, state) {
+              receivedArgs = state.extra as PreRunArgs;
+              return const Scaffold(body: SizedBox());
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        wrapWithRouter(router: router, notifier: notifier),
+      );
+      await tester.pumpAndSettle();
+      router.go(
+        RouteNames.sessionDetail,
+        extra: SessionDetailArgs(session: session, planVersionId: oldPlan.id),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      notifier.replaceWith(newPlan);
+      await tester.pump();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+      await tester.tap(find.text(l10n.sessionDetailStartWorkout));
+      await tester.pump();
+
+      expect(receivedArgs?.session.planVersionId, oldPlan.id);
+    },
+  );
+
+  testWidgets(
+    'starting from a route with captured provenance survives an unresolved plan',
+    (tester) async {
+      final session = buildPlannedRunSession(
+        id: 'unresolved-plan-session',
+        date: DateTime(2026, 4, 21, 7, 30),
+        status: SessionStatus.today,
+      );
+      final plan = TrainingPlan(
+        id: 'plan-version-captured',
+        raceType: TrainingPlanRaceType.halfMarathon,
+        totalWeeks: 12,
+        currentWeekNumber: 4,
+        sessions: [session],
+      );
+      final notifier = _MutableTrainingPlanNotifier(plan);
+      PreRunArgs? receivedArgs;
+      final router = GoRouter(
+        initialLocation: RouteNames.today,
+        routes: [
+          GoRoute(
+            path: RouteNames.today,
+            builder: (_, _) => const Scaffold(body: SizedBox()),
+          ),
+          GoRoute(
+            path: RouteNames.sessionDetail,
+            builder: (context, state) {
+              final args = state.extra as SessionDetailArgs;
+              return SessionDetailScreen(
+                session: args.session,
+                showStartWorkout: args.showStartWorkout,
+                planVersionId: args.planVersionId,
+              );
+            },
+          ),
+          GoRoute(
+            path: RouteNames.preRun,
+            builder: (_, state) {
+              receivedArgs = state.extra as PreRunArgs;
+              return const Scaffold(body: SizedBox());
+            },
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        wrapWithRouter(router: router, notifier: notifier),
+      );
+      await tester.pumpAndSettle();
+      router.go(
+        RouteNames.sessionDetail,
+        extra: SessionDetailArgs(session: session, planVersionId: plan.id),
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 350));
+
+      notifier.setUnresolved();
+      await tester.pump();
+
+      final context = tester.element(find.byType(SessionDetailScreen));
+      final l10n = AppLocalizations.of(context)!;
+      await tester.tap(find.text(l10n.sessionDetailStartWorkout));
+      await tester.pump();
+
+      expect(receivedArgs?.session.planVersionId, plan.id);
+    },
+  );
 }
