@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,8 +22,21 @@ typedef ChangeScheduleFunctionClient =
     Future<FunctionResponse> Function(String name, {Object? body});
 typedef ChangeScheduleInitialDataLoader =
     Future<ChangeScheduleInitialData> Function();
+typedef ChangeScheduleLifecycleLoader =
+    Future<ChangeScheduleLifecycleLoadResult> Function(String activePlanId);
 typedef ChangeScheduleCacheReconciler =
     Future<void> Function(ChangeScheduleAcceptedResponse acceptance);
+typedef ChangeScheduleUndoCacheReconciler =
+    Future<void> Function(ChangeScheduleUndoneResponse undone);
+
+const _changeScheduleProposalColumns =
+    'id,source_plan_version_id,status,proposed_availability,candidate_plan,'
+    'impact,effective_from,expires_at,accepted_plan_version_id,'
+    'scheduled_plan_version_id,prior_active_plan_version_id,'
+    'prior_active_availability_version_id,accepted_availability_version_id';
+const _changeScheduleActivationColumns =
+    'id,source_plan_version_id,queued_candidate_plan_version_id,'
+    'availability_version_id,effective_from,status,proposal_id';
 
 class ChangeScheduleInitialData {
   const ChangeScheduleInitialData({
@@ -46,6 +60,13 @@ enum ChangeScheduleFailureReason {
 
   const ChangeScheduleFailureReason(this.key);
   final String key;
+
+  bool get requiresAuthoritativeReload => switch (this) {
+    ChangeScheduleFailureReason.expired ||
+    ChangeScheduleFailureReason.stale ||
+    ChangeScheduleFailureReason.conflict => true,
+    _ => false,
+  };
 }
 
 enum ChangeScheduleAction {
@@ -108,6 +129,7 @@ class ChangeScheduleApplying extends ChangeScheduleState {
     required this.action,
     this.preview,
     this.scheduled,
+    this.acceptance,
   });
 
   final ChangeScheduleDraft draft;
@@ -115,6 +137,7 @@ class ChangeScheduleApplying extends ChangeScheduleState {
   final ChangeScheduleAction action;
   final ChangeSchedulePreviewResponse? preview;
   final ChangeScheduleScheduledResponse? scheduled;
+  final ChangeScheduleAcceptedResponse? acceptance;
 }
 
 class ChangeScheduleScheduled extends ChangeScheduleState {
@@ -191,6 +214,8 @@ class ChangeScheduleFailure extends ChangeScheduleState {
     required this.sourcePlanId,
     required this.reason,
     this.preview,
+    this.scheduled,
+    this.acceptance,
     this.action,
   });
 
@@ -198,6 +223,8 @@ class ChangeScheduleFailure extends ChangeScheduleState {
   final String? sourcePlanId;
   final ChangeScheduleFailureReason reason;
   final ChangeSchedulePreviewResponse? preview;
+  final ChangeScheduleScheduledResponse? scheduled;
+  final ChangeScheduleAcceptedResponse? acceptance;
   final ChangeScheduleAction? action;
 }
 
@@ -246,6 +273,76 @@ final changeScheduleInitialDataLoaderProvider =
       };
     });
 
+final changeScheduleLifecycleLoaderProvider =
+    Provider<ChangeScheduleLifecycleLoader>((ref) {
+      return (activePlanId) async {
+        if (!SupabaseConfig.isConfigured) {
+          return const ChangeScheduleLifecycleUnavailable();
+        }
+
+        final userId = ref.read(currentUserProvider)?.id;
+        if (userId == null || userId.trim().isEmpty) {
+          return const ChangeScheduleLifecycleUnavailable();
+        }
+
+        final client = ref.read(supabaseClientProvider);
+        try {
+          final pending = await client
+              .from('change_schedule_proposals')
+              .select(_changeScheduleProposalColumns)
+              .eq('user_id', userId)
+              .eq('status', ChangeScheduleLifecycleProposalStatus.pending.key)
+              .maybeSingle();
+          final scheduled = await client
+              .from('change_schedule_proposals')
+              .select(_changeScheduleProposalColumns)
+              .eq('user_id', userId)
+              .eq('status', ChangeScheduleLifecycleProposalStatus.scheduled.key)
+              .eq('source_plan_version_id', activePlanId)
+              .maybeSingle();
+          final accepted = await client
+              .from('change_schedule_proposals')
+              .select(_changeScheduleProposalColumns)
+              .eq('user_id', userId)
+              .eq('status', ChangeScheduleLifecycleProposalStatus.accepted.key)
+              .eq('accepted_plan_version_id', activePlanId)
+              .maybeSingle();
+          final activation = await client
+              .from('change_schedule_activations')
+              .select(_changeScheduleActivationColumns)
+              .eq('user_id', userId)
+              .eq('status', 'scheduled')
+              .eq('source_plan_version_id', activePlanId)
+              .maybeSingle();
+
+          return ChangeScheduleLifecycleAvailable(
+            ChangeScheduleLifecycleData(
+              pendingProposal: pending == null
+                  ? null
+                  : ChangeScheduleLifecycleProposal.fromDatabaseRow(pending),
+              scheduledProposal: scheduled == null
+                  ? null
+                  : ChangeScheduleLifecycleProposal.fromDatabaseRow(scheduled),
+              acceptedProposal: accepted == null
+                  ? null
+                  : ChangeScheduleLifecycleProposal.fromDatabaseRow(accepted),
+              scheduledActivation: activation == null
+                  ? null
+                  : ChangeScheduleLifecycleActivation.fromDatabaseRow(
+                      activation,
+                    ),
+            ),
+          );
+        } on TimeoutException {
+          return const ChangeScheduleLifecycleUnavailable();
+        } on SocketException {
+          return const ChangeScheduleLifecycleUnavailable();
+        } on HttpException {
+          return const ChangeScheduleLifecycleUnavailable();
+        }
+      };
+    });
+
 final changeScheduleCacheReconcilerProvider =
     Provider<ChangeScheduleCacheReconciler>((ref) {
       return (acceptance) async {
@@ -288,6 +385,52 @@ final changeScheduleCacheReconcilerProvider =
       };
     });
 
+final changeScheduleUndoCacheReconcilerProvider =
+    Provider<ChangeScheduleUndoCacheReconciler>((ref) {
+      return (_) async {
+        Object? failure;
+
+        try {
+          final activePlan = await ref
+              .read(planVersionRepositoryProvider)
+              .loadActivePlanAsync();
+          if (activePlan == null) {
+            throw const FormatException('Missing restored active plan.');
+          }
+        } catch (error) {
+          failure = error;
+        }
+
+        try {
+          final profile = await ref
+              .read(runnerProfileRepositoryProvider)
+              .loadProfileAsync();
+          if (profile == null) {
+            throw const FormatException('Missing restored runner profile.');
+          }
+        } catch (error) {
+          failure ??= error;
+        }
+
+        ref.invalidate(runnerProfileProvider);
+        ref.invalidate(trainingPlanProvider);
+        try {
+          await ref.read(runnerProfileProvider.future);
+        } catch (error) {
+          failure ??= error;
+        }
+        try {
+          await ref.read(trainingPlanProvider.future);
+        } catch (error) {
+          failure ??= error;
+        }
+
+        if (failure != null) {
+          throw failure;
+        }
+      };
+    });
+
 class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
   int _revision = 1;
   Future<void> _persistenceTail = Future<void>.value();
@@ -303,10 +446,22 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
     state = const ChangeScheduleLoading();
     try {
       final initial = await ref.read(changeScheduleInitialDataLoaderProvider)();
-      final stored = await ref.read(changeScheduleDraftStoreProvider).load();
       final now = ref.read(changeScheduleClockProvider)();
       final activePlan = initial.activePlan;
       final sourcePlanId = activePlan.id;
+      final lifecycle = await ref
+          .read(changeScheduleLifecycleLoaderProvider)(sourcePlanId);
+      final hydrated = _hydrateLifecycle(
+        lifecycle,
+        activePlanId: sourcePlanId,
+        now: now,
+      );
+      if (hydrated != null) {
+        if (ref.mounted) state = hydrated;
+        return;
+      }
+
+      final stored = await ref.read(changeScheduleDraftStoreProvider).load();
       final baseline = ChangeScheduleDraft.inferFromLegacyProfileAndActivePlan(
         profile: initial.profile,
         activePlan: activePlan,
@@ -322,7 +477,7 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         sourcePlanId: sourcePlanId,
         wasRebased: wasRebased,
       );
-    } catch (_) {
+    } on FormatException {
       if (ref.mounted) {
         state = const ChangeScheduleFailure(
           draft: null,
@@ -330,10 +485,81 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
           reason: ChangeScheduleFailureReason.parse,
         );
       }
+    } catch (_) {
+      if (ref.mounted) {
+        state = const ChangeScheduleFailure(
+          draft: null,
+          sourcePlanId: null,
+          reason: ChangeScheduleFailureReason.generic,
+        );
+      }
     }
   }
 
   Future<void> retryInitialization() => initialize();
+
+  /// Restores the last honest action state after a failed lifecycle request.
+  /// This avoids presenting a scheduled or accepted server lifecycle as a
+  /// generic editable review when the user should be able to retry Cancel or
+  /// Undo against the same proposal.
+  bool recoverFromFailure() {
+    final failure = state;
+    if (failure is! ChangeScheduleFailure) {
+      return false;
+    }
+
+    if (failure.reason.requiresAuthoritativeReload) {
+      unawaited(initialize());
+      return true;
+    }
+
+    if (failure.draft == null || failure.sourcePlanId == null) {
+      return false;
+    }
+
+    final draft = failure.draft!;
+    final sourcePlanId = failure.sourcePlanId!;
+    final preview = failure.preview;
+    final scheduled = failure.scheduled;
+    final acceptance = failure.acceptance;
+
+    if ((failure.action == ChangeScheduleAction.cancel ||
+            failure.action == ChangeScheduleAction.activate) &&
+        scheduled != null &&
+        preview != null) {
+      state = ChangeScheduleScheduled(
+        draft: draft,
+        sourcePlanId: sourcePlanId,
+        scheduled: scheduled,
+        preview: preview,
+      );
+      return true;
+    }
+
+    if (failure.action == ChangeScheduleAction.undo &&
+        acceptance != null &&
+        preview != null) {
+      state = ChangeScheduleSuccess(
+        draft: draft,
+        sourcePlanId: sourcePlanId,
+        acceptance: acceptance,
+        preview: preview,
+      );
+      return true;
+    }
+
+    if (preview != null) {
+      state = ChangeSchedulePreviewReady(
+        draft: draft,
+        sourcePlanId: sourcePlanId,
+        preview: preview,
+      );
+      return true;
+    }
+
+    state = ChangeScheduleEditing(draft: draft, sourcePlanId: sourcePlanId);
+    return true;
+  }
 
   void updateDraft(ChangeScheduleDraft draft) {
     final sourcePlanId = _sourcePlanId(state);
@@ -634,9 +860,14 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
   Future<bool> cancelScheduled() async {
     final draft = _draft(state);
     final sourcePlanId = _sourcePlanId(state);
+    final preview = _preview(state);
     final scheduled = _scheduled(state);
     final proposalId = scheduled?.proposalId;
-    if (draft == null || sourcePlanId == null || proposalId == null) {
+    if (draft == null ||
+        sourcePlanId == null ||
+        preview == null ||
+        scheduled == null ||
+        proposalId == null) {
       _setFailure(draft, sourcePlanId, ChangeScheduleFailureReason.parse);
       return false;
     }
@@ -645,6 +876,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       draft: draft,
       sourcePlanId: sourcePlanId,
       action: ChangeScheduleAction.cancel,
+      preview: preview,
+      scheduled: scheduled,
     );
 
     try {
@@ -660,6 +893,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
           draft,
           sourcePlanId,
           _mapResponseFailure(response),
+          preview: preview,
+          scheduled: scheduled,
           action: ChangeScheduleAction.cancel,
         );
         return false;
@@ -678,6 +913,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.timeout,
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.cancel,
       );
     } on FunctionException catch (error) {
@@ -685,6 +922,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         _mapFunctionException(error),
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.cancel,
       );
     } on FormatException {
@@ -692,6 +931,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.parse,
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.cancel,
       );
     } catch (_) {
@@ -699,6 +940,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.generic,
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.cancel,
       );
     }
@@ -709,9 +952,14 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
   Future<bool> activateDue() async {
     final draft = _draft(state);
     final sourcePlanId = _sourcePlanId(state);
+    final preview = _preview(state);
     final scheduled = _scheduled(state);
     final activationId = scheduled?.activationId;
-    if (draft == null || sourcePlanId == null || activationId == null) {
+    if (draft == null ||
+        sourcePlanId == null ||
+        preview == null ||
+        scheduled == null ||
+        activationId == null) {
       _setFailure(draft, sourcePlanId, ChangeScheduleFailureReason.parse);
       return false;
     }
@@ -720,6 +968,7 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       draft: draft,
       sourcePlanId: sourcePlanId,
       action: ChangeScheduleAction.activate,
+      preview: preview,
       scheduled: scheduled,
     );
 
@@ -736,6 +985,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
           draft,
           sourcePlanId,
           _mapResponseFailure(response),
+          preview: preview,
+          scheduled: scheduled,
           action: ChangeScheduleAction.activate,
         );
         return false;
@@ -766,7 +1017,7 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         sourcePlanId: sourcePlanId,
         activated: activated,
         scheduled: scheduled,
-        preview: _preview(state),
+        preview: preview,
       );
       return true;
     } on TimeoutException {
@@ -774,6 +1025,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.timeout,
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.activate,
       );
     } on FunctionException catch (error) {
@@ -781,6 +1034,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         _mapFunctionException(error),
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.activate,
       );
     } on FormatException {
@@ -788,6 +1043,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.parse,
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.activate,
       );
     } catch (_) {
@@ -795,6 +1052,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.generic,
+        preview: preview,
+        scheduled: scheduled,
         action: ChangeScheduleAction.activate,
       );
     }
@@ -803,10 +1062,26 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
   }
 
   Future<bool> undo() async {
-    final draft = _draft(state);
-    final sourcePlanId = _sourcePlanId(state);
-    final proposalId = _proposalId(state);
-    if (draft == null || sourcePlanId == null || proposalId == null) {
+    final success = state;
+    if (success is! ChangeScheduleSuccess) {
+      _setFailure(
+        _draft(success),
+        _sourcePlanId(success),
+        ChangeScheduleFailureReason.parse,
+      );
+      return false;
+    }
+
+    final draft = success.draft;
+    final sourcePlanId = success.sourcePlanId;
+    final preview = success.preview;
+    final acceptance = _acceptance(success);
+    if (acceptance == null) {
+      _setFailure(draft, sourcePlanId, ChangeScheduleFailureReason.parse);
+      return false;
+    }
+    final proposalId = _proposalId(success);
+    if (proposalId == null) {
       _setFailure(draft, sourcePlanId, ChangeScheduleFailureReason.parse);
       return false;
     }
@@ -815,6 +1090,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       draft: draft,
       sourcePlanId: sourcePlanId,
       action: ChangeScheduleAction.undo,
+      preview: preview,
+      acceptance: acceptance,
     );
 
     try {
@@ -830,6 +1107,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
           draft,
           sourcePlanId,
           _mapResponseFailure(response),
+          preview: preview,
+          acceptance: acceptance,
           action: ChangeScheduleAction.undo,
         );
         return false;
@@ -837,6 +1116,10 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
 
       final data = _mapFromDynamic(response.data);
       final undone = ChangeScheduleUndoneResponse.fromJson(data);
+      if (undone.proposalId != proposalId) {
+        throw const FormatException('Undo response proposal mismatch.');
+      }
+      await _cacheUndone(undone);
       state = ChangeScheduleUndone(
         draft: draft,
         sourcePlanId: sourcePlanId,
@@ -848,6 +1131,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.timeout,
+        preview: preview,
+        acceptance: acceptance,
         action: ChangeScheduleAction.undo,
       );
     } on FunctionException catch (error) {
@@ -855,6 +1140,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         _mapFunctionException(error),
+        preview: preview,
+        acceptance: acceptance,
         action: ChangeScheduleAction.undo,
       );
     } on FormatException {
@@ -862,6 +1149,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.parse,
+        preview: preview,
+        acceptance: acceptance,
         action: ChangeScheduleAction.undo,
       );
     } catch (_) {
@@ -869,6 +1158,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         ChangeScheduleFailureReason.generic,
+        preview: preview,
+        acceptance: acceptance,
         action: ChangeScheduleAction.undo,
       );
     }
@@ -878,6 +1169,10 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
 
   Future<void> _cacheAccepted(ChangeScheduleAcceptedResponse acceptance) async {
     await ref.read(changeScheduleCacheReconcilerProvider)(acceptance);
+  }
+
+  Future<void> _cacheUndone(ChangeScheduleUndoneResponse undone) async {
+    await ref.read(changeScheduleUndoCacheReconcilerProvider)(undone);
   }
 
   Future<void> _savePlanVersion({
@@ -940,6 +1235,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
     String? sourcePlanId,
     ChangeScheduleFailureReason reason, {
     ChangeSchedulePreviewResponse? preview,
+    ChangeScheduleScheduledResponse? scheduled,
+    ChangeScheduleAcceptedResponse? acceptance,
     ChangeScheduleAction? action,
   }) {
     if (!ref.mounted) return;
@@ -948,6 +1245,8 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       sourcePlanId: sourcePlanId,
       reason: reason,
       preview: preview,
+      scheduled: scheduled,
+      acceptance: acceptance,
       action: action,
     );
   }
@@ -957,6 +1256,74 @@ final changeScheduleProvider =
     NotifierProvider.autoDispose<ChangeScheduleNotifier, ChangeScheduleState>(
       ChangeScheduleNotifier.new,
     );
+
+ChangeScheduleState? _hydrateLifecycle(
+  ChangeScheduleLifecycleLoadResult result, {
+  required String activePlanId,
+  required DateTime now,
+}) {
+  if (result is ChangeScheduleLifecycleUnavailable) return null;
+  final data = (result as ChangeScheduleLifecycleAvailable).data;
+
+  final accepted = data.acceptedProposal;
+  if (accepted != null &&
+      accepted.status == ChangeScheduleLifecycleProposalStatus.accepted &&
+      accepted.acceptedPlanVersionId == activePlanId) {
+    final acceptedPlan = TrainingPlan.fromJson(accepted.candidatePlan);
+    if (acceptedPlan == null) {
+      throw const FormatException('Invalid accepted lifecycle plan.');
+    }
+    final preview = accepted.toPreview(asOfDate: accepted.effectiveFrom);
+    return ChangeScheduleSuccess(
+      draft: accepted.toDraft(now: now, requireCurrentOrNextWeek: false),
+      sourcePlanId: accepted.sourcePlanVersionId,
+      acceptance: ChangeScheduleAcceptedResponse(
+        versionId: accepted.acceptedPlanVersionId!,
+        plan: acceptedPlan,
+        priorActivePlanVersionId: accepted.priorActivePlanVersionId,
+        priorActiveAvailabilityVersionId:
+            accepted.priorActiveAvailabilityVersionId,
+        acceptedAvailabilityVersionId: accepted.acceptedAvailabilityVersionId,
+      ),
+      preview: preview,
+    );
+  }
+
+  final scheduled = data.scheduledProposal;
+  final activation = data.scheduledActivation;
+  final hasStaleScheduledLifecycle =
+      (scheduled != null && scheduled.sourcePlanVersionId != activePlanId) ||
+      (activation != null && activation.sourcePlanVersionId != activePlanId);
+  if (hasStaleScheduledLifecycle) {
+    throw const FormatException('Scheduled lifecycle source plan mismatch.');
+  }
+  if (scheduled != null || activation != null) {
+    if (scheduled == null || activation == null) {
+      throw const FormatException('Incomplete scheduled lifecycle context.');
+    }
+    final scheduledResponse = activation.toScheduledResponse(scheduled);
+    return ChangeScheduleScheduled(
+      draft: scheduled.toDraft(now: now, requireCurrentOrNextWeek: false),
+      sourcePlanId: scheduled.sourcePlanVersionId,
+      scheduled: scheduledResponse,
+      preview: scheduled.toPreview(asOfDate: scheduled.effectiveFrom),
+    );
+  }
+
+  final pending = data.pendingProposal;
+  if (pending == null || pending.sourcePlanVersionId != activePlanId) {
+    return null;
+  }
+  if (!pending.expiresAt.isAfter(now)) return null;
+  if (pending.status != ChangeScheduleLifecycleProposalStatus.pending) {
+    throw const FormatException('Invalid pending lifecycle context.');
+  }
+  return ChangeSchedulePreviewReady(
+    draft: pending.toDraft(now: now, requireCurrentOrNextWeek: true),
+    sourcePlanId: activePlanId,
+    preview: pending.toPreview(asOfDate: pending.effectiveFrom),
+  );
+}
 
 ChangeScheduleDraft? _draft(ChangeScheduleState state) => switch (state) {
   ChangeScheduleLoading() => null,
@@ -992,6 +1359,7 @@ ChangeSchedulePreviewResponse? _preview(ChangeScheduleState state) =>
       ChangeScheduleApplying(:final preview) => preview,
       ChangeScheduleScheduled(:final preview) => preview,
       ChangeScheduleActivated(:final preview) => preview,
+      ChangeScheduleSuccess(:final preview) => preview,
       ChangeScheduleFailure(:final preview) => preview,
       _ => null,
     };
@@ -1000,6 +1368,15 @@ ChangeScheduleScheduledResponse? _scheduled(ChangeScheduleState state) =>
     switch (state) {
       ChangeScheduleScheduled(:final scheduled) => scheduled,
       ChangeScheduleApplying(:final scheduled) => scheduled,
+      ChangeScheduleFailure(:final scheduled) => scheduled,
+      _ => null,
+    };
+
+ChangeScheduleAcceptedResponse? _acceptance(ChangeScheduleState state) =>
+    switch (state) {
+      ChangeScheduleSuccess(:final acceptance) => acceptance,
+      ChangeScheduleApplying(:final acceptance) => acceptance,
+      ChangeScheduleFailure(:final acceptance) => acceptance,
       _ => null,
     };
 
@@ -1007,6 +1384,7 @@ String? _proposalId(ChangeScheduleState state) => switch (state) {
   ChangeSchedulePreviewReady(:final preview) => preview.proposalId,
   ChangeScheduleScheduled(:final preview) => preview.proposalId,
   ChangeScheduleActivated(:final scheduled) => scheduled?.proposalId,
+  ChangeScheduleSuccess(:final preview) => preview.proposalId,
   ChangeScheduleFailure(:final preview) => preview?.proposalId,
   ChangeScheduleApplying(:final preview) => preview?.proposalId,
   _ => null,

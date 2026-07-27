@@ -648,33 +648,417 @@ void main() {
     },
   );
 
-  test('undo uses proposal id and transitions to undone', () async {
+  test(
+    'undo from success uses the actual proposal id and waits for cache reconciliation',
+    () async {
+      final calls = <Map<String, dynamic>>[];
+      final reconciliation = Completer<void>();
+      String? reconciledProposalId;
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        client: (_, {body}) async {
+          final payload = body! as Map<String, dynamic>;
+          calls.add(payload);
+          return switch (payload['action']) {
+            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'accept_now' => FunctionResponse(
+              data: _acceptedResponse(),
+              status: 200,
+            ),
+            'undo' => FunctionResponse(data: _undoneResponse(), status: 200),
+            _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+          };
+        },
+        undoCacheReconciler: (undone) async {
+          reconciledProposalId = undone.proposalId;
+          await reconciliation.future;
+        },
+      );
+      addTearDown(container.dispose);
+
+      await _editingState(container);
+      expect(
+        await container.read(changeScheduleProvider.notifier).preview(),
+        isTrue,
+      );
+      expect(
+        await container.read(changeScheduleProvider.notifier).acceptNow(),
+        isTrue,
+      );
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleSuccess>());
+
+      final undo = container.read(changeScheduleProvider.notifier).undo();
+      await _waitFor(() => calls.any((call) => call['action'] == 'undo'));
+      expect(calls.last, {'action': 'undo', 'proposalId': 'proposal-preview-1'});
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleApplying>());
+      expect(reconciledProposalId, 'proposal-preview-1');
+      expect(
+        container.read(changeScheduleProvider),
+        isNot(isA<ChangeScheduleUndone>()),
+      );
+
+      reconciliation.complete();
+      expect(await undo, isTrue);
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleUndone>());
+    },
+  );
+
+  test('initialization restores scheduled state after provider disposal', () async {
+    Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
+        Future.value(ChangeScheduleLifecycleAvailable(
+      ChangeScheduleLifecycleData(
+        scheduledProposal: _lifecycleProposal(
+          status: ChangeScheduleLifecycleProposalStatus.scheduled,
+          id: 'proposal-scheduled-1',
+          sourcePlanId: 'active-plan',
+          effectiveFrom: '2026-07-20',
+          scheduledPlanVersionId: 'plan-scheduled-1',
+        ),
+        scheduledActivation: _lifecycleActivation(
+          proposalId: 'proposal-scheduled-1',
+          sourcePlanId: 'active-plan',
+          effectiveFrom: '2026-07-20',
+          queuedPlanVersionId: 'plan-scheduled-1',
+        ),
+      ),
+        ));
+
+    final first = _container(
+      now: now,
+      preferences: preferences,
+      lifecycleLoader: lifecycle,
+    );
+    await _waitFor(
+      () => first.read(changeScheduleProvider) is ChangeScheduleScheduled,
+    );
+    first.dispose();
+
+    final restarted = _container(
+      now: now,
+      preferences: preferences,
+      lifecycleLoader: lifecycle,
+    );
+    addTearDown(restarted.dispose);
+    await _waitFor(
+      () => restarted.read(changeScheduleProvider) is ChangeScheduleScheduled,
+    );
+
+    final state =
+        restarted.read(changeScheduleProvider) as ChangeScheduleScheduled;
+    expect(state.scheduled.proposalId, 'proposal-scheduled-1');
+    expect(state.scheduled.activationId, 'activation-1');
+  });
+
+  test('initialization restores an accepted undoable state after restart', () async {
+    final calls = <Map<String, dynamic>>[];
+    Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
+        Future.value(ChangeScheduleLifecycleAvailable(
+      ChangeScheduleLifecycleData(
+        acceptedProposal: _lifecycleProposal(
+          status: ChangeScheduleLifecycleProposalStatus.accepted,
+          id: 'proposal-accepted-1',
+          sourcePlanId: 'plan-before-accept',
+          acceptedPlanVersionId: 'plan-accepted-1',
+        ),
+      ),
+        ));
+
+    final first = _container(
+      now: now,
+      preferences: preferences,
+      loader: () async => _initialData(activePlanId: 'plan-accepted-1'),
+      lifecycleLoader: lifecycle,
+    );
+    await _waitFor(
+      () => first.read(changeScheduleProvider) is ChangeScheduleSuccess,
+    );
+    first.dispose();
+
+    final restarted = _container(
+      now: now,
+      preferences: preferences,
+      loader: () async => _initialData(activePlanId: 'plan-accepted-1'),
+      lifecycleLoader: lifecycle,
+      client: (_, {body}) async {
+        final payload = body! as Map<String, dynamic>;
+        calls.add(payload);
+        return FunctionResponse(
+          data: _undoneResponse(id: 'proposal-accepted-1'),
+          status: 200,
+        );
+      },
+    );
+    addTearDown(restarted.dispose);
+    await _waitFor(
+      () => restarted.read(changeScheduleProvider) is ChangeScheduleSuccess,
+    );
+
+    expect(await restarted.read(changeScheduleProvider.notifier).undo(), isTrue);
+    expect(calls.single, {'action': 'undo', 'proposalId': 'proposal-accepted-1'});
+    expect(restarted.read(changeScheduleProvider), isA<ChangeScheduleUndone>());
+  });
+
+  test('cancel and undo failures restore their truthful lifecycle states', () async {
     final container = _container(
       now: now,
       preferences: preferences,
       client: (_, {body}) async {
         final payload = body! as Map<String, dynamic>;
-        if (payload['action'] == 'preview') {
-          return FunctionResponse(data: _previewResponse(), status: 200);
-        }
-        if (payload['action'] == 'undo') {
-          return FunctionResponse(data: _undoneResponse(), status: 200);
-        }
-        return FunctionResponse(data: {'error': 'invalid'}, status: 400);
+        return switch (payload['action']) {
+          'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+          'schedule' => FunctionResponse(data: _scheduledResponse(), status: 200),
+          'cancel_scheduled' => FunctionResponse(
+            data: {'error': 'timeout'},
+            status: 504,
+          ),
+          _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+        };
       },
     );
     addTearDown(container.dispose);
+    final notifier = container.read(changeScheduleProvider.notifier);
 
     await _editingState(container);
-    expect(
-      await container.read(changeScheduleProvider.notifier).preview(),
-      isTrue,
+    expect(await notifier.preview(), isTrue);
+    expect(await notifier.schedule(), isTrue);
+    expect(await notifier.cancelScheduled(), isFalse);
+    final cancelledFailure =
+        container.read(changeScheduleProvider) as ChangeScheduleFailure;
+    expect(cancelledFailure.scheduled, isNotNull);
+    expect(cancelledFailure.preview, isNotNull);
+    expect(notifier.recoverFromFailure(), isTrue);
+    expect(container.read(changeScheduleProvider), isA<ChangeScheduleScheduled>());
+
+    final acceptedContainer = _container(
+      now: now,
+      preferences: preferences,
+      client: (_, {body}) async {
+        final payload = body! as Map<String, dynamic>;
+        return switch (payload['action']) {
+          'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+          'accept_now' => FunctionResponse(
+            data: _acceptedResponse(),
+            status: 200,
+          ),
+          'undo' => FunctionResponse(data: {'error': 'timeout'}, status: 504),
+          _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+        };
+      },
     );
-    final undoResult = await container
-        .read(changeScheduleProvider.notifier)
-        .undo();
-    expect(undoResult, isTrue);
-    expect(container.read(changeScheduleProvider), isA<ChangeScheduleUndone>());
+    addTearDown(acceptedContainer.dispose);
+    final acceptedNotifier = acceptedContainer.read(
+      changeScheduleProvider.notifier,
+    );
+    await _editingState(acceptedContainer);
+    expect(await acceptedNotifier.preview(), isTrue);
+    expect(await acceptedNotifier.acceptNow(), isTrue);
+    expect(await acceptedNotifier.undo(), isFalse);
+    final undoFailure =
+        acceptedContainer.read(changeScheduleProvider) as ChangeScheduleFailure;
+    expect(undoFailure.acceptance, isNotNull);
+    expect(undoFailure.preview, isNotNull);
+    expect(acceptedNotifier.recoverFromFailure(), isTrue);
+    expect(acceptedContainer.read(changeScheduleProvider), isA<ChangeScheduleSuccess>());
+  });
+
+  test(
+    'terminal lifecycle failures reload authoritatively instead of restoring cached state',
+    () async {
+      final terminalFailures = <({ChangeScheduleFailureReason reason, Object error, int status})>[
+        (
+          reason: ChangeScheduleFailureReason.expired,
+          error: 'proposal_expired',
+          status: 409,
+        ),
+        (
+          reason: ChangeScheduleFailureReason.stale,
+          error: 'activation_not_found',
+          status: 404,
+        ),
+        (
+          reason: ChangeScheduleFailureReason.conflict,
+          error: 'proposal_plan_version_conflict',
+          status: 409,
+        ),
+      ];
+
+      for (final terminal in terminalFailures) {
+        var lifecycleLoads = 0;
+        final container = _container(
+          now: now,
+          preferences: preferences,
+          lifecycleLoader: (_) async {
+            lifecycleLoads += 1;
+            return const ChangeScheduleLifecycleUnavailable();
+          },
+          client: (_, {body}) async {
+            final payload = body! as Map<String, dynamic>;
+            return switch (payload['action']) {
+              'preview' => FunctionResponse(
+                data: _previewResponse(),
+                status: 200,
+              ),
+              'accept_now' => FunctionResponse(
+                data: {'error': terminal.error},
+                status: terminal.status,
+              ),
+              _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+            };
+          },
+        );
+        addTearDown(container.dispose);
+        final notifier = container.read(changeScheduleProvider.notifier);
+
+        await _editingState(container);
+        expect(await notifier.preview(), isTrue);
+        expect(await notifier.acceptNow(), isFalse);
+        final failure = container.read(changeScheduleProvider);
+        expect(failure, isA<ChangeScheduleFailure>());
+        expect(
+          (failure as ChangeScheduleFailure).reason,
+          terminal.reason,
+        );
+        expect(failure.preview, isNotNull);
+
+        expect(notifier.recoverFromFailure(), isTrue);
+        expect(container.read(changeScheduleProvider), isA<ChangeScheduleLoading>());
+        await _waitFor(
+          () => container.read(changeScheduleProvider) is ChangeScheduleEditing,
+        );
+        expect(lifecycleLoads, 2);
+        expect(container.read(changeScheduleProvider), isNot(isA<ChangeSchedulePreviewReady>()));
+      }
+    },
+  );
+
+  test('timeout lifecycle failures still recover the cached scheduled state', () async {
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      client: (_, {body}) async {
+        final payload = body! as Map<String, dynamic>;
+        return switch (payload['action']) {
+          'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+          'schedule' => FunctionResponse(data: _scheduledResponse(), status: 200),
+          'cancel_scheduled' => FunctionResponse(
+            data: {'error': 'timeout'},
+            status: 504,
+          ),
+          _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+        };
+      },
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(changeScheduleProvider.notifier);
+
+    await _editingState(container);
+    expect(await notifier.preview(), isTrue);
+    expect(await notifier.schedule(), isTrue);
+    expect(await notifier.cancelScheduled(), isFalse);
+    expect(
+      (container.read(changeScheduleProvider) as ChangeScheduleFailure).reason,
+      ChangeScheduleFailureReason.timeout,
+    );
+
+    expect(notifier.recoverFromFailure(), isTrue);
+    expect(container.read(changeScheduleProvider), isA<ChangeScheduleScheduled>());
+  });
+
+  test('initialization rejects scheduled lifecycle rows from another active plan', () async {
+    final scheduled = _lifecycleProposal(
+      status: ChangeScheduleLifecycleProposalStatus.scheduled,
+      id: 'proposal-scheduled-1',
+      sourcePlanId: 'active-plan',
+      effectiveFrom: '2026-07-20',
+      scheduledPlanVersionId: 'plan-scheduled-1',
+    );
+
+    final staleLifecycles = <ChangeScheduleLifecycleData>[
+      ChangeScheduleLifecycleData(
+        scheduledProposal: _lifecycleProposal(
+          status: ChangeScheduleLifecycleProposalStatus.scheduled,
+          id: 'proposal-stale-source',
+          sourcePlanId: 'previous-plan',
+          effectiveFrom: '2026-07-20',
+          scheduledPlanVersionId: 'plan-scheduled-1',
+        ),
+        scheduledActivation: _lifecycleActivation(
+          proposalId: 'proposal-stale-source',
+          sourcePlanId: 'active-plan',
+          effectiveFrom: '2026-07-20',
+          queuedPlanVersionId: 'plan-scheduled-1',
+        ),
+      ),
+      ChangeScheduleLifecycleData(
+        scheduledProposal: scheduled,
+        scheduledActivation: _lifecycleActivation(
+          proposalId: 'proposal-scheduled-1',
+          sourcePlanId: 'previous-plan',
+          effectiveFrom: '2026-07-20',
+          queuedPlanVersionId: 'plan-scheduled-1',
+        ),
+      ),
+    ];
+
+    for (final lifecycle in staleLifecycles) {
+      final container = _container(
+        now: now,
+        preferences: preferences,
+        lifecycleLoader: (_) async => ChangeScheduleLifecycleAvailable(lifecycle),
+      );
+      addTearDown(container.dispose);
+      await _waitFor(
+        () => container.read(changeScheduleProvider) is ChangeScheduleFailure,
+      );
+      expect(
+        (container.read(changeScheduleProvider) as ChangeScheduleFailure).reason,
+        ChangeScheduleFailureReason.parse,
+      );
+    }
+  });
+
+  test('expired or malformed lifecycle previews are not restored as valid', () async {
+    final expired = _container(
+      now: now,
+      preferences: preferences,
+      lifecycleLoader: (_) async => ChangeScheduleLifecycleAvailable(
+        ChangeScheduleLifecycleData(
+          pendingProposal: _lifecycleProposal(
+            status: ChangeScheduleLifecycleProposalStatus.pending,
+            id: 'proposal-expired',
+            sourcePlanId: 'active-plan',
+            expiresAt: '2026-07-13T16:44:59.000Z',
+          ),
+        ),
+      ),
+    );
+    addTearDown(expired.dispose);
+    expect(await _editingState(expired), isA<ChangeScheduleEditing>());
+
+    final malformed = _container(
+      now: now,
+      preferences: preferences,
+      lifecycleLoader: (_) async {
+        ChangeScheduleLifecycleProposal.fromDatabaseRow({
+          ..._lifecycleProposalRow(
+            status: ChangeScheduleLifecycleProposalStatus.pending,
+            id: 'proposal-malformed',
+            sourcePlanId: 'active-plan',
+          ),
+          'candidate_plan': const <String, dynamic>{},
+        });
+        throw StateError('Malformed lifecycle row unexpectedly parsed.');
+      },
+    );
+    addTearDown(malformed.dispose);
+    await _waitFor(
+      () => malformed.read(changeScheduleProvider) is ChangeScheduleFailure,
+    );
+    expect(
+      (malformed.read(changeScheduleProvider) as ChangeScheduleFailure).reason,
+      ChangeScheduleFailureReason.parse,
+    );
   });
 }
 
@@ -683,8 +1067,10 @@ ProviderContainer _container({
   required SharedPreferences preferences,
   ChangeScheduleFunctionClient? client,
   ChangeScheduleInitialDataLoader? loader,
+  ChangeScheduleLifecycleLoader? lifecycleLoader,
   ChangeScheduleDraftStore? store,
   ChangeScheduleCacheReconciler? cacheReconciler,
+  ChangeScheduleUndoCacheReconciler? undoCacheReconciler,
 }) {
   final container = ProviderContainer.test(
     overrides: [
@@ -693,6 +1079,9 @@ ProviderContainer _container({
       changeScheduleInitialDataLoaderProvider.overrideWithValue(
         loader ?? () async => _initialData(),
       ),
+      changeScheduleLifecycleLoaderProvider.overrideWithValue(
+        lifecycleLoader ?? (_) async => const ChangeScheduleLifecycleUnavailable(),
+      ),
       changeScheduleFunctionClientProvider.overrideWithValue(
         client ??
             (_, {body}) async =>
@@ -700,6 +1089,9 @@ ProviderContainer _container({
       ),
       changeScheduleCacheReconcilerProvider.overrideWithValue(
         cacheReconciler ?? ((_) async {}),
+      ),
+      changeScheduleUndoCacheReconcilerProvider.overrideWithValue(
+        undoCacheReconciler ?? ((_) async {}),
       ),
       if (store != null)
         changeScheduleDraftStoreProvider.overrideWithValue(store),
@@ -878,6 +1270,71 @@ Map<String, dynamic> _planJson({required String id}) => {
 TrainingPlan _trainingPlan(String id) =>
     TrainingPlan.fromJson(_planJson(id: id))!;
 
+ChangeScheduleLifecycleProposal _lifecycleProposal({
+  required ChangeScheduleLifecycleProposalStatus status,
+  required String id,
+  required String sourcePlanId,
+  String effectiveFrom = '2026-07-13',
+  String expiresAt = '2099-12-31T23:59:59.000Z',
+  String? acceptedPlanVersionId,
+  String? scheduledPlanVersionId,
+}) => ChangeScheduleLifecycleProposal.fromDatabaseRow(
+  _lifecycleProposalRow(
+    status: status,
+    id: id,
+    sourcePlanId: sourcePlanId,
+    effectiveFrom: effectiveFrom,
+    expiresAt: expiresAt,
+    acceptedPlanVersionId: acceptedPlanVersionId,
+    scheduledPlanVersionId: scheduledPlanVersionId,
+  ),
+);
+
+Map<String, dynamic> _lifecycleProposalRow({
+  required ChangeScheduleLifecycleProposalStatus status,
+  required String id,
+  required String sourcePlanId,
+  String effectiveFrom = '2026-07-13',
+  String expiresAt = '2099-12-31T23:59:59.000Z',
+  String? acceptedPlanVersionId,
+  String? scheduledPlanVersionId,
+}) => {
+  'id': id,
+  'source_plan_version_id': sourcePlanId,
+  'status': status.key,
+  'proposed_availability': _availability().toJson(),
+  'candidate_plan': _planJson(
+    id: acceptedPlanVersionId ?? scheduledPlanVersionId ?? sourcePlanId,
+  ),
+  'impact': {
+    'impact': <dynamic>[],
+    'warnings': <dynamic>[],
+    'goalImpact': <String, dynamic>{},
+  },
+  'effective_from': effectiveFrom,
+  'expires_at': expiresAt,
+  'accepted_plan_version_id': acceptedPlanVersionId,
+  'scheduled_plan_version_id': scheduledPlanVersionId,
+  'prior_active_plan_version_id': 'plan-previous',
+  'prior_active_availability_version_id': 'availability-previous',
+  'accepted_availability_version_id': 'availability-accepted',
+};
+
+ChangeScheduleLifecycleActivation _lifecycleActivation({
+  required String proposalId,
+  required String sourcePlanId,
+  required String effectiveFrom,
+  required String queuedPlanVersionId,
+}) => ChangeScheduleLifecycleActivation.fromDatabaseRow({
+  'id': 'activation-1',
+  'source_plan_version_id': sourcePlanId,
+  'queued_candidate_plan_version_id': queuedPlanVersionId,
+  'availability_version_id': 'availability-scheduled-1',
+  'effective_from': effectiveFrom,
+  'status': 'scheduled',
+  'proposal_id': proposalId,
+});
+
 Map<String, dynamic> _previewResponse() => {
   'proposalId': 'proposal-preview-1',
   'sourcePlanVersionId': 'active-plan',
@@ -934,8 +1391,8 @@ Map<String, dynamic> _activatedResponse() => {
   'plan': _planJson(id: 'plan-accepted-2'),
 };
 
-Map<String, dynamic> _undoneResponse() => {
-  'proposalId': 'proposal-preview-1',
+Map<String, dynamic> _undoneResponse({String id = 'proposal-preview-1'}) => {
+  'proposalId': id,
   'priorPlanVersionId': 'plan-previous',
   'priorAvailabilityVersionId': 'availability-previous',
   'restoredPlanVersionId': 'plan-restored',

@@ -1,10 +1,10 @@
 import 'dart:convert';
 
-import '../../training_plan/domain/models/training_plan.dart';
-import '../../profile/domain/models/runner_profile.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../profile/domain/models/runner_profile.dart';
+import '../../training_plan/domain/models/training_plan.dart';
 enum ChangeScheduleSameDayPreference {
   separateSessions('separate_sessions'),
   avoidSameDay('avoid_same_day');
@@ -709,6 +709,284 @@ class ChangeScheduleDraftStore {
   }
 }
 
+/// Read-only lifecycle data owned by the server-side proposal and activation
+/// tables. The mobile app uses this only to restore an already-authorized
+/// lifecycle state after its auto-disposed provider is rebuilt.
+class ChangeScheduleLifecycleData {
+  const ChangeScheduleLifecycleData({
+    this.pendingProposal,
+    this.scheduledProposal,
+    this.acceptedProposal,
+    this.scheduledActivation,
+  });
+
+  final ChangeScheduleLifecycleProposal? pendingProposal;
+  final ChangeScheduleLifecycleProposal? scheduledProposal;
+  final ChangeScheduleLifecycleProposal? acceptedProposal;
+  final ChangeScheduleLifecycleActivation? scheduledActivation;
+}
+
+sealed class ChangeScheduleLifecycleLoadResult {
+  const ChangeScheduleLifecycleLoadResult();
+}
+
+class ChangeScheduleLifecycleAvailable
+    extends ChangeScheduleLifecycleLoadResult {
+  const ChangeScheduleLifecycleAvailable(this.data);
+
+  final ChangeScheduleLifecycleData data;
+}
+
+/// The server lifecycle could not be reached safely (for example, no
+/// configured/authenticated client or a transport outage). Callers may fall
+/// back to the local editable draft, but must never use this for malformed
+/// reachable rows.
+class ChangeScheduleLifecycleUnavailable
+    extends ChangeScheduleLifecycleLoadResult {
+  const ChangeScheduleLifecycleUnavailable();
+}
+
+enum ChangeScheduleLifecycleProposalStatus {
+  pending('pending'),
+  scheduled('scheduled'),
+  accepted('accepted');
+
+  const ChangeScheduleLifecycleProposalStatus(this.key);
+  final String key;
+
+  static ChangeScheduleLifecycleProposalStatus parse(Object? value) {
+    for (final status in values) {
+      if (status.key == value) return status;
+    }
+    throw const FormatException('Invalid change schedule lifecycle status.');
+  }
+}
+
+class ChangeScheduleLifecycleProposal {
+  const ChangeScheduleLifecycleProposal({
+    required this.id,
+    required this.sourcePlanVersionId,
+    required this.status,
+    required this.proposedAvailability,
+    required this.candidatePlan,
+    required this.impacts,
+    required this.warnings,
+    required this.goalImpact,
+    required this.effectiveFrom,
+    required this.expiresAt,
+    this.acceptedPlanVersionId,
+    this.scheduledPlanVersionId,
+    this.priorActivePlanVersionId,
+    this.priorActiveAvailabilityVersionId,
+    this.acceptedAvailabilityVersionId,
+  });
+
+  final String id;
+  final String sourcePlanVersionId;
+  final ChangeScheduleLifecycleProposalStatus status;
+  final ChangeScheduleAvailability proposedAvailability;
+  final Map<String, dynamic> candidatePlan;
+  final List<dynamic> impacts;
+  final List<String> warnings;
+  final Map<String, dynamic> goalImpact;
+  final DateTime effectiveFrom;
+  final DateTime expiresAt;
+  final String? acceptedPlanVersionId;
+  final String? scheduledPlanVersionId;
+  final String? priorActivePlanVersionId;
+  final String? priorActiveAvailabilityVersionId;
+  final String? acceptedAvailabilityVersionId;
+
+  static ChangeScheduleLifecycleProposal fromDatabaseRow(Object? raw) {
+    final row = _strictMap(raw);
+    final status = ChangeScheduleLifecycleProposalStatus.parse(row['status']);
+    final candidatePlan = _requiredMap(row['candidate_plan'], 'candidate_plan');
+    if (TrainingPlan.fromJson(candidatePlan) == null) {
+      throw const FormatException('Invalid lifecycle candidate plan.');
+    }
+
+    final impact = _requiredMap(row['impact'], 'impact');
+    final rawImpacts = impact['impact'];
+    if (rawImpacts is! List) {
+      throw const FormatException('Invalid lifecycle impact list.');
+    }
+    final rawWarnings = impact['warnings'];
+    if (rawWarnings is! List) {
+      throw const FormatException('Invalid lifecycle warning list.');
+    }
+    final warnings = rawWarnings
+        .map((warning) => _requiredString(warning, 'impact.warning'))
+        .toList(growable: false);
+    final goalImpact = _requiredMap(impact['goalImpact'], 'impact.goalImpact');
+
+    final proposal = ChangeScheduleLifecycleProposal(
+      id: _requiredString(row['id'], 'id'),
+      sourcePlanVersionId: _requiredString(
+        row['source_plan_version_id'],
+        'source_plan_version_id',
+      ),
+      status: status,
+      proposedAvailability: ChangeScheduleAvailability.fromJson(
+        row['proposed_availability'],
+      ),
+      candidatePlan: candidatePlan,
+      impacts: List<dynamic>.from(rawImpacts),
+      warnings: warnings,
+      goalImpact: goalImpact,
+      effectiveFrom: _requiredDateOnly(
+        row['effective_from'],
+        'effective_from',
+      ),
+      expiresAt: _requiredDateTime(row['expires_at'], 'expires_at'),
+      acceptedPlanVersionId: _optionalNullableString(
+        row['accepted_plan_version_id'],
+      ),
+      scheduledPlanVersionId: _optionalNullableString(
+        row['scheduled_plan_version_id'],
+      ),
+      priorActivePlanVersionId: _optionalNullableString(
+        row['prior_active_plan_version_id'],
+      ),
+      priorActiveAvailabilityVersionId: _optionalNullableString(
+        row['prior_active_availability_version_id'],
+      ),
+      acceptedAvailabilityVersionId: _optionalNullableString(
+        row['accepted_availability_version_id'],
+      ),
+    );
+
+    switch (proposal.status) {
+      case ChangeScheduleLifecycleProposalStatus.pending:
+        if (proposal.acceptedPlanVersionId != null ||
+            proposal.scheduledPlanVersionId != null) {
+          throw const FormatException('Invalid pending lifecycle lineage.');
+        }
+      case ChangeScheduleLifecycleProposalStatus.scheduled:
+        if (proposal.scheduledPlanVersionId == null ||
+            proposal.acceptedPlanVersionId != null) {
+          throw const FormatException('Invalid scheduled lifecycle lineage.');
+        }
+      case ChangeScheduleLifecycleProposalStatus.accepted:
+        if (proposal.acceptedPlanVersionId == null ||
+            proposal.scheduledPlanVersionId != null) {
+          throw const FormatException('Invalid accepted lifecycle lineage.');
+        }
+    }
+
+    return proposal;
+  }
+
+  ChangeSchedulePreviewResponse toPreview({required DateTime asOfDate}) {
+    return ChangeSchedulePreviewResponse(
+      proposalId: id,
+      sourcePlanVersionId: sourcePlanVersionId,
+      effectiveFrom: effectiveFrom,
+      asOfDate: asOfDate,
+      expiresAt: expiresAt,
+      candidatePlan: candidatePlan,
+      impacts: impacts,
+      warnings: warnings,
+      goalImpact: goalImpact,
+      proposedAvailability: proposedAvailability,
+    );
+  }
+
+  ChangeScheduleDraft toDraft({
+    required DateTime now,
+    required bool requireCurrentOrNextWeek,
+  }) {
+    final currentMonday = _toMonday(now);
+    final nextMonday = currentMonday.add(const Duration(days: 7));
+    final effectiveWeek = _sameDate(effectiveFrom, nextMonday)
+        ? ChangeScheduleEffectiveWeek.next
+        : _sameDate(effectiveFrom, currentMonday)
+        ? ChangeScheduleEffectiveWeek.current
+        : requireCurrentOrNextWeek
+        ? throw const FormatException('Unsupported lifecycle effective date.')
+        : (effectiveFrom.isAfter(currentMonday)
+              ? ChangeScheduleEffectiveWeek.next
+              : ChangeScheduleEffectiveWeek.current);
+    return ChangeScheduleDraft(
+      availability: proposedAvailability,
+      effectiveWeek: effectiveWeek,
+    );
+  }
+}
+
+class ChangeScheduleLifecycleActivation {
+  const ChangeScheduleLifecycleActivation({
+    required this.id,
+    required this.sourcePlanVersionId,
+    required this.queuedCandidatePlanVersionId,
+    required this.availabilityVersionId,
+    required this.effectiveFrom,
+    required this.status,
+    this.proposalId,
+  });
+
+  final String id;
+  final String sourcePlanVersionId;
+  final String queuedCandidatePlanVersionId;
+  final String availabilityVersionId;
+  final DateTime effectiveFrom;
+  final String status;
+  final String? proposalId;
+
+  static ChangeScheduleLifecycleActivation fromDatabaseRow(Object? raw) {
+    final row = _strictMap(raw);
+    final status = _requiredString(row['status'], 'activation.status');
+    if (status != 'scheduled') {
+      throw const FormatException('Invalid activation lifecycle status.');
+    }
+    return ChangeScheduleLifecycleActivation(
+      id: _requiredString(row['id'], 'activation.id'),
+      sourcePlanVersionId: _requiredString(
+        row['source_plan_version_id'],
+        'activation.source_plan_version_id',
+      ),
+      queuedCandidatePlanVersionId: _requiredString(
+        row['queued_candidate_plan_version_id'],
+        'activation.queued_candidate_plan_version_id',
+      ),
+      availabilityVersionId: _requiredString(
+        row['availability_version_id'],
+        'activation.availability_version_id',
+      ),
+      effectiveFrom: _requiredDateOnly(
+        row['effective_from'],
+        'activation.effective_from',
+      ),
+      status: status,
+      proposalId: _optionalNullableString(row['proposal_id']),
+    );
+  }
+
+  bool matchesScheduledProposal(ChangeScheduleLifecycleProposal proposal) {
+    if (proposal.status != ChangeScheduleLifecycleProposalStatus.scheduled) {
+      return false;
+    }
+    return sourcePlanVersionId == proposal.sourcePlanVersionId &&
+        queuedCandidatePlanVersionId == proposal.scheduledPlanVersionId &&
+        _sameDate(effectiveFrom, proposal.effectiveFrom) &&
+        (proposalId == proposal.id || proposalId == null);
+  }
+
+  ChangeScheduleScheduledResponse toScheduledResponse(
+    ChangeScheduleLifecycleProposal proposal,
+  ) {
+    if (!matchesScheduledProposal(proposal)) {
+      throw const FormatException('Scheduled lifecycle lineage mismatch.');
+    }
+    return ChangeScheduleScheduledResponse(
+      proposalId: proposal.id,
+      activationId: id,
+      scheduledPlanVersionId: queuedCandidatePlanVersionId,
+      scheduledAvailabilityVersionId: availabilityVersionId,
+      activationStatus: status,
+    );
+  }
+}
+
 class ChangeSchedulePreviewResponse {
   ChangeSchedulePreviewResponse({
     required this.proposalId,
@@ -1052,6 +1330,11 @@ DateTime _toMonday(DateTime value) {
     value.day,
   ).subtract(Duration(days: shift));
 }
+
+bool _sameDate(DateTime left, DateTime right) =>
+    left.year == right.year &&
+    left.month == right.month &&
+    left.day == right.day;
 
 Set<int> _runDaysFromPlan(TrainingPlan plan, DateTime now) {
   final today = DateTime(now.year, now.month, now.day);

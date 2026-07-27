@@ -486,6 +486,79 @@ void main() {
       throwsFormatException,
     );
   });
+
+  test('lifecycle rows use canonical lineage and support exact legacy matches', () {
+    final proposal = ChangeScheduleLifecycleProposal.fromDatabaseRow({
+      'id': 'proposal-scheduled-1',
+      'source_plan_version_id': 'active-plan',
+      'status': 'scheduled',
+      'proposed_availability': _availability().toJson(),
+      'candidate_plan': _planJson(id: 'plan-scheduled-1'),
+      'impact': {
+        'impact': <dynamic>[],
+        'warnings': <dynamic>[],
+        'goalImpact': <String, dynamic>{},
+      },
+      'effective_from': '2026-07-20',
+      'expires_at': '2026-07-13T10:00:00.000Z',
+      'accepted_plan_version_id': null,
+      'scheduled_plan_version_id': 'plan-scheduled-1',
+      'prior_active_plan_version_id': null,
+      'prior_active_availability_version_id': null,
+      'accepted_availability_version_id': null,
+    });
+    final legacyActivation = ChangeScheduleLifecycleActivation.fromDatabaseRow({
+      'id': 'activation-1',
+      'source_plan_version_id': 'active-plan',
+      'queued_candidate_plan_version_id': 'plan-scheduled-1',
+      'availability_version_id': 'availability-scheduled-1',
+      'effective_from': '2026-07-20',
+      'status': 'scheduled',
+      'proposal_id': null,
+    });
+
+    expect(legacyActivation.matchesScheduledProposal(proposal), isTrue);
+    expect(
+      legacyActivation.toScheduledResponse(proposal).proposalId,
+      'proposal-scheduled-1',
+    );
+
+    final mismatchedActivation =
+        ChangeScheduleLifecycleActivation.fromDatabaseRow({
+          'id': 'activation-2',
+          'source_plan_version_id': 'active-plan',
+          'queued_candidate_plan_version_id': 'different-candidate',
+          'availability_version_id': 'availability-scheduled-1',
+          'effective_from': '2026-07-20',
+          'status': 'scheduled',
+          'proposal_id': null,
+        });
+    expect(mismatchedActivation.matchesScheduledProposal(proposal), isFalse);
+    expect(
+      () => mismatchedActivation.toScheduledResponse(proposal),
+      throwsFormatException,
+    );
+
+    expect(
+      () => ChangeScheduleLifecycleProposal.fromDatabaseRow({
+        'id': 'proposal-malformed',
+        'source_plan_version_id': 'active-plan',
+        'status': 'pending',
+        'proposed_availability': _availability().toJson(),
+        'candidate_plan': const <String, dynamic>{},
+        'impact': {
+          'impact': <dynamic>[],
+          'warnings': <dynamic>[],
+          'goalImpact': <String, dynamic>{},
+        },
+        'effective_from': '2026-07-13',
+        'expires_at': '2026-07-13T10:00:00.000Z',
+        'accepted_plan_version_id': null,
+        'scheduled_plan_version_id': null,
+      }),
+      throwsFormatException,
+    );
+  });
 }
 
 ChangeScheduleAvailability _availability() => ChangeScheduleAvailability(
