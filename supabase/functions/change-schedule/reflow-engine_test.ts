@@ -871,6 +871,42 @@ Deno.test("malformed input with uppercase status is rejected", () => {
   assertEquals(result.reason, "invalid_request");
 });
 
+Deno.test("reflow accepts persisted app statuses and preserves non-running session types", () => {
+  const result = reflowPlan(baseRequest({
+    targetRunningDays: 1,
+    sourcePlan: {
+      id: "plan",
+      sessions: [
+        runSession("upcoming-run", "2026-07-07", "easyRun", 1, 30, {
+          status: "upcoming",
+        }),
+        runSession("cross-training", "2026-07-08", "crossTraining", 1, 30, {
+          status: "today",
+        }),
+        runSession("race-day", "2026-07-12", "raceDay", 1, null, {
+          status: "upcoming",
+        }),
+      ],
+      currentWeekNumber: 1,
+      totalWeeks: 4,
+    },
+  }));
+
+  assertEquals(result.ok, true);
+  if (!result.ok) return;
+
+  const crossTraining = result.candidatePlan.sessions.find((session) =>
+    session.id === "cross-training"
+  );
+  const raceDay = result.candidatePlan.sessions.find((session) =>
+    session.id === "race-day"
+  );
+  assertEquals(crossTraining?.type, "crossTraining");
+  assertEquals(crossTraining?.date, "2026-07-08");
+  assertEquals(raceDay?.type, "raceDay");
+  assertEquals(raceDay?.date, "2026-07-12");
+});
+
 Deno.test("unsupported same-day preference values are rejected", () => {
   const unsupportedResult = reflowPlan(baseRequest({
     sameDayPreference: "run_first",

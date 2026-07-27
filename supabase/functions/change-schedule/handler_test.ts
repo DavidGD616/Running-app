@@ -444,6 +444,7 @@ Deno.test("schedule action preserves deterministic proposal IDs for concurrent p
 
 Deno.test("production dependencies read auth claims and forward verified user id into data/rpc seams", async () => {
   const eqCalls: Array<{ table: string; column: string; value: unknown }> = [];
+  const selectCalls: Array<{ table: string; columns: string | undefined }> = [];
   const rpcCalls: Array<{ name: string; params: Record<string, unknown> }> = [];
   let seenToken: string | null = null;
 
@@ -477,7 +478,8 @@ Deno.test("production dependencies read auth claims and forward verified user id
     from(table: string) {
       const result = (adminRows as Record<string, { data: unknown; error: unknown }>)[table];
       const query = {
-        select() {
+        select(columns?: string) {
+          selectCalls.push({ table, columns });
           return query;
         },
         eq(column: string, value: unknown) {
@@ -545,6 +547,10 @@ Deno.test("production dependencies read auth claims and forward verified user id
   const context = await dependencies.loadPreviewContext(userId ?? "");
   assertEquals(context?.sourcePlanVersionId, "source-plan");
   assertEquals(context?.profileSchemaVersion, 1);
+  assertEquals(
+    selectCalls.find((call) => call.table === "plan_versions")?.columns,
+    "id,data",
+  );
 
   const seenReadUserIds = eqCalls.filter((row) => row.column === "user_id").map((row) => row.value);
   assertEquals(seenReadUserIds.includes("verified-user"), true);

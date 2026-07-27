@@ -308,7 +308,7 @@ export function createChangeScheduleHandler(
       if (mapped != null) {
         return jsonResponse({ error: mapped.key }, mapped.status);
       }
-      console.error("change-schedule failed", String(error));
+      console.error("change-schedule failed", errorForLog(error));
       return jsonResponse({ error: "change_schedule_failed" }, 500);
     }
   };
@@ -768,7 +768,7 @@ export function createProductionDependencies(
       const [profileResult, planResult, activityResult] = await Promise.all([
         admin.from("runner_profiles").select("data,schema_version,updated_at")
           .eq("user_id", userId).maybeSingle(),
-        admin.from("plan_versions").select("id,data,current_week_number,total_weeks")
+        admin.from("plan_versions").select("id,data")
           .eq("user_id", userId)
           .eq("is_active", true).maybeSingle(),
         admin.from("activity_records").select("linked_session_id")
@@ -958,4 +958,25 @@ function errorMessage(error: unknown): string {
     return error.message;
   }
   return String(error);
+}
+
+function errorForLog(error: unknown): JsonObject {
+  if (error instanceof Error) {
+    return {
+      name: error.name,
+      message: error.message,
+      ...(typeof error.stack === "string" ? { stack: error.stack } : {}),
+    };
+  }
+
+  if (isRecord(error)) {
+    return {
+      ...(typeof error.code === "string" ? { code: error.code } : {}),
+      ...(typeof error.message === "string" ? { message: error.message } : {}),
+      ...(typeof error.details === "string" ? { details: error.details } : {}),
+      ...(typeof error.hint === "string" ? { hint: error.hint } : {}),
+    };
+  }
+
+  return { message: String(error) };
 }

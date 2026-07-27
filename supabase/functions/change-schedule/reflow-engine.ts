@@ -122,7 +122,14 @@ const RUN_TYPES = new Set([
   "racePaceRun",
   "recoveryRun",
 ]);
-const SESSION_TYPES = new Set([...RUN_TYPES, "restDay"]);
+// These are the persisted Flutter SessionType names. Non-running entries are
+// intentionally accepted and then left immutable by the reflow loop.
+const SESSION_TYPES = new Set([
+  ...RUN_TYPES,
+  "crossTraining",
+  "restDay",
+  "raceDay",
+]);
 const QUALITY_TYPES = new Set([
   "progressionRun",
   "intervals",
@@ -132,7 +139,14 @@ const QUALITY_TYPES = new Set([
   "thresholdRun",
   "racePaceRun",
 ]);
-const SESSION_STATUSES = new Set(["completed", "skipped", "started", "active"]);
+const SESSION_STATUSES = new Set([
+  "upcoming",
+  "today",
+  "completed",
+  "skipped",
+  "started",
+  "active",
+]);
 const IMMUTABLE_STATUS = new Set(["completed", "skipped", "started", "active"]);
 
 function parseDateOnly(value: string): Date | null {
