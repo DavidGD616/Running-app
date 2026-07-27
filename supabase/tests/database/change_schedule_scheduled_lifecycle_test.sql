@@ -218,7 +218,7 @@ values
   );
 
 select ok(
-  to_regprocedure('public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)') is not null,
+  to_regprocedure('public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)') is not null,
   'scheduled change schedule proposal RPC uses exact signature'
 );
 select col_type_is('public', 'change_schedule_activations', 'prior_active_plan_version_id', 'text', 'activation prior active plan snapshot is text');
@@ -228,7 +228,7 @@ select ok(
   'scheduled change schedule cancellation RPC uses exact signature'
 );
 select ok(
-  to_regprocedure('public.activate_due_change_schedule(uuid,text,timestamptz)') is not null,
+  to_regprocedure('public.activate_due_change_schedule(uuid,text,timestamptz,date)') is not null,
   'scheduled change schedule due-activation RPC uses exact signature'
 );
 
@@ -236,7 +236,7 @@ select is(
   (
     select prosecdef
       from pg_proc p
-     where p.oid = to_regprocedure('public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)')
+     where p.oid = to_regprocedure('public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)')
   ),
   true,
   'schedule RPC is SECURITY DEFINER'
@@ -248,7 +248,7 @@ select ok(
         (
           select proconfig
             from pg_proc p
-           where p.oid = to_regprocedure('public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)')
+           where p.oid = to_regprocedure('public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)')
         )
       ) as cfg
      where cfg like 'search_path=%'
@@ -282,7 +282,7 @@ select is(
   (
     select prosecdef
       from pg_proc p
-     where p.oid = to_regprocedure('public.activate_due_change_schedule(uuid,text,timestamptz)')
+     where p.oid = to_regprocedure('public.activate_due_change_schedule(uuid,text,timestamptz,date)')
   ),
   true,
   'due activation RPC is SECURITY DEFINER'
@@ -294,7 +294,7 @@ select ok(
         (
           select proconfig
             from pg_proc p
-           where p.oid = to_regprocedure('public.activate_due_change_schedule(uuid,text,timestamptz)')
+           where p.oid = to_regprocedure('public.activate_due_change_schedule(uuid,text,timestamptz,date)')
         )
       ) as cfg
      where cfg like 'search_path=%'
@@ -304,7 +304,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)',
+    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)',
     'EXECUTE'
   ),
   'service role can execute scheduled proposal queue RPC'
@@ -320,7 +320,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.activate_due_change_schedule(uuid,text,timestamptz)',
+    'public.activate_due_change_schedule(uuid,text,timestamptz,date)',
     'EXECUTE'
   ),
   'service role can execute due activation RPC'
@@ -6664,7 +6664,7 @@ select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000011
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)',
+    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)',
     'EXECUTE'
   ),
   'authenticated users cannot execute queue scheduling RPC'
@@ -6672,7 +6672,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'public',
-    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)',
+    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)',
     'EXECUTE'
   ),
   'public role cannot execute queue scheduling RPC'
@@ -6680,7 +6680,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'anon',
-    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz)',
+    'public.schedule_change_schedule_proposal(uuid,text,text,text,timestamptz,date)',
     'EXECUTE'
   ),
   'anon role cannot execute queue scheduling RPC'
@@ -6714,7 +6714,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.activate_due_change_schedule(uuid,text,timestamptz)',
+    'public.activate_due_change_schedule(uuid,text,timestamptz,date)',
     'EXECUTE'
   ),
   'authenticated users cannot execute activation due RPC'
@@ -6722,7 +6722,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'public',
-    'public.activate_due_change_schedule(uuid,text,timestamptz)',
+    'public.activate_due_change_schedule(uuid,text,timestamptz,date)',
     'EXECUTE'
   ),
   'public role cannot execute activation due RPC'
@@ -6730,7 +6730,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'anon',
-    'public.activate_due_change_schedule(uuid,text,timestamptz)',
+    'public.activate_due_change_schedule(uuid,text,timestamptz,date)',
     'EXECUTE'
   ),
   'anon role cannot execute activation due RPC'

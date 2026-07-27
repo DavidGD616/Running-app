@@ -79,6 +79,7 @@ export type ChangeScheduleDependencies = {
     expiresAt: string;
     sourceProfileSchemaVersion: number;
     sourceProfileUpdatedAt: string;
+    localDate: string;
   }): Promise<StoredProposal>;
   acceptProposalNow(
     userId: string,
@@ -87,6 +88,7 @@ export type ChangeScheduleDependencies = {
     availabilityVersionId: string,
     generatedAt: string,
     acceptedAt: string,
+    localDate?: string,
   ): Promise<AcceptedProposal>;
   scheduleProposal(
     userId: string,
@@ -94,6 +96,7 @@ export type ChangeScheduleDependencies = {
     planVersionId: string,
     availabilityVersionId: string,
     scheduledAt: string,
+    localDate?: string,
   ): Promise<ScheduledProposal>;
   cancelScheduledProposal(
     userId: string,
@@ -104,6 +107,7 @@ export type ChangeScheduleDependencies = {
     userId: string,
     activationId: string,
     activatedAt: string,
+    localDate?: string,
   ): Promise<ActivatedProposal>;
   undoAcceptedProposal(
     userId: string,
@@ -215,11 +219,13 @@ export const PreviewRequestSchema = z.object({
 export const AcceptRequestSchema = z.object({
   action: z.literal("accept_now"),
   proposalId: z.string().min(1),
+  localDate: DateOnlySchema.optional(),
 }).strict();
 
 export const ScheduleRequestSchema = z.object({
   action: z.literal("schedule"),
   proposalId: z.string().min(1),
+  localDate: DateOnlySchema.optional(),
 }).strict();
 
 export const CancelRequestSchema = z.object({
@@ -230,6 +236,7 @@ export const CancelRequestSchema = z.object({
 export const ActivateRequestSchema = z.object({
   action: z.literal("activate_due"),
   activationId: z.string().min(1),
+  localDate: DateOnlySchema.optional(),
 }).strict();
 
 export const UndoRequestSchema = z.object({
@@ -288,19 +295,35 @@ export function createChangeScheduleHandler(
     try {
       const action = parsed.data.action;
       if (action === "preview") {
-        return await previewSchedule(dependencies, userId, parsed.data);
+        const now = dependencies.now();
+        if (!isLocalDateWithinServerWindow(parsed.data.localDate, now)) {
+          return jsonResponse({ error: "invalid_request" }, 400);
+        }
+        return await previewSchedule(dependencies, userId, parsed.data, now);
       }
       if (action === "accept_now") {
-        return await acceptScheduleNow(dependencies, userId, parsed.data);
+        const now = dependencies.now();
+        if (!isLocalDateWithinServerWindow(parsed.data.localDate, now)) {
+          return jsonResponse({ error: "invalid_request" }, 400);
+        }
+        return await acceptScheduleNow(dependencies, userId, parsed.data, now);
       }
       if (action === "schedule") {
-        return await scheduleProposal(dependencies, userId, parsed.data);
+        const now = dependencies.now();
+        if (!isLocalDateWithinServerWindow(parsed.data.localDate, now)) {
+          return jsonResponse({ error: "invalid_request" }, 400);
+        }
+        return await scheduleProposal(dependencies, userId, parsed.data, now);
       }
       if (action === "cancel_scheduled") {
         return await cancelScheduledProposal(dependencies, userId, parsed.data);
       }
       if (action === "activate_due") {
-        return await activateDueProposal(dependencies, userId, parsed.data);
+        const now = dependencies.now();
+        if (!isLocalDateWithinServerWindow(parsed.data.localDate, now)) {
+          return jsonResponse({ error: "invalid_request" }, 400);
+        }
+        return await activateDueProposal(dependencies, userId, parsed.data, now);
       }
       return await undoAcceptedProposal(dependencies, userId, parsed.data);
     } catch (error) {
@@ -318,6 +341,7 @@ async function previewSchedule(
   dependencies: ChangeScheduleDependencies,
   userId: string,
   request: PreviewRequest,
+  now: Date,
 ): Promise<Response> {
   const context = await dependencies.loadPreviewContext(userId);
   if (context == null) {
@@ -333,8 +357,10 @@ async function previewSchedule(
     sessions: sourceSessions,
   };
 
-  const now = dependencies.now();
-  const effectiveFrom = determineEffectiveFrom(request.effectiveFrom, now);
+  const effectiveFrom = determineEffectiveFrom(
+    request.effectiveFrom,
+    request.localDate,
+  );
   if (effectiveFrom == null) {
     return jsonResponse({ error: "invalid_request" }, 400);
   }
@@ -376,6 +402,7 @@ async function previewSchedule(
     expiresAt,
     sourceProfileSchemaVersion: context.profileSchemaVersion,
     sourceProfileUpdatedAt: context.profileUpdatedAt,
+    localDate: request.localDate,
   });
 
   return jsonResponse({
@@ -397,8 +424,9 @@ async function acceptScheduleNow(
   dependencies: ChangeScheduleDependencies,
   userId: string,
   request: AcceptRequest,
+  now: Date,
 ): Promise<Response> {
-  const acceptedAt = dependencies.now().toISOString();
+  const acceptedAt = now.toISOString();
   const planVersionId = dependencies.randomId();
   const availabilityVersionId = dependencies.randomId();
   const generatedAt = acceptedAt;
@@ -409,6 +437,7 @@ async function acceptScheduleNow(
     availabilityVersionId,
     generatedAt,
     acceptedAt,
+    request.localDate,
   );
   return jsonResponse({
     versionId: accepted.accepted_plan_version_id,
@@ -424,8 +453,9 @@ async function scheduleProposal(
   dependencies: ChangeScheduleDependencies,
   userId: string,
   request: ScheduleRequest,
+  now: Date,
 ): Promise<Response> {
-  const scheduledAt = dependencies.now().toISOString();
+  const scheduledAt = now.toISOString();
   const planVersionId = buildScheduledPlanVersionId(request.proposalId);
   const availabilityVersionId = buildScheduledAvailabilityVersionId(request.proposalId);
   const scheduled = await dependencies.scheduleProposal(
@@ -434,6 +464,7 @@ async function scheduleProposal(
     planVersionId,
     availabilityVersionId,
     scheduledAt,
+    request.localDate,
   );
   return jsonResponse({
     proposalId: scheduled.proposal_id,
@@ -475,12 +506,14 @@ async function activateDueProposal(
   dependencies: ChangeScheduleDependencies,
   userId: string,
   request: ActivateRequest,
+  now: Date,
 ): Promise<Response> {
-  const activatedAt = dependencies.now().toISOString();
+  const activatedAt = now.toISOString();
   const activated = await dependencies.activateDueProposal(
     userId,
     request.activationId,
     activatedAt,
+    request.localDate,
   );
   return jsonResponse({
     proposalId: activated.proposal_id,
@@ -516,12 +549,14 @@ async function undoAcceptedProposal(
 
 function determineEffectiveFrom(
   requested: string | undefined,
-  now: Date,
+  localDate: string,
 ): string | null {
-  const requestedDate = requested == null ? toMonday(now) : parseDateOnly(requested);
+  const localCalendarDate = parseDateOnly(localDate);
+  if (localCalendarDate == null) return null;
+  const currentMonday = toMonday(localCalendarDate);
+  const requestedDate = requested == null ? currentMonday : parseDateOnly(requested);
   if (requestedDate == null) return null;
   if (requestedDate.getTime() !== toMonday(requestedDate).getTime()) return null;
-  const currentMonday = toMonday(now);
   const nextMonday = new Date(currentMonday.getTime() + 7 * DAY_MS);
   if (
     requestedDate.getTime() !== currentMonday.getTime() &&
@@ -530,6 +565,21 @@ function determineEffectiveFrom(
     return null;
   }
   return requestedDate.toISOString().slice(0, 10);
+}
+
+function isLocalDateWithinServerWindow(
+  localDate: string | undefined,
+  serverNow: Date,
+): boolean {
+  if (localDate == null) return true;
+  const parsedLocalDate = parseDateOnly(localDate);
+  if (parsedLocalDate == null) return false;
+  const serverUtcDate = new Date(Date.UTC(
+    serverNow.getUTCFullYear(),
+    serverNow.getUTCMonth(),
+    serverNow.getUTCDate(),
+  ));
+  return Math.abs(parsedLocalDate.getTime() - serverUtcDate.getTime()) <= DAY_MS;
 }
 
 function normalizeAvailability(input: unknown): {
@@ -836,6 +886,7 @@ export function createProductionDependencies(
         p_expires_at: input.expiresAt,
         p_source_profile_schema_version: input.sourceProfileSchemaVersion,
         p_source_profile_updated_at: input.sourceProfileUpdatedAt,
+        p_local_date: input.localDate,
       });
       if (error != null) throw error;
       return parseRpcResponse("store_change_schedule_proposal", StoredProposalResponseSchema, data);
@@ -847,6 +898,7 @@ export function createProductionDependencies(
       availabilityVersionId,
       generatedAt,
       acceptedAt,
+      localDate,
     ) {
       const { data, error } = await admin.rpc("accept_change_schedule_proposal_now", {
         p_user_id: userId,
@@ -855,6 +907,7 @@ export function createProductionDependencies(
         p_availability_version_id: availabilityVersionId,
         p_generated_at: generatedAt,
         p_accepted_at: acceptedAt,
+        ...(localDate == null ? {} : { p_local_date: localDate }),
       });
       if (error != null) throw error;
       return parseRpcResponse(
@@ -869,6 +922,7 @@ export function createProductionDependencies(
       planVersionId,
       availabilityVersionId,
       scheduledAt,
+      localDate,
     ) {
       const { data, error } = await admin.rpc("schedule_change_schedule_proposal", {
         p_user_id: userId,
@@ -876,6 +930,7 @@ export function createProductionDependencies(
         p_plan_version_id: planVersionId,
         p_availability_version_id: availabilityVersionId,
         p_scheduled_at: scheduledAt,
+        ...(localDate == null ? {} : { p_local_date: localDate }),
       });
       if (error != null) throw error;
       return parseRpcResponse(
@@ -900,11 +955,12 @@ export function createProductionDependencies(
         data,
       );
     },
-    async activateDueProposal(userId, activationId, activatedAt) {
+    async activateDueProposal(userId, activationId, activatedAt, localDate) {
       const { data, error } = await admin.rpc("activate_due_change_schedule", {
         p_user_id: userId,
         p_activation_id: activationId,
         p_activated_at: activatedAt,
+        ...(localDate == null ? {} : { p_local_date: localDate }),
       });
       if (error != null) throw error;
       return parseRpcResponse(

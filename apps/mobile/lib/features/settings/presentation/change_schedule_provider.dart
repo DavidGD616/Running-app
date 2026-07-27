@@ -983,14 +983,12 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       status: ChangeScheduleDraftStatus.editing,
     );
 
+    final now = ref.read(changeScheduleClockProvider)();
     try {
       final response = await ref
           .read(changeScheduleFunctionClientProvider)(
             'change-schedule',
-            body: draft.previewPayload(
-              ref.read(changeScheduleClockProvider)(),
-              ref.read(changeScheduleClockProvider)(),
-            ),
+            body: draft.previewPayload(now, now),
           )
           .timeout(const Duration(seconds: 130));
 
@@ -1083,11 +1081,16 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       comparison: comparison,
     );
 
+    final localDate = _localDateOnly(ref.read(changeScheduleClockProvider)());
     try {
       final response = await ref
           .read(changeScheduleFunctionClientProvider)(
             'change-schedule',
-            body: {'action': 'accept_now', 'proposalId': preview.proposalId},
+            body: {
+              'action': 'accept_now',
+              'proposalId': preview.proposalId,
+              'localDate': localDate,
+            },
           )
           .timeout(const Duration(seconds: 130));
 
@@ -1188,11 +1191,16 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       comparison: comparison,
     );
 
+    final localDate = _localDateOnly(ref.read(changeScheduleClockProvider)());
     try {
       final response = await ref
           .read(changeScheduleFunctionClientProvider)(
             'change-schedule',
-            body: {'action': 'schedule', 'proposalId': preview.proposalId},
+            body: {
+              'action': 'schedule',
+              'proposalId': preview.proposalId,
+              'localDate': localDate,
+            },
           )
           .timeout(const Duration(seconds: 130));
 
@@ -1368,11 +1376,16 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
       scheduled: scheduled,
     );
 
+    final localDate = _localDateOnly(ref.read(changeScheduleClockProvider)());
     try {
       final response = await ref
           .read(changeScheduleFunctionClientProvider)(
             'change-schedule',
-            body: {'action': 'activate_due', 'activationId': activationId},
+            body: {
+              'action': 'activate_due',
+              'activationId': activationId,
+              'localDate': localDate,
+            },
           )
           .timeout(const Duration(seconds: 130));
 
@@ -1998,5 +2011,8 @@ String? _dateTimeString(Object? value) => switch (value) {
   String value => value,
   _ => null,
 };
+
+String _localDateOnly(DateTime value) =>
+    '${value.year.toString().padLeft(4, '0')}-${value.month.toString().padLeft(2, '0')}-${value.day.toString().padLeft(2, '0')}';
 
 bool _validDraft(ChangeScheduleDraft draft) => draft.isValid;

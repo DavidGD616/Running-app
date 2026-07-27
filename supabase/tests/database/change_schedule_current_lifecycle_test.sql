@@ -610,7 +610,7 @@ set local role service_role;
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.store_change_schedule_proposal(uuid,text,text,jsonb,jsonb,jsonb,date,timestamptz,timestamptz,integer,timestamptz)',
+    'public.store_change_schedule_proposal(uuid,text,text,jsonb,jsonb,jsonb,date,timestamptz,timestamptz,integer,timestamptz,date)',
     'EXECUTE'
   ),
   'authenticated users cannot execute the proposal storage RPC'
@@ -618,7 +618,7 @@ select ok(
 select ok(
   not has_function_privilege(
     'authenticated',
-    'public.accept_change_schedule_proposal_now(uuid,text,text,text,timestamptz,timestamptz)',
+    'public.accept_change_schedule_proposal_now(uuid,text,text,text,timestamptz,timestamptz,date)',
     'EXECUTE'
   ),
   'authenticated users cannot execute the acceptance RPC'
@@ -634,7 +634,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.store_change_schedule_proposal(uuid,text,text,jsonb,jsonb,jsonb,date,timestamptz,timestamptz,integer,timestamptz)',
+    'public.store_change_schedule_proposal(uuid,text,text,jsonb,jsonb,jsonb,date,timestamptz,timestamptz,integer,timestamptz,date)',
     'EXECUTE'
   ),
   'service role can execute the proposal storage RPC'
@@ -642,7 +642,7 @@ select ok(
 select ok(
   has_function_privilege(
     'service_role',
-    'public.accept_change_schedule_proposal_now(uuid,text,text,text,timestamptz,timestamptz)',
+    'public.accept_change_schedule_proposal_now(uuid,text,text,text,timestamptz,timestamptz,date)',
     'EXECUTE'
   ),
   'service role can execute the acceptance RPC'

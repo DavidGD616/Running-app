@@ -432,6 +432,7 @@ void main() {
     expect(calls.last, {
       'action': 'accept_now',
       'proposalId': 'proposal-preview-1',
+      'localDate': '2026-07-13',
     });
     final success =
         container.read(changeScheduleProvider) as ChangeScheduleSuccess;
@@ -752,6 +753,15 @@ void main() {
       calls.map((call) => (call as Map)['action']),
       containsAll(['preview', 'schedule', 'cancel_scheduled']),
     );
+    expect(calls.firstWhere((call) => (call as Map)['action'] == 'schedule'), {
+      'action': 'schedule',
+      'proposalId': 'proposal-preview-1',
+      'localDate': '2026-07-13',
+    });
+    expect(
+      calls.firstWhere((call) => (call as Map)['action'] == 'cancel_scheduled'),
+      {'action': 'cancel_scheduled', 'proposalId': 'proposal-preview-1'},
+    );
   });
 
   test(
@@ -811,6 +821,14 @@ void main() {
       expect(
         (state as ChangeScheduleActivated).activated.acceptedPlanVersionId,
         'plan-scheduled-1',
+      );
+      expect(
+        calls.firstWhere((call) => (call as Map)['action'] == 'activate_due'),
+        {
+          'action': 'activate_due',
+          'activationId': 'activation-1',
+          'localDate': '2026-07-13',
+        },
       );
     },
   );

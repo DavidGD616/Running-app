@@ -52,9 +52,24 @@ const availability = {
 Deno.test("request schemas enforce canonical action names and strict payload keys", () => {
   assert(PreviewRequestSchema.safeParse(previewBody()).success);
   assert(AcceptRequestSchema.safeParse({ action: "accept_now", proposalId: "proposal-1" }).success);
+  assert(AcceptRequestSchema.safeParse({
+    action: "accept_now",
+    proposalId: "proposal-1",
+    localDate: "2026-07-13",
+  }).success);
   assert(ScheduleRequestSchema.safeParse({ action: "schedule", proposalId: "proposal-1" }).success);
+  assert(ScheduleRequestSchema.safeParse({
+    action: "schedule",
+    proposalId: "proposal-1",
+    localDate: "2026-07-13",
+  }).success);
   assert(CancelRequestSchema.safeParse({ action: "cancel_scheduled", proposalId: "proposal-1" }).success);
   assert(ActivateRequestSchema.safeParse({ action: "activate_due", activationId: "activation-1" }).success);
+  assert(ActivateRequestSchema.safeParse({
+    action: "activate_due",
+    activationId: "activation-1",
+    localDate: "2026-07-13",
+  }).success);
   assert(UndoRequestSchema.safeParse({ action: "undo", proposalId: "proposal-1" }).success);
 
   assert(!AcceptRequestSchema.safeParse({ action: "accept", proposalId: "proposal-1" }).success);
@@ -117,6 +132,11 @@ Deno.test("request schemas enforce canonical action names and strict payload key
     proposalId: "proposal-1",
     cancelledAt: "2026-07-13T10:00:00.000Z",
   }).success);
+  assert(!AcceptRequestSchema.safeParse({
+    action: "accept_now",
+    proposalId: "proposal-1",
+    localDate: "2026-02-30",
+  }).success);
 });
 
 Deno.test("handler enforces auth and method constraints", async () => {
@@ -133,7 +153,7 @@ Deno.test("handler enforces auth and method constraints", async () => {
   );
 });
 
-Deno.test("preview effectiveFrom accepts only current/next server Monday and rejects invalid windows", async () => {
+Deno.test("preview effectiveFrom accepts only current/next local Monday and rejects invalid windows", async () => {
   const fixedNow = new Date("2026-07-13T12:00:00.000Z");
 
   const handler = createChangeScheduleHandler(fakeDependencies({ now: () => fixedNow }));
@@ -162,6 +182,116 @@ Deno.test("preview effectiveFrom accepts only current/next server Monday and rej
 
   const future = await handler(request(previewBody({ effectiveFrom: "2026-08-03" })));
   assertEquals(future.status, 400);
+});
+
+Deno.test("a local Sunday at the UTC Monday boundary anchors every lifecycle RPC to the local week", async () => {
+  const serverNow = new Date("2026-07-13T00:30:00.000Z");
+  const localDate = "2026-07-12";
+  const rpcLocalDates: Record<string, unknown> = {};
+  const handler = createChangeScheduleHandler(fakeDependencies({
+    now: () => serverNow,
+    storeProposal: async (input) => {
+      rpcLocalDates.store = input.localDate;
+      return { id: input.proposalId, expires_at: input.expiresAt };
+    },
+    acceptProposalNow: async (...inputs) => {
+      rpcLocalDates.accept = inputs[6];
+      return {
+        accepted_plan_version_id: "accepted-plan",
+        plan_data: { id: "accepted-plan" },
+        prior_active_plan_version_id: null,
+        prior_active_availability_version_id: null,
+        accepted_availability_version_id: "accepted-avail",
+      };
+    },
+    scheduleProposal: async (...inputs) => {
+      rpcLocalDates.schedule = inputs[5];
+      return {
+        proposal_id: "proposal-1",
+        activation_id: "activation-1",
+        scheduled_plan_version_id: inputs[2] as string,
+        scheduled_availability_version_id: inputs[3] as string,
+        activation_status: "scheduled",
+      };
+    },
+    activateDueProposal: async (...inputs) => {
+      rpcLocalDates.activate = inputs[3];
+      return {
+        proposal_id: "proposal-1",
+        activation_id: "activation-1",
+        proposal_status: "accepted",
+        accepted_plan_version_id: "accepted-plan",
+        prior_active_plan_version_id: null,
+        prior_active_availability_version_id: null,
+        accepted_availability_version_id: "accepted-avail",
+        activation_status: "activated",
+      };
+    },
+  }));
+
+  const preview = await handler(request(previewBody({
+    localDate,
+    effectiveFrom: "2026-07-06",
+  })));
+  assertEquals(preview.status, 200);
+  assertEquals((await preview.json()).effectiveFrom, "2026-07-06");
+
+  assertEquals(
+    (await handler(request({
+      action: "accept_now",
+      proposalId: "proposal-1",
+      localDate,
+    }))).status,
+    200,
+  );
+  assertEquals(
+    (await handler(request({
+      action: "schedule",
+      proposalId: "proposal-1",
+      localDate,
+    }))).status,
+    200,
+  );
+  assertEquals(
+    (await handler(request({
+      action: "activate_due",
+      activationId: "activation-1",
+      localDate,
+    }))).status,
+    200,
+  );
+
+  assertEquals(rpcLocalDates, {
+    store: localDate,
+    accept: localDate,
+    schedule: localDate,
+    activate: localDate,
+  });
+});
+
+Deno.test("handler rejects malformed and implausibly distant local dates", async () => {
+  const handler = createChangeScheduleHandler(fakeDependencies({
+    now: () => new Date("2026-07-13T00:30:00.000Z"),
+  }));
+
+  const malformed = await handler(request({
+    action: "accept_now",
+    proposalId: "proposal-1",
+    localDate: "2026-02-30",
+  }));
+  assertEquals(malformed.status, 400);
+
+  const distantPreview = await handler(request(previewBody({
+    localDate: "2026-07-15",
+  })));
+  assertEquals(distantPreview.status, 400);
+
+  const distantActivation = await handler(request({
+    action: "activate_due",
+    activationId: "activation-1",
+    localDate: "2026-07-15",
+  }));
+  assertEquals(distantActivation.status, 400);
 });
 
 Deno.test("handler injects server-generated IDs and timestamps for all lifecycle actions", async () => {
@@ -601,6 +731,7 @@ Deno.test("production dependencies read auth claims and forward verified user id
     "avail-generated-1",
     "2026-07-13T12:00:00.000Z",
     "2026-07-13T12:00:00.000Z",
+    "2026-07-13",
   );
   await dependencies.scheduleProposal(
     userId ?? "",
@@ -608,6 +739,7 @@ Deno.test("production dependencies read auth claims and forward verified user id
     "plan-generated-2",
     "avail-generated-2",
     "2026-07-13T12:00:00.000Z",
+    "2026-07-13",
   );
   await dependencies.cancelScheduledProposal(
     userId ?? "",
@@ -618,6 +750,7 @@ Deno.test("production dependencies read auth claims and forward verified user id
     userId ?? "",
     "activation-1",
     "2026-07-13T12:00:00.000Z",
+    "2026-07-13",
   );
   await dependencies.undoAcceptedProposal(
     userId ?? "",
@@ -636,6 +769,7 @@ Deno.test("production dependencies read auth claims and forward verified user id
     expiresAt: "2026-07-13T12:30:00.000Z",
     sourceProfileSchemaVersion: 1,
     sourceProfileUpdatedAt: "2026-07-13T00:00:00.000Z",
+    localDate: "2026-07-13",
   });
 
   const expectedSeamUserId = "verified-user";
@@ -643,6 +777,17 @@ Deno.test("production dependencies read auth claims and forward verified user id
     if (Object.prototype.hasOwnProperty.call(call.params, "p_user_id")) {
       assertEquals(call.params.p_user_id, expectedSeamUserId);
     }
+  }
+  for (const name of [
+    "store_change_schedule_proposal",
+    "accept_change_schedule_proposal_now",
+    "schedule_change_schedule_proposal",
+    "activate_due_change_schedule",
+  ]) {
+    assertEquals(
+      rpcCalls.find((call) => call.name === name)?.params.p_local_date,
+      "2026-07-13",
+    );
   }
 });
 

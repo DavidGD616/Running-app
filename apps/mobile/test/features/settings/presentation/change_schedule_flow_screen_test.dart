@@ -381,6 +381,7 @@ void main() {
       expect(calls.single, {
         'action': 'activate_due',
         'activationId': 'activation-1',
+        'localDate': '2026-07-13',
       });
       expect(find.text('Scheduled change activated'), findsOneWidget);
     },
