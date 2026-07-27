@@ -607,22 +607,34 @@ class _ChangeScheduleFlowScreenState
     final l10n = AppLocalizations.of(context)!;
     final preview = _lastPreview ?? state.preview;
     final scheduled = _lastScheduled ?? state.scheduled;
+    final activationIsDue = _activationIsDue(preview.effectiveFrom);
     final date = _formatDate(context, preview.effectiveFrom);
+    final cancelButton = AppButton(
+      key: const Key('changeScheduleCancel'),
+      label: l10n.changeScheduleCancel,
+      variant: AppButtonVariant.secondary,
+      onPressed: () =>
+          ref.read(changeScheduleProvider.notifier).cancelScheduled(),
+    );
     return _outcomeScaffold(
       context,
       title: l10n.changeScheduleScheduledTitle,
-      subtitle: l10n.changeScheduleScheduledSubtitle,
+      subtitle: activationIsDue
+          ? l10n.changeScheduleScheduledDueSubtitle
+          : l10n.changeScheduleScheduledSubtitle,
       detail: scheduled.activationStatus.isEmpty
           ? null
           : l10n.changeScheduleScheduledFor(date),
       onBack: () => _handleBack(state),
-      primary: AppButton(
-        key: const Key('changeScheduleCancel'),
-        label: l10n.changeScheduleCancel,
-        variant: AppButtonVariant.secondary,
-        onPressed: () =>
-            ref.read(changeScheduleProvider.notifier).cancelScheduled(),
-      ),
+      primary: activationIsDue
+          ? AppButton(
+              key: const Key('changeScheduleActivateDue'),
+              label: l10n.changeScheduleActivateDue,
+              onPressed: () =>
+                  ref.read(changeScheduleProvider.notifier).activateDue(),
+            )
+          : cancelButton,
+      secondary: activationIsDue ? cancelButton : null,
     );
   }
 
@@ -633,6 +645,7 @@ class _ChangeScheduleFlowScreenState
     required VoidCallback onBack,
     String? detail,
     Widget? primary,
+    Widget? secondary,
   }) {
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
@@ -681,6 +694,10 @@ class _ChangeScheduleFlowScreenState
               ),
               if (primary != null) ...[
                 primary,
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              if (secondary != null) ...[
+                secondary,
                 const SizedBox(height: AppSpacing.sm),
               ],
               AppButton(
@@ -974,6 +991,17 @@ class _ChangeScheduleFlowScreenState
     } else if (state is ChangeScheduleFailure) {
       _lastPreview = state.preview ?? _lastPreview;
     }
+  }
+
+  bool _activationIsDue(DateTime effectiveFrom) {
+    final now = ref.read(changeScheduleClockProvider)();
+    final today = DateTime(now.year, now.month, now.day);
+    final effectiveDate = DateTime(
+      effectiveFrom.year,
+      effectiveFrom.month,
+      effectiveFrom.day,
+    );
+    return !effectiveDate.isAfter(today);
   }
 
   bool _isOutcome(ChangeScheduleState state) =>

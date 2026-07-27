@@ -85,7 +85,7 @@ void main() {
     expect(find.byKey(const Key('changeScheduleDone')), findsOneWidget);
   });
 
-  testWidgets('re-entering restores a scheduled change with Cancel available', (
+  testWidgets('pre-due scheduled change has Cancel but no activation CTA', (
     tester,
   ) async {
     Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
@@ -116,6 +116,7 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('changeScheduleCancel')), findsOneWidget);
+    expect(find.byKey(const Key('changeScheduleActivateDue')), findsNothing);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
@@ -128,7 +129,67 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('changeScheduleCancel')), findsOneWidget);
+    expect(find.byKey(const Key('changeScheduleActivateDue')), findsNothing);
   });
+
+  testWidgets(
+    'due scheduled change exposes an accessible activation CTA and keeps Cancel',
+    (tester) async {
+      final calls = <Map<String, dynamic>>[];
+      Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
+          Future.value(ChangeScheduleLifecycleAvailable(
+            ChangeScheduleLifecycleData(
+              scheduledProposal: _lifecycleProposal(
+                status: ChangeScheduleLifecycleProposalStatus.scheduled,
+                id: 'proposal-scheduled-1',
+                sourcePlanId: 'active-plan',
+                effectiveFrom: '2026-07-13',
+                scheduledPlanVersionId: 'plan-scheduled-1',
+              ),
+              scheduledActivation: _lifecycleActivation(
+                proposalId: 'proposal-scheduled-1',
+                sourcePlanId: 'active-plan',
+                effectiveFrom: '2026-07-13',
+                queuedPlanVersionId: 'plan-scheduled-1',
+              ),
+            ),
+          ));
+
+      await tester.pumpWidget(
+        _app(
+          now: now,
+          preferences: preferences,
+          lifecycleLoader: lifecycle,
+          client: (_, {body}) async {
+            final payload = body! as Map<String, dynamic>;
+            calls.add(payload);
+            return switch (payload['action']) {
+              'activate_due' => FunctionResponse(
+                data: _activatedResponse(),
+                status: 200,
+              ),
+              _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+            };
+          },
+          activationCacheReconciler: (_) async {},
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('changeScheduleActivateDue')), findsOneWidget);
+      expect(find.text('Activate schedule now'), findsOneWidget);
+      expect(find.byKey(const Key('changeScheduleCancel')), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('changeScheduleActivateDue')));
+      await tester.pumpAndSettle();
+
+      expect(calls.single, {
+        'action': 'activate_due',
+        'activationId': 'activation-1',
+      });
+      expect(find.text('Scheduled change activated'), findsOneWidget);
+    },
+  );
 
   testWidgets('re-entering accepted state exposes a functional Undo', (
     tester,
@@ -290,6 +351,7 @@ Widget _app({
   ChangeScheduleFunctionClient? client,
   ChangeScheduleInitialDataLoader? initialData,
   ChangeScheduleLifecycleLoader? lifecycleLoader,
+  ChangeScheduleActivationCacheReconciler? activationCacheReconciler,
   ChangeScheduleUndoCacheReconciler? undoCacheReconciler,
 }) {
   final router = GoRouter(
@@ -317,6 +379,9 @@ Widget _app({
                 FunctionResponse(data: _previewResponse(), status: 200),
       ),
       changeScheduleCacheReconcilerProvider.overrideWithValue((_) async {}),
+      changeScheduleActivationCacheReconcilerProvider.overrideWithValue(
+        activationCacheReconciler ?? ((_) async {}),
+      ),
       changeScheduleUndoCacheReconcilerProvider.overrideWithValue(
         undoCacheReconciler ?? ((_) async {}),
       ),
@@ -448,6 +513,17 @@ Map<String, dynamic> _acceptedResponse() => {
   'priorActivePlanVersionId': 'plan-previous',
   'priorActiveAvailabilityVersionId': 'availability-previous',
   'acceptedAvailabilityVersionId': 'availability-accepted',
+};
+
+Map<String, dynamic> _activatedResponse() => {
+  'proposalId': 'proposal-scheduled-1',
+  'activationId': 'activation-1',
+  'proposalStatus': 'accepted',
+  'acceptedPlanVersionId': 'plan-scheduled-1',
+  'priorActivePlanVersionId': 'plan-previous',
+  'priorActiveAvailabilityVersionId': 'availability-previous',
+  'acceptedAvailabilityVersionId': 'availability-accepted',
+  'activationStatus': 'activated',
 };
 
 Map<String, dynamic> _undoneResponse({String id = 'proposal-preview-1'}) => {

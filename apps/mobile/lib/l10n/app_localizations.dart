@@ -8738,6 +8738,12 @@ abstract class AppLocalizations {
   /// **'Cancel scheduled change'**
   String get changeScheduleCancel;
 
+  /// No description provided for @changeScheduleActivateDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate schedule now'**
+  String get changeScheduleActivateDue;
+
   /// No description provided for @changeScheduleDone.
   ///
   /// In en, this message translates to:
@@ -8803,6 +8809,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This week stays the same. Your new schedule will take effect next week.'**
   String get changeScheduleScheduledSubtitle;
+
+  /// No description provided for @changeScheduleScheduledDueSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your scheduled change is ready to activate.'**
+  String get changeScheduleScheduledDueSubtitle;
 
   /// No description provided for @changeScheduleScheduledFor.
   ///

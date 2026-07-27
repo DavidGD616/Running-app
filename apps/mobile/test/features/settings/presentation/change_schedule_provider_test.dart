@@ -593,9 +593,11 @@ void main() {
   });
 
   test(
-    'activate due transitions to activated and persists plan version',
+    'activate due accepts the production response without plan only after reconciliation',
     () async {
       final calls = <Object?>[];
+      final reconciliation = Completer<void>();
+      String? reconciledPlanVersionId;
       final container = _container(
         now: now,
         preferences: preferences,
@@ -613,40 +615,120 @@ void main() {
           }
           return FunctionResponse(data: {'error': 'invalid'}, status: 400);
         },
+        activationCacheReconciler: (activated) async {
+          reconciledPlanVersionId = activated.acceptedPlanVersionId;
+          expect(activated.plan, isNull);
+          await reconciliation.future;
+        },
       );
       addTearDown(container.dispose);
 
+      final notifier = container.read(changeScheduleProvider.notifier);
       await _editingState(container);
-      expect(
-        await container.read(changeScheduleProvider.notifier).preview(),
-        isTrue,
+      expect(await notifier.preview(), isTrue);
+      expect(await notifier.schedule(), isTrue);
+
+      final activation = notifier.activateDue();
+      await _waitFor(
+        () => calls.any(
+          (call) => call is Map && call['action'] == 'activate_due',
+        ),
       );
-      final scheduleForActivateResult = await container
-          .read(changeScheduleProvider.notifier)
-          .schedule();
-      expect(scheduleForActivateResult, isTrue);
-      final activateDueResult = await container
-          .read(changeScheduleProvider.notifier)
-          .activateDue();
-      expect(activateDueResult, isTrue);
+      expect(container.read(changeScheduleProvider), isA<ChangeScheduleApplying>());
+      expect(reconciledPlanVersionId, 'plan-scheduled-1');
+      expect(
+        container.read(changeScheduleProvider),
+        isNot(isA<ChangeScheduleActivated>()),
+      );
+
+      reconciliation.complete();
+      expect(await activation, isTrue);
 
       final state = container.read(changeScheduleProvider);
       expect(state, isA<ChangeScheduleActivated>());
       expect(
-        state is ChangeScheduleActivated
-            ? state.activated.acceptedPlanVersionId
-            : null,
-        'plan-accepted-2',
-      );
-      final activePlanState =
-          jsonDecode(preferences.getString('active_plan_version_v1')!) as Map;
-      expect(activePlanState['id'], 'plan-accepted-2');
-      expect(
-        calls.any((call) => call is Map && call['action'] == 'activate_due'),
-        isTrue,
+        (state as ChangeScheduleActivated).activated.acceptedPlanVersionId,
+        'plan-scheduled-1',
       );
     },
   );
+
+  test('activate due rejects a mismatched authoritative plan refresh', () async {
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      client: (_, {body}) async {
+        final payload = body! as Map<String, dynamic>;
+        return switch (payload['action']) {
+          'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+          'schedule' => FunctionResponse(data: _scheduledResponse(), status: 200),
+          'activate_due' => FunctionResponse(
+            data: _activatedResponse(),
+            status: 200,
+          ),
+          _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+        };
+      },
+      activationCacheReconciler: (_) async {
+        throw const ChangeScheduleActivationReconciliationException(
+          ChangeScheduleFailureReason.stale,
+        );
+      },
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(changeScheduleProvider.notifier);
+    await _editingState(container);
+    expect(await notifier.preview(), isTrue);
+    expect(await notifier.schedule(), isTrue);
+    expect(await notifier.activateDue(), isFalse);
+
+    final failure = container.read(changeScheduleProvider);
+    expect(failure, isA<ChangeScheduleFailure>());
+    expect(
+      (failure as ChangeScheduleFailure).reason,
+      ChangeScheduleFailureReason.stale,
+    );
+    expect(failure.action, ChangeScheduleAction.activate);
+    expect(notifier.recoverFromFailure(), isTrue);
+    await _editingState(container);
+  });
+
+  test('activate due fails when authoritative reconciliation refresh fails', () async {
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      client: (_, {body}) async {
+        final payload = body! as Map<String, dynamic>;
+        return switch (payload['action']) {
+          'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+          'schedule' => FunctionResponse(data: _scheduledResponse(), status: 200),
+          'activate_due' => FunctionResponse(
+            data: _activatedResponse(),
+            status: 200,
+          ),
+          _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
+        };
+      },
+      activationCacheReconciler: (_) async {
+        throw StateError('authoritative refresh failed');
+      },
+    );
+    addTearDown(container.dispose);
+
+    final notifier = container.read(changeScheduleProvider.notifier);
+    await _editingState(container);
+    expect(await notifier.preview(), isTrue);
+    expect(await notifier.schedule(), isTrue);
+    expect(await notifier.activateDue(), isFalse);
+
+    final failure = container.read(changeScheduleProvider);
+    expect(failure, isA<ChangeScheduleFailure>());
+    expect((failure as ChangeScheduleFailure).reason, ChangeScheduleFailureReason.generic);
+    expect(failure.action, ChangeScheduleAction.activate);
+    expect(notifier.recoverFromFailure(), isTrue);
+    expect(container.read(changeScheduleProvider), isA<ChangeScheduleScheduled>());
+  });
 
   test(
     'undo from success uses the actual proposal id and waits for cache reconciliation',
@@ -1070,6 +1152,7 @@ ProviderContainer _container({
   ChangeScheduleLifecycleLoader? lifecycleLoader,
   ChangeScheduleDraftStore? store,
   ChangeScheduleCacheReconciler? cacheReconciler,
+  ChangeScheduleActivationCacheReconciler? activationCacheReconciler,
   ChangeScheduleUndoCacheReconciler? undoCacheReconciler,
 }) {
   final container = ProviderContainer.test(
@@ -1089,6 +1172,9 @@ ProviderContainer _container({
       ),
       changeScheduleCacheReconcilerProvider.overrideWithValue(
         cacheReconciler ?? ((_) async {}),
+      ),
+      changeScheduleActivationCacheReconcilerProvider.overrideWithValue(
+        activationCacheReconciler ?? ((_) async {}),
       ),
       changeScheduleUndoCacheReconcilerProvider.overrideWithValue(
         undoCacheReconciler ?? ((_) async {}),
@@ -1382,13 +1468,12 @@ Map<String, dynamic> _cancelledResponse() => {
 Map<String, dynamic> _activatedResponse() => {
   'proposalId': 'proposal-preview-1',
   'activationId': 'activation-1',
-  'proposalStatus': 'active',
-  'acceptedPlanVersionId': 'plan-accepted-2',
+  'proposalStatus': 'accepted',
+  'acceptedPlanVersionId': 'plan-scheduled-1',
   'priorActivePlanVersionId': 'plan-previous',
   'priorActiveAvailabilityVersionId': 'availability-previous',
   'acceptedAvailabilityVersionId': 'availability-accepted',
-  'activationStatus': 'active',
-  'plan': _planJson(id: 'plan-accepted-2'),
+  'activationStatus': 'activated',
 };
 
 Map<String, dynamic> _undoneResponse({String id = 'proposal-preview-1'}) => {

@@ -26,6 +26,8 @@ typedef ChangeScheduleLifecycleLoader =
     Future<ChangeScheduleLifecycleLoadResult> Function(String activePlanId);
 typedef ChangeScheduleCacheReconciler =
     Future<void> Function(ChangeScheduleAcceptedResponse acceptance);
+typedef ChangeScheduleActivationCacheReconciler =
+    Future<void> Function(ChangeScheduleActivatedResponse activated);
 typedef ChangeScheduleUndoCacheReconciler =
     Future<void> Function(ChangeScheduleUndoneResponse undone);
 
@@ -67,6 +69,15 @@ enum ChangeScheduleFailureReason {
     ChangeScheduleFailureReason.conflict => true,
     _ => false,
   };
+}
+
+/// Allows reconciliation implementations to preserve a recoverable lifecycle
+/// failure reason when the server accepted an activation but the client could
+/// not prove that the active state was refreshed.
+class ChangeScheduleActivationReconciliationException implements Exception {
+  const ChangeScheduleActivationReconciliationException(this.reason);
+
+  final ChangeScheduleFailureReason reason;
 }
 
 enum ChangeScheduleAction {
@@ -381,6 +392,120 @@ final changeScheduleCacheReconcilerProvider =
 
         if (failure != null) {
           throw failure;
+        }
+      };
+    });
+
+/// Refreshes the locally cached state after the server has activated a
+/// scheduled proposal. The direct reads are deliberate: the repository and
+/// [trainingPlanProvider] can fall back to their local caches, so neither can
+/// prove that the newly active version was loaded from the server.
+final changeScheduleActivationCacheReconcilerProvider =
+    Provider<ChangeScheduleActivationCacheReconciler>((ref) {
+      return (activated) async {
+        final expectedPlanVersionId = activated.acceptedPlanVersionId;
+        if (expectedPlanVersionId == null || expectedPlanVersionId.isEmpty) {
+          throw const FormatException(
+            'Activated change schedule is missing an accepted plan version.',
+          );
+        }
+
+        if (!SupabaseConfig.isConfigured) {
+          throw const ChangeScheduleActivationReconciliationException(
+            ChangeScheduleFailureReason.generic,
+          );
+        }
+        final userId = ref.read(currentUserProvider)?.id;
+        if (userId == null || userId.trim().isEmpty) {
+          throw const ChangeScheduleActivationReconciliationException(
+            ChangeScheduleFailureReason.auth,
+          );
+        }
+
+        final client = ref.read(supabaseClientProvider);
+        final activePlanRow = _mapFromDynamic(
+          await client
+              .from('plan_versions')
+              .select('id,generated_at,requested_by,is_active,data')
+              .eq('user_id', userId)
+              .eq('is_active', true)
+              .maybeSingle(),
+        );
+        final activePlanId = activePlanRow['id'];
+        if (activePlanId is! String || activePlanId != expectedPlanVersionId) {
+          throw const ChangeScheduleActivationReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        }
+
+        final activePlan = TrainingPlan.fromJson(
+          _mapFromDynamic(activePlanRow['data']),
+        );
+        final generatedAt = _dateTimeFromDynamic(activePlanRow['generated_at']);
+        final requestedBy = activePlanRow['requested_by'];
+        if (activePlan == null ||
+            activePlan.id != expectedPlanVersionId ||
+            generatedAt == null ||
+            requestedBy is! String ||
+            requestedBy.isEmpty ||
+            activePlanRow['is_active'] != true) {
+          throw const FormatException(
+            'Invalid activated change schedule active plan.',
+          );
+        }
+
+        final profileRow = _mapFromDynamic(
+          await client
+              .from('runner_profiles')
+              .select('schema_version,updated_at,completed_onboarding_at,data')
+              .eq('user_id', userId)
+              .maybeSingle(),
+        );
+        final profileData = Map<String, dynamic>.from(
+          _mapFromDynamic(profileRow['data']),
+        );
+        profileData['schemaVersion'] ??= profileRow['schema_version'];
+        profileData['updatedAt'] ??= _dateTimeString(profileRow['updated_at']);
+        profileData['completedOnboardingAt'] ??= _dateTimeString(
+          profileRow['completed_onboarding_at'],
+        );
+        final profile = RunnerProfile.fromJson(profileData);
+        if (profile == null) {
+          throw const FormatException(
+            'Invalid activated change schedule runner profile.',
+          );
+        }
+
+        await ref
+            .read(sharedPreferencesPlanVersionRepositoryProvider)
+            .saveActivePlan(
+              PlanVersion(
+                id: activePlanId,
+                generatedAt: generatedAt,
+                requestedBy: requestedBy,
+                isActive: true,
+                plan: activePlan,
+              ),
+            );
+        await SharedPreferencesRunnerProfileRepository(
+          ref.read(sharedPreferencesProvider),
+        ).cacheProfile(profile);
+
+        ref.invalidate(runnerProfileProvider);
+        ref.invalidate(trainingPlanProvider);
+
+        final refreshedProfile = await ref.read(runnerProfileProvider.future);
+        if (refreshedProfile == null) {
+          throw const ChangeScheduleActivationReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
+        }
+
+        final refreshedPlan = await ref.read(trainingPlanProvider.future);
+        if (refreshedPlan.id != expectedPlanVersionId) {
+          throw const ChangeScheduleActivationReconciliationException(
+            ChangeScheduleFailureReason.stale,
+          );
         }
       };
     });
@@ -994,23 +1119,13 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
 
       final data = _mapFromDynamic(response.data);
       final activated = ChangeScheduleActivatedResponse.fromJson(data);
-
-      if (activated.plan != null) {
-        final plan = _planFromMap(activated.plan!);
-        await _savePlanVersion(
-          planId: activated.acceptedPlanVersionId ?? '',
-          plan: plan,
-        );
-      }
-
-      ref.invalidate(runnerProfileProvider);
-      ref.invalidate(trainingPlanProvider);
-      try {
-        await ref.read(runnerProfileProvider.future);
-      } catch (_) {}
-      try {
-        await ref.read(trainingPlanProvider.future);
-      } catch (_) {}
+      _validateActivatedResponse(
+        activated,
+        scheduled: scheduled,
+        activationId: activationId,
+      );
+      await _cacheActivated(activated);
+      if (!ref.mounted) return false;
 
       state = ChangeScheduleActivated(
         draft: draft,
@@ -1034,6 +1149,15 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
         draft,
         sourcePlanId,
         _mapFunctionException(error),
+        preview: preview,
+        scheduled: scheduled,
+        action: ChangeScheduleAction.activate,
+      );
+    } on ChangeScheduleActivationReconciliationException catch (error) {
+      _setFailure(
+        draft,
+        sourcePlanId,
+        error.reason,
         preview: preview,
         scheduled: scheduled,
         action: ChangeScheduleAction.activate,
@@ -1171,27 +1295,12 @@ class ChangeScheduleNotifier extends Notifier<ChangeScheduleState> {
     await ref.read(changeScheduleCacheReconcilerProvider)(acceptance);
   }
 
-  Future<void> _cacheUndone(ChangeScheduleUndoneResponse undone) async {
-    await ref.read(changeScheduleUndoCacheReconcilerProvider)(undone);
+  Future<void> _cacheActivated(ChangeScheduleActivatedResponse activated) async {
+    await ref.read(changeScheduleActivationCacheReconcilerProvider)(activated);
   }
 
-  Future<void> _savePlanVersion({
-    required String planId,
-    required TrainingPlan plan,
-  }) async {
-    if (planId.isEmpty) {
-      return;
-    }
-    final repository = ref.read(sharedPreferencesPlanVersionRepositoryProvider);
-    await repository.saveActivePlan(
-      PlanVersion(
-        id: planId,
-        generatedAt: ref.read(changeScheduleClockProvider)(),
-        requestedBy: 'change_schedule',
-        isActive: true,
-        plan: plan,
-      ),
-    );
+  Future<void> _cacheUndone(ChangeScheduleUndoneResponse undone) async {
+    await ref.read(changeScheduleUndoCacheReconcilerProvider)(undone);
   }
 
   Future<void> _persist(
@@ -1464,14 +1573,38 @@ ChangeScheduleFailureReason _mapFunctionException(FunctionException error) {
   );
 }
 
+void _validateActivatedResponse(
+  ChangeScheduleActivatedResponse activated, {
+  required ChangeScheduleScheduledResponse scheduled,
+  required String activationId,
+}) {
+  if (activated.activationId != activationId ||
+      activated.proposalId != scheduled.proposalId ||
+      activated.proposalStatus != 'accepted' ||
+      activated.activationStatus != 'activated' ||
+      activated.acceptedPlanVersionId == null ||
+      activated.acceptedPlanVersionId!.isEmpty ||
+      activated.acceptedPlanVersionId != scheduled.scheduledPlanVersionId) {
+    throw const FormatException('Invalid activated change schedule response.');
+  }
+}
+
 Map<String, dynamic> _mapFromDynamic(Object? value) {
   if (value is Map<String, dynamic>) return value;
   if (value is Map) return value.map((key, value) => MapEntry('$key', value));
   return const {};
 }
 
-TrainingPlan _planFromMap(Map<String, dynamic> map) =>
-    TrainingPlan.fromJson(map) ??
-    (throw const FormatException('Invalid plan data.'));
+DateTime? _dateTimeFromDynamic(Object? value) => switch (value) {
+  DateTime date => date,
+  String value => DateTime.tryParse(value),
+  _ => null,
+};
+
+String? _dateTimeString(Object? value) => switch (value) {
+  DateTime date => date.toIso8601String(),
+  String value => value,
+  _ => null,
+};
 
 bool _validDraft(ChangeScheduleDraft draft) => draft.isValid;

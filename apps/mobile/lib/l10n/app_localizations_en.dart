@@ -4910,6 +4910,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get changeScheduleCancel => 'Cancel scheduled change';
 
   @override
+  String get changeScheduleActivateDue => 'Activate schedule now';
+
+  @override
   String get changeScheduleDone => 'Done';
 
   @override
@@ -4945,6 +4948,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get changeScheduleScheduledSubtitle =>
       'This week stays the same. Your new schedule will take effect next week.';
+
+  @override
+  String get changeScheduleScheduledDueSubtitle =>
+      'Your scheduled change is ready to activate.';
 
   @override
   String changeScheduleScheduledFor(String date) {

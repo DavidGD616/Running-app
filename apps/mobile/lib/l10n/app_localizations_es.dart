@@ -4956,6 +4956,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get changeScheduleCancel => 'Cancelar cambio programado';
 
   @override
+  String get changeScheduleActivateDue => 'Activar horario ahora';
+
+  @override
   String get changeScheduleDone => 'Listo';
 
   @override
@@ -4992,6 +4995,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get changeScheduleScheduledSubtitle =>
       'Esta semana no cambia. Tu nuevo horario entrará en vigor la próxima semana.';
+
+  @override
+  String get changeScheduleScheduledDueSubtitle =>
+      'Tu cambio programado está listo para activarse.';
 
   @override
   String changeScheduleScheduledFor(String date) {
