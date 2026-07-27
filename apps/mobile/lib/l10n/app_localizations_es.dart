@@ -5080,4 +5080,91 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get changeScheduleRebased =>
       'Tu borrador guardado se actualizó para coincidir con el plan más reciente. Revísalo antes de continuar.';
+
+  @override
+  String get changeScheduleComparisonTitle => 'Comparación de horarios';
+
+  @override
+  String get changeScheduleComparisonCurrentWeek => 'Semana actual';
+
+  @override
+  String get changeScheduleComparisonUpdatedWeek => 'Semana actualizada';
+
+  @override
+  String get changeScheduleComparisonRest => 'Descanso';
+
+  @override
+  String get changeScheduleComparisonNoSession => 'Sin sesión';
+
+  @override
+  String get changeScheduleComparisonLongRun => 'Carrera larga';
+
+  @override
+  String changeScheduleComparisonDaySemantics(
+    String weekday,
+    String date,
+    String session,
+  ) {
+    return '$weekday, $date: $session';
+  }
+
+  @override
+  String changeScheduleComparisonDurationMinutes(String minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHours(String hours) {
+    return '$hours h';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHoursAndMinutes(
+    String hours,
+    String minutes,
+  ) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDistance(String distance, String unit) {
+    return '$distance $unit';
+  }
+
+  @override
+  String get changeScheduleUpdatedPreferences => 'Preferencias actualizadas';
+
+  @override
+  String changeScheduleUpdatedAvailability(String days) {
+    return 'Días disponibles: $days';
+  }
+
+  @override
+  String changeScheduleUpdatedLongRun(String day) {
+    return 'Carrera larga: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedBackup(String day) {
+    return 'Día alternativo: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedSameDay(String preference) {
+    return 'Correr y fuerza: $preference';
+  }
+
+  @override
+  String get changeScheduleUpdatedTimeCaps => 'Límites de tiempo';
+
+  @override
+  String changeScheduleUpdatedTimeCap(String day, String cap) {
+    return '$day: $cap';
+  }
+
+  @override
+  String get changeScheduleComparisonSessionDetailSeparator => ', ';
+
+  @override
+  String get changeScheduleComparisonSessionListSeparator => '; ';
 }

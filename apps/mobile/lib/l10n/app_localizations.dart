@@ -8947,6 +8947,133 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your saved draft was updated to match the latest plan. Review it before continuing.'**
   String get changeScheduleRebased;
+
+  /// No description provided for @changeScheduleComparisonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule comparison'**
+  String get changeScheduleComparisonTitle;
+
+  /// No description provided for @changeScheduleComparisonCurrentWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Current week'**
+  String get changeScheduleComparisonCurrentWeek;
+
+  /// No description provided for @changeScheduleComparisonUpdatedWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated week'**
+  String get changeScheduleComparisonUpdatedWeek;
+
+  /// No description provided for @changeScheduleComparisonRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get changeScheduleComparisonRest;
+
+  /// No description provided for @changeScheduleComparisonNoSession.
+  ///
+  /// In en, this message translates to:
+  /// **'No session'**
+  String get changeScheduleComparisonNoSession;
+
+  /// No description provided for @changeScheduleComparisonLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run'**
+  String get changeScheduleComparisonLongRun;
+
+  /// No description provided for @changeScheduleComparisonDaySemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{weekday}, {date}: {session}'**
+  String changeScheduleComparisonDaySemantics(
+    String weekday,
+    String date,
+    String session,
+  );
+
+  /// No description provided for @changeScheduleComparisonDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String changeScheduleComparisonDurationMinutes(String minutes);
+
+  /// No description provided for @changeScheduleComparisonDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr'**
+  String changeScheduleComparisonDurationHours(String hours);
+
+  /// No description provided for @changeScheduleComparisonDurationHoursAndMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr {minutes} min'**
+  String changeScheduleComparisonDurationHoursAndMinutes(
+    String hours,
+    String minutes,
+  );
+
+  /// No description provided for @changeScheduleComparisonDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} {unit}'**
+  String changeScheduleComparisonDistance(String distance, String unit);
+
+  /// No description provided for @changeScheduleUpdatedPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated preferences'**
+  String get changeScheduleUpdatedPreferences;
+
+  /// No description provided for @changeScheduleUpdatedAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Available days: {days}'**
+  String changeScheduleUpdatedAvailability(String days);
+
+  /// No description provided for @changeScheduleUpdatedLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run: {day}'**
+  String changeScheduleUpdatedLongRun(String day);
+
+  /// No description provided for @changeScheduleUpdatedBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup: {day}'**
+  String changeScheduleUpdatedBackup(String day);
+
+  /// No description provided for @changeScheduleUpdatedSameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Run and strength: {preference}'**
+  String changeScheduleUpdatedSameDay(String preference);
+
+  /// No description provided for @changeScheduleUpdatedTimeCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limits'**
+  String get changeScheduleUpdatedTimeCaps;
+
+  /// No description provided for @changeScheduleUpdatedTimeCap.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}: {cap}'**
+  String changeScheduleUpdatedTimeCap(String day, String cap);
+
+  /// No description provided for @changeScheduleComparisonSessionDetailSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get changeScheduleComparisonSessionDetailSeparator;
+
+  /// No description provided for @changeScheduleComparisonSessionListSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'; '**
+  String get changeScheduleComparisonSessionListSeparator;
 }
 
 class _AppLocalizationsDelegate

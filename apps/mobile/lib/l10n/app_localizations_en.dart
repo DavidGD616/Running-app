@@ -5034,4 +5034,91 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get changeScheduleRebased =>
       'Your saved draft was updated to match the latest plan. Review it before continuing.';
+
+  @override
+  String get changeScheduleComparisonTitle => 'Schedule comparison';
+
+  @override
+  String get changeScheduleComparisonCurrentWeek => 'Current week';
+
+  @override
+  String get changeScheduleComparisonUpdatedWeek => 'Updated week';
+
+  @override
+  String get changeScheduleComparisonRest => 'Rest';
+
+  @override
+  String get changeScheduleComparisonNoSession => 'No session';
+
+  @override
+  String get changeScheduleComparisonLongRun => 'Long run';
+
+  @override
+  String changeScheduleComparisonDaySemantics(
+    String weekday,
+    String date,
+    String session,
+  ) {
+    return '$weekday, $date: $session';
+  }
+
+  @override
+  String changeScheduleComparisonDurationMinutes(String minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHours(String hours) {
+    return '$hours hr';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHoursAndMinutes(
+    String hours,
+    String minutes,
+  ) {
+    return '$hours hr $minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDistance(String distance, String unit) {
+    return '$distance $unit';
+  }
+
+  @override
+  String get changeScheduleUpdatedPreferences => 'Updated preferences';
+
+  @override
+  String changeScheduleUpdatedAvailability(String days) {
+    return 'Available days: $days';
+  }
+
+  @override
+  String changeScheduleUpdatedLongRun(String day) {
+    return 'Long run: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedBackup(String day) {
+    return 'Backup: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedSameDay(String preference) {
+    return 'Run and strength: $preference';
+  }
+
+  @override
+  String get changeScheduleUpdatedTimeCaps => 'Time limits';
+
+  @override
+  String changeScheduleUpdatedTimeCap(String day, String cap) {
+    return '$day: $cap';
+  }
+
+  @override
+  String get changeScheduleComparisonSessionDetailSeparator => ', ';
+
+  @override
+  String get changeScheduleComparisonSessionListSeparator => '; ';
 }

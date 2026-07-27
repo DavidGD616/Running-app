@@ -29,16 +29,17 @@ void main() {
     preferences = await SharedPreferences.getInstance();
   });
 
-  testWidgets('uses the dedicated change schedule route instead of onboarding', (
-    tester,
-  ) async {
-    await tester.pumpWidget(_app(now: now, preferences: preferences));
-    await tester.pumpAndSettle();
+  testWidgets(
+    'uses the dedicated change schedule route instead of onboarding',
+    (tester) async {
+      await tester.pumpWidget(_app(now: now, preferences: preferences));
+      await tester.pumpAndSettle();
 
-    expect(find.byType(ChangeScheduleFlowScreen), findsOneWidget);
-    expect(find.byType(ScheduleScreen), findsNothing);
-    expect(find.text('Change schedule'), findsOneWidget);
-  });
+      expect(find.byType(ChangeScheduleFlowScreen), findsOneWidget);
+      expect(find.byType(ScheduleScreen), findsNothing);
+      expect(find.text('Change schedule'), findsOneWidget);
+    },
+  );
 
   testWidgets('progresses through a valid draft, previews, and applies it', (
     tester,
@@ -52,8 +53,14 @@ void main() {
           final payload = body! as Map<String, dynamic>;
           calls.add(payload);
           return switch (payload['action']) {
-            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
-            'accept_now' => FunctionResponse(data: _acceptedResponse(), status: 200),
+            'preview' => FunctionResponse(
+              data: _previewResponse(),
+              status: 200,
+            ),
+            'accept_now' => FunctionResponse(
+              data: _acceptedResponse(),
+              status: 200,
+            ),
             _ => FunctionResponse(data: {'error': 'invalid'}, status: 400),
           };
         },
@@ -77,7 +84,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(calls.single['action'], 'preview');
     expect(find.text('Schedule preview'), findsOneWidget);
-    expect(find.text('A workout moves to another available day.'), findsOneWidget);
+    expect(
+      find.text('A workout moves to another available day.'),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('changeScheduleApply')));
     await tester.pumpAndSettle();
@@ -87,34 +97,216 @@ void main() {
     expect(find.byKey(const Key('changeScheduleDone')), findsOneWidget);
   });
 
-  testWidgets('pre-due scheduled change has Cancel but no activation CTA', (
+  testWidgets(
+    'preview renders current and updated effective weeks with session details',
+    (tester) async {
+      final sourcePlan = TrainingPlan.fromJson(
+        _planJson(
+          id: 'active-plan',
+          sessions: [
+            _sessionJson(
+              id: 'current-rest',
+              date: DateTime(2026, 7, 13),
+              type: 'restDay',
+            ),
+            _sessionJson(
+              id: 'current-easy',
+              date: DateTime(2026, 7, 14),
+              type: 'easyRun',
+              durationMinutes: 35,
+              distanceKm: 5,
+            ),
+            _sessionJson(
+              id: 'current-long',
+              date: DateTime(2026, 7, 14),
+              type: 'longRun',
+              durationMinutes: 60,
+              distanceKm: 16,
+            ),
+          ],
+        ),
+      )!;
+      final candidatePlan = _planJson(
+        id: 'candidate-plan',
+        sessions: [
+          _sessionJson(
+            id: 'updated-intervals',
+            date: DateTime(2026, 7, 15),
+            type: 'intervals',
+            durationMinutes: 45,
+          ),
+        ],
+      );
+      await tester.pumpWidget(
+        _app(
+          now: now,
+          preferences: preferences,
+          initialData: () async => ChangeScheduleInitialData(
+            profile: buildRunnerProfile(),
+            activePlan: sourcePlan,
+          ),
+          client: (_, {body}) async => FunctionResponse(
+            data: {..._previewResponse(), 'candidatePlan': candidatePlan},
+            status: 200,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('changeScheduleStepContinue')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('changeScheduleStepContinue')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('changeSchedulePreview')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('changeScheduleComparison')), findsOneWidget);
+      expect(
+        find.byKey(const Key('changeScheduleComparisonCurrentWeek')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('changeScheduleComparisonUpdatedWeek')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('changeScheduleComparisonCurrentDay1')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('changeScheduleComparisonUpdatedDay1')),
+        findsOneWidget,
+      );
+      expect(find.text('Schedule comparison'), findsOneWidget);
+      expect(find.text('Current week'), findsOneWidget);
+      expect(find.text('Updated week'), findsOneWidget);
+      expect(find.text('Rest'), findsOneWidget);
+      expect(find.text('Easy Run'), findsOneWidget);
+      expect(find.text('Intervals'), findsOneWidget);
+      expect(find.text('No session'), findsWidgets);
+      expect(find.text('Long Run'), findsOneWidget);
+      expect(find.text('Long run'), findsOneWidget);
+      expect(find.text('35 min'), findsOneWidget);
+      expect(find.text('5 km'), findsOneWidget);
+      expect(find.text('1 hr'), findsOneWidget);
+      expect(find.text('16 km'), findsOneWidget);
+      expect(find.bySemanticsLabel(RegExp(r'Monday.*Rest')), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          RegExp(
+            r'Tuesday.*Easy Run.*35 min.*5 km.*Long Run.*Long run.*1 hr.*16 km',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const Key('changeScheduleUpdatedPreferences')),
+        findsOneWidget,
+      );
+      expect(find.text('Updated preferences'), findsOneWidget);
+      expect(
+        find.text('Available days: Monday, Tuesday, Thursday, Sunday'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('comparison and preferences stay localized in Spanish', (
     tester,
   ) async {
-    Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
-        Future.value(ChangeScheduleLifecycleAvailable(
-      ChangeScheduleLifecycleData(
-        scheduledProposal: _lifecycleProposal(
-          status: ChangeScheduleLifecycleProposalStatus.scheduled,
-          id: 'proposal-scheduled-1',
-          sourcePlanId: 'active-plan',
-          effectiveFrom: '2026-07-20',
-          scheduledPlanVersionId: 'plan-scheduled-1',
-        ),
-        scheduledActivation: _lifecycleActivation(
-          proposalId: 'proposal-scheduled-1',
-          sourcePlanId: 'active-plan',
-          effectiveFrom: '2026-07-20',
-          queuedPlanVersionId: 'plan-scheduled-1',
-        ),
+    final sourcePlan = TrainingPlan.fromJson(
+      _planJson(
+        id: 'active-plan',
+        sessions: [
+          _sessionJson(
+            id: 'current-rest',
+            date: DateTime(2026, 7, 13),
+            type: 'restDay',
+          ),
+          _sessionJson(
+            id: 'current-long',
+            date: DateTime(2026, 7, 19),
+            type: 'longRun',
+          ),
+        ],
       ),
-        ));
-
+    )!;
+    final candidatePlan = _planJson(
+      id: 'candidate-plan',
+      sessions: [
+        _sessionJson(
+          id: 'updated-intervals',
+          date: DateTime(2026, 7, 15),
+          type: 'intervals',
+          description: 'Unlocalized candidate summary',
+        ),
+      ],
+    );
     await tester.pumpWidget(
       _app(
         now: now,
         preferences: preferences,
-        lifecycleLoader: lifecycle,
+        locale: const Locale('es'),
+        initialData: () async => ChangeScheduleInitialData(
+          profile: buildRunnerProfile(),
+          activePlan: sourcePlan,
+        ),
+        client: (_, {body}) async => FunctionResponse(
+          data: {..._previewResponse(), 'candidatePlan': candidatePlan},
+          status: 200,
+        ),
       ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('changeScheduleStepContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeScheduleStepContinue')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('changeSchedulePreview')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Comparación de horarios'), findsOneWidget);
+    expect(find.text('Semana actual'), findsOneWidget);
+    expect(find.text('Semana actualizada'), findsOneWidget);
+    expect(find.text('Descanso'), findsOneWidget);
+    expect(find.text('Sin sesión'), findsWidgets);
+    expect(find.text('Carrera larga'), findsOneWidget);
+    expect(find.text('Preferencias actualizadas'), findsOneWidget);
+    expect(find.text('Correr y fuerza: Sesiones separadas'), findsOneWidget);
+    expect(find.text('Running y fuerza: Sesiones separadas'), findsNothing);
+    expect(find.text('Schedule comparison'), findsNothing);
+    expect(find.text('Updated preferences'), findsNothing);
+    expect(find.text('Unlocalized candidate summary'), findsNothing);
+    expect(find.bySemanticsLabel(RegExp(r'Lunes.*Descanso')), findsOneWidget);
+  });
+
+  testWidgets('pre-due scheduled change has Cancel but no activation CTA', (
+    tester,
+  ) async {
+    Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
+        Future.value(
+          ChangeScheduleLifecycleAvailable(
+            ChangeScheduleLifecycleData(
+              scheduledProposal: _lifecycleProposal(
+                status: ChangeScheduleLifecycleProposalStatus.scheduled,
+                id: 'proposal-scheduled-1',
+                sourcePlanId: 'active-plan',
+                effectiveFrom: '2026-07-20',
+                scheduledPlanVersionId: 'plan-scheduled-1',
+              ),
+              scheduledActivation: _lifecycleActivation(
+                proposalId: 'proposal-scheduled-1',
+                sourcePlanId: 'active-plan',
+                effectiveFrom: '2026-07-20',
+                queuedPlanVersionId: 'plan-scheduled-1',
+              ),
+            ),
+          ),
+        );
+
+    await tester.pumpWidget(
+      _app(now: now, preferences: preferences, lifecycleLoader: lifecycle),
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('changeScheduleCancel')), findsOneWidget);
@@ -123,11 +315,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pumpAndSettle();
     await tester.pumpWidget(
-      _app(
-        now: now,
-        preferences: preferences,
-        lifecycleLoader: lifecycle,
-      ),
+      _app(now: now, preferences: preferences, lifecycleLoader: lifecycle),
     );
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('changeScheduleCancel')), findsOneWidget);
@@ -139,23 +327,25 @@ void main() {
     (tester) async {
       final calls = <Map<String, dynamic>>[];
       Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
-          Future.value(ChangeScheduleLifecycleAvailable(
-            ChangeScheduleLifecycleData(
-              scheduledProposal: _lifecycleProposal(
-                status: ChangeScheduleLifecycleProposalStatus.scheduled,
-                id: 'proposal-scheduled-1',
-                sourcePlanId: 'active-plan',
-                effectiveFrom: '2026-07-13',
-                scheduledPlanVersionId: 'plan-scheduled-1',
-              ),
-              scheduledActivation: _lifecycleActivation(
-                proposalId: 'proposal-scheduled-1',
-                sourcePlanId: 'active-plan',
-                effectiveFrom: '2026-07-13',
-                queuedPlanVersionId: 'plan-scheduled-1',
+          Future.value(
+            ChangeScheduleLifecycleAvailable(
+              ChangeScheduleLifecycleData(
+                scheduledProposal: _lifecycleProposal(
+                  status: ChangeScheduleLifecycleProposalStatus.scheduled,
+                  id: 'proposal-scheduled-1',
+                  sourcePlanId: 'active-plan',
+                  effectiveFrom: '2026-07-13',
+                  scheduledPlanVersionId: 'plan-scheduled-1',
+                ),
+                scheduledActivation: _lifecycleActivation(
+                  proposalId: 'proposal-scheduled-1',
+                  sourcePlanId: 'active-plan',
+                  effectiveFrom: '2026-07-13',
+                  queuedPlanVersionId: 'plan-scheduled-1',
+                ),
               ),
             ),
-          ));
+          );
 
       await tester.pumpWidget(
         _app(
@@ -178,7 +368,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('changeScheduleActivateDue')), findsOneWidget);
+      expect(
+        find.byKey(const Key('changeScheduleActivateDue')),
+        findsOneWidget,
+      );
       expect(find.text('Activate schedule now'), findsOneWidget);
       expect(find.byKey(const Key('changeScheduleCancel')), findsOneWidget);
 
@@ -200,16 +393,18 @@ void main() {
     final reconciliation = Completer<void>();
     ChangeScheduleUndoneResponse? reconciled;
     Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
-        Future.value(ChangeScheduleLifecycleAvailable(
-      ChangeScheduleLifecycleData(
-        acceptedProposal: _lifecycleProposal(
-          status: ChangeScheduleLifecycleProposalStatus.accepted,
-          id: 'proposal-accepted-1',
-          sourcePlanId: 'plan-before-accept',
-          acceptedPlanVersionId: 'plan-accepted-1',
-        ),
-      ),
-        ));
+        Future.value(
+          ChangeScheduleLifecycleAvailable(
+            ChangeScheduleLifecycleData(
+              acceptedProposal: _lifecycleProposal(
+                status: ChangeScheduleLifecycleProposalStatus.accepted,
+                id: 'proposal-accepted-1',
+                sourcePlanId: 'plan-before-accept',
+                acceptedPlanVersionId: 'plan-accepted-1',
+              ),
+            ),
+          ),
+        );
 
     await tester.pumpWidget(
       _app(
@@ -236,7 +431,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('changeScheduleUndo')));
     await tester.pump();
-    expect(calls.single, {'action': 'undo', 'proposalId': 'proposal-accepted-1'});
+    expect(calls.single, {
+      'action': 'undo',
+      'proposalId': 'proposal-accepted-1',
+    });
     expect(reconciled?.proposalId, 'proposal-accepted-1');
     expect(reconciled?.priorPlanVersionId, 'plan-previous');
     expect(reconciled?.priorAvailabilityVersionId, 'availability-previous');
@@ -254,33 +452,33 @@ void main() {
     tester,
   ) async {
     Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) =>
-        Future.value(ChangeScheduleLifecycleAvailable(
-      ChangeScheduleLifecycleData(
-        scheduledProposal: _lifecycleProposal(
-          status: ChangeScheduleLifecycleProposalStatus.scheduled,
-          id: 'proposal-scheduled-1',
-          sourcePlanId: 'active-plan',
-          effectiveFrom: '2026-07-20',
-          scheduledPlanVersionId: 'plan-scheduled-1',
-        ),
-        scheduledActivation: _lifecycleActivation(
-          proposalId: 'proposal-scheduled-1',
-          sourcePlanId: 'active-plan',
-          effectiveFrom: '2026-07-20',
-          queuedPlanVersionId: 'plan-scheduled-1',
-        ),
-      ),
-        ));
+        Future.value(
+          ChangeScheduleLifecycleAvailable(
+            ChangeScheduleLifecycleData(
+              scheduledProposal: _lifecycleProposal(
+                status: ChangeScheduleLifecycleProposalStatus.scheduled,
+                id: 'proposal-scheduled-1',
+                sourcePlanId: 'active-plan',
+                effectiveFrom: '2026-07-20',
+                scheduledPlanVersionId: 'plan-scheduled-1',
+              ),
+              scheduledActivation: _lifecycleActivation(
+                proposalId: 'proposal-scheduled-1',
+                sourcePlanId: 'active-plan',
+                effectiveFrom: '2026-07-20',
+                queuedPlanVersionId: 'plan-scheduled-1',
+              ),
+            ),
+          ),
+        );
 
     await tester.pumpWidget(
       _app(
         now: now,
         preferences: preferences,
         lifecycleLoader: lifecycle,
-        client: (_, {body}) async => FunctionResponse(
-          data: {'error': 'timeout'},
-          status: 504,
-        ),
+        client: (_, {body}) async =>
+            FunctionResponse(data: {'error': 'timeout'}, status: 504),
       ),
     );
     await tester.pumpAndSettle();
@@ -330,7 +528,10 @@ void main() {
         client: (_, {body}) async {
           final payload = body! as Map<String, dynamic>;
           return switch (payload['action']) {
-            'preview' => FunctionResponse(data: _previewResponse(), status: 200),
+            'preview' => FunctionResponse(
+              data: _previewResponse(),
+              status: 200,
+            ),
             'accept_now' => FunctionResponse(
               data: {'error': 'proposal_expired'},
               status: 409,
@@ -366,6 +567,7 @@ void main() {
 Widget _app({
   required DateTime now,
   required SharedPreferences preferences,
+  Locale? locale,
   ChangeScheduleFunctionClient? client,
   ChangeScheduleInitialDataLoader? initialData,
   ChangeScheduleLifecycleLoader? lifecycleLoader,
@@ -389,7 +591,8 @@ Widget _app({
         initialData ?? () async => _initialData(),
       ),
       changeScheduleLifecycleLoaderProvider.overrideWithValue(
-        lifecycleLoader ?? (_) async => const ChangeScheduleLifecycleUnavailable(),
+        lifecycleLoader ??
+            (_) async => const ChangeScheduleLifecycleUnavailable(),
       ),
       changeScheduleFunctionClientProvider.overrideWithValue(
         client ??
@@ -406,6 +609,7 @@ Widget _app({
     ],
     child: MaterialApp.router(
       routerConfig: router,
+      locale: locale,
       theme: AppTheme.dark,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -452,13 +656,35 @@ ChangeScheduleAvailability _availability() => ChangeScheduleAvailability(
       ChangeScheduleSameDayPreference.separateSessions,
 );
 
-Map<String, dynamic> _planJson({required String id}) => {
+Map<String, dynamic> _planJson({
+  required String id,
+  List<Map<String, dynamic>> sessions = const [],
+}) => {
   'schemaVersion': 1,
   'id': id,
   'raceType': 'halfMarathon',
   'totalWeeks': 12,
   'currentWeekNumber': 1,
-  'sessions': <Map<String, dynamic>>[],
+  'sessions': sessions,
+};
+
+Map<String, dynamic> _sessionJson({
+  required String id,
+  required DateTime date,
+  required String type,
+  String? description,
+  int? durationMinutes,
+  double? distanceKm,
+}) => {
+  'schemaVersion': 1,
+  'id': id,
+  'date': date.toIso8601String(),
+  'type': type,
+  'status': 'upcoming',
+  'weekNumber': 1,
+  'description': ?description,
+  'durationMinutes': ?durationMinutes,
+  'distanceKm': ?distanceKm,
 };
 
 ChangeScheduleLifecycleProposal _lifecycleProposal({

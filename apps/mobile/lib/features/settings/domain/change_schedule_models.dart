@@ -4,7 +4,154 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../profile/domain/models/runner_profile.dart';
+import '../../training_plan/domain/models/session_type.dart';
 import '../../training_plan/domain/models/training_plan.dart';
+import '../../training_plan/domain/models/training_session.dart';
+
+/// A canonical, display-agnostic comparison of two plans for one ISO week.
+///
+/// The comparison intentionally contains no translated copy. Presentation code
+/// maps [ChangeScheduleWeekSession.type] and the structural values to localized
+/// labels at the UI boundary.
+class ChangeScheduleWeekComparison {
+  const ChangeScheduleWeekComparison({
+    required this.weekStart,
+    required this.currentWeek,
+    required this.updatedWeek,
+  });
+
+  final DateTime weekStart;
+  final List<ChangeScheduleWeekDay> currentWeek;
+  final List<ChangeScheduleWeekDay> updatedWeek;
+
+  /// Builds exactly seven Monday-to-Sunday day entries from the plan dates.
+  ///
+  /// [weekStart] must be the effective Monday supplied by the preview. This
+  /// avoids silently comparing a different week if a malformed lifecycle
+  /// payload contains a non-week-start date.
+  factory ChangeScheduleWeekComparison.fromPlans({
+    required TrainingPlan sourcePlan,
+    required TrainingPlan candidatePlan,
+    required DateTime weekStart,
+  }) {
+    final normalizedWeekStart = _changeScheduleDateOnly(weekStart);
+    if (normalizedWeekStart.weekday != DateTime.monday) {
+      throw const FormatException(
+        'Change schedule effective week must begin on Monday.',
+      );
+    }
+
+    return ChangeScheduleWeekComparison(
+      weekStart: normalizedWeekStart,
+      currentWeek: _changeScheduleWeekDays(sourcePlan, normalizedWeekStart),
+      updatedWeek: _changeScheduleWeekDays(candidatePlan, normalizedWeekStart),
+    );
+  }
+}
+
+/// One fixed weekday in a [ChangeScheduleWeekComparison].
+class ChangeScheduleWeekDay {
+  const ChangeScheduleWeekDay({
+    required this.weekday,
+    required this.date,
+    required this.sessions,
+  });
+
+  /// ISO weekday: Monday is 1 and Sunday is 7.
+  final int weekday;
+  final DateTime date;
+  final List<ChangeScheduleWeekSession> sessions;
+
+  bool get hasNoSession => sessions.isEmpty;
+
+  bool get hasLongRun => sessions.any((session) => session.isLongRun);
+
+  /// Favors an actionable workout for consumers that require one session.
+  /// The schedule comparison itself renders every entry in [sessions].
+  ChangeScheduleWeekSession? get primarySession {
+    for (final session in sessions) {
+      if (session.type != SessionType.restDay) return session;
+    }
+    return sessions.isEmpty ? null : sessions.first;
+  }
+
+  bool get isExplicitRestDay =>
+      primarySession?.type == SessionType.restDay && sessions.length == 1;
+}
+
+/// Stable source data for a plan session shown in a weekly comparison.
+class ChangeScheduleWeekSession {
+  const ChangeScheduleWeekSession({
+    required this.id,
+    required this.type,
+    required this.isLongRun,
+    this.summary,
+    this.durationMinutes,
+    this.distanceKm,
+  });
+
+  final String id;
+  final SessionType type;
+
+  /// Canonical plan text, if the source plan includes it. It is deliberately
+  /// not a localized display label and should only be rendered after an
+  /// explicit localization strategy exists for authored session summaries.
+  final String? summary;
+  final int? durationMinutes;
+  final double? distanceKm;
+  final bool isLongRun;
+
+  factory ChangeScheduleWeekSession.fromTrainingSession(
+    TrainingSession session,
+  ) {
+    final summary = session.description?.trim();
+    return ChangeScheduleWeekSession(
+      id: session.id,
+      type: session.type,
+      summary: summary == null || summary.isEmpty ? null : summary,
+      durationMinutes: session.durationMinutes,
+      distanceKm: session.distanceKm,
+      isLongRun: session.type == SessionType.longRun,
+    );
+  }
+}
+
+List<ChangeScheduleWeekDay> _changeScheduleWeekDays(
+  TrainingPlan plan,
+  DateTime weekStart,
+) {
+  final weekEnd = weekStart.add(const Duration(days: 7));
+  final sessionsByWeekday = <int, List<TrainingSession>>{};
+
+  for (final session in plan.sessions) {
+    final sessionDate = _changeScheduleDateOnly(session.date);
+    if (sessionDate.isBefore(weekStart) || !sessionDate.isBefore(weekEnd)) {
+      continue;
+    }
+    sessionsByWeekday.putIfAbsent(sessionDate.weekday, () => []).add(session);
+  }
+
+  return List<ChangeScheduleWeekDay>.generate(7, (index) {
+    final weekday = index + 1;
+    final sessions =
+        List<TrainingSession>.from(sessionsByWeekday[weekday] ?? const [])
+          ..sort((left, right) {
+            final dateOrder = left.date.compareTo(right.date);
+            return dateOrder == 0 ? left.id.compareTo(right.id) : dateOrder;
+          });
+    return ChangeScheduleWeekDay(
+      weekday: weekday,
+      date: weekStart.add(Duration(days: index)),
+      sessions: sessions
+          .map(ChangeScheduleWeekSession.fromTrainingSession)
+          .toList(growable: false),
+    );
+  }, growable: false);
+}
+
+DateTime _changeScheduleDateOnly(DateTime date) =>
+    DateTime(date.year, date.month, date.day);
+
 enum ChangeScheduleSameDayPreference {
   separateSessions('separate_sessions'),
   avoidSameDay('avoid_same_day');
@@ -833,10 +980,7 @@ class ChangeScheduleLifecycleProposal {
       impacts: List<dynamic>.from(rawImpacts),
       warnings: warnings,
       goalImpact: goalImpact,
-      effectiveFrom: _requiredDateOnly(
-        row['effective_from'],
-        'effective_from',
-      ),
+      effectiveFrom: _requiredDateOnly(row['effective_from'], 'effective_from'),
       expiresAt: _requiredDateTime(row['expires_at'], 'expires_at'),
       acceptedPlanVersionId: _optionalNullableString(
         row['accepted_plan_version_id'],
@@ -1222,6 +1366,7 @@ class ChangeScheduleUndoneResponse {
   });
 
   final String proposalId;
+
   /// The plan reactivated by the undo.
   final String priorPlanVersionId;
 

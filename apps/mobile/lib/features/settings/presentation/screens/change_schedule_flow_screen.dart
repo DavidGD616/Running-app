@@ -6,9 +6,13 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_radius.dart';
 import '../../../../core/theme/app_spacing.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/unit_formatter.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_header_bar.dart';
 import '../../../../l10n/app_localizations.dart';
+import '../../../training_plan/domain/models/session_type.dart';
+import '../../../user_preferences/domain/user_preferences.dart';
+import '../../../user_preferences/presentation/user_preferences_provider.dart';
 import '../../domain/change_schedule_models.dart';
 import '../change_schedule_provider.dart';
 
@@ -90,7 +94,9 @@ class _ChangeScheduleFlowScreenState
         title: AppLocalizations.of(context)!.changeScheduleCancelledTitle,
         subtitle: AppLocalizations.of(context)!.changeScheduleCancelledSubtitle,
         detail: preview != null && scheduled != null
-            ? AppLocalizations.of(context)!.changeSchedulePreviouslyScheduledFor(
+            ? AppLocalizations.of(
+                context,
+              )!.changeSchedulePreviouslyScheduledFor(
                 _formatDate(context, preview.effectiveFrom),
               )
             : null,
@@ -190,7 +196,8 @@ class _ChangeScheduleFlowScreenState
                   isLoading: isPreviewing,
                   onPressed: isPreviewing
                       ? null
-                      : () => ref.read(changeScheduleProvider.notifier).preview(),
+                      : () =>
+                            ref.read(changeScheduleProvider.notifier).preview(),
                 )
               else
                 AppButton(
@@ -277,7 +284,10 @@ class _ChangeScheduleFlowScreenState
           subtitle: l10n.changeScheduleLongRunSubtitle,
         ),
         const SizedBox(height: AppSpacing.xl),
-        Text(l10n.changeSchedulePrimaryLongRun, style: AppTypography.labelLarge),
+        Text(
+          l10n.changeSchedulePrimaryLongRun,
+          style: AppTypography.labelLarge,
+        ),
         const SizedBox(height: AppSpacing.md),
         Wrap(
           spacing: AppSpacing.sm,
@@ -343,7 +353,8 @@ class _ChangeScheduleFlowScreenState
                 ? l10n.changeScheduleSelected
                 : l10n.changeScheduleNotSelected,
           ),
-          selected: availability.sameDayRunStrengthPreference ==
+          selected:
+              availability.sameDayRunStrengthPreference ==
               ChangeScheduleSameDayPreference.separateSessions,
           onTap: () => _setSameDayPreference(
             draft,
@@ -361,7 +372,8 @@ class _ChangeScheduleFlowScreenState
                 ? l10n.changeScheduleSelected
                 : l10n.changeScheduleNotSelected,
           ),
-          selected: availability.sameDayRunStrengthPreference ==
+          selected:
+              availability.sameDayRunStrengthPreference ==
               ChangeScheduleSameDayPreference.avoidSameDay,
           onTap: () => _setSameDayPreference(
             draft,
@@ -452,6 +464,8 @@ class _ChangeScheduleFlowScreenState
     final proposedSessionCount = proposedSessions is List
         ? proposedSessions.length
         : 0;
+    final unitSystem =
+        ref.watch(userPreferencesProvider).value?.unitSystem ?? UnitSystem.km;
     final shouldApplyNow =
         state.draft.effectiveWeek == ChangeScheduleEffectiveWeek.current;
 
@@ -494,9 +508,22 @@ class _ChangeScheduleFlowScreenState
                           _intFrom(preview.goalImpact['removedSessions']),
                           _intFrom(preview.goalImpact['splitSessions']),
                         ),
-                        sessionLabel: l10n.changeSchedulePreviewCandidateSessions(
-                          proposedSessionCount,
-                        ),
+                        sessionLabel: l10n
+                            .changeSchedulePreviewCandidateSessions(
+                              proposedSessionCount,
+                            ),
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _ScheduleComparisonSection(
+                        comparison: state.comparison,
+                        l10n: l10n,
+                        locale: Localizations.localeOf(context),
+                        unitSystem: unitSystem,
+                      ),
+                      const SizedBox(height: AppSpacing.xl),
+                      _UpdatedPreferencesSection(
+                        availability: preview.proposedAvailability,
+                        l10n: l10n,
                       ),
                       const SizedBox(height: AppSpacing.xl),
                       Text(
@@ -512,7 +539,9 @@ class _ChangeScheduleFlowScreenState
                       else
                         ...preview.warnings.map(
                           (warning) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
+                            ),
                             child: _InformationCard(
                               label: _warningLabel(warning, l10n),
                               color: AppColors.warning,
@@ -533,7 +562,9 @@ class _ChangeScheduleFlowScreenState
                       else
                         ...preview.impacts.map(
                           (impact) => Padding(
-                            padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                            padding: const EdgeInsets.only(
+                              bottom: AppSpacing.sm,
+                            ),
                             child: _InformationCard(
                               label: _impactLabel(impact, l10n),
                               color: AppColors.accentPrimary,
@@ -577,10 +608,7 @@ class _ChangeScheduleFlowScreenState
     );
   }
 
-  Widget _acceptedScaffold(
-    BuildContext context,
-    ChangeScheduleSuccess state,
-  ) {
+  Widget _acceptedScaffold(BuildContext context, ChangeScheduleSuccess state) {
     final l10n = AppLocalizations.of(context)!;
     final preview = _lastPreview ?? state.preview;
     return _outcomeScaffold(
@@ -650,7 +678,10 @@ class _ChangeScheduleFlowScreenState
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.changeScheduleTitle, onBack: onBack),
+      appBar: AppDetailHeaderBar(
+        title: l10n.changeScheduleTitle,
+        onBack: onBack,
+      ),
       body: SafeArea(
         top: false,
         child: Padding(
@@ -722,7 +753,10 @@ class _ChangeScheduleFlowScreenState
     final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: AppColors.backgroundPrimary,
-      appBar: AppDetailHeaderBar(title: l10n.changeScheduleTitle, onBack: onBack),
+      appBar: AppDetailHeaderBar(
+        title: l10n.changeScheduleTitle,
+        onBack: onBack,
+      ),
       body: SafeArea(
         top: false,
         child: Center(
@@ -761,10 +795,7 @@ class _ChangeScheduleFlowScreenState
     );
   }
 
-  Widget _failureScaffold(
-    BuildContext context,
-    ChangeScheduleFailure state,
-  ) {
+  Widget _failureScaffold(BuildContext context, ChangeScheduleFailure state) {
     final l10n = AppLocalizations.of(context)!;
     final requiresAuthoritativeReload =
         state.reason.requiresAuthoritativeReload;
@@ -915,7 +946,8 @@ class _ChangeScheduleFlowScreenState
     var primary = availability.primaryLongRunWeekday;
     if (!availableDays.contains(primary)) primary = availableDays.first;
     final backup = availability.backupLongRunWeekday;
-    final clearBackup = backup != null &&
+    final clearBackup =
+        backup != null &&
         (!availableDays.contains(backup) || backup == primary);
     final nextAvailability = availability.copyWith(
       days: nextDays,
@@ -933,7 +965,9 @@ class _ChangeScheduleFlowScreenState
         ChangeScheduleAvailabilityDay(
           day: day.day,
           available: day.available,
-          maxDurationMinutes: day.day == targetDay ? cap : day.maxDurationMinutes,
+          maxDurationMinutes: day.day == targetDay
+              ? cap
+              : day.maxDurationMinutes,
         ),
     ];
     ref
@@ -945,14 +979,18 @@ class _ChangeScheduleFlowScreenState
     final availability = draft.availability;
     var nextAvailability = availability.withPrimaryLongRunDay(day);
     if (nextAvailability.backupLongRunWeekday == day) {
-      nextAvailability = nextAvailability.copyWith(clearBackupLongRunWeekday: true);
+      nextAvailability = nextAvailability.copyWith(
+        clearBackupLongRunWeekday: true,
+      );
     }
     ref.read(changeScheduleProvider.notifier).setAvailability(nextAvailability);
   }
 
   void _setBackupLongRunDay(ChangeScheduleDraft draft, int? day) {
     final availability = draft.availability;
-    ref.read(changeScheduleProvider.notifier).setAvailability(
+    ref
+        .read(changeScheduleProvider.notifier)
+        .setAvailability(
           day == null
               ? availability.copyWith(clearBackupLongRunWeekday: true)
               : availability.copyWith(backupLongRunWeekday: day),
@@ -963,10 +1001,10 @@ class _ChangeScheduleFlowScreenState
     ChangeScheduleDraft draft,
     ChangeScheduleSameDayPreference preference,
   ) {
-    ref.read(changeScheduleProvider.notifier).setAvailability(
-          draft.availability.copyWith(
-            sameDayRunStrengthPreference: preference,
-          ),
+    ref
+        .read(changeScheduleProvider.notifier)
+        .setAvailability(
+          draft.availability.copyWith(sameDayRunStrengthPreference: preference),
         );
   }
 
@@ -1046,19 +1084,22 @@ String _sameDayPreferenceLabel(
 ) => switch (preference) {
   ChangeScheduleSameDayPreference.separateSessions =>
     l10n.changeScheduleSameDaySeparate,
-  ChangeScheduleSameDayPreference.avoidSameDay => l10n.changeScheduleSameDayAvoid,
+  ChangeScheduleSameDayPreference.avoidSameDay =>
+    l10n.changeScheduleSameDayAvoid,
 };
 
-String _warningLabel(String warning, AppLocalizations l10n) => switch (warning) {
-  'long_run_backup' => l10n.changeScheduleWarningLongRunBackup,
-  'shortened_for_time_cap' => l10n.changeScheduleWarningShortenedForTimeCap,
-  'removed_for_constraints' => l10n.changeScheduleWarningRemovedForConstraints,
-  'immutable_preserved' => l10n.changeScheduleWarningImmutablePreserved,
-  'one_run_warning' => l10n.changeScheduleWarningOneRun,
-  'constraints_not_fully_supported' =>
-    l10n.changeScheduleWarningConstraintsNotFullySupported,
-  _ => l10n.changeScheduleWarningFallback,
-};
+String _warningLabel(String warning, AppLocalizations l10n) =>
+    switch (warning) {
+      'long_run_backup' => l10n.changeScheduleWarningLongRunBackup,
+      'shortened_for_time_cap' => l10n.changeScheduleWarningShortenedForTimeCap,
+      'removed_for_constraints' =>
+        l10n.changeScheduleWarningRemovedForConstraints,
+      'immutable_preserved' => l10n.changeScheduleWarningImmutablePreserved,
+      'one_run_warning' => l10n.changeScheduleWarningOneRun,
+      'constraints_not_fully_supported' =>
+        l10n.changeScheduleWarningConstraintsNotFullySupported,
+      _ => l10n.changeScheduleWarningFallback,
+    };
 
 String _impactLabel(Object? impact, AppLocalizations l10n) {
   final key = impact is Map ? impact['key'] : null;
@@ -1077,7 +1118,8 @@ String _failureLabel(
   AppLocalizations l10n,
 ) => switch (reason) {
   ChangeScheduleFailureReason.auth => l10n.changeScheduleErrorAuth,
-  ChangeScheduleFailureReason.invalidInput => l10n.changeScheduleErrorInvalidInput,
+  ChangeScheduleFailureReason.invalidInput =>
+    l10n.changeScheduleErrorInvalidInput,
   ChangeScheduleFailureReason.timeout => l10n.changeScheduleErrorTimeout,
   ChangeScheduleFailureReason.stale => l10n.changeScheduleErrorStale,
   ChangeScheduleFailureReason.expired => l10n.changeScheduleErrorExpired,
@@ -1095,29 +1137,149 @@ String _failureRecoveryLabel(
   }
 
   return switch (state.action) {
-    ChangeScheduleAction.cancel || ChangeScheduleAction.activate =>
-      l10n.changeScheduleReturnToScheduled,
+    ChangeScheduleAction.cancel ||
+    ChangeScheduleAction.activate => l10n.changeScheduleReturnToScheduled,
     ChangeScheduleAction.undo => l10n.changeScheduleReturnToUpdated,
     _ => l10n.changeScheduleReturnToReview,
   };
 }
 
-String _applyingLabel(
-  AppLocalizations l10n,
-  ChangeScheduleAction action,
-) => switch (action) {
-  ChangeScheduleAction.accept => l10n.changeScheduleApplyingAccept,
-  ChangeScheduleAction.schedule => l10n.changeScheduleApplyingSchedule,
-  ChangeScheduleAction.cancel => l10n.changeScheduleApplyingCancel,
-  ChangeScheduleAction.activate => l10n.changeScheduleApplyingActivate,
-  ChangeScheduleAction.undo => l10n.changeScheduleApplyingUndo,
-};
+String _applyingLabel(AppLocalizations l10n, ChangeScheduleAction action) =>
+    switch (action) {
+      ChangeScheduleAction.accept => l10n.changeScheduleApplyingAccept,
+      ChangeScheduleAction.schedule => l10n.changeScheduleApplyingSchedule,
+      ChangeScheduleAction.cancel => l10n.changeScheduleApplyingCancel,
+      ChangeScheduleAction.activate => l10n.changeScheduleApplyingActivate,
+      ChangeScheduleAction.undo => l10n.changeScheduleApplyingUndo,
+    };
 
 int _intFrom(Object? value) => value is int ? value : 0;
 
 String _formatDate(BuildContext context, DateTime date) => DateFormat.yMMMMd(
   Localizations.localeOf(context).toLanguageTag(),
 ).format(date);
+
+String _comparisonSessionLabel(
+  ChangeScheduleWeekSession session,
+  AppLocalizations l10n,
+) {
+  return switch (session.type) {
+    SessionType.restDay => l10n.changeScheduleComparisonRest,
+    SessionType.raceDay => l10n.raceDayInfoTitle,
+    SessionType.easyRun => l10n.weeklyPlanSessionEasyRun,
+    SessionType.longRun => l10n.weeklyPlanSessionLongRun,
+    SessionType.progressionRun => l10n.sessionTypeProgressionRun,
+    SessionType.intervals => l10n.weeklyPlanSessionIntervals,
+    SessionType.hillRepeats => l10n.sessionTypeHillRepeats,
+    SessionType.fartlek => l10n.sessionTypeFartlek,
+    SessionType.tempoRun => l10n.sessionTypeTempoRun,
+    SessionType.thresholdRun => l10n.sessionTypeThresholdRun,
+    SessionType.racePaceRun => l10n.sessionTypeRacePaceRun,
+    SessionType.recoveryRun => l10n.weeklyPlanSessionRecoveryRun,
+    SessionType.crossTraining => l10n.sessionTypeCrossTraining,
+  };
+}
+
+String _comparisonDaySemantics({
+  required ChangeScheduleWeekDay day,
+  required AppLocalizations l10n,
+  required Locale locale,
+  required UnitSystem unitSystem,
+}) {
+  if (day.hasNoSession) return l10n.changeScheduleComparisonNoSession;
+
+  return day.sessions
+      .map(
+        (session) => _comparisonSessionSemantics(
+          session: session,
+          l10n: l10n,
+          locale: locale,
+          unitSystem: unitSystem,
+        ),
+      )
+      .join(l10n.changeScheduleComparisonSessionListSeparator);
+}
+
+String _comparisonSessionSemantics({
+  required ChangeScheduleWeekSession session,
+  required AppLocalizations l10n,
+  required Locale locale,
+  required UnitSystem unitSystem,
+}) {
+  final details = <String>[
+    _comparisonSessionLabel(session, l10n),
+    if (session.isLongRun) l10n.changeScheduleComparisonLongRun,
+    ..._comparisonSessionMetrics(
+      session: session,
+      l10n: l10n,
+      locale: locale,
+      unitSystem: unitSystem,
+    ),
+  ];
+  return details.join(l10n.changeScheduleComparisonSessionDetailSeparator);
+}
+
+List<String> _comparisonSessionMetrics({
+  required ChangeScheduleWeekSession? session,
+  required AppLocalizations l10n,
+  required Locale locale,
+  required UnitSystem unitSystem,
+}) {
+  if (session == null || session.type == SessionType.restDay) {
+    return const [];
+  }
+
+  final values = <String>[];
+  if (session.durationMinutes != null) {
+    values.add(
+      _comparisonDurationLabel(session.durationMinutes!, locale, l10n),
+    );
+  }
+  if (session.distanceKm != null) {
+    values.add(
+      _comparisonDistanceLabel(session.distanceKm!, unitSystem, locale, l10n),
+    );
+  }
+  return values;
+}
+
+String _comparisonDurationLabel(
+  int minutes,
+  Locale locale,
+  AppLocalizations l10n,
+) {
+  final formatter = NumberFormat.decimalPattern(locale.toLanguageTag());
+  if (minutes < 60) {
+    return l10n.changeScheduleComparisonDurationMinutes(
+      formatter.format(minutes),
+    );
+  }
+
+  final hours = minutes ~/ 60;
+  final remainingMinutes = minutes % 60;
+  if (remainingMinutes == 0) {
+    return l10n.changeScheduleComparisonDurationHours(formatter.format(hours));
+  }
+  return l10n.changeScheduleComparisonDurationHoursAndMinutes(
+    formatter.format(hours),
+    formatter.format(remainingMinutes),
+  );
+}
+
+String _comparisonDistanceLabel(
+  double distanceKm,
+  UnitSystem unitSystem,
+  Locale locale,
+  AppLocalizations l10n,
+) {
+  final value = UnitFormatter.distanceValue(distanceKm, unitSystem);
+  final formatter = NumberFormat.decimalPattern(locale.toLanguageTag())
+    ..maximumFractionDigits = 1;
+  return l10n.changeScheduleComparisonDistance(
+    formatter.format(value),
+    UnitFormatter.unitLabel(unitSystem, l10n),
+  );
+}
 
 class _StepHeading extends StatelessWidget {
   const _StepHeading({required this.title, required this.subtitle});
@@ -1176,7 +1338,9 @@ class _DayAvailabilityCard extends StatelessWidget {
         color: AppColors.backgroundCard,
         borderRadius: AppRadius.borderLg,
         border: Border.all(
-          color: isAvailable ? AppColors.borderFocused : AppColors.borderDefault,
+          color: isAvailable
+              ? AppColors.borderFocused
+              : AppColors.borderDefault,
         ),
       ),
       child: Column(
@@ -1200,7 +1364,10 @@ class _DayAvailabilityCard extends StatelessWidget {
                         children: [
                           Text(dayLabel, style: AppTypography.titleMedium),
                           const SizedBox(height: AppSpacing.xs),
-                          Text(availabilityLabel, style: AppTypography.bodyMedium),
+                          Text(
+                            availabilityLabel,
+                            style: AppTypography.bodyMedium,
+                          ),
                         ],
                       ),
                     ),
@@ -1274,7 +1441,9 @@ class _SelectionTile extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(AppSpacing.base),
             decoration: BoxDecoration(
-              color: selected ? AppColors.accentMuted : AppColors.backgroundCard,
+              color: selected
+                  ? AppColors.accentMuted
+                  : AppColors.backgroundCard,
               borderRadius: AppRadius.borderLg,
               border: Border.all(
                 color: selected
@@ -1336,7 +1505,9 @@ class _ChoiceChip extends StatelessWidget {
               vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: selected ? AppColors.accentPrimary : AppColors.backgroundCard,
+              color: selected
+                  ? AppColors.accentPrimary
+                  : AppColors.backgroundCard,
               borderRadius: BorderRadius.circular(100),
               border: Border.all(
                 color: selected
@@ -1447,6 +1618,359 @@ class _PreviewSummaryCard extends StatelessWidget {
           const SizedBox(height: AppSpacing.xs),
           Text(sessionLabel, style: AppTypography.bodyMedium),
         ],
+      ),
+    );
+  }
+}
+
+class _ScheduleComparisonSection extends StatelessWidget {
+  const _ScheduleComparisonSection({
+    required this.comparison,
+    required this.l10n,
+    required this.locale,
+    required this.unitSystem,
+  });
+
+  final ChangeScheduleWeekComparison comparison;
+  final AppLocalizations l10n;
+  final Locale locale;
+  final UnitSystem unitSystem;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      container: true,
+      label: l10n.changeScheduleComparisonTitle,
+      child: Column(
+        key: const Key('changeScheduleComparison'),
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            l10n.changeScheduleComparisonTitle,
+            style: AppTypography.labelLarge,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ComparisonWeekCard(
+            key: const Key('changeScheduleComparisonCurrentWeek'),
+            title: l10n.changeScheduleComparisonCurrentWeek,
+            days: comparison.currentWeek,
+            l10n: l10n,
+            locale: locale,
+            unitSystem: unitSystem,
+            dayKeyPrefix: 'changeScheduleComparisonCurrentDay',
+          ),
+          const SizedBox(height: AppSpacing.md),
+          _ComparisonWeekCard(
+            key: const Key('changeScheduleComparisonUpdatedWeek'),
+            title: l10n.changeScheduleComparisonUpdatedWeek,
+            days: comparison.updatedWeek,
+            l10n: l10n,
+            locale: locale,
+            unitSystem: unitSystem,
+            dayKeyPrefix: 'changeScheduleComparisonUpdatedDay',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonWeekCard extends StatelessWidget {
+  const _ComparisonWeekCard({
+    super.key,
+    required this.title,
+    required this.days,
+    required this.l10n,
+    required this.locale,
+    required this.unitSystem,
+    required this.dayKeyPrefix,
+  });
+
+  final String title;
+  final List<ChangeScheduleWeekDay> days;
+  final AppLocalizations l10n;
+  final Locale locale;
+  final UnitSystem unitSystem;
+  final String dayKeyPrefix;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.base),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundCard,
+        borderRadius: AppRadius.borderLg,
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: AppTypography.titleMedium.copyWith(
+              color: AppColors.accentPrimary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (var index = 0; index < days.length; index++) ...[
+            _ComparisonDayRow(
+              key: Key('$dayKeyPrefix${days[index].weekday}'),
+              day: days[index],
+              l10n: l10n,
+              locale: locale,
+              unitSystem: unitSystem,
+            ),
+            if (index < days.length - 1)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                child: Divider(height: 1, color: AppColors.borderDefault),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ComparisonDayRow extends StatelessWidget {
+  const _ComparisonDayRow({
+    super.key,
+    required this.day,
+    required this.l10n,
+    required this.locale,
+    required this.unitSystem,
+  });
+
+  final ChangeScheduleWeekDay day;
+  final AppLocalizations l10n;
+  final Locale locale;
+  final UnitSystem unitSystem;
+
+  @override
+  Widget build(BuildContext context) {
+    final weekday = _weekdayLabel(day.weekday, l10n);
+    final date = DateFormat.MMMd(locale.toLanguageTag()).format(day.date);
+    final semanticSummary = _comparisonDaySemantics(
+      day: day,
+      l10n: l10n,
+      locale: locale,
+      unitSystem: unitSystem,
+    );
+
+    return Semantics(
+      container: true,
+      label: l10n.changeScheduleComparisonDaySemantics(
+        weekday,
+        date,
+        semanticSummary,
+      ),
+      child: ExcludeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(weekday, style: AppTypography.labelMedium),
+                ),
+                Text(
+                  date,
+                  style: AppTypography.caption.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            if (day.hasNoSession)
+              Text(
+                l10n.changeScheduleComparisonNoSession,
+                style: AppTypography.bodyMedium,
+              )
+            else
+              for (var index = 0; index < day.sessions.length; index++) ...[
+                _ComparisonSessionDetails(
+                  session: day.sessions[index],
+                  l10n: l10n,
+                  locale: locale,
+                  unitSystem: unitSystem,
+                ),
+                if (index < day.sessions.length - 1)
+                  const SizedBox(height: AppSpacing.sm),
+              ],
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ComparisonSessionDetails extends StatelessWidget {
+  const _ComparisonSessionDetails({
+    required this.session,
+    required this.l10n,
+    required this.locale,
+    required this.unitSystem,
+  });
+
+  final ChangeScheduleWeekSession session;
+  final AppLocalizations l10n;
+  final Locale locale;
+  final UnitSystem unitSystem;
+
+  @override
+  Widget build(BuildContext context) {
+    final metrics = _comparisonSessionMetrics(
+      session: session,
+      l10n: l10n,
+      locale: locale,
+      unitSystem: unitSystem,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          _comparisonSessionLabel(session, l10n),
+          style: AppTypography.bodyMedium,
+        ),
+        if (session.isLongRun || metrics.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Wrap(
+            spacing: AppSpacing.xs,
+            runSpacing: AppSpacing.xs,
+            children: [
+              if (session.isLongRun)
+                _ComparisonMetricPill(
+                  label: l10n.changeScheduleComparisonLongRun,
+                  color: AppColors.accentPrimary,
+                ),
+              for (final metric in metrics)
+                _ComparisonMetricPill(
+                  label: metric,
+                  color: AppColors.textSecondary,
+                ),
+            ],
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _ComparisonMetricPill extends StatelessWidget {
+  const _ComparisonMetricPill({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.sm,
+        vertical: AppSpacing.xs,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.backgroundPrimary,
+        borderRadius: BorderRadius.circular(100),
+        border: Border.all(color: AppColors.borderDefault),
+      ),
+      child: Text(label, style: AppTypography.caption.copyWith(color: color)),
+    );
+  }
+}
+
+class _UpdatedPreferencesSection extends StatelessWidget {
+  const _UpdatedPreferencesSection({
+    required this.availability,
+    required this.l10n,
+  });
+
+  final ChangeScheduleAvailability availability;
+  final AppLocalizations l10n;
+
+  @override
+  Widget build(BuildContext context) {
+    final caps = availability.days
+        .where((day) => day.available && day.maxDurationMinutes != null)
+        .toList(growable: false);
+
+    return Semantics(
+      container: true,
+      child: Container(
+        key: const Key('changeScheduleUpdatedPreferences'),
+        width: double.infinity,
+        padding: const EdgeInsets.all(AppSpacing.base),
+        decoration: BoxDecoration(
+          color: AppColors.backgroundCard,
+          borderRadius: AppRadius.borderLg,
+          border: Border.all(color: AppColors.borderDefault),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              l10n.changeScheduleUpdatedPreferences,
+              style: AppTypography.labelLarge,
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              l10n.changeScheduleUpdatedAvailability(
+                availability.availableDays
+                    .map((day) => _weekdayLabel(day, l10n))
+                    .join(', '),
+              ),
+              style: AppTypography.bodyMedium,
+            ),
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              l10n.changeScheduleUpdatedLongRun(
+                _weekdayLabel(availability.primaryLongRunWeekday, l10n),
+              ),
+              style: AppTypography.bodyMedium,
+            ),
+            if (availability.backupLongRunWeekday != null) ...[
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                l10n.changeScheduleUpdatedBackup(
+                  _weekdayLabel(availability.backupLongRunWeekday!, l10n),
+                ),
+                style: AppTypography.bodyMedium,
+              ),
+            ],
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              l10n.changeScheduleUpdatedSameDay(
+                _sameDayPreferenceLabel(
+                  availability.sameDayRunStrengthPreference,
+                  l10n,
+                ),
+              ),
+              style: AppTypography.bodyMedium,
+            ),
+            if (caps.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.md),
+              Text(
+                l10n.changeScheduleUpdatedTimeCaps,
+                style: AppTypography.labelMedium,
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              for (final cap in caps)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                  child: Text(
+                    l10n.changeScheduleUpdatedTimeCap(
+                      _weekdayLabel(cap.day, l10n),
+                      _capLabel(cap.maxDurationMinutes, l10n),
+                    ),
+                    style: AppTypography.bodyMedium,
+                  ),
+                ),
+            ],
+          ],
+        ),
       ),
     );
   }

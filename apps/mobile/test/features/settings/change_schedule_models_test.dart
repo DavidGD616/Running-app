@@ -58,6 +58,149 @@ void main() {
     expect(sunday.maxDurationMinutes, 90);
   });
 
+  test('derives a canonical Monday-to-Sunday comparison for both plans', () {
+    final sourcePlan = TrainingPlan.fromJson(
+      _planJson(
+        id: 'source-plan',
+        sessions: [
+          _sessionJson(
+            id: 'source-easy',
+            date: DateTime(2026, 7, 13, 8),
+            type: 'easyRun',
+            description: 'canonical source summary',
+            durationMinutes: 35,
+            distanceKm: 5.5,
+          ),
+          _sessionJson(
+            id: 'source-rest',
+            date: DateTime(2026, 7, 15),
+            type: 'restDay',
+          ),
+          _sessionJson(
+            id: 'source-long',
+            date: DateTime(2026, 7, 19),
+            type: 'longRun',
+            durationMinutes: 105,
+            distanceKm: 16,
+          ),
+        ],
+      ),
+    )!;
+    final candidatePlan = TrainingPlan.fromJson(
+      _planJson(
+        id: 'candidate-plan',
+        sessions: [
+          _sessionJson(
+            id: 'candidate-intervals',
+            date: DateTime(2026, 7, 14),
+            type: 'intervals',
+            durationMinutes: 45,
+          ),
+          _sessionJson(
+            id: 'candidate-long',
+            date: DateTime(2026, 7, 18),
+            type: 'longRun',
+            distanceKm: 18,
+          ),
+        ],
+      ),
+    )!;
+
+    final comparison = ChangeScheduleWeekComparison.fromPlans(
+      sourcePlan: sourcePlan,
+      candidatePlan: candidatePlan,
+      weekStart: DateTime(2026, 7, 13, 23, 45),
+    );
+
+    expect(comparison.weekStart, DateTime(2026, 7, 13));
+    expect(comparison.currentWeek, hasLength(7));
+    expect(comparison.updatedWeek, hasLength(7));
+    expect(comparison.currentWeek.map((day) => day.weekday), [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+    ]);
+    expect(comparison.currentWeek.first.date, DateTime(2026, 7, 13));
+    expect(comparison.currentWeek.last.date, DateTime(2026, 7, 19));
+
+    final currentMonday = comparison.currentWeek[0].primarySession!;
+    expect(currentMonday.id, 'source-easy');
+    expect(currentMonday.type.name, 'easyRun');
+    expect(currentMonday.summary, 'canonical source summary');
+    expect(currentMonday.durationMinutes, 35);
+    expect(currentMonday.distanceKm, 5.5);
+    expect(comparison.currentWeek[2].isExplicitRestDay, isTrue);
+    expect(comparison.currentWeek[3].hasNoSession, isTrue);
+    expect(comparison.currentWeek[6].hasLongRun, isTrue);
+    expect(comparison.currentWeek[6].primarySession?.isLongRun, isTrue);
+
+    expect(comparison.updatedWeek[1].primarySession?.id, 'candidate-intervals');
+    expect(comparison.updatedWeek[5].hasLongRun, isTrue);
+    expect(comparison.updatedWeek[0].hasNoSession, isTrue);
+  });
+
+  test('rejects a comparison that is not anchored to a Monday', () {
+    final plan = TrainingPlan.fromJson(_planJson(id: 'plan'))!;
+
+    expect(
+      () => ChangeScheduleWeekComparison.fromPlans(
+        sourcePlan: plan,
+        candidatePlan: plan,
+        weekStart: DateTime(2026, 7, 14),
+      ),
+      throwsFormatException,
+    );
+  });
+
+  test('preserves every session scheduled on the same comparison day', () {
+    final sourcePlan = TrainingPlan.fromJson(
+      _planJson(
+        id: 'source-plan',
+        sessions: [
+          _sessionJson(
+            id: 'easy-session',
+            date: DateTime(2026, 7, 14, 7),
+            type: 'easyRun',
+            durationMinutes: 35,
+            distanceKm: 5,
+          ),
+          _sessionJson(
+            id: 'long-session',
+            date: DateTime(2026, 7, 14, 18),
+            type: 'longRun',
+            durationMinutes: 60,
+            distanceKm: 16,
+          ),
+        ],
+      ),
+    )!;
+    final candidatePlan = TrainingPlan.fromJson(
+      _planJson(id: 'candidate-plan'),
+    )!;
+
+    final comparison = ChangeScheduleWeekComparison.fromPlans(
+      sourcePlan: sourcePlan,
+      candidatePlan: candidatePlan,
+      weekStart: DateTime(2026, 7, 13),
+    );
+
+    final tuesdaySessions = comparison.currentWeek[1].sessions;
+    expect(tuesdaySessions, hasLength(2));
+    expect(tuesdaySessions.map((session) => session.id), [
+      'easy-session',
+      'long-session',
+    ]);
+    expect(tuesdaySessions[0].durationMinutes, 35);
+    expect(tuesdaySessions[0].distanceKm, 5);
+    expect(tuesdaySessions[1].isLongRun, isTrue);
+    expect(tuesdaySessions[1].durationMinutes, 60);
+    expect(tuesdaySessions[1].distanceKm, 16);
+  });
+
   test(
     'proposal payload uses effective week and stable serialized structure',
     () {
@@ -248,33 +391,36 @@ void main() {
     expect(loaded.updatedAt, equals(DateTime(2026, 7, 13, 9).toUtc()));
   });
 
-  test('remote draft absence is authoritative and clears local cache', () async {
-    final localDraft = StoredChangeScheduleDraft(
-      draft: ChangeScheduleDraft(
-        availability: _availability(),
-        effectiveWeek: ChangeScheduleEffectiveWeek.next,
-      ),
-      sourcePlanId: 'local-plan',
-      status: ChangeScheduleDraftStatus.assessmentPending,
-      revision: 1,
-      updatedAt: DateTime(2026, 7, 13, 9).toUtc(),
-    );
-    final storageKey = ChangeScheduleDraftStore.storageKeyForUser('user-5');
-    await preferences.setString(storageKey, jsonEncode(localDraft.toJson()));
+  test(
+    'remote draft absence is authoritative and clears local cache',
+    () async {
+      final localDraft = StoredChangeScheduleDraft(
+        draft: ChangeScheduleDraft(
+          availability: _availability(),
+          effectiveWeek: ChangeScheduleEffectiveWeek.next,
+        ),
+        sourcePlanId: 'local-plan',
+        status: ChangeScheduleDraftStatus.assessmentPending,
+        revision: 1,
+        updatedAt: DateTime(2026, 7, 13, 9).toUtc(),
+      );
+      final storageKey = ChangeScheduleDraftStore.storageKeyForUser('user-5');
+      await preferences.setString(storageKey, jsonEncode(localDraft.toJson()));
 
-    final remote = _InMemoryChangeScheduleDraftRemoteStore(userId: 'user-5');
-    final store = ChangeScheduleDraftStore(
-      preferences: preferences,
-      client: null,
-      userId: 'user-5',
-      remoteStore: remote,
-    );
+      final remote = _InMemoryChangeScheduleDraftRemoteStore(userId: 'user-5');
+      final store = ChangeScheduleDraftStore(
+        preferences: preferences,
+        client: null,
+        userId: 'user-5',
+        remoteStore: remote,
+      );
 
-    final loaded = await store.load();
+      final loaded = await store.load();
 
-    expect(loaded, isNull);
-    expect(preferences.getString(storageKey), isNull);
-  });
+      expect(loaded, isNull);
+      expect(preferences.getString(storageKey), isNull);
+    },
+  );
 
   test('local legacy draft may omit effective week', () async {
     const userId = 'local-legacy-user';
@@ -302,31 +448,34 @@ void main() {
     expect(loaded!.draft.effectiveWeek, ChangeScheduleEffectiveWeek.current);
   });
 
-  test('remote drafts reject missing and invalid effective week values', () async {
-    for (final effectiveWeek in <Object?>[null, 'tomorrow']) {
-      final row = <String, dynamic>{
-        'source_plan_version_id': 'remote-plan',
-        'proposed_availability': _availability().toJson(),
-        'status': ChangeScheduleDraftStatus.editing.key,
-        'revision': 1,
-        'updated_at': now.toUtc().toIso8601String(),
-      };
-      if (effectiveWeek != null) {
-        row['effective_week'] = effectiveWeek;
-      }
-      final store = ChangeScheduleDraftStore(
-        preferences: preferences,
-        client: null,
-        userId: 'remote-effective-week-$effectiveWeek',
-        remoteStore: _InMemoryChangeScheduleDraftRemoteStore(
+  test(
+    'remote drafts reject missing and invalid effective week values',
+    () async {
+      for (final effectiveWeek in <Object?>[null, 'tomorrow']) {
+        final row = <String, dynamic>{
+          'source_plan_version_id': 'remote-plan',
+          'proposed_availability': _availability().toJson(),
+          'status': ChangeScheduleDraftStatus.editing.key,
+          'revision': 1,
+          'updated_at': now.toUtc().toIso8601String(),
+        };
+        if (effectiveWeek != null) {
+          row['effective_week'] = effectiveWeek;
+        }
+        final store = ChangeScheduleDraftStore(
+          preferences: preferences,
+          client: null,
           userId: 'remote-effective-week-$effectiveWeek',
-          seedRow: row,
-        ),
-      );
+          remoteStore: _InMemoryChangeScheduleDraftRemoteStore(
+            userId: 'remote-effective-week-$effectiveWeek',
+            seedRow: row,
+          ),
+        );
 
-      await expectLater(store.load(), throwsFormatException);
-    }
-  });
+        await expectLater(store.load(), throwsFormatException);
+      }
+    },
+  );
 
   test('remote drafts reject noncanonical statuses', () async {
     const userId = 'remote-invalid-status';
@@ -404,7 +553,9 @@ void main() {
     expect(await store.discard(), isFalse);
     expect(remote.rowFor(), isNotNull);
     expect(
-      preferences.getString(ChangeScheduleDraftStore.storageKeyForUser('user-6')),
+      preferences.getString(
+        ChangeScheduleDraftStore.storageKeyForUser('user-6'),
+      ),
       isNotNull,
     );
   });
@@ -413,12 +564,12 @@ void main() {
     'malformed remote draft payload fails fast instead of falling back to local',
     () async {
       final localDraft = StoredChangeScheduleDraft(
-          draft: ChangeScheduleDraft(
-            availability: _availability().copyWith(primaryLongRunWeekday: 1),
-            effectiveWeek: ChangeScheduleEffectiveWeek.current,
-          ),
-          sourcePlanId: 'local-plan',
-          status: ChangeScheduleDraftStatus.editing,
+        draft: ChangeScheduleDraft(
+          availability: _availability().copyWith(primaryLongRunWeekday: 1),
+          effectiveWeek: ChangeScheduleEffectiveWeek.current,
+        ),
+        sourcePlanId: 'local-plan',
+        status: ChangeScheduleDraftStatus.editing,
         revision: 1,
         updatedAt: DateTime(2026, 7, 12, 10).toUtc(),
       );
@@ -487,78 +638,82 @@ void main() {
     );
   });
 
-  test('lifecycle rows use canonical lineage and support exact legacy matches', () {
-    final proposal = ChangeScheduleLifecycleProposal.fromDatabaseRow({
-      'id': 'proposal-scheduled-1',
-      'source_plan_version_id': 'active-plan',
-      'status': 'scheduled',
-      'proposed_availability': _availability().toJson(),
-      'candidate_plan': _planJson(id: 'plan-scheduled-1'),
-      'impact': {
-        'impact': <dynamic>[],
-        'warnings': <dynamic>[],
-        'goalImpact': <String, dynamic>{},
-      },
-      'effective_from': '2026-07-20',
-      'expires_at': '2026-07-13T10:00:00.000Z',
-      'accepted_plan_version_id': null,
-      'scheduled_plan_version_id': 'plan-scheduled-1',
-      'prior_active_plan_version_id': null,
-      'prior_active_availability_version_id': null,
-      'accepted_availability_version_id': null,
-    });
-    final legacyActivation = ChangeScheduleLifecycleActivation.fromDatabaseRow({
-      'id': 'activation-1',
-      'source_plan_version_id': 'active-plan',
-      'queued_candidate_plan_version_id': 'plan-scheduled-1',
-      'availability_version_id': 'availability-scheduled-1',
-      'effective_from': '2026-07-20',
-      'status': 'scheduled',
-      'proposal_id': null,
-    });
-
-    expect(legacyActivation.matchesScheduledProposal(proposal), isTrue);
-    expect(
-      legacyActivation.toScheduledResponse(proposal).proposalId,
-      'proposal-scheduled-1',
-    );
-
-    final mismatchedActivation =
-        ChangeScheduleLifecycleActivation.fromDatabaseRow({
-          'id': 'activation-2',
-          'source_plan_version_id': 'active-plan',
-          'queued_candidate_plan_version_id': 'different-candidate',
-          'availability_version_id': 'availability-scheduled-1',
-          'effective_from': '2026-07-20',
-          'status': 'scheduled',
-          'proposal_id': null,
-        });
-    expect(mismatchedActivation.matchesScheduledProposal(proposal), isFalse);
-    expect(
-      () => mismatchedActivation.toScheduledResponse(proposal),
-      throwsFormatException,
-    );
-
-    expect(
-      () => ChangeScheduleLifecycleProposal.fromDatabaseRow({
-        'id': 'proposal-malformed',
+  test(
+    'lifecycle rows use canonical lineage and support exact legacy matches',
+    () {
+      final proposal = ChangeScheduleLifecycleProposal.fromDatabaseRow({
+        'id': 'proposal-scheduled-1',
         'source_plan_version_id': 'active-plan',
-        'status': 'pending',
+        'status': 'scheduled',
         'proposed_availability': _availability().toJson(),
-        'candidate_plan': const <String, dynamic>{},
+        'candidate_plan': _planJson(id: 'plan-scheduled-1'),
         'impact': {
           'impact': <dynamic>[],
           'warnings': <dynamic>[],
           'goalImpact': <String, dynamic>{},
         },
-        'effective_from': '2026-07-13',
+        'effective_from': '2026-07-20',
         'expires_at': '2026-07-13T10:00:00.000Z',
         'accepted_plan_version_id': null,
-        'scheduled_plan_version_id': null,
-      }),
-      throwsFormatException,
-    );
-  });
+        'scheduled_plan_version_id': 'plan-scheduled-1',
+        'prior_active_plan_version_id': null,
+        'prior_active_availability_version_id': null,
+        'accepted_availability_version_id': null,
+      });
+      final legacyActivation =
+          ChangeScheduleLifecycleActivation.fromDatabaseRow({
+            'id': 'activation-1',
+            'source_plan_version_id': 'active-plan',
+            'queued_candidate_plan_version_id': 'plan-scheduled-1',
+            'availability_version_id': 'availability-scheduled-1',
+            'effective_from': '2026-07-20',
+            'status': 'scheduled',
+            'proposal_id': null,
+          });
+
+      expect(legacyActivation.matchesScheduledProposal(proposal), isTrue);
+      expect(
+        legacyActivation.toScheduledResponse(proposal).proposalId,
+        'proposal-scheduled-1',
+      );
+
+      final mismatchedActivation =
+          ChangeScheduleLifecycleActivation.fromDatabaseRow({
+            'id': 'activation-2',
+            'source_plan_version_id': 'active-plan',
+            'queued_candidate_plan_version_id': 'different-candidate',
+            'availability_version_id': 'availability-scheduled-1',
+            'effective_from': '2026-07-20',
+            'status': 'scheduled',
+            'proposal_id': null,
+          });
+      expect(mismatchedActivation.matchesScheduledProposal(proposal), isFalse);
+      expect(
+        () => mismatchedActivation.toScheduledResponse(proposal),
+        throwsFormatException,
+      );
+
+      expect(
+        () => ChangeScheduleLifecycleProposal.fromDatabaseRow({
+          'id': 'proposal-malformed',
+          'source_plan_version_id': 'active-plan',
+          'status': 'pending',
+          'proposed_availability': _availability().toJson(),
+          'candidate_plan': const <String, dynamic>{},
+          'impact': {
+            'impact': <dynamic>[],
+            'warnings': <dynamic>[],
+            'goalImpact': <String, dynamic>{},
+          },
+          'effective_from': '2026-07-13',
+          'expires_at': '2026-07-13T10:00:00.000Z',
+          'accepted_plan_version_id': null,
+          'scheduled_plan_version_id': null,
+        }),
+        throwsFormatException,
+      );
+    },
+  );
 }
 
 ChangeScheduleAvailability _availability() => ChangeScheduleAvailability(
@@ -597,6 +752,9 @@ Map<String, dynamic> _sessionJson({
   required String id,
   required DateTime date,
   required String type,
+  String? description,
+  int? durationMinutes,
+  double? distanceKm,
 }) => {
   'schemaVersion': 1,
   'id': id,
@@ -604,6 +762,9 @@ Map<String, dynamic> _sessionJson({
   'type': type,
   'status': 'upcoming',
   'weekNumber': 1,
+  'description': ?description,
+  'durationMinutes': ?durationMinutes,
+  'distanceKm': ?distanceKm,
 };
 
 Map<String, dynamic> _previewResponseJson() => {

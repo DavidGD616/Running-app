@@ -237,6 +237,168 @@ void main() {
     },
   );
 
+  test('preview carries a source-vs-candidate effective-week comparison', () async {
+    final activePlan = _trainingPlan(
+      'active-plan',
+      sessions: [
+        _sessionJson(
+          id: 'current-easy',
+          date: DateTime(2026, 7, 13),
+          type: 'easyRun',
+          durationMinutes: 35,
+        ),
+        _sessionJson(
+          id: 'current-long',
+          date: DateTime(2026, 7, 19),
+          type: 'longRun',
+          distanceKm: 16,
+        ),
+      ],
+    );
+    final candidatePlan = _planJson(
+      id: 'candidate-plan',
+      sessions: [
+        _sessionJson(
+          id: 'updated-intervals',
+          date: DateTime(2026, 7, 14),
+          type: 'intervals',
+          durationMinutes: 45,
+        ),
+        _sessionJson(
+          id: 'updated-long',
+          date: DateTime(2026, 7, 18),
+          type: 'longRun',
+          distanceKm: 18,
+        ),
+      ],
+    );
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      loader: () async => ChangeScheduleInitialData(
+        profile: buildRunnerProfile(),
+        activePlan: activePlan,
+      ),
+      client: (_, {body}) async => FunctionResponse(
+        data: {..._previewResponse(), 'candidatePlan': candidatePlan},
+        status: 200,
+      ),
+    );
+    addTearDown(container.dispose);
+
+    await _editingState(container);
+    expect(await container.read(changeScheduleProvider.notifier).preview(), isTrue);
+
+    final state = container.read(changeScheduleProvider)
+        as ChangeSchedulePreviewReady;
+    expect(state.sourcePlan.id, 'active-plan');
+    expect(state.comparison.weekStart, DateTime(2026, 7, 13));
+    expect(state.comparison.currentWeek[0].primarySession?.id, 'current-easy');
+    expect(state.comparison.currentWeek[6].hasLongRun, isTrue);
+    expect(
+      state.comparison.updatedWeek[1].primarySession?.id,
+      'updated-intervals',
+    );
+    expect(state.comparison.updatedWeek[5].hasLongRun, isTrue);
+  });
+
+  test('preview rejects a response for a different source plan', () async {
+    final container = _container(
+      now: now,
+      preferences: preferences,
+      client: (_, {body}) async => FunctionResponse(
+        data: {
+          ..._previewResponse(),
+          'sourcePlanVersionId': 'different-active-plan',
+        },
+        status: 200,
+      ),
+    );
+    addTearDown(container.dispose);
+
+    await _editingState(container);
+    expect(await container.read(changeScheduleProvider.notifier).preview(), isFalse);
+
+    final failure = container.read(changeScheduleProvider) as ChangeScheduleFailure;
+    expect(failure.reason, ChangeScheduleFailureReason.parse);
+    expect(failure.comparison, isNull);
+  });
+
+  test('pending lifecycle hydration rebuilds the comparison after restart', () async {
+    final activePlan = _trainingPlan(
+      'active-plan',
+      sessions: [
+        _sessionJson(
+          id: 'current-rest',
+          date: DateTime(2026, 7, 13),
+          type: 'restDay',
+        ),
+        _sessionJson(
+          id: 'current-long',
+          date: DateTime(2026, 7, 19),
+          type: 'longRun',
+        ),
+      ],
+    );
+    final pending = ChangeScheduleLifecycleProposal.fromDatabaseRow({
+      ..._lifecycleProposalRow(
+        status: ChangeScheduleLifecycleProposalStatus.pending,
+        id: 'proposal-pending-comparison',
+        sourcePlanId: 'active-plan',
+      ),
+      'candidate_plan': _planJson(
+        id: 'candidate-pending',
+        sessions: [
+          _sessionJson(
+            id: 'updated-tempo',
+            date: DateTime(2026, 7, 16),
+            type: 'tempoRun',
+            durationMinutes: 50,
+          ),
+        ],
+      ),
+    });
+    Future<ChangeScheduleLifecycleLoadResult> lifecycle(String _) async =>
+        ChangeScheduleLifecycleAvailable(
+          ChangeScheduleLifecycleData(pendingProposal: pending),
+        );
+    ChangeScheduleInitialData loader() => ChangeScheduleInitialData(
+      profile: buildRunnerProfile(),
+      activePlan: activePlan,
+    );
+
+    final first = _container(
+      now: now,
+      preferences: preferences,
+      loader: () async => loader(),
+      lifecycleLoader: lifecycle,
+    );
+    await _waitFor(
+      () => first.read(changeScheduleProvider) is ChangeSchedulePreviewReady,
+    );
+    first.dispose();
+
+    final restarted = _container(
+      now: now,
+      preferences: preferences,
+      loader: () async => loader(),
+      lifecycleLoader: lifecycle,
+    );
+    addTearDown(restarted.dispose);
+    await _waitFor(
+      () =>
+          restarted.read(changeScheduleProvider) is ChangeSchedulePreviewReady,
+    );
+
+    final state = restarted.read(changeScheduleProvider)
+        as ChangeSchedulePreviewReady;
+    expect(state.sourcePlan.id, 'active-plan');
+    expect(state.comparison.currentWeek[0].isExplicitRestDay, isTrue);
+    expect(state.comparison.currentWeek[6].hasLongRun, isTrue);
+    expect(state.comparison.updatedWeek[3].primarySession?.id, 'updated-tempo');
+    expect(state.comparison.updatedWeek[0].hasNoSession, isTrue);
+  });
+
   test('accept_now applies the proposal and clears draft storage', () async {
     final calls = <Object?>[];
     final container = _container(
@@ -1648,17 +1810,40 @@ ChangeScheduleAvailability _availability() => ChangeScheduleAvailability(
       ChangeScheduleSameDayPreference.separateSessions,
 );
 
-Map<String, dynamic> _planJson({required String id}) => {
+Map<String, dynamic> _planJson({
+  required String id,
+  List<Map<String, dynamic>> sessions = const [],
+}) => {
   'schemaVersion': 1,
   'id': id,
   'raceType': 'halfMarathon',
   'totalWeeks': 12,
   'currentWeekNumber': 1,
-  'sessions': <Map<String, dynamic>>[],
+  'sessions': sessions,
 };
 
-TrainingPlan _trainingPlan(String id) =>
-    TrainingPlan.fromJson(_planJson(id: id))!;
+TrainingPlan _trainingPlan(
+  String id, {
+  List<Map<String, dynamic>> sessions = const [],
+}) =>
+    TrainingPlan.fromJson(_planJson(id: id, sessions: sessions))!;
+
+Map<String, dynamic> _sessionJson({
+  required String id,
+  required DateTime date,
+  required String type,
+  int? durationMinutes,
+  double? distanceKm,
+}) => {
+  'schemaVersion': 1,
+  'id': id,
+  'date': date.toIso8601String(),
+  'type': type,
+  'status': 'upcoming',
+  'weekNumber': 1,
+  'durationMinutes': ?durationMinutes,
+  'distanceKm': ?distanceKm,
+};
 
 ChangeScheduleLifecycleProposal _lifecycleProposal({
   required ChangeScheduleLifecycleProposalStatus status,
