@@ -207,6 +207,7 @@ void main() {
               return SessionDetailScreen(
                 session: args.session,
                 showStartWorkout: args.showStartWorkout,
+                planVersionId: args.planVersionId,
               );
             },
           ),
@@ -286,6 +287,7 @@ void main() {
       final saved = activities.single as RunActivity;
       expect(saved.id, session.id);
       expect(saved.linkedSessionId, session.id);
+      expect(saved.planVersionId, isNull);
       expect(saved.source, ActivitySource.plannedSession);
       expect(saved.completionStatus, ActivityCompletionStatus.completed);
       expect(saved.actualDistanceKm, greaterThan(0));

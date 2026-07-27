@@ -42,6 +42,7 @@ import '../../features/settings/presentation/screens/new_goal_preferences_screen
 import '../../features/settings/presentation/screens/new_goal_race_date_screen.dart';
 import '../../features/settings/presentation/screens/new_goal_schedule_screen.dart';
 import '../../features/settings/presentation/screens/new_goal_full_plan_screen.dart';
+import '../../features/settings/presentation/screens/change_schedule_flow_screen.dart';
 import '../../features/settings/presentation/screens/settings_language_screen.dart';
 import '../../features/settings/presentation/screens/settings_units_screen.dart';
 import '../../features/settings/presentation/screens/settings_account_screen.dart';
@@ -400,8 +401,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: RouteNames.settingsUpdatePlanSchedule,
-        builder: (context, state) =>
-            const ScheduleScreen(mode: ScheduleFlowMode.changeSchedule),
+        builder: (context, state) => const ChangeScheduleFlowScreen(),
       ),
       GoRoute(
         path: RouteNames.settingsLanguage,
@@ -418,6 +418,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           return SessionDetailScreen(
             session: args.session,
             showStartWorkout: args.showStartWorkout,
+            planVersionId: args.planVersionId,
           );
         },
       ),

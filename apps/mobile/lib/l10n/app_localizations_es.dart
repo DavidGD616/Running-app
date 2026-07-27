@@ -4693,4 +4693,478 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get editGoalViewPlan => 'Ver plan';
+
+  @override
+  String get changeScheduleTitle => 'Cambiar horario';
+
+  @override
+  String changeScheduleStepProgress(int step, int total) {
+    return 'Paso $step de $total';
+  }
+
+  @override
+  String get changeScheduleAvailabilityTitle => '¿Cuándo puedes correr?';
+
+  @override
+  String get changeScheduleAvailabilitySubtitle =>
+      'Elige los días en que puedes entrenar de forma realista y, si te sirve, añade un límite de tiempo.';
+
+  @override
+  String get changeScheduleAvailableDays => 'Días disponibles';
+
+  @override
+  String changeScheduleRunningDays(int count) {
+    return '$count días de running por semana';
+  }
+
+  @override
+  String get changeScheduleAvailable => 'Disponible';
+
+  @override
+  String get changeScheduleUnavailable => 'No disponible';
+
+  @override
+  String changeScheduleDayToggleSemantics(String day, String availability) {
+    return '$day: $availability';
+  }
+
+  @override
+  String get changeScheduleDurationCap => 'Límite de tiempo';
+
+  @override
+  String get changeScheduleNoCap => 'Sin límite';
+
+  @override
+  String changeScheduleCapMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String changeScheduleCapChoiceSemantics(String day, String cap) {
+    return 'Límite de tiempo de $day: $cap';
+  }
+
+  @override
+  String get changeScheduleStepContinue => 'Continuar';
+
+  @override
+  String get changeScheduleStepBack => 'Atrás';
+
+  @override
+  String get changeScheduleLongRunTitle => 'Preferencias de carrera larga';
+
+  @override
+  String get changeScheduleLongRunSubtitle =>
+      'Elige un día principal para la carrera larga y un día alternativo opcional.';
+
+  @override
+  String get changeSchedulePrimaryLongRun => 'Día principal de carrera larga';
+
+  @override
+  String get changeScheduleBackupLongRun => 'Día alternativo de carrera larga';
+
+  @override
+  String get changeScheduleNoBackup => 'Sin día alternativo';
+
+  @override
+  String get changeScheduleSameDayTitle => 'Running y fuerza el mismo día';
+
+  @override
+  String get changeScheduleSameDaySeparate => 'Sesiones separadas';
+
+  @override
+  String get changeScheduleSameDaySeparateSubtitle =>
+      'Una sesión de running y una de fuerza pueden compartir día.';
+
+  @override
+  String get changeScheduleSameDayAvoid => 'Evitar el mismo día';
+
+  @override
+  String get changeScheduleSameDayAvoidSubtitle =>
+      'Mantén las sesiones de running y fuerza en días distintos cuando sea posible.';
+
+  @override
+  String changeScheduleOptionSemantics(String label, String state) {
+    return '$label: $state';
+  }
+
+  @override
+  String get changeScheduleSelected => 'Seleccionado';
+
+  @override
+  String get changeScheduleNotSelected => 'No seleccionado';
+
+  @override
+  String get changeScheduleReviewTitle => 'Revisa tu horario';
+
+  @override
+  String get changeScheduleReviewSubtitle =>
+      'Elige cuándo debe entrar en vigor el horario actualizado y luego revisa los cambios.';
+
+  @override
+  String get changeScheduleEffectiveWeek => 'Entrada en vigor';
+
+  @override
+  String get changeScheduleEffectiveCurrent => 'Esta semana';
+
+  @override
+  String get changeScheduleEffectiveCurrentSubtitle =>
+      'Aplica los cambios desde la semana de entrenamiento actual.';
+
+  @override
+  String get changeScheduleEffectiveNext => 'La próxima semana';
+
+  @override
+  String get changeScheduleEffectiveNextSubtitle =>
+      'Mantén esta semana tal como está y activa el cambio la próxima semana.';
+
+  @override
+  String changeScheduleReviewAvailability(String days) {
+    return 'Días disponibles: $days';
+  }
+
+  @override
+  String changeScheduleReviewLongRun(String day) {
+    return 'Carrera larga: $day';
+  }
+
+  @override
+  String changeScheduleReviewBackup(String day) {
+    return 'Alternativa: $day';
+  }
+
+  @override
+  String changeScheduleReviewSameDay(String preference) {
+    return 'Running y fuerza: $preference';
+  }
+
+  @override
+  String get changeSchedulePreview => 'Vista previa de cambios';
+
+  @override
+  String get changeSchedulePreviewing => 'Creando la vista previa del horario…';
+
+  @override
+  String get changeScheduleLoading => 'Cargando tu horario…';
+
+  @override
+  String get changeScheduleLoadingSubtitle =>
+      'Estamos preparando tu horario actual.';
+
+  @override
+  String get changeSchedulePreviewTitle => 'Vista previa del horario';
+
+  @override
+  String changeScheduleEffectiveDate(String date) {
+    return 'En vigor el $date';
+  }
+
+  @override
+  String get changeSchedulePreviewWarnings => 'Información importante';
+
+  @override
+  String get changeSchedulePreviewImpacts => 'Cambios previstos';
+
+  @override
+  String get changeSchedulePreviewChangeSummary => 'Resumen de cambios';
+
+  @override
+  String changeSchedulePreviewGoalImpact(
+    int moved,
+    int shortened,
+    int removed,
+    int split,
+  ) {
+    return '$moved movidas · $shortened acortadas · $removed eliminadas · $split divididas';
+  }
+
+  @override
+  String changeSchedulePreviewCandidateSessions(int count) {
+    return '$count sesiones en el plan propuesto';
+  }
+
+  @override
+  String get changeSchedulePreviewNoWarnings =>
+      'No hay advertencias adicionales.';
+
+  @override
+  String get changeSchedulePreviewNoImpacts =>
+      'No es necesario mover ni cambiar entrenamientos.';
+
+  @override
+  String get changeScheduleWarningLongRunBackup =>
+      'Algunas carreras largas pueden usar el día alternativo.';
+
+  @override
+  String get changeScheduleWarningShortenedForTimeCap =>
+      'Algunos entrenamientos pueden acortarse para respetar tus límites de tiempo.';
+
+  @override
+  String get changeScheduleWarningRemovedForConstraints =>
+      'Algunos entrenamientos pueden eliminarse porque el nuevo horario es muy limitado.';
+
+  @override
+  String get changeScheduleWarningImmutablePreserved =>
+      'Los entrenamientos completados o en curso no cambian.';
+
+  @override
+  String get changeScheduleWarningOneRun =>
+      'Al menos una semana puede tener solo un día de running.';
+
+  @override
+  String get changeScheduleWarningConstraintsNotFullySupported =>
+      'No todas las preferencias se pueden cumplir cada semana.';
+
+  @override
+  String get changeScheduleWarningFallback =>
+      'Este horario tiene una consideración adicional.';
+
+  @override
+  String get changeScheduleImpactMove =>
+      'Un entrenamiento se mueve a otro día disponible.';
+
+  @override
+  String get changeScheduleImpactLongRunBackup =>
+      'Una carrera larga usa el día alternativo.';
+
+  @override
+  String get changeScheduleImpactShortenedForTimeCap =>
+      'Un entrenamiento se acorta para respetar un límite de tiempo.';
+
+  @override
+  String get changeScheduleImpactRemovedForConstraints =>
+      'Un entrenamiento se convierte en descanso por las nuevas restricciones.';
+
+  @override
+  String get changeScheduleImpactSplitForFrequency =>
+      'Un entrenamiento se divide para respetar los días de running elegidos.';
+
+  @override
+  String get changeScheduleImpactFallback =>
+      'Un entrenamiento cambia para adaptarse al nuevo horario.';
+
+  @override
+  String get changeScheduleApplyNow => 'Aplicar esta semana';
+
+  @override
+  String get changeScheduleSchedule => 'Programar para la próxima semana';
+
+  @override
+  String get changeScheduleUndo => 'Deshacer';
+
+  @override
+  String get changeScheduleCancel => 'Cancelar cambio programado';
+
+  @override
+  String get changeScheduleActivateDue => 'Activar horario ahora';
+
+  @override
+  String get changeScheduleDone => 'Listo';
+
+  @override
+  String get changeScheduleApplying => 'Actualizando tu horario…';
+
+  @override
+  String get changeScheduleApplyingAccept =>
+      'Aplicando los cambios de tu horario…';
+
+  @override
+  String get changeScheduleApplyingSchedule => 'Programando tus cambios…';
+
+  @override
+  String get changeScheduleApplyingCancel => 'Cancelando el cambio programado…';
+
+  @override
+  String get changeScheduleApplyingActivate =>
+      'Activando el cambio programado…';
+
+  @override
+  String get changeScheduleApplyingUndo => 'Deshaciendo el cambio de horario…';
+
+  @override
+  String get changeScheduleAcceptedTitle => 'Tu horario se actualizó';
+
+  @override
+  String get changeScheduleAcceptedSubtitle =>
+      'Tu nuevo horario está activo para esta semana de entrenamiento.';
+
+  @override
+  String get changeScheduleScheduledTitle =>
+      'El cambio de horario está programado';
+
+  @override
+  String get changeScheduleScheduledSubtitle =>
+      'Esta semana no cambia. Tu nuevo horario entrará en vigor la próxima semana.';
+
+  @override
+  String get changeScheduleScheduledDueSubtitle =>
+      'Tu cambio programado está listo para activarse.';
+
+  @override
+  String changeScheduleScheduledFor(String date) {
+    return 'Programado para $date';
+  }
+
+  @override
+  String changeSchedulePreviouslyScheduledFor(String date) {
+    return 'Programado anteriormente para $date';
+  }
+
+  @override
+  String get changeScheduleCancelledTitle => 'Cambio programado cancelado';
+
+  @override
+  String get changeScheduleCancelledSubtitle =>
+      'Tu horario actual se mantendrá.';
+
+  @override
+  String get changeScheduleActivatedTitle => 'Cambio programado activado';
+
+  @override
+  String get changeScheduleActivatedSubtitle =>
+      'Tu nueva disponibilidad ya está activa.';
+
+  @override
+  String get changeScheduleUndoneTitle => 'Cambio de horario deshecho';
+
+  @override
+  String get changeScheduleUndoneSubtitle => 'Se restauró tu horario anterior.';
+
+  @override
+  String get changeScheduleFailureTitle => 'No pudimos actualizar tu horario';
+
+  @override
+  String get changeScheduleErrorAuth =>
+      'Inicia sesión de nuevo y luego intenta cambiar tu horario.';
+
+  @override
+  String get changeScheduleErrorInvalidInput =>
+      'Revisa las elecciones de horario e inténtalo de nuevo.';
+
+  @override
+  String get changeScheduleErrorTimeout =>
+      'La solicitud de horario tardó demasiado. Vuelve e inténtalo de nuevo.';
+
+  @override
+  String get changeScheduleErrorStale =>
+      'Tu plan cambió mientras esta solicitud estaba abierta. Recarga para usar el plan más reciente.';
+
+  @override
+  String get changeScheduleErrorExpired =>
+      'Esta vista previa del horario caducó. Vuelve a revisar y crea una nueva vista previa.';
+
+  @override
+  String get changeScheduleErrorConflict =>
+      'Este cambio de horario entra en conflicto con tu plan más reciente. Recarga y revísalo otra vez.';
+
+  @override
+  String get changeScheduleErrorParse =>
+      'No pudimos leer la respuesta del horario. Recarga e inténtalo de nuevo.';
+
+  @override
+  String get changeScheduleErrorGeneric =>
+      'Algo salió mal al actualizar tu horario.';
+
+  @override
+  String get changeScheduleReload => 'Recargar horario';
+
+  @override
+  String get changeScheduleReturnToReview => 'Volver a revisar';
+
+  @override
+  String get changeScheduleReturnToScheduled => 'Volver al cambio programado';
+
+  @override
+  String get changeScheduleReturnToUpdated => 'Volver al horario actualizado';
+
+  @override
+  String get changeScheduleRebased =>
+      'Tu borrador guardado se actualizó para coincidir con el plan más reciente. Revísalo antes de continuar.';
+
+  @override
+  String get changeScheduleComparisonTitle => 'Comparación de horarios';
+
+  @override
+  String get changeScheduleComparisonCurrentWeek => 'Semana actual';
+
+  @override
+  String get changeScheduleComparisonUpdatedWeek => 'Semana actualizada';
+
+  @override
+  String get changeScheduleComparisonRest => 'Descanso';
+
+  @override
+  String get changeScheduleComparisonNoSession => 'Sin sesión';
+
+  @override
+  String get changeScheduleComparisonLongRun => 'Carrera larga';
+
+  @override
+  String changeScheduleComparisonDaySemantics(
+    String weekday,
+    String date,
+    String session,
+  ) {
+    return '$weekday, $date: $session';
+  }
+
+  @override
+  String changeScheduleComparisonDurationMinutes(String minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHours(String hours) {
+    return '$hours h';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHoursAndMinutes(
+    String hours,
+    String minutes,
+  ) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDistance(String distance, String unit) {
+    return '$distance $unit';
+  }
+
+  @override
+  String get changeScheduleUpdatedPreferences => 'Preferencias actualizadas';
+
+  @override
+  String changeScheduleUpdatedAvailability(String days) {
+    return 'Días disponibles: $days';
+  }
+
+  @override
+  String changeScheduleUpdatedLongRun(String day) {
+    return 'Carrera larga: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedBackup(String day) {
+    return 'Día alternativo: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedSameDay(String preference) {
+    return 'Correr y fuerza: $preference';
+  }
+
+  @override
+  String get changeScheduleUpdatedTimeCaps => 'Límites de tiempo';
+
+  @override
+  String changeScheduleUpdatedTimeCap(String day, String cap) {
+    return '$day: $cap';
+  }
+
+  @override
+  String get changeScheduleComparisonSessionDetailSeparator => ', ';
+
+  @override
+  String get changeScheduleComparisonSessionListSeparator => '; ';
 }

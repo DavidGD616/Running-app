@@ -22,7 +22,9 @@ class SupabaseActivityRepository implements AsyncActivityRepository {
     try {
       final response = await _client
           .from('activity_records')
-          .select('id, recorded_at, linked_session_id, activity_type, data')
+          .select(
+            'id, recorded_at, linked_session_id, plan_version_id, activity_type, data',
+          )
           .eq('user_id', uid)
           .order('recorded_at', ascending: false);
 
@@ -62,7 +64,9 @@ class SupabaseActivityRepository implements AsyncActivityRepository {
     try {
       final response = await _client
           .from('activity_records')
-          .select('id, recorded_at, linked_session_id, activity_type, data')
+          .select(
+            'id, recorded_at, linked_session_id, plan_version_id, activity_type, data',
+          )
           .eq('user_id', uid)
           .eq('linked_session_id', sessionId)
           .order('recorded_at', ascending: false);
@@ -89,7 +93,9 @@ class SupabaseActivityRepository implements AsyncActivityRepository {
     try {
       final response = await _client
           .from('activity_records')
-          .select('id, recorded_at, linked_session_id, activity_type, data')
+          .select(
+            'id, recorded_at, linked_session_id, plan_version_id, activity_type, data',
+          )
           .eq('user_id', uid)
           .eq('id', id)
           .maybeSingle();
@@ -217,6 +223,13 @@ class SupabaseActivityRepository implements AsyncActivityRepository {
       data.putIfAbsent('linkedSessionId', () => linkedSessionId);
     }
 
+    if (row.containsKey('plan_version_id')) {
+      final rawPlanVersionId = row['plan_version_id'];
+      data['planVersionId'] = rawPlanVersionId is String
+          ? _nullIfEmpty(rawPlanVersionId)
+          : null;
+    }
+
     final activityType = row['activity_type'];
     if (activityType is String && activityType.isNotEmpty) {
       data.putIfAbsent('kind', () => activityType);
@@ -231,6 +244,7 @@ class SupabaseActivityRepository implements AsyncActivityRepository {
       'user_id': uid,
       'recorded_at': activity.recordedAt.toUtc().toIso8601String(),
       'linked_session_id': _nullIfEmpty(activity.linkedSessionId),
+      'plan_version_id': _nullIfEmpty(activity.planVersionId),
       'activity_type': activity.kind.key,
       'data': activity.toJson(),
     };

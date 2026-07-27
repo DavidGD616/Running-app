@@ -119,6 +119,7 @@ class _LogRunScreenState extends ConsumerState<LogRunScreen> {
       actualDistanceKm: actualDistanceKm,
       actualElevationGainMeters: session.elevationGainMeters,
       perceivedEffort: _selectedFeeling,
+      planVersionId: session.planVersionId,
       notes: _notesController.text.trim().isEmpty
           ? null
           : _notesController.text.trim(),

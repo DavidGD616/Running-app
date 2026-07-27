@@ -4648,4 +4648,477 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get editGoalViewPlan => 'View plan';
+
+  @override
+  String get changeScheduleTitle => 'Change schedule';
+
+  @override
+  String changeScheduleStepProgress(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get changeScheduleAvailabilityTitle => 'When can you run?';
+
+  @override
+  String get changeScheduleAvailabilitySubtitle =>
+      'Choose the days you can realistically train and, if useful, add a time limit.';
+
+  @override
+  String get changeScheduleAvailableDays => 'Available days';
+
+  @override
+  String changeScheduleRunningDays(int count) {
+    return '$count running days each week';
+  }
+
+  @override
+  String get changeScheduleAvailable => 'Available';
+
+  @override
+  String get changeScheduleUnavailable => 'Unavailable';
+
+  @override
+  String changeScheduleDayToggleSemantics(String day, String availability) {
+    return '$day: $availability';
+  }
+
+  @override
+  String get changeScheduleDurationCap => 'Time limit';
+
+  @override
+  String get changeScheduleNoCap => 'No limit';
+
+  @override
+  String changeScheduleCapMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String changeScheduleCapChoiceSemantics(String day, String cap) {
+    return '$day time limit: $cap';
+  }
+
+  @override
+  String get changeScheduleStepContinue => 'Continue';
+
+  @override
+  String get changeScheduleStepBack => 'Back';
+
+  @override
+  String get changeScheduleLongRunTitle => 'Long run preferences';
+
+  @override
+  String get changeScheduleLongRunSubtitle =>
+      'Choose a primary long-run day and an optional backup day.';
+
+  @override
+  String get changeSchedulePrimaryLongRun => 'Primary long-run day';
+
+  @override
+  String get changeScheduleBackupLongRun => 'Backup long-run day';
+
+  @override
+  String get changeScheduleNoBackup => 'No backup day';
+
+  @override
+  String get changeScheduleSameDayTitle => 'Run and strength on the same day';
+
+  @override
+  String get changeScheduleSameDaySeparate => 'Separate sessions';
+
+  @override
+  String get changeScheduleSameDaySeparateSubtitle =>
+      'A run and strength session can share a day.';
+
+  @override
+  String get changeScheduleSameDayAvoid => 'Avoid the same day';
+
+  @override
+  String get changeScheduleSameDayAvoidSubtitle =>
+      'Keep run and strength sessions on different days when possible.';
+
+  @override
+  String changeScheduleOptionSemantics(String label, String state) {
+    return '$label: $state';
+  }
+
+  @override
+  String get changeScheduleSelected => 'Selected';
+
+  @override
+  String get changeScheduleNotSelected => 'Not selected';
+
+  @override
+  String get changeScheduleReviewTitle => 'Review your schedule';
+
+  @override
+  String get changeScheduleReviewSubtitle =>
+      'Choose when the updated schedule should take effect, then preview the changes.';
+
+  @override
+  String get changeScheduleEffectiveWeek => 'Take effect';
+
+  @override
+  String get changeScheduleEffectiveCurrent => 'This week';
+
+  @override
+  String get changeScheduleEffectiveCurrentSubtitle =>
+      'Apply the changes from the current training week.';
+
+  @override
+  String get changeScheduleEffectiveNext => 'Next week';
+
+  @override
+  String get changeScheduleEffectiveNextSubtitle =>
+      'Keep this week as it is and activate the change next week.';
+
+  @override
+  String changeScheduleReviewAvailability(String days) {
+    return 'Available days: $days';
+  }
+
+  @override
+  String changeScheduleReviewLongRun(String day) {
+    return 'Long run: $day';
+  }
+
+  @override
+  String changeScheduleReviewBackup(String day) {
+    return 'Backup: $day';
+  }
+
+  @override
+  String changeScheduleReviewSameDay(String preference) {
+    return 'Run and strength: $preference';
+  }
+
+  @override
+  String get changeSchedulePreview => 'Preview changes';
+
+  @override
+  String get changeSchedulePreviewing => 'Building your schedule preview…';
+
+  @override
+  String get changeScheduleLoading => 'Loading your schedule…';
+
+  @override
+  String get changeScheduleLoadingSubtitle =>
+      'We are preparing your current schedule.';
+
+  @override
+  String get changeSchedulePreviewTitle => 'Schedule preview';
+
+  @override
+  String changeScheduleEffectiveDate(String date) {
+    return 'Effective $date';
+  }
+
+  @override
+  String get changeSchedulePreviewWarnings => 'Things to know';
+
+  @override
+  String get changeSchedulePreviewImpacts => 'Planned changes';
+
+  @override
+  String get changeSchedulePreviewChangeSummary => 'Change summary';
+
+  @override
+  String changeSchedulePreviewGoalImpact(
+    int moved,
+    int shortened,
+    int removed,
+    int split,
+  ) {
+    return '$moved moved · $shortened shortened · $removed removed · $split split';
+  }
+
+  @override
+  String changeSchedulePreviewCandidateSessions(int count) {
+    return '$count sessions in the proposed plan';
+  }
+
+  @override
+  String get changeSchedulePreviewNoWarnings => 'No additional warnings.';
+
+  @override
+  String get changeSchedulePreviewNoImpacts =>
+      'No workouts need to move or change.';
+
+  @override
+  String get changeScheduleWarningLongRunBackup =>
+      'Some long runs may use your backup day.';
+
+  @override
+  String get changeScheduleWarningShortenedForTimeCap =>
+      'Some workouts may be shortened to fit your time limits.';
+
+  @override
+  String get changeScheduleWarningRemovedForConstraints =>
+      'Some workouts may be removed because the new schedule is too constrained.';
+
+  @override
+  String get changeScheduleWarningImmutablePreserved =>
+      'Completed or in-progress workouts stay unchanged.';
+
+  @override
+  String get changeScheduleWarningOneRun =>
+      'At least one week may have only one running day.';
+
+  @override
+  String get changeScheduleWarningConstraintsNotFullySupported =>
+      'Not every preference can be met in every week.';
+
+  @override
+  String get changeScheduleWarningFallback =>
+      'This schedule has an additional consideration.';
+
+  @override
+  String get changeScheduleImpactMove =>
+      'A workout moves to another available day.';
+
+  @override
+  String get changeScheduleImpactLongRunBackup =>
+      'A long run uses the backup day.';
+
+  @override
+  String get changeScheduleImpactShortenedForTimeCap =>
+      'A workout is shortened to fit a time limit.';
+
+  @override
+  String get changeScheduleImpactRemovedForConstraints =>
+      'A workout becomes a rest day because of the new constraints.';
+
+  @override
+  String get changeScheduleImpactSplitForFrequency =>
+      'A workout is split to support your selected running days.';
+
+  @override
+  String get changeScheduleImpactFallback =>
+      'A workout changes to fit the new schedule.';
+
+  @override
+  String get changeScheduleApplyNow => 'Apply this week';
+
+  @override
+  String get changeScheduleSchedule => 'Schedule for next week';
+
+  @override
+  String get changeScheduleUndo => 'Undo';
+
+  @override
+  String get changeScheduleCancel => 'Cancel scheduled change';
+
+  @override
+  String get changeScheduleActivateDue => 'Activate schedule now';
+
+  @override
+  String get changeScheduleDone => 'Done';
+
+  @override
+  String get changeScheduleApplying => 'Updating your schedule…';
+
+  @override
+  String get changeScheduleApplyingAccept => 'Applying your schedule changes…';
+
+  @override
+  String get changeScheduleApplyingSchedule => 'Scheduling your changes…';
+
+  @override
+  String get changeScheduleApplyingCancel => 'Cancelling the scheduled change…';
+
+  @override
+  String get changeScheduleApplyingActivate =>
+      'Activating your scheduled change…';
+
+  @override
+  String get changeScheduleApplyingUndo => 'Undoing your schedule change…';
+
+  @override
+  String get changeScheduleAcceptedTitle => 'Your schedule has been updated';
+
+  @override
+  String get changeScheduleAcceptedSubtitle =>
+      'Your new schedule is active for this training week.';
+
+  @override
+  String get changeScheduleScheduledTitle =>
+      'Your schedule change is scheduled';
+
+  @override
+  String get changeScheduleScheduledSubtitle =>
+      'This week stays the same. Your new schedule will take effect next week.';
+
+  @override
+  String get changeScheduleScheduledDueSubtitle =>
+      'Your scheduled change is ready to activate.';
+
+  @override
+  String changeScheduleScheduledFor(String date) {
+    return 'Scheduled for $date';
+  }
+
+  @override
+  String changeSchedulePreviouslyScheduledFor(String date) {
+    return 'Previously scheduled for $date';
+  }
+
+  @override
+  String get changeScheduleCancelledTitle => 'Scheduled change cancelled';
+
+  @override
+  String get changeScheduleCancelledSubtitle =>
+      'Your current schedule will stay in place.';
+
+  @override
+  String get changeScheduleActivatedTitle => 'Scheduled change activated';
+
+  @override
+  String get changeScheduleActivatedSubtitle =>
+      'Your new availability is now active.';
+
+  @override
+  String get changeScheduleUndoneTitle => 'Schedule change undone';
+
+  @override
+  String get changeScheduleUndoneSubtitle =>
+      'Your previous schedule has been restored.';
+
+  @override
+  String get changeScheduleFailureTitle => 'We could not update your schedule';
+
+  @override
+  String get changeScheduleErrorAuth =>
+      'Sign in again, then try changing your schedule.';
+
+  @override
+  String get changeScheduleErrorInvalidInput =>
+      'Check your schedule choices and try again.';
+
+  @override
+  String get changeScheduleErrorTimeout =>
+      'The schedule request took too long. Return and try again.';
+
+  @override
+  String get changeScheduleErrorStale =>
+      'Your plan changed while this request was open. Reload to use the latest plan.';
+
+  @override
+  String get changeScheduleErrorExpired =>
+      'This schedule preview expired. Return to review and create a new preview.';
+
+  @override
+  String get changeScheduleErrorConflict =>
+      'This schedule change conflicts with your latest plan. Reload and review it again.';
+
+  @override
+  String get changeScheduleErrorParse =>
+      'We could not read the schedule response. Reload and try again.';
+
+  @override
+  String get changeScheduleErrorGeneric =>
+      'Something went wrong while updating your schedule.';
+
+  @override
+  String get changeScheduleReload => 'Reload schedule';
+
+  @override
+  String get changeScheduleReturnToReview => 'Return to review';
+
+  @override
+  String get changeScheduleReturnToScheduled => 'Return to scheduled change';
+
+  @override
+  String get changeScheduleReturnToUpdated => 'Return to updated schedule';
+
+  @override
+  String get changeScheduleRebased =>
+      'Your saved draft was updated to match the latest plan. Review it before continuing.';
+
+  @override
+  String get changeScheduleComparisonTitle => 'Schedule comparison';
+
+  @override
+  String get changeScheduleComparisonCurrentWeek => 'Current week';
+
+  @override
+  String get changeScheduleComparisonUpdatedWeek => 'Updated week';
+
+  @override
+  String get changeScheduleComparisonRest => 'Rest';
+
+  @override
+  String get changeScheduleComparisonNoSession => 'No session';
+
+  @override
+  String get changeScheduleComparisonLongRun => 'Long run';
+
+  @override
+  String changeScheduleComparisonDaySemantics(
+    String weekday,
+    String date,
+    String session,
+  ) {
+    return '$weekday, $date: $session';
+  }
+
+  @override
+  String changeScheduleComparisonDurationMinutes(String minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHours(String hours) {
+    return '$hours hr';
+  }
+
+  @override
+  String changeScheduleComparisonDurationHoursAndMinutes(
+    String hours,
+    String minutes,
+  ) {
+    return '$hours hr $minutes min';
+  }
+
+  @override
+  String changeScheduleComparisonDistance(String distance, String unit) {
+    return '$distance $unit';
+  }
+
+  @override
+  String get changeScheduleUpdatedPreferences => 'Updated preferences';
+
+  @override
+  String changeScheduleUpdatedAvailability(String days) {
+    return 'Available days: $days';
+  }
+
+  @override
+  String changeScheduleUpdatedLongRun(String day) {
+    return 'Long run: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedBackup(String day) {
+    return 'Backup: $day';
+  }
+
+  @override
+  String changeScheduleUpdatedSameDay(String preference) {
+    return 'Run and strength: $preference';
+  }
+
+  @override
+  String get changeScheduleUpdatedTimeCaps => 'Time limits';
+
+  @override
+  String changeScheduleUpdatedTimeCap(String day, String cap) {
+    return '$day: $cap';
+  }
+
+  @override
+  String get changeScheduleComparisonSessionDetailSeparator => ', ';
+
+  @override
+  String get changeScheduleComparisonSessionListSeparator => '; ';
 }

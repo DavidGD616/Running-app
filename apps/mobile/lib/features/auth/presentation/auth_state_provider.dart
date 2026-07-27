@@ -10,9 +10,14 @@ final authStateProvider = StreamProvider<User?>((ref) {
   }
 
   final client = ref.watch(supabaseClientProvider);
-  return client.auth.onAuthStateChange.map((authState) {
-    return authState.session?.user;
-  });
+  Stream<User?> authStates() async* {
+    yield client.auth.currentUser;
+    yield* client.auth.onAuthStateChange.map((authState) {
+      return authState.session?.user;
+    });
+  }
+
+  return authStates();
 });
 
 final passwordRecoveryProvider = StreamProvider<bool>((ref) {

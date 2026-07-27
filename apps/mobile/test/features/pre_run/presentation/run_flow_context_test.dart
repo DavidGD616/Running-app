@@ -19,8 +19,14 @@ final paceZonesFixture = StravaPaceZones(
 void main() {
   test('RunFlowSessionContext carries structured workout payload', () {
     final session = buildStructuredIntervalSession();
-    final context = RunFlowSessionContext.fromSession(session);
-    final args = PreRunArgs.fromSession(session);
+    final context = RunFlowSessionContext.fromSession(
+      session,
+      planVersionId: 'plan-version-4',
+    );
+    final args = PreRunArgs.fromSession(
+      session,
+      planVersionId: 'plan-version-4',
+    );
 
     expect(context.sessionId, session.id);
     expect(context.sessionType, session.type);
@@ -29,8 +35,10 @@ void main() {
     expect(context.workoutSteps, hasLength(3));
     expect(context.workoutSteps.first.kind.name, 'warmUp');
     expect(context.workoutSteps[1].kind.name, 'repeat');
+    expect(context.planVersionId, 'plan-version-4');
     expect(args.session.workoutTarget, session.workoutTarget);
     expect(args.session.workoutSteps, hasLength(3));
+    expect(args.session.planVersionId, 'plan-version-4');
   });
 
   test('RunFlowSessionContext carries selected pace zones', () {
@@ -64,6 +72,31 @@ void main() {
       expect(restored.sessionId, session.id);
       expect(restored.sessionType, session.type);
       expect(restored.workoutSteps, hasLength(3));
+    },
+  );
+
+  test('RunFlowSessionContext JSON preserves captured plan provenance', () {
+    final session = buildStructuredIntervalSession();
+    final context = RunFlowSessionContext.fromSession(
+      session,
+      planVersionId: 'plan-version-4',
+    );
+
+    final restored = RunFlowSessionContext.fromJson(context.toJson());
+
+    expect(restored.planVersionId, 'plan-version-4');
+  });
+
+  test(
+    'RunFlowSessionContext JSON remains backward compatible without provenance',
+    () {
+      final session = buildStructuredIntervalSession();
+      final serialized = RunFlowSessionContext.fromSession(session).toJson()
+        ..remove('planVersionId');
+
+      final restored = RunFlowSessionContext.fromJson(serialized);
+
+      expect(restored.planVersionId, isNull);
     },
   );
 }

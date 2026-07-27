@@ -19,6 +19,7 @@ void main() {
       id: 'activity-1',
       recordedAt: DateTime(2026, 4, 7, 7, 45),
       linkedSessionId: 'w4-tue',
+      planVersionId: 'plan-version-4',
       source: ActivitySource.plannedSession,
       startedAt: DateTime(2026, 4, 7, 7, 3),
       endedAt: DateTime(2026, 4, 7, 7, 45),
@@ -45,7 +46,21 @@ void main() {
     expect(run.actualElevationGainMeters, 110);
     expect(run.perceivedEffort, ActivityPerceivedEffort.hard);
     expect(run.linkedSessionId, 'w4-tue');
+    expect(run.planVersionId, 'plan-version-4');
     expect(run.notes, 'Tempo effort');
+  });
+
+  test('RunActivity accepts legacy JSON without plan provenance', () {
+    final activity = buildRunActivity(
+      id: 'legacy-activity',
+      recordedAt: DateTime(2026, 4, 7, 7, 45),
+    );
+    final legacyJson = activity.toJson()..remove('planVersionId');
+
+    final restored = ActivityRecord.fromJson(legacyJson);
+
+    expect(restored, isA<RunActivity>());
+    expect((restored! as RunActivity).planVersionId, isNull);
   });
 
   test('repository saves, orders, and filters linked activities', () async {
@@ -80,7 +95,10 @@ void main() {
     expect(reloaded.first.id, 'activity-linked');
     expect(reloaded.last.id, 'activity-older');
     expect(repository.loadRecentActivities(limit: 1), hasLength(1));
-    expect(repository.loadRecentActivities(limit: 1).first.id, 'activity-linked');
+    expect(
+      repository.loadRecentActivities(limit: 1).first.id,
+      'activity-linked',
+    );
     expect(repository.loadActivityById('activity-linked'), isNotNull);
     expect(repository.loadActivitiesByLinkedSessionId('w4-tue'), hasLength(1));
     expect(

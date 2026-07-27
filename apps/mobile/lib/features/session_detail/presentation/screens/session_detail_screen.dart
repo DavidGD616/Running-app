@@ -32,10 +32,12 @@ class SessionDetailArgs {
   const SessionDetailArgs({
     required this.session,
     this.showStartWorkout = true,
+    this.planVersionId,
   });
 
   final TrainingSession session;
   final bool showStartWorkout;
+  final String? planVersionId;
 }
 
 // ── Screen ────────────────────────────────────────────────────────────────────
@@ -45,10 +47,12 @@ class SessionDetailScreen extends ConsumerWidget {
     super.key,
     required this.session,
     this.showStartWorkout = true,
+    this.planVersionId,
   });
 
   final TrainingSession session;
   final bool showStartWorkout;
+  final String? planVersionId;
 
   String? _selectedTargetEffortLabel(
     TrainingSession session,
@@ -1065,6 +1069,7 @@ class SessionDetailScreen extends ConsumerWidget {
                 extra: PreRunArgs.fromSession(
                   freshSession,
                   paceZones: plan?.paceZones,
+                  planVersionId: planVersionId,
                 ),
               ),
             ),

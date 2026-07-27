@@ -8318,6 +8318,762 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'View plan'**
   String get editGoalViewPlan;
+
+  /// No description provided for @changeScheduleTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change schedule'**
+  String get changeScheduleTitle;
+
+  /// No description provided for @changeScheduleStepProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String changeScheduleStepProgress(int step, int total);
+
+  /// No description provided for @changeScheduleAvailabilityTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'When can you run?'**
+  String get changeScheduleAvailabilityTitle;
+
+  /// No description provided for @changeScheduleAvailabilitySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the days you can realistically train and, if useful, add a time limit.'**
+  String get changeScheduleAvailabilitySubtitle;
+
+  /// No description provided for @changeScheduleAvailableDays.
+  ///
+  /// In en, this message translates to:
+  /// **'Available days'**
+  String get changeScheduleAvailableDays;
+
+  /// No description provided for @changeScheduleRunningDays.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} running days each week'**
+  String changeScheduleRunningDays(int count);
+
+  /// No description provided for @changeScheduleAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Available'**
+  String get changeScheduleAvailable;
+
+  /// No description provided for @changeScheduleUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Unavailable'**
+  String get changeScheduleUnavailable;
+
+  /// No description provided for @changeScheduleDayToggleSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}: {availability}'**
+  String changeScheduleDayToggleSemantics(String day, String availability);
+
+  /// No description provided for @changeScheduleDurationCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limit'**
+  String get changeScheduleDurationCap;
+
+  /// No description provided for @changeScheduleNoCap.
+  ///
+  /// In en, this message translates to:
+  /// **'No limit'**
+  String get changeScheduleNoCap;
+
+  /// No description provided for @changeScheduleCapMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String changeScheduleCapMinutes(int minutes);
+
+  /// No description provided for @changeScheduleCapChoiceSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{day} time limit: {cap}'**
+  String changeScheduleCapChoiceSemantics(String day, String cap);
+
+  /// No description provided for @changeScheduleStepContinue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get changeScheduleStepContinue;
+
+  /// No description provided for @changeScheduleStepBack.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get changeScheduleStepBack;
+
+  /// No description provided for @changeScheduleLongRunTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run preferences'**
+  String get changeScheduleLongRunTitle;
+
+  /// No description provided for @changeScheduleLongRunSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a primary long-run day and an optional backup day.'**
+  String get changeScheduleLongRunSubtitle;
+
+  /// No description provided for @changeSchedulePrimaryLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary long-run day'**
+  String get changeSchedulePrimaryLongRun;
+
+  /// No description provided for @changeScheduleBackupLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup long-run day'**
+  String get changeScheduleBackupLongRun;
+
+  /// No description provided for @changeScheduleNoBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'No backup day'**
+  String get changeScheduleNoBackup;
+
+  /// No description provided for @changeScheduleSameDayTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Run and strength on the same day'**
+  String get changeScheduleSameDayTitle;
+
+  /// No description provided for @changeScheduleSameDaySeparate.
+  ///
+  /// In en, this message translates to:
+  /// **'Separate sessions'**
+  String get changeScheduleSameDaySeparate;
+
+  /// No description provided for @changeScheduleSameDaySeparateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'A run and strength session can share a day.'**
+  String get changeScheduleSameDaySeparateSubtitle;
+
+  /// No description provided for @changeScheduleSameDayAvoid.
+  ///
+  /// In en, this message translates to:
+  /// **'Avoid the same day'**
+  String get changeScheduleSameDayAvoid;
+
+  /// No description provided for @changeScheduleSameDayAvoidSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep run and strength sessions on different days when possible.'**
+  String get changeScheduleSameDayAvoidSubtitle;
+
+  /// No description provided for @changeScheduleOptionSemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{label}: {state}'**
+  String changeScheduleOptionSemantics(String label, String state);
+
+  /// No description provided for @changeScheduleSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected'**
+  String get changeScheduleSelected;
+
+  /// No description provided for @changeScheduleNotSelected.
+  ///
+  /// In en, this message translates to:
+  /// **'Not selected'**
+  String get changeScheduleNotSelected;
+
+  /// No description provided for @changeScheduleReviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Review your schedule'**
+  String get changeScheduleReviewTitle;
+
+  /// No description provided for @changeScheduleReviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose when the updated schedule should take effect, then preview the changes.'**
+  String get changeScheduleReviewSubtitle;
+
+  /// No description provided for @changeScheduleEffectiveWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Take effect'**
+  String get changeScheduleEffectiveWeek;
+
+  /// No description provided for @changeScheduleEffectiveCurrent.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get changeScheduleEffectiveCurrent;
+
+  /// No description provided for @changeScheduleEffectiveCurrentSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply the changes from the current training week.'**
+  String get changeScheduleEffectiveCurrentSubtitle;
+
+  /// No description provided for @changeScheduleEffectiveNext.
+  ///
+  /// In en, this message translates to:
+  /// **'Next week'**
+  String get changeScheduleEffectiveNext;
+
+  /// No description provided for @changeScheduleEffectiveNextSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this week as it is and activate the change next week.'**
+  String get changeScheduleEffectiveNextSubtitle;
+
+  /// No description provided for @changeScheduleReviewAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Available days: {days}'**
+  String changeScheduleReviewAvailability(String days);
+
+  /// No description provided for @changeScheduleReviewLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run: {day}'**
+  String changeScheduleReviewLongRun(String day);
+
+  /// No description provided for @changeScheduleReviewBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup: {day}'**
+  String changeScheduleReviewBackup(String day);
+
+  /// No description provided for @changeScheduleReviewSameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Run and strength: {preference}'**
+  String changeScheduleReviewSameDay(String preference);
+
+  /// No description provided for @changeSchedulePreview.
+  ///
+  /// In en, this message translates to:
+  /// **'Preview changes'**
+  String get changeSchedulePreview;
+
+  /// No description provided for @changeSchedulePreviewing.
+  ///
+  /// In en, this message translates to:
+  /// **'Building your schedule preview…'**
+  String get changeSchedulePreviewing;
+
+  /// No description provided for @changeScheduleLoading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your schedule…'**
+  String get changeScheduleLoading;
+
+  /// No description provided for @changeScheduleLoadingSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We are preparing your current schedule.'**
+  String get changeScheduleLoadingSubtitle;
+
+  /// No description provided for @changeSchedulePreviewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule preview'**
+  String get changeSchedulePreviewTitle;
+
+  /// No description provided for @changeScheduleEffectiveDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Effective {date}'**
+  String changeScheduleEffectiveDate(String date);
+
+  /// No description provided for @changeSchedulePreviewWarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'Things to know'**
+  String get changeSchedulePreviewWarnings;
+
+  /// No description provided for @changeSchedulePreviewImpacts.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned changes'**
+  String get changeSchedulePreviewImpacts;
+
+  /// No description provided for @changeSchedulePreviewChangeSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Change summary'**
+  String get changeSchedulePreviewChangeSummary;
+
+  /// No description provided for @changeSchedulePreviewGoalImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'{moved} moved · {shortened} shortened · {removed} removed · {split} split'**
+  String changeSchedulePreviewGoalImpact(
+    int moved,
+    int shortened,
+    int removed,
+    int split,
+  );
+
+  /// No description provided for @changeSchedulePreviewCandidateSessions.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} sessions in the proposed plan'**
+  String changeSchedulePreviewCandidateSessions(int count);
+
+  /// No description provided for @changeSchedulePreviewNoWarnings.
+  ///
+  /// In en, this message translates to:
+  /// **'No additional warnings.'**
+  String get changeSchedulePreviewNoWarnings;
+
+  /// No description provided for @changeSchedulePreviewNoImpacts.
+  ///
+  /// In en, this message translates to:
+  /// **'No workouts need to move or change.'**
+  String get changeSchedulePreviewNoImpacts;
+
+  /// No description provided for @changeScheduleWarningLongRunBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Some long runs may use your backup day.'**
+  String get changeScheduleWarningLongRunBackup;
+
+  /// No description provided for @changeScheduleWarningShortenedForTimeCap.
+  ///
+  /// In en, this message translates to:
+  /// **'Some workouts may be shortened to fit your time limits.'**
+  String get changeScheduleWarningShortenedForTimeCap;
+
+  /// No description provided for @changeScheduleWarningRemovedForConstraints.
+  ///
+  /// In en, this message translates to:
+  /// **'Some workouts may be removed because the new schedule is too constrained.'**
+  String get changeScheduleWarningRemovedForConstraints;
+
+  /// No description provided for @changeScheduleWarningImmutablePreserved.
+  ///
+  /// In en, this message translates to:
+  /// **'Completed or in-progress workouts stay unchanged.'**
+  String get changeScheduleWarningImmutablePreserved;
+
+  /// No description provided for @changeScheduleWarningOneRun.
+  ///
+  /// In en, this message translates to:
+  /// **'At least one week may have only one running day.'**
+  String get changeScheduleWarningOneRun;
+
+  /// No description provided for @changeScheduleWarningConstraintsNotFullySupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Not every preference can be met in every week.'**
+  String get changeScheduleWarningConstraintsNotFullySupported;
+
+  /// No description provided for @changeScheduleWarningFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'This schedule has an additional consideration.'**
+  String get changeScheduleWarningFallback;
+
+  /// No description provided for @changeScheduleImpactMove.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout moves to another available day.'**
+  String get changeScheduleImpactMove;
+
+  /// No description provided for @changeScheduleImpactLongRunBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'A long run uses the backup day.'**
+  String get changeScheduleImpactLongRunBackup;
+
+  /// No description provided for @changeScheduleImpactShortenedForTimeCap.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout is shortened to fit a time limit.'**
+  String get changeScheduleImpactShortenedForTimeCap;
+
+  /// No description provided for @changeScheduleImpactRemovedForConstraints.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout becomes a rest day because of the new constraints.'**
+  String get changeScheduleImpactRemovedForConstraints;
+
+  /// No description provided for @changeScheduleImpactSplitForFrequency.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout is split to support your selected running days.'**
+  String get changeScheduleImpactSplitForFrequency;
+
+  /// No description provided for @changeScheduleImpactFallback.
+  ///
+  /// In en, this message translates to:
+  /// **'A workout changes to fit the new schedule.'**
+  String get changeScheduleImpactFallback;
+
+  /// No description provided for @changeScheduleApplyNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply this week'**
+  String get changeScheduleApplyNow;
+
+  /// No description provided for @changeScheduleSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule for next week'**
+  String get changeScheduleSchedule;
+
+  /// No description provided for @changeScheduleUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get changeScheduleUndo;
+
+  /// No description provided for @changeScheduleCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel scheduled change'**
+  String get changeScheduleCancel;
+
+  /// No description provided for @changeScheduleActivateDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Activate schedule now'**
+  String get changeScheduleActivateDue;
+
+  /// No description provided for @changeScheduleDone.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get changeScheduleDone;
+
+  /// No description provided for @changeScheduleApplying.
+  ///
+  /// In en, this message translates to:
+  /// **'Updating your schedule…'**
+  String get changeScheduleApplying;
+
+  /// No description provided for @changeScheduleApplyingAccept.
+  ///
+  /// In en, this message translates to:
+  /// **'Applying your schedule changes…'**
+  String get changeScheduleApplyingAccept;
+
+  /// No description provided for @changeScheduleApplyingSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduling your changes…'**
+  String get changeScheduleApplyingSchedule;
+
+  /// No description provided for @changeScheduleApplyingCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelling the scheduled change…'**
+  String get changeScheduleApplyingCancel;
+
+  /// No description provided for @changeScheduleApplyingActivate.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating your scheduled change…'**
+  String get changeScheduleApplyingActivate;
+
+  /// No description provided for @changeScheduleApplyingUndo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undoing your schedule change…'**
+  String get changeScheduleApplyingUndo;
+
+  /// No description provided for @changeScheduleAcceptedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your schedule has been updated'**
+  String get changeScheduleAcceptedTitle;
+
+  /// No description provided for @changeScheduleAcceptedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new schedule is active for this training week.'**
+  String get changeScheduleAcceptedSubtitle;
+
+  /// No description provided for @changeScheduleScheduledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your schedule change is scheduled'**
+  String get changeScheduleScheduledTitle;
+
+  /// No description provided for @changeScheduleScheduledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This week stays the same. Your new schedule will take effect next week.'**
+  String get changeScheduleScheduledSubtitle;
+
+  /// No description provided for @changeScheduleScheduledDueSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your scheduled change is ready to activate.'**
+  String get changeScheduleScheduledDueSubtitle;
+
+  /// No description provided for @changeScheduleScheduledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled for {date}'**
+  String changeScheduleScheduledFor(String date);
+
+  /// No description provided for @changeSchedulePreviouslyScheduledFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Previously scheduled for {date}'**
+  String changeSchedulePreviouslyScheduledFor(String date);
+
+  /// No description provided for @changeScheduleCancelledTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled change cancelled'**
+  String get changeScheduleCancelledTitle;
+
+  /// No description provided for @changeScheduleCancelledSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your current schedule will stay in place.'**
+  String get changeScheduleCancelledSubtitle;
+
+  /// No description provided for @changeScheduleActivatedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled change activated'**
+  String get changeScheduleActivatedTitle;
+
+  /// No description provided for @changeScheduleActivatedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your new availability is now active.'**
+  String get changeScheduleActivatedSubtitle;
+
+  /// No description provided for @changeScheduleUndoneTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule change undone'**
+  String get changeScheduleUndoneTitle;
+
+  /// No description provided for @changeScheduleUndoneSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your previous schedule has been restored.'**
+  String get changeScheduleUndoneSubtitle;
+
+  /// No description provided for @changeScheduleFailureTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not update your schedule'**
+  String get changeScheduleFailureTitle;
+
+  /// No description provided for @changeScheduleErrorAuth.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in again, then try changing your schedule.'**
+  String get changeScheduleErrorAuth;
+
+  /// No description provided for @changeScheduleErrorInvalidInput.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your schedule choices and try again.'**
+  String get changeScheduleErrorInvalidInput;
+
+  /// No description provided for @changeScheduleErrorTimeout.
+  ///
+  /// In en, this message translates to:
+  /// **'The schedule request took too long. Return and try again.'**
+  String get changeScheduleErrorTimeout;
+
+  /// No description provided for @changeScheduleErrorStale.
+  ///
+  /// In en, this message translates to:
+  /// **'Your plan changed while this request was open. Reload to use the latest plan.'**
+  String get changeScheduleErrorStale;
+
+  /// No description provided for @changeScheduleErrorExpired.
+  ///
+  /// In en, this message translates to:
+  /// **'This schedule preview expired. Return to review and create a new preview.'**
+  String get changeScheduleErrorExpired;
+
+  /// No description provided for @changeScheduleErrorConflict.
+  ///
+  /// In en, this message translates to:
+  /// **'This schedule change conflicts with your latest plan. Reload and review it again.'**
+  String get changeScheduleErrorConflict;
+
+  /// No description provided for @changeScheduleErrorParse.
+  ///
+  /// In en, this message translates to:
+  /// **'We could not read the schedule response. Reload and try again.'**
+  String get changeScheduleErrorParse;
+
+  /// No description provided for @changeScheduleErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while updating your schedule.'**
+  String get changeScheduleErrorGeneric;
+
+  /// No description provided for @changeScheduleReload.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload schedule'**
+  String get changeScheduleReload;
+
+  /// No description provided for @changeScheduleReturnToReview.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to review'**
+  String get changeScheduleReturnToReview;
+
+  /// No description provided for @changeScheduleReturnToScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to scheduled change'**
+  String get changeScheduleReturnToScheduled;
+
+  /// No description provided for @changeScheduleReturnToUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Return to updated schedule'**
+  String get changeScheduleReturnToUpdated;
+
+  /// No description provided for @changeScheduleRebased.
+  ///
+  /// In en, this message translates to:
+  /// **'Your saved draft was updated to match the latest plan. Review it before continuing.'**
+  String get changeScheduleRebased;
+
+  /// No description provided for @changeScheduleComparisonTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Schedule comparison'**
+  String get changeScheduleComparisonTitle;
+
+  /// No description provided for @changeScheduleComparisonCurrentWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Current week'**
+  String get changeScheduleComparisonCurrentWeek;
+
+  /// No description provided for @changeScheduleComparisonUpdatedWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated week'**
+  String get changeScheduleComparisonUpdatedWeek;
+
+  /// No description provided for @changeScheduleComparisonRest.
+  ///
+  /// In en, this message translates to:
+  /// **'Rest'**
+  String get changeScheduleComparisonRest;
+
+  /// No description provided for @changeScheduleComparisonNoSession.
+  ///
+  /// In en, this message translates to:
+  /// **'No session'**
+  String get changeScheduleComparisonNoSession;
+
+  /// No description provided for @changeScheduleComparisonLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run'**
+  String get changeScheduleComparisonLongRun;
+
+  /// No description provided for @changeScheduleComparisonDaySemantics.
+  ///
+  /// In en, this message translates to:
+  /// **'{weekday}, {date}: {session}'**
+  String changeScheduleComparisonDaySemantics(
+    String weekday,
+    String date,
+    String session,
+  );
+
+  /// No description provided for @changeScheduleComparisonDurationMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String changeScheduleComparisonDurationMinutes(String minutes);
+
+  /// No description provided for @changeScheduleComparisonDurationHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr'**
+  String changeScheduleComparisonDurationHours(String hours);
+
+  /// No description provided for @changeScheduleComparisonDurationHoursAndMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} hr {minutes} min'**
+  String changeScheduleComparisonDurationHoursAndMinutes(
+    String hours,
+    String minutes,
+  );
+
+  /// No description provided for @changeScheduleComparisonDistance.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} {unit}'**
+  String changeScheduleComparisonDistance(String distance, String unit);
+
+  /// No description provided for @changeScheduleUpdatedPreferences.
+  ///
+  /// In en, this message translates to:
+  /// **'Updated preferences'**
+  String get changeScheduleUpdatedPreferences;
+
+  /// No description provided for @changeScheduleUpdatedAvailability.
+  ///
+  /// In en, this message translates to:
+  /// **'Available days: {days}'**
+  String changeScheduleUpdatedAvailability(String days);
+
+  /// No description provided for @changeScheduleUpdatedLongRun.
+  ///
+  /// In en, this message translates to:
+  /// **'Long run: {day}'**
+  String changeScheduleUpdatedLongRun(String day);
+
+  /// No description provided for @changeScheduleUpdatedBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup: {day}'**
+  String changeScheduleUpdatedBackup(String day);
+
+  /// No description provided for @changeScheduleUpdatedSameDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Run and strength: {preference}'**
+  String changeScheduleUpdatedSameDay(String preference);
+
+  /// No description provided for @changeScheduleUpdatedTimeCaps.
+  ///
+  /// In en, this message translates to:
+  /// **'Time limits'**
+  String get changeScheduleUpdatedTimeCaps;
+
+  /// No description provided for @changeScheduleUpdatedTimeCap.
+  ///
+  /// In en, this message translates to:
+  /// **'{day}: {cap}'**
+  String changeScheduleUpdatedTimeCap(String day, String cap);
+
+  /// No description provided for @changeScheduleComparisonSessionDetailSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get changeScheduleComparisonSessionDetailSeparator;
+
+  /// No description provided for @changeScheduleComparisonSessionListSeparator.
+  ///
+  /// In en, this message translates to:
+  /// **'; '**
+  String get changeScheduleComparisonSessionListSeparator;
 }
 
 class _AppLocalizationsDelegate

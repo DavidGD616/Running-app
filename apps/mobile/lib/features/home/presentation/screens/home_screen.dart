@@ -215,7 +215,13 @@ class HomeScreen extends ConsumerWidget {
                     // ── Today's Workout ────────────────────────────────
                     SectionLabel(label: l10n.homeSectionTodaysWorkout),
                     const SizedBox(height: AppSpacing.md),
-                    _buildTodayCard(context, l10n, todaySession, unitSystem),
+                    _buildTodayCard(
+                      context,
+                      l10n,
+                      todaySession,
+                      unitSystem,
+                      plan?.id,
+                    ),
 
                     if (pendingReview != null ||
                         weeklySummary.shouldTriggerAdaptationReview) ...[
@@ -270,6 +276,7 @@ class HomeScreen extends ConsumerWidget {
                             session: nextSession,
                             showStartWorkout:
                                 nextSession.status == SessionStatus.today,
+                            planVersionId: plan?.id,
                           ),
                         ),
                       ),
@@ -308,6 +315,7 @@ class HomeScreen extends ConsumerWidget {
     AppLocalizations l10n,
     TrainingSession? session,
     UnitSystem unitSystem,
+    String? planVersionId,
   ) {
     if (session == null) {
       return const SizedBox.shrink();
@@ -334,6 +342,7 @@ class HomeScreen extends ConsumerWidget {
         extra: SessionDetailArgs(
           session: session,
           showStartWorkout: session.status == SessionStatus.today,
+          planVersionId: planVersionId,
         ),
       ),
     );

@@ -192,7 +192,10 @@ class WeeklyPlanScreen extends ConsumerWidget {
                         ? null
                         : () => context.push(
                             RouteNames.sessionDetail,
-                            extra: SessionDetailArgs(session: row.session),
+                            extra: SessionDetailArgs(
+                              session: row.session,
+                              planVersionId: plan?.id,
+                            ),
                           ),
                   ),
                 ),
