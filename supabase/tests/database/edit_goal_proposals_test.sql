@@ -825,6 +825,238 @@ select is(
   'failed stale acceptance does not partially update the proposal'
 );
 
+-- Replacing a plan through Edit Goal terminalizes pending and queued Change
+-- Schedule state based on that source in the same transaction.
+insert into auth.users (id, email)
+values (
+  '10000000-0000-0000-0000-000000000008',
+  'edit-goal-change-schedule-terminalization@example.test'
+);
+
+set local role service_role;
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claim.sub', '10000000-0000-0000-0000-000000000008', true);
+
+insert into runner_profiles (user_id, schema_version, updated_at, data)
+values (
+  '10000000-0000-0000-0000-000000000008',
+  1,
+  '2026-07-20 08:00:00+00',
+  '{"goal":{"race":"10k"},"marker":"edit-goal-change-schedule"}'::jsonb
+);
+
+insert into plan_versions (
+  id,
+  user_id,
+  generated_at,
+  requested_by,
+  is_active,
+  schema_version,
+  data
+)
+values (
+  'edit-goal-change-schedule-source',
+  '10000000-0000-0000-0000-000000000008',
+  '2026-07-20 08:00:00+00',
+  'onboarding',
+  true,
+  1,
+  '{"id":"edit-goal-change-schedule-source","weeks":[]}'::jsonb
+);
+
+select lives_ok(
+  $$
+    select public.store_change_schedule_proposal(
+      '10000000-0000-0000-0000-000000000008',
+      'edit-goal-change-schedule-scheduled',
+      'edit-goal-change-schedule-source',
+      '{"id":"edit-goal-change-schedule-queued-plan","weeks":[]}'::jsonb,
+      '{"impact":"scheduled"}'::jsonb,
+      '{
+        "days":[
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days":4,
+        "primary_long_run_weekday":1,
+        "same_day_run_strength_preference":"separate_sessions"
+      }'::jsonb,
+      '2026-08-10',
+      '2026-07-20 09:00:00+00',
+      '2026-08-01 09:00:00+00',
+      1,
+      '2026-07-20 08:00:00+00'
+    )
+  $$,
+  'edit-goal fixture stores an old-source Change Schedule proposal'
+);
+
+select lives_ok(
+  $$
+    select *
+      from public.schedule_change_schedule_proposal(
+        '10000000-0000-0000-0000-000000000008',
+        'edit-goal-change-schedule-scheduled',
+        'edit-goal-change-schedule-queued-plan',
+        'edit-goal-change-schedule-queued-availability',
+        '2026-07-20 09:05:00+00'
+      )
+  $$,
+  'edit-goal fixture queues the old-source Change Schedule proposal'
+);
+
+select lives_ok(
+  $$
+    select public.store_change_schedule_proposal(
+      '10000000-0000-0000-0000-000000000008',
+      'edit-goal-change-schedule-pending',
+      'edit-goal-change-schedule-source',
+      '{"id":"edit-goal-change-schedule-pending-candidate","weeks":[]}'::jsonb,
+      '{"impact":"pending"}'::jsonb,
+      '{
+        "days":[
+          {"day":1,"available":true},
+          {"day":2,"available":true},
+          {"day":3,"available":true},
+          {"day":4,"available":true},
+          {"day":5,"available":false},
+          {"day":6,"available":false},
+          {"day":7,"available":false}
+        ],
+        "target_running_days":4,
+        "primary_long_run_weekday":1,
+        "same_day_run_strength_preference":"separate_sessions"
+      }'::jsonb,
+      '2026-08-17',
+      '2026-07-20 09:10:00+00',
+      '2026-08-01 09:10:00+00',
+      1,
+      '2026-07-20 08:00:00+00'
+    )
+  $$,
+  'edit-goal fixture stores an old-source pending Change Schedule proposal'
+);
+
+select lives_ok(
+  $$
+    select public.store_goal_edit_proposal(
+      '10000000-0000-0000-0000-000000000008',
+      'edit-goal-change-schedule-replacement',
+      'edit-goal-change-schedule-source',
+      '{"id":"edit-goal-change-schedule-replacement-plan","weeks":[]}'::jsonb,
+      '{"race":"half_marathon","targetSeconds":7200}'::jsonb,
+      '{}'::jsonb,
+      '{"goalChanged":true}'::jsonb,
+      '[]'::jsonb,
+      7200,
+      now(),
+      now() + interval '30 minutes'
+    )
+  $$,
+  'edit-goal fixture stores the plan-replacement proposal'
+);
+
+select lives_ok(
+  $$
+    select *
+      from public.accept_goal_edit_proposal(
+        '10000000-0000-0000-0000-000000000008',
+        'edit-goal-change-schedule-replacement',
+        'edit-goal-change-schedule-replacement-plan',
+        now()
+      )
+  $$,
+  'edit-goal acceptance terminalizes old-source Change Schedule state'
+);
+
+select is(
+  (
+    select status
+      from public.change_schedule_proposals
+     where id = 'edit-goal-change-schedule-pending'
+  ),
+  'superseded',
+  'edit-goal acceptance supersedes the old-source pending Change Schedule proposal'
+);
+
+select ok(
+  (
+    select source_plan_version_id = 'edit-goal-change-schedule-source'
+       and superseded_at is not null
+      from public.change_schedule_proposals
+     where id = 'edit-goal-change-schedule-pending'
+  ),
+  'edit-goal pending terminalization retains source audit data'
+);
+
+select is(
+  (
+    select status
+      from public.change_schedule_proposals
+     where id = 'edit-goal-change-schedule-scheduled'
+  ),
+  'superseded',
+  'edit-goal acceptance supersedes the old-source scheduled Change Schedule proposal'
+);
+
+select is(
+  (
+    select scheduled_plan_version_id
+      from public.change_schedule_proposals
+     where id = 'edit-goal-change-schedule-scheduled'
+  ),
+  null::text,
+  'edit-goal scheduled terminalization clears only the active queue link'
+);
+
+select ok(
+  (
+    select status = 'stale'
+       and proposal_id = 'edit-goal-change-schedule-scheduled'
+       and stale_at is not null
+      from public.change_schedule_activations
+     where user_id = '10000000-0000-0000-0000-000000000008'
+  ),
+  'edit-goal acceptance marks its scheduled activation stale before proposal terminalization'
+);
+
+select is(
+  (
+    select is_active
+      from plan_versions
+     where id = 'edit-goal-change-schedule-queued-plan'
+  ),
+  false,
+  'edit-goal stale-source terminalization does not activate the queued candidate plan'
+);
+
+select is(
+  (
+    select lifecycle_state
+      from public.change_schedule_availability_versions
+     where id = 'edit-goal-change-schedule-queued-availability'
+  ),
+  'scheduled',
+  'edit-goal stale-source terminalization preserves queued availability audit state'
+);
+
+select is(
+  (
+    select count(*)::integer
+      from public.change_schedule_proposals
+     where user_id = '10000000-0000-0000-0000-000000000008'
+       and source_plan_version_id = 'edit-goal-change-schedule-source'
+       and status in ('pending', 'scheduled')
+  ),
+  0,
+  'edit-goal acceptance leaves no pending or scheduled old-source Change Schedule proposal'
+);
+
 select * from finish();
 
 rollback;
